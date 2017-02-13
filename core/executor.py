@@ -167,7 +167,71 @@ class State(object):
     def add(self, constraint, check=False):
         self.constraints.add(constraint)
 
-    def make_symbolic(self, data, name = 'INPUT', WILDCARD='+', string=False):
+    def abandon(self):
+        'Abandon the currently-active state'
+        # XXX(yan): This might not be the correct thing to do. Since we are 
+        # being passed the currently-executing state as the argument, it is 
+        # probably safe to assume that this was triggered via the Executor 
+        # signal and raising AbandonState here would abandon the correct one.
+        raise AbandonState()
+
+    def new_symbolic_buffer(self, nbytes, **options):
+        '''Create and return a symbolic buffer of length |nbytes|. The buffer is
+        not written into State's memory; write it to the state's memory to
+        introduce it into the program state.
+
+        Args:
+            nbytes - Length of the new buffer
+            options - Options to set on the returned expression. Valid options:
+                name --  The name to assign to the buffer (str)
+                string -- Whether or not to enforce that the buffer is a c-string
+                 (i.e. no \0 bytes). (bool)
+
+        Returns:
+            Expression representing the buffer. 
+        '''
+        name = options.get('name', 'buffer')
+        expr = self.constraints.new_array(name=name, index_max=nbytes)
+        self.input_symbols.append(expr)
+
+        if options.get('string', False):
+            for i in range(nbytes):
+                self.constraints.add(expr[i] != 0)
+
+        return expr
+
+
+    def new_symbolic_value(self, nbits, **options):
+        '''Create and return a symbolic value that is |nbits| bits wide. Assign
+        the value to a register or write it into the address space to introduce
+        it into the program state.
+
+        Args:
+            nbits - The bitwidth of the value returned.
+            options - Options to set on the returned expression. Valid options:
+                name -- The name to assign to the value.
+
+        Returns:
+            Expression representing the value.
+        '''
+        assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
+        name = options.get('name', 'val')
+        expr = self.constraints.new_bitvec(nbits, name=name)
+        return expr
+
+    def symbolicate_buffer(self, data, name = 'INPUT', WILDCARD='+', string=False):
+        '''Mark parts of a buffer as symbolic (demarked by the WILDCARD byte)
+
+        Args:
+            data -- The string to symbolicate. If no wildcard bytes are provided,
+                this is the identity function on the first argument.
+            name -- The name to assign to the value
+            WILDCARD -- The byte that is considered a wildcard
+            string -- Ensure bytes returned can not be \0
+
+        Returns:
+            data itself, or a symbolic expression
+        '''
         if WILDCARD in data:
             size = len(data)
             symb = self.constraints.new_array(name=name, index_max=size)
@@ -710,7 +774,7 @@ class Executor(object):
                     vals = random.sample(vals, 1) 
                     logger.info("Too much storage used(%d). Inhibiting fork", total_used_storage)
 
-        childs = []
+        children = []
         if len(vals) == 1:
             constraint = symbolic == vals[0]
             current_state.add(constraint, check=True) #We already know it's sat
@@ -739,10 +803,10 @@ class Executor(object):
                     setstate(new_state, new_value) 
                     #add the state to the list of pending states
                     self.putState(new_state)
-                    childs.append(new_state.co)
+                    children.append(new_state.co)
 
 
-            logger.debug("Forking state %d into states %r",parent, childs)
+            logger.debug("Forking state %d into states %r",parent, children)
             current_state = None
 
         return current_state
@@ -926,20 +990,20 @@ class Executor(object):
                     logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.current.PC, e.cause)
                     logger.info('Constraint for crashing! %s', e.constraint)
 
-                    childs = []
+                    children = []
                     with current_state as new_state:
                         new_state.add(e.constraint==False)
                         if solver.check(new_state.constraints):
                             self.putState(new_state)
-                            childs.append(new_state.co)
+                            children.append(new_state.co)
 
                     with current_state as new_state:
-                        childs.append(new_state.co)
+                        children.append(new_state.co)
                         new_state.add(e.constraint)
                         self.newerror(new_state.current.PC)
                         self.generate_testcase(new_state, "Symbolic Memory Exception: " + str(e))
 
-                    logger.info("Forking state %d into states %r",current_state.co, childs)
+                    logger.info("Forking state %d into states %r",current_state.co, children)
                     new_state = current_state = None
 
                 except MemoryException as e:

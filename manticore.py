@@ -128,32 +128,6 @@ def issymbolic(value):
     '''
     return isinstance(value, Expression)
 
-class ManticoreControl(object):
-    '''
-        Controls which state is chosen for next execution, and stops all 
-        subprocess execution.
-    '''
-
-    def __init__(self, manticore_obj):
-        self._parent = manticore_obj
-
-    def exit(self):
-        ''' Terminate all outstanding manticore processes '''
-        m = self._parent
-        m._executor.shutdown()
-
-    @property
-    def states(self):
-        ''' Return a list of possible next-state choices. Each entry in the list 
-            is a file name of the next-state file '''
-        raise NotImplementedError()
-
-    def abandon_state(self):
-        ''' Mark the current state as irrelevant, so Manticore will not continue
-            exploring this state tree
-        '''
-        pass
-
 class Manticore(object):
 
     def __init__(self, binary_path, args = [], verbose = False):
@@ -340,7 +314,7 @@ class Manticore(object):
             # manticore context
             # program state
             # manticore control obj
-            callback(self._context, state, ManticoreControl(self))
+            callback(self._context, state)
 
         self._hooks.setdefault(pc, set()).add(_inner)
 
@@ -595,6 +569,10 @@ class Manticore(object):
             self._join_workers()
         finally:
             self._running = False
+
+    def terminate(self):
+        'Gracefully terminate the currently-executing Manticore run.'
+        self._executor.shutdown()
 
     def _assertions_callback(self, state, pc):
         if pc not in self._assertions:
