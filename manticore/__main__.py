@@ -70,7 +70,7 @@ def parse_arguments():
 
 logger = logging.getLogger('MAIN')
 
-if __name__ == '__main__':
+def main():
     args = parse_arguments()
 
     m = Manticore(args.programs[0], args.programs[1:])
@@ -149,3 +149,5 @@ if __name__ == '__main__':
 
     m.dump_stats()
 
+if __name__ == '__main__':
+    main()
