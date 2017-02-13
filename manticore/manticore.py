@@ -13,14 +13,12 @@ from multiprocessing import Process
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from core.executor import Executor, State, AbandonState
-from core.parser import parse
-from core.smtlib import solver, Expression, Operators, SolverException, Array
+from .core.executor import Executor, State, AbandonState
+from .core.parser import parse
+from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
-from models import linux, decree, windows
+from .models import linux, decree, windows
 from utils import gdb, qemu
-
-from core.smtlib import ConstraintSet
 
 
 logger = logging.getLogger('MANTICORE')
@@ -475,7 +473,7 @@ class Manticore(object):
     def apply_model_hooks(self, path):
         #TODO(yan): Simplify the partial function application
 
-        # Imported straight from main.py; this will be re-written once the new
+        # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
         import core.cpu
         import importlib
