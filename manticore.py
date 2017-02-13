@@ -10,8 +10,8 @@ import functools
 from multiprocessing import Manager, Pool
 from multiprocessing import Process
 
-from binary.elf.elftools.elf.elffile import ELFFile
-from binary.elf.elftools.elf.sections import SymbolTableSection
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
 
 from core.executor import Executor, State, AbandonState
 from core.parser import parse
