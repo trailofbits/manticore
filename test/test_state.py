@@ -65,14 +65,14 @@ class StateTest(unittest.TestCase):
         constraints = ConstraintSet()
         initial_state = State(constraints, FakeModel())
 
-        arr = initial_state.make_symbolic('+'*100, name='SYMBA')
+        arr = initial_state.symbolicate_buffer('+'*100, name='SYMBA')
         initial_state.add(arr[0] > 0x41)
         self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
         with initial_state as new_state:
 
             self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
             self.assertTrue(len(new_state.constraints.declarations) == 1 ) 
-            arrb = new_state.make_symbolic('+'*100, name='SYMBB')
+            arrb = new_state.symbolicate_buffer('+'*100, name='SYMBB')
 
             self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
             self.assertTrue(len(new_state.constraints.declarations) == 1 ) 
