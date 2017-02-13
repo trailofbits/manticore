@@ -2,9 +2,9 @@ import unittest
 import struct
 from functools import wraps
 
-from core.cpu.arm import Armv7Cpu as cpu
-from core.cpu.arm import *
-from core.memory import Memory32
+from manticore.core.cpu.arm import Armv7Cpu as cpu
+from manticore.core.cpu.arm import *
+from manticore.core.memory import Memory32
 
 from capstone.arm import *
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM

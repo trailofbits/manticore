@@ -1,7 +1,7 @@
 
 import unittest
 
-from utils.event import Signal
+from manticore.utils.event import Signal
 
 class Sender(object):
     def __init__(self):

@@ -1,7 +1,7 @@
 import unittest
-from core.cpu.x86 import *
-from core.smtlib import Operators
-from core.memory import *
+from manticore.cpu.x86 import *
+from manticore.smtlib import Operators
+from manticore.memory import *
 import mockmem
 
 class ROOperand(object):
