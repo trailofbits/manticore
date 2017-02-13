@@ -1,0 +1,3 @@
+How to run the test:
+
+python SymbolicExecutor/main.py --offset 0 --workspace test --buffer "EBP-4" --size "4" tests/index_code/index_code.dmp

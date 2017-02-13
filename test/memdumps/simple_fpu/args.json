@@ -1,0 +1,10 @@
+{
+    "--offset": "0",
+    "--buffer": "EBP-8",
+    "--size": "0x8",
+    "--procs": "2",
+    "--context": "{dumpdir}/eip_context.pkl",
+    "dump": "simple_fpu.dmp",
+    "actual": "visited.txt",
+    "expected": "simple_fpu_visited.txt"
+}

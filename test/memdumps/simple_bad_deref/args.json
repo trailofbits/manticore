@@ -1,0 +1,9 @@
+{
+    "--offset": "0",
+    "--buffer": "EBP-1",
+    "--size": "0x1",
+    "--procs": "2",
+    "dump": "simple_bad_deref.dmp",
+    "actual": "visited.txt",
+    "expected": "simple_bad_deref_visited.txt"
+}

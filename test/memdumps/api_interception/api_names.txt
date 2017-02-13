@@ -1,0 +1,3 @@
+0x754d204d stdcall windows.kernel32.CreateProcessW
+0x7551c189 stdcall windows.kernel32.RegOpenKeyExW 
+0x75510d25 stdcall windows.kernel32.RegCreateKeyExW

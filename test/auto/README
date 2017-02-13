@@ -1,0 +1,18 @@
+Auto unittest generation
+------------------------
+
+1) You need a linux program that exercises a bunch of interestings intructions. 
+Lets choose:
+    SymbolicExecutor/examples/linux/nostdlib
+
+2) Run the tracer on it. It is a gdb wrapper that will execute the program step by step 
+printing pre/pos information on each instruction:
+    python SymbolicExecutor/tests/auto/make_dump.py SymbolicExecutor/examples/linux/nostdlib > mytest.dump
+(Several dump can be concatenated togheter)
+
+3) Generate the alcual python unittest based on the dump. 
+    python SymbolicExecutor/tests/auto/make_tests.py mytest.dump > SymbolicExecutor/tests/test_$TESTNAME.py
+   This will get up to 1000 testcases for the same mnemonic in the dump. 
+
+4) Run the test like this (SymbolicExecutor/)
+    python -m unittest -c tests.test_$TESTNAME

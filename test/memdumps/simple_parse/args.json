@@ -1,0 +1,9 @@
+{
+    "--offset": "0",
+    "--buffer": "EBP-88",
+    "--size": "0x84",
+    "--procs": "2",
+    "dump": "simple_parse.dmp",
+    "actual": "visited.txt",
+    "expected": "simple_parse_visited.txt"
+}

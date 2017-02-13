@@ -1,0 +1,3 @@
+0x75438d60 stdcall windows.kernel32.CloseHandle
+0x75445190 stdcall windows.kernel32.GetStdHandle
+0x76edc6b0 stdcall windows.ntdll.RtlFreeHeap
