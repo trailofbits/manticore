@@ -39,7 +39,7 @@ class Binary(object):
 
 
 
-from elf.elftools.elf.elffile import ELFFile
+from elftools.elf.elffile import ELFFile
 class CGCElf(Binary):
     def __init__(self, filename):
         super(CGCElf, self).__init__(filename)
