@@ -38,7 +38,9 @@ Manticore is officially supported on Linux and uses Python 2.7.
 
 ### required dependencies
 
-- Capstone Disassembly Engine: Run `pip install -r requirements.txt`
+- Python Dependencies: Run `pip install -r requirements.txt`
+  - capstone
+  - pyelftools
 - Z3 Theorem Prover: Download the latest release for your platform from https://github.com/Z3Prover/z3/releases/latest, and place the enclosed `z3` binary in your `$PATH`.
   - Alternatively, CVC4 or Yices can be used.
 
@@ -48,16 +50,11 @@ Manticore is officially supported on Linux and uses Python 2.7.
 
 ### development dependencies
 
-- Keystone Assembler Engine: Used in unit tests
-- QEMU: Used for cpu verification flag
-- gdb-multiarch: Used for cpu verification flag
+- keystone: Used in unit tests
 
 ## usage
 
-Manticore *actually* lives in `SymbolicExecutor/`.
-
 ```
-cd SymbolicExecutor/
 python main.py ./path/to/binary  # runs, and creates a directory with analysis results
 ```
 
