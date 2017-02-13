@@ -1,0 +1,9 @@
+{
+    "--offset": "0",
+    "--buffer": "DWORD PTR [EBP-0x28]",
+    "--size": "0x20",
+    "--procs": "2",
+    "dump": "simple_buffer_overflow.dmp",
+    "actual": "visited.txt",
+    "expected": "sbo_visited.txt"
+}

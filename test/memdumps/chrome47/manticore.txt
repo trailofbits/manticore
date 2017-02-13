@@ -1,0 +1,1 @@
+python SymbolicExecutor/main.py --buffer "DWORD PTR [ESP]" --size "DWORD PTR [ESP+4]" 

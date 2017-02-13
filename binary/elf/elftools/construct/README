@@ -1,0 +1,10 @@
+construct is a Python library for declarative parsing and building of binary
+data. This is my fork of construct 2, with some modifications for Python 3
+and bug fixes. The construct website is http://construct.readthedocs.org
+
+pyelftools carries construct around because construct has been abandoned for
+a long time and didn't get bugfixes; it also didn't work with Python 3.
+
+LICENSE is the original license.
+
+

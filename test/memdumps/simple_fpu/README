@@ -1,0 +1,4 @@
+How to run the test:
+
+python SymbolicExecutor/main.py --offset 0 --workspace sfpu --context tests/simple_fpu/eip_context.pkl --buffer "EBP-8" --size "8" tests/simple_fpu/simple_fpu.dmp --log sfpu/manti.log
+
