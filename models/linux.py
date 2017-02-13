@@ -6,7 +6,7 @@ from core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister, Inva
 from core.cpu.cpufactory import CpuFactory
 from core.memory import SMemory32, SMemory64, Memory32, Memory64
 from core.smtlib import Expression, Operators, ConstraintSet
-from binary.elf.elftools.elf.elffile import ELFFile
+from elftools.elf.elffile import ELFFile
 from contextlib import closing
 import StringIO
 import logging
