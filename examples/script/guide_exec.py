@@ -22,9 +22,9 @@ if __name__ == '__main__':
     # Ensure that we ignore all possible branches to libc
     # This hook returns False if we should abandon exploration
     # or True to continue
-    def fork_hook(new_pc):
+    def fork_hook(ctx, state):
         _from, _to = lib.start, lib.start + lib.size
-        return not (_from <= new_pc < _to)
+        return not (_from <= state.cpu.PC < _to)
     m.add_fork_hook(fork_hook)
 
     # Start path exploration. start() returns when Manticore
