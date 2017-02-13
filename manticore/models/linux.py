@@ -1,18 +1,18 @@
 import cgcrandom
 import weakref
 import sys, os, struct
-from utils import qemu
-from core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister, InvalidPCException
-from core.cpu.cpufactory import CpuFactory
-from core.memory import SMemory32, SMemory64, Memory32, Memory64
-from core.smtlib import Expression, Operators, ConstraintSet
+from ..utils import qemu
+from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister, InvalidPCException
+from ..core.cpu.cpufactory import CpuFactory
+from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
+from ..core.smtlib import Expression, Operators, ConstraintSet
 from elftools.elf.elffile import ELFFile
 from contextlib import closing
 import StringIO
 import logging
 import random
-from core.cpu.arm import *
-from core.executor import SyscallNotImplemented, ProcessExit
+from ..core.cpu.arm import *
+from ..core.executor import SyscallNotImplemented, ProcessExit
 logger = logging.getLogger("LINUX")
 
 class RestartSyscall(Exception):

@@ -2,14 +2,13 @@ import sys, os, struct
 import StringIO
 import logging
 import random
-from core.smtlib import solver, Expression, Operators
-from core.cpu.x86 import x86Cpu
+from ..core.smtlib import solver, Expression, Operators
 #, Interruption, Syscall, ConcretizeRegister, ConcretizeMemory, ConcretizeArgument, IgnoreAPI
-from core.cpu.abstractcpu import Interruption, Syscall, \
+from ..core.cpu.abstractcpu import Interruption, Syscall, \
         ConcretizeRegister, ConcretizeArgument, IgnoreAPI, \
         ConcretizeMemory
-from core.memory import MemoryException
-from core.executor import ForkState
+from ..core.memory import MemoryException
+from ..core.executor import ForkState
 
 logger = logging.getLogger("LIBC")
 

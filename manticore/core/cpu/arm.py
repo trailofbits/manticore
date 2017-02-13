@@ -1,10 +1,11 @@
 import struct
 import sys
-from abstractcpu import Cpu, RegisterFile, Operand
-from abstractcpu import SymbolicPCException, InvalidPCException, Interruption
-from abstractcpu import instruction as abstract_instruction
-from register import Register
-from core.smtlib import Operators, Expression
+from .abstractcpu import Cpu, RegisterFile, Operand
+from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
+from .abstractcpu import instruction as abstract_instruction
+from .register import Register
+from ..smtlib import Operators, Expression
+# from ..smtlib import *
 from functools import wraps
 from bitwise import *
 
@@ -23,7 +24,6 @@ except:
 MU = None
 
 
-from core.smtlib import *
 
 # Custom Constants (avoid conflicts with capstone's arm constants)
 ARM_REG_APSR_N = 1000

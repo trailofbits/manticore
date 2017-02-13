@@ -1,5 +1,5 @@
-from core.cpu.x86 import AMD64Cpu, I386Cpu
-from core.cpu.arm import Armv7Cpu
+from .x86 import AMD64Cpu, I386Cpu
+from .arm import Armv7Cpu
 
 class CpuFactory(object):
     _cpus = {

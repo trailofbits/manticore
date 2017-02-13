@@ -2,18 +2,18 @@ import cgcrandom
 import weakref
 import sys, os, struct
 # TODO use cpu factory
-from core.cpu.x86 import I386Cpu
-from core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
-from core.memory import SMemory32
-from core.smtlib import *
-from binary import CGCElf
-from binary import CGCGrr
+from ..core.cpu.x86 import I386Cpu
+from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
+from ..core.memory import SMemory32
+from ..core.smtlib import *
+from ..core.executor import SyscallNotImplemented, ProcessExit, Deadlock, RestartSyscall
+logger = logging.getLogger("DECREE")
+from ..binary import CGCElf
+from ..binary import CGCGrr
 from contextlib import closing
 import StringIO
 import logging
 import random
-from core.executor import SyscallNotImplemented, ProcessExit, Deadlock, RestartSyscall
-logger = logging.getLogger("DECREE")
 
 
 class SymbolicSyscallArgument(ConcretizeRegister):

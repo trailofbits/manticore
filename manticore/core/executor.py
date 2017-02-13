@@ -40,12 +40,12 @@ except:
     import StringIO
 from math import ceil, log
 
-from utils.nointerrupt import DelayedKeyboardInterrupt
-from cpu.abstractcpu import ConcretizeRegister, ConcretizeMemory, \
+from ..utils.nointerrupt import DelayedKeyboardInterrupt
+from .cpu.abstractcpu import ConcretizeRegister, ConcretizeMemory, \
         InvalidPCException, IgnoreAPI
-from memory import MemoryException, SymbolicMemoryException
-from smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
-from utils.event import Signal
+from .memory import MemoryException, SymbolicMemoryException
+from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
+from ..utils.event import Signal
 
 #Multiprocessing
 from multiprocessing import Manager

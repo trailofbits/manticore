@@ -1,4 +1,4 @@
-from core.smtlib import Operators, Expression, BitVec, Bool
+from ..smtlib import Operators, Expression, BitVec, Bool
 
 class Register(object):
     '''Generic variable width register. For 1 bit registers, allows writes

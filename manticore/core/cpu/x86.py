@@ -27,15 +27,15 @@
 
 from capstone import *
 from capstone.x86 import *
-from abstractcpu import Cpu, RegisterFile, Operand, SANE_SIZES, instruction
-from abstractcpu import SymbolicPCException, InvalidPCException, Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
+from .abstractcpu import Cpu, RegisterFile, Operand, SANE_SIZES, instruction
+from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
 import sys
 import struct
 import types
 import weakref
 from functools import wraps, partial
 import collections
-from core.smtlib import *
+from ..smtlib import *
 from ..memory import MemoryException
 import logging
 logger = logging.getLogger("CPU")

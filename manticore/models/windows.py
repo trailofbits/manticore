@@ -1,15 +1,15 @@
 import cgcrandom
 import weakref
 import sys, os, struct
-from core.memory import Memory, MemoryException, SMemory32
-from core.smtlib import Expression, Operators, solver
+from ..core.memory import Memory, MemoryException, SMemory32
+from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
-from core.cpu.x86 import I386Cpu, Sysenter
-from core.cpu.abstractcpu import Interruption, Syscall, \
+from ..core.cpu.x86 import I386Cpu, Sysenter
+from ..core.cpu.abstractcpu import Interruption, Syscall, \
         ConcretizeRegister, ConcretizeArgument, IgnoreAPI
-from core.executor import ForkState, SyscallNotImplemented
+from ..core.executor import ForkState, SyscallNotImplemented
 
-from binary.pe import minidump
+from ..binary.pe import minidump
 
 from contextlib import closing
 import StringIO

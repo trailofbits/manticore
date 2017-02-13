@@ -28,9 +28,9 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from weakref import WeakValueDictionary
 from cStringIO import StringIO
-from smtlib import *
+from .smtlib import *
 import logging
-from mappings import _mmap, _munmap
+from .mappings import _mmap, _munmap
 
 logger = logging.getLogger('MEMORY')
 

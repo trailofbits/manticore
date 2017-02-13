@@ -5,9 +5,8 @@ from unicorn import *
 from unicorn.x86_const import *
 from unicorn.arm_const import *
 from abc import ABCMeta, abstractmethod
-from core.smtlib import Expression, Bool, BitVec, Array, Operators, Constant
-from core.memory import MemoryException
-from utils import gdb
+from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
+from ..memory import MemoryException
 import sys
 from functools import wraps
 import types
