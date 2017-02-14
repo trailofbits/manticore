@@ -20,6 +20,27 @@ class RWOperand(ROOperand):
 sizes = {'RAX': 64, 'EAX': 32, 'AX': 16, 'AL': 8, 'AH': 8, 'RCX': 64, 'ECX': 32, 'CX': 16, 'CL': 8, 'CH': 8, 'RDX': 64, 'EDX': 32, 'DX': 16, 'DL': 8, 'DH': 8, 'RBX': 64, 'EBX': 32, 'BX': 16, 'BL': 8, 'BH': 8, 'RSP': 64, 'ESP': 32, 'SP': 16, 'SPL': 8, 'RBP': 64, 'EBP': 32, 'BP': 16, 'BPL': 8, 'RSI': 64, 'ESI': 32, 'SI': 16, 'SIL': 8, 'RDI': 64, 'EDI': 32, 'DI': 16, 'DIL': 8, 'R8': 64, 'R8D': 32, 'R8W': 16, 'R8B': 8, 'R9': 64, 'R9D': 32, 'R9W': 16, 'R9B': 8, 'R10': 64, 'R10D': 32, 'R10W': 16, 'R10B': 8, 'R11': 64, 'R11D': 32, 'R11W': 16, 'R11B': 8, 'R12': 64, 'R12D': 32, 'R12W': 16, 'R12B': 8, 'R13': 64, 'R13D': 32, 'R13W': 16, 'R13B': 8, 'R14': 64, 'R14D': 32, 'R14W': 16, 'R14B': 8, 'R15': 64, 'R15D': 32, 'R15W': 16, 'R15B': 8, 'ES': 16, 'CS': 16, 'SS': 16, 'DS': 16, 'FS': 16, 'GS': 16, 'RIP': 64, 'EIP':32, 'IP': 16, 'RFLAGS': 64, 'EFLAGS': 32, 'FLAGS': 16, 'XMM0': 128, 'XMM1': 128, 'XMM2': 128, 'XMM3': 128, 'XMM4': 128, 'XMM5': 128, 'XMM6': 128, 'XMM7': 128, 'XMM8': 128, 'XMM9': 128, 'XMM10': 128, 'XMM11': 128, 'XMM12': 128, 'XMM13': 128, 'XMM14': 128, 'XMM15': 128, 'YMM0': 256, 'YMM1': 256, 'YMM2': 256, 'YMM3': 256, 'YMM4': 256, 'YMM5': 256, 'YMM6': 256, 'YMM7': 256, 'YMM8': 256, 'YMM9': 256, 'YMM10': 256, 'YMM11': 256, 'YMM12': 256, 'YMM13': 256, 'YMM14': 256, 'YMM15': 256}
 
 class SymCPUTest(unittest.TestCase):
+    _flag_offsets = {
+        'CF': 0,
+        'PF': 2,
+        'AF': 4,
+        'ZF': 6,
+        'SF': 7,
+        'IF': 9,
+        'DF': 10,
+        'OF': 11,
+    }
+
+    _flags={
+        'CF': 0x00001,
+        'PF': 0x00004,
+        'AF': 0x00010,
+        'ZF': 0x00040,
+        'SF': 0x00080,
+        'DF': 0x00400,
+        'OF': 0x00800,
+        'IF': 0x00200,}
+    
     class ROOperand(object):
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
@@ -85,15 +106,6 @@ class SymCPUTest(unittest.TestCase):
 
 
     def testFlagAccess(self):
-        _flags={
-        'CF': 0x00001,
-        'PF': 0x00004,
-        'AF': 0x00010,
-        'ZF': 0x00040,
-        'SF': 0x00080,
-        'DF': 0x00400,
-        'OF': 0x00800,
-        'IF': 0x00200,}
 
         cpu = self.cpu
         cpu.RFLAGS = 0
@@ -107,88 +119,174 @@ class SymCPUTest(unittest.TestCase):
 
         #flag to register CF
         cpu.CF = True
-        self.assertTrue( cpu.RFLAGS&_flags['CF'] !=0)
+        self.assertTrue( cpu.RFLAGS&self._flags['CF'] !=0)
         cpu.CF = False
-        self.assertTrue( cpu.RFLAGS&_flags['CF'] ==0)
+        self.assertTrue( cpu.RFLAGS&self._flags['CF'] ==0)
 
         #register to flag CF
-        cpu.RFLAGS |= _flags['CF']
+        cpu.RFLAGS |= self._flags['CF']
         self.assertTrue(cpu.CF)
-        cpu.RFLAGS &= ~_flags['CF']
+        cpu.RFLAGS &= ~self._flags['CF']
         self.assertFalse(cpu.CF)
 
         #flag to register PF
         cpu.PF = True
-        self.assertTrue( cpu.RFLAGS&_flags['PF'] !=0)
+        self.assertTrue( cpu.RFLAGS&self._flags['PF'] !=0)
         cpu.PF = False
-        self.assertTrue( cpu.RFLAGS&_flags['PF'] ==0)
+        self.assertTrue( cpu.RFLAGS&self._flags['PF'] ==0)
 
         #register to flag PF
-        cpu.RFLAGS |= _flags['PF']
+        cpu.RFLAGS |= self._flags['PF']
         self.assertTrue(cpu.PF)
-        cpu.RFLAGS &= ~_flags['PF']
+        cpu.RFLAGS &= ~self._flags['PF']
         self.assertFalse(cpu.PF)
 
         #flag to register AF
         cpu.AF = True
-        self.assertTrue( cpu.RFLAGS&_flags['AF'] !=0)
+        self.assertTrue( cpu.RFLAGS&self._flags['AF'] !=0)
         cpu.AF = False
-        self.assertTrue( cpu.RFLAGS&_flags['AF'] ==0)
+        self.assertTrue( cpu.RFLAGS&self._flags['AF'] ==0)
 
         #register to flag AF
-        cpu.RFLAGS |= _flags['AF']
+        cpu.RFLAGS |= self._flags['AF']
         self.assertTrue(cpu.AF)
-        cpu.RFLAGS &= ~_flags['AF']
+        cpu.RFLAGS &= ~self._flags['AF']
         self.assertFalse(cpu.AF)
 
         #flag to register ZF
         cpu.ZF = True
-        self.assertTrue( (cpu.RFLAGS&_flags['ZF']) !=0)
+        self.assertTrue( (cpu.RFLAGS&self._flags['ZF']) !=0)
         cpu.ZF = False
-        self.assertTrue( cpu.RFLAGS&_flags['ZF'] ==0)
+        self.assertTrue( cpu.RFLAGS&self._flags['ZF'] ==0)
 
         #register to flag ZF
-        cpu.RFLAGS |= _flags['ZF']
+        cpu.RFLAGS |= self._flags['ZF']
         self.assertTrue(cpu.ZF)
-        cpu.RFLAGS &= ~_flags['ZF']
+        cpu.RFLAGS &= ~self._flags['ZF']
         self.assertFalse(cpu.ZF)
 
         #flag to register SF
         cpu.SF = True
-        self.assertTrue( cpu.RFLAGS&_flags['SF'] !=0)
+        self.assertTrue( cpu.RFLAGS&self._flags['SF'] !=0)
         cpu.SF = False
-        self.assertTrue( cpu.RFLAGS&_flags['SF'] ==0)
+        self.assertTrue( cpu.RFLAGS&self._flags['SF'] ==0)
 
         #register to flag SF
-        cpu.RFLAGS |= _flags['SF']
+        cpu.RFLAGS |= self._flags['SF']
         self.assertTrue(cpu.SF)
-        cpu.RFLAGS &= ~_flags['SF']
+        cpu.RFLAGS &= ~self._flags['SF']
         self.assertFalse(cpu.SF)
 
         #flag to register DF
         cpu.DF = True
-        self.assertTrue( cpu.RFLAGS&_flags['DF'] !=0)
+        self.assertTrue( cpu.RFLAGS&self._flags['DF'] !=0)
         cpu.DF = False
-        self.assertTrue( cpu.RFLAGS&_flags['DF'] ==0)
+        self.assertTrue( cpu.RFLAGS&self._flags['DF'] ==0)
 
         #register to flag DF
-        cpu.RFLAGS |= _flags['DF']
+        cpu.RFLAGS |= self._flags['DF']
         self.assertTrue(cpu.DF)
-        cpu.RFLAGS &= ~_flags['DF']
+        cpu.RFLAGS &= ~self._flags['DF']
         self.assertFalse(cpu.DF)
 
         #flag to register OF
         cpu.OF = True
-        self.assertTrue( cpu.RFLAGS&_flags['OF'] !=0)
+        self.assertTrue( cpu.RFLAGS&self._flags['OF'] !=0)
         cpu.OF = False
-        self.assertTrue( cpu.RFLAGS&_flags['OF'] ==0)
+        self.assertTrue( cpu.RFLAGS&self._flags['OF'] ==0)
 
         #register to flag
-        cpu.RFLAGS |= _flags['OF']
+        cpu.RFLAGS |= self._flags['OF']
         self.assertTrue(cpu.OF)
-        cpu.RFLAGS &= ~_flags['OF']
+        cpu.RFLAGS &= ~self._flags['OF']
         self.assertFalse(cpu.OF)
 
+    def _check_flags_CPAZSIDO(self, c, p, a, z, s, i, d, o):
+        self.assertEqual(self.cpu.CF, c)
+        self.assertEqual(self.cpu.PF, p)
+        self.assertEqual(self.cpu.AF, a)
+        self.assertEqual(self.cpu.ZF, z)
+        self.assertEqual(self.cpu.SF, s)
+        self.assertEqual(self.cpu.IF, i)
+        self.assertEqual(self.cpu.DF, d)
+        self.assertEqual(self.cpu.OF, o)
+
+    def _construct_flag_bitfield(self, flags):
+        return reduce(operator.or_, (self._flags[f] for f in flags))
+
+    def _construct_sym_flag_bitfield(self, flags):
+        return reduce(operator.or_, (BitVecConstant(32, self._flags[f]) for f in flags))
+
+    def test_set_eflags(self):
+        self.assertEqual(self.cpu.EFLAGS, 0)
+
+        flags = ['CF', 'PF', 'AF', 'ZF', 'SF']
+        self.cpu.EFLAGS = self._construct_flag_bitfield(flags)
+
+        self._check_flags_CPAZSIDO(1, 1, 1, 1, 1, 0, 0, 0)
+
+    def test_get_eflags(self):
+        self.assertEqual(self.cpu.EFLAGS, 0)
+
+        flags = ['CF', 'AF', 'SF']
+        self.cpu.CF = 1
+        self.cpu.AF = 1
+        self.cpu.SF = 1
+        self.cpu.DF = 0
+
+        self.assertEqual(self.cpu.EFLAGS, self._construct_flag_bitfield(flags))
+
+    def test_set_sym_eflags(self):
+        def check_flag(obj, flag):
+            equal = obj.operands[0]
+            extract = equal.operands[0]
+            assert isinstance(obj, Bool)
+            assert extract.begining == self._flag_offsets[flag]
+            assert extract.end == extract.begining
+
+        flags = ['CF', 'PF', 'AF', 'ZF']
+        sym_bitfield = self._construct_sym_flag_bitfield(flags)
+        self.cpu.EFLAGS = sym_bitfield
+
+        check_flag(self.cpu.CF, 'CF')
+        check_flag(self.cpu.PF, 'PF')
+        check_flag(self.cpu.AF, 'AF')
+        check_flag(self.cpu.ZF, 'ZF')
+
+    def test_get_sym_eflags(self):
+        def flatten_ors(x):
+            '''
+            Retrieve all nodes of a BitVecOr expression tree
+            '''
+            assert isinstance(x, BitVecOr)
+            if any(isinstance(op, BitVecOr) for op in x.operands):
+                ret = []
+                for op in x.operands:
+                    if isinstance(op, BitVecOr):
+                        ret += flatten_ors(op)
+                    else:
+                        ret.append(op)
+                return ret
+            else:
+                return list(x.operands)
+
+        self.cpu.CF = 1
+        self.cpu.AF = 1
+
+        a = BitVecConstant(32, 1).Bool()
+        b = BitVecConstant(32, 0).Bool()
+        self.cpu.ZF = a
+        self.cpu.SF = b
+
+        flags = flatten_ors(self.cpu.EFLAGS)
+
+        self.assertTrue(isinstance(self.cpu.EFLAGS, BitVecOr))
+        self.assertEqual(len(flags), 8)
+
+        self.assertEqual(self.cpu.CF, 1)
+        self.assertEqual(self.cpu.AF, 1)
+        self.assertIs(self.cpu.ZF, a)
+        self.assertIs(self.cpu.SF, b)
 
     def testRegisterAccess(self):
         cpu = self.cpu
