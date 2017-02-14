@@ -184,7 +184,7 @@ class State(object):
             nbytes - Length of the new buffer
             options - Options to set on the returned expression. Valid options:
                 name --  The name to assign to the buffer (str)
-                string -- Whether or not to enforce that the buffer is a c-string
+                cstring -- Whether or not to enforce that the buffer is a cstring
                  (i.e. no \0 bytes). (bool)
 
         Returns:
@@ -194,7 +194,7 @@ class State(object):
         expr = self.constraints.new_array(name=name, index_max=nbytes)
         self.input_symbols.append(expr)
 
-        if options.get('string', False):
+        if options.get('cstring', False):
             for i in range(nbytes):
                 self.constraints.add(expr[i] != 0)
 
