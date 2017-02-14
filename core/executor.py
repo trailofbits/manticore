@@ -184,7 +184,7 @@ class State(object):
             options - Options to set on the returned expression. Valid options:
                 name --  The name to assign to the buffer (str)
                 cstring -- Whether or not to enforce that the buffer is a cstring
-                 (i.e. no \0 bytes). (bool)
+                 (i.e. no \0 bytes, except for the last byte). (bool)
 
         Returns:
             Expression representing the buffer. 
@@ -194,7 +194,7 @@ class State(object):
         self.input_symbols.append(expr)
 
         if options.get('cstring', False):
-            for i in range(nbytes):
+            for i in range(nbytes - 1):
                 self.constraints.add(expr[i] != 0)
 
         return expr
