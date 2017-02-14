@@ -144,9 +144,17 @@ def repe(old_method):
 #register/flag descriptors
 class AMD64RegFile(RegisterFile):
     Regspec = collections.namedtuple('RegSpec', 'register_id ty offset size reset')
+    _flags = {
+        'CF': 0,
+        'PF': 2,
+        'AF': 4,
+        'ZF': 6,
+        'SF': 7,
+        'IF': 9,
+        'DF': 10,
+        'OF': 11
+    }
     _table = {
-        'RFLAGS': Regspec('RFLAGS', int, 0, 64, False),
-        'EFLAGS': Regspec('RFLAGS', int, 0, 32, False),
         'CS': Regspec('CS', int, 0, 16, False),
         'DS': Regspec('DS', int, 0, 16, False),
         'ES': Regspec('ES', int, 0, 16, False),
@@ -248,14 +256,14 @@ class AMD64RegFile(RegisterFile):
         'TOP' : Regspec('FPSW', int, 11, 3, False),
         'FPTAG': Regspec('FPTAG', int, 0, 16, False),
         'FPCW': Regspec('FPCW', int, 0, 16, False),
-        'CF': Regspec('RFLAGS', bool, 0, 1, False),
-        'PF': Regspec('RFLAGS', bool, 2, 1, False),
-        'AF': Regspec('RFLAGS', bool, 4, 1, False),
-        'ZF': Regspec('RFLAGS', bool, 6, 1, False),
-        'SF': Regspec('RFLAGS', bool, 7, 1, False),
-        'IF': Regspec('RFLAGS', bool, 9, 1, False),
-        'DF': Regspec('RFLAGS', bool, 10, 1, False),
-        'OF': Regspec('RFLAGS', bool, 11, 1, False),
+        'CF': Regspec('CF', bool, 0, 1, False),
+        'PF': Regspec('PF', bool, 0, 1, False),
+        'AF': Regspec('AF', bool, 0, 1, False),
+        'ZF': Regspec('ZF', bool, 0, 1, False),
+        'SF': Regspec('SF', bool, 0, 1, False),
+        'IF': Regspec('IF', bool, 0, 1, False),
+        'DF': Regspec('DF', bool, 0, 1, False),
+        'OF': Regspec('OF', bool, 0, 1, False),
         'YMM0': Regspec('YMM0', int, 0, 256, False),
         'YMM1': Regspec('YMM1', int, 0, 256, False),
         'YMM2': Regspec('YMM2', int, 0, 256, False),
@@ -341,16 +349,16 @@ class AMD64RegFile(RegisterFile):
                 'FS' : () ,
                 'GS' : () ,
                 'SS' : () ,
-                'RFLAGS' : ('AF', 'CF', 'DF', 'EFLAGS', 'IF', 'OF', 'PF', 'SF', 'ZF') ,
-                'EFLAGS' : ('AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'RFLAGS', 'SF', 'ZF') ,
-                'AF': ('EFLAGS', 'RFLAGS') ,
-                'CF' : ('EFLAGS', 'RFLAGS') ,
-                'DF' : ('EFLAGS', 'RFLAGS') ,
-                'IF' : ('EFLAGS', 'RFLAGS') ,
-                'OF' : ('EFLAGS', 'RFLAGS') ,
-                'PF' : ('EFLAGS', 'RFLAGS') ,
-                'SF' : ('EFLAGS', 'RFLAGS') ,
-                'ZF' : ('EFLAGS', 'RFLAGS') ,
+                'RFLAGS' : ('EFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF') ,
+                'EFLAGS' : ('RFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF') ,
+                'AF' : ('RFLAGS', 'EFLAGS') ,
+                'CF' : ('RFLAGS', 'EFLAGS') ,
+                'DF' : ('RFLAGS', 'EFLAGS') ,
+                'IF' : ('RFLAGS', 'EFLAGS') ,
+                'OF' : ('RFLAGS', 'EFLAGS') ,
+                'PF' : ('RFLAGS', 'EFLAGS') ,
+                'SF' : ('RFLAGS', 'EFLAGS') ,
+                'ZF' : ('RFLAGS', 'EFLAGS') ,
                 'FPSW' : ('TOP',) ,
                 'TOP' : ('FPSW',) ,
                 'FPCW' : () ,
@@ -453,7 +461,7 @@ class AMD64RegFile(RegisterFile):
                      'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 
                      'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 
                      'YMM13', 'YMM14', 'YMM15', 'CS','DS','ES','SS', 'FS', 'GS',
-                     'RFLAGS'):
+                     'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'):
             self._registers[reg] = 0
 
         for reg in ('FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7'):
@@ -463,7 +471,7 @@ class AMD64RegFile(RegisterFile):
             self._registers[reg] = 0
         self._cache = {}
         for name in ('AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'):
-            self.write(name, 0)
+            self.write(name, False)
 
     def reg_name(self, reg_id):
         return reg_id
@@ -473,9 +481,8 @@ class AMD64RegFile(RegisterFile):
 
     @property
     def all_registers(self):
-        return tuple( self._table.keys() + 
-                      ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7'] + 
-                      self._aliases.keys() )
+        return tuple( self._table.keys() +
+                      ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7'] + ['EFLAGS', 'RFLAGS'] + self._aliases.keys() )
 
     @property
     def canonical_registers(self):
@@ -522,15 +529,12 @@ class AMD64RegFile(RegisterFile):
                 raise TypeError
         if not isinstance(value, (bool, Bool)):
             value = (value != 0)
-        new_value = self._registers[register_id] & (~(1<<offset))
-        new_value |= Operators.ITEBV(register_size, value, 1<<offset, 0)
-        self._registers[register_id] = new_value
+        self._registers[register_id] = value
         return value
 
     def _get_flag(self, register_id, register_size, offset, size):
         assert size == 1
-        value = Operators.EXTRACT(self._registers[register_id], offset, size)
-        return value != 0
+        return self._registers[register_id]
 
     def _set_float(self, register_id, register_size, offset, size, reset, value):
         assert size == 80
@@ -545,11 +549,44 @@ class AMD64RegFile(RegisterFile):
         assert offset == 0
         return self._registers[register_id]
 
+    def _get_flags(self, reg):
+        ''' Build EFLAGS/RFLAGS from flags '''
+        def make_symbolic(flag_expr):
+            register_size = 32 if reg == 'EFLAGS' else 64
+            value, offset = flag_expr
+            return Operators.ITEBV(register_size, value,
+                                   BitVecConstant(register_size, 1 << offset),
+                                   BitVecConstant(register_size, 0))
+
+        flags = []
+        for flag, offset in self._flags.iteritems():
+            flags.append((self._registers[flag], offset))
+
+        if any(isinstance(flag, Expression) for flag, offset in flags):
+            res = reduce(operator.or_, map(make_symbolic, flags))
+        else:
+            res = 0
+            for flag, offset in flags:
+                res += flag << offset
+        return res
+
+    def _set_flags(self, reg, res):
+        ''' Set individual flags from a EFLAGS/RFLAGS value '''
+        #assert sizeof (res) == 32 if reg == 'EFLAGS' else 64   
+        for flag, offset in self._flags.iteritems():
+            self.write(flag, Operators.EXTRACT(res, offset, 1))
+
     def write(self, reg_id, value):
         name = self.reg_name(reg_id)
 
         if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
             name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
+
+        #Special EFLAGS/RFLAGS case
+        if 'FLAGS' in name:
+            self._set_flags(name, value)
+            self._update_cache(name, value)
+            return value
 
         register_id, ty, offset, size, reset = self._table[name]
         if register_id != name:
@@ -560,20 +597,26 @@ class AMD64RegFile(RegisterFile):
         assert register_size >= offset+size
         typed_setter = {int: self._set_bv, bool: self._set_flag, float: self._set_float}[ty]
         value = typed_setter(register_id, register_size, offset, size, reset, value)
+        self._update_cache(name, value)
+        return value
+
+    def _update_cache(self,name, value):
         self._cache[name] = value
         for affected in self._affects[name]:
             assert affected != name
             self._cache.pop(affected, None)
-        return value
 
     def read(self, reg_id):
         name = self.reg_name(reg_id)
 
         if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
             name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
-
         if name in self._cache:
             return self._cache[name]
+        if 'FLAGS' in name:
+            value = self._get_flags(name)
+            self._cache[name] = value
+            return value
         register_id, ty, offset, size, reset = self._table[name]
         if register_id != name:
             register_size = self._table[register_id].size
@@ -582,6 +625,7 @@ class AMD64RegFile(RegisterFile):
         assert register_size >= offset+size
         typed_getter = {int: self._get_bv, bool: self._get_flag, float: self._get_float}[ty]
         value = typed_getter(register_id, register_size, offset, size)
+        self._cache[name] = value
         return value
 
 ###########################
@@ -778,9 +822,9 @@ class X86Cpu(Cpu):
         else:
             # TODO: only concretize registers the instruction touches
             if cpu.mode == CS_MODE_64:
-                regs = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10',  'R11', 'R12', 'R13', 'R14', 'R15', 'RIP', 'EFLAGS', 'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15')
+                regs = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10',  'R11', 'R12', 'R13', 'R14', 'R15', 'RIP', 'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15')
             else:
-                regs = ('EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP', 'EFLAGS', 'XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7')
+                regs = ('EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP', 'XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7')
 
         regs += ('FPSW', 'FPCW', 'FPTAG', 'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7')
 
@@ -2574,9 +2618,7 @@ class X86Cpu(Cpu):
         @param src: source operand.
         '''
 
-        # TODO(yan): Add an interface to query a register's size, or hard-code
-        # 32 below.
-        eflags_size = cpu.regfile._table['EFLAGS'].size
+        eflags_size = 32
         val = cpu.AH & 0xD5 | 0x02
 
         cpu.EFLAGS = Operators.ZEXTEND(val, eflags_size)
