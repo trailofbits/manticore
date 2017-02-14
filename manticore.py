@@ -36,7 +36,7 @@ def makeDecree(args):
     #if args.data != '':
     #    logger.info('Starting with concrete input: {}'.format(args.data))
     model.input.transmit(args.data)
-    model.input.transmit(initial_state.make_symbolic('+'*14, name='RECEIVE'))
+    model.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
 def makeLinux(program, arguments, environment, concrete_start = ''):
@@ -50,14 +50,14 @@ def makeLinux(program, arguments, environment, concrete_start = ''):
         logger.info('Starting with concrete input: {}'.format(concrete_start))
 
     for i in xrange(len(arguments)):
-        arguments[i] = initial_state.make_symbolic(arguments[i], name='ARGV%d' % (i+1), string=True)    
+        arguments[i] = initial_state.symbolicate_buffer(arguments[i], label='ARGV%d' % (i+1), string=True)    
 
     for i in xrange(len(environment)):
-        environment[i] = initial_state.make_symbolic(environment[i], name='ENV%d' % (i+1), string=True)    
+        environment[i] = initial_state.symbolicate_buffer(environment[i], label='ENV%d' % (i+1), string=True)    
 
     model.input.transmit(concrete_start)
     #set stdin input...
-    model.input.transmit(initial_state.make_symbolic('+'*256, name='STDIN'))
+    model.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
     return initial_state 
 
@@ -127,32 +127,6 @@ def issymbolic(value):
     Helper to determine whether a value read from memory is symbolic.
     '''
     return isinstance(value, Expression)
-
-class ManticoreControl(object):
-    '''
-        Controls which state is chosen for next execution, and stops all 
-        subprocess execution.
-    '''
-
-    def __init__(self, manticore_obj):
-        self._parent = manticore_obj
-
-    def exit(self):
-        ''' Terminate all outstanding manticore processes '''
-        m = self._parent
-        m._executor.shutdown()
-
-    @property
-    def states(self):
-        ''' Return a list of possible next-state choices. Each entry in the list 
-            is a file name of the next-state file '''
-        raise NotImplementedError()
-
-    def abandon_state(self):
-        ''' Mark the current state as irrelevant, so Manticore will not continue
-            exploring this state tree
-        '''
-        pass
 
 class Manticore(object):
 
@@ -336,11 +310,7 @@ class Manticore(object):
         for pc to invoke callback on every instruction.
         '''
         def _inner(state):
-            # Callbacks are defined to consume three arguments:
-            # manticore context
-            # program state
-            # manticore control obj
-            callback(self._context, state, ManticoreControl(self))
+            callback(self._context, state)
 
         self._hooks.setdefault(pc, set()).add(_inner)
 
@@ -595,6 +565,10 @@ class Manticore(object):
             self._join_workers()
         finally:
             self._running = False
+
+    def terminate(self):
+        'Gracefully terminate the currently-executing Manticore run.'
+        self._executor.shutdown()
 
     def _assertions_callback(self, state, pc):
         if pc not in self._assertions:
