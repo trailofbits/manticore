@@ -310,10 +310,6 @@ class Manticore(object):
         for pc to invoke callback on every instruction.
         '''
         def _inner(state):
-            # Callbacks are defined to consume three arguments:
-            # manticore context
-            # program state
-            # manticore control obj
             callback(self._context, state)
 
         self._hooks.setdefault(pc, set()).add(_inner)
