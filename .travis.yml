@@ -1,7 +1,7 @@
 branches:
   only:
     - master
-    - /^dev-.*$/
+    - /^(?!wip).+$/
 language: python
 cache:
     pip: true
