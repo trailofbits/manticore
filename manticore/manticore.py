@@ -485,7 +485,7 @@ class Manticore(object):
                 cc = getattr(core.cpu.x86.ABI, cc_name)
                 fmodel = models
                 name_parts = name.split('.')
-                importlib.import_module("models.{}".format(name_parts[0]))
+                importlib.import_module(".models.{}".format(name_parts[0]), 'manticore')
                 for n in name_parts:
                     fmodel = getattr(fmodel,n)
                 assert fmodel != models
