@@ -84,3 +84,19 @@ class StateTest(unittest.TestCase):
 
 
         self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
+
+    def test_new_symbolic_buffer(self):
+        length = 64
+        expr = self.state.new_symbolic_buffer(length)
+        self.assertEqual(len(expr), length)
+
+    def test_new_symbolic_value(self):
+        length = 64
+        expr = self.state.new_symbolic_value(length)
+        self.assertEqual(expr.size, length)
+
+    def test_new_bad_symbolic_value(self):
+        length = 62
+        with self.assertRaises(Exception):
+            expr = self.state.new_symbolic_value(length)
+
