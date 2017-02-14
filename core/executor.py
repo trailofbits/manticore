@@ -168,12 +168,11 @@ class State(object):
         self.constraints.add(constraint)
 
     def abandon(self):
-        'Abandon the currently-active state'
-        # XXX(yan): This might not be the correct thing to do. Since we are 
-        # being passed the currently-executing state as the argument, it is 
-        # probably safe to assume that this was triggered via the Executor 
-        # signal and raising AbandonState here would abandon the correct one.
-        raise AbandonState()
+        '''Abandon the currently-active state
+        
+        Note: This must be called from the Executor loop, or a user-provided
+        callback.'''
+        raise AbandonState
 
     def new_symbolic_buffer(self, nbytes, **options):
         '''Create and return a symbolic buffer of length |nbytes|. The buffer is
