@@ -36,7 +36,7 @@ def makeDecree(args):
     #if args.data != '':
     #    logger.info('Starting with concrete input: {}'.format(args.data))
     model.input.transmit(args.data)
-    model.input.transmit(initial_state.symbolicate_buffer('+'*14, name='RECEIVE'))
+    model.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
 def makeLinux(program, arguments, environment, concrete_start = ''):
@@ -50,14 +50,14 @@ def makeLinux(program, arguments, environment, concrete_start = ''):
         logger.info('Starting with concrete input: {}'.format(concrete_start))
 
     for i in xrange(len(arguments)):
-        arguments[i] = initial_state.symbolicate_buffer(arguments[i], name='ARGV%d' % (i+1), string=True)    
+        arguments[i] = initial_state.symbolicate_buffer(arguments[i], label='ARGV%d' % (i+1), string=True)    
 
     for i in xrange(len(environment)):
-        environment[i] = initial_state.symbolicate_buffer(environment[i], name='ENV%d' % (i+1), string=True)    
+        environment[i] = initial_state.symbolicate_buffer(environment[i], label='ENV%d' % (i+1), string=True)    
 
     model.input.transmit(concrete_start)
     #set stdin input...
-    model.input.transmit(initial_state.symbolicate_buffer('+'*256, name='STDIN'))
+    model.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
     return initial_state 
 
