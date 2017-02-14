@@ -21,12 +21,12 @@ if __name__ == '__main__':
     m = Manticore(None, path, args)
 
     # Trigger an event when PC reaches a certain value
-    def reached_goal(state):
+    def reached_goal(ctx, state):
         cpu = state.cpu
 
-        assert cpu.pc == 0x10858
+        assert cpu.PC == 0x10858
 
-        instruction = cpu.read(cpu.pc, 4)
+        instruction = cpu.read(cpu.PC, 4)
         print "Execution goal reached."
         print "Instruction bytes: {:08x}".format(cpu.pc)
 
