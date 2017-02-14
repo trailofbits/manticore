@@ -932,7 +932,6 @@ class Executor(object):
 
                 except AbandonState, e:
                     current_state = None
-                    break
 
                 except ForkState as e:
                     logger.debug("Forking state")
