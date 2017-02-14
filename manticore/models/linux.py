@@ -310,6 +310,7 @@ class Linux(object):
         cpu = self._mk_proc(arch)
         self.load(cpu, program)
         self._arch_reg_init(cpu, arch)
+        self._stack_top = cpu.STACK
         self.setup_stack(cpu, [program]+argv, envp)
 
 
@@ -475,6 +476,11 @@ class Linux(object):
          (0xc0000000)      < top of stack >              0   (virtual)
          ----------------------------------------------------------------------
         '''
+
+        # In case setup_stack() is called again, we make sure we're growing the
+        # stack from the original top
+        cpu.STACK = self._stack_top
+
         # TODO cpu.STACK_push_bytes() pls
         def push_bytes(data):
             cpu.STACK -= len(data)
