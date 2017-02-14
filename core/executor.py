@@ -230,16 +230,18 @@ class State(object):
             string -- Ensure bytes returned can not be \0
 
         Returns:
-            data itself, or a symbolic expression
+            If data does not contain any wildcard bytes, data itself. Otherwise,
+            a list of values derived from data. Non-wildcard bytes are kept as
+            is, wildcard bytes are replaced by Expression objects.
         '''
         if wildcard in data:
             size = len(data)
-            symb = self.constraints.new_array(name=name, index_max=size)
+            symb = self.constraints.new_array(name=label, index_max=size)
             self.input_symbols.append(symb)
             for j in xrange(size):
                 if data[j] != wildcard:
                     symb[j] = data[j]
-            data =  [symb[i] for i in range(size)]
+            data = [symb[i] for i in range(size)]
 
         if string:
             for b in data:
