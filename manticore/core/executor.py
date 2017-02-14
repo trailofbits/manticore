@@ -659,7 +659,7 @@ class Executor(object):
             except RuntimeError:
                 # there recursion limit exceeded problem, 
                 # try a slower, iterative solution
-                from utils import iterpickle
+                from ..utils import iterpickle
                 logger.info("WARNING: using iterpickle to dump state")
                 f.write(iterpickle.dumps(state, 2))
             f.flush()
