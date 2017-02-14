@@ -219,25 +219,25 @@ class State(object):
         expr = self.constraints.new_bitvec(nbits, name=name)
         return expr
 
-    def symbolicate_buffer(self, data, name = 'INPUT', WILDCARD='+', string=False):
-        '''Mark parts of a buffer as symbolic (demarked by the WILDCARD byte)
+    def symbolicate_buffer(self, data, name = 'INPUT', wildcard='+', string=False):
+        '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
         Args:
             data -- The string to symbolicate. If no wildcard bytes are provided,
                 this is the identity function on the first argument.
             name -- The name to assign to the value
-            WILDCARD -- The byte that is considered a wildcard
+            wildcard -- The byte that is considered a wildcard
             string -- Ensure bytes returned can not be \0
 
         Returns:
             data itself, or a symbolic expression
         '''
-        if WILDCARD in data:
+        if wildcard in data:
             size = len(data)
             symb = self.constraints.new_array(name=name, index_max=size)
             self.input_symbols.append(symb)
             for j in xrange(size):
-                if data[j] != WILDCARD:
+                if data[j] != wildcard:
                     symb[j] = data[j]
             data =  [symb[i] for i in range(size)]
 
