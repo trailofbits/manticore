@@ -208,23 +208,24 @@ class State(object):
         Args:
             nbits - The bitwidth of the value returned.
             options - Options to set on the returned expression. Valid options:
-                name -- The name to assign to the value.
+                label -- The label to assign to the value.
 
         Returns:
             Expression representing the value.
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
-        name = options.get('name', 'val')
+        name = options.get('label', 'val')
         expr = self.constraints.new_bitvec(nbits, name=name)
+        self.input_symbols.append(expr)
         return expr
 
-    def symbolicate_buffer(self, data, name = 'INPUT', wildcard='+', string=False):
+    def symbolicate_buffer(self, data, label = 'INPUT', wildcard='+', string=False):
         '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
         Args:
             data -- The string to symbolicate. If no wildcard bytes are provided,
                 this is the identity function on the first argument.
-            name -- The name to assign to the value
+            label -- The label to assign to the value
             wildcard -- The byte that is considered a wildcard
             string -- Ensure bytes returned can not be \0
 
