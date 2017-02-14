@@ -9,5 +9,4 @@ setup(
             'manticore = manticore.__main__:main'
         ]
     }
-
 )
