@@ -6,8 +6,8 @@ language: python
 cache:
     pip: true
     directories:
-        - $HOME/virtualenv/python2.7.10/lib/python2.7/site-packages
-        - $HOME/virtualenv/python2.7.10/bin/
+        - $HOME/virtualenv/python2.7.12/lib/python2.7/site-packages
+        - $HOME/virtualenv/python2.7.12/bin/
         - $HOME/unicorn
 dist: trusty
 sudo: required
