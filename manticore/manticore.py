@@ -24,6 +24,12 @@ from utils import gdb, qemu
 logger = logging.getLogger('MANTICORE')
 
 
+def issymbolic(value):
+    '''
+    Helper to determine whether a value read from memory is symbolic.
+    '''
+    return isinstance(value, Expression)
+
 
 def makeDecree(args):
     constraints = ConstraintSet()
@@ -58,7 +64,7 @@ def makeLinux(program, argv, env, concrete_start = ''):
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
-    if any(isinstance(x, Expression) for val in argv + env for x in val):
+    if any(issymbolic(x) for val in argv + env for x in val):
         model.setup_stack(initial_state.cpu, [program] + argv, env)
 
     model.input.transmit(concrete_start)
@@ -128,12 +134,6 @@ def binary_type(path):
         return 'DECREE'
     else:
         raise NotImplementedError("Binary {} not supported.".format(path))
-
-def issymbolic(value):
-    '''
-    Helper to determine whether a value read from memory is symbolic.
-    '''
-    return isinstance(value, Expression)
 
 class Manticore(object):
 
