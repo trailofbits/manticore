@@ -17,14 +17,13 @@ if __name__ == '__main__':
 
     m = Manticore(sys.argv[1])
     m.workers = 3
-
-    m['count'] = 0
+    m.context['count'] = 0
 
     def explore(state):
-        m['count'] += 1
+        m.context['count'] += 1
 
     m.add_hook(None, explore)
 
     m.start()
 
-    print "Executed ", m['count'], " instructions."
+    print "Executed ", m.context['count'], " instructions."

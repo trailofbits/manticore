@@ -161,7 +161,8 @@ class Manticore(object):
         self._verbosity = 0
 
         manager = Manager()
-        self._context = manager.dict()
+
+        self.context = manager.dict()
 
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
@@ -215,26 +216,6 @@ class Manticore(object):
         self._log_file = path
 
         self._init_logging()
-
-    # Manticore object itself can act as storage for multi-process program
-    # analysis runs. 
-    def __getitem__(self, key):
-        return self._context[self.__keytransform__(key)]
-
-    def __setitem__(self, key, value):
-        self._context[self.__keytransform__(key)] = value
-
-    def __delitem__(self, key):
-        del self._context[self.__keytransform__(key)]
-
-    def __iter__(self):
-        return iter(self._context)
-
-    def __len__(self):
-        return len(self._context)
-
-    def __keytransform__(self, key):
-        return key
 
 
     # XXX(yan): args is a temporary hack to include while we continue moving
