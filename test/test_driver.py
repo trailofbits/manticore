@@ -10,7 +10,7 @@ import collections
 import time
 
 from manticore import Manticore, issymbolic
-from core.smtlib import BitVecVariable
+from manticore.core.smtlib import BitVecVariable
 
 class ManticoreDriver(unittest.TestCase):
     def setUp(self):

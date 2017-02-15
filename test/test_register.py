@@ -1,6 +1,6 @@
 import unittest
 
-from core.cpu.register import Register
+from manticore.core.cpu.register import Register
 
 class RegisterTest(unittest.TestCase):
     def test_rd(self):

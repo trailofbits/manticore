@@ -1,4 +1,4 @@
-from core.smtlib import Operators
+from manticore.core.smtlib import Operators
 
 class Memory:  #todo Mock
     def getchar(self, addr):

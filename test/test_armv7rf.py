@@ -1,7 +1,7 @@
 import unittest
  
-from core.cpu.arm import Armv7RegisterFile as RF
-from core.cpu.arm import *
+from manticore.core.cpu.arm import Armv7RegisterFile as RF
+from manticore.core.cpu.arm import *
 
 from capstone.arm import *
 

@@ -1,6 +1,6 @@
 import unittest
 
-from models import linux
+from manticore.models import linux
 
 
 class LinuxTest(unittest.TestCase):

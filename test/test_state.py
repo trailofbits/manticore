@@ -1,9 +1,9 @@
 import unittest
 
-from core.executor import State
-from core.smtlib import BitVecVariable
-from core.smtlib import ConstraintSet
-from models import linux
+from manticore.core.executor import State
+from manticore.core.smtlib import BitVecVariable
+from manticore.core.smtlib import ConstraintSet
+from manticore.models import linux
 
 class FakeMemory(object):
     def __init__(self):

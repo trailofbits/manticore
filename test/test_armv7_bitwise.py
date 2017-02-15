@@ -1,6 +1,6 @@
 import unittest
  
-from core.cpu import bitwise
+from manticore.core.cpu import bitwise
 
 
 class Armv7RF(unittest.TestCase):

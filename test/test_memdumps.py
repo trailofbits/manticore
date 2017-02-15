@@ -87,13 +87,12 @@ class IntegrationTest(unittest.TestCase):
 
         params = self._getDumpParams(jsonfile)
 
-        SE = os.path.join(dirname, '../main.py')
         workspace = os.path.join(self.test_dir, 'ws_{}'.format(dumpname))
         logfile = os.path.join(workspace, "output.log")
 
         dumpfile = os.path.join(dumpdir, params['dump'])
 
-        args = ['python', SE, '--workspace', workspace, '--log', logfile, dumpfile]
+        args = ['manticore', '--workspace', workspace, '--log', logfile, dumpfile]
 
         for k,v in params.iteritems():
             if k.startswith("--"):
