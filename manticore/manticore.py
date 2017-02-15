@@ -216,6 +216,27 @@ class Manticore(object):
 
         self._init_logging()
 
+    # Manticore object itself can act as storage for multi-process program
+    # analysis runs. 
+    def __getitem__(self, key):
+        return self._context[self.__keytransform__(key)]
+
+    def __setitem__(self, key, value):
+        self._context[self.__keytransform__(key)] = value
+
+    def __delitem__(self, key):
+        del self._context[self.__keytransform__(key)]
+
+    def __iter__(self):
+        return iter(self._context)
+
+    def __len__(self):
+        return len(self._context)
+
+    def __keytransform__(self, key):
+        return key
+
+
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
     @property
@@ -308,7 +329,7 @@ class Manticore(object):
         for pc to invoke callback on every instruction.
         '''
         def _inner(state):
-            callback(self._context, state)
+            callback(state)
 
         self._hooks.setdefault(pc, set()).add(_inner)
 
