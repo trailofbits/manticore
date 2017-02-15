@@ -328,10 +328,7 @@ class Manticore(object):
         Add a callback to be invoked on executing a program counter. Pass 'None'
         for pc to invoke callback on every instruction.
         '''
-        def _inner(state):
-            callback(state)
-
-        self._hooks.setdefault(pc, set()).add(_inner)
+        self._hooks.setdefault(pc, set()).add(callback)
 
     def _get_symbol_address(self, symbol):
         '''
