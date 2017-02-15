@@ -133,9 +133,10 @@ class ExpressionTest(unittest.TestCase):
             self.assertTrue(self.solver.check(temp_cs))
 
     def testBasicArrayStore(self):
+        name = "bitarray"
         cs =  ConstraintSet()
         #make array of 32->8 bits
-        array = cs.new_array(32)
+        array = cs.new_array(32, name=name)
         #make free 32bit bitvector 
         key = cs.new_bitvec(32)
 
@@ -149,6 +150,9 @@ class ExpressionTest(unittest.TestCase):
 
         #1001 position of array can be 'B'
         self.assertTrue(self.solver.can_be_true(cs, array.select(1001) == 'B'))
+
+        #name is correctly proxied
+        self.assertEqual(array.name, name + "_1")
 
         with cs as temp_cs:
             #but if it is 'B' ...

@@ -591,6 +591,10 @@ class ArrayStore(ArrayOperation):
         return self.operands[0]
 
     @property
+    def name(self):
+        return self.operands[0].name
+
+    @property
     def index(self):
         return self.operands[1]
 
