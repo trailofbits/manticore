@@ -29,7 +29,7 @@ if __name__ == '__main__':
     else:
         target = (0x400a83, 'EBX')
 
-    def entered_func(ctx, state):
+    def entered_func(state):
         '''For ARM, Make R4 symbolic at 0x1082c, as r4 is used in a branch right
            after.
         '''

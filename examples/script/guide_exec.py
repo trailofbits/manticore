@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # Ensure that we ignore all possible branches to libc
     # This hook returns False if we should abandon exploration
     # or True to continue
-    def fork_hook(ctx, state):
+    def fork_hook(state):
         _from, _to = lib.start, lib.start + lib.size
         return not (_from <= state.cpu.PC < _to)
     m.add_fork_hook(fork_hook)
