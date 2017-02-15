@@ -170,7 +170,8 @@ class Manticore(object):
         self._verbosity = 0
 
         manager = Manager()
-        self._context = manager.dict()
+
+        self.context = manager.dict()
 
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
@@ -224,6 +225,7 @@ class Manticore(object):
         self._log_file = path
 
         self._init_logging()
+
 
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
@@ -316,10 +318,7 @@ class Manticore(object):
         Add a callback to be invoked on executing a program counter. Pass 'None'
         for pc to invoke callback on every instruction.
         '''
-        def _inner(state):
-            callback(self._context, state)
-
-        self._hooks.setdefault(pc, set()).add(_inner)
+        self._hooks.setdefault(pc, set()).add(callback)
 
     def _get_symbol_address(self, symbol):
         '''

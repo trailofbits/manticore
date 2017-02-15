@@ -21,7 +21,7 @@ if __name__ == '__main__':
     m = Manticore(None, path, args)
 
     # Trigger an event when PC reaches a certain value
-    def reached_goal(ctx, state):
+    def reached_goal(state):
         cpu = state.cpu
 
         assert cpu.PC == 0x10858

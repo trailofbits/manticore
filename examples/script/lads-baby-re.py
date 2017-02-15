@@ -11,7 +11,7 @@ if __name__ == '__main__':
     path = sys.argv[1]
     m = Manticore(path)
 
-    def myhook(ctx, state):
+    def myhook(state):
         flag = ''
         cpu = state.cpu
         arraytop = cpu.R11
