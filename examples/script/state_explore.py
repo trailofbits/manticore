@@ -12,7 +12,7 @@ if __name__ == '__main__':
     # Set to the address of the conditonal checking for the first complex branch
     to_abandon = int(sys.argv[2], 0)
 
-    def explore(ctx, state):
+    def explore(state):
         print "Abandoning state at PC: ", hex(state.cpu.PC)
         state.abandon()
 
