@@ -26,13 +26,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from cStringIO import StringIO
-from core.smtlib import Solver, Operators
+from manticore.core.smtlib import Solver, Operators
 import unittest
 import tempfile, os
 import gc, pickle
 import fcntl
 import resource
-from core.memory import *
+from manticore.core.memory import *
 
 def issymbolic(value):
     return isinstance(value, Expression)
