@@ -5,9 +5,9 @@ from manticore import Manticore
 '''
 Count the number of emulated instructions.
 
-This uses the ability of the Manticore object to act as a dict to store data
-that is used/updated in the hook function.
-
+This example uses the context property of the Manticore object to store data
+that's updated by the hook function. Manticore.context is needed to properly
+share data when running with multiple worker processes.
 '''
 
 if __name__ == '__main__':
