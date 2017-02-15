@@ -24,6 +24,12 @@ from utils import gdb, qemu
 logger = logging.getLogger('MANTICORE')
 
 
+def issymbolic(value):
+    '''
+    Helper to determine whether a value read from memory is symbolic.
+    '''
+    return isinstance(value, Expression)
+
 
 def makeDecree(args):
     constraints = ConstraintSet()
@@ -37,23 +43,32 @@ def makeDecree(args):
     model.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, arguments, environment, concrete_start = ''):
+def makeLinux(program, argv, env, concrete_start = ''):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-    model = linux.SLinux(constraints, program, argv=arguments, envp=environment, symbolic_files=('symbolic.txt'))
+    model = linux.SLinux(constraints, program, argv=argv, envp=env,
+            symbolic_files=('symbolic.txt'))
     initial_state = State(constraints, model)
 
     if concrete_start != '':
         logger.info('Starting with concrete input: {}'.format(concrete_start))
 
-    for i in xrange(len(arguments)):
-        arguments[i] = initial_state.symbolicate_buffer(arguments[i], label='ARGV%d' % (i+1), string=True)    
+    for i, arg in enumerate(argv):
+        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1),
+                string=True)
 
-    for i in xrange(len(environment)):
-        environment[i] = initial_state.symbolicate_buffer(environment[i], label='ENV%d' % (i+1), string=True)    
+    for i, evar in enumerate(env):
+        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1),
+                string=True)
+
+    # If any of the arguments or environment refer to symbolic values, re-
+    # initialize the stack
+    if any(issymbolic(x) for val in argv + env for x in val):
+        model.setup_stack(initial_state.cpu, [program] + argv, env)
 
     model.input.transmit(concrete_start)
+
     #set stdin input...
     model.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
@@ -119,12 +134,6 @@ def binary_type(path):
         return 'DECREE'
     else:
         raise NotImplementedError("Binary {} not supported.".format(path))
-
-def issymbolic(value):
-    '''
-    Helper to determine whether a value read from memory is symbolic.
-    '''
-    return isinstance(value, Expression)
 
 class Manticore(object):
 
