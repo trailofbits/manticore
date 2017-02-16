@@ -281,6 +281,7 @@ class Linux(object):
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []
+        self.syscall_arg_regs = []
 
         self.files = []
         # open standard files stdin, stdout, stderr
@@ -309,7 +310,7 @@ class Linux(object):
         arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[ELFFile(file(program)).get_machine_arch()]
         cpu = self._mk_proc(arch)
         self.load(cpu, program)
-        self._arch_reg_init(cpu, arch)
+        self._arch_specific_init(cpu, arch)
         self._stack_top = cpu.STACK
         self.setup_stack(cpu, [program]+argv, envp)
 
@@ -367,6 +368,7 @@ class Linux(object):
         state['elf_brk'] = self.elf_brk
         state['auxv'] = self.auxv
         state['program'] = self.program
+        state['syscall_arg_regs'] = self.syscall_arg_regs
         if hasattr(self, 'tls_value'):
             state['tls_value'] = self.tls_value
         return state
@@ -414,6 +416,7 @@ class Linux(object):
         self.elf_brk = state['elf_brk']
         self.auxv = state['auxv']
         self.program = state['program']
+        self.syscall_arg_regs = state['syscall_arg_regs']
         if 'tls_value' in state:
             self.tls_value = state['tls_value']
 
@@ -1919,6 +1922,18 @@ class Linux(object):
         self.sys_close(cpu, fd)
         return ret
     
+    def _arch_specific_init(self, cpu, arch):
+        assert arch in {'i386', 'amd64', 'armv7'}
+
+        self._arch_reg_init(cpu, arch)
+
+        if arch == 'i386':
+            self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
+        elif arch == 'amd64':
+            self.syscall_arg_regs = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']
+        elif arch == 'armv7':
+            self.syscall_arg_regs = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6']
+
     def _arch_reg_init(self, cpu, arch):
         if arch in {'i386', 'amd64'}:
             x86_defaults = {
@@ -1979,14 +1994,16 @@ class SLinux(Linux):
         try:
             return super(SLinux, self).syscall(cpu)
         except SymbolicSyscallArgument, e:
-            reg_name = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9' ][e.reg_num]
+            cpu.PC = cpu.PC - cpu.instruction.size
+            reg_name = self.syscall_arg_regs[e.reg_num]
             raise ConcretizeRegister(reg_name,e.message,e.policy)
 
     def int80(self, cpu):
         try:
             return super(SLinux, self).int80(cpu)
         except SymbolicSyscallArgument, e:
-            reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][e.reg_num]
+            cpu.PC = cpu.PC - cpu.instruction.size
+            reg_name = self.syscall_arg_regs[e.reg_num]
             raise ConcretizeRegister(reg_name,e.message,e.policy)
 
 
@@ -1996,17 +2013,14 @@ class SLinux(Linux):
         '''
         if isinstance(fd, Expression):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
 
         if isinstance(buf, Expression):
             logger.debug("Ask to read to a symbolic buffer")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
 
         if isinstance(count, Expression):
             logger.debug("Ask to read a symbolic number of bytes ")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(2)
 
         return super(SLinux, self).sys_read(cpu, fd, buf, count)
@@ -2136,17 +2150,14 @@ class SLinux(Linux):
         '''
         if isinstance(fd, Expression):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
 
         if isinstance(buf, Expression):
             logger.debug("Ask to write to a symbolic buffer")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
 
         if isinstance(count, Expression):
             logger.debug("Ask to write a symbolic number of bytes ")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(2)
 
         return super(SLinux, self).sys_write(cpu, fd, buf, count)
@@ -2155,26 +2166,21 @@ class SLinux(Linux):
     def sys_allocate(self, cpu, length, isX, address_p):
         if isinstance(length, Expression):
             logger.debug("Ask to ALLOCATE a symbolic number of bytes ")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
         if isinstance(address_p, Expression):
             logger.debug("Ask to ALLOCATE potentially executable or not executable memory")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
         if isinstance(address_p, Expression):
             logger.debug("Ask to return ALLOCATE result to a symbolic reference ")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(2)
         return super(SLinux, self).sys_allocate(cpu, length, isX, address_p)
 
     def sys_deallocate(self, cpu, addr, size):
         if isinstance(addr, Expression):
             logger.debug("Ask to DEALLOCATE a symbolic pointer?!")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
         if isinstance(size, Expression):
             logger.debug("Ask to DEALLOCATE a symbolic size?!")
-            cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
         return super(SLinux, self).sys_deallocate(cpu, addr, size)
 
