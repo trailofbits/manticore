@@ -714,6 +714,9 @@ class X86Cpu(Cpu):
     '''
     A CPU model.
     '''
+    max_instr_width = 15
+    _nop = '\x90'
+
     def __init__(self, regfile, memory, *args, **kwargs):
         '''
         Builds a CPU model.
@@ -5791,7 +5794,6 @@ class ABI:
 
 class AMD64Cpu(X86Cpu):
     #Config
-    max_instr_width = 15
     address_bit_size = 64
     arch = CS_ARCH_X86
     mode = CS_MODE_64
@@ -5899,7 +5901,6 @@ class AMD64Cpu(X86Cpu):
 
 class I386Cpu(X86Cpu):
     #Config
-    max_instr_width = 15
     address_bit_size = 32
     arch = CS_ARCH_X86
     mode = CS_MODE_32

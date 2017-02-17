@@ -156,7 +156,7 @@ class Cpu(object):
         self._md = Cs(self.arch, self.mode)
         self._md.detail = True
         self._md.syntax = 0
-        self.instruction = None
+        self.instruction = next(self._md.disasm(self._nop, 0))
         #FIXME self.transactions = []
 
     def __getstate__(self):
