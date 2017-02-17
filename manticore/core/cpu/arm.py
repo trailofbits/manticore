@@ -5,6 +5,7 @@ from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
 from ..smtlib import Operators, Expression
+from manticore.utils.helpers import issymbolic
 # from ..smtlib import *
 from functools import wraps
 from bitwise import *
