@@ -1,4 +1,5 @@
 from expression import *
+from manticore.utils.helpers import issymbolic
 import math
 
 
@@ -146,7 +147,7 @@ def ZEXTEND(x, size):
 
 def CONCAT(total_size, *args):
     arg_size = total_size / len(args)
-    if any((isinstance(x, Expression) for x in args)):
+    if any(issymbolic(x) for x in args):
         if len(args) > 1:
             def cast(x):
                 if isinstance(x, (int, long)):
@@ -247,7 +248,7 @@ def SREM(a, b):
 
 
 def simplify(value):
-    if isinstance(value, Expression):
+    if issymbolic(value):
         return value.simplify()
     return value
 

@@ -7,6 +7,7 @@ from unicorn.arm_const import *
 from abc import ABCMeta, abstractmethod
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import MemoryException
+from manticore.utils.helpers import issymbolic
 import sys
 from functools import wraps
 import types
@@ -311,7 +312,7 @@ class Cpu(object):
             # check access_ok
             for i in xrange(0, self.max_instr_width):
                 c = self.memory[pc+i]
-                if isinstance(c, Expression):
+                if issymbolic(c):
                     assert isinstance(c, BitVec) and  c.size == 8
                     if isinstance(c, Constant):
                         c = chr(c.value)
@@ -405,7 +406,7 @@ class Cpu(object):
             self.PC += instruction.size
             addr = op.address()  #FIXME maybe add a kwarg parameter to operand.address() with the current pc?
             self.PC -= instruction.size
-            assert not isinstance(addr, Expression)
+            assert not issymbolic(addr)
             num_bytes = op.size/8
             needed_bytes.update(range(addr, addr + num_bytes))
         # Request the bytes of the instruction.
@@ -415,7 +416,7 @@ class Cpu(object):
         for addr in needed_bytes:
             needed_pages.add(addr & (~0xFFF))
             val = self.read_int(addr, 8)
-            if isinstance(val, Expression):
+            if issymbolic(val):
                 logger.debug("Concretizing bytes before passing it to unicorn")
                 raise ConcretizeMemory(addr, 8, "Passing control to emulator", 'SAMPLED')
             byte_values[addr] = val
@@ -504,7 +505,7 @@ class Cpu(object):
         regs = self._regfile.canonical_registers
         for reg_name in regs:
             value = self.read_register(reg_name)
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 aux = "%3s: "%reg_name +"%16s"%value
                 result += aux
             elif isinstance(value, (int, long)):

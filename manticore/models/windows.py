@@ -8,6 +8,7 @@ from ..core.cpu.x86 import I386Cpu, Sysenter
 from ..core.cpu.abstractcpu import Interruption, Syscall, \
         ConcretizeRegister, ConcretizeArgument, IgnoreAPI
 from ..core.executor import ForkState, SyscallNotImplemented
+from ..utils.helpers import issymbolic
 
 from ..binary.pe import minidump
 
@@ -38,7 +39,7 @@ class SymbolicSyscallArgument(ConcretizeRegister):
 
 #FIXME Cosider movnig this to executor.state?
 def toStr(state, value):
-    if isinstance(value, Expression):
+    if issymbolic(value):
         minmax = solver.get_all_values(state.constraints, value, maxcnt=2, silent=True)
         if len(minmax) > 1:
             return '?'*(value.size/8) + ' ' + repr(minmax)
@@ -457,7 +458,7 @@ class SWindows(Windows):
 
 def readStringFromPointer(state, cpu, ptr, utf16, max_symbols=8):
 
-    if isinstance(ptr, Expression):
+    if issymbolic(ptr):
         ptrs = solver.get_all_values(state.constraints, ptr, maxcnt=2, silent=True)
         if len(ptrs) == 1:
             ptr = ptrs[0]
@@ -481,7 +482,7 @@ def readStringFromPointer(state, cpu, ptr, utf16, max_symbols=8):
         value = cpu.read_int(ptr+i, width)
 
         # ooh, a symbolic char
-        if isinstance(value, Expression):
+        if issymbolic(value):
             # how symbolic is it?
             vals = solver.get_all_values(state.constraints, value, maxcnt=max_symbols, silent=True)
             if len(vals) == 1:
@@ -526,7 +527,7 @@ class ntdll(object):
 
     @staticmethod
     def RtlAllocateHeap(model, handle, flags, size):
-        if isinstance(size, Expression):
+        if issymbolic(size):
             logger.info("RtlAllcoateHeap({}, {}, SymbolicSize); concretizing size".format(str(handle), str(flags)) )
             raise ConcretizeArgument(2)
         else:
@@ -577,14 +578,14 @@ class kernel32(object):
             str(hKey), key_str, str(ulOptions), str(samDesired),
             str(phkResult)))
 
-        if isinstance(phkResult, Expression):
+        if issymbolic(phkResult):
 
             #Check if the symbol has a single solution.
             values = solver.get_all_values(model.constraints, phkResult, maxcnt=2, silent=True)
             if len(values) == 1:
                 phkResult = values[0]
 
-        if isinstance(phkResult, Expression):
+        if issymbolic(phkResult):
 
             if solver.can_be_true(model.constraints, phkResult==0):
                 raise ForkState(phkResult==0)
@@ -640,14 +641,14 @@ class kernel32(object):
             str(hKey), key_str, str(Reserved), str(lpClass), str(dwOptions), 
             str(lpSecurityAttributes), str(samDesired), str(phkResult), str(lpdwDisposition)))
 
-        if isinstance(phkResult, Expression):
+        if issymbolic(phkResult):
 
             #Check if the symbol has a single solution.
             values = solver.get_all_values(model.constraints, phkResult, maxcnt=2, silent=True)
             if len(values) == 1:
                 phkResult = values[0]
 
-        if isinstance(phkResult, Expression):
+        if issymbolic(phkResult):
 
             if solver.can_be_true(model.constraints, phkResult==0):
                 raise ForkState(phkResult==0)
@@ -677,7 +678,7 @@ class kernel32(object):
         STD_OUTPUT_HANDLE = -11
         STD_ERROR_HANDLE = -12
 
-        if isinstance(nStdHandle, Expression):
+        if issymbolic(nStdHandle):
 
             #Check if the symbol has a single solution.            
             values = solver.get_all_values(model.constraints, nStdHandle, maxcnt=2, silent=True)
@@ -776,7 +777,7 @@ class kernel32(object):
         toStr(model, lpOverlapped))
     )
 
-        if isinstance(lpNumberOfBytesWritten, Expression):
+        if issymbolic(lpNumberOfBytesWritten):
 
             #Check if the symbol has a single solution.
             values = solver.get_all_values(model.constraints, lpNumberOfBytesWritten, maxcnt=2, silent=True)
@@ -785,7 +786,7 @@ class kernel32(object):
                 lpNumberOfBytesWritten = values[0]
 
         cpu = model.current
-        if isinstance(lpNumberOfBytesWritten, Expression):
+        if issymbolic(lpNumberOfBytesWritten):
 
             if solver.can_be_true(model.constraints, lpNumberOfBytesWritten==0):
                 raise ForkState(lpNumberOfBytesWritten==0)

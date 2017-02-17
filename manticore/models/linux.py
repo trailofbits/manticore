@@ -2,6 +2,7 @@ import cgcrandom
 import weakref
 import sys, os, struct
 from ..utils import qemu
+from ..utils.helpers import issymbolic
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister, InvalidPCException
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
@@ -2011,15 +2012,15 @@ class SLinux(Linux):
     def sys_read(self, cpu, fd, buf, count):
         ''' Symbolic version of Decree.sys_receive
         '''
-        if isinstance(fd, Expression):
+        if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
             raise SymbolicSyscallArgument(0)
 
-        if isinstance(buf, Expression):
+        if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
             raise SymbolicSyscallArgument(1)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
             raise SymbolicSyscallArgument(2)
 
@@ -2148,15 +2149,15 @@ class SLinux(Linux):
     def sys_write(self, cpu, fd, buf, count):
         ''' Symbolic version of Decree.sys_receive
         '''
-        if isinstance(fd, Expression):
+        if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
             raise SymbolicSyscallArgument(0)
 
-        if isinstance(buf, Expression):
+        if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
             raise SymbolicSyscallArgument(1)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
             raise SymbolicSyscallArgument(2)
 
@@ -2164,22 +2165,22 @@ class SLinux(Linux):
 
 
     def sys_allocate(self, cpu, length, isX, address_p):
-        if isinstance(length, Expression):
+        if issymbolic(length):
             logger.debug("Ask to ALLOCATE a symbolic number of bytes ")
             raise SymbolicSyscallArgument(0)
-        if isinstance(address_p, Expression):
+        if issymbolic(address_p):
             logger.debug("Ask to ALLOCATE potentially executable or not executable memory")
             raise SymbolicSyscallArgument(1)
-        if isinstance(address_p, Expression):
+        if issymbolic(address_p):
             logger.debug("Ask to return ALLOCATE result to a symbolic reference ")
             raise SymbolicSyscallArgument(2)
         return super(SLinux, self).sys_allocate(cpu, length, isX, address_p)
 
     def sys_deallocate(self, cpu, addr, size):
-        if isinstance(addr, Expression):
+        if issymbolic(addr):
             logger.debug("Ask to DEALLOCATE a symbolic pointer?!")
             raise SymbolicSyscallArgument(0)
-        if isinstance(size, Expression):
+        if issymbolic(size):
             logger.debug("Ask to DEALLOCATE a symbolic size?!")
             raise SymbolicSyscallArgument(1)
         return super(SLinux, self).sys_deallocate(cpu, addr, size)
@@ -2196,15 +2197,15 @@ class DecreeEmu(object):
     @staticmethod
     def cgc_random(model, buf, count, rnd_bytes):
         import cgcrandom
-        if isinstance(buf, Expression):
+        if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
             raise ConcretizeArgument(0)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
             logger.info("Ask to read a symbolic number of random bytes ")
             raise ConcretizeArgument(1)
 
-        if isinstance(rnd_bytes, Expression):
+        if issymbolic(rnd_bytes):
             logger.info("Ask to return rnd size to a symbolic address ")
             raise ConcretizeArgument(2)
 

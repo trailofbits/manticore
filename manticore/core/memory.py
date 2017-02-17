@@ -31,6 +31,7 @@ from cStringIO import StringIO
 from .smtlib import *
 import logging
 from .mappings import _mmap, _munmap
+from ..utils.helpers import issymbolic
 
 logger = logging.getLogger('MEMORY')
 
@@ -60,7 +61,7 @@ class SymbolicMemoryException(MemoryException):
         self.size = size
 
     def __str__(self):
-        return '%s <%s>'%(self.cause, isinstance(self.address, Expression) and repr(self.address) or '%08x'%self.address)
+        return '%s <%s>'%(self.cause, issymbolic(self.address) and repr(self.address) or '%08x'%self.address)
 
 class Map(object):
     '''
@@ -860,10 +861,10 @@ class SMemory(Memory):
     def read(self, address, size):
         ''' Read a stream of potentially symbolic bytes from a potentially symbolic address '''
         size = self._get_size(size)
-        assert not isinstance(size, Expression)
+        assert not issymbolic(size)
 
 
-        if isinstance(address, Expression):
+        if issymbolic(address):
             assert solver.check(self.constraints)
             logger.info('Reading %d bytes from symbolic address %s', size, address)
             try:
@@ -935,7 +936,7 @@ class SMemory(Memory):
 
     def write(self, address, value):
         size = len(value)
-        if isinstance(address, Expression):
+        if issymbolic(address):
 
             solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
 
@@ -955,7 +956,7 @@ class SMemory(Memory):
         else:
 
             for offset in xrange(size):
-                if isinstance(value[offset], Expression):
+                if issymbolic(value[offset]):
                     if not self.access_ok(address+offset, 'w'):
                         raise MemoryException('No access writing', address+offset)
                     self._symbols[address+offset] = [(True, value[offset])]
