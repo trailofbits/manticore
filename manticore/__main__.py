@@ -133,7 +133,7 @@ def main():
     verbosity = {False:logging.INFO, True:logging.DEBUG}[args.verbose]
     ctxfilter = ContextFilter()
 
-    for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'LINUX', 'DECREE', 'WINDOWS', 'QNX', 'LIBC']:
+    for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
         logging.getLogger(loggername).addFilter(ctxfilter)
         logging.getLogger(loggername).setLevel(verbosity)
         logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
