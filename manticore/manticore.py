@@ -299,9 +299,9 @@ class Manticore(object):
         levels = [[],
                   [('EXECUTOR', logging.INFO)],
                   [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('CPU', logging.DEBUG), ('SMTLIB', logging.DEBUG)]]
+                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('SMTLIB', logging.DEBUG)]]
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]
