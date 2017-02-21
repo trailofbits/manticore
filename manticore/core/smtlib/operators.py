@@ -1,5 +1,5 @@
 from expression import *
-from manticore.utils.helpers import issymbolic
+from ...utils.helpers import issymbolic
 import math
 
 

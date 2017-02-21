@@ -23,7 +23,7 @@ import logging
 import re
 import time
 from visitors import *
-from manticore.utils.helpers import issymbolic
+from ...utils.helpers import issymbolic
 logger = logging.getLogger("SMT")
 
 class SolverException(Exception):

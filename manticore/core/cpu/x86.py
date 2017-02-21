@@ -37,7 +37,7 @@ from functools import wraps, partial
 import collections
 from ..smtlib import *
 from ..memory import MemoryException
-from manticore.utils.helpers import issymbolic
+from ...utils.helpers import issymbolic
 import logging
 logger = logging.getLogger("CPU")
 

@@ -7,7 +7,7 @@ from unicorn.arm_const import *
 from abc import ABCMeta, abstractmethod
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import MemoryException
-from manticore.utils.helpers import issymbolic
+from ...utils.helpers import issymbolic
 import sys
 from functools import wraps
 import types
