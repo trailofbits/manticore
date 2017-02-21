@@ -24,7 +24,7 @@ def parse_arguments():
                         help='A folder name for temporaries and results. (default pse_?????)')
     parser.add_argument('--log', type=str, default='-',
                         help='The log filename')
-    parser.add_argument('--verbose', action='store_true', help='Enable debug mode.')
+    parser.add_argument('-v', '--verbose', action='count', help='Enable verbose logging', default=0)
     parser.add_argument('--stats', action='store_true', help='Enable profiling mode.')
 
     parser.add_argument('--buffer', type=str, help='Specify buffer to make symbolic')
@@ -74,7 +74,6 @@ def main():
     args = parse_arguments()
 
     m = Manticore(args.programs[0], args.programs[1:])
-
     m.policy = args.policy
     m.args = args
 
@@ -110,41 +109,7 @@ def main():
     if args.assertions:
         m.load_assertions(args.assertions)
 
-    # logging
-    class ContextFilter(logging.Filter):
-        '''
-        This is a filter which injects contextual information into the log.
-        '''
-        def filter(self, record):
-            if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-                record.stateid = '[%d]' % self.stateid
-            else:
-                record.stateid = ''
-            return True
-    
-    
-    def loggerSetState(logger, stateid):
-        logger.filters[0].stateid = stateid
-
-    logging.basicConfig(filename = args.log,
-                        format = '%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s',
-                        level = {False:logging.INFO, True:logging.DEBUG}[args.verbose])
-
-    verbosity = {False:logging.INFO, True:logging.DEBUG}[args.verbose]
-    ctxfilter = ContextFilter()
-
-    for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'LINUX', 'DECREE', 'WINDOWS', 'QNX', 'LIBC']:
-        logging.getLogger(loggername).addFilter(ctxfilter)
-        logging.getLogger(loggername).setLevel(verbosity)
-        logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
-
-    logging.getLogger('SMT').setLevel(logging.INFO)
-    logging.getLogger('MEMORY').setLevel(logging.INFO)
-    #logging.getLogger('CPU').setLevel(logging.INFO)
-    logging.getLogger('LIBC').setLevel(logging.INFO)
-
-    logger.info('[+] Loading challenge %s', args.programs)
-
+    m.verbosity = args.verbose + 1
     m.start()
 
     m.dump_stats()
