@@ -376,10 +376,14 @@ class Executor(object):
 
         ps = None
         for item in self._stats:
-            if ps is None:
-                ps = pstats.Stats(X(item))
-            else:
-                ps.add(X(item))
+            try:
+                stat = X(item)
+                if ps is None:
+                    ps = pstats.Stats(stat)
+                else:
+                    ps.add(stat)
+            except TypeError:
+                logger.debug("Incorrectly formatted profiling information in _stats, skipping")
 
         if ps is None:
             logger.info("Profiling failed")
@@ -1073,10 +1077,10 @@ class Executor(object):
             #notify siblings we are about to stop this run
             self._stopRun(count)
             if self._dump_stats:
-                pr.disable()
-                pr.create_stats()
+                self.profile.disable()
+                self.profile.create_stats()
                 with self._lock:
-                     self._stats.append(pr.stats.items())
+                     self._stats.append(self.profile.stats.items())
 
         return count
 

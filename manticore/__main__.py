@@ -84,6 +84,9 @@ def main():
     if args.log:
         m.log_file = args.log
 
+    if args.stats:
+        m.should_profile = args.stats
+
     if args.dumpafter != 0:
         m.dumpafter = args.dumpafter
 
