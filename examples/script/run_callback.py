@@ -34,5 +34,5 @@ if __name__ == '__main__':
 
     # Start path exploration. start() returns when Manticore
     # finishes
-    m.start()
+    m.run()
 
