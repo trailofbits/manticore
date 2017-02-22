@@ -74,5 +74,5 @@ def hook(state):
   m.terminate()  # tell Manticore to stop
 
 m.add_hook(hook_pc, hook)
-m.start()
+m.run()
 ```

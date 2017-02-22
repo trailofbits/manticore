@@ -12,7 +12,7 @@ if __name__ == '__main__':
     m = Manticore(None, path)
     # Start path exploration. start() returns when Manticore
     # finishes
-    m.start()
+    m.run()
     # Print high level statistics
     m.dump_stats()
 
