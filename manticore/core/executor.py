@@ -856,6 +856,10 @@ class Executor(object):
 
 
     def run(self):
+        if self._dump_stats:
+            import cProfile
+            self.profile = cProfile.Profile()
+            self.profile.enable()
 
         policy_order=self.policy_order
         policy=self.policy
