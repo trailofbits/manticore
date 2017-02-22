@@ -626,7 +626,7 @@ class Manticore(object):
                 for m in self._executor.errors:
                     f.write(fmt.format(m))
 
-        self._executor.dumpStats()
+        self._executor.dump_stats()
 
         logger.info('Results dumped in %s', self.workspace)
         logger.info('Instructions executed: %d', self._executor.count)

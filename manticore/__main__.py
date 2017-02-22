@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument('--log', type=str, default='-',
                         help='The log filename')
     parser.add_argument('--verbose', action='store_true', help='Enable debug mode.')
-    parser.add_argument('--stats', action='store_true', help='Enable profiling mode.')
+    parser.add_argument('--profiling', action='store_true', help='Enable profiling mode.')
 
     parser.add_argument('--buffer', type=str, help='Specify buffer to make symbolic')
     parser.add_argument('--size', type=str, help='Specify buffer full size')
@@ -84,8 +84,8 @@ def main():
     if args.log:
         m.log_file = args.log
 
-    if args.stats:
-        m.should_profile = args.stats
+    if args.profiling:
+        m.should_profile = args.profiling
 
     if args.dumpafter != 0:
         m.dumpafter = args.dumpafter

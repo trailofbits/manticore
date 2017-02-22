@@ -362,7 +362,7 @@ class Executor(object):
             #If we are continuin from a set of saved states replay is not supported
             assert self.replay_path is None 
 
-    def dumpStats(self):
+    def dump_stats(self):
         if not self.profiling:
             logger.debug("Profiling not enabled.")
             return
