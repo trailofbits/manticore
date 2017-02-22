@@ -45,7 +45,7 @@ if __name__ == '__main__':
     m.add_pc_hook(target[0], entered_func)
 
     # Start path exploration. start() returns when Manticore finishes
-    m.start()
+    m.run()
 
     # Print high level statistics
     #m.dump_stats()

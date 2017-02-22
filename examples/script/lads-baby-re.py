@@ -26,5 +26,5 @@ if __name__ == '__main__':
 
     m.add_hook(0x109f0, myhook)
 
-    m.start()
+    m.run()
     print 'done'

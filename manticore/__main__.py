@@ -145,7 +145,7 @@ def main():
 
     logger.info('[+] Loading challenge %s', args.programs)
 
-    m.start()
+    m.run()
 
     m.dump_stats()
 

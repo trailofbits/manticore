@@ -525,7 +525,7 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
 
-    def start(self):
+    def run(self):
         '''
         Start Manticore, creating all necessary support classes.
         '''

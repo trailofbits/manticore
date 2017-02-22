@@ -19,4 +19,4 @@ if __name__ == '__main__':
     print "Adding hook to: ", hex(to_abandon)
     m.add_hook(to_abandon, explore)
 
-    m.start()
+    m.run()

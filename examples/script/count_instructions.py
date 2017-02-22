@@ -24,6 +24,6 @@ if __name__ == '__main__':
 
     m.add_hook(None, explore)
 
-    m.start()
+    m.run()
 
     print "Executed ", m.context['count'], " instructions."
