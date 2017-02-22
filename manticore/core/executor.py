@@ -368,7 +368,7 @@ class Executor(object):
             return
 
         import pstats
-        class X:
+        class PstatsFormatted:
             def __init__(self, d):
                 self.stats = dict(d)
             def create_stats(self):
@@ -377,7 +377,7 @@ class Executor(object):
         ps = None
         for item in self._stats:
             try:
-                stat = X(item)
+                stat = PstatsFormatted(item)
                 if ps is None:
                     ps = pstats.Stats(stat)
                 else:
