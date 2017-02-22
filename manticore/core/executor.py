@@ -842,24 +842,24 @@ class Executor(object):
 
     @property
     def profiling(self):
-        return (self.profile is not None)
+        return (self._profile is not None)
 
     @profiling.setter
     def profiling(self, enable):
         if enable:
-            if not self.profile:
+            if not self._profile:
                 import cProfile
-                self.profile = cProfile.Profile()
+                self._profile = cProfile.Profile()
         else:
-            self.profile = None
+            self._profile = None
 
 
 
     def run(self):
         if self._dump_stats:
             import cProfile
-            self.profile = cProfile.Profile()
-            self.profile.enable()
+            self._profile = cProfile.Profile()
+            self._profile.enable()
 
         policy_order=self.policy_order
         policy=self.policy
@@ -1081,10 +1081,10 @@ class Executor(object):
             #notify siblings we are about to stop this run
             self._stopRun(count)
             if self._dump_stats:
-                self.profile.disable()
-                self.profile.create_stats()
+                self._profile.disable()
+                self._profile.create_stats()
                 with self._lock:
-                     self._stats.append(self.profile.stats.items())
+                     self._stats.append(self._profile.stats.items())
 
         return count
 
