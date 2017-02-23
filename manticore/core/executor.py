@@ -701,11 +701,10 @@ class Executor(object):
             f.write(output.getvalue())
             output.close()
 
-
-        # Save execution trace
         tracefile = 'test_{:08x}.trace'.format(test_number)
-        with open(self._getFilename(tracefile), 'wb') as f:
-            f.write('\n'.join(["0x%08x"%i[1] for i in state.trace]))
+        with open(self._getFilename(tracefile), 'w') as f:
+            for _, pc in state.visited:
+                f.write('0x{:08x}\n'.format(pc))
 
         # Save constraints formula
         smtfile = 'test_{:08x}.smt'.format(test_number)
