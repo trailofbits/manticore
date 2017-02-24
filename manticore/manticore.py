@@ -313,6 +313,16 @@ class Manticore(object):
             logging.getLogger(log_type).setLevel(level)
             self._verbosity = setting
 
+    def hook(self, pc):
+        '''
+        A decorator used to register a hook function for a given instruction address
+        (`pc`). Equivalent to calling `add_hook`.
+        '''
+        def decorator(f):
+            self.add_hook(pc, f)
+            return f
+        return decorator
+
     def add_hook(self, pc, callback):
         '''
         Add a callback to be invoked on executing a program counter. Pass 'None'
