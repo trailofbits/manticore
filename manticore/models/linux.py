@@ -13,7 +13,7 @@ import logging
 import random
 from ..core.cpu.arm import *
 from ..core.executor import SyscallNotImplemented, ProcessExit
-logger = logging.getLogger("LINUX")
+logger = logging.getLogger("MODEL")
 
 class RestartSyscall(Exception):
     pass

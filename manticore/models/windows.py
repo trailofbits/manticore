@@ -16,7 +16,7 @@ import StringIO
 import logging
 import random
 from windows_syscalls import syscalls_num
-logger = logging.getLogger("WINDOWS")
+logger = logging.getLogger("MODEL")
 
 class ProcessExit(Exception):
     def __init__(self, code):

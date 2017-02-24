@@ -7,7 +7,7 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.memory import SMemory32
 from ..core.smtlib import *
 from ..core.executor import SyscallNotImplemented, ProcessExit, Deadlock, RestartSyscall
-logger = logging.getLogger("DECREE")
+logger = logging.getLogger("MODEL")
 from ..binary import CGCElf
 from ..binary import CGCGrr
 from contextlib import closing
