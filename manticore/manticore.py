@@ -18,6 +18,7 @@ from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
 from .models import linux, decree, windows
+from .utils.helpers import issymbolic
 
 logger = logging.getLogger('MANTICORE')
 
