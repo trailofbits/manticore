@@ -18,13 +18,9 @@ from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
 from .models import linux, decree, windows
-from utils import gdb, qemu, helpers
 
 logger = logging.getLogger('MANTICORE')
 
-
-# Bring in issymbolic() from utils.helpers
-issymbolic = helpers.issymbolic
 
 def makeDecree(args):
     constraints = ConstraintSet()
