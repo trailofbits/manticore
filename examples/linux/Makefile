@@ -9,7 +9,7 @@ arm: CC=arm-linux-gnueabi-gcc
 arm: basic  sindex  strncmp  arguments ibranch sendmail cbahacks indexhell helloworld simple_copy
 
 clean:
-		rm -rf nostdlib  basic  sindex strncmp arguments sendmail server ibranch cbahacks indexhell cbahacks.c simple_copy
+		rm -rf nostdlib  basic  sindex strncmp arguments sendmail server ibranch cbahacks indexhell cbahacks.c simple_copy helloworld
 
 nostdlib: nostdlib.c
 		$(CC) -m32 -fno-builtin -static -nostdlib  -fomit-frame-pointer  nostdlib.c  -o nostdlib32
