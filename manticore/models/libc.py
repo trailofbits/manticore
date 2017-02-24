@@ -10,7 +10,7 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, \
 from ..core.memory import MemoryException
 from ..core.executor import ForkState
 
-logger = logging.getLogger("LIBC")
+logger = logging.getLogger("MODEL")
 
 def _memset_range(cpu, dst, value, rng):
 
