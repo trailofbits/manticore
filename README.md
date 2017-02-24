@@ -66,6 +66,7 @@ hook_pc = 0x400ca0
 
 m = Manticore('./path/to/binary')
 
+@m.hook(hook_pc)
 def hook(state):
   cpu = state.cpu
   print 'eax', cpu.EAX
@@ -73,6 +74,5 @@ def hook(state):
   
   m.terminate()  # tell Manticore to stop
 
-m.add_hook(hook_pc, hook)
 m.run()
 ```
