@@ -37,6 +37,7 @@ from functools import wraps, partial
 import collections
 from ..smtlib import *
 from ..memory import MemoryException
+from ...utils.helpers import issymbolic
 import logging
 logger = logging.getLogger("CPU")
 
@@ -84,7 +85,7 @@ def rep(old_method):
         if (X86_PREFIX_REP in prefix):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8] 
             count = cpu.read_register(counter_name)
-            if isinstance(count, Expression):
+            if issymbolic(count):
                 raise ConcretizeRegister(counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
 
             FLAG = count != 0
@@ -112,7 +113,7 @@ def repe(old_method):
         if (X86_PREFIX_REP in prefix) or (X86_PREFIX_REPNE in prefix):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8] 
             count = cpu.read_register(counter_name)
-            if isinstance(count, Expression):
+            if issymbolic(count):
                 raise ConcretizeRegister(counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
 
             FLAG = count != 0
@@ -129,7 +130,7 @@ def repe(old_method):
                 elif X86_PREFIX_REPNE in prefix:
                     FLAG = Operators.AND(cpu.ZF == False, count != 0) #true FLAG means loop
 
-            #if isinstance(FLAG, Expression):
+            #if issymbolic(FLAG):
             #    raise ConcretizeRegister('ZF', "Concretizing ZF on REP instruction", policy='ALL')
 
             #if not FLAG:
@@ -562,7 +563,7 @@ class AMD64RegFile(RegisterFile):
         for flag, offset in self._flags.iteritems():
             flags.append((self._registers[flag], offset))
 
-        if any(isinstance(flag, Expression) for flag, offset in flags):
+        if any(issymbolic(flag) for flag, offset in flags):
             res = reduce(operator.or_, map(make_symbolic, flags))
         else:
             res = 0
@@ -830,7 +831,7 @@ class X86Cpu(Cpu):
 
         for reg in regs:
             value = cpu.read_register(reg)
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 raise ConcretizeRegister(reg, "Passing control to emulator")
             reg_values[reg] = value
 
@@ -2402,7 +2403,7 @@ class X86Cpu(Cpu):
         @param src: source operand.
         '''
         used_regs = (cpu.SF, cpu.ZF, cpu.AF, cpu.PF, cpu.CF)
-        is_expression = any(isinstance(x, Expression) for x in used_regs)
+        is_expression = any(issymbolic(x) for x in used_regs)
 
         def make_flag(val, offset):
             if is_expression:
@@ -3830,7 +3831,7 @@ class X86Cpu(Cpu):
         # We can't use this one as the 'true' expresion gets eagerly calculated even on count == 0		 +        cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
         # cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
         # We can't use this one as the EXTRACT op needs the offset arguments to be concrete
         #    cpu.CF = Operators.ITE(count!=0, Operands.EXTRACT(value,count-1,1) !=0, cpu.CF)
             cpu.CF = Operators.ITE(Operators.AND(count != 0, count <= OperandSize), ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
@@ -3870,7 +3871,7 @@ class X86Cpu(Cpu):
         MASK = (1<<OperandSize)-1
         SIGN_MASK = 1<<(OperandSize-1)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
             cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
         else:
             if count != 0:
@@ -5578,7 +5579,7 @@ class X86Cpu(Cpu):
     def LSL(cpu, limit_ptr, selector):
         selector = selector.read()
 
-        if isinstance(selector, Expression):
+        if issymbolic(selector):
             # need to check if selector can be any of cpu_segments.keys()
             # and if so concretize acordinglyi
             raise NotImplementedError("Do not yet implement symbolic LSL")
@@ -5829,7 +5830,7 @@ class AMD64Cpu(X86Cpu):
         regs = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',  'RIP', 'EFLAGS')
         for reg_name in regs:
             value = self.read_register(reg_name)
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 result += "%3s: "%reg_name + CFAIL
                 result += visitors.pretty_print (value, depth=10) 
                 result += CEND
@@ -5841,7 +5842,7 @@ class AMD64Cpu(X86Cpu):
         pos = 0
         for reg_name in ('CF','SF','ZF','OF','AF', 'PF', 'IF', 'DF'):
             value = self.read_register(reg_name)
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 result += "%s:"%reg_name + CFAIL
                 #"%16s"%value+CEND
                 result += visitors.pretty_print (value, depth=10) + CEND
@@ -5948,7 +5949,7 @@ class I386Cpu(X86Cpu):
         regs = ('EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP')
         for reg_name in regs:
             value = self.read_register(reg_name)
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 result += "%3s: "%reg_name + CFAIL
                 result += visitors.pretty_print (value, depth=10) + CEND
             else:
@@ -5959,7 +5960,7 @@ class I386Cpu(X86Cpu):
         pos = 0
         for reg_name in ['CF','SF','ZF','OF','AF', 'PF', 'IF', 'DF']:
             value = self.read_register(reg_name)
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 result += "%s:"%reg_name + CFAIL
                 #"%16s"%value+CEND
                 result += visitors.pretty_print (value, depth=10) + CEND

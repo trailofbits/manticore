@@ -18,17 +18,9 @@ from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
 from .models import linux, decree, windows
-from utils import gdb, qemu
-
+from .utils.helpers import issymbolic
 
 logger = logging.getLogger('MANTICORE')
-
-
-def issymbolic(value):
-    '''
-    Helper to determine whether a value read from memory is symbolic.
-    '''
-    return isinstance(value, Expression)
 
 
 def makeDecree(args):
