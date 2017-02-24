@@ -46,6 +46,7 @@ from .cpu.abstractcpu import ConcretizeRegister, ConcretizeMemory, \
 from .memory import MemoryException, SymbolicMemoryException
 from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
 from ..utils.event import Signal
+from ..utils.helpers import issymbolic
 
 #Multiprocessing
 from multiprocessing import Manager
@@ -245,7 +246,7 @@ class State(object):
 
         if string:
             for b in data:
-                if isinstance(b, Expression):
+                if issymbolic(b):
                     self.constraints.add(b != 0)
                 else:
                     assert b!=0
@@ -494,12 +495,12 @@ class Executor(object):
         except KeyError:
             state.branches[(last_pc, state.cpu.PC)] = 1
         item = (last_pc, state.cpu.PC)
-        assert not isinstance(last_pc, Expression)
-        assert not isinstance(state.cpu.PC, Expression)
+        assert not issymbolic(last_pc)
+        assert not issymbolic(state.cpu.PC)
         if item not in self._all_branches:
             self._all_branches.append(item)
 
-        assert not isinstance(last_pc, Expression)
+        assert not issymbolic(last_pc)
 
         self._states[state.name] = {'received' : receive_size,
                                     'transmited': transmit_size,
@@ -922,7 +923,7 @@ class Executor(object):
                         count += 1
 
                         if self.dump_every and count >= max_iters:
-                            if not isinstance(current_state.cpu.PC, Expression):
+                            if not issymbolic(current_state.cpu.PC):
                                 raise MaxConsecutiveIntructions()
 
                 except MaxConsecutiveIntructions as e:

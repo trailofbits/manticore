@@ -9,6 +9,7 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, \
         ConcretizeMemory
 from ..core.memory import MemoryException
 from ..core.executor import ForkState
+from ..utils.helpers import issymbolic
 
 logger = logging.getLogger("MODEL")
 
@@ -67,7 +68,7 @@ class strings(object):
 
         cpu = state.cpu
 
-        if isinstance(size, Expression):
+        if issymbolic(size):
             single_sol = solver.get_all_values(state.constraints, size, maxcnt=2, silent=True)
             if len(single_sol) == 1:
                 size = single_sol[0]
@@ -87,7 +88,7 @@ class strings(object):
     def memset(state, dst, char, size):
         cpu = state.cpu
 
-        if isinstance(size, Expression):
+        if issymbolic(size):
             single_sol = solver.get_all_values(state.constraints, size, maxcnt=2, silent=True)
             if len(single_sol) == 1:
                 size = single_sol[0]
@@ -108,7 +109,7 @@ class strings(object):
         count = 0
         while True:
             value = cpu.read_int(src+count, 8)
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 if solver.can_be_true(state.constraints, value==0):
                     raise ForkState(value==0)
             elif value == 0:
@@ -126,7 +127,7 @@ class strings(object):
             value = cpu.read_int(src, 8)
             if not cpu.mem.isWritable(dst+i):
                 raise MemoryException("No access writing", dst+i) 
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 if solver.can_be_true(state.constraints, value==0):
                     raise ConcretizeMemory(src+i)
                 else:
@@ -142,7 +143,7 @@ class heap(object):
 
     @staticmethod
     def malloc(cpu, size):
-        if isinstance(size, Expression):
+        if issymbolic(size):
             logger.info("malloc(Symbolic Size); concretizing size")
             raise ConcretizeArgument(0)
         else:
@@ -150,7 +151,7 @@ class heap(object):
 
     @staticmethod
     def realloc(cpu, ptr, size):
-        if isinstance(size, Expression):
+        if issymbolic(size):
             logger.info("realloc({}, Symbolic Size); concretizing size".format(str(ptr)))
             raise ConcretizeArgument(1)
         else:
@@ -158,11 +159,11 @@ class heap(object):
 
     @staticmethod
     def calloc(cpu, count, size):
-        if isinstance(size, Expression):
+        if issymbolic(size):
             logger.info("calloc({}, Symbolic Size); concretizing size".format(str(count)))
             raise ConcretizeArgument(1)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
             logger.info("calloc(Symbolic count, {}); concretizing count".format(str(size)))
             raise ConcretizeArgument(0)
 

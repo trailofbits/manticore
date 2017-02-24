@@ -7,13 +7,15 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.memory import SMemory32
 from ..core.smtlib import *
 from ..core.executor import SyscallNotImplemented, ProcessExit, Deadlock, RestartSyscall
-logger = logging.getLogger("MODEL")
+from ..utils.helpers import issymbolic
 from ..binary import CGCElf
 from ..binary import CGCGrr
 from contextlib import closing
 import StringIO
 import logging
 import random
+
+logger = logging.getLogger("MODEL")
 
 
 class SymbolicSyscallArgument(ConcretizeRegister):
@@ -615,7 +617,7 @@ class Decree(object):
         self.sched()
         self.running.remove(procid)
         #self.procs[procid] = None #let it there so we can report?
-        if isinstance(error_code, Expression):
+        if issymbolic(error_code):
            logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(constraints, error_code))
         else:
             logger.info("TERMINATE PROC_%02d %x", procid, error_code)
@@ -948,22 +950,22 @@ class SDecree(Decree):
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
         ''' Symbolic version of Decree.sys_receive
         '''
-        if isinstance(fd, Expression):
+        if issymbolic(fd):
             logger.info("Ask to read from a symbolic file descriptor!!")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
 
-        if isinstance(buf, Expression):
+        if issymbolic(buf):
             logger.info("Ask to read to a symbolic buffer")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
             logger.info("Ask to read a symbolic number of bytes ")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(2)
 
-        if isinstance(rx_bytes, Expression):
+        if issymbolic(rx_bytes):
             logger.info("Ask to return size to a symbolic address ")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(3)
@@ -974,22 +976,22 @@ class SDecree(Decree):
     def sys_transmit(self, cpu, fd, buf, count, tx_bytes):
         ''' Symbolic version of Decree.sys_receive
         '''
-        if isinstance(fd, Expression):
+        if issymbolic(fd):
             logger.info("Ask to write to a symbolic file descriptor!!")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
 
-        if isinstance(buf, Expression):
+        if issymbolic(buf):
             logger.info("Ask to write to a symbolic buffer")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
             logger.info("Ask to write a symbolic number of bytes ")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(2)
 
-        if isinstance(tx_bytes, Expression):
+        if issymbolic(tx_bytes):
             logger.info("Ask to return size to a symbolic address ")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(3)
@@ -998,43 +1000,43 @@ class SDecree(Decree):
 
 
     def sys_allocate(self, cpu, length, isX, address_p):
-        if isinstance(length, Expression):
+        if issymbolic(length):
             logger.info("Ask to ALLOCATE a symbolic number of bytes ")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
-        if isinstance(isX, Expression):
+        if issymbolic(isX):
             logger.info("Ask to ALLOCATE potentially executable or not executable memory")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
-        if isinstance(address_p, Expression):
+        if issymbolic(address_p):
             logger.info("Ask to return ALLOCATE result to a symbolic reference ")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(2)
         return super(SDecree, self).sys_allocate(cpu, length, isX, address_p)
 
     def sys_deallocate(self, cpu, addr, size):
-        if isinstance(addr, Expression):
+        if issymbolic(addr):
             logger.info("Ask to DEALLOCATE a symbolic pointer?!")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
-        if isinstance(size, Expression):
+        if issymbolic(size):
             logger.info("Ask to DEALLOCATE a symbolic size?!")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
         return super(SDecree, self).sys_deallocate(cpu, addr, size)
 
     def sys_random(self, cpu, buf, count, rnd_bytes):
-        if isinstance(buf, Expression):
+        if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(0)
 
-        if isinstance(count, Expression):
+        if issymbolic(count):
             logger.info("Ask to read a symbolic number of random bytes ")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(1)
 
-        if isinstance(rnd_bytes, Expression):
+        if issymbolic(rnd_bytes):
             logger.info("Ask to return rnd size to a symbolic address ")
             cpu.PC = cpu.PC-cpu.instruction.size
             raise SymbolicSyscallArgument(2)

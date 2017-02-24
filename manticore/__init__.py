@@ -1,1 +1,2 @@
-from .manticore import Manticore, issymbolic
+from .manticore import Manticore
+from .utils.helpers import issymbolic

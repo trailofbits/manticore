@@ -23,6 +23,7 @@ import logging
 import re
 import time
 from visitors import *
+from ...utils.helpers import issymbolic
 logger = logging.getLogger("SMT")
 
 class SolverException(Exception):
@@ -92,7 +93,7 @@ class Solver(object):
 
     def minmax(self, constraints, x, iters=10000):
         ''' Returns the min and max possible values for x. '''
-        if isinstance(x, Expression):
+        if issymbolic(x):
             m = self.min(constraints, x, iters)
             M = self.max(constraints, x, iters)
             return m, M
@@ -275,7 +276,7 @@ class SMTSolver(Solver):
             of constraints.
             The current set of assertions must be sat.
             @param val: an expression or symbol '''
-        if not isinstance(expression, Expression):
+        if not issymbolic(expression):
             return expression
         assert isinstance(expression, Variable)
 
@@ -413,7 +414,7 @@ class SMTSolver(Solver):
             of constraints.
             The current set of assertions must be sat.
             @param val: an expression or symbol '''
-        if not isinstance(expression, Expression):
+        if not issymbolic(expression):
             if isinstance(expression, str):
                 expression = ord(expression)
             return expression

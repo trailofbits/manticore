@@ -5,6 +5,7 @@ from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
 from ..smtlib import Operators, Expression
+from ...utils.helpers import issymbolic
 # from ..smtlib import *
 from functools import wraps
 from bitwise import *
@@ -49,7 +50,7 @@ def instruction(body):
 
         should_execute = cpu.shouldExecuteConditional()
 
-        if isinstance(should_execute, Expression):
+        if issymbolic(should_execute):
             i_size = cpu.address_bit_size / 8
             cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC-i_size,
                     cpu.PC)
@@ -312,7 +313,7 @@ class Armv7Cpu(Cpu):
         logger.debug("Emulator wants this regs %r", regs)
         for reg in regs:
             value = cpu.read_register(reg)
-            if isinstance(value, Expression):
+            if issymbolic(value):
                 raise ConcretizeRegister(reg, "Passing control to emulator") #FIXME improve exception to handle multiple registers at a time 
             reg_values[reg] = value 
 
@@ -527,7 +528,7 @@ class Armv7Cpu(Cpu):
             return Operators.ITEBV(cpu.address_bit_size, flag_expr,
                               BitVecConstant(cpu.address_bit_size, 1 << offset),
                               BitVecConstant(cpu.address_bit_size, 0))
-        if any(isinstance(x, Expression) for x in [N, Z, C, V]):
+        if any(issymbolic(x) for x in [N, Z, C, V]):
             cpsr = (make_cpsr_flag(N, 31) |
                     make_cpsr_flag(Z, 30) |
                     make_cpsr_flag(C, 29) |
