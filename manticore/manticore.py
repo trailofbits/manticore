@@ -326,7 +326,8 @@ class Manticore(object):
     def add_hook(self, pc, callback):
         '''
         Add a callback to be invoked on executing a program counter. Pass 'None'
-        for pc to invoke callback on every instruction.
+        for pc to invoke callback on every instruction. `callback` should be a callable
+        that takes one `core.executor.State` argument.
         '''
         self._hooks.setdefault(pc, set()).add(callback)
 
