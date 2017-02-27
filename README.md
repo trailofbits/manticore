@@ -42,10 +42,6 @@ Manticore is officially supported on Linux and uses Python 2.7.
 - Z3 Theorem Prover: Download the latest release for your platform from https://github.com/Z3Prover/z3/releases/latest, and place the enclosed `z3` binary in your `$PATH`.
   - Alternatively, CVC4 or Yices can be used.
 
-### optional dependencies
-
-- Unicorn Emulation Engine: Allows Manticore to handle unimplemented instructions
-
 ### development dependencies
 
 - keystone: Used in unit tests
