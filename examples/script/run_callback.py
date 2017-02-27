@@ -6,7 +6,6 @@ from manticore import Manticore
 # This example demonstrates a basic hook (PC register)
 
 if __name__ == '__main__':
-    print sys.argv
     path = sys.argv[1]
     pc = int(sys.argv[2], 0)
 
