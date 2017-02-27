@@ -558,9 +558,6 @@ class Manticore(object):
         if self._assertions:
             self._executor.will_execute_pc += self._assertions_callback
 
-        if self.should_profile:
-            self._executor.profiling = True
-
         self._time_started = time.time()
 
         self._running = True
