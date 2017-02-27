@@ -314,9 +314,9 @@ class Executor(object):
         self.max_states = options.get('maxstates', 0)
         self.max_storage = options.get('maxstorage', 0)
         self.replay_path = options.get('replay', None) #(dest, cond, origin)
-        self.profiling = None
         self._dump_every = options.get('dumpafter', 0)
-        self._dump_stats = options.get('dumpstats', False)
+        self._profile = None
+        self.profiling = options.get('dumpstats', False)
 
         # Signals
         self.will_execute_pc = Signal()
@@ -856,7 +856,7 @@ class Executor(object):
 
 
     def run(self):
-        if self._dump_stats:
+        if self.profiling:
             import cProfile
             self._profile = cProfile.Profile()
             self._profile.enable()
@@ -1080,7 +1080,7 @@ class Executor(object):
         with DelayedKeyboardInterrupt():
             #notify siblings we are about to stop this run
             self._stopRun(count)
-            if self._dump_stats:
+            if self.profiling:
                 self._profile.disable()
                 self._profile.create_stats()
                 with self._lock:
