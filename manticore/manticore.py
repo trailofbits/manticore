@@ -318,7 +318,7 @@ class Manticore(object):
         Add a callback to be invoked on executing a program counter. Pass 'None'
         for pc to invoke callback on every instruction.
         '''
-        if not (type(pc) == int or pc == None):
+        if not (type(pc) == int or pc is None):
             logger.debug("pc must be either an int or None, defaulting to None")
             pc = None
         self._hooks.setdefault(pc, set()).add(callback)
