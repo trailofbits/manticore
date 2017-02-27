@@ -564,9 +564,6 @@ class Manticore(object):
         if self._assertions:
             self._executor.will_execute_pc += self._assertions_callback
 
-        if self.should_profile:
-            self._executor.profiling = True
-
         self._time_started = time.time()
 
         self._running = True
@@ -632,7 +629,7 @@ class Manticore(object):
                 for m in self._executor.errors:
                     f.write(fmt.format(m))
 
-        self._executor.dumpStats()
+        self._executor.dump_stats()
 
         logger.info('Results dumped in %s', self.workspace)
         logger.info('Instructions executed: %d', self._executor.count)
