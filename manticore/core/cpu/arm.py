@@ -14,17 +14,6 @@ from capstone.arm import *
 from capstone.x86 import *
 
 
-# no emulator by default
-try:
-    from unicorn import *
-    from unicorn.x86_const import *
-    from unicorn.arm_const import *
-except:
-    pass
-MU = None
-
-
-
 # Custom Constants (avoid conflicts with capstone's arm constants)
 ARM_REG_APSR_N = 1000
 ARM_REG_APSR_Z = 1001

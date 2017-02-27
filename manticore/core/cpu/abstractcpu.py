@@ -1,9 +1,6 @@
 from capstone import *
 from capstone.arm import *
 from capstone.x86 import *
-from unicorn import *
-from unicorn.x86_const import *
-from unicorn.arm_const import *
 from abc import ABCMeta, abstractmethod
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import MemoryException
@@ -16,11 +13,14 @@ logger = logging.getLogger("CPU")
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
 # no emulator by default
-MU = {
-        (CS_ARCH_ARM, CS_MODE_ARM): Uc(UC_ARCH_ARM, UC_MODE_ARM),
-        (CS_ARCH_X86, CS_MODE_32): Uc(UC_ARCH_X86, UC_MODE_32),
-        (CS_ARCH_X86, CS_MODE_64): Uc(UC_ARCH_X86, UC_MODE_64)
-     }
+try:
+    from unicorn import *
+    from unicorn.x86_const import *
+    from unicorn.arm_const import *
+except:
+    print "Warning if verbose"
+    pass
+
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 # This encapsulates how to acccess operands (regs/mem/immediates) for differents cpus
@@ -157,7 +157,6 @@ class Cpu(object):
         self._md.detail = True
         self._md.syntax = 0
         self.instruction = None
-        #FIXME self.transactions = []
 
     def __getstate__(self):
         state = {}
@@ -364,7 +363,7 @@ class Cpu(object):
         try:
             implementation = getattr(self, name)
         except AttributeError as ae:
-            logger.debug("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
+            logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
             implementation = lambda *ops: self.emulate(instruction)
 
         #log
@@ -383,12 +382,20 @@ class Cpu(object):
     #############################################################
     # Emulation
     def _concretize_registers(self, instruction):
-        pass
+        raise NotImplemented
 
     def _unicorn(self):
-        return MU[(self.arch, self.mode)]
+        MU = {  (CS_ARCH_ARM, CS_MODE_ARM): (UC_ARCH_ARM, UC_MODE_ARM),
+        (CS_ARCH_X86, CS_MODE_32): (UC_ARCH_X86, UC_MODE_32),
+        (CS_ARCH_X86, CS_MODE_64): (UC_ARCH_X86, UC_MODE_64)
+        }
+        return Uc(*MU[(self.arch, self.mode)])
 
     def emulate(self, instruction):
+        logger.info("EMULATE instruction %r", instruction)
+        def get_constant(x):
+            stem = { CS_ARCH_X86: 'X86', CS_ARCH_ARM: 'ARM' }
+            return globals()[stem+x]
         #Fix Taint propagation
         needed_pages = set()
         needed_bytes = set()
@@ -434,8 +441,8 @@ class Cpu(object):
         try:
             # Copy in the concrete values of all needed registers.
             for reg, value in reg_values.items():
-                #stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
-                stem = 'UC_X86_REG_'
+                stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
+                #stem = 'UC_X86_REG_'
                 mu.reg_write(globals()[stem+reg], value)
 
             #Map needed pages
@@ -472,15 +479,15 @@ class Cpu(object):
                 regs = reg_values.keys()
             logger.debug("Emulator wrote to this regs %r", regs)
             for reg in regs:
-                #stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
-                stem = 'UC_X86_REG_'
+                stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
+                #stem = 'UC_X86_REG_'
                 new_value = mu.reg_read(globals()[stem+reg])
                 self.write_register(reg, new_value)
           
             self.PC = self.PC+instruction.size
             return
         except Exception as e:
-            logger.error('Exception in emulatin code:')
+            logger.error('Exception in emulating code:')
             logger.error(e, exc_info=True)
         finally:
             for i in mapped:
