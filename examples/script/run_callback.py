@@ -5,34 +5,24 @@ from manticore import Manticore
 
 # This example demonstrates a basic hook (PC register)
 
-def get_args():
-    class Args(object): pass
-    args = Args()
-    args.replay = None; args.data = ''; args.dumpafter = 0; args.maxstates = 0;
-    args.maxstorage = 0; args.stats = True; args.verbose = False; args.log = '-';
-    return args
-
 if __name__ == '__main__':
     path = sys.argv[1]
-    args = get_args()
+    pc = int(sys.argv[2], 0)
 
-    args.programs = sys.argv[1:]
-    # Create a new Manticore object
-    m = Manticore(None, path, args)
+    m = Manticore(path)
 
     # Trigger an event when PC reaches a certain value
+    @m.hook(pc)
     def reached_goal(state):
         cpu = state.cpu
 
-        assert cpu.PC == 0x10858
+        assert cpu.PC == pc
 
-        instruction = cpu.read(cpu.PC, 4)
+        instruction = cpu.read_int(cpu.PC)
         print "Execution goal reached."
-        print "Instruction bytes: {:08x}".format(cpu.pc)
+        print "Instruction bytes: {:08x}".format(instruction)
 
-    m.add_pc_hook(0x10858, reached_goal)
-
-    # Start path exploration. start() returns when Manticore
+    # Start path exploration. m.run() returns when Manticore
     # finishes
     m.run()
 

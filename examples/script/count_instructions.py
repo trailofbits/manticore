@@ -19,10 +19,9 @@ if __name__ == '__main__':
     m.workers = 3
     m.context['count'] = 0
 
+    @m.hook(None)
     def explore(state):
         m.context['count'] += 1
-
-    m.add_hook(None, explore)
 
     m.run()
 
