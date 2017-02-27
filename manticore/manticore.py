@@ -305,10 +305,21 @@ class Manticore(object):
             logging.getLogger(log_type).setLevel(level)
             self._verbosity = setting
 
+    def hook(self, pc):
+        '''
+        A decorator used to register a hook function for a given instruction address
+        (`pc`). Equivalent to calling `add_hook`.
+        '''
+        def decorator(f):
+            self.add_hook(pc, f)
+            return f
+        return decorator
+
     def add_hook(self, pc, callback):
         '''
         Add a callback to be invoked on executing a program counter. Pass 'None'
-        for pc to invoke callback on every instruction.
+        for pc to invoke callback on every instruction. `callback` should be a callable
+        that takes one `manticore.core.executor.State` argument.
         '''
         if not (isinstance(pc, (int, long)) or pc is None):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))

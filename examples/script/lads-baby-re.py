@@ -11,6 +11,7 @@ if __name__ == '__main__':
     path = sys.argv[1]
     m = Manticore(path)
 
+    @m.hook(0x109f0)
     def myhook(state):
         flag = ''
         cpu = state.cpu
@@ -23,8 +24,6 @@ if __name__ == '__main__':
             flag += chr(concrete_input & 0xff)
         print 'flag is:', flag
         m.terminate()
-
-    m.add_hook(0x109f0, myhook)
 
     m.run()
     print 'done'
