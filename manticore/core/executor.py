@@ -29,6 +29,7 @@ import time
 import os
 import copy
 import cPickle
+import cProfile
 import random
 import logging
 import traceback
@@ -315,9 +316,9 @@ class Executor(object):
         self.max_states = options.get('maxstates', 0)
         self.max_storage = options.get('maxstorage', 0)
         self.replay_path = options.get('replay', None) #(dest, cond, origin)
-        self.profiling = None
         self._dump_every = options.get('dumpafter', 0)
-        self._dump_stats = options.get('dumpstats', False)
+        self._profile = cProfile.Profile()
+        self.profiling = options.get('dumpstats', False)
 
         # Signals
         self.will_execute_pc = Signal()
@@ -363,13 +364,13 @@ class Executor(object):
             #If we are continuin from a set of saved states replay is not supported
             assert self.replay_path is None 
 
-    def dumpStats(self):
+    def dump_stats(self):
         if not self.profiling:
             logger.debug("Profiling not enabled.")
             return
 
         import pstats
-        class X:
+        class PstatsFormatted:
             def __init__(self, d):
                 self.stats = dict(d)
             def create_stats(self):
@@ -377,10 +378,14 @@ class Executor(object):
 
         ps = None
         for item in self._stats:
-            if ps is None:
-                ps = pstats.Stats(X(item))
-            else:
-                ps.add(X(item))
+            try:
+                stat = PstatsFormatted(item)
+                if ps is None:
+                    ps = pstats.Stats(stat)
+                else:
+                    ps.add(stat)
+            except TypeError:
+                logger.debug("Incorrectly formatted profiling information in _stats, skipping")
 
         if ps is None:
             logger.info("Profiling failed")
@@ -837,22 +842,9 @@ class Executor(object):
             self._count.value += count
             self._lock.notify_all()
 
-    @property
-    def profiling(self):
-        return (self.profile is not None)
-
-    @profiling.setter
-    def profiling(self, enable):
-        if enable:
-            if not self.profile:
-                import cProfile
-                self.profile = cProfile.Profile()
-        else:
-            self.profile = None
-
-
-
     def run(self):
+        if self.profiling:
+            self._profile.enable()
 
         policy_order=self.policy_order
         policy=self.policy
@@ -1073,11 +1065,11 @@ class Executor(object):
         with DelayedKeyboardInterrupt():
             #notify siblings we are about to stop this run
             self._stopRun(count)
-            if self._dump_stats:
-                pr.disable()
-                pr.create_stats()
+            if self.profiling:
+                self._profile.disable()
+                self._profile.create_stats()
                 with self._lock:
-                     self._stats.append(pr.stats.items())
+                     self._stats.append(self._profile.stats.items())
 
         return count
 
