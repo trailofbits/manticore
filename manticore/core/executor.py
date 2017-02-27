@@ -29,6 +29,7 @@ import time
 import os
 import copy
 import cPickle
+import cProfile
 import random
 import logging
 import traceback
@@ -315,7 +316,7 @@ class Executor(object):
         self.max_storage = options.get('maxstorage', 0)
         self.replay_path = options.get('replay', None) #(dest, cond, origin)
         self._dump_every = options.get('dumpafter', 0)
-        self._profile = None
+        self._profile = cProfile.Profile()
         self.profiling = options.get('dumpstats', False)
 
         # Signals
@@ -840,25 +841,8 @@ class Executor(object):
             self._count.value += count
             self._lock.notify_all()
 
-    @property
-    def profiling(self):
-        return (self._profile is not None)
-
-    @profiling.setter
-    def profiling(self, enable):
-        if enable:
-            if not self._profile:
-                import cProfile
-                self._profile = cProfile.Profile()
-        else:
-            self._profile = None
-
-
-
     def run(self):
         if self.profiling:
-            import cProfile
-            self._profile = cProfile.Profile()
             self._profile.enable()
 
         policy_order=self.policy_order
