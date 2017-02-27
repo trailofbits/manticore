@@ -319,9 +319,9 @@ class Manticore(object):
         for pc to invoke callback on every instruction.
         '''
         if not (type(pc) == int or pc is None):
-            logger.debug("pc must be either an int or None, defaulting to None")
-            pc = None
-        self._hooks.setdefault(pc, set()).add(callback)
+            raise TypeError("pc must be either an int or None, not %s" % pc.__class__.__name__)
+        else:
+            self._hooks.setdefault(pc, set()).add(callback)
 
     def _get_symbol_address(self, symbol):
         '''
