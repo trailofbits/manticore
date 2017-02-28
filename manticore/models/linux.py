@@ -1838,8 +1838,6 @@ class SLinux(Linux):
 
 
     def sys_read(self, cpu, fd, buf, count):
-        ''' Symbolic version of Decree.sys_receive
-        '''
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
             raise SymbolicSyscallArgument(0)
@@ -1975,8 +1973,6 @@ class SLinux(Linux):
 
 
     def sys_write(self, cpu, fd, buf, count):
-        ''' Symbolic version of Decree.sys_receive
-        '''
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
             raise SymbolicSyscallArgument(0)
