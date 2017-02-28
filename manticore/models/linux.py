@@ -895,30 +895,15 @@ class Linux(object):
         return 0
         
     def sys_read(self, cpu, fd, buf, count):
-        ''' receive - receive bytes from a file descriptor
-            
-            The receive system call reads up to count bytes from file descriptor fd to the
-            buffer pointed to by buf. If count is zero, receive returns 0 and optionally 
-            dets *rx_bytes to zero.
-
-            @param self          current CPU.
-            @param fd            a valid file descripor
-            @param buf           a memory buffer
-            @param count         max number of bytes to receive
-            @param rx_bytes      if valid, points to the actual number of bytes received
-            @result        0            Success
-                           EBADF        fd is not a valid file descriptor or is not open
-                           EFAULT       buf or rx_bytes points to an invalid address.
-        '''
         data = ''
         if count != 0:
             if not self._is_open(fd):
-                logger.info("RECEIVE: Not valid file descriptor on receive. Returning EBADF")
+                logger.info("READ: Not valid file descriptor on read. Returning EBADF")
                 return errno.EBADF
 
             # TODO check count bytes from buf
             if not buf in cpu.memory: # or not  cpu.memory.isValid(buf+count):
-                logger.info("RECEIVE: buf points to invalid address. Returning EFAULT")
+                logger.info("READ: buf points to invalid address. Returning EFAULT")
                 return errno.EFAULT
 
             if isinstance(self.files[fd],Socket) and self.files[fd].is_empty():
@@ -926,10 +911,10 @@ class Linux(object):
 
             # Read the data and put in tin memory
             data = self.files[fd].read(count)
-            self.syscall_trace.append(("_receive", fd, data))
+            self.syscall_trace.append(("_read", fd, data))
             cpu.write_bytes(buf, data)
 
-        logger.debug("RECEIVE(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)"%(fd, buf, count, len(data), repr(data)[:min(count,10)],len(data)))
+        logger.debug("READ(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)"%(fd, buf, count, len(data), repr(data)[:min(count,10)],len(data)))
         return len(data)
 
     def sys_write(self, cpu, fd, buf, count):
