@@ -1311,7 +1311,7 @@ class Linux(object):
         self.sched()
         self.running.remove(procid)
         #self.procs[procid] = None
-        logger.debug("TERMINATE PROC_%02d %s", procid, error_code)
+        logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
             raise ProcessExit(error_code)
         return error_code
