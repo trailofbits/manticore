@@ -860,52 +860,6 @@ class Linux(object):
     def _is_open(self, fd):
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
-    def sys_allocate(self, cpu, length, isX, addr):
-        ''' allocate - allocate virtual memory
-
-           The  allocate  system call creates a new allocation in the virtual address
-           space of the calling process.  The length argument specifies the length of
-           the allocation in bytes which will be rounded up to the hardware page size.
-
-           The kernel chooses the address at which to create the allocation; the 
-           address of the new allocation is returned in *addr as the result of the call.
-
-           All newly allocated memory is readable and writeable. In addition, the 
-           is_X argument is a boolean that allows newly allocated memory to be marked
-           as executable (non-zero) or non-executable (zero).
-
-           The allocate function is invoked through system call number 5.
-           
-           @param cpu           current CPU
-           @parm length         the length of the allocation in bytes 
-           @parm isX            boolean that allows newly allocated memory to be marked 
-                                as executable
-           @parm addr           the address of the new allocation is returned in *addr
-
-           @return On success, allocate returns zero and a pointer to the allocated area
-                               is returned in *addr.  Otherwise, an error code is returned
-                               and *addr is undefined.
-                   EINVAL   length is zero.
-                   EINVAL   length is too large.
-                   EFAULT   addr points to an invalid address.
-                   ENOMEM   No memory is available or the process' maximum number of allocations
-                            would have been exceeded.
-        '''
-        #TODO: check 4 bytes from addr
-        if not cpu.memory.isValid(addr):
-            logger.info("ALLOCATE: addr points to invalid address. Rerurning EFAULT")
-            return errno.EFAULT
-
-        perms = [ 'rw ', 'rwx'][bool(isX)]
-        try:
-            result = cpu.memory.mmap(None, length, perms)
-        except Exception,e:
-            logger.info("ALLOCATE exception %s. Returning ENOMEM", str(e))
-            return errno.ENOMEM
-        cpu.write_int(addr, result, cpu.address_bit_size)
-        logger.debug("ALLOCATE(%d, %s, 0x%08x) -> 0x%08x"%(length, perms, addr, result))
-
-        return 0
 
     def sys_lseek(self, cpu, fd, offset, whence):
         ''' lseek - reposition read/write file offset
@@ -2153,19 +2107,6 @@ class SLinux(Linux):
             raise SymbolicSyscallArgument(2)
 
         return super(SLinux, self).sys_write(cpu, fd, buf, count)
-
-
-    def sys_allocate(self, cpu, length, isX, address_p):
-        if issymbolic(length):
-            logger.debug("Ask to ALLOCATE a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(0)
-        if issymbolic(address_p):
-            logger.debug("Ask to ALLOCATE potentially executable or not executable memory")
-            raise SymbolicSyscallArgument(1)
-        if issymbolic(address_p):
-            logger.debug("Ask to return ALLOCATE result to a symbolic reference ")
-            raise SymbolicSyscallArgument(2)
-        return super(SLinux, self).sys_allocate(cpu, length, isX, address_p)
 
     def sys_deallocate(self, cpu, addr, size):
         if issymbolic(addr):
