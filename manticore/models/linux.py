@@ -918,9 +918,9 @@ class Linux(object):
         return len(data)
 
     def sys_write(self, cpu, fd, buf, count):
-        ''' transmit - send bytes through a file descriptor
-          The  transmit system call writes up to count bytes from the buffer pointed
-          to by buf to the file descriptor fd. If count is zero, transmit returns 0
+        ''' write - send bytes through a file descriptor
+          The write system call writes up to count bytes from the buffer pointed
+          to by buf to the file descriptor fd. If count is zero, write returns 0
           and optionally sets *tx_bytes to zero.
 
           @param cpu           current CPU
@@ -935,12 +935,12 @@ class Linux(object):
         if count != 0:
 
             if not self._is_open(fd):
-                logger.error("TRANSMIT: Not valid file descriptor. Returning EBADFD %d", fd)
+                logger.error("WRITE: Not valid file descriptor. Returning EBADFD %d", fd)
                 return errno.EBADF
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf+count not in cpu.memory:
-                logger.debug("TRANSMIT: buf points to invalid address. Rerurning EFAULT")
+                logger.debug("WRITE: buf points to invalid address. Rerurning EFAULT")
                 return errno.EFAULT
 
             if fd > 2 and self.files[fd].is_full():
@@ -952,8 +952,8 @@ class Linux(object):
             self.files[fd].transmit(data)
 
             for line in ''.join([str(x) for x in data]).split('\n'):
-                logger.debug("TRANSMIT(%d, 0x%08x, %d) -> <%.48r>"%(fd, buf, count, line))
-            self.syscall_trace.append(("_transmit", fd, data))
+                logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>"%(fd, buf, count, line))
+            self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
         return len(data)
