@@ -1,5 +1,6 @@
 import cgcrandom
 import weakref
+import errno
 import sys, os, struct
 from ..utils import qemu
 from ..utils.helpers import issymbolic
@@ -256,16 +257,6 @@ class Linux(object):
     A simple Linux Operating System Model.
     This class emulates the most common Linux system calls
     '''
-    CGC_EBADF=1
-    CGC_EFAULT=2
-    CGC_EINVAL=3
-    CGC_ENOMEM=4
-    CGC_ENOSYS=5
-    CGC_EPIPE=6
-    CGC_SSIZE_MAX=2147483647
-    CGC_SIZE_MAX=4294967295
-    CGC_FD_SETSIZE=32
-
     ARM_GET_TLS=0xffff0fe0
     ARM_CMPXCHG=0xffff0fc0
     ARM_MEM_BARRIER=0xffff0fa0
@@ -903,14 +894,14 @@ class Linux(object):
         #TODO: check 4 bytes from addr
         if not cpu.memory.isValid(addr):
             logger.info("ALLOCATE: addr points to invalid address. Rerurning EFAULT")
-            return Linux.CGC_EFAULT
+            return errno.EFAULT
 
         perms = [ 'rw ', 'rwx'][bool(isX)]
         try:
             result = cpu.memory.mmap(None, length, perms)
         except Exception,e:
             logger.info("ALLOCATE exception %s. Returning ENOMEM", str(e))
-            return Linux.CGC_ENOMEM
+            return errno.ENOMEM
         cpu.write_int(addr, result, cpu.address_bit_size)
         logger.debug("ALLOCATE(%d, %s, 0x%08x) -> 0x%08x"%(length, perms, addr, result))
 
@@ -936,11 +927,11 @@ class Linux(object):
          '''
         if not self._is_open(fd):
             logger.info("LSEEK: Not valid file descriptor on lseek. Returning EBADF")
-            return Linux.CGC_EBADF
+            return errno.EBADF
 
         if isinstance(self.files[fd], Socket):
             logger.info("LSEEK: Not valid file descriptor on lseek. Fd not seekable. Returning EBADF")
-            return Linux.CGC_EBADF
+            return errno.EBADF
 
         # Read the data and put in tin memory
         self.files[fd].seek(offset)
@@ -969,12 +960,12 @@ class Linux(object):
         if count != 0:
             if not self._is_open(fd):
                 logger.info("RECEIVE: Not valid file descriptor on receive. Returning EBADF")
-                return Linux.CGC_EBADF
+                return errno.EBADF
 
             # TODO check count bytes from buf
             if not buf in cpu.memory: # or not  cpu.memory.isValid(buf+count):
                 logger.info("RECEIVE: buf points to invalid address. Returning EFAULT")
-                return Linux.CGC_EFAULT
+                return errno.EFAULT
 
             if isinstance(self.files[fd],Socket) and self.files[fd].is_empty():
                 return 0
@@ -1006,12 +997,12 @@ class Linux(object):
 
             if not self._is_open(fd):
                 logger.error("TRANSMIT: Not valid file descriptor. Returning EBADFD %d", fd)
-                return Linux.CGC_EBADF
+                return errno.EBADF
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf+count not in cpu.memory:
                 logger.debug("TRANSMIT: buf points to invalid address. Rerurning EFAULT")
-                return Linux.CGC_EFAULT
+                return errno.EFAULT
 
             if fd > 2 and self.files[fd].is_full():
                 cpu.PC -= cpu.instruction.size
@@ -1380,7 +1371,7 @@ class Linux(object):
         procid = self.procs.index(cpu)
         self.sched()
         self.running.remove(procid)
-        #self.procs[procid] = None  # TODO(mark) ask felipe why this commented
+        #self.procs[procid] = None
         logger.debug("TERMINATE PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
             raise ProcessExit(error_code)
@@ -1417,10 +1408,10 @@ class Linux(object):
 
         if addr & 0xfff != 0:
             logger.info("DEALLOCATE: addr is not page aligned")
-            return Linux.CGC_EINVAL
+            return errno.EINVAL
         if size == 0 :
             logger.info("DEALLOCATE:length is zero")
-            return Linux.CGC_EINVAL
+            return errno.EINVAL
         #unlikely AND WRONG!!!
         #if addr > Decree.CGC_SSIZE_MAX or addr+size > Decree.CGC_SSIZE_MAX:
         #    logger.info("DEALLOCATE: part of the region being deallocated is outside the valid address range of the process")
@@ -1437,12 +1428,12 @@ class Linux(object):
         if timeout:
             if timeout not in cpu.memory: #todo: size
                 logger.info("FDWAIT: timeput is pointing to invalid memory. Returning EFAULT")
-                return Linux.CGC_EFAULT
+                return errno.EFAULT
 
         if readyfds:
             if readyfds not in cpu.memory:
                 logger.info("FDWAIT: readyfds pointing to invalid memory. Returning EFAULT")
-                return Linux.CGC_EFAULT
+                return errno.EFAULT
 
         writefds_wait = set()
         writefds_ready = set()
@@ -1450,7 +1441,7 @@ class Linux(object):
         if writefds:
             if writefds not in cpu.memory:
                 logger.info("FDWAIT: writefds pointing to invalid memory. Returning EFAULT")
-                return Linux.CGC_EFAULT
+                return errno.EFAULT
             bits = cpu.read_int(writefds, (nfds + 7) / 8)
 
             for fd in range(nfds):
@@ -1465,7 +1456,7 @@ class Linux(object):
         if readfds:
             if readfds not in cpu.memory:
                 logger.info("FDWAIT: readfds pointing to invalid memory. Returning EFAULT")
-                return Linux.CGC_EFAULT
+                return errno.EFAULT
             bits = cpu.read_int(readfds, (nfds + 7) / 8)
             for fd in range(nfds):
                 if (bits & 1<<fd):
