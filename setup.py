@@ -11,7 +11,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'keystone',
+            'keystone-engine',
             'coverage',
             'nose',
         ]
