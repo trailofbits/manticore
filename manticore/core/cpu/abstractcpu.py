@@ -189,6 +189,13 @@ class Cpu(object):
         @return: the list of register names for this CPU.
         '''
         return self._regfile.all_registers
+    @property
+    def canonical_registers(self):
+        ''' Returns the list of all register names  for this CPU.
+        @rtype: tuple
+        @return: the list of register names for this CPU.
+        '''
+        return self._regfile.canonical_registers
 
     #this operates on names
     def write_register(self, name, value):
