@@ -1347,17 +1347,3 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read(ARM_REG_R2), (mul >> 32) & Mask(32))
         self._checkFlagsNZCV(0, 1, pre_c, pre_v)
 
-    # Misc
-
-    def test_getCanonicalRegisters(self):
-        for i, reg in enumerate(self.rf.canonical_registers):
-            if reg not in ('sp', 'pc'):
-                reg = reg.upper()
-            setattr(self.cpu, reg, i)
-        self._setupCpu("add r0, r0, 1")
-
-        ideal = {'r4': 4, 'r5': 5, 'r6': 6, 'r7': 7, 'r0': 0, 'r1': 1, 'r2': 2, 'r3': 3,
-                 'r11': 11, 'r8': 8, 'r9': 9, 'pc': 4096, 'lr': 14, 'r12': 12, 'r10': 10,
-                 'cpsr': 0, 'sp': 65536}
-
-        self.assertEqual(ideal, self.cpu.getCanonicalRegisters())
