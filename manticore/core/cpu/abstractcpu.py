@@ -456,7 +456,7 @@ class Cpu(object):
 
             # Run the instruction.
             hook_id = mu.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, hook_mem_access, touched)
-            mu.emu_start(self.PC, self.PC+instruction.size)
+            mu.emu_start(self.PC, self.PC+instruction.size, count=1)
             mu.hook_del(hook_id)
             mu.emu_stop()
 
