@@ -60,9 +60,9 @@ After installing Manticore, here is some basic usage you can try.
 ```
 cd examples/linux
 make
-manticore basic  # a pse_* directory is created
-cat pse_*/*1.stdin | ./basic
-cat pse_*/*2.stdin | ./basic
+manticore basic  # a mcore_* directory is created
+cat mcore_*/*1.stdin | ./basic
+cat mcore_*/*2.stdin | ./basic
 
 cd ../script
 python count_instructions.py ../linux/helloworld
@@ -110,6 +110,3 @@ Manticore to have a slightly less steep learning curve. Additionally, if you
 come from a reverse engineering or exploitation background, you may find
 Manticore intuitive due to its lack of intermediate representation and overall
 emphasis on staying close to machine abstractions.
-
-
-
