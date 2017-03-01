@@ -1,5 +1,6 @@
 import cgcrandom
 import weakref
+import errno
 import sys, os, struct
 from ..utils import qemu
 from ..utils.helpers import issymbolic
@@ -256,16 +257,6 @@ class Linux(object):
     A simple Linux Operating System Model.
     This class emulates the most common Linux system calls
     '''
-    CGC_EBADF=1
-    CGC_EFAULT=2
-    CGC_EINVAL=3
-    CGC_ENOMEM=4
-    CGC_ENOSYS=5
-    CGC_EPIPE=6
-    CGC_SSIZE_MAX=2147483647
-    CGC_SIZE_MAX=4294967295
-    CGC_FD_SETSIZE=32
-
     ARM_GET_TLS=0xffff0fe0
     ARM_CMPXCHG=0xffff0fc0
     ARM_MEM_BARRIER=0xffff0fa0
@@ -869,52 +860,6 @@ class Linux(object):
     def _is_open(self, fd):
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
-    def sys_allocate(self, cpu, length, isX, addr):
-        ''' allocate - allocate virtual memory
-
-           The  allocate  system call creates a new allocation in the virtual address
-           space of the calling process.  The length argument specifies the length of
-           the allocation in bytes which will be rounded up to the hardware page size.
-
-           The kernel chooses the address at which to create the allocation; the 
-           address of the new allocation is returned in *addr as the result of the call.
-
-           All newly allocated memory is readable and writeable. In addition, the 
-           is_X argument is a boolean that allows newly allocated memory to be marked
-           as executable (non-zero) or non-executable (zero).
-
-           The allocate function is invoked through system call number 5.
-           
-           @param cpu           current CPU
-           @parm length         the length of the allocation in bytes 
-           @parm isX            boolean that allows newly allocated memory to be marked 
-                                as executable
-           @parm addr           the address of the new allocation is returned in *addr
-
-           @return On success, allocate returns zero and a pointer to the allocated area
-                               is returned in *addr.  Otherwise, an error code is returned
-                               and *addr is undefined.
-                   EINVAL   length is zero.
-                   EINVAL   length is too large.
-                   EFAULT   addr points to an invalid address.
-                   ENOMEM   No memory is available or the process' maximum number of allocations
-                            would have been exceeded.
-        '''
-        #TODO: check 4 bytes from addr
-        if not cpu.memory.isValid(addr):
-            logger.info("ALLOCATE: addr points to invalid address. Rerurning EFAULT")
-            return Linux.CGC_EFAULT
-
-        perms = [ 'rw ', 'rwx'][bool(isX)]
-        try:
-            result = cpu.memory.mmap(None, length, perms)
-        except Exception,e:
-            logger.info("ALLOCATE exception %s. Returning ENOMEM", str(e))
-            return Linux.CGC_ENOMEM
-        cpu.write_int(addr, result, cpu.address_bit_size)
-        logger.debug("ALLOCATE(%d, %s, 0x%08x) -> 0x%08x"%(length, perms, addr, result))
-
-        return 0
 
     def sys_lseek(self, cpu, fd, offset, whence):
         ''' lseek - reposition read/write file offset
@@ -936,11 +881,11 @@ class Linux(object):
          '''
         if not self._is_open(fd):
             logger.info("LSEEK: Not valid file descriptor on lseek. Returning EBADF")
-            return Linux.CGC_EBADF
+            return errno.EBADF
 
         if isinstance(self.files[fd], Socket):
             logger.info("LSEEK: Not valid file descriptor on lseek. Fd not seekable. Returning EBADF")
-            return Linux.CGC_EBADF
+            return errno.EBADF
 
         # Read the data and put in tin memory
         self.files[fd].seek(offset)
@@ -950,47 +895,32 @@ class Linux(object):
         return 0
         
     def sys_read(self, cpu, fd, buf, count):
-        ''' receive - receive bytes from a file descriptor
-            
-            The receive system call reads up to count bytes from file descriptor fd to the
-            buffer pointed to by buf. If count is zero, receive returns 0 and optionally 
-            dets *rx_bytes to zero.
-
-            @param self          current CPU.
-            @param fd            a valid file descripor
-            @param buf           a memory buffer
-            @param count         max number of bytes to receive
-            @param rx_bytes      if valid, points to the actual number of bytes received
-            @result        0            Success
-                           EBADF        fd is not a valid file descriptor or is not open
-                           EFAULT       buf or rx_bytes points to an invalid address.
-        '''
         data = ''
         if count != 0:
             if not self._is_open(fd):
-                logger.info("RECEIVE: Not valid file descriptor on receive. Returning EBADF")
-                return Linux.CGC_EBADF
+                logger.info("READ: Not valid file descriptor on read. Returning EBADF")
+                return errno.EBADF
 
             # TODO check count bytes from buf
             if not buf in cpu.memory: # or not  cpu.memory.isValid(buf+count):
-                logger.info("RECEIVE: buf points to invalid address. Returning EFAULT")
-                return Linux.CGC_EFAULT
+                logger.info("READ: buf points to invalid address. Returning EFAULT")
+                return errno.EFAULT
 
             if isinstance(self.files[fd],Socket) and self.files[fd].is_empty():
                 return 0
 
             # Read the data and put in tin memory
             data = self.files[fd].read(count)
-            self.syscall_trace.append(("_receive", fd, data))
+            self.syscall_trace.append(("_read", fd, data))
             cpu.write_bytes(buf, data)
 
-        logger.debug("RECEIVE(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)"%(fd, buf, count, len(data), repr(data)[:min(count,10)],len(data)))
+        logger.debug("READ(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)"%(fd, buf, count, len(data), repr(data)[:min(count,10)],len(data)))
         return len(data)
 
     def sys_write(self, cpu, fd, buf, count):
-        ''' transmit - send bytes through a file descriptor
-          The  transmit system call writes up to count bytes from the buffer pointed
-          to by buf to the file descriptor fd. If count is zero, transmit returns 0
+        ''' write - send bytes through a file descriptor
+          The write system call writes up to count bytes from the buffer pointed
+          to by buf to the file descriptor fd. If count is zero, write returns 0
           and optionally sets *tx_bytes to zero.
 
           @param cpu           current CPU
@@ -1005,13 +935,13 @@ class Linux(object):
         if count != 0:
 
             if not self._is_open(fd):
-                logger.error("TRANSMIT: Not valid file descriptor. Returning EBADFD %d", fd)
-                return Linux.CGC_EBADF
+                logger.error("WRITE: Not valid file descriptor. Returning EBADFD %d", fd)
+                return errno.EBADF
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf+count not in cpu.memory:
-                logger.debug("TRANSMIT: buf points to invalid address. Rerurning EFAULT")
-                return Linux.CGC_EFAULT
+                logger.debug("WRITE: buf points to invalid address. Rerurning EFAULT")
+                return errno.EFAULT
 
             if fd > 2 and self.files[fd].is_full():
                 cpu.PC -= cpu.instruction.size
@@ -1022,8 +952,8 @@ class Linux(object):
             self.files[fd].transmit(data)
 
             for line in ''.join([str(x) for x in data]).split('\n'):
-                logger.debug("TRANSMIT(%d, 0x%08x, %d) -> <%.48r>"%(fd, buf, count, line))
-            self.syscall_trace.append(("_transmit", fd, data))
+                logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>"%(fd, buf, count, line))
+            self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
         return len(data)
@@ -1380,128 +1310,11 @@ class Linux(object):
         procid = self.procs.index(cpu)
         self.sched()
         self.running.remove(procid)
-        #self.procs[procid] = None  # TODO(mark) ask felipe why this commented
-        logger.debug("TERMINATE PROC_%02d %s", procid, error_code)
+        #self.procs[procid] = None
+        logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
             raise ProcessExit(error_code)
         return error_code
-
-    def sys_deallocate(self, cpu, addr, size):
-        ''' deallocate - remove allocations
-        The  deallocate  system call deletes the allocations for the specified
-        address range, and causes further references to the addresses within the
-        range to generate invalid memory accesses. The region is also 
-        automatically deallocated when the process is terminated.
-
-        The address addr must be a multiple of the page size.  The length parameter
-        specifies the size of the region to be deallocated in bytes.  All pages 
-        containing a part of the indicated range are deallocated, and subsequent
-        references will terminate the process.  It is not an error if the indicated
-        range does not contain any allocated pages.
-
-        The deallocate function is invoked through system call number 6.
-
-        @param cpu: current CPU
-        @param addr: the starting address to unmap.
-        @param size: the size of the portion to unmap.
-        @return 0        On success
-                EINVAL   addr is not page aligned.
-                EINVAL   length is zero.
-                EINVAL   any  part  of  the  region  being  deallocated  is outside the valid
-                         address range of the process.
-
-        @param cpu: current CPU.
-        @return: C{0} on success.  
-        '''
-        logger.debug("DEALLOCATE(0x%08x, %d)"%(addr, size))
-
-        if addr & 0xfff != 0:
-            logger.info("DEALLOCATE: addr is not page aligned")
-            return Linux.CGC_EINVAL
-        if size == 0 :
-            logger.info("DEALLOCATE:length is zero")
-            return Linux.CGC_EINVAL
-        #unlikely AND WRONG!!!
-        #if addr > Decree.CGC_SSIZE_MAX or addr+size > Decree.CGC_SSIZE_MAX:
-        #    logger.info("DEALLOCATE: part of the region being deallocated is outside the valid address range of the process")
-        #    return Decree.CGC_EINVAL
-
-        cpu.memory.munmap(addr, size)
-        return 0
-
-    def sys_fdwait(self, cpu, nfds, readfds, writefds, timeout, readyfds):
-        ''' fdwait - wait for file descriptors to become ready
-        '''
-        logger.debug("FDWAIT(%d, 0x%08x, 0x%08x, 0x%08x, 0x%08x)"%(nfds, readfds, writefds, timeout, readyfds))
-
-        if timeout:
-            if timeout not in cpu.memory: #todo: size
-                logger.info("FDWAIT: timeput is pointing to invalid memory. Returning EFAULT")
-                return Linux.CGC_EFAULT
-
-        if readyfds:
-            if readyfds not in cpu.memory:
-                logger.info("FDWAIT: readyfds pointing to invalid memory. Returning EFAULT")
-                return Linux.CGC_EFAULT
-
-        writefds_wait = set()
-        writefds_ready = set()
-
-        if writefds:
-            if writefds not in cpu.memory:
-                logger.info("FDWAIT: writefds pointing to invalid memory. Returning EFAULT")
-                return Linux.CGC_EFAULT
-            bits = cpu.read_int(writefds, (nfds + 7) / 8)
-
-            for fd in range(nfds):
-                if (bits & 1<<fd):
-                    if self.files[fd].is_full():
-                        writefds_wait.add(fd)
-                    else:
-                        writefds_ready.add(fd)
-
-        readfds_wait = set()
-        readfds_ready = set()
-        if readfds:
-            if readfds not in cpu.memory:
-                logger.info("FDWAIT: readfds pointing to invalid memory. Returning EFAULT")
-                return Linux.CGC_EFAULT
-            bits = cpu.read_int(readfds, (nfds + 7) / 8)
-            for fd in range(nfds):
-                if (bits & 1<<fd):
-                    if self.files[fd].is_empty():
-                        readfds_wait.add(fd)
-                    else:
-                        readfds_ready.add(fd)
-
-        n = len(readfds_ready) + len(writefds_ready)
-        if n == 0:
-            seconds = cpu.read_int(timeout, 32)
-            microseconds = cpu.read_int(timeout + 4, 32)
-            logger.debug("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: %d", repr(list(readfds_wait)), repr(list(writefds_wait)), microseconds+1000*seconds)
-            #no ready file, wait
-            cpu.PC -= cpu.instruction.size
-            self.wait(readfds_wait, writefds_wait, microseconds+1000*seconds)
-            raise RestartSyscall() #When comming back from a timeout remember 
-            #not to backtrack instruction and set EAX to 0! :( uglyness alert!
-
-        if readfds:
-            bits = 0
-            for fd in readfds_ready:
-                bits |= 1<<fd
-            for byte in range(0, nfds,8):
-                cpu.write_int(readfds, (bits >> byte) & 0xff, 8)
-        if writefds:
-            bits = 0
-            for fd in writefds_ready:
-                bits |= 1<<fd
-            for byte in range(0, nfds,8):
-                cpu.write_int(writefds, (bits >> byte) & 0xff, 8)
-
-        logger.debug("FDWAIT: continuing. Some file is ready Readyfds: %08x", readyfds)
-        if readyfds:
-            cpu.write_int(readyfds, n, 32)
-        return 0
 
     def sys_ptrace(self, cpu, request, pid, addr, data):
         logger.debug("sys_ptrace(%016x, %d, %016x, %016x) -> 0", request, pid, addr, data)
@@ -2010,8 +1823,6 @@ class SLinux(Linux):
 
 
     def sys_read(self, cpu, fd, buf, count):
-        ''' Symbolic version of Decree.sys_receive
-        '''
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
             raise SymbolicSyscallArgument(0)
@@ -2147,8 +1958,6 @@ class SLinux(Linux):
 
 
     def sys_write(self, cpu, fd, buf, count):
-        ''' Symbolic version of Decree.sys_receive
-        '''
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
             raise SymbolicSyscallArgument(0)
@@ -2162,28 +1971,6 @@ class SLinux(Linux):
             raise SymbolicSyscallArgument(2)
 
         return super(SLinux, self).sys_write(cpu, fd, buf, count)
-
-
-    def sys_allocate(self, cpu, length, isX, address_p):
-        if issymbolic(length):
-            logger.debug("Ask to ALLOCATE a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(0)
-        if issymbolic(address_p):
-            logger.debug("Ask to ALLOCATE potentially executable or not executable memory")
-            raise SymbolicSyscallArgument(1)
-        if issymbolic(address_p):
-            logger.debug("Ask to return ALLOCATE result to a symbolic reference ")
-            raise SymbolicSyscallArgument(2)
-        return super(SLinux, self).sys_allocate(cpu, length, isX, address_p)
-
-    def sys_deallocate(self, cpu, addr, size):
-        if issymbolic(addr):
-            logger.debug("Ask to DEALLOCATE a symbolic pointer?!")
-            raise SymbolicSyscallArgument(0)
-        if issymbolic(size):
-            logger.debug("Ask to DEALLOCATE a symbolic size?!")
-            raise SymbolicSyscallArgument(1)
-        return super(SLinux, self).sys_deallocate(cpu, addr, size)
 
 class DecreeEmu(object):
 
