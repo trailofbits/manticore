@@ -4,3 +4,4 @@
 # dependencies
 capstone
 pyelftools
+unicorn
