@@ -481,9 +481,9 @@ class Executor(object):
         receive_size = 0
         transmit_size = 0
         for sysname, fd, data in state.model.syscall_trace:
-            if sysname == '_receive':
+            if sysname in ('_receive', '_read'):
                 receive_size += len(data)
-            if sysname == '_transmit':
+            if sysname in ('_transmit', '_write'):
                 transmit_size += len(data)
 
         # if we did *not* concretize PC, this will be expression
