@@ -9,11 +9,11 @@ symbolic execution, taint analysis, and binary instrumentation.
 
 - **Input Generation**: Manticore automatically generates inputs that trigger
   unique code paths.
-- **Defect Discovery**: Manticore discovers program defects enabling memory
-  safety violations and generates inputs to trigger them.
+- **Crash Discovery**: Manticore discovers inputs that crash programs via
+memory safety violations.
 - **Execution Tracing**: Manticore records an instruction-level trace of the
   program's execution for each generated input.
-- **Programmatic Interface** (unstable): Manticore exposes programmatic access
+- **Programmatic Interface** (beta): Manticore exposes programmatic access
   to its analysis engine via a Python API.
 
 ## scope
@@ -30,11 +30,23 @@ Manticore is officially supported on Linux and uses Python 2.7.
 
 ## installation
 
-- From the root of the Manticore repository, run `pip install .`. This installs
-  the Manticore CLI tool (`manticore`) and the Python API.
-- Install Z3 Theorem Prover: Download the latest release for your platform from
-  https://github.com/Z3Prover/z3/releases/latest, and place the enclosed `z3`
-  binary in your `$PATH`.
+From the root of the Manticore repository, run:
+
+```
+pip install .
+````
+
+or, if you would like to do a user install:
+
+```
+pip install --user .
+```
+
+This installs the Manticore CLI tool (`manticore`) and the Python API.
+
+Then, install the Z3 Theorem Prover. Download the latest release for your
+platform from https://github.com/Z3Prover/z3/releases/latest, and place the
+enclosed `z3` binary in your `$PATH`.
 
 ## quick start
 
@@ -93,4 +105,5 @@ Manticore to have a slightly less steep learning curve. Additionally, if you
 come from a reverse engineering or exploitation background, you may find
 Manticore intuitive due to its lack of intermediate representation and overall
 emphasis on staying close to machine abstractions.
+
 
