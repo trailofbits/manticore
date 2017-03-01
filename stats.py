@@ -34,7 +34,7 @@ for filename in saved_states:
             #load the whole saved state (memory/cpu/solver/..)
             state = cPickle.loads(f.read())
             lastpc = 'ROOT'
-            for proc, pc in state.trace:
+            for proc, pc in state.visited:
                 assert proc == 0, 'Multi process no supported'
                 db[pc] = db.setdefault(pc,0) + 1
                 edges.setdefault(lastpc,[]).append(pc)
