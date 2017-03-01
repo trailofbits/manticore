@@ -430,28 +430,6 @@ class Armv7Cpu(Cpu):
                 return 'LSL'
         return OP_NAME_MAP.get(name, name)
 
-    def readOperand(self, op):
-        if op.type == ARM_OP_REG:
-            return self.regfile.read(op.reg)
-        elif op.type == ARM_OP_IMM:
-            return op.imm
-        elif op.type == ARM_OP_MEM:
-            raise NotImplementedError('need to impl arm load mem')
-        else:
-            raise NotImplementedError("readOperand unknown type", op.type)
-
-    def writeOperand(self, op, value):
-        if op.type == ARM_OP_REG:
-            self.regfile.write(op.reg, value)
-        elif op.type == ARM_OP_MEM:
-            raise NotImplementedError('need to impl arm store mem')
-        else:
-            raise NotImplementedError("writeOperand unknown type", op.type)
-
-    def getOperandAddress(self, op):
-        # TODO IMPLEMENT
-        return -1
-
     def _wrap_operands(self, ops):
         return [Armv7Operand(self, op) for op in ops]
 
