@@ -188,6 +188,13 @@ class Cpu(object):
         :rtype: tuple[str]
         '''
         return self._regfile.all_registers
+    @property
+    def canonical_registers(self):
+        ''' Returns the list of all register names  for this CPU.
+        @rtype: tuple
+        @return: the list of register names for this CPU.
+        '''
+        return self._regfile.canonical_registers
 
     def write_register(self, register, value):
         '''Dynamic interface for writing cpu registers
