@@ -510,27 +510,4 @@ class Z3Solver(SMTSolver):
         except (IndexError, ValueError, TypeError):
             pass
 
-class Cvc4Solver(SMTSolver):
-    def __init__(self):
-        self.command = 'cvc4 --incremental --lang=smt2'
-        self.init = ['(set-logic QF_AUFBV)', '(set-option :produce-models true)']
-        self.get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ \(_\ bv(?P<value>(\d*))\ \d*\)\)\)'), 10)
-        self.support_simplify =  False
-        self.support_reset = False
-        self.support_maximize = False
-        self.support_minimize = False
-        super(Cvc4Solver, self).__init__()
-
-class YicesSolver(SMTSolver):
-    def __init__(self):
-        self.command = 'yices-smt2 --incremental'
-        self.init = ['(set-logic QF_AUFBV)']
-        self.get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #b(?P<value>([0-1]*))\)\)'), 2)
-        self.support_simplify = False
-        self.support_reset = True
-        self.support_maximize = False
-        self.support_minimize = False
-        super(YicesSolver, self).__init__()
-
-
 solver = Z3Solver()
