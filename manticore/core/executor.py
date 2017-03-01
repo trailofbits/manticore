@@ -100,7 +100,6 @@ class State(object):
         return ret
 
     def __init__(self, constraints, model):
-        self.trace = []
         self.model = model
         self.forks = 0
         self.co = self.get_new_id()
@@ -140,7 +139,6 @@ class State(object):
         assert self._child is None
         new_state = State(self.constraints.__enter__(), self.model)
         new_state.visited = set(self.visited)
-        new_state.trace = self.last_pc
         new_state.forks = self.forks + 1
         new_state.co = State.get_new_id()
         new_state.input_symbols = self.input_symbols
@@ -899,12 +897,6 @@ class Executor(object):
 
                         if not current_state.execute():
                             break
-
-                        if replay_path:
-                            if self.replay_path[len(current_state.trace)-1] != current_state.trace[-1][1]:
-                                logger.debug("Silently ignoring state, trace dosen't match the replay")
-                                current_state = None
-                                continue
 
                         #TODO: maybe generalize as hook
                         if current_state.last_pc not in local_visited:
