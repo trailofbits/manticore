@@ -51,7 +51,7 @@ enclosed `z3` binary in your `$PATH`.
 > Note: Due to a known [issue](https://github.com/aquynh/capstone/issues/445),
   Capstone may not install correctly. If you get this error message,
   "ImportError: ERROR: fail to load the dynamic library.", or another related
-  to Capstone, try reinstalling via `pip install -I --no-binary capstone`
+  to Capstone, try reinstalling via `pip install -I --no-binary capstone capstone`
 
 ### for developers
 
