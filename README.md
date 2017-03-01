@@ -48,6 +48,11 @@ Then, install the Z3 Theorem Prover. Download the latest release for your
 platform from https://github.com/Z3Prover/z3/releases/latest, and place the
 enclosed `z3` binary in your `$PATH`.
 
+> Note: Due to a known [issue](https://github.com/aquynh/capstone/issues/445),
+  Capstone may not install correctly. If you get this error message,
+  "ImportError: ERROR: fail to load the dynamic library.", or another related
+  to Capstone, try reinstalling via `pip install -I --no-binary capstone`
+
 ## quick start
 
 After installing Manticore, here is some basic usage you can try.
@@ -105,5 +110,6 @@ Manticore to have a slightly less steep learning curve. Additionally, if you
 come from a reverse engineering or exploitation background, you may find
 Manticore intuitive due to its lack of intermediate representation and overall
 emphasis on staying close to machine abstractions.
+
 
 
