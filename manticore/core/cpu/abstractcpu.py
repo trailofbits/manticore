@@ -223,11 +223,6 @@ class Cpu(object):
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
     
-    def getCanonicalRegisters(self):
-        values = [self.read_register(rname) for rname in self.canonical_registers]
-        d = dict(zip(self.canonical_registers, values))
-        return d
-
     #############################
     # Memory access
     @property
