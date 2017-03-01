@@ -13,7 +13,7 @@ setup(
         'dev': [
             'keystone',
             'coverage',
-            'nosetests',
+            'nose',
         ]
     },
     entry_points={
