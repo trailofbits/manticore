@@ -290,7 +290,7 @@ class Armv7Cpu(Cpu):
         self._last_flags = state['_last_flags']
         self._force_next = state['_force_next']
 
-    def _concretize_registers(cpu, instruction):
+    def _concretize_registers(self, instruction):
         reg_values = {}
         if hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
             (regs_read, regs_write) = instruction.regs_access()
