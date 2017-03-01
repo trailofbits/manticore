@@ -6,7 +6,7 @@ def parse_arguments():
     # parse arguments
     parser = argparse.ArgumentParser(description='Extract different statistic and information from a manticore workspace')
     parser.add_argument('--workspace', type=str, default=None,
-                       help='A folder name fpor temporaries and results. (default pse_?????)')
+                       help='A folder name fpor temporaries and results. (default mcore_?????)')
     parser.add_argument('--pcfreq', action='store_true', help='Print out visited pc and frequency')
     parser.add_argument('--visited', action='store_true', help='Print out visited pc set')
     parser.add_argument('--bbs', action='store_true', help='Print out visited basic blocks ')
