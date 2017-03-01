@@ -7,8 +7,7 @@
  * $ gcc -m32 -static -g state_explore.c -o state_explore
  *
  * # Pull out the address of the branch we want to ignore
- * $ ADDRESS=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' |
- *                 tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
+ * $ ADDRESS=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' | tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
  *
  * # Run the analysis
  * $ python state_explore.py state_explore $ADDRESS

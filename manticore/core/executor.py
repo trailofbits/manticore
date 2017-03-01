@@ -627,26 +627,6 @@ class Executor(object):
 
         return new_state 
 
-    def add_hook(self, pc, callback, user_data=None):
-        '''This setups a hook.
-            Invokes callback when the specified address pc is reached
-            Returns an id to reference this specific hook.
-        '''
-        if self.hooks is None:
-            self.hooks = {}
-        self.hooks.setdefault(pc, set()).add( (callback, user_data) )
-        return hash( (pc, callback, user_data) )
-
-    def del_hook(self, n):
-        ''' Deletes the hook by id '''
-        for pc, callback, user_data in self.hooks.items():
-            if hash((pc, callback, user_data)) == n:
-                self.hooks[pc].remove((callback, user_data))
-                if len(self.hooks[pc]) == 0 :
-                    del self.hooks[pc]
-                    return True
-        return False
-
     def generate_testcase(self, state, message = 'Testcase generated'):
         with self._lock:
             self._test_number.value += 1
