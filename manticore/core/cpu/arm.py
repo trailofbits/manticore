@@ -333,7 +333,7 @@ class Armv7Cpu(Cpu):
 
     def _concretize_registers(cpu, instruction):
         reg_values = {}
-        if hasattr(instruction, 'regs_access'):
+        if hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
             (regs_read, regs_write) = instruction.regs_access()
             regs = [ instruction.reg_name(r).upper() for r in regs_read ] 
             regs.append('R15')
