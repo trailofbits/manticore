@@ -379,7 +379,7 @@ class Manticore(object):
 
     def _make_workspace(self):
         ''' Make working directory '''
-        return tempfile.mkdtemp(prefix="pse_", dir='./')
+        return tempfile.mkdtemp(prefix="mcore_", dir='./')
 
     @property
     def workers(self):

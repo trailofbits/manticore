@@ -21,7 +21,7 @@ def parse_arguments():
     # parse arguments
     parser = argparse.ArgumentParser(description='Symbolically analyze a program')
     parser.add_argument('--workspace', type=str, default=None,
-                        help='A folder name for temporaries and results. (default pse_?????)')
+                        help='A folder name for temporaries and results. (default mcore_?????)')
     parser.add_argument('--log', type=str, default='-',
                         help='The log filename')
     parser.add_argument('--verbose', action='store_true', help='Enable debug mode.')
