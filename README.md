@@ -53,6 +53,29 @@ enclosed `z3` binary in your `$PATH`.
   "ImportError: ERROR: fail to load the dynamic library.", or another related
   to Capstone, try reinstalling via `pip install -I --no-binary capstone`
 
+### for developers
+
+For a dev install, run:
+
+```
+pip install -e .[dev]
+```
+
+This installs a few other dependencies used for tests, which you can run, for
+example, with some of the commands below:
+
+```
+cd /path/to/manticore/
+# all tests
+nosetests
+# just one file
+nosetests test/test_armv7cpu.py
+# just one test class
+nosetests test/test_armv7cpu.py:Armv7CpuInstructions
+# just one test
+nosetests test/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
+```
+
 ## quick start
 
 After installing Manticore, here is some basic usage you can try.
@@ -60,9 +83,9 @@ After installing Manticore, here is some basic usage you can try.
 ```
 cd examples/linux
 make
-manticore basic  # a mcore_* directory is created
-cat mcore_*/*1.stdin | ./basic
-cat mcore_*/*2.stdin | ./basic
+manticore basic  # a pse_* directory is created
+cat pse_*/*1.stdin | ./basic
+cat pse_*/*2.stdin | ./basic
 
 cd ../script
 python count_instructions.py ../linux/helloworld
