@@ -120,16 +120,7 @@ m.run()
 
 ## FAQ
 
-### How does Manticore compare to [angr](http://angr.io)?
+### How does Manticore compare to angr?
 
-In short, Manticore is simpler. Manticore is a smaller codebase, and has fewer
-dependencies and features. Accordingly, Manticore may also be slower,
-for example, due to having less symbolic execution optimizations and techniques
-implemented.
-
-Generally speaking, a subset of the analyses that can be implemented with angr,
-can be implemented with Manticore, however if you’ve used neither, you may find
-Manticore to have a slightly less steep learning curve. Additionally, if you
-come from a reverse engineering or exploitation background, you may find
-Manticore intuitive due to its lack of intermediate representation and overall
-emphasis on staying close to machine abstractions.
+Manticore is simpler. It has a smaller codebase, fewer dependencies and features, and an easier learning curve. If you
+come from a reverse engineering or exploitation background, you may find Manticore intuitive due to its lack of intermediate representation and overall emphasis on staying close to machine abstractions.
