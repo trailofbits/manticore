@@ -6,10 +6,10 @@ Manticore is a prototyping tool for dynamic binary analysis, with support for sy
 
 ## Features
 
-- **Input Generation**: Manticore automatically generates inputs that trigger unique code paths.
-- **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations.
-- **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input.
-- **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API.
+- **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
+- **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations
+- **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
+- **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
 
 ## Scope
 
@@ -37,11 +37,9 @@ or, if you would like to do a user install:
 pip install --user .
 ```
 
-This installs the Manticore CLI tool (`manticore`) and the Python API.
+This installs the Manticore CLI tool `manticore` and the Python API.
 
-Then, install the Z3 Theorem Prover. Download the latest release for your
-platform from https://github.com/Z3Prover/z3/releases/latest, and place the
-enclosed `z3` binary in your `$PATH`.
+Then, install the Z3 Theorem Prover. Download the [latest release](https://github.com/Z3Prover/z3/releases/latest) for your platform and place the `z3` binary in your `$PATH`.
 
 > Note: Due to a known [issue](https://github.com/aquynh/capstone/issues/445),
   Capstone may not install correctly. If you get this error message,
@@ -56,8 +54,7 @@ For a dev install, run:
 pip install -e .[dev]
 ```
 
-This installs a few other dependencies used for tests, which you can run, for
-example, with some of the commands below:
+This installs a few other dependencies used for tests, which you can run, for example, with some of the commands below:
 
 ```
 cd /path/to/manticore/
