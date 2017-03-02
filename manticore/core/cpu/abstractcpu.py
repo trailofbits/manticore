@@ -365,6 +365,7 @@ class Cpu(object):
         try:
             implementation = getattr(self, name)
         except AttributeError as ae:
+            #XXX Check that the attribute error is for "name" !! print "EXCEPTION", ae
             logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
             implementation = lambda *ops: self.emulate(instruction)
 

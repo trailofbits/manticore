@@ -428,6 +428,8 @@ class Armv7Cpu(Cpu):
                 return 'LSR'
             elif instr.mnemonic.startswith('lsl'):
                 return 'LSL'
+        #if instr.mnemonic.startswith('asr'): This replicates the old behavior 
+        #    return 'MOV'
         return OP_NAME_MAP.get(name, name)
 
     def _wrap_operands(self, ops):
