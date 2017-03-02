@@ -200,7 +200,7 @@ class State(object):
         return expr
 
 
-    def new_symbolic_value(self, nbits, **options):
+    def new_symbolic_value(self, nbits, label='val', taint=frozenset()):
         '''Create and return a symbolic value that is |nbits| bits wide. Assign
         the value to a register or write it into the address space to introduce
         it into the program state.
@@ -214,8 +214,7 @@ class State(object):
             Expression representing the value.
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
-        name = options.get('label', 'val')
-        expr = self.constraints.new_bitvec(nbits, name=name)
+        expr = self.constraints.new_bitvec(nbits, name=label, taint=taint)
         self.input_symbols.append(expr)
         return expr
 
