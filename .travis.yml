@@ -17,7 +17,7 @@ python:
 - 2.7
 install:
 - travis_retry pip install -U pip
-- travis_retry pip install --no-binary capstone --no-binary keystone-engine .[dev]
+- travis_retry pip install --no-binary capstone --no-binary keystone-engine .[dev]  # cs/ks can have pip install issues (cs issues #445)
 - scripts/travis_install_z3.sh
 - scripts/travis_install_unicorn.sh 
 script:
