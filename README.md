@@ -54,7 +54,7 @@ For a dev install, run:
 pip install -e .[dev]
 ```
 
-This installs a few other dependencies used for tests, which you can run, for example, with some of the commands below:
+This installs a few other dependencies used for tests which you can run with some of the commands below:
 
 ```
 cd /path/to/manticore/
@@ -70,7 +70,7 @@ nosetests test/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 
 ## Quick start
 
-After installing Manticore, here is some basic functionality you can try.
+Here is some basic functionality you can try after installing Manticore:
 
 ```
 cd examples/linux
