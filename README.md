@@ -1,22 +1,17 @@
-# manticore
+# Manticore
 
 [![Build Status](https://travis-ci.com/trailofbits/manticore.svg?token=m4YsYkGcyttTxRXGVHMr&branch=master)](https://travis-ci.com/trailofbits/manticore)
 
-Manticore is a prototyping tool for dynamic binary analysis, with support for
-symbolic execution, taint analysis, and binary instrumentation.
+Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
-## features
+## Features
 
-- **Input Generation**: Manticore automatically generates inputs that trigger
-  unique code paths.
-- **Crash Discovery**: Manticore discovers inputs that crash programs via
-memory safety violations.
-- **Execution Tracing**: Manticore records an instruction-level trace of the
-  program's execution for each generated input.
-- **Programmatic Interface** (beta): Manticore exposes programmatic access
-  to its analysis engine via a Python API.
+- **Input Generation**: Manticore automatically generates inputs that trigger unique code paths.
+- **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations.
+- **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input.
+- **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API.
 
-## scope
+## Scope
 
 Manticore supports binaries of the following formats, operating systems, and
 architectures. It has been primarily used on binaries compiled from C and C++.
@@ -24,11 +19,11 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 - OS/Formats: Linux ELF, Windows Minidump
 - Architectures: x86, x86_64, ARMv7 (partial)
 
-## requirements
+## Requirements
 
 Manticore is officially supported on Linux and uses Python 2.7.
 
-## installation
+## Installation
 
 From the root of the Manticore repository, run:
 
@@ -53,7 +48,7 @@ enclosed `z3` binary in your `$PATH`.
   "ImportError: ERROR: fail to load the dynamic library.", or another related
   to Capstone, try reinstalling via `pip install -I --no-binary capstone capstone`
 
-### for developers
+### For developers
 
 For a dev install, run:
 
@@ -76,9 +71,9 @@ nosetests test/test_armv7cpu.py:Armv7CpuInstructions
 nosetests test/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 ```
 
-## quick start
+## Quick start
 
-After installing Manticore, here is some basic usage you can try.
+After installing Manticore, here is some basic functionality you can try.
 
 ```
 cd examples/linux
@@ -91,7 +86,7 @@ cd ../script
 python count_instructions.py ../linux/helloworld
 ```
 
-## usage
+## Usage
 
 ```
 $ manticore ./path/to/binary  # runs, and creates a directory with analysis results
