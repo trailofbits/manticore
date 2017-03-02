@@ -362,7 +362,6 @@ class Cpu(object):
         self.instruction = instruction #FIX
 
         name = self.canonicalize_instruction_name(instruction)
-
         try:
             implementation = getattr(self, name)
         except AttributeError as ae:
