@@ -872,33 +872,39 @@ class Armv7Cpu(Cpu):
         result, carry, overflow = cpu._ADD(src.read(), add.read())
         return result, carry, overflow
 
-    @instruction
-    def LSL(cpu, dest, op, *rest):
-        '''LSL reg has @rest, but LSL imm does not, its baked into @op
+    def _SR(cpu, insn_id, dest, op, *rest):
+        '''_SR reg has @rest, but _SR imm does not, its baked into @op
         '''
+        assert insn_id in (ARM_INS_ASR, ARM_INS_LSL, ARM_INS_LSR)
+
+        if insn_id == ARM_INS_ASR:
+            srtype = ARM_SFT_ASR_REG
+        elif insn_id == ARM_INS_LSL:
+            srtype = ARM_SFT_LSL_REG
+        elif insn_id == ARM_INS_LSR:
+            srtype = ARM_SFT_LSR_REG
+
         carry = cpu.regfile.read(ARM_REG_APSR_C)
         if rest:
             amount_val = rest[0].op.reg
-            result, carry = cpu._Shift(op.read(), ARM_SFT_LSL_REG, amount_val, carry)
+            result, carry = cpu._Shift(op.read(), srtype, amount_val, carry)
         else:
             result, carry = op.read(withCarry=True)
         dest.write(result)
 
         cpu.setFlags(N=HighBit(result), Z=(result==0), C=carry)
+
+    @instruction
+    def ASR(cpu, dest, op, *rest):
+        cpu._SR(ARM_INS_ASR, dest, op, *rest)
+
+    @instruction
+    def LSL(cpu, dest, op, *rest):
+        cpu._SR(ARM_INS_LSL, dest, op, *rest)
 
     @instruction
     def LSR(cpu, dest, op, *rest):
-        '''LSR reg has @rest, but LSR imm does not, its baked into @op
-        '''
-        carry = cpu.regfile.read(ARM_REG_APSR_C)
-        if rest:
-            amount_val = rest[0].op.reg
-            result, carry = cpu._Shift(op.read(), ARM_SFT_LSR_REG, amount_val, carry)
-        else:
-            result, carry = op.read(withCarry=True)
-        dest.write(result)
-
-        cpu.setFlags(N=HighBit(result), Z=(result==0), C=carry)
+        cpu._SR(ARM_INS_LSR, dest, op, *rest)
 
     @instruction
     def UMULL(cpu, rdlo, rdhi, rn, rm):
