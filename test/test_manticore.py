@@ -19,3 +19,9 @@ class ManticoreTest(unittest.TestCase):
         def tmp(state):
             pass
         self.assertTrue(tmp in self.m._hooks[entry])
+
+    def test_hook_dec_err(self):
+        with self.assertRaises(TypeError):
+            @self.m.hook('0x00400e40')
+            def tmp(state):
+                pass
