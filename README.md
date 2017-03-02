@@ -51,7 +51,7 @@ enclosed `z3` binary in your `$PATH`.
 > Note: Due to a known [issue](https://github.com/aquynh/capstone/issues/445),
   Capstone may not install correctly. If you get this error message,
   "ImportError: ERROR: fail to load the dynamic library.", or another related
-  to Capstone, try reinstalling via `pip install -I --no-binary capstone`
+  to Capstone, try reinstalling via `pip install -I --no-binary capstone capstone`
 
 ### for developers
 
@@ -83,9 +83,9 @@ After installing Manticore, here is some basic usage you can try.
 ```
 cd examples/linux
 make
-manticore basic  # a pse_* directory is created
-cat pse_*/*1.stdin | ./basic
-cat pse_*/*2.stdin | ./basic
+manticore basic  # a mcore_* directory is created
+cat mcore_*/*1.stdin | ./basic
+cat mcore_*/*2.stdin | ./basic
 
 cd ../script
 python count_instructions.py ../linux/helloworld
