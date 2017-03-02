@@ -872,7 +872,6 @@ class Armv7Cpu(Cpu):
         result, carry, overflow = cpu._ADD(src.read(), add.read())
         return result, carry, overflow
 
-    @instruction
     def _SR(cpu, insn_id, dest, op, *rest):
         '''_SR reg has @rest, but _SR imm does not, its baked into @op
         '''
