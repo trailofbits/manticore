@@ -8,6 +8,7 @@ setup(
         'capstone',
         'pyelftools',
         'unicorn',
+        'ply',
     ],
     extras_require={
         'dev': [
