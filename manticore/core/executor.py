@@ -207,8 +207,8 @@ class State(object):
 
         Args:
             nbits - The bitwidth of the value returned.
-            options - Options to set on the returned expression. Valid options:
-                label -- The label to assign to the value.
+            label - The label to assign to the value.
+            taint - A tuple or frozenset of values to use as taint identifiers.
 
         Returns:
             Expression representing the value.
