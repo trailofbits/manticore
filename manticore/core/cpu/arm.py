@@ -301,7 +301,7 @@ class Armv7Cpu(Cpu):
 
         logger.debug("Emulator wants this regs %r", regs)
         for reg in regs:
-            value = cpu.read_register(reg)
+            value = self.read_register(reg)
             if issymbolic(value):
                 raise ConcretizeRegister(reg, "Passing control to emulator") #FIXME improve exception to handle multiple registers at a time 
             reg_values[reg] = value 
