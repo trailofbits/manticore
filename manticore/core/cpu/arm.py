@@ -783,7 +783,7 @@ class Armv7Cpu(Cpu):
         cpu.setFlags(N=HighBit(result), Z=(result==0), C=carry)
 
     @instruction
-    def ASR(cpu, dest, op, *rest):
+    def __disabledASR(cpu, dest, op, *rest):
         cpu._SR(ARM_INS_ASR, dest, op, *rest)
 
     @instruction
