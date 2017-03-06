@@ -26,6 +26,7 @@ class ManticoreTest(unittest.TestCase):
             def tmp(state):
                 pass
 
+    @unittest.skip('TODO(mark) testing if skipping doesnt break other tests')
     def test_integration_basic_stdin(self):
         import os, struct
         self.m = Manticore('test/binaries/basic_linux_amd64')
