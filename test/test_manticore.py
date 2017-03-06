@@ -26,7 +26,7 @@ class ManticoreTest(unittest.TestCase):
             def tmp(state):
                 pass
 
-    @unittest.skip('TODO(mark): activating this test breaks something z3 related for following tests')
+    @unittest.skip('TODO(mark): (#52) activating this test breaks something z3 related for following tests')
     def test_integration_basic_stdin(self):
         import os, struct
         self.m = Manticore('test/binaries/basic_linux_amd64')
