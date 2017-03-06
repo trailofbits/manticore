@@ -697,7 +697,7 @@ class Executor(object):
 
         stdout = ''
         for sysname, fd, data in state.model.syscall_trace:
-            if sysname == '_transmit' and fd == 1:
+            if sysname in ('_transmit', '_write') and fd == 1:
                 stdout += ''.join(map(str, data))
         file(self._getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
 
@@ -706,7 +706,7 @@ class Executor(object):
         with open(self._getFilename(stdin_file), 'wb') as f:
             try:
                 for sysname, fd, data in state.model.syscall_trace:
-                    if sysname != '_receive' or fd != 0:
+                    if sysname not in ('_receive', '_read') or fd != 0:
                         continue
                     for c in data:
                         f.write(chr(solver.get_value(state.constraints, c)))
