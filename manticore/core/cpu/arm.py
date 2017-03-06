@@ -440,6 +440,8 @@ class Armv7Cpu(Cpu):
                 return 'LSR'
             elif instr.mnemonic.startswith('lsl'):
                 return 'LSL'
+            elif instr.mnemonic.startswith('asr'):
+                return 'ASR'
         return OP_NAME_MAP.get(name, name)
 
     def readOperand(self, op):
