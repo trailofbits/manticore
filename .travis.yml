@@ -1,14 +1,14 @@
 branches:
   only:
-    - master
-    - /^(?!wip-).+$/
+  - master
+  - /^(?!wip-).+$/
 language: python
 cache:
-    pip: true
-    directories:
-        - $HOME/virtualenv/python2.7.12/lib/python2.7/site-packages
-        - $HOME/virtualenv/python2.7.12/bin/
-        - $HOME/unicorn
+  pip: true
+  directories:
+  - $HOME/virtualenv/python2.7.12/lib/python2.7/site-packages
+  - $HOME/virtualenv/python2.7.12/bin/
+  - $HOME/unicorn
 dist: trusty
 sudo: required
 os:
@@ -17,13 +17,11 @@ python:
 - 2.7
 install:
 - travis_retry pip install -U pip
-- travis_retry pip install --no-binary keystone-engine keystone-engine
-- travis_retry pip install coverage
-- travis_retry pip install .
+- travis_retry pip install --no-binary capstone --no-binary keystone-engine .[dev]  # cs/ks can have pip install issues (cs issues #445)
 - scripts/travis_install_z3.sh
-- scripts/travis_install_unicorn.sh 
+- scripts/travis_install_unicorn.sh
 script:
 - scripts/travis_test.sh
 notifications:
   slack:
-    secure: cEBnjLHUGz1dBr0MRcvCN96ec8IAb6k53AAqovlhy2ogWzceBbEJ+k1B4q7blNAJutHpVzRe6poJdDnezXET1sibQebGVTPn3AonrAnDwfaPh7/2PFtdjIzKho8jXoAYmp9Dj6e1M/CUOPRBR54fDK47ljmJom6p5aKEOHjYnwMWjm8r0uixSst3VoWcRLxU+HQYnv1f+6ocZ3e1XoeJC7Etua6+9KSNL4l2qX1jfUqUv4rsB/6zLjo4FNmtq1J1UDa62cNH7O7tYmK0e+R8KDPaIJAgw2XRwwKLpFX5Z1DVttfLMUYN5tGj+uL1jiXFui6eAu3bJqDytGNZgDHf4kC3CgNXAuH8fG4MJAj5jgY4D85RzCrqN8eTs9ZgcEM9tOJ8VZDf4/X8m6+GysvrA9f3EkN7qx83XfdnY+6BLldH5Mus4U+m+xw8cjJRTe8lwovDKYTczh5pca9SkMFjbdxxQbkfynhwa3QSSmKtGKXE0HqoydbtaAy9Cl19JsCzJkJV8yqVyzvFbRSz63A1z8A0DxXgjfnvK1eki9hfHhUUuYs+b2/zha3qZvlwrNW4cC004kOHiOH8OpeUpWWhC3ht67Ox3mYZnig9glkwek6h6LRVdxLVn5HSUiZqDmxxTNsCeQLeX88LupWK7KvJk1J7H2wrBN9jZXN7Og7e1T4=
+    secure: PBBiv8JhFZFzUO/mSDUa/6jSK8ndweNDvxi+Qh1BtZAzVNQu3CZQgluq2IEfGD0w+6eUo5UVsA5sfxjAPF3TB+OsCyr/waWNzFR4GXkzng31EBzyYorZxJIMCHGGwsH7PQaJus0La5st2LmfLLRxh7V9cJ8aUmUNTHPuv6fb7qcoKTi1AxUxQsDi+Lfo5byTSNmShVCWwft01aTFtDntpRs97KB2MopUH8vgriYaRZEMSwtxvq79MI2J/aaUzzE3qgopWG3bvhOjajrFi0L2EVRIy9hT+FZFeeRc0/X0ZX1gT48W5+5lXSVUPuF9+TI/RRmkYPoaqw7yM8MiuAfQrZIAJc9nMlgA/I+lZhjOgp0ybV3qKkmiJHNc6NtMniLBles4POMmz5iu3FJITXb0/TQg+hhR2/m8rzOHY2MjTpf0AtKdFBaxOGTvmMoTvlg/Z46x4ZolWkAsTy/eG+C/PlIxXZVIUnKCGPDkpKofR9AamVHu4Ibly8JKKmnZoTtKnkvA+m54szc07GzITJ9ut5yA/3P54TZzgGz1sNh97dH7eMjS1q+cgNdMITOAV3DupZwN6LKm6dC5fbCT5kPRv/Cb0iJfQXWx3oekKdfAI4w39PYYTE/uJql1WMQctNRvA0XrZlKKnvIYeH8NWV/DXlJ8cerPJ4g/GiNoOuVYCQQ=

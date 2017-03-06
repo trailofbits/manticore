@@ -7,8 +7,16 @@ setup(
     install_requires=[
         'capstone',
         'pyelftools',
-        'unicorn'
+        'unicorn',
+        'ply',
     ],
+    extras_require={
+        'dev': [
+            'keystone-engine',
+            'coverage',
+            'nose',
+        ]
+    },
     entry_points={
         'console_scripts': [
             'manticore = manticore.__main__:main'
