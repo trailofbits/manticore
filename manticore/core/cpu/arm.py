@@ -282,7 +282,7 @@ class Armv7Cpu(Cpu):
         if hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
             (regs_read, regs_write) = instruction.regs_access()
             regs = [ instruction.reg_name(r).upper() for r in regs_read ] 
-            regs.append('R15')
+            regs += ['R15', 'APSR_N','APSR_Z','APSR_C','APSR_V' ]
         else:
             regs = self.canonical_registers
 
@@ -291,6 +291,7 @@ class Armv7Cpu(Cpu):
             value = self.read_register(reg)
             if issymbolic(value):
                 raise ConcretizeRegister(reg, "Passing control to emulator") #FIXME improve exception to handle multiple registers at a time 
+            logger.info ("Emulator wants %s: %x", reg, value)
             reg_values[reg] = value 
 
         logger.info("Emulator wants this regs %r", reg_values)
@@ -783,8 +784,10 @@ class Armv7Cpu(Cpu):
         cpu.setFlags(N=HighBit(result), Z=(result==0), C=carry)
 
     @instruction
-    def __disabledASR(cpu, dest, op, *rest):
+    def ___ASR(cpu, dest, op, *rest):
+        #print "pre %x ASR SB: %x"%(cpu.PC, cpu.read_register('SB'))
         cpu._SR(ARM_INS_ASR, dest, op, *rest)
+        #print "pos %x ASR SB: %x"%(cpu.PC, cpu.read_register('SB'))
 
     @instruction
     def LSL(cpu, dest, op, *rest):

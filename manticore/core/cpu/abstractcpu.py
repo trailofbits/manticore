@@ -403,7 +403,7 @@ class Cpu(object):
         mapped = set()
         accessed = set()
         byte_values = {}
-
+        PC = self.PC
         reg_values = self._concretize_registers(instruction)
         # Request any memory nearby the memory directly needed by the memory
         # operands of the instruction. 
@@ -476,23 +476,27 @@ class Cpu(object):
                 regs = [ instruction.reg_name(r).upper() for r in regs_write ] 
                 if self.arch == CS_ARCH_X86:
                     regs += ['FPSW', 'FPCW', 'FPTAG', 'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7']
+                elif self.arch == CS_ARCH_ARM:
+                    regs += ['APSR_N','APSR_Z','APSR_C','APSR_V']
+
             else:
                 regs = reg_values.keys()
-            logger.debug("Emulator wrote to this regs %r", regs)
+            logger.info("Emulator wrote to this regs %r", regs)
             for reg in regs:
                 stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
                 #stem = 'UC_X86_REG_'
                 new_value = mu.reg_read(globals()[stem+reg])
+                logger.info("Emulator wrote %s: %x", reg, new_value)
                 self.write_register(reg, new_value)
           
-            self.PC = self.PC+instruction.size
+            self.PC = PC+instruction.size
             return
         except Exception as e:
             logger.error('Exception in emulating code:')
             logger.error(e, exc_info=True)
         finally:
             for i in mapped:
-                mu.mem_unmap(i,0x1000)
+                mu.mem_unmap(i, 0x1000)
 
     #Generic string representation
     def __str__(self):
