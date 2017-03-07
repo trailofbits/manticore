@@ -76,18 +76,19 @@ class Operand(object):
 # Basic register file structure not actully need to abstract as it's used only from the cpu implementation
 class RegisterFile(object):
 
-
     def __init__(self, aliases=None):
         if aliases is None:
             aliases = {}
         self._aliases = aliases
-        ''''dict mapping from alias register name ('PC') to actual register name
-            ('RSP'), which can be passed into reg_id()
-        '''
+        ''''dict mapping from alias register name ('PC') to actual register name ('RIP') '''
+
+    def alias(self, register):
+        '''Get register canonical alias. ex. PC->RIP or PC->R15 '''
+        return self._aliases.get(register, register) 
 
     #@abstractmethod
-    def write(self, reg_id, value):
-        ''' Write value to the register reg_id 
+    def write(self, register, value):
+        ''' Write value to the specified register 
             @param reg_id: a register id. Must be listed on all_registers
             @param value: a value of the expected type
             @return the value actually written to the register
@@ -95,24 +96,11 @@ class RegisterFile(object):
         pass
 
     #@abstractmethod
-    def read(self, reg_id):
-        ''' Read value from the register identified by reg_id 
-            @param reg_id: a register id. Must be listed on all_registers
+    def read(self, register):
+        ''' Read value from specified register 
+            @param register: a register name. Must be listed on all_registers
             @return the register value
         '''
-        pass
-
-    #@abstractmethod
-    def reg_name(self, reg_id):
-        ''' Gives a string representation (name) of a register (ID->name)
-            @param reg_id: a register ID
-        '''
-        pass
-
-    #@abstractmethod
-    def reg_id(self, reg_name):
-        ''' Gives the register ID for a string representation of a register (name->ID)
-            @param reg_name: a string representation of reg_id register'''
         pass
 
     @property
@@ -125,11 +113,11 @@ class RegisterFile(object):
         ''' List the minimal most beautiful set of registers needed '''
         pass
         
-    def __contains__(self, reg_id):
+    def __contains__(self, register):
         ''' Check for register validity 
-            @param reg_id: a register ID
+            @param register: a register name
         '''
-        return reg_id in self.all_registers
+        return register in self.all_registers
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
@@ -192,23 +180,21 @@ class Cpu(object):
         return self._regfile.all_registers
 
     #this operates on names
-    def write_register(self, name, value):
+    def write_register(self, register, value):
         ''' A convenient method to write a register by name (this accepts alias)
-            @param name a register name as listed in all_registers
+            @param register a register name as listed in all_registers
             @param value a value
             @return It will return the written value possibly croped
         '''
-        reg_id = self._regfile.reg_id(name)
-        return self._regfile.write(reg_id, value)
+        return self._regfile.write(register, value)
 
-    def read_register(self, name):
+    def read_register(self, register):
         ''' A convenient method to read a register by name (this accepts alias)
-            @param name a register name as listed in all_registers
+            @param register a register name as listed in all_registers
             @param value a value
             @return It will return the written value possibly croped
         '''
-        reg_id = self._regfile.reg_id(name)
-        return self._regfile.read(reg_id)
+        return self._regfile.read(register)
 
     # Pythonic acces to registers and aliases
     def __getattr__(self, name):
