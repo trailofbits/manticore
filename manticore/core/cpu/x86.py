@@ -470,15 +470,10 @@ class AMD64RegFile(RegisterFile):
 
         for reg in ('FPSW', 'FPTAG', 'FPCW'):
             self._registers[reg] = 0
+
         self._cache = {}
         for name in ('AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'):
             self.write(name, False)
-
-    def reg_name(self, reg_id):
-        return reg_id
-
-    def reg_id(self, reg_name):
-        return self._aliases.get(reg_name, reg_name)
 
     @property
     def all_registers(self):
@@ -489,8 +484,8 @@ class AMD64RegFile(RegisterFile):
     def canonical_registers(self):
         return self._canonical_registers
 
-    def __contains__(self, reg_id):
-        return reg_id in self.all_registers
+    def __contains__(self, register):
+        return register in self.all_registers
 
     def _set_bv(self, register_id, register_size, offset, size, reset, value):
         if isinstance(value, (int,long)):
@@ -577,9 +572,8 @@ class AMD64RegFile(RegisterFile):
         for flag, offset in self._flags.iteritems():
             self.write(flag, Operators.EXTRACT(res, offset, 1))
 
-    def write(self, reg_id, value):
-        name = self.reg_name(reg_id)
-
+    def write(self, name, value):
+        name = self.alias(name)
         if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
             name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
 
@@ -601,15 +595,14 @@ class AMD64RegFile(RegisterFile):
         self._update_cache(name, value)
         return value
 
-    def _update_cache(self,name, value):
+    def _update_cache(self, name, value):
         self._cache[name] = value
         for affected in self._affects[name]:
             assert affected != name
             self._cache.pop(affected, None)
 
-    def read(self, reg_id):
-        name = self.reg_name(reg_id)
-
+    def read(self, name):
+        name = self.alias(name)
         if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
             name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
         if name in self._cache:
@@ -632,6 +625,7 @@ class AMD64RegFile(RegisterFile):
 ###########################
 # Operand Wrapper
 class AMD64Operand(Operand):
+    ''' Thiss class deals with capstone X86 operands '''
     def _reg_name(self, reg_id):
         if reg_id <= 0 :
             return '(invalid)'
