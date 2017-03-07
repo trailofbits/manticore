@@ -226,7 +226,9 @@ class Armv7RegisterFile(RegisterFile):
         ARM_REG_APSR_N: 48,
         ARM_REG_APSR_Z: 49,
         ARM_REG_APSR_C: 50,
-        ARM_REG_APSR_V: 51
+        ARM_REG_APSR_V: 51,
+        ARM_REG_APSR: 52,
+
     }
 
     def __init__(self):
@@ -243,10 +245,51 @@ class Armv7RegisterFile(RegisterFile):
         bit_flags = [Register(1) for x in xrange(4)]
         self.regs = gpr + vec + bit_flags
 
+    def _read_APSR(self):
+        N = self.read(ARM_REG_APSR_N)
+        Z = self.read(ARM_REG_APSR_Z)
+        C = self.read(ARM_REG_APSR_C)
+        V = self.read(ARM_REG_APSR_V)
+
+        cpsr = 0
+
+        def make_cpsr_flag(flag_expr, offset):
+            'Helper for constructing an expression for the CPSR register'
+            return Operators.ITEBV(cpu.address_bit_size, flag_expr,
+                              BitVecConstant(cpu.address_bit_size, 1 << offset),
+                              BitVecConstant(cpu.address_bit_size, 0))
+        if any(issymbolic(x) for x in [N, Z, C, V]):
+            cpsr = (make_cpsr_flag(N, 31) |
+                    make_cpsr_flag(Z, 30) |
+                    make_cpsr_flag(C, 29) |
+                    make_cpsr_flag(V, 28))
+        else:
+            if N: cpsr |= 1 << 31
+            if Z: cpsr |= 1 << 30
+            if C: cpsr |= 1 << 29
+            if V: cpsr |= 1 << 28
+        return cpsr 
+
+    def _write_APSR(self, cpsr):
+        V = EXTRACT(cpsr, 28, 1)
+        C = EXTRACT(cpsr, 29, 1)
+        Z = EXTRACT(cpsr, 30, 1)
+        N = EXTRACT(cpsr, 31, 1)
+
+        self.write(ARM_REG_APSR_V, V)
+        self.write(ARM_REG_APSR_C, C)
+        self.write(ARM_REG_APSR_Z, Z)
+        self.write(ARM_REG_APSR_N, N)
+
+
     def read(self, reg_id):
+        if reg_id == ARM_REG_APSR:
+            return self._read_APSR()
         return self.regs[self.REGMAP[reg_id]].read()
 
     def write(self, reg_id, val):
+        if reg_id == ARM_REG_APSR:
+            return self._write_APSR(val)
         reg_offset = self.REGMAP[reg_id]
         reg = self.regs[reg_offset]
         reg.write(val)
@@ -259,7 +302,7 @@ class Armv7RegisterFile(RegisterFile):
 
     @property
     def canonical_registers(self):
-        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12', 'SP', 'LR', 'PC')
+        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12', 'SP', 'LR', 'PC', 'APSR')
 
     def reg_name(self, reg_id):
         reg_offset = self.REGMAP[reg_id]
