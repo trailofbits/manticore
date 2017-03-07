@@ -227,7 +227,6 @@ class Armv7RegisterFile(RegisterFile):
         ARM_REG_APSR_Z: 49,
         ARM_REG_APSR_C: 50,
         ARM_REG_APSR_V: 51,
-        ARM_REG_APSR: 52,
 
     }
 
