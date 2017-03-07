@@ -51,6 +51,9 @@ class Armv7Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Armv7Operand, self).__init__(cpu, op, **kwargs)
 
+    def _reg_name(self, reg_id):
+        return self.cpu.instruction.reg_name(reg_id).upper()
+
     def size(self):
         assert self.op.type == ARM_OP_REG
         if self.op.reg >= 'D0' and self.op.reg <= 'D31':
@@ -156,6 +159,7 @@ class Armv7Operand(Operand):
 
 
 class Armv7RegisterFile(RegisterFile):
+
     def __init__(self):
         '''ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
@@ -217,7 +221,6 @@ class Armv7RegisterFile(RegisterFile):
                 'APSR_C': Register(1),
                 'APSR_V': Register(1) }
 
-
     def _read_APSR(self):
         N = self.read('APSR_N')
         Z = self.read('APSR_Z')
@@ -253,26 +256,17 @@ class Armv7RegisterFile(RegisterFile):
         self.write('APSR_Z', Z)
         self.write('APSR_N', N)
 
-
-    def read(self, reg_id):
-        if reg_id == 'APSR':
-            return self._read_APSR()
-        return self.regs[self.REGMAP[reg_id]].read()
-
-    def write(self, reg_id, val):
-        if reg_id == 'APSR':
-            return self._write_APSR(val)
-        reg_offset = self.REGMAP[reg_id]
-        reg = self.regs[reg_offset]
-        reg.write(val)
-
     def read(self, register):
         assert register in self
+        if reg_id == 'APSR':
+            return self._read_APSR()
         register = self.alias(register)
         return self._regs[register].read()
 
     def write(self, register, value):
         assert register in self
+        if reg_id == 'APSR':
+            return self._write_APSR(val)
         register = self.alias(register)
         self._regs[register].write(value)
 

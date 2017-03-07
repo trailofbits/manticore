@@ -626,6 +626,11 @@ class AMD64RegFile(RegisterFile):
 # Operand Wrapper
 class AMD64Operand(Operand):
     ''' Thiss class deals with capstone X86 operands '''
+    def _reg_name(self, reg_id):
+        if reg_id <= 0 :
+            return '(invalid)'
+        return self.cpu.instruction.reg_name(reg_id).upper()
+
     def __init__(self, cpu, op, **kwargs):
         super(AMD64Operand, self).__init__(cpu, op, **kwargs)
 
