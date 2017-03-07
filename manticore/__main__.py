@@ -147,6 +147,7 @@ def main():
     logging.getLogger('LIBC').setLevel(logging.INFO)
 
     logger.info('[+] Loading challenge %s', args.programs)
+    logger.info('Workspace: {}'.format(m.workspace))
 
     m.run()
 
