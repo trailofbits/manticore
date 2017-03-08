@@ -573,7 +573,7 @@ class AMD64RegFile(RegisterFile):
             self.write(flag, Operators.EXTRACT(res, offset, 1))
 
     def write(self, name, value):
-        name = self.alias(name)
+        name = self._alias(name)
         if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
             name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
 
@@ -602,7 +602,7 @@ class AMD64RegFile(RegisterFile):
             self._cache.pop(affected, None)
 
     def read(self, name):
-        name = self.alias(name)
+        name = self._alias(name)
         if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
             name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
         if name in self._cache:
