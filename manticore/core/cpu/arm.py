@@ -51,9 +51,6 @@ class Armv7Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Armv7Operand, self).__init__(cpu, op, **kwargs)
 
-    def _reg_name(self, reg_id):
-        return self.cpu.instruction.reg_name(reg_id).upper()
-
     def size(self):
         assert self.op.type == ARM_OP_REG
         if self.op.reg >= 'D0' and self.op.reg <= 'D31':
@@ -394,7 +391,6 @@ class Armv7Cpu(Cpu):
             amount = 1
 
         elif _type in range(ARM_SFT_ASR_REG, ARM_SFT_RRX_REG + 1):
-            print "AM:",amount
             amount = cpu.instruction.reg_name(amount).upper()
             amount = Operators.EXTRACT(cpu.regfile.read(amount), 0, 8)
 

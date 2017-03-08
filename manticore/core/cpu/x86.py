@@ -626,24 +626,15 @@ class AMD64RegFile(RegisterFile):
 # Operand Wrapper
 class AMD64Operand(Operand):
     ''' Thiss class deals with capstone X86 operands '''
-    def _reg_name(self, reg_id):
-        if reg_id <= 0 :
-            return '(invalid)'
-        return self.cpu.instruction.reg_name(reg_id).upper()
-
     def __init__(self, cpu, op, **kwargs):
         super(AMD64Operand, self).__init__(cpu, op, **kwargs)
-        self.cpu=cpu
-        self.op=op
-        if op.type == X86_OP_MEM:
-            self.mem = AMD64Operand.MemSpec(self)
 
     #################################3
     # Operand access
     def address(self):
         cpu, o = self.cpu, self.op
         address = 0
-        if o.mem.segment != 0:
+        if self.mem.segment != '(invalid)':
             seg = self.mem.segment
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
@@ -651,18 +642,18 @@ class AMD64Operand(Operand):
             #FIXME inspect operand or cpu.instruction and decide 
             # the correct default segment for instruction
             seg = 'DS'
-            if o.mem.base != 0 and self.mem.base in ['SP', 'ESP', 'EBP']:
+            if self.mem.base != '(invalid)' and self.mem.base in ['SP', 'ESP', 'EBP']:
                 seg = 'SS'
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
-        if o.mem.base != 0:
+        if self.mem.base  != '(invalid)':
             base = self.mem.base
             address += cpu.read_register(base)
-        if o.mem.index != 0:
+        if self.mem.index  != '(invalid)':
             index = self.mem.index
-            address += o.mem.scale*cpu.read_register(index)
-        if o.mem.disp != 0:
-            address += o.mem.disp
+            address += self.mem.scale*cpu.read_register(index)
+
+        address += o.mem.disp
 
         return address & ((1<<cpu.address_bit_size)-1)
 

@@ -26,19 +26,16 @@ MU = {
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 # This encapsulates how to acccess operands (regs/mem/immediates) for differents cpus
 class Operand(object):
-    __metaclass__ = ABCMeta
-    def _reg_name(self, reg_id):
-        return reg_id
 
     class MemSpec(object):
+        ''' Auxiliary class wraps capstone operand 'mem' attribute. This will return register names instead of Ids ''' 
         def __init__(self, parent):
             self.parent = parent
         segment = property( lambda self: self.parent._reg_name(self.parent.op.mem.segment) )
         base = property( lambda self: self.parent._reg_name(self.parent.op.mem.base) )
         index = property( lambda self: self.parent._reg_name(self.parent.op.mem.index) )
-        scale = property( lambda self: self.parent._reg_name(self.parent.op.mem.scale) )
-        disp = property( lambda self: self.parent._reg_name(self.parent.op.mem.disp) )
-
+        scale = property( lambda self: self.parent.op.mem.scale )
+        disp = property( lambda self: self.parent.op.mem.disp )
 
     def __init__(self, cpu, op, **kwargs):
         '''
@@ -50,28 +47,32 @@ class Operand(object):
         @param cpu:  A Cpu oinstance
         @param op: a Capstone operand (eew)
         '''
-        self.cpu=cpu
-        self.op=op
-        if op.type == X86_OP_MEM:
-            self.mem = self.__class__.MemSpec(self)
+        assert isinstance(cpu, Cpu)
+        assert isinstance(op, (X86Op, ArmOp))
+        self.cpu = cpu
+        self.op = op
+        self.mem = Operand.MemSpec(self)
+
+    def _reg_name(self, reg_id):
+        ''' Translates a captone register ID into the register name '''
+        if reg_id <= 0 :
+            return '(invalid)'
+        return self.cpu.instruction.reg_name(reg_id).upper()
 
     def __getattr__(self, name):
         return getattr(self.op, name)
 
-    @abstractmethod
     def address(self):
         ''' On a memory operand it returns the effective address '''
-        pass
+        raise NotImplemented
 
-    @abstractmethod
     def read(self):
         ''' It reads the operand value from the registers or memory '''
-        pass
+        raise NotImplemented
 
-    @abstractmethod
     def write(self, value):
         ''' It writes the value ofspecific type to the registers or memory '''
-        pass
+        raise NotImplemented
 
 # Basic register file structure not actully need to abstract as it's used only from the cpu implementation
 class RegisterFile(object):
