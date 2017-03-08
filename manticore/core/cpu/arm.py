@@ -359,7 +359,7 @@ class Armv7Cpu(Cpu):
         '''
         unupdated_flags = self._last_flags.viewkeys() - flags.viewkeys()
         for flag in unupdated_flags:
-            flag_name = 'APSR_%s'%flag
+            flag_name = 'APSR_%s'.format(flag)
             self._last_flags[flag] = self.regfile.read(flag_name)
         self._last_flags.update(flags)
 
@@ -368,7 +368,7 @@ class Armv7Cpu(Cpu):
         if self.instruction.mnemonic == 'adc':
             return
         for flag, val in self._last_flags.iteritems():
-            flag_name = 'APSR_%s'%flag
+            flag_name = 'APSR_%s'.format(flag)
             self.regfile.write(flag_name, val)
 
 
@@ -525,7 +525,7 @@ class Armv7Cpu(Cpu):
         #  retval is passed in R0
         index = cpu.regfile.read('R7')
 
-        arg_indeces = [globals()[''R'%d' % i] for i in range(0, 7)]
+        arg_indeces = ['R%d'.format(i)] for i in range(0, 7)]
         arguments = [cpu.regfile.read(idx) for idx in arg_indeces]
 
         def writeResult(result, cpu = cpu):
@@ -712,7 +712,7 @@ class Armv7Cpu(Cpu):
         # "The SP can only be in the list before ARMv7. ARM deprecates any use
         # of ARM instructions that include the SP, and the value of the SP after
         # such an instruction is UNKNOWN" (pg A8-537)
-        valid = lambda r: r.op.type == ARM_OP_REG and r.op.reg != 'SP'
+        valid = lambda r: r.type == ARM_OP_REG and r.reg != 'SP'
 
         for reg in regs:
             assert valid(reg)
@@ -723,7 +723,7 @@ class Armv7Cpu(Cpu):
     def PUSH(cpu, *regs):
         # ARM deprecates the use of ARM instructions that include the PC in the
         # list (pg A8-539)
-        valid = lambda r: r.op.type == ARM_OP_REG and r.op.reg != 'PC'
+        valid = lambda r: r.type == ARM_OP_REG and r.reg != 'PC'
 
         high_to_low_regs = regs[::-1]
         for reg in high_to_low_regs:
