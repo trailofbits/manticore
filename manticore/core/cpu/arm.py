@@ -249,7 +249,6 @@ class Armv7RegisterFile(RegisterFile):
         Z = self.read(ARM_REG_APSR_Z)
         C = self.read(ARM_REG_APSR_C)
         V = self.read(ARM_REG_APSR_V)
-
         cpsr = 0
 
         def make_cpsr_flag(flag_expr, offset):
@@ -270,10 +269,10 @@ class Armv7RegisterFile(RegisterFile):
         return cpsr 
 
     def _write_APSR(self, cpsr):
-        V = EXTRACT(cpsr, 28, 1)
-        C = EXTRACT(cpsr, 29, 1)
-        Z = EXTRACT(cpsr, 30, 1)
-        N = EXTRACT(cpsr, 31, 1)
+        V = Operators.EXTRACT(cpsr, 28, 1)
+        C = Operators.EXTRACT(cpsr, 29, 1)
+        Z = Operators.EXTRACT(cpsr, 30, 1)
+        N = Operators.EXTRACT(cpsr, 31, 1)
 
         self.write(ARM_REG_APSR_V, V)
         self.write(ARM_REG_APSR_C, C)
