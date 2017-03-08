@@ -57,7 +57,7 @@ class Operand(object):
         ''' Translates a capstone register ID into the register name '''
         if reg_id <= 0 :
             return '(invalid)'
-        return self.cpu.instruction.reg_name(reg_id).upper()
+        return self.cpu._regfile._alias(self.cpu.instruction.reg_name(reg_id).upper())
 
     def __getattr__(self, name):
         return getattr(self.op, name)
@@ -353,9 +353,7 @@ class Cpu(object):
         if logger.level == logging.DEBUG :
             for l in str(self).split('\n'):
                 logger.debug(l)
-
         implementation(*instruction.operands)
-
         self._icount+=1
 
     @abstractmethod
