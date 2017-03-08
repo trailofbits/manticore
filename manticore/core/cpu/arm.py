@@ -162,61 +162,60 @@ class Armv7RegisterFile(RegisterFile):
         flags allow writes of bool/{1, 0} but always read bools.
         '''
         super(Armv7RegisterFile, self).__init__({ 'STACK': 'R14', 'PC': 'R15', 'SP': 'R14', 'LR': 'R13'} )
-        self._regs = {
-                'R0': Register(32),
-                'R1': Register(32),
-                'R2': Register(32),
-                'R3': Register(32),
-                'R4': Register(32),
-                'R5': Register(32),
-                'R6': Register(32),
-                'R7': Register(32),
-                'R8': Register(32),
-                'R9': Register(32),
-                'R10': Register(32),
-                'R11': Register(32),
-                'R12': Register(32),
-                'R13': Register(32),
-                'R14': Register(32),
-                'R15': Register(32),
+        self._regs = { }
+        #32 bit registers
+        for reg_name in ( 'R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',
+                          'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15' ):
+            self._regs[reg_name] = Register(32)
+        #64 bit registers
+        for reg_name in  ( 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 
+                           'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15', 'D16',
+                           'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24',
+                           'D25', 'D26', 'D27', 'D28', 'D29', 'D30', 'D31'):
+            self._regs[reg_name] = Register(64)
+        #Flags
+        self._regs['APSR_N'] = Register(1)
+        self._regs['APSR_Z'] = Register(1)
+        self._regs['APSR_C'] = Register(1)
+        self._regs['APSR_V'] = Register(1) 
 
-                'D0': Register(64),
-                'D1': Register(64),
-                'D2': Register(64),
-                'D3': Register(64),
-                'D4': Register(64),
-                'D5': Register(64),
-                'D6': Register(64),
-                'D7': Register(64),
-                'D8': Register(64),
-                'D9': Register(64),
-                'D10': Register(64),
-                'D11': Register(64),
-                'D12': Register(64),
-                'D13': Register(64),
-                'D14': Register(64),
-                'D15': Register(64),
-                'D16': Register(64),
-                'D17': Register(64),
-                'D18': Register(64),
-                'D19': Register(64),
-                'D20': Register(64),
-                'D21': Register(64),
-                'D22': Register(64),
-                'D23': Register(64),
-                'D24': Register(64),
-                'D25': Register(64),
-                'D26': Register(64),
-                'D27': Register(64),
-                'D28': Register(64),
-                'D29': Register(64),
-                'D30': Register(64),
-                'D31': Register(64),
+    def _read_APSR(self):
+        ''' Auxiliar function - Reads full APSR from flags (only 4 msb used) ''' 
+        N = self.read(ARM_REG_APSR_N)
+        Z = self.read(ARM_REG_APSR_Z)
+        C = self.read(ARM_REG_APSR_C)
+        V = self.read(ARM_REG_APSR_V)
+        apsr = 0
 
-                'APSR_N': Register(1),
-                'APSR_Z': Register(1),
-                'APSR_C': Register(1),
-                'APSR_V': Register(1) }
+        def make_apsr_flag(flag_expr, offset):
+            'Helper for constructing an expression for the APSR register'
+            return Operators.ITEBV(cpu.address_bit_size, flag_expr,
+                              BitVecConstant(cpu.address_bit_size, 1 << offset),
+                              BitVecConstant(cpu.address_bit_size, 0))
+        if any(issymbolic(x) for x in [N, Z, C, V]):
+            apsr = (make_apsr_flag(N, 31) |
+                    make_apsr_flag(Z, 30) |
+                    make_apsr_flag(C, 29) |
+                    make_apsr_flag(V, 28))
+        else:
+            if N: apsr |= 1 << 31
+            if Z: apsr |= 1 << 30
+            if C: apsr |= 1 << 29
+            if V: apsr |= 1 << 28
+        return apsr 
+
+    def _write_APSR(self, apsr):
+        ''' Auxiliar function - Writes flgs from a full APSR (only 4 msb used) ''' 
+        V = Operators.EXTRACT(apsr, 28, 1)
+        C = Operators.EXTRACT(apsr, 29, 1)
+        Z = Operators.EXTRACT(apsr, 30, 1)
+        N = Operators.EXTRACT(apsr, 31, 1)
+
+        self.write(ARM_REG_APSR_V, V)
+        self.write(ARM_REG_APSR_C, C)
+        self.write(ARM_REG_APSR_Z, Z)
+        self.write(ARM_REG_APSR_N, N)
+
 
     def _read_APSR(self):
         N = self.read('APSR_N')
