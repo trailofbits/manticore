@@ -249,30 +249,30 @@ class Armv7RegisterFile(RegisterFile):
         Z = self.read(ARM_REG_APSR_Z)
         C = self.read(ARM_REG_APSR_C)
         V = self.read(ARM_REG_APSR_V)
-        cpsr = 0
+        apsr = 0
 
-        def make_cpsr_flag(flag_expr, offset):
-            'Helper for constructing an expression for the CPSR register'
+        def make_apsr_flag(flag_expr, offset):
+            'Helper for constructing an expression for the APSR register'
             return Operators.ITEBV(cpu.address_bit_size, flag_expr,
                               BitVecConstant(cpu.address_bit_size, 1 << offset),
                               BitVecConstant(cpu.address_bit_size, 0))
         if any(issymbolic(x) for x in [N, Z, C, V]):
-            cpsr = (make_cpsr_flag(N, 31) |
-                    make_cpsr_flag(Z, 30) |
-                    make_cpsr_flag(C, 29) |
-                    make_cpsr_flag(V, 28))
+            apsr = (make_apsr_flag(N, 31) |
+                    make_apsr_flag(Z, 30) |
+                    make_apsr_flag(C, 29) |
+                    make_apsr_flag(V, 28))
         else:
-            if N: cpsr |= 1 << 31
-            if Z: cpsr |= 1 << 30
-            if C: cpsr |= 1 << 29
-            if V: cpsr |= 1 << 28
-        return cpsr 
+            if N: apsr |= 1 << 31
+            if Z: apsr |= 1 << 30
+            if C: apsr |= 1 << 29
+            if V: apsr |= 1 << 28
+        return apsr 
 
-    def _write_APSR(self, cpsr):
-        V = Operators.EXTRACT(cpsr, 28, 1)
-        C = Operators.EXTRACT(cpsr, 29, 1)
-        Z = Operators.EXTRACT(cpsr, 30, 1)
-        N = Operators.EXTRACT(cpsr, 31, 1)
+    def _write_APSR(self, apsr):
+        V = Operators.EXTRACT(apsr, 28, 1)
+        C = Operators.EXTRACT(apsr, 29, 1)
+        Z = Operators.EXTRACT(apsr, 30, 1)
+        N = Operators.EXTRACT(apsr, 31, 1)
 
         self.write(ARM_REG_APSR_V, V)
         self.write(ARM_REG_APSR_C, C)
