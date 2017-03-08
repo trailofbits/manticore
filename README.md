@@ -70,18 +70,23 @@ nosetests test/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 
 ## Quick start
 
-Here is some basic functionality you can try after installing Manticore:
+Install and try Manticore in about ten shell commands:
 
 ```
+# install z3 before beginning, see our README.md
+git clone git@github.com:trailofbits/manticore.git
+cd manticore
+pip install --user --no-binary capstone . # do this in a virtualenv if you want, but omit --user
 cd examples/linux
 make
-manticore basic  # a mcore_* directory is created
+manticore basic
 cat mcore_*/*1.stdin | ./basic
 cat mcore_*/*2.stdin | ./basic
-
 cd ../script
-python count_instructions.py ../linux/helloworld
+python count_instructions.py ../linux/helloworld # ok if the insn count is different
 ```
+
+Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
 
 ## Usage
 
