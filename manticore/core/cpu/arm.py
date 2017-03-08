@@ -256,14 +256,14 @@ class Armv7RegisterFile(RegisterFile):
         assert register in self
         if reg_id == 'APSR':
             return self._read_APSR()
-        register = self.alias(register)
+        register = self._alias(register)
         return self._regs[register].read()
 
     def write(self, register, value):
         assert register in self
         if register == 'APSR':
             return self._write_APSR(value)
-        register = self.alias(register)
+        register = self._alias(register)
         self._regs[register].write(value)
 
     @property
@@ -525,7 +525,7 @@ class Armv7Cpu(Cpu):
         #  retval is passed in R0
         index = cpu.regfile.read('R7')
 
-        arg_indeces = ['R%d'.format(i)] for i in range(0, 7)]
+        arg_indeces = ['R%d'.format(i) for i in range(0, 7)]
         arguments = [cpu.regfile.read(idx) for idx in arg_indeces]
 
         def writeResult(result, cpu = cpu):
