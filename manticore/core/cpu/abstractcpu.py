@@ -64,15 +64,15 @@ class Operand(object):
 
     def address(self):
         ''' On a memory operand it returns the effective address '''
-        raise NotImplemented
+        raise NotImplementedError
 
     def read(self):
         ''' It reads the operand value from the registers or memory '''
-        raise NotImplemented
+        raise NotImplementedError
 
     def write(self, value):
         ''' It writes the value ofspecific type to the registers or memory '''
-        raise NotImplemented
+        raise NotImplementedError
 
 # Basic register file structure not actully need to abstract as it's used only from the cpu implementation
 class RegisterFile(object):
@@ -520,7 +520,7 @@ class InvalidPCException(Exception):
         super(InvalidPCException, self).__init__("Trying to execute invalid memory @%08x"%pc)
         self.pc=pc
 
-class InstructionNotImplemented(Exception):
+class InstructionNotImplementedError(Exception):
     ''' Exception raised when you try to execute an instruction that is
         not yet implemented in the emulator.
         Go to cpu.py and add it!
