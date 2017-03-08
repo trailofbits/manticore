@@ -156,20 +156,6 @@ class Armv7Operand(Operand):
 
 
 class Armv7RegisterFile(RegisterFile):
-    def __init__(self):
-        '''ARM Register file abstraction. GPRs use ints for read/write. APSR
-        flags allow writes of bool/{1, 0} but always read bools.
-        '''
-        super(Armv7RegisterFile, self).__init__(     )                                                    
-        self.aliases = { 'STACK': 'SP',
-                                                    'PC': 'PC',  # these three lines are technically unnecessary, but explicit is
-                                                    'SP': 'SP',  # better than implicit
-                                                    'LR': 'LR',  }#) 
-        gpr =  [Register(32) for x in xrange(16)]
-        vec = [Register(64) for x in xrange(32)]
-        bit_flags = [Register(1) for x in xrange(4)]
-        self.regs = gpr + vec + bit_flags
-
     def _read_APSR(self):
         N = self.read(ARM_REG_APSR_N)
         Z = self.read(ARM_REG_APSR_Z)
@@ -204,20 +190,10 @@ class Armv7RegisterFile(RegisterFile):
         self.write(ARM_REG_APSR_C, C)
         self.write(ARM_REG_APSR_Z, Z)
         self.write(ARM_REG_APSR_N, N)
-
-
-    def read(self, reg_id):
-        if reg_id == ARM_REG_APSR:
-            return self._read_APSR()
-        return self.regs[self.REGMAP[reg_id]].read()
-
-    def write(self, reg_id, val):
-        if reg_id == ARM_REG_APSR:
-            return self._write_APSR(val)
-        reg_offset = self.REGMAP[reg_id]
-        reg = self.regs[reg_offset]
-        reg.write(val)
-=======
+    def __init__(self):
+        '''ARM Register file abstraction. GPRs use ints for read/write. APSR
+        flags allow writes of bool/{1, 0} but always read bools.
+        '''
         super(Armv7RegisterFile, self).__init__({ 'STACK': 'R14', 'PC': 'R15', 'SP': 'R14', 'LR': 'R13'} )
         self._regs = {
                 'R0': Register(32),
@@ -277,14 +253,17 @@ class Armv7RegisterFile(RegisterFile):
 
     def read(self, register):
         assert register in self
+        if register == 'APSR':
+            return self._read_APSR()
         register = self.alias(register)
         return self._regs[register].read()
 
     def write(self, register, value):
         assert register in self
+        if register == 'APSR':
+            return self._write_APSR(val)
         register = self.alias(register)
         self._regs[register].write(value)
->>>>>>> RegisterFile refactor everywhere
 
     @property
     def all_registers(self):
