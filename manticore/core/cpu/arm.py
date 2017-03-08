@@ -53,7 +53,7 @@ class Armv7Operand(Operand):
 
     def size(self):
         assert self.op.type == ARM_OP_REG
-        if self.op.reg >= 'D0' and self.op.reg <= 'D31':
+        if self.op.reg >= ARM_REG_D0 and self.op.reg <= ARM_REG_D31:
             return 8
         else:
             return 4
@@ -64,7 +64,7 @@ class Armv7Operand(Operand):
             register = self._reg_name(self.op.reg)
             value = self.cpu.regfile.read(register)
             # XXX This can be an offset of 8, depending on ARM mode
-            if register == 'R15':
+            if register in ('PC', 'R15'):
                 value += 4
             if self.is_shifted():
                 shift = self.op.shift
@@ -93,7 +93,6 @@ class Armv7Operand(Operand):
     def write(self, value, nbits=None):
         if self.op.type == ARM_OP_REG:
             register = self._reg_name(self.op.reg)
-            print register
             self.cpu.regfile.write(register, value)
         elif self.op.type == ARM_OP_MEM:
             raise NotImplementedError('need to impl arm store mem')
@@ -121,29 +120,27 @@ class Armv7Operand(Operand):
     def get_mem_offset(self):
         assert self.op.type == ARM_OP_MEM
 
-        mem = self.op.mem
         off = 0
-        if mem.index:
-            idx = mem.scale * self.cpu.regfile.read(self._reg_name(mem.index))
+        if self.mem.index != '(invalid)':
+            idx = self.mem.scale * self.cpu.regfile.read(self.mem.index)
             carry = self.cpu.regfile.read('APSR_C')
             if self.is_shifted():
                 shift = self.op.shift
                 idx, carry = self.cpu._Shift(idx, shift.type, shift.value,  carry)
             off = idx
         else:
-            off = mem.disp
+            off = self.mem.disp
         return -off if self.op.subtracted else off
 
     def get_mem_base_addr(self):
         assert self.op.type == ARM_OP_MEM
 
-        mem = self.op.mem
-        base = self.cpu.regfile.read(self._reg_name(mem.base))
+        base = self.cpu.regfile.read(self.mem.base)
 
         # If pc is the base, we need to correct for the fact that the ARM
         # spec defines PC to point to the current insn + 8, which we are not
         # compliant with (we do current insn + 4)
-        return base+4 if mem.base == 'PC' else base
+        return base+4 if self.mem.base in ('PC', 'R15')  else base
 
     def _getExpandImmCarry(self, carryIn):
         '''Manually compute the carry bit produced by expanding an immediate
@@ -162,7 +159,7 @@ class Armv7RegisterFile(RegisterFile):
         '''ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         '''
-        super(Armv7RegisterFile, self).__init__({ 'FP':'R11', 'IP': 'R12', 'STACK': 'R14', 'PC': 'R15', 'SP': 'R14', 'LR': 'R13'} )
+        super(Armv7RegisterFile, self).__init__({ 'SB':'R9', 'SL':'R10', 'FP':'R11', 'IP': 'R12', 'STACK': 'R14', 'PC': 'R15', 'SP': 'R14', 'LR': 'R13'} )
         self._regs = { }
         #32 bit registers
         for reg_name in ( 'R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',
@@ -725,7 +722,7 @@ class Armv7Cpu(Cpu):
     def PUSH(cpu, *regs):
         # ARM deprecates the use of ARM instructions that include the PC in the
         # list (pg A8-539)
-        valid = lambda r: r.type == ARM_OP_REG and r.reg != 'PC'
+        valid = lambda r: r.type == ARM_OP_REG and r.reg != 'R15'
 
         high_to_low_regs = regs[::-1]
         for reg in high_to_low_regs:

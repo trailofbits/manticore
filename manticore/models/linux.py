@@ -16,6 +16,9 @@ from ..core.cpu.arm import *
 from ..core.executor import SyscallNotImplemented, ProcessExit
 logger = logging.getLogger("MODEL")
 
+#/usr/include/asm-generic/errno-base.h
+EINVAL = 22
+
 class RestartSyscall(Exception):
     pass
 
@@ -1004,7 +1007,7 @@ class Linux(object):
         uname += pad('x86_64')
         uname += pad('(none)')
         cpu.write_bytes(old_utsname, uname)
-        logger.debug("sys_uname(...) -> %s", uname)
+        logger.debug("sys_uname(...) -> %s", uname.encode('hex'))
         return 0
 
     def sys_brk(self, cpu, brk):
@@ -1598,23 +1601,24 @@ class Linux(object):
                     self.awake(procid)
 
     def handleInvalidPC(self, e):
+        #FIXME THIS IS ARM SPECIFIC
         cpu = self.current
         if cpu.PC == self.ARM_GET_TLS:
             if hasattr(self, 'tls_value'):
-                cpu.regfile.write(ARM_REG_R0, self.tls_value)
+                cpu.regfile.write('R0', self.tls_value)
         elif cpu.PC == self.ARM_CMPXCHG:
-            oldval = cpu.regfile.read(ARM_REG_R0)
-            newval = cpu.regfile.read(ARM_REG_R1)
-            ptr    = cpu.regfile.read(ARM_REG_R2)
+            oldval = cpu.regfile.read('R0')
+            newval = cpu.regfile.read('R1')
+            ptr    = cpu.regfile.read('R2')
 
             existing = cpu.read_int(ptr, cpu.address_bit_size)
             ret = 1
             if existing == oldval:
                 ret = 0
-                cpu.regfile.write(ARM_REG_APSR_C, 1)
+                cpu.regfile.write('APSR_C', 1)
                 cpu.write_int(ptr, newval, cpu.address_bit_size)
 
-            cpu.regfile.write(ARM_REG_R0, ret)
+            cpu.regfile.write('R0', ret)
         elif cpu.PC == self.ARM_MEM_BARRIER:
             # Apply any needed memory barrier to preserve consistency with data
             # modified manually and __kuser_cmpxchg usage. Nop in our case, just
@@ -1624,7 +1628,7 @@ class Linux(object):
             raise e
 
         # Return normally
-        lr = cpu.regfile.read(ARM_REG_R14) # ARM_REG_LR
+        lr = cpu.regfile.read('R14') # 'LR'
         cpu.PC = lr
 
 
