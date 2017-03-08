@@ -33,27 +33,27 @@ class Armv7RF(unittest.TestCase):
             self.r.write('APSR_Z', 2)
 
     def test_bad_reg_name(self):
-        with self.assertRaises(KeyError):
+        with self.assertRaises(AssertionError):
             nonexistant_reg = "Pc"
-            self.r.reg_name(nonexistant_reg)
+            self.r.read(nonexistant_reg)
 
     def test_flag_wr(self):
-        self.r.write(ARM_REG_APSR, 0xffffffff)
-        self.assertEqual(self.r.read(ARM_REG_APSR), 0xf0000000) #4 more significant bits used
-        self.assertEqual(self.r.read(ARM_REG_APSR_V), True)
-        self.assertEqual(self.r.read(ARM_REG_APSR_C), True)
-        self.assertEqual(self.r.read(ARM_REG_APSR_Z), True)
-        self.assertEqual(self.r.read(ARM_REG_APSR_N), True)
+        self.r.write('APSR', 0xffffffff)
+        self.assertEqual(self.r.read('APSR'), 0xf0000000) #4 more significant bits used
+        self.assertEqual(self.r.read('APSR_V'), True)
+        self.assertEqual(self.r.read('APSR_C'), True)
+        self.assertEqual(self.r.read('APSR_Z'), True)
+        self.assertEqual(self.r.read('APSR_N'), True)
 
-        self.r.write(ARM_REG_APSR_N, False)
-        self.assertEqual(self.r.read(ARM_REG_APSR), 0x70000000)
+        self.r.write('APSR_N', False)
+        self.assertEqual(self.r.read('APSR'), 0x70000000)
 
-        self.r.write(ARM_REG_APSR_Z, False)
-        self.assertEqual(self.r.read(ARM_REG_APSR), 0x30000000)
+        self.r.write('APSR_Z', False)
+        self.assertEqual(self.r.read('APSR'), 0x30000000)
 
-        self.r.write(ARM_REG_APSR_C, False)
-        self.assertEqual(self.r.read(ARM_REG_APSR), 0x10000000)
+        self.r.write('APSR_C', False)
+        self.assertEqual(self.r.read('APSR'), 0x10000000)
 
-        self.r.write(ARM_REG_APSR_V, False)
-        self.assertEqual(self.r.read(ARM_REG_APSR), 0x00000000)
+        self.r.write('APSR_V', False)
+        self.assertEqual(self.r.read('APSR'), 0x00000000)
 

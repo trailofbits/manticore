@@ -180,10 +180,10 @@ class Armv7RegisterFile(RegisterFile):
 
     def _read_APSR(self):
         ''' Auxiliar function - Reads full APSR from flags (only 4 msb used) ''' 
-        N = self.read(ARM_REG_APSR_N)
-        Z = self.read(ARM_REG_APSR_Z)
-        C = self.read(ARM_REG_APSR_C)
-        V = self.read(ARM_REG_APSR_V)
+        N = self.read('APSR_N')
+        Z = self.read('APSR_Z')
+        C = self.read('APSR_C')
+        V = self.read('APSR_V')
         apsr = 0
 
         def make_apsr_flag(flag_expr, offset):
@@ -210,10 +210,10 @@ class Armv7RegisterFile(RegisterFile):
         Z = Operators.EXTRACT(apsr, 30, 1)
         N = Operators.EXTRACT(apsr, 31, 1)
 
-        self.write(ARM_REG_APSR_V, V)
-        self.write(ARM_REG_APSR_C, C)
-        self.write(ARM_REG_APSR_Z, Z)
-        self.write(ARM_REG_APSR_N, N)
+        self.write('APSR_V', V)
+        self.write('APSR_C', C)
+        self.write('APSR_Z', Z)
+        self.write('APSR_N', N)
 
 
     def read(self, register):
@@ -226,7 +226,7 @@ class Armv7RegisterFile(RegisterFile):
     def write(self, register, value):
         assert register in self
         if register == 'APSR':
-            return self._write_APSR(val)
+            return self._write_APSR(value)
         register = self.alias(register)
         self._regs[register].write(value)
 
@@ -234,7 +234,7 @@ class Armv7RegisterFile(RegisterFile):
     def all_registers(self):
         return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','D0','D1','D2',
                 'D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14','D15','D16','D17','D18','D19','D20',
-                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR_N','APSR_Z','APSR_C','APSR_V') + ('STACK','PC','SP','LR')
+                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V') + ('STACK','PC','SP','LR')
 
     @property
     def canonical_registers(self):
