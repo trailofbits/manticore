@@ -107,7 +107,7 @@ class RegisterFile(object):
     @property
     def all_registers(self):
         ''' Lists all possible register names (Including aliases) '''
-        pass
+        return tuple(self._aliases.keys())
 
     @property
     def canonical_registers(self):
@@ -118,8 +118,7 @@ class RegisterFile(object):
         ''' Check for register validity 
             @param register: a register name
         '''
-        return register in self.all_registers
-
+        return self._alias(register) in self.all_registers 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
 class Cpu(object):
@@ -201,21 +200,16 @@ class Cpu(object):
     def __getattr__(self, name):
         ''' A pythonic version of read_register '''
         assert name != '_regfile'
-        if hasattr(self, '_regfile') and name in self.all_registers:
+        if hasattr(self, '_regfile') and name in self._regfile:
             return self.read_register(name)
-
         raise AttributeError(name)
 
     def __setattr__(self, name, value):
         ''' A pythonic version of write_register '''
-        if hasattr(self, '_regfile') and name in self.all_registers:
+        if hasattr(self, '_regfile') and name in self._regfile:
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
     
-    def getCanonicalRegisters(self):
-        values = [self.read_register(rname) for rname in self.canonical_registers]
-        d = dict(zip(self.canonical_registers, values))
-        return d
 
     #############################
     # Memory access
