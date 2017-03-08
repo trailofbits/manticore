@@ -46,3 +46,25 @@ class Armv7RF(unittest.TestCase):
     def test_bad_reg_id(self):
         with self.assertRaises(KeyError):
             self.r.reg_id('XXX')
+
+    def test_flag_wr(self):
+        self.r.write(ARM_REG_APSR, 0xffffffff)
+        self.assertEqual(self.r.read(ARM_REG_APSR), 0xf0000000) #4 more significant bits used
+        self.assertEqual(self.r.read(ARM_REG_APSR_V), True)
+        self.assertEqual(self.r.read(ARM_REG_APSR_C), True)
+        self.assertEqual(self.r.read(ARM_REG_APSR_Z), True)
+        self.assertEqual(self.r.read(ARM_REG_APSR_N), True)
+
+        self.r.write(ARM_REG_APSR_N, False)
+        self.assertEqual(self.r.read(ARM_REG_APSR), 0x70000000)
+
+        self.r.write(ARM_REG_APSR_Z, False)
+        self.assertEqual(self.r.read(ARM_REG_APSR), 0x30000000)
+
+        self.r.write(ARM_REG_APSR_C, False)
+        self.assertEqual(self.r.read(ARM_REG_APSR), 0x10000000)
+
+        self.r.write(ARM_REG_APSR_V, False)
+        self.assertEqual(self.r.read(ARM_REG_APSR), 0x00000000)
+
+
