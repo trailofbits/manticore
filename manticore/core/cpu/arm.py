@@ -359,7 +359,7 @@ class Armv7Cpu(Cpu):
         '''
         unupdated_flags = self._last_flags.viewkeys() - flags.viewkeys()
         for flag in unupdated_flags:
-            flag_name = 'APSR_%s'.format(flag)
+            flag_name = 'APSR_{}'.format(flag)
             self._last_flags[flag] = self.regfile.read(flag_name)
         self._last_flags.update(flags)
 
@@ -368,7 +368,7 @@ class Armv7Cpu(Cpu):
         if self.instruction.mnemonic == 'adc':
             return
         for flag, val in self._last_flags.iteritems():
-            flag_name = 'APSR_%s'.format(flag)
+            flag_name = 'APSR_{}'.format(flag)
             self.regfile.write(flag_name, val)
 
 
@@ -525,7 +525,7 @@ class Armv7Cpu(Cpu):
         #  retval is passed in R0
         index = cpu.regfile.read('R7')
 
-        arg_indeces = ['R%d'.format(i) for i in range(0, 7)]
+        arg_indeces = ['R{}'.format(i) for i in range(0, 7)]
         arguments = [cpu.regfile.read(idx) for idx in arg_indeces]
 
         def writeResult(result, cpu = cpu):
