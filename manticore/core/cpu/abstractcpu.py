@@ -54,7 +54,7 @@ class Operand(object):
         self.mem = Operand.MemSpec(self)
 
     def _reg_name(self, reg_id):
-        ''' Translates a captone register ID into the register name '''
+        ''' Translates a capstone register ID into the register name '''
         if reg_id <= 0 :
             return '(invalid)'
         return self.cpu.instruction.reg_name(reg_id).upper()
@@ -83,14 +83,14 @@ class RegisterFile(object):
         self._aliases = aliases
         ''''dict mapping from alias register name ('PC') to actual register name ('RIP') '''
 
-    def alias(self, register):
+    def _alias(self, register):
         '''Get register canonical alias. ex. PC->RIP or PC->R15 '''
         return self._aliases.get(register, register) 
 
     #@abstractmethod
     def write(self, register, value):
         ''' Write value to the specified register 
-            @param reg_id: a register id. Must be listed on all_registers
+            @param register: a register id. Must be listed on all_registers
             @param value: a value of the expected type
             @return the value actually written to the register
         '''

@@ -625,7 +625,7 @@ class AMD64RegFile(RegisterFile):
 ###########################
 # Operand Wrapper
 class AMD64Operand(Operand):
-    ''' Thiss class deals with capstone X86 operands '''
+    ''' This class deals with capstone X86 operands '''
     def __init__(self, cpu, op, **kwargs):
         super(AMD64Operand, self).__init__(cpu, op, **kwargs)
 
@@ -653,7 +653,7 @@ class AMD64Operand(Operand):
             index = self.mem.index
             address += self.mem.scale*cpu.read_register(index)
 
-        address += o.mem.disp
+        address += self.mem.disp
 
         return address & ((1<<cpu.address_bit_size)-1)
 
