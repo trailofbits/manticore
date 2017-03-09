@@ -1,7 +1,0 @@
-# workaround for capstone install issue
---no-binary capstone
-
-# dependencies
-capstone
-pyelftools
-unicorn
