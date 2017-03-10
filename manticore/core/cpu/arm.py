@@ -159,7 +159,14 @@ class Armv7RegisterFile(RegisterFile):
         '''ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         '''
-        super(Armv7RegisterFile, self).__init__({ 'SB':'R9', 'SL':'R10', 'FP':'R11', 'IP': 'R12', 'STACK': 'R14', 'PC': 'R15', 'SP': 'R14', 'LR': 'R13'} )
+        super(Armv7RegisterFile, self).__init__({  'SB':'R9', 
+                                                   'SL':'R10', 
+                                                   'FP':'R11', 
+                                                   'IP': 'R12',  
+                                                   'LR': 'R13',
+                                                   'STACK': 'R14',
+                                                   'SP': 'R14',
+                                                   'PC': 'R15', } )
         self._regs = { }
         #32 bit registers
         for reg_name in ( 'R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',
@@ -273,7 +280,7 @@ class Armv7RegisterFile(RegisterFile):
 
     @property
     def canonical_registers(self):
-        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12', 'SP', 'LR', 'PC', 'APSR')
+        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
 
 
 class Armv7Cpu(Cpu):
@@ -640,6 +647,7 @@ class Armv7Cpu(Cpu):
     @instruction
     def SUB(cpu, dest, src, add):
         result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
+        logger.info("SUB  %x %x %x -> %x", dest.read(), src.read(), add.read(), src.read()+ ~add.read()+ 1)
         dest.write(result)
         return result, carry, overflow
 
