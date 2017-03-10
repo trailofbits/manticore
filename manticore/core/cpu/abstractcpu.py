@@ -447,6 +447,10 @@ class Cpu(object):
 
     def emulate(self, instruction):
         def _reg_id(reg_name):
+            #FIXME FIXME FIXME
+            #assert unicorn.__version__ <= '1.0.0', "If we are using unicorn greater than 1.0.0 we have ARM.APSR support
+            if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
+                reg_name = 'CPSR'
             stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
             return globals()[stem+reg_name]
         #Fix Taint propagation
