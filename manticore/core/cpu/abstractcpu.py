@@ -384,9 +384,6 @@ class Cpu(object):
 
     #############################################################
     # Emulation
-    def _concretize_registers(self, instruction):
-        raise NotImplemented
-
     def _unicorn(self):
         MU = {  (CS_ARCH_ARM, CS_MODE_ARM): (UC_ARCH_ARM, UC_MODE_ARM),
         (CS_ARCH_X86, CS_MODE_32): (UC_ARCH_X86, UC_MODE_32),
@@ -394,67 +391,123 @@ class Cpu(object):
         }
         return Uc(*MU[(self.arch, self.mode)])
 
-    def emulate(self, instruction):
-        logger.info("EMULATE instruction %r", instruction)
-        def get_constant(x):
-            stem = { CS_ARCH_X86: 'X86', CS_ARCH_ARM: 'ARM' }
-            return globals()[stem+x]
-        #Fix Taint propagation
-        needed_pages = set()
-        needed_bytes = set()
-        mapped = set()
-        accessed = set()
-        byte_values = {}
-        PC = self.PC
-        reg_values = self._concretize_registers(instruction)
-        # Request any memory nearby the memory directly needed by the memory
+    def _mem_used(self, instruction):
+        used = set()
         # operands of the instruction. 
         for op in instruction.operands:
-            if op.type != {CS_ARCH_ARM: ARM_OP_MEM, CS_ARCH_X86: X86_OP_MEM}[self.arch]:
+            if op.type not in (ARM_OP_MEM, X86_OP_MEM):
                 continue
             self.PC += instruction.size
-            addr = op.address()  #FIXME maybe add a kwarg parameter to operand.address() with the current pc?
+            #FIXME maybe add a kwarg parameter to operand.address() with the current pc?
+            addr = op.address()
             self.PC -= instruction.size
+            #address can not be symbolis as all registers in the operands where concretized before. Right?
             assert not issymbolic(addr)
             num_bytes = op.size/8
-            needed_bytes.update(range(addr, addr + num_bytes))
+            used.update(range(addr, addr + num_bytes))
         # Request the bytes of the instruction.
-        needed_bytes.update(range(self.PC, self.PC + instruction.size))
+        used.update(range(self.PC, self.PC + instruction.size))
+        return used
+
+
+    def _regs_used(self, instruction):
+        if False and hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
+            (regs_read, regs_write) = instruction.regs_access()
+            regs = [ instruction.reg_name(r).upper() for r in regs_write ] 
+            if self.arch == CS_ARCH_X86:
+                if self.mode == CS_MODE_64:
+                    #fix buggy capstone regs for amd64
+                    pass
+                else:
+                    #fix buggy capstone regs for i386
+                    pass
+
+            elif self.arch == CS_ARCH_ARM: 
+                #fix buggy capstone regs for arm
+                pass
+        else:
+            regs = self.canonical_registers
+        return regs
+
+    def _regs_modif(self, instruction):
+        if False and hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
+            (regs_read, regs_write) = instruction.regs_access()
+            regs = [ instruction.reg_name(r).upper() for r in regs_write ] 
+            if self.arch == CS_ARCH_X86:
+                if self.mode == CS_MODE_64:
+                    #fix buggy capstone regs for amd64
+                    pass
+                else:
+                    #fix buggy capstone regs for i386
+                    pass
+            elif self.arch == CS_ARCH_ARM: 
+                #fix buggy capstone regs for arm 
+                pass
+        else:
+            regs = self.canonical_registers
+        return regs
+
+    def emulate(self, instruction):
+        def _reg_id(reg_name):
+            stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
+            return globals()[stem+reg_name]
+        #Fix Taint propagation
+        pages = set() #list of page addresses we need to pass tothe emulator
+
+        registers = {}
+        memory = {}
+
+        for reg in self._regs_used(instruction):
+            value = self.read_register(reg)
+            if issymbolic(value):
+                #this will restart the emulation with a concrete register reg
+                raise ConcretizeRegister(reg, "Prepare register for concrete emulator") 
+            registers[reg] = value
 
         # Concretizes the bytes of memory potentially needed by the instruction.
-        for addr in needed_bytes:
-            needed_pages.add(addr & (~0xFFF))
+        for addr in self._mem_used(instruction):
+            pages.add(addr & (~0xFFF))
             val = self.read_int(addr, 8)
             if issymbolic(val):
-                logger.debug("Concretizing bytes before passing it to unicorn")
-                raise ConcretizeMemory(addr, 8, "Passing control to emulator", 'SAMPLED')
-            byte_values[addr] = val
+                raise ConcretizeMemory(addr, 8, "Prepare memory for concrete emulation", 'SAMPLED')
+            memory[addr] = val
 
+        #The emulator
         mu = self._unicorn()
 
         touched = set()
         def hook_mem_access(uc, access, address, size, value, user_data):
+            ''' Auxiliar hook to process unicorn memory accesses.
+                    Reads must be initialized.
+                    Writes must by updated to manticore SE.
+             ''' 
             if access & UC_MEM_WRITE:
                 for i in range(address, address+size):
                     user_data.add(i)
             if access & UC_MEM_READ:
                 for i in range(address, address+size):
-                    if i not in needed_bytes:
-                        logger.error("Not initalized memory used by emulator at %x", address)
+                    if i not in memory.keys():
+                        logger.error("Emulator is using not initalized memory at %x", address)
         try:
             # Copy in the concrete values of all needed registers.
-            for reg, value in reg_values.items():
-                stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
-                #stem = 'UC_X86_REG_'
-                mu.reg_write(globals()[stem+reg], value)
+            for register, value in registers.items():
+                mu.reg_write(_reg_id(register), value)
 
             #Map needed pages
-            for page in needed_pages:
-                mapped.add(page)
+            for page in pages:
+                pages.add(page)
+                #FIXME We should replicate same permissions in the emulator
                 mu.mem_map(page, 0x1000, UC_PROT_ALL)
+
             # Copy in memory bytes needed by instruction.
-            for addr, value in byte_values.items():
+            for addr, value in memory.items():
                 mu.mem_write(addr, Operators.CHR(value))
+
+
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                logger.debug("="*10)
+                for register in self.canonical_registers:
+                    logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x", register, self.read_register(register), mu.reg_read(_reg_id(register)) )
 
             # Run the instruction.
             hook_id = mu.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, hook_mem_access, touched)
@@ -462,42 +515,37 @@ class Cpu(object):
             mu.hook_del(hook_id)
             mu.emu_stop()
 
+            if logger.getEffectiveLevel() == logging.DEBUG:
+                logger.debug("="*10)
+                for register in self.canonical_registers:
+                    logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x", register, self.read_register(register), mu.reg_read(_reg_id(register)) )
+                logger.debug(">"*10)
+
+
             # Copy back the memory modified by the unicorn emulation.
             for addr in touched:
                 if not addr in needed_bytes:
                     logger.error("Some address was touched in the emulation but not provided %x", addr)
                 assert addr in needed_bytes
                 try:
-                    cpu.write_int(addr, ord(mu.mem_read(addr, 1)), 8)
+                    self.write_int(addr, ord(mu.mem_read(addr, 1)), 8)
                 except:
                     pass
 
             # Copy back the new values of all registers.
-            if hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
-                (regs_read, regs_write) = instruction.regs_access()
-                regs = [ instruction.reg_name(r).upper() for r in regs_write ] 
-                if self.arch == CS_ARCH_X86:
-                    regs += ['FPSW', 'FPCW', 'FPTAG', 'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7']
-                elif self.arch == CS_ARCH_ARM:
-                    regs += ['APSR_N','APSR_Z','APSR_C','APSR_V']
-
-            else:
-                regs = reg_values.keys()
-            logger.info("Emulator wrote to this regs %r", regs)
-            for reg in regs:
-                stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
-                #stem = 'UC_X86_REG_'
-                new_value = mu.reg_read(globals()[stem+reg])
-                logger.info("Emulator wrote %s: %x", reg, new_value)
-                self.write_register(reg, new_value)
-          
-            self.PC = PC+instruction.size
+            for register in self._regs_modif(instruction):
+                new_value = mu.reg_read(_reg_id(register))
+                self.write_register(register, new_value)
+            
+            #PC should have been updated by emulator :(
+            self.PC = self.PC+instruction.size
             return
+
         except Exception as e:
             logger.error('Exception in emulating code:')
             logger.error(e, exc_info=True)
         finally:
-            for i in mapped:
+            for i in pages:
                 mu.mem_unmap(i, 0x1000)
 
     #Generic string representation
