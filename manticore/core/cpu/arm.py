@@ -297,7 +297,6 @@ class Armv7Cpu(Cpu):
         logger.info("Emulator wants this regs %r", reg_values)
         return reg_values
 
-
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
     #
@@ -784,10 +783,8 @@ class Armv7Cpu(Cpu):
         cpu.setFlags(N=HighBit(result), Z=(result==0), C=carry)
 
     @instruction
-    def ___ASR(cpu, dest, op, *rest):
-        #print "pre %x ASR SB: %x"%(cpu.PC, cpu.read_register('SB'))
+    def ASR(cpu, dest, op, *rest):
         cpu._SR(ARM_INS_ASR, dest, op, *rest)
-        #print "pos %x ASR SB: %x"%(cpu.PC, cpu.read_register('SB'))
 
     @instruction
     def LSL(cpu, dest, op, *rest):
