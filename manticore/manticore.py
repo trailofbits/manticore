@@ -128,9 +128,18 @@ def binary_type(path):
         raise NotImplementedError("Binary {} not supported.".format(path))
 
 class Manticore(object):
+    '''
+    The central analysis object.
 
-    def __init__(self, binary_path, args = [], verbose = False):
+    :param str binary_path: Path to binary to analyze
+    :param args: Arguments to provide to binary
+    :type args: list[str]
+    '''
+
+    def __init__(self, binary_path, args=None):
         assert os.path.isfile(binary_path)
+
+        args = [] if args is None else args
 
         self._binary = binary_path
         self._binary_type = binary_type(binary_path)
