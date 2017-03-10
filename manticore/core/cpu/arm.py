@@ -331,6 +331,25 @@ class Armv7Cpu(Cpu):
         self._last_flags = state['_last_flags']
         self._force_next = state['_force_next']
 
+    def _concretize_registers(self, instruction):
+        reg_values = {}
+        if hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
+            (regs_read, regs_write) = instruction.regs_access()
+            regs = [ instruction.reg_name(r).upper() for r in regs_read ] 
+            regs.append('R15')
+        else:
+            regs = self.canonical_registers
+
+        logger.debug("Emulator wants this regs %r", regs)
+        for reg in regs:
+            value = self.read_register(reg)
+            if issymbolic(value):
+                raise ConcretizeRegister(reg, "Passing control to emulator") #FIXME improve exception to handle multiple registers at a time 
+            reg_values[reg] = value 
+
+        logger.info("Emulator wants this regs %r", reg_values)
+        return reg_values
+
     def stack_get(self):
         return self.STACK
 
