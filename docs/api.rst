@@ -1,0 +1,7 @@
+API
+===
+
+.. module:: manticore
+
+Manticore
+---------
