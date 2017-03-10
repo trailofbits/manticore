@@ -288,22 +288,6 @@ class Armv7Cpu(Cpu):
         logger.info("Emulator wants this regs %r", reg_values)
         return reg_values
 
-    def stack_get(self):
-        return self.STACK
-
-    def stack_set(self, value):
-        self.STACK = value
-
-
-    def pc_get(self):
-        return self.PC
-    def pc_set(self, value):
-        self.PC=value
-
-    def stack_sub(self, value):
-        self.STACK -= value
-    def stack_add(self, value):
-        self.STACK += value
 
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
@@ -369,29 +353,29 @@ class Armv7Cpu(Cpu):
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
     def stack_push(self, data):
         if isinstance(data, (int, long)):
-            self.stack_sub(self.address_bit_size/8)
-            self.write_int(self.stack_get(), data, self.address_bit_size)
+            self.STACK -= self.address_bit_size/8
+            self.write_int(self.STACK, data, self.address_bit_size)
         elif isinstance(data, BitVec):
-            self.stack_sub(data.size/8)
-            self.write_int(self.stack_get(), data, data.size)
+            self.STACK -= data.size/8
+            self.write_int(self.STACK, data, data.size)
         elif isinstance(data, str):
-            self.stack_sub(len(data))
-            self.write(self.stack_get(), data)
+            self.STACK -= len(data)
+            self.write(self.STACK, data)
         else:
             raise NotImplementedError('unsupported type for stack push data')
-        return self.stack_get()
+        return self.STACK
 
     def stack_peek(self, nbytes=4):
-        return self.read(self.stack_get(), nbytes)
+        return self.read(self.STACK, nbytes)
 
     def stack_pop(self, nbytes=4):
         # TODO is the distinction between load and read really in the op size?
         nbits = nbytes * 8
         if nbits == self.address_bit_size:
-            val = self.read_int(self.stack_get(), nbits)
+            val = self.read_int(self.STACK, nbits)
         else:
-            val = self.read(self.stack_get(), nbytes)
-        self.stack_add(nbytes)
+            val = self.read(self.STACK, nbytes)
+        self.STACK += nbytes
         return val
 
     def read(self, addr, nbytes):
@@ -669,7 +653,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def POP(cpu, *regs):
-        sp = cpu.stack_get()
+        sp = cpu.STACK
         invalid = 0
 
         # "The SP can only be in the list before ARMv7. ARM deprecates any use
