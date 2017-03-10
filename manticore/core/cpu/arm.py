@@ -162,9 +162,9 @@ class Armv7RegisterFile(RegisterFile):
                                                    'SL':'R10', 
                                                    'FP':'R11', 
                                                    'IP': 'R12',  
-                                                   'LR': 'R13',
-                                                   'STACK': 'R14',
-                                                   'SP': 'R14',
+                                                   'STACK': 'R13',
+                                                   'SP': 'R13',
+                                                   'LR': 'R14',
                                                    'PC': 'R15', } )
         self._regs = { }
         #32 bit registers
