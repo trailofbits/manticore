@@ -611,7 +611,6 @@ class Armv7Cpu(Cpu):
     @instruction
     def SUB(cpu, dest, src, add):
         result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
-        logger.info("SUB  %x %x %x -> %x", dest.read(), src.read(), add.read(), src.read()+ ~add.read()+ 1)
         dest.write(result)
         return result, carry, overflow
 
