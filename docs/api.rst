@@ -5,3 +5,6 @@ API
 
 Manticore
 ---------
+
+.. autoclass:: Manticore
+   :members:
