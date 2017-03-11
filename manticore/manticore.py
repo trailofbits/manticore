@@ -323,8 +323,11 @@ class Manticore(object):
 
     def hook(self, pc):
         '''
-        A decorator used to register a hook function for a given instruction address
-        (`pc`). Equivalent to calling `add_hook`.
+        A decorator used to register a hook function for a given instruction address.
+        Equivalent to calling :func:`~add_hook`.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
         '''
         def decorator(f):
             self.add_hook(pc, f)
@@ -333,9 +336,13 @@ class Manticore(object):
 
     def add_hook(self, pc, callback):
         '''
-        Add a callback to be invoked on executing a program counter. Pass 'None'
+        Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one `manticore.core.executor.State` argument.
+        that takes one :class:`~manticore.core.executor.State` argument.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
+        :param callable callback: Hook function
         '''
         if not (isinstance(pc, (int, long)) or pc is None):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
