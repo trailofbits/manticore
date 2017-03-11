@@ -556,7 +556,7 @@ class Manticore(object):
 
     def run(self):
         '''
-        Start Manticore, creating all necessary support classes.
+        Runs analysis.
         '''
         assert not self._running, "Manticore is already running."
         args = self._args
@@ -599,7 +599,10 @@ class Manticore(object):
             self._running = False
 
     def terminate(self):
-        'Gracefully terminate the currently-executing Manticore run.'
+        '''
+        Gracefully terminate the currently-executing run. Typically called from within
+        a :func:`~hook`.
+        '''
         self._executor.shutdown()
 
     def _assertions_callback(self, state, pc):
