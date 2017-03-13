@@ -15,17 +15,6 @@ from capstone.arm import *
 from capstone.x86 import *
 
 
-# no emulator by default
-try:
-    from unicorn import *
-    from unicorn.x86_const import *
-    from unicorn.arm_const import *
-except:
-    pass
-MU = None
-
-
-
 # Custom Constants (avoid conflicts with capstone's arm constants)
 ARM_REG_APSR_N = 1000
 ARM_REG_APSR_Z = 1001
@@ -342,9 +331,9 @@ class Armv7Cpu(Cpu):
         self._last_flags = state['_last_flags']
         self._force_next = state['_force_next']
 
-    def _concretize_registers(cpu, instruction):
+    def _concretize_registers(self, instruction):
         reg_values = {}
-        if hasattr(instruction, 'regs_access'):
+        if hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
             (regs_read, regs_write) = instruction.regs_access()
             regs = [ instruction.reg_name(r).upper() for r in regs_read ] 
             regs.append('R15')
@@ -353,7 +342,7 @@ class Armv7Cpu(Cpu):
 
         logger.debug("Emulator wants this regs %r", regs)
         for reg in regs:
-            value = cpu.read_register(reg)
+            value = self.read_register(reg)
             if issymbolic(value):
                 raise ConcretizeRegister(reg, "Passing control to emulator") #FIXME improve exception to handle multiple registers at a time 
             reg_values[reg] = value 
@@ -484,28 +473,6 @@ class Armv7Cpu(Cpu):
             elif instr.mnemonic.startswith('asr'):
                 return 'ASR'
         return OP_NAME_MAP.get(name, name)
-
-    def readOperand(self, op):
-        if op.type == ARM_OP_REG:
-            return self.regfile.read(op.reg)
-        elif op.type == ARM_OP_IMM:
-            return op.imm
-        elif op.type == ARM_OP_MEM:
-            raise NotImplementedError('need to impl arm load mem')
-        else:
-            raise NotImplementedError("readOperand unknown type", op.type)
-
-    def writeOperand(self, op, value):
-        if op.type == ARM_OP_REG:
-            self.regfile.write(op.reg, value)
-        elif op.type == ARM_OP_MEM:
-            raise NotImplementedError('need to impl arm store mem')
-        else:
-            raise NotImplementedError("writeOperand unknown type", op.type)
-
-    def getOperandAddress(self, op):
-        # TODO IMPLEMENT
-        return -1
 
     def _wrap_operands(self, ops):
         return [Armv7Operand(self, op) for op in ops]

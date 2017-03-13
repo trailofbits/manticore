@@ -668,7 +668,7 @@ class Executor(object):
 
             output.write("CPU:\n{}".format(cpu))
 
-            if hasattr(cpu, "instruction"):
+            if hasattr(cpu, "instruction") and cpu.instruction is not None:
                 i = cpu.instruction
                 output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
             else:
@@ -951,7 +951,7 @@ class Executor(object):
                     del vals, symbolic, setstate
 
                 except SymbolicMemoryException as e:
-                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.current.PC, e.cause)
+                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.PC, e.cause)
                     logger.info('Constraint for crashing! %s', e.constraint)
 
                     children = []
