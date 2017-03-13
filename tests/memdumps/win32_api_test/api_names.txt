@@ -1,0 +1,2 @@
+0x75627525 stdcall windows.KERNELBASE.WriteFile
+0x756c1400 stdcall windows.kernel32.WriteFile

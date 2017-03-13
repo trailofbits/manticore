@@ -1,0 +1,10 @@
+{
+    "--offset": "0",
+    "--buffer": "DWORD PTR [ DWORD PTR [EBP+0x0C] ]",
+    "--size": "0x12",
+    "--procs": "2",
+    "--names": "{dumpdir}/api_names.txt",
+    "dump": "win32_api_test.dmp",
+    "actual": "visited.txt",
+    "expected": "win32_api_test_visited.txt"
+}

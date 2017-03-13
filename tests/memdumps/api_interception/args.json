@@ -1,0 +1,10 @@
+{
+    "--offset": "0",
+    "--buffer": "0x00403018",
+    "--size": "0x2E",
+    "--procs": "1",
+    "--names": "{dumpdir}/api_names.txt",
+    "dump": "api_interception.dmp",
+    "actual": "visited.txt",
+    "expected": "api_interception_test_visited.txt"
+}

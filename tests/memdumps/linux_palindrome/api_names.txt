@@ -1,0 +1,2 @@
+0x08049cb0 cdecl linux.DecreeEmu.cgc_initialize_secret_page
+0x08049c50 cdecl linux.DecreeEmu.cgc_random
