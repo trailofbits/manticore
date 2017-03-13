@@ -1,6 +1,6 @@
 #!/bin/bash
 coverage erase
-coverage run -m unittest discover test/ 2>&1 >/dev/null | tee travis_tests.log
+coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
 DID_OK=$(tail -n1 travis_tests.log)
 RV=1
 if [[ "${DID_OK}" == OK* ]]

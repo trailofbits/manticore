@@ -61,11 +61,11 @@ cd /path/to/manticore/
 # all tests
 nosetests
 # just one file
-nosetests test/test_armv7cpu.py
+nosetests tests/test_armv7cpu.py
 # just one test class
-nosetests test/test_armv7cpu.py:Armv7CpuInstructions
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
 # just one test
-nosetests test/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 ```
 
 ## Quick start
