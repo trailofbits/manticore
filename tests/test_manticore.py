@@ -4,7 +4,7 @@ from manticore import Manticore
 
 class ManticoreTest(unittest.TestCase):
     def setUp(self):
-        self.m = Manticore('test/binaries/arguments_linux_amd64')
+        self.m = Manticore('tests/binaries/arguments_linux_amd64')
 
     def test_add_hook(self):
         def tmp(state):
@@ -29,7 +29,7 @@ class ManticoreTest(unittest.TestCase):
     @unittest.skip('TODO(mark): (#52) activating this test breaks something z3 related for following tests')
     def test_integration_basic_stdin(self):
         import os, struct
-        self.m = Manticore('test/binaries/basic_linux_amd64')
+        self.m = Manticore('tests/binaries/basic_linux_amd64')
         self.m.run()
         workspace = os.path.join(os.getcwd(), self.m.workspace)
         with open(os.path.join(workspace, 'test_00000001.stdin')) as f:

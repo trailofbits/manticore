@@ -5,7 +5,7 @@ No ignore APIs:
 python SymbolicExecutor/main.py --offset 0 --workspace test --buffer "DWORD PTR [EBP-0x28]" --size "0x20" tests/ignore_an_api/ignore_an_api.dmp
 
 Ignore APIs:
-python SymbolicExecutor/main.py --offset 0 --workspace test --buffer "DWORD PTR [EBP-0x28]" --size "0x20" tests/ignore_an_api/ignore_an_api.dmp --names tests/ignore_an_api/api_names.txt --log test/manticore.log
+python SymbolicExecutor/main.py --offset 0 --workspace test --buffer "DWORD PTR [EBP-0x28]" --size "0x20" tests/ignore_an_api/ignore_an_api.dmp --names tests/ignore_an_api/api_names.txt --log tests/manticore.log
 
 
 APIs to Ignore:
