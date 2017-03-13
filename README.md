@@ -25,7 +25,15 @@ Manticore is officially supported on Linux and uses Python 2.7.
 
 ## Installation
 
-From the root of the Manticore repository, run:
+We recommend the use of Manticore in a virtual environment, though this is optional.
+To manage this, we recommend installing [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/).
+Then, to set up a virtual environment, in the root of the Manticore repository, run
+
+```
+mkvirtualenv manticore
+```
+
+Then, from the root of the Manticore repository, run:
 
 ```
 pip install .
