@@ -60,11 +60,15 @@ class Armv7Operand(Operand):
         super(Armv7Operand, self).__init__(cpu, op, **kwargs)
 
     def size(self):
-        assert self.op.type == ARM_OP_REG
-        if self.op.reg >= ARM_REG_D0 and self.op.reg <= ARM_REG_D31:
-            return 8
-        else:
+        if self.op.type == ARM_OP_REG:
+            if self.op.reg >= ARM_REG_D0 and self.op.reg <= ARM_REG_D31:
+                return 8
+            else:
+                return 4
+        elif self.op.type == ARM_OP_MEM:
+            #FIXME Access the cpu.instruction and decide which size we are
             return 4
+        raise Exception()
 
     def read(self, nbits=None, withCarry=False):
         carry = self.cpu.regfile.read(ARM_REG_APSR_C)
@@ -147,7 +151,7 @@ class Armv7Operand(Operand):
         # If pc is the base, we need to correct for the fact that the ARM
         # spec defines PC to point to the current insn + 8, which we are not
         # compliant with (we do current insn + 4)
-        return base+4 if mem.base == ARM_REG_PC else base
+        return base+4 if mem.base in ( ARM_REG_PC,  ARM_REG_R15) else base
 
     def _getExpandImmCarry(self, carryIn):
         '''Manually compute the carry bit produced by expanding an immediate
@@ -289,7 +293,7 @@ class Armv7RegisterFile(RegisterFile):
 
     @property
     def canonical_registers(self):
-        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12', 'SP', 'LR', 'PC', 'APSR')
+        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
 
     def reg_name(self, reg_id):
         reg_offset = self.REGMAP[reg_id]
@@ -626,7 +630,7 @@ class Armv7Cpu(Cpu):
         cpu._handleWriteback(dest, src, offset)
 
     @instruction
-    def LDR(cpu, dest, src, offset=None):
+    def _DISABLE_LDR(cpu, dest, src, offset=None):
         cpu._LDR(dest, src, 32, False, offset)
 
     @instruction
