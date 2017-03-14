@@ -883,32 +883,34 @@ class X86Cpu(Cpu):
         @param cpu: current CPU. 
         '''
         #FIXME Choose conserative values and consider returning some default when eax not here
-        conf = {  0: (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
-                  1: (0x000306c3, 0x05100800, 0x7ffafbff, 0xbfebfbff),
-                  2: (0x76035a01, 0x00f0b5ff, 0x00000000, 0x00c10000),
-                  4: { 0: (0x1c004121, 0x01c0003f, 0x0000003f, 0x00000000),
-                       1: (0x1c004122, 0x01c0003f, 0x0000003f, 0x00000000),
-                       2: (0x1c004143, 0x01c0003f, 0x000001ff, 0x00000000),
-                       3: (0x1c03c163, 0x03c0003f, 0x00000fff, 0x00000006)},
-                  7: (0x00000000, 0xffffffff, 0x00000000, 0x00000000),
-                  0x80000000: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
-                 11: { 0: (0x00000001, 0x00000002, 0x00000100, 0x00000005),
-                       1: (0x00000004, 0x00000004, 0x00000201, 0x00000003)},
+        conf = {   0x0:        (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
+                   0x1:        (0x000306c3, 0x05100800, 0x7ffafbff, 0xbfebfbff),
+                   0x2:        (0x76035a01, 0x00f0b5ff, 0x00000000, 0x00c10000),
+                   0x4: { 0x0: (0x1c004121, 0x01c0003f, 0x0000003f, 0x00000000),
+                          0x1: (0x1c004122, 0x01c0003f, 0x0000003f, 0x00000000),
+                          0x2: (0x1c004143, 0x01c0003f, 0x000001ff, 0x00000000),
+                          0x3: (0x1c03c163, 0x03c0003f, 0x00000fff, 0x00000006)},
+                   0x7:        (0x00000000, 0xffffffff, 0x00000000, 0x00000000),
+                   0x8:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
+                   0xb: { 0x0: (0x00000001, 0x00000002, 0x00000100, 0x00000005),
+                          0x1: (0x00000004, 0x00000004, 0x00000201, 0x00000003)},
+                   0xd: { 0x0: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
+                          0x1: (0x00000000, 0x00000000, 0x00000000, 0x00000000)},
                   }
 
         if not cpu.EAX in conf:
-            errormsg = "CPUID with EAX={:x} not implemented @ {:x}".format(cpu.EAX, cpu.PC)
-            logger.info(errormsg)
-            raise NotImplementedError(errormsg)
+            logger.warning('CPUID with EAX=%x not implemented @ %x', cpu.EAX, cpu.PC)
+            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0,0,0,0
+            return
 
         if isinstance(conf[cpu.EAX], tuple):
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX]
             return
 
         if not cpu.ECX in conf[cpu.EAX]:
-            errormsg = "CPUID with EAX={:x} ECX={:x} not implemented".format(cpu.EAX, cpu.ECX)
-            logger.debug(errormsg)
-            raise NotImplementedError(errormsg)
+            logger.warning('CPUID with EAX=%x ECX=%x not implemented',cpu.EAX, cpu.ECX)
+            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0,0,0,0
+            return
     
         cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX][cpu.ECX]
 
