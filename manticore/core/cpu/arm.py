@@ -630,7 +630,7 @@ class Armv7Cpu(Cpu):
         cpu._handleWriteback(dest, src, offset)
 
     @instruction
-    def _DISABLE_LDR(cpu, dest, src, offset=None):
+    def LDR(cpu, dest, src, offset=None):
         cpu._LDR(dest, src, 32, False, offset)
 
     @instruction

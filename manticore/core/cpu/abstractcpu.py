@@ -407,7 +407,7 @@ class Cpu(object):
                 num_bytes = op.size()
             else:
                 num_bytes = op.size/8
-            used.update(range(addr-64, addr + num_bytes+64))
+            used.update(range(addr, addr + num_bytes))
         # Request the bytes of the instruction.
         used.update(range(self.PC, self.PC + instruction.size))
         return used
@@ -517,6 +517,9 @@ class Cpu(object):
                 for register in self.canonical_registers:
                     logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x", register, self.read_register(register), mu.reg_read(_reg_id(register)) )
 
+            #Unicorn hack. On single step unicorn wont advance the PC register
+            PC = self.PC
+
             # Run the instruction.
             hook_id = mu.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, hook_mem_access, touched)
             mu.emu_start(self.PC, self.PC+instruction.size, count=1)
@@ -543,13 +546,14 @@ class Cpu(object):
                 self.write_register(register, new_value)
             
 
+            #Unicorn hack. On single step unicorn wont advance the PC register
             mu_pc = mu.reg_read(_reg_id('R15'))
-            logger.debug("self.PC: %x, mu_pc: %x", self.PC, mu_pc)
-            if self.PC == mu_pc:
+            if PC == mu_pc:
                 #PC should have been updated by emulator :(
                 self.PC = self.PC+instruction.size
             else:
                 self.PC = mu_pc
+
             return
 
         except Exception as e:
