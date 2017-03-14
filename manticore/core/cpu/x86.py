@@ -898,7 +898,7 @@ class X86Cpu(Cpu):
 
         if not cpu.EAX in conf:
             errormsg = "CPUID with EAX={:x} not implemented @ {:x}".format(cpu.EAX, cpu.PC)
-            logger.error(errormsg)
+            logger.warning(errormsg)
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0,0,0,0
             return
 
@@ -908,7 +908,7 @@ class X86Cpu(Cpu):
 
         if not cpu.ECX in conf[cpu.EAX]:
             errormsg = "CPUID with EAX={:x} ECX={:x} not implemented".format(cpu.EAX, cpu.ECX)
-            logger.error(errormsg)
+            logger.warning(errormsg)
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0,0,0,0
             return
     
