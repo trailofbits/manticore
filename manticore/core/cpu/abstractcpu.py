@@ -401,8 +401,11 @@ class Cpu(object):
             self.PC -= instruction.size
             #address can not be symbolis as all registers in the operands where concretized before. Right?
             assert not issymbolic(addr)
-            num_bytes = op.size/8
-            used.update(range(addr, addr + num_bytes))
+            if self.arch == CS_ARCH_ARM:  #FIXME normalize insterface
+                num_bytes = op.size()
+            else:
+                num_bytes = op.size/8
+            used.update(range(addr-64, addr + num_bytes+64))
         # Request the bytes of the instruction.
         used.update(range(self.PC, self.PC + instruction.size))
         return used
@@ -469,10 +472,11 @@ class Cpu(object):
         # Concretizes the bytes of memory potentially needed by the instruction.
         for addr in self._mem_used(instruction):
             pages.add(addr & (~0xFFF))
-            val = self.read_int(addr, 8)
-            if issymbolic(val):
-                raise ConcretizeMemory(addr, 8, "Prepare memory for concrete emulation", 'SAMPLED')
-            memory[addr] = val
+            if self.memory.access_ok(addr, 'r'):
+                val = self.read_int(addr, 8)
+                if issymbolic(val):
+                    raise ConcretizeMemory(addr, 8, "Prepare memory for concrete emulation", 'SAMPLED')
+                memory[addr] = val
 
         #The emulator
         mu = self._unicorn()
@@ -526,12 +530,9 @@ class Cpu(object):
 
             # Copy back the memory modified by the unicorn emulation.
             for addr in touched:
-                if not addr in needed_bytes:
-                    logger.error("Some address was touched in the emulation but not provided %x", addr)
-                assert addr in needed_bytes
                 try:
                     self.write_int(addr, ord(mu.mem_read(addr, 1)), 8)
-                except:
+                except MemoryException as e:
                     pass
 
             # Copy back the new values of all registers.
@@ -539,8 +540,14 @@ class Cpu(object):
                 new_value = mu.reg_read(_reg_id(register))
                 self.write_register(register, new_value)
             
-            #PC should have been updated by emulator :(
-            self.PC = self.PC+instruction.size
+
+            mu_pc = mu.reg_read(_reg_id('R15'))
+            logger.debug("self.PC: %x, mu_pc: %x", self.PC, mu_pc)
+            if self.PC == mu_pc:
+                #PC should have been updated by emulator :(
+                self.PC = self.PC+instruction.size
+            else:
+                self.PC = mu_pc
             return
 
         except Exception as e:
