@@ -1,4 +1,4 @@
-from manticore.core.executor import manager
+from .executor import manager
 from .smtlib import solver
 from ..utils.helpers import issymbolic
 
