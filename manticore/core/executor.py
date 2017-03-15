@@ -506,8 +506,6 @@ class Executor(object):
         if item not in self._all_branches:
             self._all_branches.append(item)
 
-        assert not issymbolic(last_pc)
-
         self._states[state.name] = {'received' : receive_size,
                                     'transmited': transmit_size,
                                     'icount': state.model.current.icount,
