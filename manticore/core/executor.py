@@ -579,7 +579,6 @@ class Executor(object):
             current_state.record_fork(vals)
 
             for new_value in vals:
-
                 with current_state as new_state:
                     new_state.add(symbolic == new_value, check=False) #We already know it's sat
                     #and set the PC of the new state to the concrete pc-dest
