@@ -151,7 +151,7 @@ class Armv7Operand(Operand):
         # If pc is the base, we need to correct for the fact that the ARM
         # spec defines PC to point to the current insn + 8, which we are not
         # compliant with (we do current insn + 4)
-        return base+4 if mem.base in ( ARM_REG_PC,  ARM_REG_R15) else base
+        return base+4 if mem.base == ARM_REG_PC else base
 
     def _getExpandImmCarry(self, carryIn):
         '''Manually compute the carry bit produced by expanding an immediate
