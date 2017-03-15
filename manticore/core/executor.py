@@ -576,12 +576,7 @@ class Executor(object):
                 raise Exception('Unsupported concretization type %s', type(symbolic))
             current_state.constraints.add(new_var == symbolic)
 
-            for new_value in vals:
-                try:
-                    lastpc = current_state.last_pc[1]
-                    current_state.branches[(lastpc, new_value)] += 1
-                except KeyError:
-                    current_state.branches[(lastpc, new_value)] = 1
+            current_state.record_fork(vals)
 
             for new_value in vals:
 
