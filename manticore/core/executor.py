@@ -43,7 +43,7 @@ from math import ceil, log
 
 from ..utils.nointerrupt import DelayedKeyboardInterrupt
 from .cpu.abstractcpu import ConcretizeRegister, ConcretizeMemory, \
-        InvalidPCException, IgnoreAPI
+        InvalidPCException, IgnoreAPI, SymbolicPCException
 from .memory import MemoryException, SymbolicMemoryException
 from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
 from ..utils.event import Signal
@@ -576,8 +576,6 @@ class Executor(object):
                 raise Exception('Unsupported concretization type %s', type(symbolic))
             current_state.constraints.add(new_var == symbolic)
 
-            current_state.record_fork(vals)
-
             for new_value in vals:
                 with current_state as new_state:
                     new_state.add(symbolic == new_value, check=False) #We already know it's sat
@@ -740,6 +738,9 @@ class Executor(object):
 
                     assert len(vals) > 0, "It should be at least one solution"
                     logger.debug("%s. Possible values are: %s", e.message, ["0x%016x"%x for x in vals])
+
+                    if isinstance(e, SymbolicPCException):
+                        current_state.record_branches(vals)
 
                     def setstate(state, val):
                         # XXX This only applies to ARM since x86 has no conditional instructions
