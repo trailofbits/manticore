@@ -293,10 +293,6 @@ class Executor(object):
         # get last executed instruction
         last_cpu, last_pc = state.last_pc
 
-        # try:
-        #     state.branches[(last_pc, state.cpu.PC)] += 1
-        # except KeyError:
-        #     state.branches[(last_pc, state.cpu.PC)] = 1
         item = (last_pc, state.cpu.PC)
         assert not issymbolic(last_pc)
         assert not issymbolic(state.cpu.PC)
