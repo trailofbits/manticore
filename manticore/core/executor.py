@@ -43,7 +43,7 @@ from math import ceil, log
 
 from ..utils.nointerrupt import DelayedKeyboardInterrupt
 from .cpu.abstractcpu import ConcretizeRegister, ConcretizeMemory, \
-        InvalidPCException, IgnoreAPI
+        InvalidPCException, IgnoreAPI, SymbolicPCException
 from .memory import MemoryException, SymbolicMemoryException
 from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
 from ..utils.event import Signal
@@ -155,8 +155,10 @@ class State(object):
         trace_item = (self.model._current, self.cpu.PC)
         try:
             result = self.model.execute()
+        except SymbolicPCException:
+            self._record_symbolic_branch()
+            raise
         except:
-            trace_item = None
             raise
         assert self.model.constraints is self.constraints
         assert self.mem.constraints is self.constraints
@@ -281,6 +283,12 @@ class State(object):
     def solve_n(self, expr, nsolves=1, policy='minmax'):
         # type: (Expression, int) -> list
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
+
+    def _record_symbolic_branch(self):
+        try:
+            self.branches[self.last_pc] += 1
+        except KeyError:
+            self.branches[self.last_pc] = 1
 
 
 def sync(f):
@@ -492,17 +500,11 @@ class Executor(object):
         # get last executed instruction
         last_cpu, last_pc = state.last_pc
 
-        try:
-            state.branches[(last_pc, state.cpu.PC)] += 1
-        except KeyError:
-            state.branches[(last_pc, state.cpu.PC)] = 1
         item = (last_pc, state.cpu.PC)
         assert not issymbolic(last_pc)
         assert not issymbolic(state.cpu.PC)
         if item not in self._all_branches:
             self._all_branches.append(item)
-
-        assert not issymbolic(last_pc)
 
         self._states[state.name] = {'received' : receive_size,
                                     'transmited': transmit_size,

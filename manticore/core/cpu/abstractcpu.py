@@ -351,7 +351,7 @@ class Cpu(object):
 
     def execute(self):
         ''' Decode, and execute one intruction pointed by register PC'''
-        if not isinstance(self.PC, (int,long)):
+        if issymbolic(self.PC):
             raise SymbolicPCException()
 
         if not self.memory.access_ok(self.PC,'x'):
