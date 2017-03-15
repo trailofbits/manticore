@@ -293,10 +293,10 @@ class Executor(object):
         # get last executed instruction
         last_cpu, last_pc = state.last_pc
 
-        try:
-            state.branches[(last_pc, state.cpu.PC)] += 1
-        except KeyError:
-            state.branches[(last_pc, state.cpu.PC)] = 1
+        # try:
+        #     state.branches[(last_pc, state.cpu.PC)] += 1
+        # except KeyError:
+        #     state.branches[(last_pc, state.cpu.PC)] = 1
         item = (last_pc, state.cpu.PC)
         assert not issymbolic(last_pc)
         assert not issymbolic(state.cpu.PC)
@@ -581,6 +581,14 @@ class Executor(object):
             current_state.constraints.add(new_var == symbolic)
 
             for new_value in vals:
+                try:
+                    lastpc = current_state.last_pc[1]
+                    current_state.branches[(lastpc, new_value)] += 1
+                except KeyError:
+                    current_state.branches[(lastpc, new_value)] = 1
+
+            for new_value in vals:
+
                 with current_state as new_state:
                     new_state.add(symbolic == new_value, check=False) #We already know it's sat
                     #and set the PC of the new state to the concrete pc-dest
