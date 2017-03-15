@@ -56,7 +56,7 @@ def mgr_init():
 manager = SyncManager()
 manager.start(mgr_init)
 
-from .state import AbandonState
+from .state import AbandonState, State
 
 logger = logging.getLogger("EXECUTOR")
 
