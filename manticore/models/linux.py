@@ -2,7 +2,6 @@ import cgcrandom
 import weakref
 import errno
 import sys, os, struct
-from ..utils import qemu
 from ..utils.helpers import issymbolic
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister, InvalidPCException
 from ..core.cpu.cpufactory import CpuFactory
