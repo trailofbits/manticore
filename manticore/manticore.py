@@ -13,7 +13,8 @@ from multiprocessing import Process
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from .core.executor import Executor, State, AbandonState
+from .core.executor import Executor
+from .core.state import State, AbandonState
 from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
