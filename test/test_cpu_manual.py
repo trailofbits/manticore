@@ -958,6 +958,34 @@ Using the SAR instruction to perform a division operation does not produce the s
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.EAX, 0xffffffff)
 
+    def test_emulator_SAR(self):
+        ''' Instruction emulator_SAR
+
+        '''
+        mem = Memory32()
+        cpu = I386Cpu(mem)
+        mem.mmap(0x0041e000, 0x1000, 'rwx')
+        mem[0x0041e10a] = '\xc0'
+        mem[0x0041e10b] = '\xf8'
+        mem[0x0041e10c] = '\x9f'
+        cpu.RIP = 0x41e10a
+        cpu.CF = True
+        cpu.SF = True
+        cpu.ZF = False
+        cpu.AF = False
+        cpu.OF = False
+        cpu.PF = False
+        cpu.EAX = 0xfffffffd
+        bk = X86Cpu.SAR
+        del X86Cpu.SAR
+        cpu.execute()
+        #self.assertEqual(cpu.PF, True)
+        self.assertEqual(cpu.SF, True)
+        self.assertEqual(cpu.ZF, False)
+        self.assertEqual(cpu.OF, False)
+        self.assertEqual(cpu.AF, False)
+        self.assertEqual(cpu.EAX, 0xffffffff)
+        X86Cpu.SAR = bk
 
     def test_SAR_2_symbolicsa(self):
         cs = ConstraintSet()
