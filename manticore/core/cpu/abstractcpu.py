@@ -414,38 +414,19 @@ class Cpu(object):
 
 
     def _regs_used(self, instruction):
-        if False and hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
+        ''' Returns a list of register names used by the instruction '''
+        if  hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
             (regs_read, regs_write) = instruction.regs_access()
             regs = [ instruction.reg_name(r).upper() for r in regs_write ] 
-            if self.arch == CS_ARCH_X86:
-                if self.mode == CS_MODE_64:
-                    #fix buggy capstone regs for amd64
-                    pass
-                else:
-                    #fix buggy capstone regs for i386
-                    pass
-
-            elif self.arch == CS_ARCH_ARM: 
-                #fix buggy capstone regs for arm
-                pass
         else:
             regs = self.canonical_registers
         return regs
 
     def _regs_modif(self, instruction):
-        if False and hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
+        ''' Returns a list of register names modified by the instruction '''
+        if hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
             (regs_read, regs_write) = instruction.regs_access()
             regs = [ instruction.reg_name(r).upper() for r in regs_write ] 
-            if self.arch == CS_ARCH_X86:
-                if self.mode == CS_MODE_64:
-                    #fix buggy capstone regs for amd64
-                    pass
-                else:
-                    #fix buggy capstone regs for i386
-                    pass
-            elif self.arch == CS_ARCH_ARM: 
-                #fix buggy capstone regs for arm 
-                pass
         else:
             regs = self.canonical_registers
         return regs

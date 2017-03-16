@@ -734,6 +734,24 @@ class X86Cpu(Cpu):
         self._segments = state['segments']
         super(X86Cpu, self).__setstate__(state)
 
+
+    def _regs_used(self, instruction):
+        regs = ('EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI',  'EFLAGS', 'EIP',
+                     'XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 
+                     'XMM6', 'XMM7',
+                     'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7',
+                     'FPSW', 'FPCW', 'FPTAG')
+        return regs
+
+    def _regs_modif(self, instruction):
+        regs = ('EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI',  'EFLAGS', 'EIP',
+                     'XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 
+                     'XMM6', 'XMM7', 
+                     'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7',
+                     'FPSW', 'FPCW', 'FPTAG')
+        return regs
+
+
     ####################
     # Segments
     def set_descriptor(self, selector, base, limit, perms):
