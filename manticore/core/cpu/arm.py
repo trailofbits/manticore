@@ -4,7 +4,7 @@ from .abstractcpu import Cpu, RegisterFile, Operand
 from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
-from ..smtlib import Operators, Expression
+from ..smtlib import Operators, Expression, BitVecConstant
 from ...utils.helpers import issymbolic
 # from ..smtlib import *
 from functools import wraps
@@ -253,9 +253,9 @@ class Armv7RegisterFile(RegisterFile):
 
         def make_apsr_flag(flag_expr, offset):
             'Helper for constructing an expression for the APSR register'
-            return Operators.ITEBV(cpu.address_bit_size, flag_expr,
-                              BitVecConstant(cpu.address_bit_size, 1 << offset),
-                              BitVecConstant(cpu.address_bit_size, 0))
+            return Operators.ITEBV(32, flag_expr,
+                              BitVecConstant(32, 1 << offset),
+                              BitVecConstant(32, 0))
         if any(issymbolic(x) for x in [N, Z, C, V]):
             apsr = (make_apsr_flag(N, 31) |
                     make_apsr_flag(Z, 30) |
