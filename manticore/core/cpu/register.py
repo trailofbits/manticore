@@ -10,11 +10,13 @@ class Register(object):
         self.value = 0
 
     def read(self, nbits=None):
-        if isinstance(self.value, (int, long, BitVec)):
+        if isinstance(self.value, (int, long)):
             val = Operators.EXTRACT(self.value, 0, nbits or self.width)
             return bool(val) if self.width == 1 else val
         elif isinstance(self.value, Bool):
             return self.value
+        elif isinstance(self.value, BitVec):
+            return self.value.Bool() if self.width == 1 else self.value
         else:
             raise Exception('Malformed data in a register')
 
