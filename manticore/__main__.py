@@ -118,9 +118,6 @@ def main():
     for hdlr in handlers:
         m.add_handler(hdlr)
 
-    if args.log:
-        m.log_file = args.log
-
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
 
