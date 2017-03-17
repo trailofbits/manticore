@@ -9,21 +9,18 @@ class Register(object):
         self.width = width
         self.value = 0
 
-    def read(self, nbits=None):
-        if isinstance(self.value, (int, long)):
-            val = Operators.EXTRACT(self.value, 0, nbits or self.width)
-            return bool(val) if self.width == 1 else val
-        elif isinstance(self.value, Bool):
-            return self.value
-        elif isinstance(self.value, BitVec):
-            return self.value.Bool() if self.width == 1 else self.value
-        else:
-            raise Exception('Malformed data in a register')
+    def is_flag(self):
+        return self.width == 1
 
-    def write(self, val, nbits=None):
-        if self.width == 1:
-            assert isinstance(val, (bool, Expression)) or val in (1, 0)
-            self.value = int(val) if isinstance(val, bool) else val
-        else:
-            val = Operators.EXTRACT(val, 0, nbits or self.width)
+    def read(self):
+        return self.value
+
+    def write(self, val):
+        if isinstance(val, (Bool, bool)):
             self.value = val
+        elif isinstance(val, BitVec):
+            self.value = val.Bool() if self.is_flag() else val
+        elif isinstance(val, (int, long)):
+            self.value = Operators.EXTRACT(val, 0, self.width)
+            if self.is_flag():
+                self.value = bool(self.value)
