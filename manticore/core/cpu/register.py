@@ -24,3 +24,5 @@ class Register(object):
             self.value = Operators.EXTRACT(val, 0, self.width)
             if self.is_flag():
                 self.value = bool(self.value)
+        else:
+            raise TypeError('Cannot store {} in Register'.format(val.__class__.__name__))
