@@ -15,6 +15,7 @@ except ImportError:
     pass
 sys.setrecursionlimit(10000)
 
+logger = logging.getLogger('MAIN')
 
 def parse_arguments():
     ###########################################################################
@@ -67,8 +68,6 @@ def parse_arguments():
     return parsed
 
 
-#logger = logging.getLogger('MAIN')
-
 def main():
     args = parse_arguments()
 
@@ -109,8 +108,6 @@ def main():
     if args.assertions:
         m.load_assertions(args.assertions)
 
-    logger = logging.getLogger('MANTICORE')
-
     if args.verbose:
         m.verbosity = 5
 
@@ -123,8 +120,8 @@ def main():
     if args.log:
         m.log_file = args.log
 
-    m.log_info('Loading program: {}'.format(args.programs))
-    m.log_info('Workspace: {}'.format(m.workspace))
+    logger.info('Loading program: {}'.format(args.programs))
+    logger.info('Workspace: {}'.format(m.workspace))
 
     m.run(args.timeout)
 
