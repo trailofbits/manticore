@@ -361,13 +361,19 @@ class Cpu(object):
         instruction = self.decode_instruction(self.PC)
         self.instruction = instruction #FIX
 
+
+        def _get_regs():
+            return {name:self.read_register(name) for name in self.canonical_registers}
+
+        before_impl = _get_regs()
+
         name = self.canonicalize_instruction_name(instruction)
-        try:
-            implementation = getattr(self, name)
-        except AttributeError as ae:
-            #XXX Check that the attribute error is for "name" !! print "EXCEPTION", ae
-            logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
-            implementation = lambda *ops: self.emulate(instruction)
+        #try:
+        implementation = getattr(self, name)
+        #except AttributeError as ae:
+        #XXX Check that the attribute error is for "name" !! print "EXCEPTION", ae
+        logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
+        implementation2 = lambda *ops: self.emulate(instruction)
 
         #log
         if logger.level == logging.DEBUG :
@@ -452,8 +458,8 @@ class Cpu(object):
         def _reg_id(reg_name):
             #FIXME FIXME FIXME
             #assert unicorn.__version__ <= '1.0.0', "If we are using unicorn greater than 1.0.0 we have ARM.APSR support
-            if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
-                reg_name = 'CPSR'
+            #if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
+                #reg_name = 'CPSR'
             stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
             return globals()[stem+reg_name]
         #Fix Taint propagation
@@ -462,6 +468,7 @@ class Cpu(object):
         registers = {}
         memory = {}
 
+        '''
         for reg in self._regs_used(instruction):
             value = self.read_register(reg)
             if issymbolic(value):
@@ -478,51 +485,219 @@ class Cpu(object):
                     raise ConcretizeMemory(addr, 8, "Prepare memory for concrete emulation", 'SAMPLED')
                 memory[addr] = val
 
+        '''
         #The emulator
         mu = self._unicorn()
 
         touched = set()
-        def hook_mem_access(uc, access, address, size, value, user_data):
-            ''' Auxiliar hook to process unicorn memory accesses.
-                    Reads must be initialized.
-                    Writes must by updated to manticore SE.
-             ''' 
-            if access & UC_MEM_WRITE:
-                for i in range(address, address+size):
-                    user_data.add(i)
-            if access & UC_MEM_READ:
-                for i in range(address, address+size):
-                    if i not in memory.keys():
-                        logger.error("Emulator is using not initalized memory at %x", address)
+
+        ### def hook_mem_access(uc, access, address, size, value, user_data):
+        ###     ''' Auxiliar hook to process unicorn memory accesses.
+        ###             Reads must be initialized.
+        ###             Writes must by updated to manticore SE.
+        ###      ''' 
+        ###     if access & UC_MEM_WRITE:
+        ###         for i in range(address, address+size):
+        ###             user_data.add(i)
+        ###     if access & UC_MEM_READ:
+        ###         for i in range(address, address+size):
+        ###             if i not in memory.keys():
+        ###                 logger.error("Emulator is using not initalized memory at %x", address)
         try:
             # Copy in the concrete values of all needed registers.
-            for register, value in registers.items():
-                mu.reg_write(_reg_id(register), value)
+            #for register, value in registers.items():
+            #    print "writing: "
+            #    mu.reg_write(_reg_id(register), value)
+            for reg in self.canonical_registers:
+                val = self.read_register(reg)
+                if issymbolic(val):
+                    raise ConcretizeRegister(reg, "Prepare register for concrete emulator") 
+                mu.reg_write(_reg_id(reg), val)
+                #print "Written {} to {:x}".format(reg, val)
+
 
             #Map needed pages
-            for page in pages:
-                pages.add(page)
-                #FIXME We should replicate same permissions in the emulator
-                mu.mem_map(page, 0x1000, UC_PROT_ALL)
+            ## for page in pages:
+            ##     pages.add(page)
+            ##     #FIXME We should replicate same permissions in the emulator
+            ##     mu.mem_map(page, 0x1000, UC_PROT_ALL)
 
-            # Copy in memory bytes needed by instruction.
-            for addr, value in memory.items():
-                mu.mem_write(addr, Operators.CHR(value))
+            ## # Copy in memory bytes needed by instruction.
+            ## for addr, value in memory.items():
+            ##     mu.mem_write(addr, Operators.CHR(value))
 
 
-            if logger.getEffectiveLevel() == logging.DEBUG:
-                logger.debug("="*10)
-                for register in self.canonical_registers:
-                    logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x", register, self.read_register(register), mu.reg_read(_reg_id(register)) )
+            ## if logger.getEffectiveLevel() == logging.DEBUG:
+            ##     logger.debug("="*10)
+            ##     for register in self.canonical_registers:
+            ##         logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x", register, self.read_register(register), mu.reg_read(_reg_id(register)) )
+
+            def _create_emulated_mapping(uc, address):
+
+                m = self.memory.map_containing(address)
+
+                permissions = UC_PROT_NONE
+                if 'r' in m.perms: permissions |= UC_PROT_READ
+                if 'w' in m.perms: permissions |= UC_PROT_WRITE
+                if 'x' in m.perms: permissions |= UC_PROT_EXEC
+
+                print "mapping: ({:x}, {:x}, {})".format(m.start, len(m), permissions)
+
+                uc.mem_map(m.start, len(m), permissions)
+
+                return m
 
             #Unicorn hack. On single step unicorn wont advance the PC register
             PC = self.PC
 
+            m = _create_emulated_mapping(mu, PC)
+            mu.mem_write(PC, ''.join(m[PC:PC+instruction.size]))
+            
+
             # Run the instruction.
-            hook_id = mu.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, hook_mem_access, touched)
-            mu.emu_start(self.PC, self.PC+instruction.size, count=1)
-            mu.hook_del(hook_id)
-            mu.emu_stop()
+            #hook_id = mu.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, hook_mem_access, touched)
+            def _step_back(uc):
+                pc = uc.reg_read(_reg_id('PC'))
+                uc.reg_write(_reg_id('PC'), pc - instruction.size)
+                #raise ReExecute
+
+
+            def _generic_hook(*args, **kwargs):
+                print "_generic_hook, args: {}, kwargs: {}".format(repr(args), repr(kwargs))
+                print "   hex: {}".format([hex(x) for x in args if isinstance(x, (int,long))])
+                #sys.exit(1)
+                return True
+
+            def _xfer_mem(uc, access, address, size, value, self):
+                # XXX(yan): record memory writes to our own state and undo them if
+                # we have to re-execute
+                print "_xfer_mem: access({}) address({:x}) size({}) value({})".format(['write', 'read'][access == UC_MEM_READ], address, size, repr(value))
+                #print _create_emulated_mapping(uc, address)
+
+                assert access in (UC_MEM_WRITE, UC_MEM_READ)
+
+                #try:
+                if access == UC_MEM_WRITE:
+                    print "Writing"
+                    self.write_int(address, value, size*8)
+                else:
+                    val = self.read(address, size)
+                    print "Reading ({})".format(repr(val))
+                    mu.mem_write(address, ''.join(val))
+                    print "Done"
+                print "Returning.."
+                return True
+                #except Exception as e:
+                    #print "FAILED: ",e
+                    #return False
+                #_step_back(uc)
+
+            def _fetch_unmapped(uc, access, address, size, value, self):
+                '''
+                We hit an unmapped region; map it into unicorn
+                '''
+                print "_fetch_unmapped (acc:{}, addr:{:x}, sz:{}, val:{})".format(access, address, size, repr(value))
+
+                if not self.memory.access_ok(slice(address, address+size), 'r'):
+                    return False
+                    #raise MemoryException('No access reading', address)
+
+                _create_emulated_mapping(uc, address)
+                self.should_try_again = True
+                uc.emu_stop()
+
+                #for offset in range(address, address+size):
+                #    if not self.memory.access_ok(offset, 'r'):
+                #        continue
+                #    val = self.read_int(offset, 8)
+                ##    if issymbolic(val):
+                ##        raise ConcretizeMemory(addr, 8, "Prepare memory for concrete emulation", 'SAMPLED')
+                ##    uc.mem_write(offset, Operators.CHR(val))
+
+                #print "fetch_unmapped"
+                #print "\t uc: ", uc
+                #print "\t access: ", access
+                #print "\t address: ", address
+                #print "\t size: ", size
+                #print "\t value: ", value
+                #print "\t user_data: ", repr(self)
+
+                return False
+
+            def _write_unmapped(uc, access, address, size, value, self):
+                print "unmapped ({}, {}, {:x}, {}, {}, {})\n\n\n".format(repr(uc), repr(access), (address), repr(size), repr(value), repr(self))
+                m = _create_emulated_mapping(uc, address)
+                # _step_back(uc)
+                # uc.emu_stop()
+                self.should_try_again = True
+                return False
+
+            def _invalid_write(uc, access, address, size, value, self):
+                print "invalid write"
+                self.should_try_again = False
+                return False
+
+
+            #mu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, _fetch_unmapped, self)
+            mu.hook_add(UC_HOOK_MEM_UNMAPPED,       _fetch_unmapped, self)
+            mu.hook_add(UC_HOOK_MEM_WRITE,          _xfer_mem, self)
+            #mu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, _write_unmapped, self)
+            mu.hook_add(UC_HOOK_MEM_INVALID,        _invalid_write, self)
+            mu.hook_add(UC_HOOK_MEM_READ,           _xfer_mem, self)
+
+            mu.hook_add(UC_HOOK_INTR,               _generic_hook, 0)
+            mu.hook_add(UC_HOOK_INSN,               _generic_hook, 1)
+            #mu.hook_add(UC_HOOK_CODE,               _generic_hook, 2)
+            #mu.hook_add(UC_HOOK_BLOCK,              _generic_hook, 3)
+            mu.hook_add(UC_HOOK_MEM_READ_UNMAPPED,  _generic_hook, 4)
+            #mu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, _generic_hook, 5)
+            mu.hook_add(UC_HOOK_MEM_READ_PROT,      _generic_hook, 7)
+            mu.hook_add(UC_HOOK_MEM_WRITE_PROT,     _generic_hook, 8)
+            mu.hook_add(UC_HOOK_MEM_FETCH_PROT,     _generic_hook, 9)
+            #mu.hook_add(UC_HOOK_MEM_WRITE,          _generic_hook, 11)
+            mu.hook_add(UC_HOOK_MEM_FETCH,          _generic_hook, 12)
+            mu.hook_add(UC_HOOK_MEM_READ_AFTER,     _generic_hook, 13)
+            #mu.hook_add(UC_HOOK_MEM_UNMAPPED,       _generic_hook, 14)
+            mu.hook_add(UC_HOOK_MEM_PROT,           _generic_hook, 15)
+            mu.hook_add(UC_HOOK_MEM_READ_INVALID,   _generic_hook, 16)
+            ### mu.hook_add(UC_HOOK_MEM_WRITE_INVALID,  _generic_hook, 17)
+            mu.hook_add(UC_HOOK_MEM_FETCH_INVALID,  _generic_hook, 18)
+            #mu.hook_add(UC_HOOK_MEM_INVALID,        _generic_hook, 19)
+            #mu.hook_add(UC_HOOK_MEM_VALID,          _generic_hook, 20)
+
+            ctx = mu.context_save()
+
+            while True:
+                try:
+                    self.should_try_again = False
+                    print "before start"
+                    mu.emu_start(self.PC, self.PC+instruction.size, count=1)
+                    print "after start"
+                    if not self.should_try_again:
+                        break
+                    mu.emu_stop()
+                    print "after stop"
+                    mu.context_restore(ctx)
+                    print "after restore"
+
+                except UcError as e:
+                    print "Exception: ", e
+                    if e.errno == UC_ERR_WRITE_UNMAPPED:
+                        raise MemoryException(repr(e), 0)
+                except Exception as e:
+                    print "Raised: ", e
+                finally:
+                    print "Fainally"
+
+                    #print "!!!!", e, e.errno, UC_ERR_WRITE_UNMAPPED
+                    #sys.exit(1)
+                #finally:
+                    #print "Finally"
+            #mu.hook_del(hook_id)
+            # mu.emu_stop()
+
+            print "Done."
+            #sys.exit(0)
 
             if logger.getEffectiveLevel() == logging.DEBUG:
                 logger.debug("="*10)
@@ -532,25 +707,37 @@ class Cpu(object):
 
 
             # Copy back the memory modified by the unicorn emulation.
-            for addr in touched:
-                try:
-                    self.write_int(addr, ord(mu.mem_read(addr, 1)), 8)
-                except MemoryException as e:
-                    pass
+            #for addr in touched:
+            #    try:
+            #        self.write_int(addr, ord(mu.mem_read(addr, 1)), 8)
+            #    except MemoryException as e:
+            #        pass
 
             # Copy back the new values of all registers.
-            for register in self._regs_modif(instruction):
-                new_value = mu.reg_read(_reg_id(register))
-                self.write_register(register, new_value)
+            #for register in self._regs_modif(instruction):
+            #    new_value = mu.reg_read(_reg_id(register))
+            #    self.write_register(register, new_value)
+            
+
+            for reg in self.canonical_registers:
+                val = mu.reg_read(_reg_id(reg))
+                #if issymbolic(val):
+                    #raise ConcretizeRegister(reg, "Prepare register for concrete emulator") 
+                self.write_register(reg, val)
+                #mu.reg_write(_reg_id(reg), val)
+                #print "Written {} to {:x}".format(reg, val)
             
 
             #Unicorn hack. On single step unicorn wont advance the PC register
             mu_pc = mu.reg_read(_reg_id('R15'))
+            
             if PC == mu_pc:
                 #PC should have been updated by emulator :(
                 self.PC = self.PC+instruction.size
+                print "bumping"
             else:
-                self.PC = mu_pc
+                print 'not bumping {:x} {:x}'.format(mu_pc, PC)
+                #self.PC = mu_pc
 
             return
 
