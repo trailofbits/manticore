@@ -571,15 +571,6 @@ class Executor(object):
             #this will save all the states to files
             parent = current_state.co
 
-            #Make a new variable
-            if isinstance(symbolic, BitVec):
-                new_var = current_state.constraints.new_bitvec(symbolic.size)
-            elif isinstance(symbolic, Bool):
-                new_var = current_state.constraints.new_bool()
-            else:
-                raise Exception('Unsupported concretization type %s', type(symbolic))
-            current_state.constraints.add(new_var == symbolic)
-
             for new_value in vals:
                 with current_state as new_state:
                     new_state.add(symbolic == new_value, check=False) #We already know it's sat
