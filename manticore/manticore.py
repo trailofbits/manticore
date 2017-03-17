@@ -183,7 +183,7 @@ class Manticore(object):
             self._binary_obj = ELFFile(file(self._binary))
 
         self.init_logging()
-        
+
     def init_logging(self): 
 
         def loggerSetState(logger, stateid):
@@ -204,10 +204,11 @@ class Manticore(object):
         for name, logger in logging.Logger.manager.loggerDict.items():
             logger.addFilter(ctxfilter)
             logger.setState = types.MethodType(loggerSetState, logger)
+            logger.addHandler(logging.NullHandler())
 
         self.verbosity = self._verbosity
 
-    def addHandler(self, hdlr):
+    def add_handler(self, hdlr):
         hdlr.setFormatter(logging.Formatter(self._fmt_str))
         for _, logger in logging.Logger.manager.loggerDict.items():
             logger.addHandler(hdlr)

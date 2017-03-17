@@ -115,7 +115,7 @@ def main():
     if args.log: handlers += [logging.FileHandler(args.log)]
 
     for hdlr in handlers:
-        m.addHandler(hdlr)
+        m.add_handler(hdlr)
 
     if args.log:
         m.log_file = args.log
