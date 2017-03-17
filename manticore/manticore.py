@@ -25,7 +25,6 @@ from .utils.helpers import issymbolic
 
 logger = logging.getLogger('MANTICORE')
 
-
 def makeDecree(args):
     constraints = ConstraintSet()
     model = decree.SDecree(constraints, ','.join(args.programs))
@@ -171,7 +170,8 @@ class Manticore(object):
         self._dumpafter = 0
         self._maxstates = 0
         self._maxstorage = 0
-        self._verbosity = 0
+        self._verbosity = 1
+        self._fmt_str = '%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s'
 
         manager = Manager()
 
@@ -182,17 +182,9 @@ class Manticore(object):
         if self._binary_type == 'ELF':
             self._binary_obj = ELFFile(file(self._binary))
 
-        self._init_logging()
+        self.init_logging()
         
-    def _init_logging(self): 
-        fmt_str = '%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s'
-
-        if self._log_debug:
-            log_level = logging.DEBUG
-        else:
-            log_level = logging.WARNING
-
-        logging.basicConfig(filename=self._log_file, format=fmt_str, level=log_level)
+    def init_logging(self): 
 
         def loggerSetState(logger, stateid):
             logger.filters[0].stateid = stateid
@@ -211,8 +203,39 @@ class Manticore(object):
         ctxfilter = ContextFilter()
         for name, logger in logging.Logger.manager.loggerDict.items():
             logger.addFilter(ctxfilter)
-            logger.setLevel(log_level)
             logger.setState = types.MethodType(loggerSetState, logger)
+
+        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
+            logging.getLogger(loggername).addFilter(ctxfilter)
+            logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
+    
+        logging.getLogger('SMT').setLevel(logging.INFO)
+        logging.getLogger('MEMORY').setLevel(logging.INFO)
+        logging.getLogger('LIBC').setLevel(logging.INFO)
+
+        self.verbosity = self._verbosity
+
+    @staticmethod
+    def addHandler(hdlr):
+        hdlr.setFormatter(logging.Formatter(self._fmt_str))
+        for _, logger in logging.Logger.manager.loggerDict.items():
+            logger.addHandler(hdlr)
+
+    @staticmethod
+    def log_debug(msg):
+        logger.debug(msg)
+
+    @staticmethod
+    def log_info(msg):
+        logger.info(msg)
+
+    @staticmethod
+    def log_warning(msg):
+        logger.warning(msg)
+
+    @staticmethod
+    def log_error(msg):
+        logger.error(msg)
 
     @property
     def log_file(self):
@@ -228,7 +251,19 @@ class Manticore(object):
 
         self._log_file = path
 
-        self._init_logging()
+        self.init_logging()
+
+    @property
+    def fmt_str(self):
+        return self._fmt_str
+
+    @fmt_str.setter
+    def fmt_str(self, new_val):
+        if self._fmt_str == new_val:
+            return
+        else:
+            self._fmt_str = new_val
+            self.init_logging()
 
 
     # XXX(yan): args is a temporary hack to include while we continue moving
@@ -292,7 +327,7 @@ class Manticore(object):
 
         self._log_debug = debug
 
-        self._init_logging()
+        self.init_logging()
 
     @property
     def verbosity(self):
