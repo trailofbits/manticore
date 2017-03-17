@@ -194,18 +194,9 @@ class Manticore(object):
             logger.addFilter(ctxfilter)
             logger.setState = types.MethodType(loggerSetState, logger)
 
-        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
-            logging.getLogger(loggername).addFilter(ctxfilter)
-            logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
-    
-        logging.getLogger('SMT').setLevel(logging.INFO)
-        logging.getLogger('MEMORY').setLevel(logging.INFO)
-        logging.getLogger('LIBC').setLevel(logging.INFO)
-
         self.verbosity = self._verbosity
 
-    @staticmethod
-    def addHandler(hdlr):
+    def addHandler(self, hdlr):
         hdlr.setFormatter(logging.Formatter(self._fmt_str))
         for _, logger in logging.Logger.manager.loggerDict.items():
             logger.addHandler(hdlr)
@@ -325,11 +316,11 @@ class Manticore(object):
     @verbosity.setter
     def verbosity(self, setting):
         levels = [[],
-                  [('EXECUTOR', logging.INFO)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('SMTLIB', logging.DEBUG)]]
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('SMTLIB', logging.DEBUG)]]
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]
