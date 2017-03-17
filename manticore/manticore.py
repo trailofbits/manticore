@@ -165,7 +165,6 @@ class Manticore(object):
         self._running = False
         self._arch = None
         self._log_debug = False
-        self._log_file = '/dev/stdout'
         self._concrete_data = ''
         self._dumpafter = 0
         self._maxstates = 0
@@ -228,22 +227,6 @@ class Manticore(object):
     @staticmethod
     def log_error(msg):
         logger.error(msg)
-
-    @property
-    def log_file(self):
-        return self._log_file
-
-    @log_file.setter
-    def log_file(self, path):
-        if self._log_file == path:
-            return
-
-        if path == '-':
-            path = '/dev/stdout'
-
-        self._log_file = path
-
-        self.init_logging()
 
     @property
     def fmt_str(self):
