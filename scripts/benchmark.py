@@ -36,14 +36,14 @@ def benchmark(program):
 
     ps = None
     for item in m._executor._stats:
-            try:
-                stat = PstatsFormatted(item)
-                if ps is None:
-                    ps = pstats.Stats(stat)
-                else:
-                    ps.add(stat)
-            except TypeError:
-                logger.debug("Incorrectly formatted profiling information in _stats, skipping")
+        try:
+            stat = PstatsFormatted(item)
+            if ps is None:
+                ps = pstats.Stats(stat)
+            else:
+                ps.add(stat)
+        except TypeError:
+            logger.debug("Incorrectly formatted profiling information in _stats, skipping")
 
     time_elapsed = ps.total_tt
 
