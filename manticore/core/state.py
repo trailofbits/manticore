@@ -202,3 +202,12 @@ class State(object):
     def solve_n(self, expr, nsolves=1, policy='minmax'):
         # type: (Expression, int) -> list
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
+
+    def record_branches(self, targets):
+        _, branch = self.last_pc
+        for target in targets:
+            key = (branch, target)
+            try:
+                self.branches[key] += 1
+            except KeyError:
+                self.branches[key] = 1
