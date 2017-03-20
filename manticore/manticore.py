@@ -153,7 +153,6 @@ class Manticore(object):
         self._hooks = {}
         self._running = False
         self._arch = None
-        self._log_debug = False
         self._concrete_data = ''
         self._dumpafter = 0
         self._maxstates = 0
@@ -189,7 +188,7 @@ class Manticore(object):
                 return True
 
         ctxfilter = ContextFilter()
-        for name, logger in logging.Logger.manager.loggerDict.items():
+        for _, logger in logging.Logger.manager.loggerDict.items():
             logger.addFilter(ctxfilter)
             logger.setState = types.MethodType(loggerSetState, logger)
             logger.addHandler(logging.NullHandler())
@@ -227,7 +226,9 @@ class Manticore(object):
             return
         else:
             self._fmt_str = new_val
-            self.init_logging()
+            for _, logger in logging.Logger.manager.loggerDict.items():
+                for hdlr in logger.handlers:
+                    hdlr.setFormatter(new_val)
 
 
     # XXX(yan): args is a temporary hack to include while we continue moving
@@ -279,19 +280,6 @@ class Manticore(object):
     @maxstorage.setter
     def maxstorage(self, max_storage):
         self._maxstorage = max_storage
-
-    @property
-    def log_debug(self):
-        return self._log_debug
-
-    @log_debug.setter
-    def log_debug(self, debug):
-        if self._log_debug == debug:
-            return
-
-        self._log_debug = debug
-
-        self.init_logging()
 
     @property
     def verbosity(self):
