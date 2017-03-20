@@ -121,7 +121,7 @@ def main():
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
 
-    m.fmt_str = "lol"
+    m.run()
 
     m.dump_stats()
 
