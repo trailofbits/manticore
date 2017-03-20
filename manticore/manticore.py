@@ -169,9 +169,9 @@ class Manticore(object):
         if self._binary_type == 'ELF':
             self._binary_obj = ELFFile(file(self._binary))
 
-        self.init_logging()
+        self._init_logging()
 
-    def init_logging(self): 
+    def _init_logging(self): 
 
         def loggerSetState(logger, stateid):
             logger.filters[0].stateid = stateid
