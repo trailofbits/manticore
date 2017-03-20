@@ -43,7 +43,7 @@ def benchmark(program):
             else:
                 ps.add(stat)
         except TypeError:
-            logger.debug("Incorrectly formatted profiling information in _stats, skipping")
+            print "Incorrectly formatted profiling information in _stats for {}, skipping".format(program)
 
     time_elapsed = ps.total_tt
 
