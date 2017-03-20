@@ -121,6 +121,7 @@ def main():
     logger.info('Workspace: {}'.format(m.workspace))
 
     m.run(args.timeout)
+    m.fmt_str = "lol"
 
     m.dump_stats()
 
