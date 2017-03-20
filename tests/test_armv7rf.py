@@ -28,10 +28,6 @@ class Armv7RF(unittest.TestCase):
         self.r.write(ARM_REG_APSR_Z, False)
         self.assertEqual(self.r.read(ARM_REG_APSR_Z), False)
 
-    def test_bad_flag_write(self):
-        with self.assertRaises(AssertionError) as e:
-            self.r.write(ARM_REG_APSR_Z, 2)
-
     def test_reg_name(self):
         self.assertEqual(self.r.reg_name(ARM_REG_R0), 'R0')
 
