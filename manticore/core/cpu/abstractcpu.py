@@ -107,7 +107,7 @@ class RegisterFile(object):
     @property
     def all_registers(self):
         ''' Lists all possible register names (Including aliases) '''
-        return self._aliases.keys()
+        return tuple(self._aliases.keys())
 
     @property
     def canonical_registers(self):
