@@ -121,8 +121,6 @@ def main():
     logger.info('Workspace: {}'.format(m.workspace))
 
     m.run(args.timeout)
-    m.fmt_str = "lol"
-
     m.dump_stats()
 
 if __name__ == '__main__':
