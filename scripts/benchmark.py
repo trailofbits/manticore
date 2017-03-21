@@ -1,8 +1,6 @@
 from manticore import Manticore
 from sys import argv, exit
 
-import pstats
-
 class Results(object):
     def __init__(self, time_elapsed, instructions_executed, loading_time, saving_time, solver_time):
         self.time_elapsed = time_elapsed
@@ -27,23 +25,10 @@ def benchmark(program):
     m.run()
 
     instructions_executed = m._executor.count
-
-    class PstatsFormatted:
-        def __init__(self, d):
-            self.stats = dict(d)
-        def create_stats(self):
-            pass
-
-    ps = None
-    for item in m._executor._stats:
-        try:
-            stat = PstatsFormatted(item)
-            if ps is None:
-                ps = pstats.Stats(stat)
-            else:
-                ps.add(stat)
-        except TypeError:
-            print "Incorrectly formatted profiling information in _stats for {}, skipping".format(program)
+    ps = m._executor.dump_stats()
+    if ps is None:
+        print "[*] Failed to collect stats for program {}".format(program)
+        return
 
     time_elapsed = ps.total_tt
 
@@ -67,7 +52,7 @@ if __name__ == "__main__":
     args = argv[1:]
 
     if len(args) == 0:
-        print "usage: python " + argv[0] + " PROGRAM1 PROGRAM2..."
+        print "usage: python {} PROGRAM1 PROGRAM2...".format(argv[0])
         exit()
 
     overall_results = Results(0, 0, 0, 0, 0)

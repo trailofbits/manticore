@@ -219,6 +219,7 @@ class Executor(object):
             logger.info("Saving state time: %f", putstate_time)
             logger.info("Solver time: %f", solver_time)
             logger.info("Other time: %f", ps.total_tt - (getstate_time+putstate_time+solver_time))
+            return ps
 
     def _getFilename(self, filename):
         return os.path.join(self.workspace, filename)
