@@ -67,7 +67,7 @@ if __name__ == "__main__":
     args = argv[1:]
 
     if len(args) == 0:
-        print "usage: python benchmark.py PROGRAM1 PROGRAM2..."
+        print "usage: python " + argv[0] + " PROGRAM1 PROGRAM2..."
         exit()
 
     overall_results = Results(0, 0, 0, 0, 0)
