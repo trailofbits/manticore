@@ -107,8 +107,8 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(hashlib.md5(data).hexdigest() , 'c52d7d471ba5c94fcf59936086821a6b')
 
 
-    @unittest.skip('TODO(mark); skipping so we can move on with our lives and merge x86_new. ask felipe to fix later.')
     def testDecree(self):
+        print "AA"
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/cadet_decree_x86'))
         self.assertTrue(filename.startswith(os.getcwd()))
@@ -118,16 +118,25 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(len(data), 1828)
         self.assertEqual(hashlib.md5(data).hexdigest() , '8955a29d51c1edd39b0e53794ebcf464')
         workspace = '%s/workspace'%self.test_dir
-        self._runWithTimeout(['python', SE, 
+        print " ".join(['python', '-m', 'manticore', 
                     '--log', '%s/output.log'%self.test_dir,
                     '--workspace', workspace,
                     '--timeout', '20',
                     '--proc', '4',
                     '--policy', 'uncovered',
                     filename])
+        self._runWithTimeout(['python', '-m', 'manticore', 
+                    '--log', '%s/output.log'%self.test_dir,
+                    '--workspace', workspace,
+                    '--timeout', '20',
+                    '--proc', '4',
+                    '--policy', 'uncovered',
+                    filename])
+
         data = file('%s/visited.txt'%workspace,'r').read()
         visited = len(set(data.split('\n')))
         self.assertTrue(visited > 100 )
+        print data
 
 
 if __name__ == '__main__':
