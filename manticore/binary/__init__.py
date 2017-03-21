@@ -40,10 +40,18 @@ class Binary(object):
 
 
 from elftools.elf.elffile import ELFFile
+import StringIO
 class CGCElf(Binary):
     def __init__(self, filename):
         super(CGCElf, self).__init__(filename)
-        self.elf = ELFFile(file(filename)) 
+        #hack begin so we can use upstream Elftool
+        fd = file(filename)
+        stream = StringIO.StringIO(fd.read())
+        stream.seek(0)
+        stream.write('\x7fELF')
+        stream.name = fd.name
+        #hack end 
+        self.elf = ELFFile(stream)
         self.arch = {'x86':'i386','x64':'amd64'}[self.elf.get_machine_arch()]
 
         assert 'i386' == self.arch
