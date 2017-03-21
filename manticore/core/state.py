@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from .executor import manager
 from .smtlib import solver
 from ..utils.helpers import issymbolic
@@ -32,7 +34,7 @@ class State(object):
         # Stats I'm not sure we need in general
         self.last_pc = (None, None)
         self.visited = set()
-        self.branches = {}
+        self.branches = OrderedDict()
         self._child = None
 
     def __reduce__(self):
