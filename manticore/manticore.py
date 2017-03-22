@@ -168,8 +168,7 @@ class Manticore(object):
         self._dumpafter = 0
         self._maxstates = 0
         self._maxstorage = 0
-        self._verbosity = 1
-        self._fmt_str = '%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s'
+        self._verbosity = 0
 
         manager = Manager()
 
@@ -199,48 +198,18 @@ class Manticore(object):
                 return True
 
         ctxfilter = ContextFilter()
-        for _, logger in logging.Logger.manager.loggerDict.items():
-            logger.addFilter(ctxfilter)
-            logger.setState = types.MethodType(loggerSetState, logger)
-            logger.addHandler(logging.NullHandler())
 
         self.verbosity = self._verbosity
 
-    def add_handler(self, hdlr):
-        hdlr.setFormatter(logging.Formatter(self._fmt_str))
-        for _, logger in logging.Logger.manager.loggerDict.items():
-            logger.addHandler(hdlr)
+        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s')
 
-    @staticmethod
-    def log_debug(msg):
-        logger.debug(msg)
-
-    @staticmethod
-    def log_info(msg):
-        logger.info(msg)
-
-    @staticmethod
-    def log_warning(msg):
-        logger.warning(msg)
-
-    @staticmethod
-    def log_error(msg):
-        logger.error(msg)
-
-    @property
-    def fmt_str(self):
-        return self._fmt_str
-
-    @fmt_str.setter
-    def fmt_str(self, new_val):
-        if self._fmt_str == new_val:
-            return
-        else:
-            self._fmt_str = new_val
-            for _, logger in logging.Logger.manager.loggerDict.items():
-                for hdlr in logger.handlers:
-                    hdlr.setFormatter(new_val)
-
+        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
+            logging.getLogger(loggername).addFilter(ctxfilter)
+            logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
+        
+        logging.getLogger('SMT').setLevel(logging.INFO)
+        logging.getLogger('MEMORY').setLevel(logging.INFO)
+        logging.getLogger('LIBC').setLevel(logging.INFO)
 
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
