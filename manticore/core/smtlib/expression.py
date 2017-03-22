@@ -353,6 +353,10 @@ class BitVec(Expression):
     def sal(self, other):
         return BitVecArithmeticShiftLeft(self, self.cast(other))
 
+    def Bool(self):
+        return self != 0
+
+
 class BitVecVariable(BitVec, Variable):
     def __init__(self, *args, **kwargs):
         super(BitVecVariable, self).__init__(*args, **kwargs)
