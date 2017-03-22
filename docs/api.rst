@@ -19,5 +19,6 @@ State
 Cpu
 ---
 
-.. autoclass:: manticore.core.abstractcpu.Cpu
-   :members:
+.. autoclass:: manticore.core.cpu.abstractcpu.Cpu
+   :members: read_int, read_bytes, write_int, write_bytes
+
