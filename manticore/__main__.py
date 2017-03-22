@@ -23,8 +23,6 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Symbolically analyze a program')
     parser.add_argument('--workspace', type=str, default=None,
                         help='A folder name for temporaries and results. (default mcore_?????)')
-    parser.add_argument('--log', type=str, default='-',
-                        help='The log filename')
     parser.add_argument('--verbose', action='store_true', help='Enable debug mode.')
     parser.add_argument('--profile', action='store_true', help='Enable profiling mode.')
 
@@ -111,12 +109,8 @@ def main():
 
     if args.verbose:
         m.verbosity = 5
-
-    handlers = [logging.StreamHandler()]
-    if args.log: handlers += [logging.FileHandler(args.log)]
-
-    for hdlr in handlers:
-        m.add_handler(hdlr)
+    else:
+        m.verbosity = 1
 
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
