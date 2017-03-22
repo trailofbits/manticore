@@ -129,9 +129,18 @@ def binary_type(path):
         raise NotImplementedError("Binary {} not supported.".format(path))
 
 class Manticore(object):
+    '''
+    The central analysis object.
 
-    def __init__(self, binary_path, args = [], verbose = False):
+    :param str binary_path: Path to binary to analyze
+    :param args: Arguments to provide to binary
+    :type args: list[str]
+    '''
+
+    def __init__(self, binary_path, args=None):
         assert os.path.isfile(binary_path)
+
+        args = [] if args is None else args
 
         self._binary = binary_path
         self._binary_type = binary_type(binary_path)
@@ -285,6 +294,13 @@ class Manticore(object):
 
     @property
     def verbosity(self):
+        '''
+        Convenience property for controlling the logging verbosity to a number of presets
+
+        :getter: Get current verbosity level
+        :setter: Set current verbosity level [0-5]
+        :type: int
+        '''
         return self._verbosity
 
     @verbosity.setter
@@ -308,8 +324,11 @@ class Manticore(object):
 
     def hook(self, pc):
         '''
-        A decorator used to register a hook function for a given instruction address
-        (`pc`). Equivalent to calling `add_hook`.
+        A decorator used to register a hook function for a given instruction address.
+        Equivalent to calling :func:`~add_hook`.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
         '''
         def decorator(f):
             self.add_hook(pc, f)
@@ -318,9 +337,13 @@ class Manticore(object):
 
     def add_hook(self, pc, callback):
         '''
-        Add a callback to be invoked on executing a program counter. Pass 'None'
+        Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one `manticore.core.executor.State` argument.
+        that takes one :class:`~manticore.core.executor.State` argument.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
+        :param callable callback: Hook function
         '''
         if not (isinstance(pc, (int, long)) or pc is None):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
@@ -534,7 +557,7 @@ class Manticore(object):
 
     def run(self):
         '''
-        Start Manticore, creating all necessary support classes.
+        Runs analysis.
         '''
         assert not self._running, "Manticore is already running."
         args = self._args
@@ -577,7 +600,10 @@ class Manticore(object):
             self._running = False
 
     def terminate(self):
-        'Gracefully terminate the currently-executing Manticore run.'
+        '''
+        Gracefully terminate the currently-executing run. Typically called from within
+        a :func:`~hook`.
+        '''
         self._executor.shutdown()
 
     def _assertions_callback(self, state, pc):
