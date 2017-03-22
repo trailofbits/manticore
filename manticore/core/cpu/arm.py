@@ -324,6 +324,7 @@ class Armv7Cpu(Cpu):
     machine = 'armv7'
     arch = CS_ARCH_ARM
     mode = CS_MODE_ARM
+    _nop = '\x00\xf0\x20\xe3'
 
 
     def __init__(self, memory, *args, **kwargs):
