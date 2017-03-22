@@ -114,8 +114,17 @@ class UnicornEmulator(object):
         # XXX(yan): handle if this points to an incorrect mapping
         self._create_emulated_mapping(uc, address, size)
 
-        bytes = self._cpu.read_bytes(address, size)
-        uc.mem_write(address, ''.join(bytes))
+        read_bytes = self._cpu.read_bytes(address, size)
+        for address, byte in enumerate(read_bytes, start=address):
+            if issymbolic(byte):
+                # TODO(yan): This raises an exception for each byte of symbolic
+                # memory; we should be batching
+                from ..core.cpu.abstractcpu import ConcretizeMemory
+                self._to_raise = ConcretizeMemory(address, 1, "Concretizing memory for emulation")
+                self._should_try_again = False
+                return False
+
+        uc.mem_write(address, ''.join(read_bytes))
 
         self._should_try_again = True
         return True

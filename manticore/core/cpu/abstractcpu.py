@@ -362,7 +362,7 @@ class Cpu(object):
             if name not in ae.message:
                 raise
 
-            text_bytes = ' '.join(map(lambda x: '%02x'%x, instruction.bytes))
+            text_bytes = ' '.join('%02x'%x for x in instruction.bytes)
             logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s",
                     instruction.address, text_bytes, instruction.mnemonic,
                     instruction.op_str)
