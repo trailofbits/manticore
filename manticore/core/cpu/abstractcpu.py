@@ -353,17 +353,20 @@ class Cpu(object):
         self.instruction = instruction #FIX
 
 
-        def _get_regs():
-            return {name:self.read_register(name) for name in self.canonical_registers}
-
-        before_impl = _get_regs()
 
         name = self.canonicalize_instruction_name(instruction)
         try:
             implementation = getattr(self, name)
         except AttributeError as ae:
-        #XXX Check that the attribute error is for "name" !! print "EXCEPTION", ae
-            logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
+            # Make sure we're referencing the instruction look up
+            if name not in ae.message:
+                raise
+
+            text_bytes = ' '.join(map(lambda x: '%02x'%x, instruction.bytes))
+            logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s",
+                    instruction.address, text_bytes, instruction.mnemonic,
+                    instruction.op_str)
+
             implementation = lambda *ops: self.emulate(instruction)
 
         #log
