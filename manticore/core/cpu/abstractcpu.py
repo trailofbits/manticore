@@ -128,19 +128,21 @@ class RegisterFile(object):
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
 class Cpu(object):
-    def __init__(self, regfile, memory):
-        '''
-        This is an abstract representation os a Cpu. Functionality common to all 
-        subyacent architectures (and expected from users of a Cpu) should be here.
+    '''
+    This is an abstract representation of a Cpu. Functionality common to all
+    architectures (and expected from users of a Cpu) should be here.
 
-        The following attributes need to be defined in any derived class
-        assert hasattr(self, 'arch')
-        assert hasattr(self, 'mode')
-        assert hasattr(self, 'max_instr_width')
-        assert hasattr(self, 'address_bit_size')
-        assert hasattr(self, 'pc_alias')
-        assert hasattr(self, 'stack_alias')
-        '''
+    The following attributes need to be defined in any derived class
+
+    - arch
+    - mode
+    - max_instr_width
+    - address_bit_size
+    - pc_alias
+    - stack_alias
+    '''
+
+    def __init__(self, regfile, memory):
         assert isinstance(regfile, RegisterFile)
         super(Cpu, self).__init__()
         self._regfile = regfile
@@ -225,11 +227,12 @@ class Cpu(object):
 
     def write_int(self, where, expr, size=None):
         '''
-        Writes an integer value of C{size} bits to memory at address C{where}.
-        
-        @param where: the address in memory where to store the value.
-        @param expr: the value to store in memory.
-        @param size: the amount of bytes to write. 
+        Writes int to memory
+
+        :param int where: address to write to
+        :param expr: value to write
+        :type expr: int or BitVec
+        :param size: bit size of `expr`
         '''
         if size is None:
             size = self.address_bit_size
@@ -238,12 +241,12 @@ class Cpu(object):
 
     def read_int(self, where, size=None):
         '''
-        Reads anm integuer value of C{size} bits from memory at address C{where}.
+        Reads int from memory
 
-        @rtype: int or L{BitVec}
-        @param where: the address to read from.
-        @param size: the number of bits to read.
-        @return: the value read.
+        :param int where: address to read from
+        :param size: number of bits to read
+        :return: the value read
+        :rtype: int or BitVec
         '''
         if size is None:
             size = self.address_bit_size
@@ -256,6 +259,13 @@ class Cpu(object):
 
     def write_bytes(self, where, data):
         '''
+        Writes to memory
+
+        :param int where: address to write to
+        :param data: data to write
+        :type data: str
+        '''
+        '''
         Writes C{data} in the address C{where}.
         
         @param where: address to write the data C{data}.
@@ -266,10 +276,12 @@ class Cpu(object):
 
     def read_bytes(self, where, size):
         '''
-        Writes C{data} in the address C{where}.
-        
-        @param where: address to read the data C{data} from.
-        @param size: number of bytes.
+        Reads from memory
+
+        :param int where: address to read data from
+        :param int size: number of bytes
+        :return: data
+        :rtype: list[int or Expression]
         '''
         result = []
         for i in xrange(size):
