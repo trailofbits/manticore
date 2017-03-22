@@ -644,7 +644,7 @@ class Linux(object):
                 hint = None
 
             logger.debug("Loading elf offset: %08x addr:%08x %08x %s" %(offset, base+vaddr, base+vaddr+memsz, perms))
-            base = cpu.memory.mmapFile(hint,memsz,perms,elf_segment.stream.name,offset) - vaddr
+            base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) - vaddr
 
             if load_addr == 0 :
                 load_addr = base + vaddr
@@ -704,7 +704,7 @@ class Linux(object):
 
         reserved = cpu.memory.mmap(base+vaddr+memsz,0x1000000,'   ')
         interpreter_base = 0
-        if not interpreter is None:
+        if interpreter is not None:
             base = 0
             elf_bss = 0
             end_code = 0
@@ -730,7 +730,12 @@ class Linux(object):
 
                 if base == 0 and elf.header.e_type == 'ET_DYN':
                     assert vaddr == 0
-                    base = stack_base - memsz 
+                    total_size = 0
+                    for _elf_segment in interpreter.iter_segments():
+                        if _elf_segment.header.p_type != 'PT_LOAD':
+                            _memsz = elf_segment.header.p_memsz + (_elf_segment.header.p_vaddr & (align-1))
+                            total_size += cpu.memory._ceil(_memsz)
+                    base = stack_base - total_size 
 
                 if base == 0:
                     assert vaddr == 0
@@ -738,9 +743,10 @@ class Linux(object):
                 hint = base+vaddr
                 if hint == 0:
                     hint = None
-                base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) - vaddr
 
-                logger.debug("Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %(offset, base+vaddr, base+vaddr+memsz, (flags&1 and 'r' or ' '), (flags&2 and 'w' or ' '), (flags&4 and 'x' or ' ')))
+                base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) 
+                base -= vaddr
+                logger.info("Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %(offset, base+vaddr, base+vaddr+memsz, (flags&1 and 'r' or ' '), (flags&2 and 'w' or ' '), (flags&4 and 'x' or ' ')))
 
                 k = base + vaddr+ filesz;
                 if k > elf_bss :
