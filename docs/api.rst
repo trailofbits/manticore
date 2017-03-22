@@ -4,6 +4,11 @@ API
 
 This API is under active development, and should be considered unstable.
 
+Helpers
+-------
+
+.. autofunction:: manticore.issymbolic
+
 Manticore
 ---------
 
