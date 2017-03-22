@@ -32,6 +32,7 @@ import cPickle
 import cProfile
 import random
 import logging
+import pstats
 import traceback
 import signal
 import weakref
@@ -93,6 +94,24 @@ def sync(f):
         finally:
             self._lock.release()
     return newFunction
+
+class ProfilingResults(object):
+    def __init__(self, raw_stats, instructions_executed):
+        self.raw_stats = raw_stats
+        self.instructions_executed = instructions_executed
+
+        self.time_elapsed = raw_stats.total_tt
+
+        self.loading_time = 0
+        self.saving_time = 0
+        self.solver_time = 0
+        for (func_file, _, func_name), (_, _, _, func_time, _) in raw_stats.stats.iteritems():
+            if func_name == '_getState':
+                self.loading_time += func_time
+            elif func_name == '_putState':
+                self.saving_time += func_time
+            elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
+                self.solver_time += func_time
 
 class Executor(object):
 
@@ -199,27 +218,14 @@ class Executor(object):
                 How long it actually took (tottime: excludes the times of other functions) - 
                 What functions it called (callers) - 
                 What functions called it (callees)'''
+            results = ProfilingResults(ps, self.count)
 
-            getstate_time = 0.0
-            putstate_time = 0.0
-            solver_time = 0.0
-
-            for (func_file, func_line, func_name), (cc, nc, tt, ct, callers) in ps.stats.iteritems():
-                #This if tries to sum only independient stuff
-                if func_name == '_getState':
-                    getstate_time += ct
-                elif func_name == '_putState':
-                    putstate_time += ct
-                elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
-                    solver_time += ct
-                #print (func_file, func_line, func_name), (cc, nc, tt, ct)
-
-            logger.info("Total profiled time: %f", ps.total_tt)
-            logger.info("Loading state time: %f", getstate_time)
-            logger.info("Saving state time: %f", putstate_time)
-            logger.info("Solver time: %f", solver_time)
-            logger.info("Other time: %f", ps.total_tt - (getstate_time+putstate_time+solver_time))
-            return ps
+            logger.info("Total profiled time: %f", results.time_elapsed)
+            logger.info("Loading state time: %f", results.loading_time)
+            logger.info("Saving state time: %f", results.saving_time)
+            logger.info("Solver time: %f", results.solver_time)
+            logger.info("Other time: %f", results.time_elapsed - (results.loading_time + results.saving_time + results.solver_time))
+            return results
 
     def _getFilename(self, filename):
         return os.path.join(self.workspace, filename)
