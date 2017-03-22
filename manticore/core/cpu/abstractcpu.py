@@ -359,12 +359,12 @@ class Cpu(object):
         before_impl = _get_regs()
 
         name = self.canonicalize_instruction_name(instruction)
-        #try:
-        implementation = getattr(self, name)
-        #except AttributeError as ae:
+        try:
+            implementation = getattr(self, name)
+        except AttributeError as ae:
         #XXX Check that the attribute error is for "name" !! print "EXCEPTION", ae
-        logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
-        implementation2 = lambda *ops: self.emulate(instruction)
+            logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
+            implementation = lambda *ops: self.emulate(instruction)
 
         #log
         if logger.level == logging.DEBUG :
