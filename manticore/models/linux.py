@@ -746,7 +746,7 @@ class Linux(object):
 
                 base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) 
                 base -= vaddr
-                logger.info("Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %(offset, base+vaddr, base+vaddr+memsz, (flags&1 and 'r' or ' '), (flags&2 and 'w' or ' '), (flags&4 and 'x' or ' ')))
+                logger.debug("Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %(offset, base+vaddr, base+vaddr+memsz, (flags&1 and 'r' or ' '), (flags&2 and 'w' or ' '), (flags&4 and 'x' or ' ')))
 
                 k = base + vaddr+ filesz;
                 if k > elf_bss :
