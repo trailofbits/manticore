@@ -154,7 +154,6 @@ class Armv7Operand(Operand):
 
 
 class Armv7RegisterFile(RegisterFile):
-
     def __init__(self):
         '''ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
@@ -185,18 +184,17 @@ class Armv7RegisterFile(RegisterFile):
         self._regs['APSR_V'] = Register(1) 
 
     def _read_APSR(self):
-        ''' Auxiliar function - Reads full APSR from flags (only 4 msb used) ''' 
+        def make_apsr_flag(flag_expr, offset):
+            'Helper for constructing an expression for the APSR register'
+            return Operators.ITEBV(32, flag_expr,
+                              BitVecConstant(32, 1 << offset),
+                              BitVecConstant(32, 0))
+        apsr = 0
         N = self.read('APSR_N')
         Z = self.read('APSR_Z')
         C = self.read('APSR_C')
         V = self.read('APSR_V')
-        apsr = 0
 
-        def make_apsr_flag(flag_expr, offset):
-            'Helper for constructing an expression for the APSR register'
-            return Operators.ITEBV(cpu.address_bit_size, flag_expr,
-                              BitVecConstant(cpu.address_bit_size, 1 << offset),
-                              BitVecConstant(cpu.address_bit_size, 0))
         if any(issymbolic(x) for x in [N, Z, C, V]):
             apsr = (make_apsr_flag(N, 31) |
                     make_apsr_flag(Z, 30) |
@@ -208,6 +206,7 @@ class Armv7RegisterFile(RegisterFile):
             if C: apsr |= 1 << 29
             if V: apsr |= 1 << 28
         return apsr 
+
 
     def _write_APSR(self, apsr):
         ''' Auxiliar function - Writes flgs from a full APSR (only 4 msb used) ''' 
@@ -221,45 +220,9 @@ class Armv7RegisterFile(RegisterFile):
         self.write('APSR_Z', Z)
         self.write('APSR_N', N)
 
-
-    def _read_APSR(self):
-        N = self.read('APSR_N')
-        Z = self.read('APSR_Z')
-        C = self.read('APSR_C')
-        V = self.read('APSR_V')
-        apsr = 0
-
-        def make_apsr_flag(flag_expr, offset):
-            'Helper for constructing an expression for the APSR register'
-            return Operators.ITEBV(32, flag_expr,
-                              BitVecConstant(32, 1 << offset),
-                              BitVecConstant(32, 0))
-        if any(issymbolic(x) for x in [N, Z, C, V]):
-            apsr = (make_apsr_flag(N, 31) |
-                    make_apsr_flag(Z, 30) |
-                    make_apsr_flag(C, 29) |
-                    make_apsr_flag(V, 28))
-        else:
-            if N: apsr |= 1 << 31
-            if Z: apsr |= 1 << 30
-            if C: apsr |= 1 << 29
-            if V: apsr |= 1 << 28
-        return apsr 
-
-    def _write_APSR(self, apsr):
-        V = Operators.EXTRACT(apsr, 28, 1)
-        C = Operators.EXTRACT(apsr, 29, 1)
-        Z = Operators.EXTRACT(apsr, 30, 1)
-        N = Operators.EXTRACT(apsr, 31, 1)
-
-        self.write('APSR_V', V)
-        self.write('APSR_C', C)
-        self.write('APSR_Z', Z)
-        self.write('APSR_N', N)
-
     def read(self, register):
         assert register in self
-        if reg_id == 'APSR':
+        if register == 'APSR':
             return self._read_APSR()
         register = self._alias(register)
         return self._regs[register].read()
