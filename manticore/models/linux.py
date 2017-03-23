@@ -262,13 +262,17 @@ class Linux(object):
     This class emulates the most common Linux system calls
     '''
 
-    def __init__(self, program, argv=[], envp=[]):
+    def __init__(self, program, argv=None, envp=None):
         '''
         Builds a Linux OS model
         :param string program: The path to ELF binary
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         '''
+
+        argv = [] if argv is None else argv
+        envp = [] if envp is None else envp
+
         self.program = program
         self.clocks = 0
         self.files = [] 
