@@ -9,7 +9,7 @@ from manticore import Manticore
 if __name__ == '__main__':
     path = sys.argv[1]
     # Create a new Manticore object
-    m = Manticore(None, path)
+    m = Manticore(path)
     # Start path exploration. start() returns when Manticore
     # finishes
     m.run()
