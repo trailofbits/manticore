@@ -43,7 +43,8 @@ from elftools.elf.elffile import ELFFile
 import StringIO
 class CGCElf(Binary):
 
-    def _cgc2elf(self, filename):
+    @staticmethod
+    def _cgc2elf(filename):
         #hack begin so we can use upstream Elftool
         with open(filename, 'rb') as fd:
             stream = StringIO.StringIO(fd.read())
