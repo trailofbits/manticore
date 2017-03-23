@@ -592,12 +592,20 @@ class Manticore(object):
 
         self._running = True
 
+
+        timeout = args.timeout
+        if timeout > 0:
+            from threading import Timer
+            t = Timer(timeout, self.terminate)
+            t.start()
         try:
             self._start_workers(self._num_processes)
 
             self._join_workers()
         finally:
             self._running = False
+            if timeout > 0:
+                t.cancel()
 
     def terminate(self):
         '''
