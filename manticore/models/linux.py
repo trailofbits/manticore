@@ -732,7 +732,7 @@ class Linux(object):
                     assert vaddr == 0
                     total_size = 0
                     for _elf_segment in interpreter.iter_segments():
-                        if _elf_segment.header.p_type != 'PT_LOAD':
+                        if _elf_segment.header.p_type == 'PT_LOAD':
                             _memsz = elf_segment.header.p_memsz + (_elf_segment.header.p_vaddr & (align-1))
                             total_size += cpu.memory._ceil(_memsz)
                     base = stack_base - total_size 
