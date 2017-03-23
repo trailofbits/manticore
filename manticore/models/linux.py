@@ -508,7 +508,7 @@ class Linux(object):
         #load vdso #TODO or #IGNORE
         vdso_top = {32: 0x7fff0000, 64: 0x7fff00007fff0000}[bits]
         vdso_size = len(file('vdso%2d.dump'%bits).read())
-        vdso_addr = cpu.memory.mmapFile(cpu.memory._floor(vdso_top - vdso_size),
+        vdso_addr = self.memory.mmapFile(self.memory._floor(vdso_top - vdso_size),
                                      vdso_size, 'r x', 
                                      {32: 'vdso32.dump', 64: 'vdso64.dump'}[bits],
                                      0 )
