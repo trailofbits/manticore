@@ -48,7 +48,6 @@ class CGCElf(Binary):
         #hack begin so we can use upstream Elftool
         with open(filename, 'rb') as fd:
             stream = StringIO.StringIO(fd.read())
-            stream.seek(0)
             stream.write('\x7fELF')
             stream.name = fd.name
             return stream
