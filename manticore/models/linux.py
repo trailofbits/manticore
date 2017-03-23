@@ -1,3 +1,7 @@
+import fcntl
+
+import cgcrandom
+import weakref
 import errno
 import os, struct
 from ..utils.helpers import issymbolic
@@ -109,6 +113,7 @@ class SymbolicFile(object):
             else:
                 symbols_cnt+=1
 
+        self._constraints = constraints
         self.pos = 0
         self.max_size=min(len(data), max_size)
         if symbols_cnt > max_size:
@@ -130,7 +135,7 @@ class SymbolicFile(object):
 
     @property
     def constraints(self):
-        return self._constraints()
+        return self._constraints
 
     @property
     def name(self):
