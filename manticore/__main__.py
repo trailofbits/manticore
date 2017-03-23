@@ -54,7 +54,6 @@ def parse_arguments():
     parser.add_argument('--names', type=str, default=None, help='File with function addresses to replace with known models')
     parser.add_argument('programs', type=str, nargs='+', metavar='PROGRAM',
                        help='Programs to analyze (arguments after ?)' )
-    parser.add_argument('--no-mp', action='store_true', help='Disable multiprocess')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0 :
