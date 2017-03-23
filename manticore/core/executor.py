@@ -87,7 +87,6 @@ class Executor(object):
 
         self.max_states = options.get('maxstates', 0)
         self.max_storage = options.get('maxstorage', 0)
-        self.replay_path = options.get('replay', None) #(dest, cond, origin)
         self._dump_every = options.get('dumpafter', 0)
         self._profile = cProfile.Profile()
         self.profiling = options.get('dumpstats', False)
@@ -132,9 +131,6 @@ class Executor(object):
         #Normally...
         if len(saved_states) == 0 :
             self.putState( initial )
-        else:
-            #If we are continuin from a set of saved states replay is not supported
-            assert self.replay_path is None 
 
     def dump_stats(self):
         if not self.profiling:
@@ -586,7 +582,6 @@ class Executor(object):
 
         policy_order=self.policy_order
         policy=self.policy
-        replay_path = self.replay_path
 
         count = 0
         current_state = None
