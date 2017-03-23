@@ -39,7 +39,7 @@ class SymbolicSyscallArgument(Exception):
 
 class File(object):
     def __init__(self, *args, **kwargs):
-        #Todo: assert file is seekable otherwise we should save wwhat was 
+        #Todo: assert file is seekable otherwise we should save what was
         #read/write to the state
         self.file = file(*args,**kwargs)
     def stat(self):
@@ -763,7 +763,7 @@ class Linux(object):
         logger.debug("Main elf brk %x:"%elf_brk)
 
 	#FIXME Need a way to inspect maps and perms so 
-	#we can roollback all to the initial state after zeroing
+	#we can rollback all to the initial state after zeroing
         #if elf_brk-elf_bss > 0:
         #    saved_perms = cpu.mem.perms(elf_bss)
         #    cpu.memory.mprotect(cpu.mem._ceil(elf_bss), elf_brk-elf_bss, 'rw ')
@@ -956,7 +956,7 @@ class Linux(object):
 
 
         :param self: current CPU.
-        :param fd: a valid file descripor
+        :param fd: a valid file descriptor
         :param offset: the offset in bytes
         :param whence: SEEK_SET: The file offset is set to offset bytes. 
                        SEEK_CUR: The file offset is set to its current location plus offset bytes.
@@ -1010,7 +1010,7 @@ class Linux(object):
           and optionally sets *tx_bytes to zero.
 
           :param cpu           current CPU
-          :param fd            a valid file descripor
+          :param fd            a valid file descriptor
           :param buf           a memory buffer
           :param count         number of bytes to send 
           :return: 0          Success
@@ -1026,7 +1026,7 @@ class Linux(object):
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf+count not in cpu.memory:
-                logger.debug("WRITE: buf points to invalid address. Rerurning EFAULT")
+                logger.debug("WRITE: buf points to invalid address. Returning EFAULT")
                 return errno.EFAULT
 
             if fd > 2 and self.files[fd].is_full():
@@ -1184,11 +1184,11 @@ class Linux(object):
         return 0
 
     def sys_sigaction(self, cpu, signum, act, oldact):
-        logger.debug("SIGACTION, Ignoring chaging signal handler for signal %d", signum)
+        logger.debug("SIGACTION, Ignoring changing signal handler for signal %d", signum)
         return 0
 
     def sys_sigprocmask(self, how, newset, oldset):
-        logger.debug("SIGACTION, Ignoring chaging signal mask set cmd:%d", how)
+        logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
         return 0
 
     def sys_close(self, cpu, fd):
@@ -1307,8 +1307,8 @@ class Linux(object):
             size = cpu.read_int(iov + i * 16 + 8, 64)
 
             data = ""
-            for i in xrange(0,size):
-                data += Operators.CHR(cpu.read_int(buf + i, 8))
+            for j in xrange(0,size):
+                data += Operators.CHR(cpu.read_int(buf + j, 8))
             logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
             self.files[fd].write(data)
             total+=size
@@ -1331,9 +1331,9 @@ class Linux(object):
             size = cpu.read_int(iov + i * 8 + 4, 32)
 
             data = ""
-            for i in xrange(0,size):
-                data += Operators.CHR(cpu.read_int(buf + i, 8))
-                self.files[fd].write(Operators.CHR(cpu.read_int(buf + i, 8)))
+            for j in xrange(0,size):
+                data += Operators.CHR(cpu.read_int(buf + j, 8))
+                self.files[fd].write(Operators.CHR(cpu.read_int(buf + j, 8)))
             logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
             total+=size
         return total
@@ -1577,9 +1577,9 @@ class Linux(object):
 
     def sched(self):
         ''' Yield CPU.
-            This will choose another process from the RUNNNIG list and change
+            This will choose another process from the running list and change
             current running process. May give the same cpu if only one running
-            proccess.
+            process.
         '''
         if len(self.procs)>1:
             logger.debug("SCHED:")
@@ -1608,7 +1608,7 @@ class Linux(object):
 
     def wait(self, readfds, writefds, timeout):
         ''' Wait for filedescriptors or timout.
-            Adds the current proceess in the correspondant wainting list and  
+            Adds the current process in the correspondant wainting list and
             yield the cpu to another running process.
         '''
         logger.debug("WAIT:")
@@ -1673,7 +1673,7 @@ class Linux(object):
             self.awake(procid)
 
     def check_timers(self):
-        ''' Awake proccess if timer has expired '''
+        ''' Awake process if timer has expired '''
         if self._current is None :
             #Advance the clocks. Go to future!!
             advance = min([self.clocks] + filter(lambda x: x is not None, self.timers)) +1
@@ -1688,7 +1688,7 @@ class Linux(object):
 
     def execute(self):
         """
-        Execute one cpu instruction in the current thread (only one suported).
+        Execute one cpu instruction in the current thread (only one supported).
         :rtype: bool
         :return: C{True}
         
