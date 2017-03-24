@@ -70,6 +70,15 @@ class Operand(object):
         ''' Return bit size of operand '''
         raise NotImplementedError
         
+    @property
+    def type(self):
+        ''' This property encapsulate the operand type. It may be a:
+                register
+                memory
+        '''
+        raise NotImplementedError
+        
+    @abstractmethod
     def address(self):
         ''' On a memory operand it returns the effective address '''
         raise NotImplementedError
