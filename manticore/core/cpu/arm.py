@@ -659,16 +659,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def POP(cpu, *regs):
-        sp = cpu.STACK
-        invalid = 0
-
-        # "The SP can only be in the list before ARMv7. ARM deprecates any use
-        # of ARM instructions that include the SP, and the value of the SP after
-        # such an instruction is UNKNOWN" (pg A8-537)
-        valid = lambda r: r.type == ARM_OP_REG and r.reg != 'SP'
-
         for reg in regs:
-            assert valid(reg)
             val = cpu.stack_pop(cpu.address_bit_size / 8)
             reg.write(val)
 
