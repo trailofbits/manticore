@@ -613,15 +613,9 @@ class Armv7Cpu(Cpu):
            Note: If src operand is PC, temporarily release our logical PC
            view and conform to the spec, which dictates PC = curr instr + 8
         '''
-        result, carry = src.read(withCarry=True)
+        result, carry_out = src.read(withCarry=True)
         dest.write(result)
-
-        flags = {
-            'N': HighBit(result),
-            'Z': (result == 0),
-            'C': carry
-        }
-        cpu.setFlags(**flags)
+        cpu.setFlags(C=carry_out, N=HighBit(result), Z=(result == 0))
 
     def _handleWriteback(cpu, src, dest, offset):
         # capstone bug doesn't set writeback correctly for postindex reg
