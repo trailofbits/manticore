@@ -133,7 +133,6 @@ class Executor(object):
         self._running = manager.Value('i', 0 )
         self._count = manager.Value('i', 0 )
         self._shutdown = manager.Value('i', 0)
-        #self.timeout = manager.Event()
         self._visited = manager.list()
         self._errors = manager.list()
         self._all_branches = manager.list()

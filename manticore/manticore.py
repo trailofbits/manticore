@@ -555,7 +555,7 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
 
-    def run(self):
+    def run(self, timeout=0):
         '''
         Runs analysis.
         '''
@@ -593,7 +593,6 @@ class Manticore(object):
         self._running = True
 
 
-        timeout = args.timeout
         if timeout > 0:
             from threading import Timer
             t = Timer(timeout, self.terminate)
