@@ -56,7 +56,7 @@ class Operand(object):
     def _reg_name(self, reg_id):
         ''' Translates a capstone register ID into the register name '''
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
-        if cs_reg_name is None :
+        if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
             return None
         return self.cpu._regfile._alias(cs_reg_name.upper())
 
