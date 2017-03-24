@@ -17,7 +17,9 @@ from ..core.executor import SyscallNotImplemented, ProcessExit
 logger = logging.getLogger("MODEL")
 
 #/usr/include/asm-generic/errno-base.h
-EINVAL = 22
+
+import errno; 
+
 
 class RestartSyscall(Exception):
     pass
@@ -1128,10 +1130,10 @@ class Linux(object):
         @param path: the "link path id"
         @param buf: the buffer where the bytes will be putted. 
         @param bufsize: the max size for read the link.
-        @todo: Out eax number of bytes actually sent | EAGAIN | EBADF | EFAULT | EINTR | EINVAL | EIO | ENOSPC | EPIPE
+        @todo: Out eax number of bytes actually sent | EAGAIN | EBADF | EFAULT | EINTR | errno.EINVAL | EIO | ENOSPC | EPIPE
         '''
         if bufsize <= 0:
-            return -EINVAL
+            return -errno.EINVAL
         filename = self._read_string(cpu, path)
         data = os.readlink(filename)[:bufsize]
         cpu.write_bytes(buf, data)
@@ -1600,7 +1602,7 @@ class Linux(object):
                     self.procs[procid].PC += self.procs[procid].instruction.size
                     self.awake(procid)
 
-    def handleInvalidPC(self, e):
+    def handlerrno.EINVALidPC(self, e):
         #FIXME THIS IS ARM SPECIFIC
         cpu = self.current
         if cpu.PC == self.ARM_GET_TLS:
@@ -1658,7 +1660,7 @@ class Linux(object):
             except RestartSyscall:
                 pass
         except InvalidPCException, e:
-            self.handleInvalidPC(e)
+            self.handlerrno.EINVALidPC(e)
 
         return True
         
