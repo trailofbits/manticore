@@ -121,7 +121,7 @@ class Armv7Operand(Operand):
         assert self.op.type == ARM_OP_MEM
 
         off = 0
-        if self.mem.index != '(invalid)':
+        if self.mem.index is not None:
             idx = self.mem.scale * self.cpu.regfile.read(self.mem.index)
             carry = self.cpu.regfile.read('APSR_C')
             if self.is_shifted():
