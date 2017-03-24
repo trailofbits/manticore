@@ -63,6 +63,11 @@ class Operand(object):
     def __getattr__(self, name):
         return getattr(self.op, name)
 
+    @property
+    def size(self):
+        ''' Return bit size of operand '''
+        raise NotImplementedError
+        
     def address(self):
         ''' On a memory operand it returns the effective address '''
         raise NotImplementedError

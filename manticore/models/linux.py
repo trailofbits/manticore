@@ -1009,7 +1009,7 @@ class Linux(object):
         uname += pad('x86_64')
         uname += pad('(none)')
         cpu.write_bytes(old_utsname, uname)
-        logger.debug("sys_uname(...) -> %s", uname.encode('hex'))
+        logger.debug("sys_uname(...) -> %s", uname)
         return 0
 
     def sys_brk(self, cpu, brk):
@@ -1660,7 +1660,7 @@ class Linux(object):
             except RestartSyscall:
                 pass
         except InvalidPCException, e:
-            self.handlerrno.EINVALidPC(e)
+            self.handleInvalidPC(e)
 
         return True
         

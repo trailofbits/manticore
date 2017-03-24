@@ -51,12 +51,14 @@ class Armv7Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Armv7Operand, self).__init__(cpu, op, **kwargs)
 
+    @property
     def size(self):
         assert self.op.type == ARM_OP_REG
         if self.op.reg >= ARM_REG_D0 and self.op.reg <= ARM_REG_D31:
-            return 8
+            return 64
         else:
-            return 4
+            #FIXME check other types of operand sizes
+            return 32
 
     def read(self, nbits=None, withCarry=False):
         carry = self.cpu.regfile.read('APSR_C')
@@ -402,28 +404,6 @@ class Armv7Cpu(Cpu):
             elif instr.mnemonic.startswith('asr'):
                 return 'ASR'
         return OP_NAME_MAP.get(name, name)
-
-    def readOperand(self, op):
-        if op.type == ARM_OP_REG:
-            return self.regfile.read(op.reg)
-        elif op.type == ARM_OP_IMM:
-            return op.imm
-        elif op.type == ARM_OP_MEM:
-            raise NotImplementedError('need to impl arm load mem')
-        else:
-            raise NotImplementedError("readOperand unknown type", op.type)
-
-    def writeOperand(self, op, value):
-        if op.type == ARM_OP_REG:
-            self.regfile.write(op.reg, value)
-        elif op.type == ARM_OP_MEM:
-            raise NotImplementedError('need to impl arm store mem')
-        else:
-            raise NotImplementedError("writeOperand unknown type", op.type)
-
-    def getOperandAddress(self, op):
-        # TODO IMPLEMENT
-        return -1
 
     def _wrap_operands(self, ops):
         return [Armv7Operand(self, op) for op in ops]
@@ -856,9 +836,8 @@ class Armv7Cpu(Cpu):
 
     def _VSTM(cpu, address, *regs):
         for reg in regs:
-            size = reg.size()
-            cpu.write_int(address, reg.read(), size * 8)
-            address += size
+            cpu.write_int(address, reg.read(), reg.size)
+            address += reg.size/8
 
         return address
 
@@ -878,3 +857,4 @@ class Armv7Cpu(Cpu):
     @instruction
     def STCL(cpu, *operands):
         pass
+
