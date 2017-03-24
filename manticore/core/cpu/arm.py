@@ -209,7 +209,7 @@ class Armv7RegisterFile(RegisterFile):
 
 
     def _write_APSR(self, apsr):
-        ''' Auxiliar function - Writes flgs from a full APSR (only 4 msb used) ''' 
+        ''' Auxiliar function - Writes flags from a full APSR (only 4 msb used) ''' 
         V = Operators.EXTRACT(apsr, 28, 1)
         C = Operators.EXTRACT(apsr, 29, 1)
         Z = Operators.EXTRACT(apsr, 30, 1)
@@ -378,10 +378,10 @@ class Armv7Cpu(Cpu):
         # TODO is the distinction between load and read really in the op size?
         nbits = nbytes * 8
         if nbits == self.address_bit_size:
-            val = self.read_int(self.STACK, nbits)
+            val = self.read_int(self.SP, nbits)
         else:
-            val = self.read(self.STACK, nbytes)
-        self.STACK += nbytes
+            val = self.read(self.SP, nbytes)
+        self.SP += nbytes
         return val
 
     def read(self, addr, nbytes):
