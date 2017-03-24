@@ -471,10 +471,14 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def MOV(cpu, dest, src):
-        '''TODO: MOV imm should technically set carry bit.
-              XXX: We now set carry bit when it's a shift operation
-           Note: If src operand is PC, temporarily release our logical PC
-           view and conform to the spec, which dictates PC = curr instr + 8
+        '''
+        Implement the MOV{S} instruction.
+
+        Note: If src operand is PC, temporarily release our logical PC
+        view and conform to the spec, which dictates PC = curr instr + 8
+
+        :param Armv7Operand dest: The destination operand; register.
+        :param Armv7Operand src: The source operand; register or immediate.
         '''
         result, carry_out = src.read(withCarry=True)
         dest.write(result)
