@@ -674,13 +674,8 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def PUSH(cpu, *regs):
-        # ARM deprecates the use of ARM instructions that include the PC in the
-        # list (pg A8-539)
-        valid = lambda r: r.type == ARM_OP_REG and r.reg != 'R15'
-
         high_to_low_regs = regs[::-1]
         for reg in high_to_low_regs:
-            assert valid(reg)
             cpu.stack_push(reg.read())
 
 
