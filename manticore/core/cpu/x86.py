@@ -634,7 +634,7 @@ class AMD64Operand(Operand):
     def address(self):
         cpu, o = self.cpu, self.op
         address = 0
-        if self.mem.segment != '(invalid)':
+        if self.mem.segment is not None:
             seg = self.mem.segment
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
@@ -642,14 +642,14 @@ class AMD64Operand(Operand):
             #FIXME inspect operand or cpu.instruction and decide 
             # the correct default segment for instruction
             seg = 'DS'
-            if self.mem.base != '(invalid)' and self.mem.base in ['SP', 'ESP', 'EBP']:
+            if self.mem.base is not None and self.mem.base in ['SP', 'ESP', 'EBP']:
                 seg = 'SS'
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
-        if self.mem.base  != '(invalid)':
+        if self.mem.base  is not None:
             base = self.mem.base
             address += cpu.read_register(base)
-        if self.mem.index  != '(invalid)':
+        if self.mem.index  is not None:
             index = self.mem.index
             address += self.mem.scale*cpu.read_register(index)
 
