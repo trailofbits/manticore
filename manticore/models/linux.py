@@ -1602,7 +1602,7 @@ class Linux(object):
                     self.procs[procid].PC += self.procs[procid].instruction.size
                     self.awake(procid)
 
-    def handlerrno.EINVALidPC(self, e):
+    def handleInvalidPC(self, e):
         #FIXME THIS IS ARM SPECIFIC
         cpu = self.current
         if cpu.PC == self.ARM_GET_TLS:
