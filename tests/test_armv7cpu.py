@@ -144,8 +144,9 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
-        self.mem.write(self.code, assemble(asm))
-        self.rf.write('PC', self.code)
+        start = self.code + 4
+        self.mem.write(start, assemble(asm))
+        self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000)
 
     def _checkFlagsNZCV(self, n, z, c, v):
@@ -1009,16 +1010,17 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.cpu.read_int(addr + 8, self.cpu.address_bit_size), 4)
 
     @itest_custom("bx r1")
-    @itest_setregs("R1=0x1004")
+    @itest_setregs("R1=0x1008")
     def test_bx_basic(self):
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), 0x1004)
+        self.assertEqual(self.rf.read('PC'), 0x1008)
 
     @itest_custom("bx r1")
-    @itest_setregs("R1=0x1005")
+    @itest_setregs("R1=0x1009")
     def test_bx_thumb(self):
+        pre_pc = self.rf.read('PC')
         self.cpu.execute()
-        self.assertEqual(self.rf.read('PC'), 0x1004)
+        self.assertEqual(self.rf.read('PC'), pre_pc + 4)
 
     # ORR
 
@@ -1300,13 +1302,13 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest("BLX R1")
     def test_blx_reg(self):
         self.assertEqual(self.rf.read('PC'), 0x1008)
-        self.assertEqual(self.rf.read('LR'), 0x1004)
+        self.assertEqual(self.rf.read('LR'), 0x1008)
 
     @itest_setregs("R1=0x1009")
     @itest("BLX R1")
     def test_blx_reg_thumb(self):
         self.assertEqual(self.rf.read('PC'), 0x1008)
-        self.assertEqual(self.rf.read('LR'), 0x1004)
+        self.assertEqual(self.rf.read('LR'), 0x1008)
 
     @itest_setregs("R1=0xffffffff", "R2=2")
     @itest("UMULLS R1, R2, R1, R2")
