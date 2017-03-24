@@ -616,12 +616,11 @@ class Armv7Cpu(Cpu):
         result, carry = src.read(withCarry=True)
         dest.write(result)
 
-        # Setting flags in two separate setFlags calls clears earlier flags, set
-        # it once
-        flags = {'N' : HighBit(result),
-                 'Z': (result == 0)}
-        if src.is_shifted():
-            flags['C'] = carry
+        flags = {
+            'N': HighBit(result),
+            'Z': (result == 0),
+            'C': carry
+        }
         cpu.setFlags(**flags)
 
     def _handleWriteback(cpu, src, dest, offset):

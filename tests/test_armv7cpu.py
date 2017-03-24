@@ -239,11 +239,17 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("movs r0, 0xff000000")
     def test_movs_imm_modified_imm_max(self):
-        pre_c = self.rf.read(ARM_REG_APSR_C)
         pre_v = self.rf.read(ARM_REG_APSR_V)
         self.cpu.execute()
         self.assertEqual(self.rf.read(ARM_REG_R0), 0xff000000)
-        self._checkFlagsNZCV(1, 0, pre_c, pre_v)
+        self._checkFlagsNZCV(1, 0, 1, pre_v)
+
+    @itest_custom("movs r0, 0x0e000000")
+    def test_movs_imm_modified_imm_sans_carry(self):
+        pre_v = self.rf.read(ARM_REG_APSR_V)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read(ARM_REG_R0), 0x0e000000)
+        self._checkFlagsNZCV(0, 0, 0, pre_v)
 
     @itest_custom("movs r0, r1")
     def test_movs_reg(self):
