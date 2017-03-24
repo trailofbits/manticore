@@ -359,20 +359,20 @@ class Armv7Cpu(Cpu):
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
     def stack_push(self, data):
         if isinstance(data, (int, long)):
-            self.STACK -= self.address_bit_size/8
-            self.write_int(self.STACK, data, self.address_bit_size)
+            self.SP -= self.address_bit_size/8
+            self.write_int(self.SP, data, self.address_bit_size)
         elif isinstance(data, BitVec):
-            self.STACK -= data.size/8
-            self.write_int(self.STACK, data, data.size)
+            self.SP -= data.size/8
+            self.write_int(self.SP, data, data.size)
         elif isinstance(data, str):
-            self.STACK -= len(data)
-            self.write(self.STACK, data)
+            self.SP -= len(data)
+            self.write(self.SP, data)
         else:
             raise NotImplementedError('unsupported type for stack push data')
-        return self.STACK
+        return self.SP
 
     def stack_peek(self, nbytes=4):
-        return self.read(self.STACK, nbytes)
+        return self.read(self.SP, nbytes)
 
     def stack_pop(self, nbytes=4):
         # TODO is the distinction between load and read really in the op size?
