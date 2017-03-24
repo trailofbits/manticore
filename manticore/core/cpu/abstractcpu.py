@@ -26,19 +26,16 @@ MU = {
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 # This encapsulates how to acccess operands (regs/mem/immediates) for differents cpus
 class Operand(object):
-    __metaclass__ = ABCMeta
-    def _reg_name(self, reg_id):
-        return reg_id
 
     class MemSpec(object):
+        ''' Auxiliary class wraps capstone operand 'mem' attribute. This will return register names instead of Ids ''' 
         def __init__(self, parent):
             self.parent = parent
         segment = property( lambda self: self.parent._reg_name(self.parent.op.mem.segment) )
         base = property( lambda self: self.parent._reg_name(self.parent.op.mem.base) )
         index = property( lambda self: self.parent._reg_name(self.parent.op.mem.index) )
-        scale = property( lambda self: self.parent._reg_name(self.parent.op.mem.scale) )
-        disp = property( lambda self: self.parent._reg_name(self.parent.op.mem.disp) )
-
+        scale = property( lambda self: self.parent.op.mem.scale )
+        disp = property( lambda self: self.parent.op.mem.disp )
 
     def __init__(self, cpu, op, **kwargs):
         '''
@@ -50,10 +47,18 @@ class Operand(object):
         @param cpu:  A Cpu oinstance
         @param op: a Capstone operand (eew)
         '''
-        self.cpu=cpu
-        self.op=op
-        if op.type == X86_OP_MEM:
-            self.mem = self.__class__.MemSpec(self)
+        assert isinstance(cpu, Cpu)
+        assert isinstance(op, (X86Op, ArmOp))
+        self.cpu = cpu
+        self.op = op
+        self.mem = Operand.MemSpec(self)
+
+    def _reg_name(self, reg_id):
+        ''' Translates a capstone register ID into the register name '''
+        cs_reg_name = self.cpu.instruction.reg_name(reg_id)
+        if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
+            return None
+        return self.cpu._regfile._alias(cs_reg_name.upper())
 
     def __getattr__(self, name):
         return getattr(self.op, name)
@@ -65,80 +70,69 @@ class Operand(object):
                 memory
         '''
         raise NotImplementedError
+
+    @property        
+    def size(self):
+        ''' Return bit size of operand '''
+        raise NotImplementedError
         
-    @abstractmethod
     def address(self):
         ''' On a memory operand it returns the effective address '''
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def read(self):
         ''' It reads the operand value from the registers or memory '''
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def write(self, value):
         ''' It writes the value ofspecific type to the registers or memory '''
-        pass
+        raise NotImplementedError
 
 # Basic register file structure not actully need to abstract as it's used only from the cpu implementation
 class RegisterFile(object):
-
 
     def __init__(self, aliases=None):
         if aliases is None:
             aliases = {}
         self._aliases = aliases
-        ''''dict mapping from alias register name ('PC') to actual register name
-            ('RSP'), which can be passed into reg_id()
-        '''
+        ''''dict mapping from alias register name ('PC') to actual register name ('RIP') '''
+
+    def _alias(self, register):
+        '''Get register canonical alias. ex. PC->RIP or PC->R15 '''
+        return self._aliases.get(register, register) 
 
     #@abstractmethod
-    def write(self, reg_id, value):
-        ''' Write value to the register reg_id 
-            @param reg_id: a register id. Must be listed on all_registers
+    def write(self, register, value):
+        ''' Write value to the specified register 
+            @param register: a register id. Must be listed on all_registers
             @param value: a value of the expected type
             @return the value actually written to the register
         '''
         pass
 
     #@abstractmethod
-    def read(self, reg_id):
-        ''' Read value from the register identified by reg_id 
-            @param reg_id: a register id. Must be listed on all_registers
+    def read(self, register):
+        ''' Read value from specified register 
+            @param register: a register name. Must be listed on all_registers
             @return the register value
         '''
-        pass
-
-    #@abstractmethod
-    def reg_name(self, reg_id):
-        ''' Gives a string representation (name) of a register (ID->name)
-            @param reg_id: a register ID
-        '''
-        pass
-
-    #@abstractmethod
-    def reg_id(self, reg_name):
-        ''' Gives the register ID for a string representation of a register (name->ID)
-            @param reg_name: a string representation of reg_id register'''
         pass
 
     @property
     def all_registers(self):
         ''' Lists all possible register names (Including aliases) '''
-        pass
+        return tuple(self._aliases)
 
     @property
     def canonical_registers(self):
         ''' List the minimal most beautiful set of registers needed '''
         pass
         
-    def __contains__(self, reg_id):
+    def __contains__(self, register):
         ''' Check for register validity 
-            @param reg_id: a register ID
+            @param register: a register name
         '''
-        return reg_id in self.all_registers
-
+        return self._alias(register) in self.all_registers 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
 class Cpu(object):
@@ -200,43 +194,36 @@ class Cpu(object):
         return self._regfile.all_registers
 
     #this operates on names
-    def write_register(self, name, value):
+    def write_register(self, register, value):
         ''' A convenient method to write a register by name (this accepts alias)
-            @param name a register name as listed in all_registers
+            @param register a register name as listed in all_registers
             @param value a value
             @return It will return the written value possibly croped
         '''
-        reg_id = self._regfile.reg_id(name)
-        return self._regfile.write(reg_id, value)
+        return self._regfile.write(register, value)
 
-    def read_register(self, name):
+    def read_register(self, register):
         ''' A convenient method to read a register by name (this accepts alias)
-            @param name a register name as listed in all_registers
+            @param register a register name as listed in all_registers
             @param value a value
             @return It will return the written value possibly croped
         '''
-        reg_id = self._regfile.reg_id(name)
-        return self._regfile.read(reg_id)
+        return self._regfile.read(register)
 
     # Pythonic acces to registers and aliases
     def __getattr__(self, name):
         ''' A pythonic version of read_register '''
         assert name != '_regfile'
-        if hasattr(self, '_regfile') and name in self.all_registers:
+        if hasattr(self, '_regfile') and name in self._regfile:
             return self.read_register(name)
-
         raise AttributeError(name)
 
     def __setattr__(self, name, value):
         ''' A pythonic version of write_register '''
-        if hasattr(self, '_regfile') and name in self.all_registers:
+        if hasattr(self, '_regfile') and name in self._regfile:
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
     
-    def getCanonicalRegisters(self):
-        values = [self.read_register(rname) for rname in self.canonical_registers]
-        d = dict(zip(self.canonical_registers, values))
-        return d
 
     #############################
     # Memory access
@@ -380,9 +367,7 @@ class Cpu(object):
         if logger.level == logging.DEBUG :
             for l in str(self).split('\n'):
                 logger.debug(l)
-
         implementation(*instruction.operands)
-
         self._icount+=1
 
     @abstractmethod
@@ -541,7 +526,7 @@ class InvalidPCException(Exception):
         super(InvalidPCException, self).__init__("Trying to execute invalid memory @%08x"%pc)
         self.pc=pc
 
-class InstructionNotImplemented(Exception):
+class InstructionNotImplementedError(Exception):
     ''' Exception raised when you try to execute an instruction that is
         not yet implemented in the emulator.
         Go to cpu.py and add it!

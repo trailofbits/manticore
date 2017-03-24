@@ -1,30 +1,3 @@
-# Copyright (c) 2013, Felipe Andres Manzano
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-#     * Redistributions of source code must retain the above copyright notice,
-#       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice,this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the copyright holder nor the names of its
-#       contributors may be used to endorse or promote products derived from
-#       this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCOUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-
 from capstone import *
 from capstone.x86 import *
 from .abstractcpu import Cpu, RegisterFile, Operand, SANE_SIZES, instruction
@@ -470,15 +443,10 @@ class AMD64RegFile(RegisterFile):
 
         for reg in ('FPSW', 'FPTAG', 'FPCW'):
             self._registers[reg] = 0
+
         self._cache = {}
         for name in ('AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'):
             self.write(name, False)
-
-    def reg_name(self, reg_id):
-        return reg_id
-
-    def reg_id(self, reg_name):
-        return self._aliases.get(reg_name, reg_name)
 
     @property
     def all_registers(self):
@@ -489,8 +457,8 @@ class AMD64RegFile(RegisterFile):
     def canonical_registers(self):
         return self._canonical_registers
 
-    def __contains__(self, reg_id):
-        return reg_id in self.all_registers
+    def __contains__(self, register):
+        return register in self.all_registers
 
     def _set_bv(self, register_id, register_size, offset, size, reset, value):
         if isinstance(value, (int,long)):
@@ -577,9 +545,8 @@ class AMD64RegFile(RegisterFile):
         for flag, offset in self._flags.iteritems():
             self.write(flag, Operators.EXTRACT(res, offset, 1))
 
-    def write(self, reg_id, value):
-        name = self.reg_name(reg_id)
-
+    def write(self, name, value):
+        name = self._alias(name)
         if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
             name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
 
@@ -601,15 +568,14 @@ class AMD64RegFile(RegisterFile):
         self._update_cache(name, value)
         return value
 
-    def _update_cache(self,name, value):
+    def _update_cache(self, name, value):
         self._cache[name] = value
         for affected in self._affects[name]:
             assert affected != name
             self._cache.pop(affected, None)
 
-    def read(self, reg_id):
-        name = self.reg_name(reg_id)
-
+    def read(self, name):
+        name = self._alias(name)
         if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
             name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
         if name in self._cache:
@@ -632,17 +598,9 @@ class AMD64RegFile(RegisterFile):
 ###########################
 # Operand Wrapper
 class AMD64Operand(Operand):
-    def _reg_name(self, reg_id):
-        if reg_id <= 0 :
-            return '(invalid)'
-        return self.cpu.instruction.reg_name(reg_id).upper()
-
+    ''' This class deals with capstone X86 operands '''
     def __init__(self, cpu, op, **kwargs):
         super(AMD64Operand, self).__init__(cpu, op, **kwargs)
-        self.cpu=cpu
-        self.op=op
-        if op.type == X86_OP_MEM:
-            self.mem = AMD64Operand.MemSpec(self)
 
     @property
     def type(self):
@@ -655,7 +613,7 @@ class AMD64Operand(Operand):
     def address(self):
         cpu, o = self.cpu, self.op
         address = 0
-        if o.mem.segment != 0:
+        if self.mem.segment is not None:
             seg = self.mem.segment
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
@@ -663,18 +621,18 @@ class AMD64Operand(Operand):
             #FIXME inspect operand or cpu.instruction and decide 
             # the correct default segment for instruction
             seg = 'DS'
-            if o.mem.base != 0 and self.mem.base in ['SP', 'ESP', 'EBP']:
+            if self.mem.base is not None and self.mem.base in ['SP', 'ESP', 'EBP']:
                 seg = 'SS'
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
-        if o.mem.base != 0:
+        if self.mem.base  is not None:
             base = self.mem.base
             address += cpu.read_register(base)
-        if o.mem.index != 0:
+        if self.mem.index  is not None:
             index = self.mem.index
-            address += o.mem.scale*cpu.read_register(index)
-        if o.mem.disp != 0:
-            address += o.mem.disp
+            address += self.mem.scale*cpu.read_register(index)
+
+        address += self.mem.disp
 
         return address & ((1<<cpu.address_bit_size)-1)
 
