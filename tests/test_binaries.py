@@ -33,26 +33,24 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(secs_used < timeout)
         sys.stderr.write("\n")
 
-    @unittest.skip('TODO(mark); skipping so we can move on with our lives and merge x86_new. ask felipe to fix later.')
-    def testArguments(self):
+    def testTimeout(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        SE = os.path.join(dirname, '../main.py')
         data = file(filename,'rb').read()
         self.assertEqual(len(data), 767152)
         self.assertEqual(hashlib.md5(data).hexdigest() , '00fb23e47831a1054ca4a74656035472')
         workspace = '%s/workspace'%self.test_dir
-        self._runWithTimeout(['python', SE, 
-                    '--log', '%s/output.log'%self.test_dir,
-                    '--workspace', workspace,
-                    '--proc', '4',
-                    filename,
-                    '+++++++++'])
-        data = file('%s/visited.txt'%workspace,'r').read()
-        data = '\n'.join(sorted(set(data.split('\n'))))
-        self.assertEqual(hashlib.md5(data).hexdigest() , '757e3cb387a163987d9265f15970f595')
+        t = time.time()
+        po = subprocess.call(['python', '-m', 'manticore', 
+                            '--log', '%s/output.log'%self.test_dir,
+                            '--workspace', workspace,
+                            '--timeout', '1', 
+                            '--procs', '4',
+                            filename,
+                            '+++++++++'])
+        self.assertTrue(time.time()-t < 20)
 
 
     @unittest.skip('TODO(mark); skipping so we can move on with our lives and merge x86_new. ask felipe to fix later.')

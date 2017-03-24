@@ -148,7 +148,7 @@ def main():
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
 
-    m.run()
+    m.run(args.timeout)
 
     m.dump_stats()
 
