@@ -471,21 +471,18 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def MOV(cpu, dest, src):
-        '''TODO: MOV imm should technically set carry bit.
-              XXX: We now set carry bit when it's a shift operation
-           Note: If src operand is PC, temporarily release our logical PC
-           view and conform to the spec, which dictates PC = curr instr + 8
         '''
-        result, carry = src.read(withCarry=True)
-        dest.write(result)
+        Implement the MOV{S} instruction.
 
-        # Setting flags in two separate setFlags calls clears earlier flags, set
-        # it once
-        flags = {'N' : HighBit(result),
-                 'Z': (result == 0)}
-        if src.is_shifted():
-            flags['C'] = carry
-        cpu.setFlags(**flags)
+        Note: If src operand is PC, temporarily release our logical PC
+        view and conform to the spec, which dictates PC = curr instr + 8
+
+        :param Armv7Operand dest: The destination operand; register.
+        :param Armv7Operand src: The source operand; register or immediate.
+        '''
+        result, carry_out = src.read(withCarry=True)
+        dest.write(result)
+        cpu.setFlags(C=carry_out, N=HighBit(result), Z=(result == 0))
 
     def _handleWriteback(cpu, src, dest, offset):
         # capstone bug doesn't set writeback correctly for postindex reg
