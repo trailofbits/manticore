@@ -16,10 +16,6 @@ from ..core.cpu.arm import *
 from ..core.executor import SyscallNotImplemented, ProcessExit
 logger = logging.getLogger("MODEL")
 
-#/usr/include/asm-generic/errno-base.h
-
-import errno; 
-
 
 class RestartSyscall(Exception):
     pass
