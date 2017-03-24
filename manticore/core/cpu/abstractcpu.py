@@ -58,6 +58,14 @@ class Operand(object):
     def __getattr__(self, name):
         return getattr(self.op, name)
 
+    @property
+    def type(self):
+        ''' This property encapsulate the operand type. It may be a:
+                register
+                memory
+        '''
+        raise NotImplementedError
+        
     @abstractmethod
     def address(self):
         ''' On a memory operand it returns the effective address '''

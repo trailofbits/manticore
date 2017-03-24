@@ -70,8 +70,14 @@ class Armv7Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Armv7Operand, self).__init__(cpu, op, **kwargs)
 
+    @property
+    def type(self):
+        return { ARM_OP_REG: 'register',
+                 ARM_OP_MEM: 'memory',
+                 ARM_OP_IMM: 'immediate'}[self.op.type]
+
     def size(self):
-        assert self.op.type == ARM_OP_REG
+        assert self.type == 'register'
         if self.op.reg >= ARM_REG_D0 and self.op.reg <= ARM_REG_D31:
             return 8
         else:
@@ -79,7 +85,7 @@ class Armv7Operand(Operand):
 
     def read(self, nbits=None, withCarry=False):
         carry = self.cpu.regfile.read(ARM_REG_APSR_C)
-        if self.op.type == ARM_OP_REG:
+        if self.type == 'register':
             reg = self.cpu.regfile.read(self.op.reg)
             # XXX This can be an offset of 8, depending on ARM mode
             if self.op.reg == ARM_REG_R15:
@@ -92,7 +98,7 @@ class Armv7Operand(Operand):
             if withCarry:
                 return reg, carry
             return reg
-        elif self.op.type == ARM_OP_IMM:
+        elif self.type == 'immediate':
             imm = self.op.imm
             if self.op.subtracted:
                 imm = -imm
@@ -100,7 +106,7 @@ class Armv7Operand(Operand):
                 return imm, self._getExpandImmCarry(carry)
             return imm
 
-        elif self.op.type == ARM_OP_MEM:
+        elif self.type == 'memory':
             val = self.cpu.read_int(self.address(), nbits)
             if withCarry:
                 return (val, carry)
@@ -109,17 +115,17 @@ class Armv7Operand(Operand):
             raise NotImplementedError("readOperand unknown type", self.op.type)
 
     def write(self, value, nbits=None):
-        if self.op.type == ARM_OP_REG:
+        if self.type == 'register':
             self.cpu.regfile.write(self.op.reg, value)
-        elif self.op.type == ARM_OP_MEM:
+        elif self.type == 'memory':
             raise NotImplementedError('need to impl arm store mem')
         else:
             raise NotImplementedError("writeOperand unknown type", self.op.type)
 
     def writeback(self, value):
-        if self.op.type == ARM_OP_REG:
+        if self.type == 'register':
             self.write(value)
-        elif self.op.type == ARM_OP_MEM:
+        elif self.type == 'memory':
             self.cpu.regfile.write(self.op.mem.base, value)
         else:
             raise NotImplementedError("writeback Operand unknown type", self.op.type)
@@ -128,13 +134,13 @@ class Armv7Operand(Operand):
         return self.op.shift.type != ARM_SFT_INVALID
 
     def address(self):
-        assert self.op.type == ARM_OP_MEM
+        assert self.type == 'memory'
         mem = self.op.mem
         addr = self.get_mem_base_addr() + self.get_mem_offset()
         return addr & Mask(self.cpu.address_bit_size)
 
     def get_mem_offset(self):
-        assert self.op.type == ARM_OP_MEM
+        assert self.type == 'memory'
 
         mem = self.op.mem
         off = 0
@@ -150,7 +156,7 @@ class Armv7Operand(Operand):
         return -off if self.op.subtracted else off
 
     def get_mem_base_addr(self):
-        assert self.op.type == ARM_OP_MEM
+        assert self.type == 'memory'
 
         mem = self.op.mem
         base = self.cpu.regfile.read(mem.base)
