@@ -181,26 +181,28 @@ class Cpu(object):
 
     @property
     def all_registers(self):
-        ''' Returns the list of all register names  for this CPU.
-        @rtype: tuple
-        @return: the list of register names for this CPU.
+        '''Returns all register names for this CPU. Any register returned can be accessed
+        via a `cpu.REG` convenience interface (e.g. `cpu.EAX`) for both reading and
+        writing.
+
+        :return: valid register names
+        :rtype: tuple[str]
         '''
         return self._regfile.all_registers
 
-    #this operates on names
-    def write_register(self, register, value):
-        ''' A convenient method to write a register by name (this accepts alias)
-            @param register a register name as listed in all_registers
-            @param value a value
-            @return It will return the written value possibly croped
+    def write_register(self, name, value):
+        '''Dynamic interface for writing cpu registers
+
+        :param str name: register name (as listed in `self.all_registers`)
+        :param value: register value
         '''
         return self._regfile.write(register, value)
 
-    def read_register(self, register):
-        ''' A convenient method to read a register by name (this accepts alias)
-            @param register a register name as listed in all_registers
-            @param value a value
-            @return It will return the written value possibly croped
+    def read_register(self, name):
+        '''Dynamic interface for reading cpu registers
+
+        :param str name: register name (as listed in `self.all_registers`)
+        :return: register value
         '''
         return self._regfile.read(register)
 
