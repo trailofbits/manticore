@@ -265,12 +265,6 @@ class Cpu(object):
         :param data: data to write
         :type data: str
         '''
-        '''
-        Writes C{data} in the address C{where}.
-        
-        @param where: address to write the data C{data}.
-        @param data: the data to write in the address C{where}.  
-        '''
         for i in xrange(len(data)):
             self.write_int( where+i, Operators.ORD(data[i]), 8)
 
