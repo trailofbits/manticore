@@ -3,7 +3,7 @@ import struct
 from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
-from manticore.core.cpu.abstractcpu import ConcretizeMemory
+from manticore.core.cpu.abstractcpu import ConcretizeMemory, ConcretizeRegister
 from manticore.core.memory import Memory32, SMemory32
 from manticore.core.executor import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
@@ -1361,3 +1361,14 @@ class UnicornConcretization(unittest.TestCase):
             sp = self.rf.read('SP')
             self.assertTrue(e.address in range(sp, sp+len(val)))
 
+    @itest_custom("mov r1, r2")
+    def test_load_symbolic_from_register(self):
+        val = self.state.new_symbolic_value(32)
+        self.rf.write('R2', val)
+
+        try:
+            emulate_next(self.cpu)
+            # Make sure we raise
+            self.assertFalse(True)
+        except ConcretizeRegister as e:
+            self.assertEqual(e.reg_name, 'R2')
