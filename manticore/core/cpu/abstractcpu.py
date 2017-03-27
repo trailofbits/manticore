@@ -129,7 +129,7 @@ class RegisterFile(object):
 # Abstract cpu encapsulating common cpu methods used by models and executor.
 class Cpu(object):
     '''
-    This is an abstract representation of a Cpu. Functionality common to all
+    Base class for all Cpu architectures. Functionality common to all
     architectures (and expected from users of a Cpu) should be here.
 
     The following attributes need to be defined in any derived class
