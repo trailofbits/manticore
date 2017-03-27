@@ -295,11 +295,8 @@ class Manticore(object):
     @property
     def verbosity(self):
         '''
-        Convenience property for controlling the logging verbosity to a number of presets
-
-        :getter: Get current verbosity level
-        :setter: Set current verbosity level [0-5]
-        :type: int
+        Convenience interface for setting logging verbosity to one of several predefined
+        logging presets. Valid values: 0-5
         '''
         return self._verbosity
 
