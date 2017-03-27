@@ -149,10 +149,13 @@ class UnicornEmulator(object):
 
     def emulate(self, instruction):
         def _to_unicorn_id(reg_name):
-            #FIXME FIXME FIXME
+            # TODO(felipe, yan): Register naming is broken in current unicorn
+            # packages, but works on unicorn git's master. We leave this hack
+            # in until unicorn gets updated.
+
             #assert unicorn.__version__ <= '1.0.0', "If we are using unicorn greater than 1.0.0 we have ARM.APSR support
-            #if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
-                #reg_name = 'CPSR'
+            if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
+                reg_name = 'CPSR'
             if self._cpu.arch == CS_ARCH_ARM:
                 return globals()['UC_ARM_REG_' + reg_name]
             elif self._cpu.arch == CS_ARCH_X86:
