@@ -9,6 +9,14 @@ class AbandonState(Exception):
 
 
 class State(object):
+    '''
+    Representation of a unique program state/path.
+
+    :param ConstraintSet constraints: Initial constraints on state
+    :param model: Initial constraints on state
+    :type model: Decree or Linux or Windows
+    '''
+
     # Class global counter
     _state_count = manager.Value('i', 0)
     _lock = manager.Lock()
@@ -91,26 +99,23 @@ class State(object):
         self.constraints.add(constraint)
 
     def abandon(self):
-        '''Abandon the currently-active state
+        '''Abandon the currently-active state.
 
-        Note: This must be called from the Executor loop, or a user-provided
-        callback.'''
+        Note: This must be called from the Executor loop, or a :func:`~manticore.Manticore.hook`.
+        '''
         raise AbandonState
 
     def new_symbolic_buffer(self, nbytes, **options):
-        '''Create and return a symbolic buffer of length |nbytes|. The buffer is
+        '''Create and return a symbolic buffer of length `nbytes`. The buffer is
         not written into State's memory; write it to the state's memory to
         introduce it into the program state.
 
-        Args:
-            nbytes - Length of the new buffer
-            options - Options to set on the returned expression. Valid options:
-                name --  The name to assign to the buffer (str)
-                cstring -- Whether or not to enforce that the buffer is a cstring
+        :param int nbytes: Length of the new buffer
+        :param str name: (keyword arg only) The name to assign to the buffer
+        :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
                  (i.e. no \0 bytes, except for the last byte). (bool)
 
-        Returns:
-            Expression representing the buffer.
+        :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
         name = options.get('name', 'buffer')
         expr = self.constraints.new_array(name=name, index_max=nbytes)
@@ -123,17 +128,15 @@ class State(object):
         return expr
 
     def new_symbolic_value(self, nbits, label='val', taint=frozenset()):
-        '''Create and return a symbolic value that is |nbits| bits wide. Assign
+        '''Create and return a symbolic value that is `nbits` bits wide. Assign
         the value to a register or write it into the address space to introduce
         it into the program state.
 
-        Args:
-            nbits - The bitwidth of the value returned.
-            label - The label to assign to the value.
-            taint - A tuple or frozenset of values to use as taint identifiers.
-
-        Returns:
-            Expression representing the value.
+        :param int nbits: The bitwidth of the value returned
+        :param str label: The label to assign to the value
+        :param taint: Taint identifier of this value
+        :type taint: tuple or frozenset
+        :return: :class:`~manticore.core.smtlib.expression.Expression` representing the value
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
         expr = self.constraints.new_bitvec(nbits, name=label, taint=taint)
@@ -143,15 +146,13 @@ class State(object):
     def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False):
         '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
-        Args:
-            data -- The string to symbolicate. If no wildcard bytes are provided,
+        :param str data: The string to symbolicate. If no wildcard bytes are provided,
                 this is the identity function on the first argument.
-            label -- The label to assign to the value
-            wildcard -- The byte that is considered a wildcard
-            string -- Ensure bytes returned can not be \0
+        :param str label: The label to assign to the value
+        :param str wildcard: The byte that is considered a wildcard
+        :param bool string: Ensure bytes returned can not be \0
 
-        Returns:
-            If data does not contain any wildcard bytes, data itself. Otherwise,
+        :return: If data does not contain any wildcard bytes, data itself. Otherwise,
             a list of values derived from data. Non-wildcard bytes are kept as
             is, wildcard bytes are replaced by Expression objects.
         '''
@@ -198,11 +199,25 @@ class State(object):
         return solver
 
     def solve_one(self, expr):
-        # type: (Expression) -> int
+        '''
+        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        one solution.
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :return: Concrete value
+        :rtype: int
+        '''
         return self._solver.get_value(self.constraints, expr)
 
     def solve_n(self, expr, nsolves=1, policy='minmax'):
-        # type: (Expression, int) -> list
+        '''
+        Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        `nsolves` solutions.
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to concretize
+        :return: Concrete value
+        :rtype: list[int]
+        '''
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
 
     def record_branches(self, targets):
