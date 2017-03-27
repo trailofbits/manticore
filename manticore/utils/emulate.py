@@ -175,6 +175,7 @@ class UnicornEmulator(object):
         for reg in registers:
             val = self._cpu.read_register(reg)
             if issymbolic(val):
+                from ..core.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(reg, "Concretizing register for emulation.") 
             self._emu.reg_write(_to_unicorn_id(reg), val)
 
