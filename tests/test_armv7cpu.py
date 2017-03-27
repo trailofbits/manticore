@@ -2,8 +2,7 @@ import unittest
 import struct
 from functools import wraps
 
-from manticore.core.cpu.arm import Armv7Cpu as cpu
-from manticore.core.cpu.arm import *
+from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.memory import Memory32
 
 from capstone.arm import *
@@ -25,7 +24,7 @@ def assemble(asm):
 
 class Armv7CpuTest(unittest.TestCase):
     def setUp(self):
-        self.c = cpu(Memory32(), 'armv7')
+        self.c = Cpu(Memory32(), 'armv7')
         self.rf = self.c.regfile
         self._setupStack()
 
@@ -121,7 +120,6 @@ def itest_setregs(*preds):
 
     return instr_dec
 
-
 def itest_custom(asm):
     def instr_dec(custom_func):
         @wraps(custom_func)
@@ -136,7 +134,7 @@ def itest_custom(asm):
 
 class Armv7CpuInstructions(unittest.TestCase):
     def setUp(self):
-        self.cpu = cpu(Memory32(), 'armv7')
+        self.cpu = Cpu(Memory32(), 'armv7')
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
