@@ -259,7 +259,7 @@ class Cpu(object):
 
     def write_bytes(self, where, data):
         '''
-        Writes to memory
+        Write a concrete or symbolic (or mixed) buffer to memory
 
         :param int where: address to write to
         :param data: data to write
