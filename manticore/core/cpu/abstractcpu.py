@@ -190,18 +190,18 @@ class Cpu(object):
         '''
         return self._regfile.all_registers
 
-    def write_register(self, name, value):
+    def write_register(self, register, value):
         '''Dynamic interface for writing cpu registers
 
-        :param str name: register name (as listed in `self.all_registers`)
+        :param str register: register name (as listed in `self.all_registers`)
         :param value: register value
         '''
         return self._regfile.write(register, value)
 
-    def read_register(self, name):
+    def read_register(self, register):
         '''Dynamic interface for reading cpu registers
 
-        :param str name: register name (as listed in `self.all_registers`)
+        :param str register: register name (as listed in `self.all_registers`)
         :return: register value
         '''
         return self._regfile.read(register)
