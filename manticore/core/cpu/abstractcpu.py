@@ -463,38 +463,52 @@ class Syscall(CpuInterrupt):
         super(Syscall, self).__init__("CPU Syscall")
 
 # TODO(yan): Move this into State or a more appropriate location
-_ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
 
-class ConcretizeRegister(Exception):
-    ''' '''
-    def __init__(self, reg_name, message, policy='MINMAX'):
-        assert policy in _ValidPolicies
-        super(ConcretizeRegister, self).__init__("Concretizing %s (%s). %s"%(reg_name, policy, message))
-        self.reg_name = reg_name
+class ConcretizeException(Exception):
+    '''
+    Base class for all exceptions that trigger the concretization of a symbolic
+    value.
+    '''
+    _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
+    def __init__(self, message, policy):
+        assert policy in self._ValidPolicies, "Policy must be one of: %s"%(', '.join(self._ValidPolicies),)
         self.policy = policy
+        super(ConcretizeException, self).__init__("%s (Policy: %s)"%(message, policy))
 
-class ConcretizeMemory(Exception):
-    ''' '''
+class ConcretizeRegister(ConcretizeException):
+    '''
+    Raised when a symbolic register needs to be concretized.
+    '''
+    def __init__(self, reg_name, message, policy='MINMAX'):
+        message = "Concretizing %s. %s"%(reg_name, message)
+        super(ConcretizeRegister, self).__init__(message, policy)
+        self.reg_name = reg_name
+
+class ConcretizeMemory(ConcretizeException):
+    '''
+    Raised when a symbolic memory location needs to be concretized.
+    '''
     def __init__(self, address, size, message, policy='MINMAX'):
-        assert policy in _ValidPolicies
-        super(ConcretizeMemory, self).__init__("Concretizing byte at %x (%s). %s"%(address, policy, message))
+        message = "Concretizing byte at %x. %s"%(address, message)
+        super(ConcretizeMemory, self).__init__(message, policy)
         self.address = address
         self.size = size
-        self.policy = policy
 
-class ConcretizeArgument(Exception):
-    ''' '''
+class ConcretizeArgument(ConcretizeException):
+    '''
+    Raised when a symbolic argument needs to be concretized.
+    '''
     def __init__(self, argnum, policy='MINMAX'):
-        assert policy in _ValidPolicies
-        super(ConcretizeArgument, self).__init__("Concretizing argument #%d (%s): "%(argnum, policy))
+        message = "Concretizing argument #%d."%(argnum,)
+        super(ConcretizeArgument, self).__init__(message, policy)
         self.argnum = argnum
-        self.policy = policy
-
 
 class SymbolicPCException(ConcretizeRegister):
-    ''' '''
+    '''
+    Raised when we attempt to execute from a symbolic location.
+    '''
     def __init__(self):
-        super(SymbolicPCException, self).__init__("PC", "Symbolic PC", "ALL")
+        super(SymbolicPCException, self).__init__("PC", "Can't execute from a symbolic address.", "ALL")
 
 class IgnoreAPI(Exception):
     def __init__(self, name):
