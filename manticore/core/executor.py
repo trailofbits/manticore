@@ -160,7 +160,6 @@ class Executor(object):
             logger.debug("Profiling not enabled.")
             return
 
-        import pstats
         class PstatsFormatted:
             def __init__(self, d):
                 self.stats = dict(d)
