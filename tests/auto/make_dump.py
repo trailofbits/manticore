@@ -71,7 +71,7 @@ class Gdb(subprocess.Popen):
         except Exception,e:
             raise e
             return 0
-    def getPid(self):
+    def get_pid(self):
         return int(self.correspond('info proc\n').split("\n")[0].split(" ")[-1])
     def getStack(self):
         maps = file("/proc/%s/maps"%self.correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
@@ -83,6 +83,10 @@ class Gdb(subprocess.Popen):
     def get_entry(self):
         a=self.correspond('info target\n')
         return int(a[a.find("Entry point:"):].split('\n')[0].split(' ')[-1][2:],16)
+
+    def get_maps(self):
+        pid = self.get_pid()
+        return file('/proc/%d/maps'%pid, 'rb').read()
 
     _arch = None
     def get_arch(self):
@@ -110,7 +114,7 @@ gdb.correspond("b *0\n")
 gdb.correspond("run arg1 arg2 < /dev/urandom > /dev/null\n")
 #gdb.correspond("run arg1 arg2 arg3 < input > /dev/null\n")
 gdb.correspond("d 1\n")
-
+#print gdb.get_maps()
 '''
 # Simulate no vdso (As when analized with symbemu)
 found = 0
