@@ -10,6 +10,8 @@ import functools
 from multiprocessing import Manager, Pool
 from multiprocessing import Process
 
+from threading import Timer
+
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -594,7 +596,6 @@ class Manticore(object):
 
 
         if timeout > 0:
-            from threading import Timer
             t = Timer(timeout, self.terminate)
             t.start()
         try:
