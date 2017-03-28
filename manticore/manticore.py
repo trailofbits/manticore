@@ -10,6 +10,8 @@ import functools
 from multiprocessing import Manager, Pool
 from multiprocessing import Process
 
+from threading import Timer
+
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -552,7 +554,7 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
 
-    def run(self):
+    def run(self, timeout=0):
         '''
         Runs analysis.
         '''
@@ -589,12 +591,18 @@ class Manticore(object):
 
         self._running = True
 
+
+        if timeout > 0:
+            t = Timer(timeout, self.terminate)
+            t.start()
         try:
             self._start_workers(self._num_processes)
 
             self._join_workers()
         finally:
             self._running = False
+            if timeout > 0:
+                t.cancel()
 
     def terminate(self):
         '''
