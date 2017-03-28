@@ -462,10 +462,13 @@ class Syscall(CpuInterrupt):
     def __init__(self):
         super(Syscall, self).__init__("CPU Syscall")
 
+# TODO(yan): Move this into State or a more appropriate location
+_ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
+
 class ConcretizeRegister(Exception):
     ''' '''
     def __init__(self, reg_name, message, policy='MINMAX'):
-        assert policy in ['MINMAX', 'ALL', 'SAMPLED']
+        assert policy in _ValidPolicies
         super(ConcretizeRegister, self).__init__("Concretizing %s (%s). %s"%(reg_name, policy, message))
         self.reg_name = reg_name
         self.policy = policy
@@ -473,7 +476,7 @@ class ConcretizeRegister(Exception):
 class ConcretizeMemory(Exception):
     ''' '''
     def __init__(self, address, size, message, policy='MINMAX'):
-        assert policy in ['MINMAX', 'ALL', 'SAMPLED']
+        assert policy in _ValidPolicies
         super(ConcretizeMemory, self).__init__("Concretizing byte at %x (%s). %s"%(address, policy, message))
         self.address = address
         self.size = size
@@ -482,7 +485,7 @@ class ConcretizeMemory(Exception):
 class ConcretizeArgument(Exception):
     ''' '''
     def __init__(self, argnum, policy='MINMAX'):
-        assert policy in ['MINMAX', 'ALL', 'SAMPLED']
+        assert policy in _ValidPolicies
         super(ConcretizeArgument, self).__init__("Concretizing argument #%d (%s): "%(argnum, policy))
         self.argnum = argnum
         self.policy = policy
