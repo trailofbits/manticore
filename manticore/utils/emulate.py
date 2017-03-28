@@ -223,7 +223,7 @@ class UnicornEmulator(object):
                 # XXX(yan): We might need to raise here
                 pass
 
-        if logger.getEffectiveLevel() == logging.DEBUG:
+        if logger.isEnabledFor(logging.DEBUG):
             logger.debug("="*10)
             for register in self._cpu.canonical_registers:
                 logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x",
