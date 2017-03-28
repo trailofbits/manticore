@@ -120,7 +120,8 @@ class UnicornEmulator(object):
                 # TODO(yan): This raises an exception for each byte of symbolic
                 # memory; we should be batching
                 from ..core.cpu.abstractcpu import ConcretizeMemory
-                self._to_raise = ConcretizeMemory(address, 8, "Concretizing memory for emulation")
+                self._to_raise = ConcretizeMemory(address, 8,
+                                                  "Concretizing for emulation")
                 self._should_try_again = False
                 return False
 
@@ -152,8 +153,6 @@ class UnicornEmulator(object):
             # TODO(felipe, yan): Register naming is broken in current unicorn
             # packages, but works on unicorn git's master. We leave this hack
             # in until unicorn gets updated.
-
-            #assert unicorn.__version__ <= '1.0.0', "If we are using unicorn greater than 1.0.0 we have ARM.APSR support
             if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
                 reg_name = 'CPSR'
             if self._cpu.arch == CS_ARCH_ARM:
@@ -167,19 +166,25 @@ class UnicornEmulator(object):
 
         self._emu = self._unicorn()
 
-        # Copy in the concrete values of all needed registers.
         registers = set(self._cpu.canonical_registers)
+
+        # Refer to EFLAGS instead of individual flags for x86
         if self._cpu.arch == CS_ARCH_X86:
             # The last 8 canonical registers of x86 are individual flags; replace
             # with the eflags
             registers -= set(['CF','PF','AF','ZF','SF','IF','DF','OF'])
             registers.add('EFLAGS')
 
+        # XXX(yan): This concretizes the entire register state. This is overly
+        # aggressive. Once capstone adds consistent support for accessing 
+        # referred registers, make this only concretize those registers being
+        # read from.
         for reg in registers:
             val = self._cpu.read_register(reg)
             if issymbolic(val):
                 from ..core.cpu.abstractcpu import ConcretizeRegister
-                raise ConcretizeRegister(reg, "Concretizing register for emulation.") 
+                raise ConcretizeRegister(reg, "Concretizing for emulation.",
+                                         policy='ONE') 
             self._emu.reg_write(_to_unicorn_id(reg), val)
 
 
@@ -199,6 +204,9 @@ class UnicornEmulator(object):
             while True:
                 ctx = self._emu.context_save()
                 self._should_try_again = False
+                # If one of the hooks triggers an error, it might signal that we
+                # should attempt to re-execute the instruction. This can happen
+                # if memory needs to be mapped into Unicorn state.
                 self._emu.emu_start(self._cpu.PC, self._cpu.PC+instruction.size, count=1)
 
                 if not self._should_try_again:
