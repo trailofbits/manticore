@@ -60,6 +60,14 @@ class StateTest(unittest.TestCase):
         self.state.add(expr < 100)
         solved = self.state.solve_n(expr, 5)
         self.assertEqual(len(solved), 5)
+
+    def test_policy_one(self):
+        expr = BitVecVariable(32, 'tmp')
+        self.state.add(expr > 0)
+        self.state.add(expr < 100)
+        solved = self.state.concretize(expr, 'ONE')
+        self.assertEqual(len(solved), 1)
+        self.assertIn(solved[0], xrange(100))
     
     def test_state(self):
         constraints = ConstraintSet()
