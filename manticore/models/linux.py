@@ -728,7 +728,7 @@ class Linux(object):
                 vaddr = vaddr - ELF_PAGEOFFSET
                 memsz = cpu.memory._ceil(memsz)
 
-                if base == 0 and elf.header.e_type == 'ET_DYN':
+                if base == 0 and interpreter.header.e_type == 'ET_DYN':
                     assert vaddr == 0
                     total_size = 0
                     for _elf_segment in interpreter.iter_segments():
