@@ -403,9 +403,6 @@ class Memory(object):
     def maps(self):
         return self._maps
 
-    def map_of_address(self, address):
-        pass
-
     def _ceil(self, address):
         '''
         Returns the smallest page boundary value not less than the address.
