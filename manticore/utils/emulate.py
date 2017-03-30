@@ -70,12 +70,24 @@ class UnicornEmulator(object):
         '''
         assert access in (UC_MEM_WRITE, UC_MEM_READ, UC_MEM_FETCH)
 
-        # Make sure the memory we're reading or writing is mapped
-        m = self._create_emulated_mapping(uc, address, size)
+        # Make sure the memory we're reading or writing is mapped. If not, a
+        # KeyError will be raised when trying to dereference the 
+        print (self, uc, access, address, size, value, data)
+        if address == 0xffff0fc0:
+            return True
+        try:
+            m = self._create_emulated_mapping(uc, address, size)
+        except KeyError as ke:
+            print "uc {}, access {}, address {:x}, size {}, value {}".format(uc, access, address, size, value)
+            self._to_raise = MemoryException("Can't read memory.", address)
+            self._should_try_again = False
+            return False
 
         if access == UC_MEM_WRITE:
+            print "Writing to %x\n"%(address,)
             self._cpu.write_int(address, value, size*8)
         elif access == UC_MEM_READ:
+            print "Reading from %x\n"%(address,)
             value = self._cpu.read_bytes(address, size)
             uc.mem_write(address, ''.join(value))
         else:
@@ -94,22 +106,14 @@ class UnicornEmulator(object):
         '''
 
         if not self._cpu.memory.access_ok(slice(address, address+size), 'r'):
-            # TODO(yan): handle this in a different place
-            if self._cpu.arch == CS_ARCH_ARM:
-                from ..models.linux import Linux
-                special_addrs = (Linux.ARM_GET_TLS, Linux.ARM_CMPXCHG, Linux.ARM_MEM_BARRIER)
-                if address in special_addrs:
-                    # We are trying to execute from a special ARM value;
-                    # map it so we don't keep hitting this hook
-                    uc.mem_map(address & ~0xFFF, 0x1000)
+            #permissions = UC_PROT_WRITE | UC_PROT_READ | UC_PROT_EXEC
+            print "Mapping {:x}".format(address)
+            uc.mem_map(address & ~0xFFF, 0x2000, UC_PROT_READ|UC_PROT_EXEC|UC_PROT_WRITE)
+            uc.mem_write(address, '\x00'*size, size)
 
-                    from ..core.cpu.abstractcpu import InvalidPCException
-                    self._to_raise = InvalidPCException(address)
-                else:
-                    self._to_raise = MemoryException("Can't read at", address)
-
-            self._should_try_again = False
-            return False
+            self._should_try_again = True
+            return True
+            
 
         # XXX(yan): handle if this points to an incorrect mapping
         self._create_emulated_mapping(uc, address, size)
@@ -133,12 +137,42 @@ class UnicornEmulator(object):
 
     def _hook_write_unmapped(self, uc, access, address, size, value, data):
         '''
-        If we're about to write to unmapped memory, map it in and try again.
+        If we're about to write to unmapped memory, map it in and try again. If
+        the memory isn't mapped into Manticore, fail.
         '''
-        m = self._create_emulated_mapping(uc, address, size)
+        try:
+            m = self._create_emulated_mapping(uc, address, size)
+        except:
+            self._to_raise = MemoryException("Not mapped", address)
+            self._should_try_again = False
+            return False
+
         self._should_try_again = True
         return True
 
+    def _hook_fetch_prot(self, uc, access, address, size, value, data):
+        registers = set(self._cpu.canonical_registers)
+        try:
+            print "!!!! ", self._cpu.regfile.read('R15')
+            print "!!!! ", self._cpu.canonical_registers
+        except Exception as e:
+            print "Exc: ", e
+        for reg in registers:
+            val = self._emu.reg_read(self._to_unicorn_id(reg))
+            print '{}: {:x}'.format(reg,val)
+
+        if self._cpu.arch == CS_ARCH_ARM:
+
+            from ..models.linux import Linux
+            special_addrs = (Linux.ARM_GET_TLS, Linux.ARM_CMPXCHG, Linux.ARM_MEM_BARRIER)
+
+            if address in special_addrs:
+                # We are trying to execute from a special ARM value;
+                # map it so we don't keep hitting this hook
+                uc.mem_map(address & ~0xFFF, 0x1000)
+
+                from ..core.cpu.abstractcpu import InvalidPCException
+                self._to_raise = InvalidPCException(address)
 
     def _interrupt(self, uc, number, data):
         '''
@@ -148,22 +182,22 @@ class UnicornEmulator(object):
         self._to_raise = Interruption(number)
         return True
 
-    def emulate(self, instruction):
-        def _to_unicorn_id(reg_name):
-            # TODO(felipe, yan): Register naming is broken in current unicorn
-            # packages, but works on unicorn git's master. We leave this hack
-            # in until unicorn gets updated.
-            if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
-                reg_name = 'CPSR'
-            if self._cpu.arch == CS_ARCH_ARM:
-                return globals()['UC_ARM_REG_' + reg_name]
-            elif self._cpu.arch == CS_ARCH_X86:
-                # TODO(yan): This needs to handle AF regiseter
-                return globals()['UC_X86_REG_' + reg_name]
-            else:
-                # TODO(yan): raise a more appropriate exception
-                raise TypeError
+    def _to_unicorn_id(self, reg_name):
+        # TODO(felipe, yan): Register naming is broken in current unicorn
+        # packages, but works on unicorn git's master. We leave this hack
+        # in until unicorn gets updated.
+        if unicorn.__version__ <= '1.0.0' and reg_name == 'APSR':
+            reg_name = 'CPSR'
+        if self._cpu.arch == CS_ARCH_ARM:
+            return globals()['UC_ARM_REG_' + reg_name]
+        elif self._cpu.arch == CS_ARCH_X86:
+            # TODO(yan): This needs to handle AF regiseter
+            return globals()['UC_X86_REG_' + reg_name]
+        else:
+            # TODO(yan): raise a more appropriate exception
+            raise TypeError
 
+    def emulate(self, instruction):
         self._emu = self._unicorn()
 
         registers = set(self._cpu.canonical_registers)
@@ -185,12 +219,21 @@ class UnicornEmulator(object):
                 from ..core.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(reg, "Concretizing for emulation.",
                                          policy='ONE') 
-            self._emu.reg_write(_to_unicorn_id(reg), val)
+            self._emu.reg_write(self._to_unicorn_id(reg), val)
 
 
+        # Guaranteed to be mapped since we're executing the instruction
         m = self._create_emulated_mapping(self._emu, self._cpu.PC, instruction.size)
         text_bytes = self._cpu.read_bytes(self._cpu.PC, instruction.size)
         self._emu.mem_write(self._cpu.PC, ''.join(text_bytes))
+
+        def _hook_code(*ops):
+            print "Ops: ", ops
+
+        self._emu.hook_add(UC_HOOK_CODE,               _hook_code)
+        self._emu.hook_add(UC_HOOK_BLOCK,               _hook_code)
+        #self._emu.hook_add(UC_HOOK_MEM_FETCH_PROT,     _hook_fetch_prot, 1)
+        self._emu.hook_add(UC_HOOK_MEM_READ_PROT,      self._hook_fetch_prot, 2)
 
         self._emu.hook_add(UC_HOOK_MEM_UNMAPPED,       self._hook_read_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_xfer_mem)
@@ -228,12 +271,12 @@ class UnicornEmulator(object):
             for register in self._cpu.canonical_registers:
                 logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x",
                         register, self._cpu.read_register(register),
-                        self._emu.reg_read(_to_unicorn_id(register)) )
+                        self._emu.reg_read(self._to_unicorn_id(register)) )
             logger.debug(">"*10)
 
         # Bring back Unicorn registers to Manticore
         for reg in registers:
-            val = self._emu.reg_read(_to_unicorn_id(reg))
+            val = self._emu.reg_read(self._to_unicorn_id(reg))
             self._cpu.write_register(reg, val)
 
         #Unicorn hack. On single step unicorn wont advance the PC register

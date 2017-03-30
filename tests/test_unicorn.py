@@ -1372,3 +1372,27 @@ class UnicornConcretization(unittest.TestCase):
             self.assertFalse(True)
         except ConcretizeRegister as e:
             self.assertEqual(e.reg_name, 'R2')
+
+    def test_arm_constant(self):
+        self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
+        self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
+        self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
+        start = self.code + 4
+
+        asm = 'ldr r0, [pc, #0]; ldr r1, [r0]'
+
+        code = assemble(asm)
+        code += '\xc0\x0f\xff\xff'
+        code += '\x78\x56\x34\x12'
+
+        self.mem.write(start, code)
+
+        self.rf.write('PC', start)
+        self.rf.write('SP', self.stack + 0x1000)
+
+        emulate_next(self.cpu)
+        emulate_next(self.cpu)
+
+        self.assertEqual(self.rf.read('PC'), 0xffff0fc0)
+        self.assertEqual(True, False)
+
