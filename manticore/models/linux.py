@@ -1762,7 +1762,8 @@ class Linux(object):
             for reg, val in x86_defaults.iteritems():
                 cpu.regfile.write(reg, val)
 
-    def _interp_total_size(self, interp):
+    @staticmethod
+    def _interp_total_size(interp):
         '''
         Compute total load size of interpreter.
 
