@@ -4,6 +4,9 @@ from manticore.models import linux
 
 
 class LinuxTest(unittest.TestCase):
+    '''
+    TODO(mark): these tests assumes /bin/ls is a dynamic x64 binary
+    '''
     BIN_PATH = '/bin/ls'
 
     def setUp(self):
@@ -22,9 +25,6 @@ class LinuxTest(unittest.TestCase):
             self.assertEqual(cpu.regfile.read(reg), val)
 
     def test_stack_init(self):
-        '''
-        TODO(mark): this test assumes /bin/ls is a x64 binary
-        '''
         argv = ['arg1', 'arg2', 'arg3']
         real_argv = [self.BIN_PATH] + argv
         envp = ['env1', 'env2', 'env3']
@@ -41,3 +41,19 @@ class LinuxTest(unittest.TestCase):
 
         for i, env in enumerate(envp):
             self.assertEqual(self.linux._read_string(cpu, cpu.read_int(envp_ptr + i*8)), env)
+
+    def test_load_maps(self):
+        mappings = self.linux.current.memory.mappings()
+
+        # stack should be last
+        last_map = mappings[-1]
+        last_map_perms = last_map[2]
+        self.assertEqual(last_map_perms, 'rwx')
+
+        # binary should be first two
+        first_map, second_map = mappings[:2]
+        first_map_name = first_map[4]
+        second_map_name = second_map[4]
+        self.assertEqual(first_map_name, '/bin/ls')
+        self.assertEqual(second_map_name, '/bin/ls')
+
