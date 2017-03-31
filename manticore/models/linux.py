@@ -731,11 +731,7 @@ class Linux(object):
 
                 if base == 0 and interpreter.header.e_type == 'ET_DYN':
                     assert vaddr == 0
-                    total_size = 0
-                    for _elf_segment in interpreter.iter_segments():
-                        if _elf_segment.header.p_type == 'PT_LOAD':
-                            _memsz = elf_segment.header.p_memsz + (_elf_segment.header.p_vaddr & (align-1))
-                            total_size += cpu.memory._ceil(_memsz)
+                    total_size = self._get_interp_total_size(interpreter)
                     base = stack_base - total_size 
 
                 if base == 0:
@@ -1765,6 +1761,19 @@ class Linux(object):
             }
             for reg, val in x86_defaults.iteritems():
                 cpu.regfile.write(reg, val)
+
+    def _get_interp_total_size(self, interp):
+        '''
+        Computer total size of interpreter.
+
+        :param ELFFile interp: interpreter ELF .so
+        :return: total size of interpreter, not aligned
+        :rtype: int
+        '''
+        load_segs = filter(lambda x: x.header.p_type == 'PT_LOAD', interp.iter_segments())
+        last = load_segs[-1]
+        return last.header.p_vaddr + last.header.p_memsz
+
 
 ############################################################################
 # Symbolic versions follows
