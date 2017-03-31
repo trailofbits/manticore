@@ -731,7 +731,7 @@ class Linux(object):
 
                 if base == 0 and interpreter.header.e_type == 'ET_DYN':
                     assert vaddr == 0
-                    total_size = self._get_interp_total_size(interpreter)
+                    total_size = self._interp_total_size(interpreter)
                     base = stack_base - total_size 
 
                 if base == 0:
@@ -1762,12 +1762,12 @@ class Linux(object):
             for reg, val in x86_defaults.iteritems():
                 cpu.regfile.write(reg, val)
 
-    def _get_interp_total_size(self, interp):
+    def _interp_total_size(self, interp):
         '''
-        Computer total size of interpreter.
+        Compute total load size of interpreter.
 
         :param ELFFile interp: interpreter ELF .so
-        :return: total size of interpreter, not aligned
+        :return: total load size of interpreter, not aligned
         :rtype: int
         '''
         load_segs = filter(lambda x: x.header.p_type == 'PT_LOAD', interp.iter_segments())
