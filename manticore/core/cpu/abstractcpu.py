@@ -352,27 +352,22 @@ class Cpu(object):
         instruction = self.decode_instruction(self.PC)
         self.instruction = instruction #FIX
 
-
-
         name = self.canonicalize_instruction_name(instruction)
-        try:
-            implementation = getattr(self, name)
-        except AttributeError as ae:
-            # Make sure we're referencing the instruction look up
-            if name not in ae.message:
-                raise
 
+        def fallback_to_emulate(*operands):
             text_bytes = ' '.join('%02x'%x for x in instruction.bytes)
             logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s",
                     instruction.address, text_bytes, instruction.mnemonic,
                     instruction.op_str)
+            self.emulate(instruction)
 
-            implementation = lambda *ops: self.emulate(instruction)
+        implementation = getattr(self, name, fallback_to_emulate)
 
         #log
         if logger.level == logging.DEBUG :
             for l in str(self).split('\n'):
                 logger.debug(l)
+
         implementation(*instruction.operands)
         self._icount+=1
 
