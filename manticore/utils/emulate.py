@@ -55,6 +55,7 @@ class UnicornEmulator(object):
         '''
         Create a mapping in Unicorn and note that we'll need it if we retry.
         '''
+
         m = self._cpu.memory.map_containing(address)
 
         permissions = UC_PROT_NONE
@@ -89,6 +90,7 @@ class UnicornEmulator(object):
 
         if access == UC_MEM_WRITE:
             self._cpu.write_int(address, value, size*8)
+
         # If client code is attempting to read a value, we need to bring it
         # in from Manticore state. If we try to mem_write it here, Unicorn
         # will segfault. We add the value to a list of things that need to
@@ -215,6 +217,7 @@ class UnicornEmulator(object):
 
         self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED,  self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
+        self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_READ,           self._hook_xfer_mem)
         self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_xfer_mem)
         self._emu.hook_add(UC_HOOK_INTR,               self._interrupt)
