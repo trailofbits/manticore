@@ -384,6 +384,7 @@ class Cpu(object):
         '''
         emu = UnicornEmulator(self)
         emu.emulate(instruction)
+        del emu
 
     #Generic string representation
     def __str__(self):
