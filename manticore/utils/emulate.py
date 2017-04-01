@@ -1,5 +1,6 @@
 
 import logging
+import inspect
 
 from ..core.memory import MemoryException, FileMap, AnonMap
 
@@ -23,11 +24,20 @@ class UnicornEmulator(object):
     '''
     def __init__(self, cpu):
         self._cpu = cpu
+
+        text = cpu.memory.map_containing(cpu.PC)
+        # Keep track of all memory mappings. We start with just the text section
+        self._should_be_mapped = {
+                text.start: (len(text), UC_PROT_READ | UC_PROT_EXEC)
+        }
+
+        # Keep track of all the memory Unicorn needs while executing this 
+        # instruction
+        self._should_be_written = {}
+
+    def reset(self):
         self._emu = self._unicorn()
-        self._undo_list = []
-        self._mapped = []
         self._to_raise = None
-        #self._should_try_again = False
 
     def _unicorn(self):
         if self._cpu.arch == CS_ARCH_ARM:
@@ -42,16 +52,23 @@ class UnicornEmulator(object):
 
 
     def _create_emulated_mapping(self, uc, address, size=None):
+        '''
+        Create a mapping in Unicorn and note that we'll need it if we retry.
+        '''
         m = self._cpu.memory.map_containing(address)
 
-        if m.start in self._mapped:
-            return m
-
-        # We might be modifying memory (even read-only), set all permissions
-        permissions = UC_PROT_WRITE | UC_PROT_READ | UC_PROT_EXEC
+        permissions = UC_PROT_NONE
+        if 'r' in m.perms:
+            permissions |= UC_PROT_READ
+        if 'w' in m.perms:
+            permissions |= UC_PROT_WRITE
+        if 'x' in m.perms:
+            permissions |= UC_PROT_EXEC
 
         uc.mem_map(m.start, len(m), permissions)
-        self._mapped.append(m.start)
+
+        self._should_be_mapped[m.start] = (len(m), permissions)
+
         return m
 
     def get_unicorn_pc(self):
@@ -70,76 +87,33 @@ class UnicornEmulator(object):
         '''
         assert access in (UC_MEM_WRITE, UC_MEM_READ, UC_MEM_FETCH)
 
-        # Make sure the memory we're reading or writing is mapped. If not, a
-        # KeyError will be raised when trying to dereference the 
-        print (self, uc, access, address, size, value, data)
-        if address == 0xffff0fc0:
-            return True
-        try:
-            m = self._create_emulated_mapping(uc, address, size)
-        except KeyError as ke:
-            print "uc {}, access {}, address {:x}, size {}, value {}".format(uc, access, address, size, value)
-            self._to_raise = MemoryException("Can't read memory.", address)
-            self._should_try_again = False
-            return False
-
         if access == UC_MEM_WRITE:
-            print "Writing to %x\n"%(address,)
             self._cpu.write_int(address, value, size*8)
+        # If client code is attempting to read a value, we need to bring it
+        # in from Manticore state. If we try to mem_write it here, Unicorn
+        # will segfault. We add the value to a list of things that need to
+        # be written, and ask to restart the emulation.
         elif access == UC_MEM_READ:
-            print "Reading from %x\n"%(address,)
             value = self._cpu.read_bytes(address, size)
-            uc.mem_write(address, ''.join(value))
+
+            if address in self._should_be_written:
+                return True
+
+            self._should_be_written[address] = value
+
+            self._should_try_again = True
+            return False
         else:
-            # XXX(yan): Does this need handling?
             pass
 
         return True
 
 
-    def _hook_read_unmapped(self, uc, access, address, size, value, data):
+    def _hook_unmapped(self, uc, access, address, size, value, data):
         '''
-        We hit an unmapped region; map it into unicorn. If we tried to 
-        execute from a set of addresses to handle Linux intrinsics, raise
-        the appropriate exception.
-
+        We hit an unmapped region; map it into unicorn.
         '''
 
-        if not self._cpu.memory.access_ok(slice(address, address+size), 'r'):
-            #permissions = UC_PROT_WRITE | UC_PROT_READ | UC_PROT_EXEC
-            print "Mapping {:x}".format(address)
-            uc.mem_map(address & ~0xFFF, 0x2000, UC_PROT_READ|UC_PROT_EXEC|UC_PROT_WRITE)
-            uc.mem_write(address, '\x00'*size, size)
-
-            self._should_try_again = True
-            return True
-            
-
-        # XXX(yan): handle if this points to an incorrect mapping
-        self._create_emulated_mapping(uc, address, size)
-
-        read_bytes = self._cpu.read_bytes(address, size)
-        for address, byte in enumerate(read_bytes, start=address):
-            if issymbolic(byte):
-                # TODO(yan): This raises an exception for each byte of symbolic
-                # memory; we should be batching
-                from ..core.cpu.abstractcpu import ConcretizeMemory
-                self._to_raise = ConcretizeMemory(address, 8,
-                                                  "Concretizing for emulation")
-                self._should_try_again = False
-                return False
-
-        # XXX(yan): This might need to be uncommented.
-        #uc.mem_write(address, ''.join(read_bytes))
-
-        self._should_try_again = True
-        return True
-
-    def _hook_write_unmapped(self, uc, access, address, size, value, data):
-        '''
-        If we're about to write to unmapped memory, map it in and try again. If
-        the memory isn't mapped into Manticore, fail.
-        '''
         try:
             m = self._create_emulated_mapping(uc, address, size)
         except:
@@ -148,36 +122,13 @@ class UnicornEmulator(object):
             return False
 
         self._should_try_again = True
-        return True
-
-    def _hook_fetch_prot(self, uc, access, address, size, value, data):
-        registers = set(self._cpu.canonical_registers)
-        try:
-            print "!!!! ", self._cpu.regfile.read('R15')
-            print "!!!! ", self._cpu.canonical_registers
-        except Exception as e:
-            print "Exc: ", e
-        for reg in registers:
-            val = self._emu.reg_read(self._to_unicorn_id(reg))
-            print '{}: {:x}'.format(reg,val)
-
-        if self._cpu.arch == CS_ARCH_ARM:
-
-            from ..models.linux import Linux
-            special_addrs = (Linux.ARM_GET_TLS, Linux.ARM_CMPXCHG, Linux.ARM_MEM_BARRIER)
-
-            if address in special_addrs:
-                # We are trying to execute from a special ARM value;
-                # map it so we don't keep hitting this hook
-                uc.mem_map(address & ~0xFFF, 0x1000)
-
-                from ..core.cpu.abstractcpu import InvalidPCException
-                self._to_raise = InvalidPCException(address)
+        return False
 
     def _interrupt(self, uc, number, data):
         '''
-        Handle software interrupt
+        Handle software interrupt (SVC/INT)
         '''
+
         from ..core.cpu.abstractcpu import Interruption
         self._to_raise = Interruption(number)
         return True
@@ -198,7 +149,44 @@ class UnicornEmulator(object):
             raise TypeError
 
     def emulate(self, instruction):
-        self._emu = self._unicorn()
+        '''
+        Emulate a single instruction.
+        '''
+
+        # The emulation might restart if Unicorn needs to bring in a memory map
+        # or bring a value from Manticore state.
+        while True:
+
+            self.reset()
+
+            # Establish Manticore state, potentially from past emulation
+            # attempts
+            for base in self._should_be_mapped:
+                size, perms = self._should_be_mapped[base]
+                self._emu.mem_map(base, size, perms)
+
+            for address, values in self._should_be_written.items():
+                for offset, byte in enumerate(values, start=address):
+                    if issymbolic(byte):
+                        from ..core.cpu.abstractcpu import ConcretizeMemory
+                        raise ConcretizeMemory(offset, 8,
+                                               "Concretizing for emulation")
+
+                self._emu.mem_write(address, ''.join(values))
+            
+            # Try emulation
+            self._should_try_again = False
+
+            self._step(instruction)
+
+            if not self._should_try_again:
+                break
+
+
+    def _step(self, instruction):
+        '''
+        A single attempt at execution an instruction.
+        '''
 
         registers = set(self._cpu.canonical_registers)
 
@@ -221,50 +209,25 @@ class UnicornEmulator(object):
                                          policy='ONE') 
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
-
-        # Guaranteed to be mapped since we're executing the instruction
-        m = self._create_emulated_mapping(self._emu, self._cpu.PC, instruction.size)
+        # Bring in the instruction itself
         text_bytes = self._cpu.read_bytes(self._cpu.PC, instruction.size)
         self._emu.mem_write(self._cpu.PC, ''.join(text_bytes))
 
-        def _hook_code(*ops):
-            print "Ops: ", ops
-
-        self._emu.hook_add(UC_HOOK_CODE,               _hook_code)
-        self._emu.hook_add(UC_HOOK_BLOCK,               _hook_code)
-        #self._emu.hook_add(UC_HOOK_MEM_FETCH_PROT,     _hook_fetch_prot, 1)
-        self._emu.hook_add(UC_HOOK_MEM_READ_PROT,      self._hook_fetch_prot, 2)
-
-        self._emu.hook_add(UC_HOOK_MEM_UNMAPPED,       self._hook_read_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_xfer_mem)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_write_unmapped)
+        self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED,  self._hook_unmapped)
+        self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_READ,           self._hook_xfer_mem)
+        self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_xfer_mem)
         self._emu.hook_add(UC_HOOK_INTR,               self._interrupt)
 
         saved_PC = self._cpu.PC
 
         try:
-            while True:
-                ctx = self._emu.context_save()
-                self._should_try_again = False
-                # If one of the hooks triggers an error, it might signal that we
-                # should attempt to re-execute the instruction. This can happen
-                # if memory needs to be mapped into Unicorn state.
-                self._emu.emu_start(self._cpu.PC, self._cpu.PC+instruction.size, count=1)
-
-                if not self._should_try_again:
-                    break
-
-                # If we are trying again, restore context
-                self._emu.emu_stop()
-                self._emu.context_restore(ctx)
-
+            self._emu.emu_start(self._cpu.PC, self._cpu.PC+instruction.size, count=1)
         except UcError as e:
-            if e.errno == UC_ERR_WRITE_UNMAPPED:
-                raise MemoryException(repr(e), 0)
-            else:
-                # XXX(yan): We might need to raise here
-                pass
+            pass
+
+        if self._should_try_again:
+            return
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("="*10)
@@ -282,8 +245,9 @@ class UnicornEmulator(object):
         #Unicorn hack. On single step unicorn wont advance the PC register
         mu_pc = self.get_unicorn_pc()
         if saved_PC == mu_pc:
-            self._cpu.PC += instruction.size
+            self._cpu.PC = saved_PC + instruction.size
 
+        # Raise the exception from a hook that Uniocrn would have eaten
         if self._to_raise:
             raise self._to_raise
 
