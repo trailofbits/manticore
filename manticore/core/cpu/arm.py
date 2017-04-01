@@ -835,3 +835,7 @@ class Armv7Cpu(Cpu):
     def STCL(cpu, *operands):
         pass
 
+    @instruction
+    def DMB(cpu, *operands):
+        pass
+
