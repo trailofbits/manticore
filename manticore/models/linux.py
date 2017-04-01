@@ -503,7 +503,6 @@ class Linux(object):
         update(0xff0, tls_area)
         update(0xffc, version)
 
-        # Map the helpers
         cpu.memory.mmap(0xffff0000, len(page_data), 'r x', page_data)
 
     def load_vdso(self, bits):
