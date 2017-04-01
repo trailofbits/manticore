@@ -1378,11 +1378,13 @@ class UnicornConcretization(unittest.TestCase):
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
         start = self.code + 4
+        constant = 0x42424242
 
-        asm = 'ldr r0, [pc, #0]; ldr r1, [r0]'
+        asm = '''
+            ldr r0, [pc, #-4]
+        '''
 
         code = assemble(asm)
-        code += '\xc0\x0f\xff\xff'
         code += '\x78\x56\x34\x12'
 
         self.mem.write(start, code)
@@ -1391,8 +1393,7 @@ class UnicornConcretization(unittest.TestCase):
         self.rf.write('SP', self.stack + 0x1000)
 
         emulate_next(self.cpu)
-        emulate_next(self.cpu)
 
-        self.assertEqual(self.rf.read('PC'), 0xffff0fc0)
-        self.assertEqual(True, False)
+        self.assertEqual(self.rf.read('PC'), self.code+8)
+        self.assertEqual(self.rf.read('R0'), 0x12345678)
 
