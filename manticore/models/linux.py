@@ -1074,7 +1074,7 @@ class Linux(object):
                     pass
             mode = { os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w' }[flags&7]
             f = File(filename, mode) #todo modes, flags
-            logger.debug("Openning file %s for %s real fd %d",filename, mode, f.fileno())
+            logger.debug("Opening file %s for %s real fd %d",filename, mode, f.fileno())
         except Exception,e:
             logger.info("Could not open file %s. Reason %s"%(filename,str(e)))
             return -1
