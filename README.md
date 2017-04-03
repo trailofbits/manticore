@@ -81,7 +81,7 @@ nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 Install and try Manticore in a few shell commands:
 
 ```
-# following install instructions in README.md before beginning
+# follow install instructions in README.md before beginning
 cd /path/to/manticore/
 cd examples/linux
 make
