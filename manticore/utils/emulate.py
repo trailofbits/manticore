@@ -51,9 +51,13 @@ class UnicornEmulator(object):
         raise RuntimeError("Unsupported architecture")
 
 
-    def _create_emulated_mapping(self, uc, address, size=None):
+    def _create_emulated_mapping(self, uc, address):
         '''
         Create a mapping in Unicorn and note that we'll need it if we retry.
+
+        :param uc: The Unicorn instance.
+        :param address: The address which is contained by the mapping.
+        :rtype Map
         '''
 
         m = self._cpu.memory.map_containing(address)
@@ -115,7 +119,7 @@ class UnicornEmulator(object):
         '''
 
         try:
-            m = self._create_emulated_mapping(uc, address, size)
+            m = self._create_emulated_mapping(uc, address)
         except MemoryException as e:
             self._to_raise = e
             self._should_try_again = False
@@ -185,7 +189,7 @@ class UnicornEmulator(object):
 
     def _step(self, instruction):
         '''
-        A single attempt at execution an instruction.
+        A single attempt at executing an instruction.
         '''
 
         registers = set(self._cpu.canonical_registers)
