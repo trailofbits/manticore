@@ -255,7 +255,7 @@ class UnicornEmulator(object):
         if saved_PC == mu_pc:
             self._cpu.PC = saved_PC + instruction.size
 
-        # Raise the exception from a hook that Uniocrn would have eaten
+        # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
             raise self._to_raise
 
