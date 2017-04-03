@@ -771,32 +771,6 @@ class X86Cpu(Cpu):
         name = OP_NAME_MAP.get(name, name)
         return name
 
-
-    def _concretize_registers(cpu, instruction):
-        reg_values = {}
-        if hasattr(instruction, 'regs_access'):
-            (regs_read, regs_write) = instruction.regs_access()
-            regs = [ str(instruction.reg_name(r).upper()) for r in regs_read ] 
-
-        else:
-            # TODO: only concretize registers the instruction touches
-            if cpu.mode == CS_MODE_64:
-                regs = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10',  'R11', 'R12', 'R13', 'R14', 'R15', 'RIP', 'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15')
-            else:
-                regs = ('EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP', 'XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7')
-
-        regs += ('FPSW', 'FPCW', 'FPTAG', 'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7')
-
-        for reg in regs:
-            value = cpu.read_register(reg)
-            if issymbolic(value):
-                raise ConcretizeRegister(reg, "Passing control to emulator")
-            reg_values[reg] = value
-
-        logger.info("Emulator wants this regs %r", reg_values)
-        return reg_values
-
-
     ################################################3
     # instruction implementation
 
