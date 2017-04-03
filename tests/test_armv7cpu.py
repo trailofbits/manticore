@@ -1348,3 +1348,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R2'), (mul >> 32) & Mask(32))
         self._checkFlagsNZCV(0, 1, pre_c, pre_v)
 
+    @itest("dmb ish")
+    def test_dmb(self):
+        # This is a nop, ensure that the instruction exists
+        self.assertTrue(True)

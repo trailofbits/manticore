@@ -837,5 +837,9 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def DMB(cpu, *operands):
+        '''
+        Used by the the __kuser_dmb ARM Linux user-space handler. This is a nop
+        under Manticore's memory and execution model.
+        '''
         pass
 

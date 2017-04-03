@@ -464,8 +464,7 @@ class Linux(object):
                 ).decode('hex')
 
         __kuser_dmb = (
-                # Nop here since we don't need a memory barrier.
-                #'5bf07ff5' + # dmb ish
+                '5bf07ff5' + # dmb ish
                 '1eff2fe1'   # bx lr
                 ).decode('hex')
 
