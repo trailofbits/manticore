@@ -6,7 +6,8 @@ logger = logging.getLogger('SMT')
 class ConstraintSet(object):
     ''' Constraint Sets
 
-        An object containing a set of constraints. Serves also as a factory for new variables.
+        An object containing a set of constraints. Serves also as a factory for
+        new variables.
     '''
     def __init__(self):
         self._constraints = list()
@@ -168,19 +169,19 @@ class ConstraintSet(object):
 
     def new_bool(self, name='B', taint=frozenset()):
         ''' Declares a free symbolic boolean in the constraint store
-            @param name: try to assign name to internal variable representation,
+            :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
-            @return: a fresh BoolVariable
+            :return: a fresh BoolVariable
         '''
         name = self._get_new_name(name)
         return BoolVariable(name, taint=taint)
 
     def new_bitvec(self, size, name='V', taint=frozenset()):
         ''' Declares a free symbolic bitvectore  in the constraint store
-            @param size: size in bits for the bitvector
-            @param name: try to assign name to internal variable representation,
+            :param size: size in bits for the bitvector
+            :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
-            @return: a fresh BitVecVariable
+            :return: a fresh BitVecVariable
         '''
         assert size in (1, 4, 8, 16, 32, 64, 128, 256)
         name = self._get_new_name(name)
@@ -188,11 +189,11 @@ class ConstraintSet(object):
 
     def new_array(self, index_bits=32, name='A', index_max=None, taint=frozenset()):
         ''' Declares a free symbolic array of 8 bits long bitvectors in the constraint store.
-            @param index_bit_size: size in bits for the array indexes one of [32, 64]
-            @param name: try to assign name to internal variable representation,
+            :param index_bit_size: size in bits for the array indexes one of [32, 64]
+            :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
-            @param index_max: upper limit for indexes on ths array (#FIXME)
-            @return: a fresh BitVecVariable
+            :param index_max: upper limit for indexes on ths array (#FIXME)
+            :return: a fresh BitVecVariable
         '''
         assert index_bits in (8, 16, 32, 64)
         name = self._get_new_name(name)

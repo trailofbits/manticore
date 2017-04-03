@@ -676,8 +676,8 @@ class X86Cpu(Cpu):
     def __init__(self, regfile, memory, *args, **kwargs):
         '''
         Builds a CPU model.
-        @param regfile: regfile object for this CPU.
-        @param memory: memory object for this CPU.
+        :param regfile: regfile object for this CPU.
+        :param memory: memory object for this CPU.
         '''
         super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
         #Segments              ('base', 'limit', 'perms', 'gatetype')
@@ -714,8 +714,8 @@ class X86Cpu(Cpu):
         '''
         Writes a value in the stack.
         
-        @param value: the value to put in the stack.
-        @param size: the size of the value.
+        :param value: the value to put in the stack.
+        :param size: the size of the value.
         '''
         assert size in ( 8, 16, cpu.address_bit_size )
         cpu.STACK = cpu.STACK-size/8
@@ -727,9 +727,9 @@ class X86Cpu(Cpu):
         '''
         Gets a value from the stack.
         
-        @rtype: int
-        @param size: the size of the value to consume from the stack.
-        @return: the value from the stack.
+        :rtype: int
+        :param size: the size of the value to consume from the stack.
+        :return: the value from the stack.
         '''
         assert size in ( 16, cpu.address_bit_size )
         base, _, _ = cpu.get_descriptor(cpu.SS)
@@ -812,7 +812,7 @@ class X86Cpu(Cpu):
         
         The instruction's output is dependent on the contents of the EAX register upon execution.
         
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         #FIXME Choose conserative values and consider returning some default when eax not here
         conf = {   0x0:        (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
@@ -854,7 +854,7 @@ class X86Cpu(Cpu):
         Reads the contents of the extended cont register (XCR) specified in the ECX register into registers EDX:EAX. 
         Implemented only for ECX = 0.
         
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         #if cpu.ECX != 0:
         #logger.debug("XGETBV ECX=%x not implemented", cpu.ECX)
@@ -879,9 +879,9 @@ class X86Cpu(Cpu):
         
             DEST  =  DEST AND SRC;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.  
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.  
         '''
         res = dest.write(dest.read() & src.read())
         #Defined Flags: szp
@@ -907,9 +907,9 @@ class X86Cpu(Cpu):
             OF  =  0;
             (*AF is Undefined*)
         
-        @param cpu: current CPU. 
-        @param src1: first operand.
-        @param src2: second operand.
+        :param cpu: current CPU. 
+        :param src1: first operand.
+        :param src2: second operand.
         '''
         #Defined Flags: szp
         temp = src1.read() & src2.read();
@@ -930,8 +930,8 @@ class X86Cpu(Cpu):
         
             DEST  =  NOT DEST;
         
-        @param cpu: current CPU.
-        @param dest: destination operand. 
+        :param cpu: current CPU.
+        :param dest: destination operand. 
         '''
         res = dest.write(~dest.read())
         #Flags Affected: None.
@@ -952,9 +952,9 @@ class X86Cpu(Cpu):
             
             DEST  =  DEST XOR SRC;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         if dest == src:
             #if the operands are the same write zero
@@ -980,9 +980,9 @@ class X86Cpu(Cpu):
 
             DEST  =  DEST OR SRC;
 
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         res = dest.write(dest.read() | src.read())
         #Defined Flags: szp
@@ -1026,7 +1026,7 @@ class X86Cpu(Cpu):
                     CF  =  0;
                 FI;
                 AL  =  AL AND 0FH;
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         cpu.AF = Operators.OR(cpu.AL & 0x0F > 9, cpu.AF)
         cpu.CF = cpu.AF
@@ -1069,7 +1069,7 @@ class X86Cpu(Cpu):
                 AL  =  (tempAL + (tempAH * 10)) AND FFH;
                 AH  =  0
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         if imm is None:
             imm = 10
@@ -1104,7 +1104,7 @@ class X86Cpu(Cpu):
                 AH  =  tempAL / 10; 
                 AL  =  tempAL MOD 10;
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         if imm is None:
             imm = 10
@@ -1150,7 +1150,7 @@ class X86Cpu(Cpu):
                 FI;
                 AL  =  AL AND 0FH;
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         if (cpu.AL & 0x0F > 9) or cpu.AF == 1:
             cpu.AX = cpu.AX - 6
@@ -1182,9 +1182,9 @@ class X86Cpu(Cpu):
         
         The OF, SF, ZF, AF, CF, and PF flags are set according to the result.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         cpu._ADD(dest, src, carry=True)
 
@@ -1203,9 +1203,9 @@ class X86Cpu(Cpu):
 
                 DEST  =  DEST + SRC;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         cpu._ADD(dest, src, carry=False)
 
@@ -1254,9 +1254,9 @@ class X86Cpu(Cpu):
         
         The CF, OF, SF, ZF, AF, and PF flags are set according to the result.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.        
         '''
         arg0 = src1.read()
         arg1 = Operators.SEXTEND(src2.read(), src2.size, src1.size)
@@ -1290,9 +1290,9 @@ class X86Cpu(Cpu):
                     accumulator  =  DEST
                 FI;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         size = dest.size
         reg_name = {8:'AL', 16:'AX', 32:'EAX', 64:'RAX'}[size]
@@ -1337,8 +1337,8 @@ class X86Cpu(Cpu):
                     FI;
                 FI;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.    
+        :param cpu: current CPU.
+        :param dest: destination operand.    
         '''
         size = dest.size
         cmp_reg_name_l = { 64:'EAX', 128:'RAX'}[size]
@@ -1399,7 +1399,7 @@ class X86Cpu(Cpu):
                     CF  =  0;
                 FI;
         
-        @param cpu: current CPU.        
+        :param cpu: current CPU.        
         '''
 
         cpu.AF = Operators.OR((cpu.AL & 0x0f) > 9, cpu.AF)
@@ -1455,7 +1455,7 @@ class X86Cpu(Cpu):
                     AL  =  AL - 60H;
                     CF  =  1;
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         oldAL = cpu.AL
         oldCF = cpu.CF
@@ -1499,8 +1499,8 @@ class X86Cpu(Cpu):
         
                 DEST  =  DEST - 1;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
         '''
         arg0 = dest.read()
         res = dest.write(arg0-1)
@@ -1568,8 +1568,8 @@ class X86Cpu(Cpu):
                         FI;
                 FI;
 
-        @param cpu: current CPU.
-        @param src: source operand.         
+        :param cpu: current CPU.
+        :param src: source operand.         
         '''
         size = src.size
         reg_name_h = { 8: 'DL', 16: 'DX', 32:'EDX', 64:'RDX'}[size]
@@ -1642,8 +1642,8 @@ class X86Cpu(Cpu):
                     FI;
                 FI;
         
-        @param cpu: current CPU.
-        @param src: source operand.        
+        :param cpu: current CPU.
+        :param src: source operand.        
         '''
 
         reg_name_h = { 8: 'AH', 16: 'DX', 32:'EDX', 64:'RDX'}[src.size]
@@ -1781,8 +1781,8 @@ class X86Cpu(Cpu):
                     FI;
                 FI;
         
-        @param cpu: current CPU.
-        @param operands: variable list of operands. 
+        :param cpu: current CPU.
+        :param operands: variable list of operands. 
         '''
         dest = operands[0]
         OperandSize = dest.size
@@ -1829,8 +1829,8 @@ class X86Cpu(Cpu):
 
                 DEST  =  DEST +1;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         arg0 = dest.read()
         res = dest.write(arg0+1)
@@ -1871,8 +1871,8 @@ class X86Cpu(Cpu):
                     FI;
                 FI;
         
-        @param cpu: current CPU.
-        @param src: source operand.        
+        :param cpu: current CPU.
+        :param src: source operand.        
         '''
         size = src.size
         reg_name_low, reg_name_high = { 8: ('AL','AH'),
@@ -1900,8 +1900,8 @@ class X86Cpu(Cpu):
                 FI;
                 DEST  =  - (DEST)
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         source = dest.read()
         res = dest.write(-source)
@@ -1933,9 +1933,9 @@ class X86Cpu(Cpu):
 
                 DEST  =  DEST - (SRC + CF);
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.        
         '''
         cpu._SUB(dest, src, carry=True)
 
@@ -1958,9 +1958,9 @@ class X86Cpu(Cpu):
 
             DEST  =  DEST - SRC;
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.        
         '''
         cpu._SUB(dest, src, carry=False)
 
@@ -1996,9 +1996,9 @@ class X86Cpu(Cpu):
                 SRC  =  DEST
                 DEST  =  TEMP
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.        
         '''
         MASK = (1<<dest.size)-1
         SIGN_MASK = 1<<(dest.size-1)
@@ -2048,8 +2048,8 @@ class X86Cpu(Cpu):
             DEST[23..16]  =  TEMP[15..8]
             DEST[31..24]  =  TEMP[7..0]
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         parts = []
         arg0 = dest.read()
@@ -2076,9 +2076,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand. 
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand. 
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, src.read(), dest.read()))
 
@@ -2092,9 +2092,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF==False, cpu.ZF==False), src.read(), dest.read()))
 
@@ -2108,9 +2108,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF==False, src.read(), dest.read()))
 
@@ -2124,9 +2124,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), src.read(), dest.read()))
 
@@ -2139,9 +2139,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, src.read(), dest.read()))
 
@@ -2154,9 +2154,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, src.read(), dest.read()))
 
@@ -2170,9 +2170,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF, src.read(), dest.read()))
     #CMOVPO
@@ -2185,9 +2185,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF==False, src.read(), dest.read()))
 
@@ -2206,9 +2206,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==0, cpu.SF==cpu.OF), src.read(), dest.read()))
 
@@ -2222,9 +2222,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, (cpu.SF ^ cpu.OF)==0, src.read(), dest.read()))
 
@@ -2239,9 +2239,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF ^ cpu.OF, src.read(), dest.read()))
 
@@ -2255,9 +2255,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.SF ^ cpu.OF, cpu.ZF), src.read(), dest.read()))
 
@@ -2270,9 +2270,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.OF, src.read(), dest.read()))
 
@@ -2285,9 +2285,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.OF==False, src.read(), dest.read()))
 
@@ -2300,9 +2300,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF, src.read(), dest.read()))
 
@@ -2315,9 +2315,9 @@ class X86Cpu(Cpu):
         (second operand) to the destination operand (first operand) if the given 
         test condition is true.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF==False, src.read(), dest.read()))
 
@@ -2332,9 +2332,9 @@ class X86Cpu(Cpu):
 
                 AH  =  EFLAGS(SF:ZF:0:AF:0:PF:1:CF);
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         used_regs = (cpu.SF, cpu.ZF, cpu.AF, cpu.PF, cpu.CF)
         is_expression = any(issymbolic(x) for x in used_regs)
@@ -2465,9 +2465,9 @@ class X86Cpu(Cpu):
         attribute of the instruction is determined by the chosen register; the address-size attribute is determined by the
         attribute of the code segment.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(Operators.EXTRACT(src.address(),0,dest.size))
 
@@ -2484,9 +2484,9 @@ class X86Cpu(Cpu):
         Both operands must be the same size, which can be a byte, a word, or a 
         doubleword.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         dest.write(src.read())
 
@@ -2524,9 +2524,9 @@ class X86Cpu(Cpu):
                     DEST[63:56] = TEMP[7:0];
                 FI;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
         size = dest.size
         arg0 = dest.read()
@@ -2548,9 +2548,9 @@ class X86Cpu(Cpu):
 
                 EFLAGS(SF:ZF:0:AF:0:PF:1:CF)  =  AH;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand.
         '''
 
         eflags_size = 32
@@ -2573,8 +2573,8 @@ class X86Cpu(Cpu):
                     DEST = 0;
                 FI;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
          '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF,cpu.ZF) == False, 1, 0))
 
@@ -2583,8 +2583,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if above or equal. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
 
@@ -2593,8 +2593,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if below. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
@@ -2603,8 +2603,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if below or equal.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), 1, 0))
 
@@ -2613,8 +2613,8 @@ class X86Cpu(Cpu):
         '''
         Sets if carry. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
@@ -2623,8 +2623,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if equal.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, 1, 0))
 
@@ -2633,8 +2633,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if greater. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==False, cpu.SF==cpu.OF), 1, 0))
 
@@ -2643,8 +2643,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if greater or equal.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF==cpu.OF, 1, 0))
 
@@ -2653,8 +2653,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if less. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF!=cpu.OF, 1, 0))
 
@@ -2663,8 +2663,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if less or equal. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF!=cpu.OF), 1, 0))
 
@@ -2673,8 +2673,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not above.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), 1, 0))
 
@@ -2683,8 +2683,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not above or equal. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
@@ -2693,8 +2693,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not below.         
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
 
@@ -2703,8 +2703,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not below or equal. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF==False, cpu.ZF==False), 1, 0))
 
@@ -2713,8 +2713,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not carry. 
        
-        @param cpu: current CPU.
-        @param dest: destination operand. 
+        :param cpu: current CPU.
+        :param dest: destination operand. 
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
 
@@ -2723,8 +2723,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not equal.
 
-        @param cpu: current CPU.
-        @param dest: destination operand. 
+        :param cpu: current CPU.
+        :param dest: destination operand. 
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, 1, 0))
 
@@ -2733,8 +2733,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not greater. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF!=cpu.OF), 1, 0))
 
@@ -2743,8 +2743,8 @@ class X86Cpu(Cpu):
         '''
         Sets if not greater or equal.
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF!=cpu.OF, 1, 0))
 
@@ -2753,8 +2753,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not less. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF==cpu.OF, 1, 0))
 
@@ -2763,8 +2763,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not less or equal. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==False, cpu.SF==cpu.OF), 1, 0))
 
@@ -2773,8 +2773,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not overflow. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.OF==False, 1, 0))
 
@@ -2783,8 +2783,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not parity. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF==False, 1, 0))
 
@@ -2793,8 +2793,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not sign. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF==False, 1, 0))
 
@@ -2803,8 +2803,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if not zero. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, 1, 0))
 
@@ -2813,8 +2813,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if overflow. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.OF, 1, 0))
 
@@ -2823,8 +2823,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if parity. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF, 1, 0))
 
@@ -2833,8 +2833,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if parity even.
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF, 1, 0))
 
@@ -2843,8 +2843,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if parity odd. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF==False, 1, 0))
 
@@ -2853,8 +2853,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if sign. 
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF, 1, 0))
 
@@ -2863,8 +2863,8 @@ class X86Cpu(Cpu):
         '''
         Sets byte if zero.
 
-        @param cpu: current CPU.
-        @param dest: destination operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.        
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, 1, 0))
 
@@ -2888,9 +2888,9 @@ class X86Cpu(Cpu):
                 DEST  =  SRC
                 SRC  =  TEMP
         
-        @param cpu: current CPU.
-        @param dest: destination operand.        
-        @param src: source operand. 
+        :param cpu: current CPU.
+        :param dest: destination operand.        
+        :param src: source operand. 
         '''
         temp = dest.read()
         dest.write(src.read())
@@ -2932,7 +2932,7 @@ class X86Cpu(Cpu):
                     BP  =  Pop();
                 FI;
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         cpu.STACK = cpu.FRAME
         cpu.FRAME = cpu.pop(cpu.address_bit_size)
@@ -2945,8 +2945,8 @@ class X86Cpu(Cpu):
         Loads the value from the top of the stack to the location specified 
         with the destination operand and then increments the stack pointer. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
         '''
         dest.write(cpu.pop(dest.size))
 
@@ -2957,8 +2957,8 @@ class X86Cpu(Cpu):
         
         Decrements the stack pointer and then stores the source operand on the top of the stack.
         
-        @param cpu: current CPU.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param src: source operand.
         '''
         #http://stackoverflow.com/questions/11291151/how-push-imm-encodes
         size = src.size
@@ -2973,7 +2973,7 @@ class X86Cpu(Cpu):
         ''' 
         Pops stack into EFLAGS register. 
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         mask = (0x00000001 |
                 0x00000004 |
@@ -2991,7 +2991,7 @@ class X86Cpu(Cpu):
         ''' 
         Pops stack into EFLAGS register.
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         mask = 0x00000001 | 0x00000004 | 0x00000010 | 0x00000040 | 0x00000080 | 0x00000400 | 0x00000800
         cpu.EFLAGS = cpu.pop(32) & mask
@@ -3001,7 +3001,7 @@ class X86Cpu(Cpu):
         ''' 
         Pops stack into EFLAGS register.
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         mask = 0x00000001 | 0x00000004 | 0x00000010 | 0x00000040 | 0x00000080 | 0x00000400 | 0x00000800
         cpu.EFLAGS = (cpu.EFLAGS& ~mask) | cpu.pop(64) & mask
@@ -3011,7 +3011,7 @@ class X86Cpu(Cpu):
         ''' 
         Pushes FLAGS register onto the stack.
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         cpu.push(cpu.EFLAGS, 16)
 
@@ -3020,7 +3020,7 @@ class X86Cpu(Cpu):
         ''' 
         Pushes EFLAGS register onto the stack.
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         cpu.push(cpu.EFLAGS, 32)
 
@@ -3029,7 +3029,7 @@ class X86Cpu(Cpu):
         ''' 
         Pushes RFLAGS register onto the stack.
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         cpu.push(cpu.RFLAGS, 64)
 
@@ -3045,8 +3045,8 @@ class X86Cpu(Cpu):
         interrupt checks the OF flag in the EFLAGS register and calls the overflow interrupt handler 
         if the OF flag is set to 1.
 
-        @param cpu: current CPU.
-        @param op0: destination operand. 
+        :param cpu: current CPU.
+        :param op0: destination operand. 
         '''
         if op0.read() != 0x80:
             logger.warning("Unsupported interrupt")
@@ -3057,7 +3057,7 @@ class X86Cpu(Cpu):
         ''' 
         Breakpoint
 
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         raise Interruption(3)
 
@@ -3078,8 +3078,8 @@ class X86Cpu(Cpu):
         operand. The target operand specifies the address of the first instruction in the called procedure. The operand can
         be an immediate value, a general-purpose register, or a memory location.
         
-        @param cpu: current CPU.
-        @param op0: target operand.         
+        :param cpu: current CPU.
+        :param op0: target operand.         
         '''
         #TODO FIX 64Bit FIX segment
         proc = op0.read()
@@ -3097,8 +3097,8 @@ class X86Cpu(Cpu):
         The optional source operand specifies the number of stack bytes to be 
         released after the return address is popped; the default is none.
         
-        @param cpu: current CPU.
-        @param operands: variable operands list. 
+        :param cpu: current CPU.
+        :param operands: variable operands list. 
         '''
         #TODO FIX 64Bit FIX segment
         N = 0
@@ -3112,8 +3112,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if above.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.CF == False, cpu.ZF == False), target.read(), cpu.PC)
 
@@ -3122,8 +3122,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if above or equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == False, target.read(), cpu.PC)
 
@@ -3132,8 +3132,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if below.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == True, target.read(), cpu.PC)
 
@@ -3142,8 +3142,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if below or equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.CF, cpu.ZF) , target.read(), cpu.PC)
 
@@ -3152,8 +3152,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if carry.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF , target.read(), cpu.PC)
 
@@ -3162,8 +3162,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if CX register is 0.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CX == 0, target.read(), cpu.PC)
 
@@ -3172,8 +3172,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if ECX register is 0.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ECX == 0, target.read(), cpu.PC)
 
@@ -3182,8 +3182,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if RCX register is 0.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.RCX == 0, target.read(), cpu.PC)
 
@@ -3192,8 +3192,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ZF, target.read(), cpu.PC)
 
@@ -3202,8 +3202,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if greater.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.ZF == False, cpu.SF == cpu.OF), target.read(), cpu.PC)
 
@@ -3212,8 +3212,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if greater or equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF == cpu.OF), target.read(), cpu.PC)
 
@@ -3222,8 +3222,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if less.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF != cpu.OF), target.read(), cpu.PC)
 
@@ -3232,8 +3232,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if less or equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), target.read(), cpu.PC)
 
@@ -3242,8 +3242,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not above.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.CF, cpu.ZF) , target.read(), cpu.PC)
 
@@ -3252,8 +3252,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not above or equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF , target.read(), cpu.PC)
 
@@ -3262,8 +3262,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not below.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == False, target.read(), cpu.PC)
 
@@ -3272,8 +3272,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not below or equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.CF == False, cpu.ZF == False), target.read(), cpu.PC)
 
@@ -3282,8 +3282,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not carry.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.CF, target.read(), cpu.PC)
 
@@ -3292,8 +3292,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.ZF , target.read(), cpu.PC)
 
@@ -3302,8 +3302,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not greater.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), target.read(), cpu.PC)
 
@@ -3312,8 +3312,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not greater or equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF != cpu.OF), target.read(), cpu.PC)
 
@@ -3322,8 +3322,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not less.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF == cpu.OF), target.read(), cpu.PC)
 
@@ -3332,8 +3332,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not less or equal.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(False == cpu.ZF, cpu.SF == cpu.OF), target.read(), cpu.PC)
 
@@ -3342,8 +3342,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not overflow.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.OF , target.read(), cpu.PC)
 
@@ -3352,8 +3352,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not parity.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.PF , target.read(), cpu.PC)
 
@@ -3362,8 +3362,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not sign.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.SF, target.read(), cpu.PC)
 
@@ -3371,8 +3371,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if not zero.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.JNE(target)
 
@@ -3381,8 +3381,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if overflow.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.OF, target.read(), cpu.PC)
 
@@ -3391,8 +3391,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if parity.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.PF, target.read(), cpu.PC)
 
@@ -3401,8 +3401,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if parity even.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.PF, target.read(), cpu.PC)
 
@@ -3411,8 +3411,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if parity odd.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.PF, target.read(), cpu.PC)
 
@@ -3421,8 +3421,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if sign.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.SF, target.read(), cpu.PC)
 
@@ -3431,8 +3431,8 @@ class X86Cpu(Cpu):
         '''
         Jumps short if zero.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ZF, target.read(), cpu.PC)
 
@@ -3445,8 +3445,8 @@ class X86Cpu(Cpu):
         recording return information. The destination (target) operand specifies the address
         of the instruction being jumped to. This operand can be an immediate value, a general-purpose register, or a memory location.
         
-        @param cpu: current CPU.
-        @param target: destination operand.         
+        :param cpu: current CPU.
+        :param target: destination operand.         
         '''
         cpu.PC=target.read()
 
@@ -3491,8 +3491,8 @@ class X86Cpu(Cpu):
                     Terminate loop and continue program execution at EIP;
                 FI;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
         '''
         counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.address_bit_size]
         counter = cpu.write_register(counter_name, cpu.read_register(counter_name)-1)
@@ -3503,8 +3503,8 @@ class X86Cpu(Cpu):
         '''
         Loops if ECX counter is nonzero.
         
-        @param cpu: current CPU.
-        @param target: destination operand.
+        :param cpu: current CPU.
+        :param target: destination operand.
         '''
         counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.address_bit_size]
         counter = cpu.write_register(counter_name, cpu.read_register(counter_name)-1)
@@ -3531,9 +3531,9 @@ class X86Cpu(Cpu):
 
         The RCL instruction shifts the CF flag into the least-significant bit and shifts the most-significant bit into the CF flag.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = src.read()
@@ -3577,9 +3577,9 @@ class X86Cpu(Cpu):
         for the least-significant bit, which is rotated to the most-significant bit location. The RCR instruction shifts the 
         CF flag into the most-significant bit and shifts the least-significant bit into the CF flag. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.        
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.        
         '''
         OperandSize = dest.size
         count = src.read()
@@ -3626,9 +3626,9 @@ class X86Cpu(Cpu):
         The rotate left shift all the bits toward more-significant bit positions, except for the most-significant bit, which
         is rotated to the least-significant bit location.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = src.read()
@@ -3661,9 +3661,9 @@ class X86Cpu(Cpu):
         The rotate right (ROR) instruction shift all the bits toward less significant bit positions, except
         for the least-significant bit, which is rotated to the most-significant bit location.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = src.read()
@@ -3693,9 +3693,9 @@ class X86Cpu(Cpu):
         flag, then discarded. At the end of the shift operation, the CF flag contains the last bit shifted out of the destination
         operand.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = src.read()
@@ -3726,9 +3726,9 @@ class X86Cpu(Cpu):
             
         The shift arithmetic left (SAL) and shift logical left (SHL) instructions perform the same operation.
         
-        @param cpu: current cpu.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current cpu.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         return cpu.SAL(dest,src)
 
@@ -3744,9 +3744,9 @@ class X86Cpu(Cpu):
         to correspond to the sign (most significant bit) of the original value in the destination operand. In effect, the SAR 
         instruction fills the empty bit position's shifted value with the sign of the unshifted value
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         OperandSize = dest.size
         countMask = { 8 : 0x1f,
@@ -3792,9 +3792,9 @@ class X86Cpu(Cpu):
         operand is shifted into the CF flag, and the most significant bit is either set or cleared depending on the instruction
         type. The SHR instruction clears the most significant bit. 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = Operators.ZEXTEND(src.read() & (OperandSize-1) , OperandSize)
@@ -3847,10 +3847,10 @@ class X86Cpu(Cpu):
         (count operand). The second operand (source operand) provides bits to shift in from the left (starting with 
         the most significant bit of the destination operand). 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
-        @param count: count operand 
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
+        :param count: count operand 
         '''
         OperandSize = dest.size
         MASK = ((1 << OperandSize) -1)
@@ -3879,10 +3879,10 @@ class X86Cpu(Cpu):
         (count operand). The second operand (source operand) provides bits to shift in from the right (starting with 
         the least significant bit of the destination operand). 
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
-        @param count: count operand 
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
+        :param count: count operand 
         '''
         OperandSize = dest.size
         tempCount =  Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
@@ -3951,9 +3951,9 @@ class X86Cpu(Cpu):
                         OD;
                     FI;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.  
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.  
         '''
         value = src.read()
         flag = Operators.EXTRACT(value, 0, 1) == 1
@@ -3992,9 +3992,9 @@ class X86Cpu(Cpu):
                     OD;
                 FI;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         value = src.read()
         flag = Operators.EXTRACT(value, src.size-1, 1) == 1
@@ -4024,9 +4024,9 @@ class X86Cpu(Cpu):
               byte in memory that contains the bit base (bit 0 of the specified byte) of the bit string. The 
               range of the bit position that can be referenced by the offset operand depends on the operand size.
         
-        @param cpu: current CPU.
-        @param dest: bit base.
-        @param src: bit offset.
+        :param cpu: current CPU.
+        :param dest: bit base.
+        :param src: bit offset.
         '''
         if dest.type == X86_OP_REG:
             cpu.CF = ((dest.read() >> (src.read()%dest.size) ) &1) !=0
@@ -4048,9 +4048,9 @@ class X86Cpu(Cpu):
         (second operand), stores the value of the bit in the CF flag, and complements 
         the selected bit in the bit string.
         
-        @param cpu: current CPU.
-        @param dest: bit base operand.
-        @param src: bit offset operand.
+        :param cpu: current CPU.
+        :param dest: bit base operand.
+        :param src: bit offset operand.
         '''
         if dest.type == X86_OP_REG:
             value = dest.read()
@@ -4078,9 +4078,9 @@ class X86Cpu(Cpu):
         (second operand), stores the value of the bit in the CF flag, and clears 
         the selected bit in the bit string to 0. 
         
-        @param cpu: current CPU.
-        @param dest: bit base operand.
-        @param src: bit offset operand.
+        :param cpu: current CPU.
+        :param dest: bit base operand.
+        :param src: bit offset operand.
         '''
         if dest.type == X86_OP_REG:
             value = dest.read()
@@ -4108,9 +4108,9 @@ class X86Cpu(Cpu):
         (second operand), stores the value of the bit in the CF flag, and sets 
         the selected bit in the bit string to 1.
         
-        @param cpu: current CPU.
-        @param dest: bit base operand.
-        @param src: bit offset operand.
+        :param cpu: current CPU.
+        :param dest: bit base operand.
+        :param src: bit offset operand.
         '''
 
         if dest.type == X86_OP_REG:
@@ -4176,7 +4176,7 @@ class X86Cpu(Cpu):
 
             DF  =  0;
         
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         cpu.DF = False
 
@@ -4190,7 +4190,7 @@ class X86Cpu(Cpu):
 
             DF  =  1;
         
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         cpu.DF = True
 
@@ -4198,7 +4198,7 @@ class X86Cpu(Cpu):
     def CLC(cpu):
         ''' 
         Clears CF
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         cpu.CF = False
 
@@ -4206,7 +4206,7 @@ class X86Cpu(Cpu):
     def STC(cpu):
         ''' 
         Sets CF
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         cpu.CF = True
 
@@ -4255,9 +4255,9 @@ class X86Cpu(Cpu):
                     FI;
                 FI;
         
-        @param cpu: current CPU.
-        @param dest: first source operand.
-        @param src: second source operand.
+        :param cpu: current CPU.
+        :param dest: first source operand.
+        :param src: second source operand.
         '''
         src_reg = {8: 'SI', 32: 'ESI', 64: 'RSI'}[cpu.address_bit_size]
         dest_reg = {8: 'DI', 32: 'EDI', 64: 'RDI'}[cpu.address_bit_size]
@@ -4295,8 +4295,8 @@ class X86Cpu(Cpu):
         The (E)SI register is incremented or decremented by 1 for byte operations, by 2 for word operations, or by 4 for
         doubleword operations.
         
-        @param cpu: current CPU.
-        @param dest: source operand.    
+        :param cpu: current CPU.
+        :param dest: source operand.    
         '''
         src_reg = {8: 'SI', 32: 'ESI', 64: 'RSI'}[cpu.address_bit_size]
         base, _, ty = cpu.get_descriptor(cpu.DS)
@@ -4322,9 +4322,9 @@ class X86Cpu(Cpu):
         or the ES:DI registers (again depending on the address-size attribute of the instruction). The DS segment may be
         overridden with a segment override prefix, but the ES segment cannot be overridden.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         base, size, ty = cpu.get_descriptor(cpu.DS)
         src_addr = src.address() + base
@@ -4381,9 +4381,9 @@ class X86Cpu(Cpu):
                            FI;
                      FI;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         dest_reg = dest.reg
         mem_reg = src.mem.base #, src.type, src.read()
@@ -4408,9 +4408,9 @@ class X86Cpu(Cpu):
         instruction, 32 or 16, respectively). The ES segment cannot be overridden 
         with a segment override prefix.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         size = src.size 
         dest.write(src.read())
@@ -4484,9 +4484,9 @@ class X86Cpu(Cpu):
         flag, then discarded. At the end of the shift operation, the CF flag contains the last bit shifted out of the destination
         operand.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = count.read()
@@ -4504,9 +4504,9 @@ class X86Cpu(Cpu):
         '''
         The shift arithmetic right.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = count.read()
@@ -4523,9 +4523,9 @@ class X86Cpu(Cpu):
         '''
         The shift arithmetic right.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = count.read()
@@ -4573,9 +4573,9 @@ class X86Cpu(Cpu):
         
             DEST  =  DEST XOR SRC;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: quadword source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: quadword source operand.
         '''
         res = dest.write(dest.read() ^ src.read())
 
@@ -4589,9 +4589,9 @@ class X86Cpu(Cpu):
         of the destination operand (first operand) and source operand (second operand) into the 
         destination operand.
 
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.
         '''
         size = op0.size
         arg0 = op0.read()
@@ -4616,9 +4616,9 @@ class X86Cpu(Cpu):
         of the destination operand (first operand) and source operand (second operand) into the 
         destination operand.
 
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.
         '''
         size = dest.size
         arg0 = dest.read()
@@ -4644,9 +4644,9 @@ class X86Cpu(Cpu):
         of the destination operand (first operand) and source operand (second operand) into the 
         destination operand.
 
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.
         '''
         size = dest.size
         arg0 = dest.read()
@@ -4671,9 +4671,9 @@ class X86Cpu(Cpu):
         of the destination operand (first operand) and source operand (second operand) into the 
         destination operand.
 
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.
         '''
         size = dest.size
         arg0 = dest.read()
@@ -4698,10 +4698,10 @@ class X86Cpu(Cpu):
         Copies doublewords from source operand (second operand) and inserts them in the destination operand 
         (first operand) at locations selected with the order operand (third operand). 
         
-        @param cpu: current CPU. 
-        @param op0: destination operand.
-        @param op1: source operand.
-        @param op3: order operand.
+        :param cpu: current CPU. 
+        :param op0: destination operand.
+        :param op1: source operand.
+        :param op3: order operand.
          '''
         size = op0.size
         arg0 = op0.read()
@@ -4752,10 +4752,10 @@ class X86Cpu(Cpu):
         Copies doublewords from source operand (second operand) and inserts them in the destination operand 
         (first operand) at locations selected with the order operand (third operand). 
         
-        @param cpu: current CPU. 
-        @param op0: destination operand.
-        @param op1: source operand.
-        @param op3: order operand.
+        :param cpu: current CPU. 
+        :param op0: destination operand.
+        :param op1: source operand.
+        :param op3: order operand.
          '''
         size = op0.size
         arg0 = op0.read()
@@ -4780,9 +4780,9 @@ class X86Cpu(Cpu):
 
             OP0  =  OP1;
     
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.
         '''
         
         op0.write(op1.read())
@@ -4796,9 +4796,9 @@ class X86Cpu(Cpu):
         (first operand)::
             OP0  =  OP1;
         
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.
         @todo: check alingment.
         '''
         op0.write(op1.read())
@@ -4817,9 +4817,9 @@ class X86Cpu(Cpu):
         The PCMPEQB instruction compares the bytes in the destination operand to the corresponding bytes 
         in the source operand.
  
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.   
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.   
         '''
         arg0 = op0.read()
         arg1 = op1.read()
@@ -4841,9 +4841,9 @@ class X86Cpu(Cpu):
         (first operand). The source operand is an MMX(TM) technology or an XXM register; the destination 
         operand is a general-purpose register.
         
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.
         '''
         arg0 = op0.read()
         arg1 = op1.read()
@@ -4869,9 +4869,9 @@ class X86Cpu(Cpu):
             if (TEMP > 15) TEMP  =  16;
             DEST  =  DEST >> (temp * 8);
 
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: count operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: count operand.
         '''
         # TODO(yan): Verify the correctness of truncating SRC like this ( tests
         # use '-1' as the value
@@ -4888,8 +4888,8 @@ class X86Cpu(Cpu):
         instruction stream but does not affect the machine.
         The NOP instruction is an alias mnemonic for the XCHG (E)AX, (E)AX instruction.
         
-        @param cpu: current CPU. 
-        @param arg0: this argument is ignored. 
+        :param cpu: current CPU. 
+        :param arg0: this argument is ignored. 
         '''
         pass
 
@@ -4909,9 +4909,9 @@ class X86Cpu(Cpu):
 
                 OP0  =  ZeroExtend(OP1);
         
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand.
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand.
         '''
         op0.write(Operators.ZEXTEND(op1.read(), op0.size))
 
@@ -4925,9 +4925,9 @@ class X86Cpu(Cpu):
 
                 OP0  =  SignExtend(OP1);
     
-        @param cpu: current CPU.
-        @param op0: destination operand.
-        @param op1: source operand. 
+        :param cpu: current CPU.
+        :param op0: destination operand.
+        :param op1: source operand. 
         '''
         op0.write(Operators.SEXTEND(op1.read(), op1.size, op0.size))
 
@@ -4968,7 +4968,7 @@ class X86Cpu(Cpu):
         ::
             DX = sign-extend of AX.
             
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         bit = Operators.EXTRACT(cpu.AX, 15, 1)
         cpu.EAX = Operators.SEXTEND(cpu.AX, 16, 32)
@@ -4983,7 +4983,7 @@ class X86Cpu(Cpu):
         
                 AX = sign-extend of AL.
         
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         cpu.AX = Operators.SEXTEND(cpu.AL,8,16)
 
@@ -4998,7 +4998,7 @@ class X86Cpu(Cpu):
         The processor increments the time-stamp counter MSR every clock cycle and resets it to 0 whenever 
         the processor is reset.
         
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         val = cpu.icount
         cpu.RAX = val&0xffffffff
@@ -5045,8 +5045,8 @@ class X86Cpu(Cpu):
 
             DEST  =  FPUControlWord;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
         '''
         cpu.write_int(dest.address(), cpu.FPCW, 16)
 
@@ -5063,7 +5063,7 @@ class X86Cpu(Cpu):
         interrupt checks the OF flag in the EFLAGS register and calls the overflow interrupt handler 
         if the OF flag is set to 1.
         
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         cpu.RCX = cpu.RIP
         cpu.R11 = cpu.RFLAGS
@@ -5081,9 +5081,9 @@ class X86Cpu(Cpu):
         or memory to memory moves. When the destination operand is an XMM register, the high quadword of the 
         register remains unchanged.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         value = src.read()
         if src.size == 64 and dest.size == 128:
@@ -5102,9 +5102,9 @@ class X86Cpu(Cpu):
         register or memory to memory moves. When the destination operand is an XMM register, the low quadword 
         of the register remains unchanged.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         if src.size == 128:
             assert dest.size == 64
@@ -5128,9 +5128,9 @@ class X86Cpu(Cpu):
         to be represented in a byte, the result is wrapped around and the low 8 bits are written to the 
         destination element.
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         result = []
         value_a = dest.read()
@@ -5203,9 +5203,9 @@ class X86Cpu(Cpu):
 
                 DEST  =  SRC;
 
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         dest.write(src.read())
 
@@ -5240,9 +5240,9 @@ class X86Cpu(Cpu):
             DEST[63-0]  =  SRC;
             DEST[127-64]  =  0000000000000000H;
         
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         #mmx to mmx or mmx to mem
         if dest.size == src.size and dest.size == 64:
@@ -5279,9 +5279,9 @@ class X86Cpu(Cpu):
         operand is a memory location and destination operand is an XMM registers,
         the high quadword of the destination operand is cleared to all 0s.
 
-        @param cpu: current CPU.
-        @param dest: destination operand.
-        @param src: source operand.
+        :param cpu: current CPU.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         assert dest.type != X86_OP_MEM or src.type != X86_OP_MEM 
         value = Operators.EXTRACT(src.read(), 0, 64)
@@ -5540,7 +5540,7 @@ class X86Cpu(Cpu):
 
         Executes a fast call to a level 0 system procedure or routine
         
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         raise Sysenter()
 
@@ -5578,10 +5578,10 @@ class X86Cpu(Cpu):
         Copies bytes from source operand (second operand) and inserts them in the destination operand 
         (first operand) at locations selected with the order operand (third operand). 
         
-        @param cpu: current CPU. 
-        @param op0: destination operand.
-        @param op1: source operand.
-        @param op3: order operand.
+        :param cpu: current CPU. 
+        :param op0: destination operand.
+        :param op1: source operand.
+        :param op3: order operand.
          '''
         size = op0.size
         arg0 = op0.read()
@@ -5734,8 +5734,8 @@ class AMD64Cpu(X86Cpu):
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
-        @param memory: memory object for this CPU.
-        @param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
+        :param memory: memory object for this CPU.
+        :param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
         '''
         super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},  ), memory, *args, **kwargs)
 
@@ -5743,8 +5743,8 @@ class AMD64Cpu(X86Cpu):
         '''
         Returns a string representation of cpu state
         
-        @rtype: str
-        @return: a string containing the name and current value for all the registers. 
+        :rtype: str
+        :return: a string containing the name and current value for all the registers. 
         '''
         CHEADER = '\033[95m'
         CBLUE = '\033[94m'
@@ -5825,8 +5825,8 @@ class AMD64Cpu(X86Cpu):
                     AL = (RBX + ZeroExtend(AL));
                 FI;
 
-        @param cpu: current CPU.
-        @param dest: destination operand.  
+        :param cpu: current CPU.
+        :param dest: destination operand.  
         '''
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
@@ -5853,8 +5853,8 @@ class I386Cpu(X86Cpu):
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
-        @param memory: memory object for this CPU.
-        @param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
+        :param memory: memory object for this CPU.
+        :param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
         '''
         super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}), memory, *args, **kwargs)
 
@@ -5862,8 +5862,8 @@ class I386Cpu(X86Cpu):
         '''
         Returns a string representation of cpu state
         
-        @rtype: str
-        @return: a string containing the name and current value for all the registers. 
+        :rtype: str
+        :return: a string containing the name and current value for all the registers. 
         '''
         CHEADER = '\033[95m'
         CBLUE = '\033[94m'
@@ -5949,8 +5949,8 @@ class I386Cpu(X86Cpu):
                     AL = (RBX + ZeroExtend(AL));
                 FI;
 
-        @param cpu: current CPU.
-        @param dest: destination operand.  
+        :param cpu: current CPU.
+        :param dest: destination operand.  
         '''
         cpu.AL = cpu.read_int(cpu.EBX + Operators.ZEXTEND(cpu.AL, 32), 8)
 

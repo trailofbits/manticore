@@ -87,10 +87,11 @@ class SymbolicFile(object):
     def __init__(self, constraints, path="sfile", mode='rw', max_size=100, wildcard='+'):
         '''
         Builds a symbolic file
-        @param constraints: the constraints
-        @param path: the pathname of the symbolic file
-        @param mode: the access permissions of the symbolic file
-        @param max_size: Maximun amount of bytes of the symbolic file   
+
+        :param constraints: the constraints
+        :param path: the pathname of the symbolic file
+        :param mode: the access permissions of the symbolic file
+        :param max_size: Maximun amount of bytes of the symbolic file   
         '''
         assert 'r' in mode
         if isinstance(path, str):
@@ -156,15 +157,15 @@ class SymbolicFile(object):
     def tell(self):
         '''
         Returns the read/write file offset
-        @rtype: int
-        @return: the read/write file offset.
+        :rtype: int
+        :return: the read/write file offset.
         '''
         return self.pos
     def seek(self, pos):
         '''
         Returns the read/write file offset
-        @rtype: int
-        @return: the read/write file offset.
+        :rtype: int
+        :return: the read/write file offset.
         '''
         assert isinstance(pos, (int,long))
         self.pos = pos
@@ -172,8 +173,8 @@ class SymbolicFile(object):
     def read(self, count):
         '''
         Reads up to C{count} bytes from the file.
-        @rtype: list
-        @return: the list of symbolic bytes read  
+        :rtype: list
+        :return: the list of symbolic bytes read  
         '''
         if self.pos > self.max_size :
             return []
@@ -264,10 +265,10 @@ class Linux(object):
     def __init__(self, program, argv=[], envp=[]):
         '''
         Builds a Linux OS model
-        @param cpus: CPU for this model.
-        @param mem: memory for this model.
-        @todo: generalize for more CPUs.
-        @todo: fix deps?
+        :param cpus: CPU for this model.
+        :param mem: memory for this model.
+        :todo: generalize for more CPUs.
+        :todo: fix deps?
         '''
         self.program = program
         self.clocks = 0
@@ -367,8 +368,8 @@ class Linux(object):
 
     def __setstate__(self, state):
         """
-        @todo: some asserts
-        @todo: fix deps? (last line)
+        :todo: some asserts
+        :todo: fix deps? (last line)
         """
         self.input = Socket()
         self.input.buffer = state['input']
@@ -415,7 +416,7 @@ class Linux(object):
     def _read_string(self, cpu, buf):
         """
         Reads a null terminated concrete buffer form memory
-        @todo: FIX. move to cpu or memory 
+        :todo: FIX. move to cpu or memory 
         """
         filename = ""
         for i in xrange(0,1024):
@@ -517,8 +518,8 @@ class Linux(object):
 
     def setup_stack(self, cpu, argv, envp):
         '''
-        @param argv: list of parameters for the program to execute.
-        @param envp: list of environment variables for the program to execute.
+        :param argv: list of parameters for the program to execute.
+        :param envp: list of environment variables for the program to execute.
 
         http://www.phrack.org/issues.html?issue=58&id=5#article
          position            content                     size (bytes) + comment
@@ -653,11 +654,11 @@ class Linux(object):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state. 
         Creates the stack and loads the environment variables and the arguments in it.
-        @param filename: pathname of the file to be executed.
-        @raise error:
+        :param filename: pathname of the file to be executed.
+        :raises error:
             - 'Not matching cpu': if the program is compiled for a different architecture
             - 'Not matching memory': if the program is compiled for a different address size
-        @todo: define va_randomize and read_implies_exec personality 
+        :todo: define va_randomize and read_implies_exec personality 
         '''
         #load elf See binfmt_elf.c
         #read the ELF object file
@@ -907,10 +908,10 @@ class Linux(object):
     def _open(self, f):
         '''
         It opens a file on the given a file descriptor
-        @rtype: int
-        @param filename: pathname of the file to open.
-        @param mode: file permissions mode.
-        @return: a file description of the opened file.
+        :rtype: int
+        :param filename: pathname of the file to open.
+        :param mode: file permissions mode.
+        :return: a file description of the opened file.
         '''
         if None in self.files:
             fd = self.files.index(None)
@@ -923,18 +924,18 @@ class Linux(object):
     def _close(self, fd):
         '''
         Closes a file descriptor
-        @rtype: int
-        @param fd: the file descriptor to close.
-        @return: C{0} on success.  
+        :rtype: int
+        :param fd: the file descriptor to close.
+        :return: C{0} on success.  
         '''
         self.files[fd] = None
 
     def _dup(self, fd):
         '''
         Duplicates a file descriptor
-        @rtype: int
-        @param fd: the file descriptor to close.
-        @return: C{0} on success.  
+        :rtype: int
+        :param fd: the file descriptor to close.
+        :return: C{0} on success.  
         '''
         return self._open(self.files[fd])
 
@@ -943,21 +944,21 @@ class Linux(object):
 
 
     def sys_lseek(self, cpu, fd, offset, whence):
-        ''' lseek - reposition read/write file offset
+        '''
+        lseek - reposition read/write file offset
 
-            The lseek() function repositions the file offset of the open file description associated
-            with the file descriptor fd to the argument offset according to the directive whence
+        The lseek() function repositions the file offset of the open file description associated
+        with the file descriptor fd to the argument offset according to the directive whence
 
 
-            @param self          current CPU.
-            @param fd            a valid file descripor
-            @param offset        the offset in bytes
-            @param whence        SEEK_SET: The file offset is set to offset bytes.
-                                 SEEK_CUR: The file offset is set to its current location plus offset bytes.
-                                 SEEK_END: The file offset is set to the size of the file plus offset bytes.
+        :param self: current CPU.
+        :param fd: a valid file descripor
+        :param offset: the offset in bytes
+        :param whence: SEEK_SET: The file offset is set to offset bytes. 
+                       SEEK_CUR: The file offset is set to its current location plus offset bytes.
+                       SEEK_END: The file offset is set to the size of the file plus offset bytes.
   
-            @result        0            Success
-                           EBADF        fd is not a valid file descriptor or is not open
+        :return: 0 (Success), or EBADF (fd is not a valid file descriptor or is not open)
 
          '''
         if not self._is_open(fd):
@@ -1004,13 +1005,13 @@ class Linux(object):
           to by buf to the file descriptor fd. If count is zero, write returns 0
           and optionally sets *tx_bytes to zero.
 
-          @param cpu           current CPU
-          @param fd            a valid file descripor
-          @param buf           a memory buffer
-          @param count         number of bytes to send 
-          @result 0            Success
-                  EBADF        fd is not a valid file descriptor or is not open.
-                  EFAULT       buf or tx_bytes points to an invalid address.
+          :param cpu           current CPU
+          :param fd            a valid file descripor
+          :param buf           a memory buffer
+          :param count         number of bytes to send 
+          :return: 0          Success
+                    EBADF      fd is not a valid file descriptor or is not open.
+                    EFAULT     buf or tx_bytes points to an invalid address.
         '''
         data = []
         if count != 0:
@@ -1042,12 +1043,12 @@ class Linux(object):
     def sys_access(self, cpu, buf, mode):
         '''
         Checks real user's permissions for a file 
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param buf: a buffer containing the pathname to the file to check its permissions.
-        @param mode: the access permissions to check.
-        @return: 
+        :param cpu: current CPU.
+        :param buf: a buffer containing the pathname to the file to check its permissions.
+        :param mode: the access permissions to check.
+        :return: 
             -  C{0} if the calling process can access the file in the desired mode.
             - C{-1} if the calling process can not access the file in the desired mode.
         '''
@@ -1071,10 +1072,10 @@ class Linux(object):
     def sys_uname(self, cpu, old_utsname):
         '''
         Writes system information in the variable C{old_utsname}.
-        @rtype: int
-        @param cpu: current CPU.
-        @param old_utsname: the buffer to write the system info.
-        @return: C{0} on success  
+        :rtype: int
+        :param cpu: current CPU.
+        :param old_utsname: the buffer to write the system info.
+        :return: C{0} on success  
         '''
         from datetime import datetime
         def pad(s):
@@ -1092,11 +1093,11 @@ class Linux(object):
     def sys_brk(self, cpu, brk):
         '''
         Changes data segment size (moves the C{elf_brk} to the new address)
-        @rtype: int
-        @param cpu: current CPU.
-        @param brk: the new address for C{elf_brk}.
-        @return: the value of the new C{elf_brk}.
-        @raise error: 
+        :rtype: int
+        :param cpu: current CPU.
+        :param brk: the new address for C{elf_brk}.
+        :return: the value of the new C{elf_brk}.
+        :raises error: 
                     - "Error in brk!" if there is any error allocating the memory
         '''
         if brk != 0:
@@ -1113,13 +1114,13 @@ class Linux(object):
     def sys_arch_prctl(self, cpu, code, addr):
         '''
         Sets architecture-specific thread state
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param code: must be C{ARCH_SET_FS}.
-        @param addr: the base address of the FS segment.
-        @return: C{0} on success
-        @raise error:
+        :param cpu: current CPU.
+        :param code: must be C{ARCH_SET_FS}.
+        :param addr: the base address of the FS segment.
+        :return: C{0} on success
+        :raises error:
             - if C{code} is different to C{ARCH_SET_FS}
         '''
         ARCH_SET_GS = 0x1001
@@ -1189,10 +1190,10 @@ class Linux(object):
     def sys_close(self, cpu, fd):
         '''
         Closes a file descriptor
-        @rtype: int
-        @param cpu: current CPU.
-        @param fd: the file descriptor to close.
-        @return: C{0} on success.  
+        :rtype: int
+        :param cpu: current CPU.
+        :param fd: the file descriptor to close.
+        :return: C{0} on success.  
         '''
         if fd > 0 :
             self._close(fd)
@@ -1202,13 +1203,13 @@ class Linux(object):
     def sys_readlink(self, cpu, path, buf, bufsize):
         '''
         Read
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param path: the "link path id"
-        @param buf: the buffer where the bytes will be putted. 
-        @param bufsize: the max size for read the link.
-        @todo: Out eax number of bytes actually sent | EAGAIN | EBADF | EFAULT | EINTR | errno.EINVAL | EIO | ENOSPC | EPIPE
+        :param cpu: current CPU.
+        :param path: the "link path id"
+        :param buf: the buffer where the bytes will be putted. 
+        :param bufsize: the max size for read the link.
+        :todo: Out eax number of bytes actually sent | EAGAIN | EBADF | EFAULT | EINTR | errno.EINVAL | EIO | ENOSPC | EPIPE
         '''
         if bufsize <= 0:
             return -errno.EINVAL
@@ -1222,13 +1223,13 @@ class Linux(object):
         '''
         Sets protection on a region of memory. Changes protection for the calling process's 
         memory page(s) containing any part of the address range in the interval [C{start}, C{start}+C{size}-1].  
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param start: the starting address to change the permissions.
-        @param size: the size of the portion of memory to change the permissions.
-        @param prot: the new acces premission for the memory.
-        @return: C{0} on success.
+        :param cpu: current CPU.
+        :param start: the starting address to change the permissions.
+        :param size: the size of the portion of memory to change the permissions.
+        :param prot: the new acces premission for the memory.
+        :return: C{0} on success.
         '''
         perms = perms_from_protflags(prot)
         ret = cpu.memory.mprotect(start, size, perms)
@@ -1238,12 +1239,12 @@ class Linux(object):
     def sys_munmap(self, cpu, addr, size):
         '''
         Unmaps a file from memory. It deletes the mappings for the specified address range
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param addr: the starting address to unmap.
-        @param size: the size of the portion to unmap.
-        @return: C{0} on success.  
+        :param cpu: current CPU.
+        :param addr: the starting address to unmap.
+        :param size: the size of the portion to unmap.
+        :return: C{0} on success.  
         '''
         cpu.memory.munmap(addr, size)
         return 0
@@ -1251,50 +1252,50 @@ class Linux(object):
     def sys_getuid(self, cpu):
         '''
         Gets user identity.
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @return: this call returns C{1000} for all the users.  
+        :param cpu: current CPU.
+        :return: this call returns C{1000} for all the users.  
         '''
         return 1000
     def sys_getgid(self, cpu):
         '''
         Gets group identity.
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @return: this call returns C{1000} for all the groups.  
+        :param cpu: current CPU.
+        :return: this call returns C{1000} for all the groups.  
         '''
         return 1000
     def sys_geteuid(self, cpu):
         '''
         Gets user identity.
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @return: This call returns C{1000} for all the users.  
+        :param cpu: current CPU.
+        :return: This call returns C{1000} for all the users.  
         '''
         return 1000
     def sys_getegid(self, cpu):
         '''
         Gets group identity.
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @return: this call returns C{1000} for all the groups.  
+        :param cpu: current CPU.
+        :return: this call returns C{1000} for all the groups.  
         '''
         return 1000
 
     def sys_writev(self, cpu, fd, iov, count):
         '''
         Works just like C{sys_write} except that multiple buffers are written out (for Linux 64 bits).
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param fd: the file descriptor of the file to write.
-        @param iov: the buffer where the the bytes to write are taken. 
-        @param count: amount of C{iov} buffers to write into the file.
-        @return: the amount of bytes written in total.
+        :param cpu: current CPU.
+        :param fd: the file descriptor of the file to write.
+        :param iov: the buffer where the the bytes to write are taken. 
+        :param count: amount of C{iov} buffers to write into the file.
+        :return: the amount of bytes written in total.
         '''
         total = 0
         for i in xrange(0, count):
@@ -1312,13 +1313,13 @@ class Linux(object):
     def sys_writev32(self, cpu, fd, iov, count):
         '''
         Works just like C{sys_write} except that multiple buffers are written out. (32 bit version)
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param fd: the file descriptor of the file to write.
-        @param iov: the buffer where the the bytes to write are taken. 
-        @param count: amount of C{iov} buffers to write into the file.
-        @return: the amount of bytes written in total.
+        :param cpu: current CPU.
+        :param fd: the file descriptor of the file to write.
+        :param iov: the buffer where the the bytes to write are taken. 
+        :param count: amount of C{iov} buffers to write into the file.
+        :return: the amount of bytes written in total.
         '''
         total = 0
         for i in xrange(0, count):
@@ -1336,11 +1337,11 @@ class Linux(object):
     def sys_set_thread_area32(self, cpu, user_info):
         '''
         Sets a thread local storage (TLS) area. Sets the base address of the GS segment.
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param user_info: the TLS array entry set corresponds to the value of C{u_info->entry_number}.
-        @return: C{0} on success.   
+        :param cpu: current CPU.
+        :param user_info: the TLS array entry set corresponds to the value of C{u_info->entry_number}.
+        :return: C{0} on success.   
         '''
         n = cpu.read_int(user_info, 32)
         pointer = cpu.read_int(user_info + 4, 32)
@@ -1356,9 +1357,9 @@ class Linux(object):
     def sys_getpriority(self, cpu, which, who):
         '''
         System call ignored. 
-        @rtype: int
+        :rtype: int
         
-        @return: C{0}
+        :return: C{0}
         '''
         logger.debug("Ignoring sys_get_priority")
         return 0
@@ -1366,9 +1367,9 @@ class Linux(object):
     def sys_setpriority(self, cpu, which, who, prio):
         '''
         System call ignored.
-        @rtype: int
+        :rtype: int
         
-        @return: C{0}
+        :return: C{0}
         '''
         logger.debug("Ignoring sys_set_priority")
         return 0
@@ -1376,9 +1377,9 @@ class Linux(object):
     def sys_acct(self, cpu, path):
         '''
         System call not implemented.
-        @rtype: int
+        :rtype: int
         
-        @return: C{-1}
+        :return: C{-1}
         '''
         logger.debug("BSD account not implemented!")
         return -1
@@ -1386,8 +1387,8 @@ class Linux(object):
     def sys_exit_group(self, cpu, error_code):
         '''
         Exits all threads in a process
-        @param cpu: current CPU.
-        @raise Exception: 'Finished'
+        :param cpu: current CPU.
+        :raises Exception: 'Finished'
         '''
         procid = self.procs.index(cpu)
         self.sched()
@@ -1432,7 +1433,7 @@ class Linux(object):
     def syscall(self, cpu):
         ''' 
         64 bit dispatcher.
-        @param cpu: current CPU. 
+        :param cpu: current CPU. 
         '''
         syscalls = { 
                  0x0000000000000008: self.sys_lseek, 
@@ -1507,7 +1508,7 @@ class Linux(object):
     def int80(self, cpu):
         ''' 
         32 bit dispatcher.
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         '''
         syscalls = { 0x00000001: self.sys_exit_group, 
                      0x00000003: self.sys_read, 
@@ -1684,10 +1685,10 @@ class Linux(object):
     def execute(self):
         """
         Execute one cpu instruction in the current thread (only one suported).
-        @rtype: bool
-        @return: C{True}
+        :rtype: bool
+        :return: C{True}
         
-        @todo: This is where we could implement a simple schedule.
+        :todo: This is where we could implement a simple schedule.
         """
         syscallret = None
         try:
@@ -1715,12 +1716,12 @@ class Linux(object):
     def sys_fstat64(self, cpu, fd, buf):
         '''
         Determines information about a file based on its file descriptor (for Linux 64 bits).
-        @rtype: int
-        @param cpu: current CPU.
-        @param fd: the file descriptor of the file that is being inquired.
-        @param buf: a buffer where data about the file will be stored. 
-        @return: C{0} on success.
-        @todo: Fix device number.   
+        :rtype: int
+        :param cpu: current CPU.
+        :param fd: the file descriptor of the file that is being inquired.
+        :param buf: a buffer where data about the file will be stored. 
+        :return: C{0} on success.
+        :todo: Fix device number.   
         '''
         ''' unsigned long	st_dev;		/* Device.  */
             unsigned long	st_ino;		/* File serial number.  */
@@ -1775,11 +1776,11 @@ class Linux(object):
     def sys_stat64(self, cpu, path, buf):
         '''
         Determines information about a file based on its filename (for Linux 64 bits).
-        @rtype: int
-        @param cpu: current CPU.
-        @param path: the pathname of the file that is being inquired.
-        @param buf: a buffer where data about the file will be stored. 
-        @return: C{0} on success.   
+        :rtype: int
+        :param cpu: current CPU.
+        :param path: the pathname of the file that is being inquired.
+        :param buf: a buffer where data about the file will be stored. 
+        :return: C{0} on success.   
         '''
         fd = self.sys_open(cpu, path, 0, 'r')
         ret = self.sys_fstat64(cpu, fd, buf)
@@ -1835,9 +1836,9 @@ class SLinux(Linux):
     def __init__(self, constraints, programs, argv, envp, symbolic_random=None, symbolic_files=()):
         '''
         Builds a symbolic extension of a Decree OS
-        @param constraints: a constraints.
-        @param cpus: CPU for this model.
-        @param mem: memory for this model.
+        :param constraints: a constraints.
+        :param cpus: CPU for this model.
+        :param mem: memory for this model.
         '''
         self._constraints = ConstraintSet()
         self.random = 0
@@ -1907,11 +1908,11 @@ class SLinux(Linux):
     def sys_fstat(self, cpu, fd, buf):
         '''
         Determines information about a file based on its file descriptor.
-        @rtype: int
-        @param cpu: current CPU.
-        @param fd: the file descriptor of the file that is being inquired.
-        @param buf: a buffer where data about the file will be stored. 
-        @return: C{0} on success.   
+        :rtype: int
+        :param cpu: current CPU.
+        :param fd: the file descriptor of the file that is being inquired.
+        :param buf: a buffer where data about the file will be stored. 
+        :return: C{0} on success.   
         '''
         '''
            dev_t     st_dev;     /* ID of device containing file */
@@ -1956,20 +1957,20 @@ class SLinux(Linux):
     def sys_mmap2(self, cpu, address, size, prot, flags, fd, offset):
         ''' 
         Creates a new mapping in the virtual address space of the calling process.
-        @rtype: int
-        @param cpu: current CPU.
-        @param address: the starting address for the new mapping. This address is used as hint unless the
+        :rtype: int
+        :param cpu: current CPU.
+        :param address: the starting address for the new mapping. This address is used as hint unless the
                         flag contains C{MAP_FIXED}.
-        @param size: the length of the mapping.
-        @param prot: the desired memory protection of the mapping.
-        @param flags: determines whether updates to the mapping are visible to other 
+        :param size: the length of the mapping.
+        :param prot: the desired memory protection of the mapping.
+        :param flags: determines whether updates to the mapping are visible to other 
                       processes mapping the same region, and whether updates are carried 
                       through to the underlying file. 
-        @param fd: the contents of a file mapping are initialized using C{size} bytes starting at 
+        :param fd: the contents of a file mapping are initialized using C{size} bytes starting at 
                    offset C{offset} in the file referred to by the file descriptor C{fd}.
-        @param offset: the contents of a file mapping are initialized using C{size} bytes starting at 
+        :param offset: the contents of a file mapping are initialized using C{size} bytes starting at 
                        offset C{offset}*0x1000 in the file referred to by the file descriptor C{fd}.
-        @return: 
+        :return: 
             - C{-1} In case you use C{MAP_FIXED} in the flags and the mapping can not be place at the desired address.
             - the address of the new mapping.
         '''
@@ -1978,24 +1979,24 @@ class SLinux(Linux):
     def sys_mmap(self, cpu, address, size, prot, flags, fd, offset):
         ''' 
         Creates a new mapping in the virtual address space of the calling process. 
-        @rtype: int
+        :rtype: int
         
-        @param cpu: current CPU.
-        @param address: the starting address for the new mapping. This address is used as hint unless the
+        :param cpu: current CPU.
+        :param address: the starting address for the new mapping. This address is used as hint unless the
                         flag contains C{MAP_FIXED}.
-        @param size: the length of the mapping.
-        @param prot: the desired memory protection of the mapping.
-        @param flags: determines whether updates to the mapping are visible to other 
+        :param size: the length of the mapping.
+        :param prot: the desired memory protection of the mapping.
+        :param flags: determines whether updates to the mapping are visible to other 
                       processes mapping the same region, and whether updates are carried 
                       through to the underlying file. 
-        @param fd: the contents of a file mapping are initialized using C{size} bytes starting at 
+        :param fd: the contents of a file mapping are initialized using C{size} bytes starting at 
                    offset C{offset} in the file referred to by the file descriptor C{fd}.
-        @param offset: the contents of a file mapping are initialized using C{size} bytes starting at 
+        :param offset: the contents of a file mapping are initialized using C{size} bytes starting at 
                        offset C{offset} in the file referred to by the file descriptor C{fd}.
-        @return: 
+        :return: 
                 - C{-1} in case you use C{MAP_FIXED} in the flags and the mapping can not be place at the desired address.
                 - the address of the new mapping (that must be the same as address in case you included C{MAP_FIXED} in flags).
-        @todo: handle exception.
+        :todo: handle exception.
         '''
 
         if address == 0:

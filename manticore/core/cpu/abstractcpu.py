@@ -19,7 +19,10 @@ SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 class Operand(object):
 
     class MemSpec(object):
-        ''' Auxiliary class wraps capstone operand 'mem' attribute. This will return register names instead of Ids ''' 
+        '''
+        Auxiliary class wraps capstone operand 'mem' attribute. This will
+        return register names instead of Ids
+        ''' 
         def __init__(self, parent):
             self.parent = parent
         segment = property( lambda self: self.parent._reg_name(self.parent.op.mem.segment) )
@@ -30,13 +33,16 @@ class Operand(object):
 
     def __init__(self, cpu, op, **kwargs):
         '''
-        This encapsulates the arch way to access instruction operands and immediates based on a 
-        capstone operand descriptor.
-        This class knows how to browse a capstone operand and get the details of operand.
-        It also knows how to access the specific Cpu to get the actual values from memory and registers.
+        This encapsulates the arch-independent way to access instruction
+        operands and immediates based on a capstone operand descriptor. This
+        class knows how to browse a capstone operand and get the details of
+        operand.
 
-        @param cpu:  A Cpu oinstance
-        @param op: a Capstone operand (eew)
+        It also knows how to access the specific Cpu to get the actual values
+        from memory and registers.
+
+        :param cpu: A Cpu instance
+        :param op: A Capstone operand 
         '''
         assert isinstance(cpu, Cpu)
         assert isinstance(op, (X86Op, ArmOp))
@@ -45,7 +51,11 @@ class Operand(object):
         self.mem = Operand.MemSpec(self)
 
     def _reg_name(self, reg_id):
-        ''' Translates a capstone register ID into the register name '''
+        '''
+        Translates a capstone register ID into the register name
+
+        :param reg_id: Register ID
+        '''
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
         if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
             return None
@@ -71,33 +81,41 @@ class Operand(object):
         ''' It writes the value ofspecific type to the registers or memory '''
         raise NotImplementedError
 
-# Basic register file structure not actully need to abstract as it's used only from the cpu implementation
+# Basic register file structure not actully need to abstract as it's used only'
+# from the cpu implementation
 class RegisterFile(object):
 
     def __init__(self, aliases=None):
         if aliases is None:
             aliases = {}
+        # dict mapping from alias register name ('PC') to actual register
+        # name ('RIP')
         self._aliases = aliases
-        ''''dict mapping from alias register name ('PC') to actual register name ('RIP') '''
 
     def _alias(self, register):
-        '''Get register canonical alias. ex. PC->RIP or PC->R15 '''
+        '''
+        Get register canonical alias. ex. PC->RIP or PC->R15
+        
+        :param str register: The register name
+        '''
         return self._aliases.get(register, register) 
 
-    #@abstractmethod
     def write(self, register, value):
-        ''' Write value to the specified register 
-            @param register: a register id. Must be listed on all_registers
-            @param value: a value of the expected type
-            @return the value actually written to the register
+        '''
+        Write value to the specified register 
+
+        :param register: a register id. Must be listed on all_registers
+        :param value: a value of the expected type
+        :return the value actually written to the register
         '''
         pass
 
-    #@abstractmethod
     def read(self, register):
-        ''' Read value from specified register 
-            @param register: a register name. Must be listed on all_registers
-            @return the register value
+        '''
+        Read value from specified register 
+
+        :param register: a register name. Must be listed on all_registers
+        :return the register value
         '''
         pass
 
@@ -113,15 +131,17 @@ class RegisterFile(object):
         
     def __contains__(self, register):
         ''' Check for register validity 
-            @param register: a register name
+            :param register: a register name
         '''
         return self._alias(register) in self.all_registers 
+
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
 class Cpu(object):
     '''
     Base class for all Cpu architectures. Functionality common to all
-    architectures (and expected from users of a Cpu) should be here.
+    architectures (and expected from users of a Cpu) should be here. Commonly
+    used by models and py:class:manticore.core.Executor
 
     The following attributes need to be defined in any derived class
 
@@ -171,24 +191,29 @@ class Cpu(object):
 
     @property
     def all_registers(self):
-        '''Returns all register names for this CPU. Any register returned can be accessed
-        via a `cpu.REG` convenience interface (e.g. `cpu.EAX`) for both reading and
-        writing.
+        '''
+        Returns all register names for this CPU. Any register returned can be
+        accessed via a `cpu.REG` convenience interface (e.g. `cpu.EAX`) for both
+        reading and writing.
 
-        :return: valid register names
+        :return valid register names
         :rtype: tuple[str]
         '''
         return self._regfile.all_registers
+
     @property
     def canonical_registers(self):
-        ''' Returns the list of all register names  for this CPU.
-        @rtype: tuple
-        @return: the list of register names for this CPU.
+        '''
+        Returns the list of all register names  for this CPU.
+
+        :rtype: tuple
+        :return: the list of register names for this CPU.
         '''
         return self._regfile.canonical_registers
 
     def write_register(self, register, value):
-        '''Dynamic interface for writing cpu registers
+        '''
+        Dynamic interface for writing cpu registers
 
         :param str register: register name (as listed in `self.all_registers`)
         :param value: register value
@@ -196,7 +221,8 @@ class Cpu(object):
         return self._regfile.write(register, value)
 
     def read_register(self, register):
-        '''Dynamic interface for reading cpu registers
+        '''
+        Dynamic interface for reading cpu registers
 
         :param str register: register name (as listed in `self.all_registers`)
         :return: register value
@@ -285,12 +311,17 @@ class Cpu(object):
     # Decoder
     @abstractmethod
     def _wrap_operands(self, operands):
-        ''' Private method to decorate a capston Operand to our needs. See Operand class'''
+        '''
+        Private method to decorate a capston Operand to our needs. See Operand
+        class
+        '''
         pass
 
     def decode_instruction(self, pc):
-        ''' This will decode an intructcion from memory pointed by @pc
-            @param pc address of the instruction
+        '''
+        This will decode an intructcion from memory pointed by @pc
+
+        :param pc: address of the instruction
         '''
         #No dynamic code!!! #TODO! 
         #Check if instruction was already decoded 
@@ -337,8 +368,10 @@ class Cpu(object):
     # Execute
     @abstractmethod
     def canonicalize_instruction_name(self, instruction):
-        ''' Get the semantic name of an instruction. 
-        The subyacent arch implementations'''
+        '''
+        Get the semantic name of an instruction. 
+        The subyacent arch implementations
+        '''
         pass
 
     def execute(self):
@@ -380,7 +413,7 @@ class Cpu(object):
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
 
-        @param instruction The instruction object to emulate
+        :param instruction: The instruction object to emulate
         '''
         emu = UnicornEmulator(self)
         emu.emulate(instruction)
@@ -391,8 +424,8 @@ class Cpu(object):
         '''
         Returns a string representation of cpu state
         
-        @rtype: str
-        @return: a string containing the name and current value for all the registers. 
+        :rtype: str
+        :return: name and current value for all the registers. 
         '''
         result = ""
         try:
@@ -418,7 +451,7 @@ class Cpu(object):
 
 
 class DecodeException(Exception):
-    ''' You tried to decode an unknown or invalid intruction '''
+    ''' Raised when trying to decode an unknown or invalid intruction '''
     def __init__(self, pc, bytes, extra):
         super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
         self.pc=pc
@@ -426,16 +459,17 @@ class DecodeException(Exception):
         self.extra=extra
 
 class InvalidPCException(Exception):
-    ''' Exception raised when you try to execute invalid or not executable memory
+    '''
+    Exception raised when you try to execute invalid or not executable memory
     '''
     def __init__(self, pc):
         super(InvalidPCException, self).__init__("Trying to execute invalid memory @%08x"%pc)
         self.pc=pc
 
 class InstructionNotImplementedError(Exception):
-    ''' Exception raised when you try to execute an instruction that is
-        not yet implemented in the emulator.
-        Go to cpu.py and add it!
+    '''
+    Exception raised when you try to execute an instruction that is not yet
+    implemented in the emulator. Add it to the Cpu-specific implementation.
     '''
     pass
 
@@ -448,7 +482,7 @@ class CpuInterrupt(Exception):
     pass
 
 class Interruption(CpuInterrupt):
-    ''' '''
+    ''' A software interrupt. '''
     def __init__(self, N):
         super(Interruption,self).__init__("CPU Software Interruption %08x", N)
         self.N = N
