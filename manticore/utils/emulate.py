@@ -105,8 +105,6 @@ class UnicornEmulator(object):
 
             self._should_try_again = True
             return False
-        else:
-            pass
 
         return True
 
