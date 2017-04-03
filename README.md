@@ -52,7 +52,7 @@ This installs the Manticore CLI tool `manticore` and the Python API.
 
 Then, install the Z3 Theorem Prover. Download the [latest release](https://github.com/Z3Prover/z3/releases/latest) for your platform and place the `z3` binary in your `$PATH`.
 
-> Note: The `--no-binary` flag is a workaround for a known Capstone [issue](https://github.com/aquynh/capstone/issues/445).
+> Note: The `--no-binary` flag is a workaround for a known Capstone [issue](https://github.com/aquynh/capstone/issues/445) that may occur.
 
 ### For developers
 
