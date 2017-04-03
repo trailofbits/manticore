@@ -592,7 +592,10 @@ class Memory(object):
 
         @todo: symbolic address
         '''
-        return self._page2map[self._page(address)]
+        page_offset = self._page(address)
+        if page_offset not in self._page2map:
+            raise MemoryException("Page not mapped", address)
+        return self._page2map[page_offset]
 
 
     def mappings(self):

@@ -118,8 +118,8 @@ class UnicornEmulator(object):
 
         try:
             m = self._create_emulated_mapping(uc, address, size)
-        except:
-            self._to_raise = MemoryException("Not mapped", address)
+        except MemoryException as e:
+            self._to_raise = e
             self._should_try_again = False
             return False
 
