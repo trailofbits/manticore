@@ -25,6 +25,9 @@ Manticore is officially supported on Linux and uses Python 2.7.
 
 ## Installation
 
+These install instructions require pip 7.1.0, due to `--no-binary`. If you have an older
+pip version, you might be able to use `--no-use-wheel` instead.
+
 We recommend the use of Manticore in a virtual environment, though this is optional.
 To manage this, we recommend installing [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/).
 Then, to set up a virtual environment, in the root of the Manticore repository, run
@@ -36,30 +39,27 @@ mkvirtualenv manticore
 Then, from the root of the Manticore repository, run:
 
 ```
-pip install .
+pip install --no-binary capstone .
 ````
 
-or, if you would like to do a user install:
+or, if you didn't use a virtualenv and would like to do a user install:
 
 ```
-pip install --user .
+pip install --user --no-binary capstone .
 ```
 
 This installs the Manticore CLI tool `manticore` and the Python API.
 
 Then, install the Z3 Theorem Prover. Download the [latest release](https://github.com/Z3Prover/z3/releases/latest) for your platform and place the `z3` binary in your `$PATH`.
 
-> Note: Due to a known [issue](https://github.com/aquynh/capstone/issues/445),
-  Capstone may not install correctly. If you get this error message,
-  "ImportError: ERROR: fail to load the dynamic library.", or another related
-  to Capstone, try reinstalling via `pip install -I --no-binary capstone capstone`
+> Note: The `--no-binary` flag is a workaround for a known Capstone [issue](https://github.com/aquynh/capstone/issues/445).
 
 ### For developers
 
 For a dev install, run:
 
 ```
-pip install -e .[dev]
+pip install -e --no-binary capstone --no-binary keystone-engine .[dev]
 ```
 
 This installs a few other dependencies used for tests which you can run with some of the commands below:
@@ -78,13 +78,11 @@ nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 
 ## Quick start
 
-Install and try Manticore in about ten shell commands:
+Install and try Manticore in a few shell commands:
 
 ```
-# install z3 before beginning, see our README.md
-git clone git@github.com:trailofbits/manticore.git
-cd manticore
-pip install --user --no-binary capstone . # do this in a virtualenv if you want, but omit --user
+# following install instructions in README.md before beginning
+cd /path/to/manticore/
 cd examples/linux
 make
 manticore basic
