@@ -273,8 +273,8 @@ class SymCPUTest(unittest.TestCase):
         self.cpu.CF = 1
         self.cpu.AF = 1
 
-        a = BitVecConstant(32, 1).Bool()
-        b = BitVecConstant(32, 0).Bool()
+        a = BitVecConstant(32, 1) != 0
+        b = BitVecConstant(32, 0) != 0
         self.cpu.ZF = a
         self.cpu.SF = b
 

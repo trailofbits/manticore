@@ -176,16 +176,18 @@ class State(object):
     def concretize(self, symbolic, policy, maxcount=100):
         vals = []
         if policy == 'MINMAX':
-            vals = solver.minmax(self.constraints, symbolic)
+            vals = self._solver.minmax(self.constraints, symbolic)
         elif policy == 'SAMPLED':
-            m, M = solver.minmax(self.constraints, symbolic)
+            m, M = self._solver.minmax(self.constraints, symbolic)
             vals += [m, M]
             if M - m > 3:
-                if solver.can_be_true(self.constraints, symbolic == (m + M) / 2):
+                if self._solver.can_be_true(self.constraints, symbolic == (m + M) / 2):
                     vals.append((m + M) / 2)
             if M - m > 100:
-                vals += solver.get_all_values(self.constraints, symbolic, maxcnt=maxcount,
-                                              silent=True)
+                vals += self._solver.get_all_values(self.constraints, symbolic,
+                                                    maxcnt=maxcount, silent=True)
+        elif policy == 'ONE':
+            vals = [self._solver.get_value(self.constraints, symbolic)]
         else:
             assert policy == 'ALL'
             vals = solver.get_all_values(self.constraints, symbolic, maxcnt=maxcount,

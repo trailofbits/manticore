@@ -583,7 +583,7 @@ class Memory(object):
         #remove m from the maps set
         self._maps.remove(m)
 
-    def _get(self, address):
+    def map_containing(self, address):
         '''
         Returns the L{MMap} object containing the address.
         @rtype: L{MMap}
@@ -592,7 +592,10 @@ class Memory(object):
 
         @todo: symbolic address
         '''
-        return self._page2map[self._page(address)]
+        page_offset = self._page(address)
+        if page_offset not in self._page2map:
+            raise MemoryException("Page not mapped", address)
+        return self._page2map[page_offset]
 
 
     def mappings(self):
@@ -699,7 +702,7 @@ class Memory(object):
             # get the more restrictive set of perms for the range
             raise NotImplementedError('No perms for slices')
         else:
-            return self._get(index).perms
+            return self.map_containing(index).perms
 
     def access_ok(self, index, access):
         if isinstance(index, slice):
@@ -709,7 +712,7 @@ class Memory(object):
             while addr < index.stop:
                 if addr not in self:
                     return False
-                m = self._get(addr)
+                m = self.map_containing(addr)
                 size = min(m.end-addr, index.stop-addr)
 
                 if not m.access_ok(access):
@@ -720,7 +723,7 @@ class Memory(object):
         else:
             if index not in self:
                 return False
-            m = self._get(index)
+            m = self.map_containing(index)
             return m.access_ok(access)
 
     #write and read potentially symbolic bytes at symbolic indexes
@@ -734,7 +737,7 @@ class Memory(object):
         stop = addr+size
         p = addr
         while p < stop:
-            m = self._get(p)
+            m = self.map_containing(p)
 
             _size = min(m.end-p, stop-p)
             result += m[p:p+_size]
@@ -754,7 +757,7 @@ class Memory(object):
         stop = addr + size
         start = addr
         while addr < stop:
-            m = self._get(addr)
+            m = self.map_containing(addr)
             size = min(m.end-addr, stop-addr)
             m[addr:addr+size] = buf[addr-start:addr-start+size]
             addr+=size
@@ -886,7 +889,7 @@ class SMemory(Memory):
                 #Given ALL solutions for the symbolic address
                 for base in solutions:
                     addr_value = base + offset
-                    byte = Operators.ORD(self._get(addr_value)[addr_value])
+                    byte = Operators.ORD(self.map_containing(addr_value)[addr_value])
                     if addr_value in self._symbols:
                         for condition, value in self._symbols[addr_value]:
                             byte = Operators.ITEBV(8, condition, Operators.ORD(value), byte)

@@ -277,26 +277,6 @@ class Armv7Cpu(Cpu):
         self._last_flags = state['_last_flags']
         self._force_next = state['_force_next']
 
-    def _concretize_registers(cpu, instruction):
-        reg_values = {}
-        if hasattr(instruction, 'regs_access'):
-            (regs_read, regs_write) = instruction.regs_access()
-            regs = [ instruction.reg_name(r).upper() for r in regs_read ] 
-            regs.append('R15')
-        else:
-            regs = self.canonical_registers
-
-        logger.debug("Emulator wants this regs %r", regs)
-        for reg in regs:
-            value = cpu.read_register(reg)
-            if issymbolic(value):
-                raise ConcretizeRegister(reg, "Passing control to emulator") #FIXME improve exception to handle multiple registers at a time 
-            reg_values[reg] = value 
-
-        logger.info("Emulator wants this regs %r", reg_values)
-        return reg_values
-
-
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
     #
@@ -853,5 +833,13 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def STCL(cpu, *operands):
+        pass
+
+    @instruction
+    def DMB(cpu, *operands):
+        '''
+        Used by the the __kuser_dmb ARM Linux user-space handler. This is a nop
+        under Manticore's memory and execution model.
+        '''
         pass
 
