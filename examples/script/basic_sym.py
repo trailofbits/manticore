@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-from core.smtlib.expression import *
-from capstone.arm import *
-from capstone.x86 import *
 from manticore import Manticore
 
 '''
@@ -31,10 +28,11 @@ if __name__ == '__main__':
         For ARM, Make R4 symbolic at 0x1082c, as r4 is used in a branch right
         after.
         '''
-        sym_var = BitVecVariable(32, 'from_callback', taint=())
+        sym_var = state.new_symbolic_value(32, label='from_callback')
         state.cpu.write_register(target[1], sym_var)
 
     # Start path exploration. start() returns when Manticore finishes
+    m.verbosity = 2
     m.run()
 
     # Print high level statistics
