@@ -6,24 +6,18 @@ from manticore import Manticore
 # This example demonstrates the basic high level config
 # interface
 
-def get_args():
-    class Args(object): pass
-    args = Args()
-    args.replay = None; args.data = ''; args.dumpafter = 0; args.maxstates = 0;
-    args.maxstorage = 0; args.stats = True; args.verbose = False; args.log = '-';
-    return args
 
 if __name__ == '__main__':
     path = sys.argv[1]
-    args = get_args()
+    bin_args = sys.argv[1:]
 
-    args.programs = sys.argv[1:]
     # Create a new Manticore object
-    m = Manticore(None, path, args)
+    m = Manticore(path, bin_args)
 
     # Set a few settings
     m.procs = 4
     m.solver = 'z3'
+    m.verbosity = 2
 
     # Start path exploration. start() returns when Manticore
     # finishes
