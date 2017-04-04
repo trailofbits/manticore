@@ -2,6 +2,10 @@
 import sys
 from manticore import Manticore
 
+'''
+Demonstrates guiding Manticore's state exploration. 
+'''
+
 if __name__ == '__main__':
     if len(sys.argv) < 3:
         sys.stderr.write("Usage: %s [binary] [address]\n"%(sys.argv[0],))

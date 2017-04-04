@@ -1,11 +1,10 @@
-'''
-API v0.1.0
-Solves modified version of baby-re, compiled for arm.
-'''
-
 import sys
 
 from manticore import Manticore
+
+'''
+Solves modified version of baby-re, compiled for arm.
+'''
 
 if __name__ == '__main__':
     path = sys.argv[1]
@@ -26,4 +25,3 @@ if __name__ == '__main__':
         m.terminate()
 
     m.run()
-    print 'done'
