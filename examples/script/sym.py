@@ -6,8 +6,10 @@ from capstone.arm import *
 from capstone.x86 import *
 from manticore import Manticore
 
-# This example demonstrates creating hooks on arbitrary values of the program
-# counter.
+'''
+Minimal example demonstrating setting execution hooks, the ability to target
+multiple target architectures, and symbolicating memory.
+'''
 
 if __name__ == '__main__':
 
@@ -16,7 +18,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Create a new Manticore object
-    m = Manticore(sys.argv[1], sys.argv[1:])
+    m = Manticore(sys.argv[1], sys.argv[2:])
 
     if m.arch == 'arm':
         target = (0x1082c, 'R4')
