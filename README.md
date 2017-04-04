@@ -125,13 +125,6 @@ m.run()
 
 Some example scripts using the Manticore API can be found in `examples/script`.
 
-- `run_callback.py` - Demonstrates the ability to set a basic hook on a specific program counter and the ability to read from memory.
-- `count_instructions.py` - Demonstrates the ability to set a hook on every instruction executed, and the use of a shared context to keep track of data from multiple worker processes.
-- `lads-baby-re.py` - Uses a hook and the symbolic execution engine to determine the required input to reach a program state.
-- `state_explore.py` - Demonstrates guiding Manticore's state exploration. (Uses `abandon()` to prevent further exploration on a program state)
-- `sym.py` - Minimal example demonstrating setting execution hooks, the ability to target multiple target architectures, and symbolicating memory.
-
-
 ## FAQ
 
 ### How does Manticore compare to angr?
