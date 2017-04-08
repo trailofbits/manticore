@@ -1,6 +1,7 @@
 # Manticore
 
 [![Build Status](https://travis-ci.com/trailofbits/manticore.svg?token=m4YsYkGcyttTxRXGVHMr&branch=master)](https://travis-ci.com/trailofbits/manticore)
+[![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 
 Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
@@ -11,10 +12,7 @@ Manticore is a prototyping tool for dynamic binary analysis, with support for sy
 - **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
 - **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
 
-## Scope
-
-Manticore supports binaries of the following formats, operating systems, and
-architectures. It has been primarily used on binaries compiled from C and C++.
+Manticore supports binaries of the following formats, operating systems, and architectures. It has been primarily used on binaries compiled from C and C++.
 
 - OS/Formats: Linux ELF, Windows Minidump
 - Architectures: x86, x86_64, ARMv7 (partial)
@@ -25,22 +23,14 @@ Manticore is officially supported on Linux and uses Python 2.7.
 
 ## Installation
 
-These install instructions require pip 7.1.0, due to `--no-binary`. If you have an older
-pip version, you might be able to use `--no-use-wheel` instead.
+These install instructions require pip 7.1.0, due to `--no-binary`. If you have an older pip version, you might be able to use `--no-use-wheel` instead.
 
-We recommend the use of Manticore in a virtual environment, though this is optional.
-To manage this, we recommend installing [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/).
-Then, to set up a virtual environment, in the root of the Manticore repository, run
+We recommend using Manticore in a virtual environment with [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/). Run the following commands in the root of the Manticore repository to setup a virtual environment (note: The `--no-binary` flag is a workaround for a known Capstone [issue](https://github.com/aquynh/capstone/issues/445)).
 
 ```
 mkvirtualenv manticore
-```
-
-Then, from the root of the Manticore repository, run:
-
-```
 pip install --no-binary capstone .
-````
+```
 
 or, if you didn't use a virtualenv and would like to do a user install:
 
@@ -52,17 +42,15 @@ This installs the Manticore CLI tool `manticore` and the Python API.
 
 Then, install the Z3 Theorem Prover. Download the [latest release](https://github.com/Z3Prover/z3/releases/latest) for your platform and place the `z3` binary in your `$PATH`.
 
-> Note: The `--no-binary` flag is a workaround for a known Capstone [issue](https://github.com/aquynh/capstone/issues/445) that may occur.
-
 ### For developers
 
-For a dev install, run:
+For a dev install that includes dependencies for tests, run:
 
 ```
 pip install -e --no-binary capstone --no-binary keystone-engine .[dev]
 ```
 
-This installs a few other dependencies used for tests which you can run with some of the commands below:
+You can run the tests with the commands below:
 
 ```
 cd /path/to/manticore/
