@@ -35,7 +35,6 @@ class Operand(object):
         '''
         This encapsulates the arch-independent way to access instruction
         operands and immediates based on a capstone operand descriptor. This
-        :param taint
         class knows how to browse a capstone operand and get the details of
         operand.
 
@@ -43,7 +42,8 @@ class Operand(object):
         from memory and registers.
 
         :param Cpu cpu: A Cpu instance
-        :param op: A Capstone operand 
+        :param op: A Capstone operand
+        :type op: X86Op or ArmOp
         '''
         assert isinstance(cpu, Cpu)
         assert isinstance(op, (X86Op, ArmOp))
@@ -55,7 +55,7 @@ class Operand(object):
         '''
         Translates a capstone register ID into the register name
 
-        :param reg_id: Register ID
+        :param int reg_id: Register ID
         '''
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
         if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
@@ -79,7 +79,7 @@ class Operand(object):
         raise NotImplementedError
 
     def write(self, value):
-        ''' It writes the value ofspecific type to the registers or memory '''
+        ''' It writes the value of specific type to the registers or memory '''
         raise NotImplementedError
 
 # Basic register file structure not actully need to abstract as it's used only'
@@ -105,8 +105,9 @@ class RegisterFile(object):
         '''
         Write value to the specified register 
 
-        :param register: a register id. Must be listed on all_registers
+        :param str register: a register id. Must be listed on all_registers
         :param value: a value of the expected type
+        :type value: int or long or Expression
         :return the value actually written to the register
         '''
         pass
@@ -115,7 +116,7 @@ class RegisterFile(object):
         '''
         Read value from specified register 
 
-        :param register: a register name. Must be listed on all_registers
+        :param str register: a register name. Must be listed on all_registers
         :return the register value
         '''
         pass
@@ -220,6 +221,7 @@ class Cpu(object):
 
         :param str register: register name (as listed in `self.all_registers`)
         :param value: register value
+        :type value: int or long or Expression
         '''
         return self._regfile.write(register, value)
 
@@ -229,19 +231,30 @@ class Cpu(object):
 
         :param str register: register name (as listed in `self.all_registers`)
         :return: register value
+        :rtype int or long or Expression
         '''
         return self._regfile.read(register)
 
     # Pythonic acces to registers and aliases
     def __getattr__(self, name):
-        ''' A pythonic version of read_register '''
+        '''
+        A Pythonic version of read_register
+
+        :param str name: Name of the register
+        '''
         assert name != '_regfile'
         if hasattr(self, '_regfile') and name in self._regfile:
             return self.read_register(name)
         raise AttributeError(name)
 
     def __setattr__(self, name, value):
-        ''' A pythonic version of write_register '''
+        '''
+        A Pythonic version of write_register
+
+        :param str name: Name of the register to set
+        :param value: The value to set the register to
+        :type param: int or long or Expression
+        '''
         if hasattr(self, '_regfile') and name in self._regfile:
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
@@ -291,14 +304,14 @@ class Cpu(object):
 
         :param int where: address to write to
         :param data: data to write
-        :type data: str
+        :type data: str or list
         '''
         for i in xrange(len(data)):
             self.write_int( where+i, Operators.ORD(data[i]), 8)
 
     def read_bytes(self, where, size):
         '''
-        Reads from memory
+        Read from memory.
 
         :param int where: address to read data from
         :param int size: number of bytes
@@ -315,7 +328,7 @@ class Cpu(object):
     @abstractmethod
     def _wrap_operands(self, operands):
         '''
-        Private method to decorate a capston Operand to our needs. See Operand
+        Private method to decorate a capstone Operand to our needs. See Operand
         class
         '''
         pass
@@ -324,7 +337,7 @@ class Cpu(object):
         '''
         This will decode an intructcion from memory pointed by @pc
 
-        :param pc: address of the instruction
+        :param int pc: address of the instruction
         '''
         #No dynamic code!!! #TODO! 
         #Check if instruction was already decoded 
@@ -373,7 +386,6 @@ class Cpu(object):
     def canonicalize_instruction_name(self, instruction):
         '''
         Get the semantic name of an instruction. 
-        The subyacent arch implementations
         '''
         pass
 
@@ -416,10 +428,13 @@ class Cpu(object):
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
 
-        :param instruction: The instruction object to emulate
+        :param capstone.CsInsn instruction: The instruction object to emulate
         '''
         emu = UnicornEmulator(self)
         emu.emulate(instruction)
+        # We have been seeing occasional Unicorn issues with it not clearing
+        # the backing unicorn instance. Saw fewer issues with the following
+        # line present.
         del emu
 
     #Generic string representation
