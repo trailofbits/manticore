@@ -108,7 +108,7 @@ class RegisterFile(object):
         :param str register: a register id. Must be listed on all_registers
         :param value: a value of the expected type
         :type value: int or long or Expression
-        :return the value actually written to the register
+        :return: the value actually written to the register
         '''
         pass
 
@@ -117,7 +117,7 @@ class RegisterFile(object):
         Read value from specified register 
 
         :param str register: a register name. Must be listed on all_registers
-        :return the register value
+        :return: the register value
         '''
         pass
 
@@ -200,7 +200,7 @@ class Cpu(object):
         accessed via a `cpu.REG` convenience interface (e.g. `cpu.EAX`) for both
         reading and writing.
 
-        :return valid register names
+        :return: valid register names
         :rtype: tuple[str]
         '''
         return self._regfile.all_registers
