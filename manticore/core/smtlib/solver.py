@@ -26,6 +26,10 @@ from visitors import *
 from ...utils.helpers import issymbolic
 logger = logging.getLogger("SMT")
 
+
+class Z3NotFoundError(EnvironmentError):
+    pass
+
 class SolverException(Exception):
     pass
 
@@ -145,7 +149,10 @@ class SMTSolver(Solver):
             forked in memory or even sent over the network.
         '''
         super(SMTSolver, self).__init__()
-        version_cmd_output = check_output(self.version_cmd.split())
+        try:
+            version_cmd_output = check_output(self.version_cmd.split())
+        except OSError:
+            raise Z3NotFoundError
         self._check_solver_version(version_cmd_output)
         self._proc = None
         self._constraints = None
@@ -160,7 +167,10 @@ class SMTSolver(Solver):
     def _start_proc(self):
         ''' Auxiliary method to spawn the external solver pocess'''
         assert '_proc' not in dir(self) or self._proc is None
-        self._proc = Popen(self.command.split(' '), stdin=PIPE, stdout=PIPE )
+        try:
+            self._proc = Popen(self.command.split(' '), stdin=PIPE, stdout=PIPE )
+        except OSError:
+            raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
 
         #run solver specific initializations
         for cfg in self.init:
