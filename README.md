@@ -47,7 +47,7 @@ Then, install the Z3 Theorem Prover. Download the [latest release](https://githu
 For a dev install that includes dependencies for tests, run:
 
 ```
-pip install -e --no-binary capstone --no-binary keystone-engine .[dev]
+pip install --no-binary capstone --no-binary keystone-engine -e .[dev]
 ```
 
 You can run the tests with the commands below:
