@@ -15,8 +15,9 @@ class MemoryException(Exception):
     def __init__(self, cause, address):
         '''
         Builds a memory exception.
-        @param cause: exception message.
-        @param address: memory address where the exception occurred.
+
+        :param cause: exception message.
+        :param address: memory address where the exception occurred.
         '''
         super(MemoryException, self, ).__init__('{} <{}>'.format(cause, address))
         self.cause = cause
@@ -50,10 +51,12 @@ class Map(object):
     '''
     __metaclass__ = ABCMeta
     def __init__(self, start, size, perms, name=None):
-        ''' Abstract memory map.
-            @param start: the first valid address.
-            @param size: the size of the map.
-            @param perms: the access permissions of the map (rwx).
+        '''
+        Abstract memory map.
+
+        :param start: the first valid address.
+        :param size: the size of the map.
+        :param perms: the access permissions of the map (rwx).
         '''
         assert isinstance(start, (int, long)) and start >= 0, 'Invalid start address'
         assert isinstance(size, (int, long)) and size > 0, 'Invalid end address'
@@ -65,14 +68,14 @@ class Map(object):
         self._name = name
 
     def _get_perms(self):
-        ''' Gets the access permissions of the map.
-        '''
+        ''' Gets the access permissions of the map. '''
         return self._perms
 
     def _set_perms(self, perms):
-        ''' Sets the access permissions of the map.
-		    
-            @param perms: the new permissions.
+        '''
+        Sets the access permissions of the map.
+
+        :param perms: the new permissions.
         '''
         assert isinstance(perms, str) and len(perms) <= 3 and perms.strip() in ['', 'r', 'w', 'x', 'rw', 'r x', 'rx', 'rwx', 'wx', ]
         self._perms = perms
@@ -100,13 +103,14 @@ class Map(object):
         return self._name
 
     def __len__(self):
-        '''Returns the current size in bytes.
-        '''
+        '''Returns the current size in bytes. '''
         return self._end - self._start
 
     def __repr__(self):
-        '''Returns the string representation of the map mapping.
-        @rtype: str
+        '''
+        Returns the string representation of the map mapping.
+
+        :rtype: str
         '''
         return '<%s 0x%016x-0x%016x %s>'%(self.__class__.__name__, self.start, self.end, self.perms)
 
@@ -122,11 +126,13 @@ class Map(object):
         return in_range
 
     def _get_offset(self, index):
-        ''' Translates the index to the internal offsets.
-            self.start   -> 0
-            self.start+1 -> 1
-            ...
-            self.end     -> len(self)
+        '''
+        Translates the index to the internal offsets.
+
+        self.start   -> 0
+        self.start+1 -> 1
+        ...
+        self.end     -> len(self)
         '''
         if not self._in_range(index):
             raise IndexError('Map index out of range')
@@ -140,10 +146,10 @@ class Map(object):
     def __getitem__(self, index):
         '''
         Reads a byte from an address or a sequence of bytes from a range of addresses
-        @rtype: byte or array
-        
-        @param index: the address or slice where to obtain the bytes from.
-        @return: the character or sequence at the specified address.
+
+        :param index: the address or slice where to obtain the bytes from.
+        :return: the character or sequence at the specified address.
+        :rtype: byte or array
         '''
         pass
 
@@ -151,25 +157,33 @@ class Map(object):
     def __setitem__(self, index, value):
         '''
         Writes a byte to an address or a sequence of bytes to a range of addresses
-        @param index: the address or slice where to put the data.
-        @param value: byte or sequence of bytes to put in this map.
+
+        :param index: the address or slice where to put the data.
+        :param value: byte or sequence of bytes to put in this map.
         '''
         pass
 
 
     @abstractmethod
     def split(self, address):
+        '''
+        Split the current map into two mappings
+
+        :param address: The address at which to split the Map.
+        '''
         pass
 
 
 class AnonMap(Map):
     ''' A concrete anonymous memory map '''
     def __init__(self, start, size, perms, data_init=None, **kwargs):
-        ''' Builds a concrete anonymous memory map.
-            @param start: the first valid address of the map.
-            @param size: the size of the map.
-            @param perms: the access permissions of the map.
-            @param data_init: the data to initialize the map.
+        '''
+        Builds a concrete anonymous memory map.
+
+        :param start: the first valid address of the map.
+        :param size: the size of the map.
+        :param perms: the access permissions of the map.
+        :param data_init: the data to initialize the map.
         '''
         super(AnonMap, self).__init__(start, size, perms, **kwargs)
         self._data = bytearray(size)
@@ -208,19 +222,23 @@ class FileMap(Map):
     '''
     A file map.
     
-    A  file is mapped in multiples of the page size.  For a file that is not a multiple of the page size, 
-    the remaining memory is zeroed when mapped, and writes to that region are not written out to the file.
-    The  effect  of  changing the size of the underlying file of a mapping on the pages that correspond to
-    added or removed regions of the file is unspecified.
+    A  file is mapped in multiples of the page size.  For a file that is not a
+    multiple of the page size, the remaining memory is zeroed when mapped, and
+    writes to that region are not written out to the file. The effect of
+    changing the size of the underlying file of a mapping on the pages that
+    correspond to added or removed regions of the file is unspecified.
     '''
 
     def __init__(self, addr, size, perms, filename, offset=0, overlay=None, **kwargs):
-        ''' Builds a map of memory  initialized with the content of filename.
-            @param addr: the first valid address of the file map.
-            @param size: the size of the file map.
-            @param perms: the access permissions of the file map.
-            @param filename: the file to map in memory.
-            @param offset: the offset into the file where to start the mapping. This offset must be a multiple of pagebitsize.
+        '''
+        Builds a map of memory  initialized with the content of filename.
+
+        :param addr: the first valid address of the file map.
+        :param size: the size of the file map.
+        :param perms: the access permissions of the file map.
+        :param filename: the file to map in memory.
+        :param offset: the offset into the file where to start the mapping. \
+                This offset must be a multiple of pagebitsize.
         '''
         super(FileMap, self).__init__(addr, size, perms, **kwargs)
         assert isinstance(offset, (int, long))
@@ -288,15 +306,17 @@ class FileMap(Map):
 
 class COWMap(Map):
     '''
-    Copy on write based map.
+    Copy-on-write based map.
     '''
     def __init__(self, parent, offset=0, perms=None, size=None, **kwargs):
-        ''' A copy on write copy of parent. Writes to the parent after a copy on write are unspecified.
-            @param start the new map address
-            @size the new map size
-            @param parent: the parent map.
-            @param offset: an offset within the parent map from where to create the new map.
-            @param size: the size of the new map or max.
+        '''
+        A copy on write copy of parent. Writes to the parent after a copy on
+        write are unspecified.
+
+        :param parent: the parent map.
+        :param offset: an offset within the parent map from where to create the new map.
+        :param perms: Permissions on new mapping, or None if inheriting.
+        :param size: the size of the new map or max.
         '''
         assert isinstance(parent, Map)
         assert offset >= 0 and offset < len(parent)
@@ -406,45 +426,45 @@ class Memory(object):
     def _ceil(self, address):
         '''
         Returns the smallest page boundary value not less than the address.
-        @rtype: int
-        @param address: the address to calculate its ceil.
-        @return: the ceil of C{address}.
+        :rtype: int
+        :param address: the address to calculate its ceil.
+        :return: the ceil of C{address}.
         '''
         return ((address | self.page_mask) + 1 ) & self.memory_mask
 
     def _floor(self, address):
         '''
         Returns largest page boundary value not greater than the address.
-        @rtype: int
         
-        @param address: the address to calculate its floor.
-        @return: the floor of C{address}.
+        :param address: the address to calculate its floor.
+        :return: the floor of C{address}.
+        :rtype: int
         '''
         return address & ~self.page_mask
 
     def _page(self, address):
         '''
         Calculates the page number of an address.
-        @rtype: int
 
-        @param address: the address to calculate its page number.
-        @return: the page number address of C{address}.
+        :param address: the address to calculate its page number.
+        :return: the page number of address.
+        :rtype: int
         '''
         return address >> self.page_bit_size
 
     def _search(self, size, start=None, counter=0):
         '''
         Recursively searches the address space for enough free space to allocate C{size} bytes.
-        @rtype: int
         
-        @param size: the size in bytes to allocate.
-        @param start: an address from where to start the search.
-        @param counter: internal parameter to know if all the memory was already scanned.
-        @return: the address of an available space to map C{size} bytes.
-        @raise MemoryException: if there is no space available to allocate the desired memory.
+        :param size: the size in bytes to allocate.
+        :param start: an address from where to start the search.
+        :param counter: internal parameter to know if all the memory was already scanned.
+        :return: the address of an available space to map C{size} bytes.
+        :raises MemoryException: if there is no space available to allocate the desired memory.
+        :rtype: int
 
 
-        @todo: Document what happens when you try to allocate something that goes round the address 32/64 bit representation.
+        todo: Document what happens when you try to allocate something that goes round the address 32/64 bit representation.
         '''
         assert size & self.page_mask == 0
         if start is None:
@@ -454,7 +474,6 @@ class Memory(object):
             if start > self.memory_size - size:
                 start =  self.memory_size - size
             end = start+size
-
 
         consecutive_free = 0
         for p in xrange(self._page(end-1),-1,-1):
@@ -474,18 +493,17 @@ class Memory(object):
         '''
         Creates a new file mapping in the memory address space.
                 
-        @rtype: int
-        
-        @param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
+        :param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
                      chunk of memory will be selected as starting address.
-        @param size: the contents of a file mapping are initialized using C{size} bytes starting
+        :param size: the contents of a file mapping are initialized using C{size} bytes starting
                      at offset C{offset} in the file C{filename}.
-        @param perms: the access permissions to this memory.
-        @param filename: the pathname to the file to map.
-        @param offset: the contents of a file mapping are initialized using C{size} bytes starting
+        :param perms: the access permissions to this memory.
+        :param filename: the pathname to the file to map.
+        :param offset: the contents of a file mapping are initialized using C{size} bytes starting
                       at offset C{offset} in the file C{filename}.
-        @return: the starting address where the file was mapped.
-        @raise error:
+        :return: the starting address where the file was mapped.
+        :rtype: int
+        :raises error:
                    - 'Address shall be concrete' if C{addr} is not an integer number.
                    - 'Address too big' if C{addr} goes beyond the limit of the memory.
                    - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
@@ -522,19 +540,19 @@ class Memory(object):
         '''
         Creates a new mapping in the memory address space.
         
-        @rtype: int
-        
-        @param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
+        :param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
                      chunk of memory will be selected as starting address.
-        @param size: the length of the mapping.
-        @param perms: the access permissions to this memory.
-        @param data_init: optional data to initialize this memory.
-        @param name: optional name to give to this mapping
-        @return: the starting address where the memory was mapped.
-        @raise error:
+        :param size: the length of the mapping.
+        :param perms: the access permissions to this memory.
+        :param data_init: optional data to initialize this memory.
+        :param name: optional name to give to this mapping
+        :return: the starting address where the memory was mapped.
+        :raises error:
                    - 'Address shall be concrete' if C{addr} is not an integer number.
                    - 'Address too big' if C{addr} goes beyond the limit of the memory.
                    - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
+        :rtype: int
+        
         '''
         #If addr is NULL, the system determines where to allocate the region.
         assert addr is None or type(addr) in [int, long], 'Address shall be concrete'
@@ -586,9 +604,9 @@ class Memory(object):
     def map_containing(self, address):
         '''
         Returns the L{MMap} object containing the address.
-        @rtype: L{MMap}
 	
-        @param address: the address to obtain its mapping.
+        :param address: the address to obtain its mapping.
+        :rtype: L{MMap}
 
         @todo: symbolic address
         '''
@@ -602,9 +620,8 @@ class Memory(object):
         '''
         Returns a sorted list of all the mappings for this memory.
         
-        @rtype: list
-        
-        @return: a list of mappings.
+        :return: a list of mappings.
+        :rtype: list
         '''
         result = []
         for m in self.maps:
@@ -638,10 +655,12 @@ class Memory(object):
 
     def munmap(self, start, size):
         '''
-        Deletes the mappings for the specified address range and causes further references to addresses
-        within the range to generate invalid memory references.
-        @param start: the starting address to delete.
-        @param size: the length of the unmapping. 
+        Deletes the mappings for the specified address range and causes further
+        references to addresses within the range to generate invalid memory
+        references.
+
+        :param start: the starting address to delete.
+        :param size: the length of the unmapping. 
         '''
         start = self._floor(start)
         end = self._ceil(start+size-1)
@@ -688,6 +707,9 @@ class Memory(object):
         '''
         Set or remove a callback for a named event.
         Takes a callable that potentially receives parameter.
+
+        :param name: Callback name
+        :param callback: The Callable to register.
         '''
         if callback is None:
             self._callbacks.pop(name,None)
@@ -785,18 +807,19 @@ class Memory(object):
         return result
 
 
-
 class SMemory(Memory):
     '''
     The symbolic memory manager.
     This class handles all virtual memory mappings and symbolic chunks.
-    @todo: improve comments
+
+    :todo: improve comments
     '''
     def __init__(self, constraints, symbols=None, *args, **kwargs):
-        ''' Builds a map of memory.
-            @param constraints:  a set of constraints
-            @param addressbitsize: the size in bits of the address space (default=32).
-            @param pagebitsize: the size in bits of a page boundary memory (default=12).
+        '''
+        Builds a map of memory.
+
+        :param constraints:  a set of constraints
+        :param symbols: Symbolic chunks
         '''
         super(SMemory, self).__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
@@ -824,10 +847,12 @@ class SMemory(Memory):
 
     def munmap(self, start, size):
         '''
-        Deletes the mappings for the specified address range and causes further references to addresses
-        within the range to generate invalid memory references.
-        @param start: the starting address to delete.
-        @param size: the length of the unmapping.
+        Deletes the mappings for the specified address range and causes further
+        references to addresses within the range to generate invalid memory
+        references.
+
+        :param start: the starting address to delete.
+        :param size: the length of the unmapping.
         '''
         for addr in xrange(start,start+size):
             if addr in self._symbols:
@@ -835,10 +860,16 @@ class SMemory(Memory):
         super(SMemory, self).munmap(start,size)
 
     def read(self, address, size):
-        ''' Read a stream of potentially symbolic bytes from a potentially symbolic address '''
+        '''
+        Read a stream of potentially symbolic bytes from a potentially symbolic
+        address
+
+        :param address: Where to read from
+        :param size: How many bytes
+        :rtype: list
+        '''
         size = self._get_size(size)
         assert not issymbolic(size)
-
 
         if issymbolic(address):
             assert solver.check(self.constraints)
@@ -911,6 +942,13 @@ class SMemory(Memory):
             return map(Operators.CHR, result)
 
     def write(self, address, value):
+        '''
+        Write a value at address.
+        :param address: The address at which to write
+        :type address: int or long or Expression
+        :param value: Bytes to write
+        :type value: str or list
+        '''
         size = len(value)
         if issymbolic(address):
 

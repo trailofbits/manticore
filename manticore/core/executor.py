@@ -88,6 +88,11 @@ class ProfilingResults(object):
                 self.solver_time += func_time
 
 class Executor(object):
+    '''
+    The executor guides the execution of a single state, handles state forking 
+    and selection, maintains run statistics and handles all exceptional
+    conditions (system calls, memory faults, concretization, etc.)
+    '''
 
     def shutdown(self):
         with self._lock:
@@ -231,6 +236,11 @@ class Executor(object):
 
     @sync
     def putState(self, state):
+        '''
+        Serialize and store a given state.
+
+        :param state: The state to serialize
+        '''
         return self._putState(state)
 
     def _putState(self, state):
@@ -302,6 +312,14 @@ class Executor(object):
 
     @sync
     def getState(self, policy='random', order='max', fudge=1):
+        '''
+        Load a stored state according to policy and order.
+
+        :param policy: One of: 'random','adhoc','uncovered','dicount','icount','syscount','depth', or 'bucket'
+        :param order: 'max' or 'min'
+        :param fudge: Whether to skip any
+        :return: a State instance
+        '''
         return self._getState(policy, order, fudge)
 
     def _getState(self, policy='random', order='max', fudge=1):
@@ -397,6 +415,12 @@ class Executor(object):
         return new_state 
 
     def generate_testcase(self, state, message = 'Testcase generated'):
+        '''
+        Create a serialized description of a given state.
+
+        :param state: The state to generate information about
+        :param message: Accompanying message
+        '''
         with self._lock:
             self._test_number.value += 1
             test_number = self._test_number.value
@@ -582,6 +606,9 @@ class Executor(object):
             self._lock.notify_all()
 
     def run(self):
+        '''
+        Entry point of the Executor; called by workers to start analysis.
+        '''
         if self.profiling:
             self._profile.enable()
 

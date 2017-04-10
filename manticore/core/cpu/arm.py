@@ -157,7 +157,8 @@ class Armv7Operand(Operand):
 
 class Armv7RegisterFile(RegisterFile):
     def __init__(self):
-        '''ARM Register file abstraction. GPRs use ints for read/write. APSR
+        '''
+        ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         '''
         super(Armv7RegisterFile, self).__init__({  'SB':'R9', 
@@ -211,7 +212,7 @@ class Armv7RegisterFile(RegisterFile):
 
 
     def _write_APSR(self, apsr):
-        ''' Auxiliar function - Writes flags from a full APSR (only 4 msb used) ''' 
+        ''' Auxiliary function - Writes flags from a full APSR (only 4 msb used) '''
         V = Operators.EXTRACT(apsr, 28, 1)
         C = Operators.EXTRACT(apsr, 29, 1)
         Z = Operators.EXTRACT(apsr, 30, 1)
@@ -249,7 +250,10 @@ class Armv7RegisterFile(RegisterFile):
 
 
 class Armv7Cpu(Cpu):
-    '''Note: In this implementation, PC contains address of current
+    '''
+    Cpu specialization handling the ARMv7 architecture.
+
+    Note: In this implementation, PC contains address of current
     instruction + 4. However, official spec defines PC to be address of
     current instruction + 8 (section A2.3).
     '''

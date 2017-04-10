@@ -89,10 +89,10 @@ class Decree(object):
     def __init__(self, programs):
         '''
         Builds a Decree OS model
-        @param cpus: CPU for this model.
-        @param mem: memory for this model.
-        @todo: generalize for more CPUs.
-        @todo: fix deps?
+        :param cpus: CPU for this model.
+        :param mem: memory for this model.
+        :todo: generalize for more CPUs.
+        :todo: fix deps?
         '''
         programs = programs.split(",")
         self.clocks = 0
@@ -166,8 +166,8 @@ class Decree(object):
 
     def __setstate__(self, state):
         """
-        @todo: some asserts
-        @todo: fix deps? (last line)
+        :todo: some asserts
+        :todo: fix deps? (last line)
         """
         self.input = Socket()
         self.input.buffer = state['input']
@@ -201,7 +201,7 @@ class Decree(object):
     def _read_string(self, cpu, buf):
         """
         Reads a null terminated concrete buffer form memory
-        @todo: FIX. move to cpu or memory 
+        :todo: FIX. move to cpu or memory 
         """
         filename = ""
         for i in xrange(0,1024):
@@ -223,7 +223,8 @@ class Decree(object):
     def _load_grr(self, filename):
         ''' 
         Loads a GRR CGC snapshot in memory and restores the CPU state.
-         @param filename: pathname of the file to be executed.
+
+        :param filename: pathname of the file to be executed.
         '''
         grr = CGCGrr(filename) 
         logger.info("Loading %s grr snapshot", filename)
@@ -247,8 +248,9 @@ class Decree(object):
     def _load_cgc(self, filename):
         ''' 
         Loads a CGC-ELF program in memory and prepares the initial CPU state
-         and the stack.
-         @param filename: pathname of the file to be executed.
+        and the stack.
+        
+        :param filename: pathname of the file to be executed.
         '''
         CGC_MIN_PAGE_SIZE   = 4096
         CGC_MIN_ALIGN       = CGC_MIN_PAGE_SIZE
@@ -376,13 +378,6 @@ class Decree(object):
         return [cpu]
 
     def _open(self, f):
-        '''
-        It opens a file on the given a file descriptor
-        @rtype: int
-        @param filename: pathname of the file to open.
-        @param mode: file permissions mode.
-        @return: a file description of the opened file.
-        '''
         if None in self.files:
             fd = self.files.index(None)
             self.files[fd]=f
@@ -394,18 +389,18 @@ class Decree(object):
     def _close(self, fd):
         '''
         Closes a file descriptor
-        @rtype: int
-        @param fd: the file descriptor to close.
-        @return: C{0} on success.  
+        :rtype: int
+        :param fd: the file descriptor to close.
+        :return: C{0} on success.  
         '''
         self.files[fd] = None
 
     def _dup(self, fd):
         '''
         Duplicates a file descriptor
-        @rtype: int
-        @param fd: the file descriptor to close.
-        @return: C{0} on success.  
+        :rtype: int
+        :param fd: the file descriptor to close.
+        :return: C{0} on success.  
         '''
         return self._open(self.files[fd])
 
@@ -428,13 +423,12 @@ class Decree(object):
 
            The allocate function is invoked through system call number 5.
            
-           @param cpu           current CPU
-           @parm length         the length of the allocation in bytes 
-           @parm isX            boolean that allows newly allocated memory to be marked 
-                                as executable
-           @parm addr           the address of the new allocation is returned in *addr
+           :param cpu: current CPU
+           :param length: the length of the allocation in bytes 
+           :param isX: boolean that allows newly allocated memory to be marked as executable
+           :param addr: the address of the new allocation is returned in *addr
 
-           @return On success, allocate returns zero and a pointer to the allocated area
+           :return: On success, allocate returns zero and a pointer to the allocated area
                                is returned in *addr.  Otherwise, an error code is returned
                                and *addr is undefined.
                    EINVAL   length is zero.
@@ -465,12 +459,12 @@ class Decree(object):
            count bytes of random data. If count is zero, random returns 0 and optionallyi
            sets *rx_bytes to zero. If count is greater than SSIZE_MAX, the result is unspecified.
 
-           @param cpu           current CPU
-           @param buf           a memory buffer
-           @param count         max number of bytes to receive
-           @param rnd_bytes     if valid, points to the actual number of random bytes
+           :param cpu: current CPU
+           :param buf: a memory buffer
+           :param count: max number of bytes to receive
+           :param rnd_bytes: if valid, points to the actual number of random bytes
 
-           @return   0        On success 
+           :return:  0        On success 
                      EINVAL   count is invalid.
                      EFAULT   buf or rnd_bytes points to an invalid address.
         '''
@@ -505,14 +499,14 @@ class Decree(object):
             buffer pointed to by buf. If count is zero, receive returns 0 and optionally 
             dets *rx_bytes to zero.
 
-            @param cpu: current CPU.
-            @param fd            a valid file descripor
-            @param buf           a memory buffer
-            @param count         max number of bytes to receive
-            @param rx_bytes      if valid, points to the actual number of bytes received
-            @result        0            Success
-                           EBADF        fd is not a valid file descriptor or is not open
-                           EFAULT       buf or rx_bytes points to an invalid address.
+            :param cpu: current CPU.
+            :param fd: a valid file descripor
+            :param buf: a memory buffer
+            :param count: max number of bytes to receive
+            :param rx_bytes: if valid, points to the actual number of bytes received
+            :return: 0            Success
+                     EBADF        fd is not a valid file descriptor or is not open
+                     EFAULT       buf or rx_bytes points to an invalid address.
         '''
         data = ''
         if count != 0:
@@ -560,14 +554,14 @@ class Decree(object):
           to by buf to the file descriptor fd. If count is zero, transmit returns 0
           and optionally sets *tx_bytes to zero.
 
-          @param cpu           current CPU
-          @param fd            a valid file descripor
-          @param buf           a memory buffer
-          @param count         number of bytes to send 
-          @param tx_bytes      if valid, points to the actual number of bytes transmitted
-          @result 0            Success
-                  EBADF        fd is not a valid file descriptor or is not open.
-                  EFAULT       buf or tx_bytes points to an invalid address.
+          :param cpu           current CPU
+          :param fd            a valid file descripor
+          :param buf           a memory buffer
+          :param count         number of bytes to send 
+          :param tx_bytes      if valid, points to the actual number of bytes transmitted
+          :return: 0            Success
+                   EBADF        fd is not a valid file descriptor or is not open.
+                   EFAULT       buf or tx_bytes points to an invalid address.
         '''
         data = []
         if count != 0:
@@ -610,8 +604,8 @@ class Decree(object):
     def sys_terminate(self, cpu, error_code):
         '''
         Exits all threads in a process
-        @param cpu: current CPU.
-        @raise Exception: 'Finished'
+        :param cpu: current CPU.
+        :raises Exception: 'Finished'
         '''
         procid = self.procs.index(cpu)
         self.sched()
@@ -640,17 +634,17 @@ class Decree(object):
 
         The deallocate function is invoked through system call number 6.
 
-        @param cpu: current CPU
-        @param addr: the starting address to unmap.
-        @param size: the size of the portion to unmap.
-        @return 0        On success
+        :param cpu: current CPU
+        :param addr: the starting address to unmap.
+        :param size: the size of the portion to unmap.
+        :return 0        On success
                 EINVAL   addr is not page aligned.
                 EINVAL   length is zero.
                 EINVAL   any  part  of  the  region  being  deallocated  is outside the valid
                          address range of the process.
 
-        @param cpu: current CPU.
-        @return: C{0} on success.  
+        :param cpu: current CPU.
+        :return: C{0} on success.  
         '''
         logger.info("DEALLOCATE(0x%08x, %d)"%(addr, size))
 
@@ -752,7 +746,7 @@ class Decree(object):
     def int80(self, cpu):
         ''' 
         32 bit dispatcher.
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         _terminate, transmit, receive, fdwait, allocate, deallocate and random
         '''
         syscalls = { 0x00000001: self.sys_terminate, 
@@ -889,10 +883,10 @@ class Decree(object):
     def execute(self):
         """
         Execute one cpu instruction in the current thread (only one suported).
-        @rtype: bool
-        @return: C{True}
+        :rtype: bool
+        :return: C{True}
         
-        @todo: This is where we could implement a simple schedule.
+        :todo: This is where we could implement a simple schedule.
         """
         try:
             self.current.execute()
@@ -920,9 +914,9 @@ class SDecree(Decree):
     def __init__(self, constraints, programs, symbolic_random=None):
         '''
         Builds a symbolic extension of a Decree OS
-        @param constraints: a constraint set
-        @param cpus: CPU for this model
-        @param mem: memory for this model
+        :param constraints: a constraint set
+        :param cpus: CPU for this model
+        :param mem: memory for this model
         '''
         self._constraints = constraints
         self.random = 0

@@ -48,8 +48,8 @@ class Solver(object):
     def optimize(self, X, operation, M=10000):
         ''' Iterativelly finds the maximun or minimal value for the operation 
             (Normally Operators.UGT or Operators.ULT)
-            @param X: a symbol or expression
-            @param M: maximun number of iterations allowed
+            :param X: a symbol or expression
+            :param M: maximun number of iterations allowed
         '''
         pass
 
@@ -72,21 +72,21 @@ class Solver(object):
         ''' Ask the solver for one possible assigment for expression using currrent set
             of constraints.
             The current set of assertions must be sat.
-            @param val: an expression or symbol '''
+            :param val: an expression or symbol '''
         pass
 
     def max(self, constraints, X, M=10000):
         ''' Iterativelly finds the maximum value for a symbol.
-            @param X: a symbol or expression
-            @param M: maximun number of iterations allowed
+            :param X: a symbol or expression
+            :param M: maximun number of iterations allowed
         '''
         assert isinstance(X, BitVec)
         return self.optimize(constraints, X, 'maximize')
 
     def min(self, constraints, X, M=10000):
         ''' Iterativelly finds the minimum value for a symbol.
-            @param X: a symbol or expression
-            @param M: maximun number of iterations allowed
+            :param X: a symbol or expression
+            :param M: maximun number of iterations allowed
         '''
         assert isinstance(X, BitVec)
         return self.optimize(constraints, X, 'minimize')
@@ -211,7 +211,7 @@ class SMTSolver(Solver):
 
     def _send(self, cmd):
         ''' Send a string to the solver.
-            @param cmd: a SMTLIBv2 command (ex. (check-sat))
+            :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s',cmd)
         self._log += str(cmd) + '\n'
@@ -275,7 +275,7 @@ class SMTSolver(Solver):
         ''' Ask the solver for one possible assigment for val using currrent set
             of constraints.
             The current set of assertions must be sat.
-            @param val: an expression or symbol '''
+            :param val: an expression or symbol '''
         if not issymbolic(expression):
             return expression
         assert isinstance(expression, Variable)
@@ -359,8 +359,8 @@ class SMTSolver(Solver):
     def optimize(self, constraints, x, goal, M=10000):
         ''' Iterativelly finds the maximun or minimal value for the operation 
             (Normally Operators.UGT or Operators.ULT)
-            @param X: a symbol or expression
-            @param M: maximun number of iterations allowed
+            :param X: a symbol or expression
+            :param M: maximun number of iterations allowed
         '''
         assert goal in ('maximize', 'minimize')
         assert isinstance(x, BitVec)
@@ -413,7 +413,7 @@ class SMTSolver(Solver):
         ''' Ask the solver for one possible assigment for val using currrent set
             of constraints.
             The current set of assertions must be sat.
-            @param val: an expression or symbol '''
+            :param val: an expression or symbol '''
         if not issymbolic(expression):
             if isinstance(expression, str):
                 expression = ord(expression)
@@ -470,7 +470,7 @@ class SMTSolver(Solver):
     def simplify(self):
         ''' Ask the solver to try to simplify the expression val.
             This works only with z3.
-            @param val: a symbol or expression. 
+            :param val: a symbol or expression. 
         '''
         simple_constraints = []
         for exp in self._constraints:

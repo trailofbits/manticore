@@ -198,8 +198,8 @@ class Windows(object):
 
     def __setstate__(self, state):
         """
-        @todo: some asserts
-        @todo: fix deps? (last line)
+        :todo: some asserts
+        :todo: fix deps? (last line)
         """
         self.procs = state['procs']
         self._current = state['current']
@@ -212,7 +212,7 @@ class Windows(object):
     def _read_string(self, cpu, buf):
         """
         Reads a null terminated concrete buffer form memory
-        @todo: FIX. move to cpu or memory 
+        :todo: FIX. move to cpu or memory 
         """
         filename = ""
         for i in xrange(0,1024):
@@ -226,17 +226,17 @@ class Windows(object):
     def load(self, cpu, filename):
         ''' 
         Loads PE program in memory and prepares the initial CPU state and the stack.
-         @param filename: pathname of the file to be executed.
+         :param filename: pathname of the file to be executed.
         '''
         raise Exception("Not Implementes")
 
     def _open(self, f):
         '''
         It opens a file on the given a file descriptor
-        @rtype: int
-        @param filename: pathname of the file to open.
-        @param mode: file permissions mode.
-        @return: a file description of the opened file.
+        :rtype: int
+        :param filename: pathname of the file to open.
+        :param mode: file permissions mode.
+        :return: a file description of the opened file.
         '''
         if None in self.files:
             fd = self.files.index(None)
@@ -249,18 +249,18 @@ class Windows(object):
     def _close(self, fd):
         '''
         Closes a file descriptor
-        @rtype: int
-        @param fd: the file descriptor to close.
-        @return: C{0} on success.  
+        :rtype: int
+        :param fd: the file descriptor to close.
+        :return: C{0} on success.  
         '''
         self.files[fd] = None
 
     def _dup(self, fd):
         '''
         Duplicates a file descriptor
-        @rtype: int
-        @param fd: the file descriptor to close.
-        @return: C{0} on success.  
+        :rtype: int
+        :param fd: the file descriptor to close.
+        :return: C{0} on success.  
         '''
         return self._open(self.files[fd])
 
@@ -270,7 +270,7 @@ class Windows(object):
     def sysenter(self, cpu):
         ''' 
         32 bit dispatcher.
-        @param cpu: current CPU.
+        :param cpu: current CPU.
         _terminate, transmit, receive, fdwait, allocate, deallocate and random
         '''
         if not cpu.EAX in syscalls_num[self.flavor]:
@@ -314,10 +314,10 @@ class Windows(object):
     def execute(self):
         """
         Execute one cpu instruction in the current thread (only one suported).
-        @rtype: bool
-        @return: C{True}
+        :rtype: bool
+        :return: C{True}
         
-        @todo: This is where we could implement a simple schedule.
+        :todo: This is where we could implement a simple schedule.
         """
         try:
             self.current.execute()
@@ -431,9 +431,9 @@ class SWindows(Windows):
     def __init__(self, constraints, path, additional_context=None, snapshot_folder=None):
         '''
         Builds a symbolic extension of a Decree OS
-        @param constraints: a constraints set.
-        @param path: path to minidump to load.
-        @param additional_context: optional object for overriding data read from minidump, e.g., initial register values.
+        :param constraints: a constraints set.
+        :param path: path to minidump to load.
+        :param additional_context: optional object for overriding data read from minidump, e.g., initial register values.
         '''
         self._constraints =  constraints
         super(SWindows, self).__init__(path, additional_context, snapshot_folder)
