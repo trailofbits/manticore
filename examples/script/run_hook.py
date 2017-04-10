@@ -3,7 +3,10 @@
 import sys
 from manticore import Manticore
 
-# This example demonstrates a basic hook (PC register)
+'''
+Demonstrates the ability to set a basic hook on a specific program counter and
+the ability to read from memory.
+'''
 
 if __name__ == '__main__':
     path = sys.argv[1]
