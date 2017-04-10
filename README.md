@@ -109,6 +109,10 @@ def hook(state):
 m.run()
 ```
 
+### Examples
+
+Some example scripts using the Manticore API can be found in `examples/script`.
+
 ## FAQ
 
 ### How does Manticore compare to angr?
