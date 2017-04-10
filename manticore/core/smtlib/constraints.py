@@ -37,6 +37,14 @@ class ConstraintSet(object):
         return len(self._constraints)
 
     def add(self, constraint, check=False):
+        '''
+        Add a constraint to the set
+
+        :param constraint: The constraint to add to the set.
+        :param check: Currently unused.
+        :return:
+        '''
+        # XXX(yan): check is an unused param
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
@@ -124,6 +132,10 @@ class ConstraintSet(object):
 
     @property
     def constraints(self):
+        '''
+        :rtype tuple
+        :return: All constraints represented by this and parent sets.
+        '''
         if self._parent is not None:
             return tuple(self._constraints) + self._parent.constraints
         return tuple(self._constraints)

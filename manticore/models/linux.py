@@ -1,15 +1,11 @@
-import cgcrandom
-import weakref
 import errno
-import sys, os, struct
+import os, struct
 from ..utils.helpers import issymbolic
-from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister, InvalidPCException
+from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
-from ..core.smtlib import Expression, Operators, ConstraintSet
+from ..core.smtlib import Operators, ConstraintSet
 from elftools.elf.elffile import ELFFile
-from contextlib import closing
-import StringIO
 import logging
 import random
 from ..core.cpu.arm import *
@@ -82,7 +78,7 @@ class File(object):
 
 class SymbolicFile(object):
     '''
-    Represents a symbolic file
+    Represents a symbolic file.
     '''
     def __init__(self, constraints, path="sfile", mode='rw', max_size=100, wildcard='+'):
         '''
@@ -90,9 +86,11 @@ class SymbolicFile(object):
 
         :param constraints: the constraints
         :param path: the pathname of the symbolic file
-        :param mode: the access permissions of the symbolic file
-        :param max_size: Maximun amount of bytes of the symbolic file   
+        :type path: str or File
+        :param str mode: the access permissions of the symbolic file
+        :param max_size: Maximun amount of bytes of the symbolic file
         '''
+        # XXX(yan): wildcard isn't used; check callers and remove.
         assert 'r' in mode
         if isinstance(path, str):
             path = File(path, mode)
@@ -258,17 +256,13 @@ class Linux(object):
     A simple Linux Operating System Model.
     This class emulates the most common Linux system calls
     '''
-    ARM_GET_TLS=0xffff0fe0
-    ARM_CMPXCHG=0xffff0fc0
-    ARM_MEM_BARRIER=0xffff0fa0
 
     def __init__(self, program, argv=[], envp=[]):
         '''
         Builds a Linux OS model
-        :param cpus: CPU for this model.
-        :param mem: memory for this model.
-        :todo: generalize for more CPUs.
-        :todo: fix deps?
+        :param string program: The path to ELF binary
+        :param list argv: The argv array; not including binary.
+        :param list envp: The ENV variables.
         '''
         self.program = program
         self.clocks = 0
@@ -518,6 +512,7 @@ class Linux(object):
 
     def setup_stack(self, cpu, argv, envp):
         '''
+        :param Cpu cpu: The cpu instance
         :param argv: list of parameters for the program to execute.
         :param envp: list of environment variables for the program to execute.
 

@@ -819,8 +819,7 @@ class SMemory(Memory):
         Builds a map of memory.
 
         :param constraints:  a set of constraints
-        :param addressbitsize: the size in bits of the address space (default=32).
-        :param pagebitsize: the size in bits of a page boundary memory (default=12).
+        :param symbols: Symbolic chunks
         '''
         super(SMemory, self).__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
@@ -865,11 +864,12 @@ class SMemory(Memory):
         Read a stream of potentially symbolic bytes from a potentially symbolic
         address
 
+        :param address: Where to read from
+        :param size: How many bytes
         :rtype: list
         '''
         size = self._get_size(size)
         assert not issymbolic(size)
-
 
         if issymbolic(address):
             assert solver.check(self.constraints)
@@ -942,6 +942,13 @@ class SMemory(Memory):
             return map(Operators.CHR, result)
 
     def write(self, address, value):
+        '''
+        Write a value at address.
+        :param address: The address at which to write
+        :type address: int or long or Expression
+        :param value: Bytes to write
+        :type value: str or list
+        '''
         size = len(value)
         if issymbolic(address):
 

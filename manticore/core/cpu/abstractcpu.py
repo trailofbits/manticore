@@ -35,13 +35,14 @@ class Operand(object):
         '''
         This encapsulates the arch-independent way to access instruction
         operands and immediates based on a capstone operand descriptor. This
+        :param taint
         class knows how to browse a capstone operand and get the details of
         operand.
 
         It also knows how to access the specific Cpu to get the actual values
         from memory and registers.
 
-        :param cpu: A Cpu instance
+        :param Cpu cpu: A Cpu instance
         :param op: A Capstone operand 
         '''
         assert isinstance(cpu, Cpu)
@@ -130,8 +131,10 @@ class RegisterFile(object):
         pass
         
     def __contains__(self, register):
-        ''' Check for register validity 
-            :param register: a register name
+        '''
+        Check for register validity 
+
+        :param register: a register name
         '''
         return self._alias(register) in self.all_registers 
 
