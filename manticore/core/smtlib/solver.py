@@ -26,6 +26,10 @@ from visitors import *
 from ...utils.helpers import issymbolic
 logger = logging.getLogger("SMT")
 
+
+class Z3NotFoundError(EnvironmentError):
+    pass
+
 class SolverException(Exception):
     pass
 
@@ -148,7 +152,7 @@ class SMTSolver(Solver):
         try:
             version_cmd_output = check_output(self.version_cmd.split())
         except OSError:
-            raise Exception('Z3 not installed!')
+            raise Z3NotFoundError
         self._check_solver_version(version_cmd_output)
         self._proc = None
         self._constraints = None
@@ -166,7 +170,7 @@ class SMTSolver(Solver):
         try:
             self._proc = Popen(self.command.split(' '), stdin=PIPE, stdout=PIPE )
         except OSError:
-            raise Exception('Z3 not installed!')  # TODO(mark) don't catch this exception in two places
+            raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
 
         #run solver specific initializations
         for cfg in self.init:
