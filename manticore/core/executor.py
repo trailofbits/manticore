@@ -492,10 +492,14 @@ class Executor(object):
         file(self._getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.model.syscall_trace))
 
         stdout = ''
+        stderr = ''
         for sysname, fd, data in state.model.syscall_trace:
             if sysname in ('_transmit', '_write') and fd == 1:
                 stdout += ''.join(map(str, data))
+            if sysname in ('_transmit', '_write') and fd == 2:
+                stderr += ''.join(map(str, data))
         file(self._getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
+        file(self._getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
 
         # Save STDIN solution
         stdin_file = 'test_{:08x}.stdin'.format(test_number)
