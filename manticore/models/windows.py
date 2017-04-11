@@ -1,7 +1,7 @@
 import cgcrandom
 import weakref
 import sys, os, struct
-from ..core.memory import Memory, MemoryException, SMemory32
+from ..core.memory import Memory, MemoryException, SMemory32, Memory32
 from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu, Sysenter
