@@ -715,7 +715,7 @@ class Linux(object):
             offset = elf_segment.header.p_offset - ELF_PAGEOFFSET
             filesz = elf_segment.header.p_filesz + ELF_PAGEOFFSET
             vaddr = elf_segment.header.p_vaddr - ELF_PAGEOFFSET
-            memsz = cpu.memory._ceil(memsz+1) #FIXME Should this be +1 / (memsz + align ) & ~(align-1) 
+            memsz = cpu.memory._ceil(memsz)
             if base == 0 and elf.header.e_type == 'ET_DYN':
                 assert vaddr == 0
                 if addressbitsize == 32:
