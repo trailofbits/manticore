@@ -658,28 +658,41 @@ class ExpressionTest(unittest.TestCase):
         self.assertTrue(solver.check(cs))
         self.assertEqual(solver.get_value(cs, a), -7&0xFF)
 
+import importlib
 class Z3Test(unittest.TestCase):
     def setUp(self):
-        self.z3 = Z3Solver()
+        #Manual mock for check_output 
+        self.module = importlib.import_module('manticore.core.smtlib.solver')
+        self.module.check_output = lambda *args, **kwargs: self.version
+        self.z3 = self.module.Z3Solver
 
     def test_check_solver_min(self):
-        self.z3._check_solver_version('Z3 version 4.4.2')
+        self.version = 'Z3 version 4.4.1'
+        self.assertTrue(self.z3._solver_version() == Version(major=4, minor=4, patch=1))
 
     def test_check_solver_too_old(self):
+        self.version = 'Z3 version 4.3.1'
         with self.assertRaises(SolverException):
-            self.z3._check_solver_version('Z3 version 4.4.1')
+            self.z3()
 
     def test_check_solver_newer(self):
-        self.z3._check_solver_version('Z3 version 4.5.0')
+        self.version = 'Z3 version 4.5.0'
+        self.assertTrue(self.z3._solver_version() > Version(major=4, minor=4, patch=1))
 
     def test_check_solver_badfmt(self):
-        self.z3._check_solver_version('Z3 4.5.0')
+        self.version = 'Z3 version 4.5.0.8'
+        with self.assertRaises(SolverException):
+            self.z3()
 
     def test_check_solver_badfmt2(self):
-        self.z3._check_solver_version('Z3 version 4.5.0.8')
+        self.version = 'Z3 version 4.5.0.8'
+        with self.assertRaises(SolverException):
+            self.z3()
 
     def test_check_solver_badfmt3(self):
-        self.z3._check_solver_version('Z3 version 4.5.what')
+        self.version = 'Z3 version 4.5.what'
+        with self.assertRaises(SolverException):
+            self.z3()
 
 if __name__ == '__main__':
     unittest.main()

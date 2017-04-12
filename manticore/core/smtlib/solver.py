@@ -134,10 +134,13 @@ class memoized(object):
       '''Support instance methods.'''
       return functools.partial(self.__call__, obj)
 
-#FixME move this \/
+#FixME move this \/ This configuration should be registered as global config 
 consider_unknown_as_unsat = True
 
-class SMTSolver(Solver):
+
+
+Version = collections.namedtuple('Version', 'major minor patch')
+class Z3Solver(Solver):
     def __init__(self):
         ''' Build a solver intance.
             This is implemented using an external native solver via a subprocess.
@@ -148,22 +151,67 @@ class SMTSolver(Solver):
             The analisys may be saved to disk and continued after a while or 
             forked in memory or even sent over the network.
         '''
-        super(SMTSolver, self).__init__()
+        super(Z3Solver, self).__init__()
         self._proc = None
         self._constraints = None
-        self._log = ''
+        self._log = '' #this should be enabled only if we are debugging
+
+        self.version = self._solver_version()
+        #Check that the z3 version we're using is at least the minimum we need. 
+        min_version = Version(4, 4, 0)
+        if self.version < min_version:
+            raise SolverException("Z3 Version >= {}.{}.{} required".format(*min_version))
+
+        self.support_maximize = False
+        self.support_minimize = False
+        self.support_simplify = True
+        self.support_reset = True
+
+        if self.version >= Version(4, 4, 2):
+            self.support_maximize = True
+            self.support_minimize = True
+        else:
+            logger.debug("Please install Z3 4.4.2 or newer to get optimization support. Current version: %r",self.version)
+
+        self._command = 'z3 -t:30000 -smt2 -in'
+        self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
+        self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
+
+        super(Z3Solver, self).__init__()
+
+    @staticmethod
+    def _solver_version():
+        '''
+        If we
+        fail to parse the version, we assume z3's output has changed, meaning it's a newer
+        version than what's used now, and therefore ok.
+        
+        Anticipated version_cmd_output format: 'Z3 version 4.4.2'
+        '''
+        their_version = Version(0,0,0)
+        try:
+            version_cmd_output = check_output('z3 -version'.split())
+        except OSError:
+            raise Z3NotFoundError
+        try:
+            version = version_cmd_output.split()[2]
+            their_version = Version(*map(int, version.split('.')))
+        except (IndexError, ValueError, TypeError):
+            pass
+        return their_version
+
         
     def _start_proc(self):
         ''' Auxiliary method to spawn the external solver pocess'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self.command.split(' '), stdin=PIPE, stdout=PIPE )
+            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE )
         except OSError:
             #Z3 was removed from the system in the middle of operation
             raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
 
         #run solver specific initializations
-        for cfg in self.init:
+        for cfg in self._init:
             self._send(cfg)
 
     def _stop_proc(self):
@@ -200,7 +248,8 @@ class SMTSolver(Solver):
         else:
             if self.support_reset:
                 self._send("(reset)")
-                for cfg in self.init:
+                
+                for cfg in self._init:
                     self._send(cfg)
             else: 
                 self._stop_proc()
@@ -477,51 +526,5 @@ class SMTSolver(Solver):
             if not isinstance(new_constraint, Bool):
                 simple_constraints.append(new_constraint)
         self._constraints = set(simple_constraints)
-
-Version = collections.namedtuple('Version', 'major minor patch')
-
-class Z3Solver(SMTSolver):
-    def __init__(self):
-        self.command = 'z3 -t:30000 -smt2 -in'
-        self.init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
-        self.min_version = Version(4, 4, 2)
-        self.get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
-        self.version = self._check_solver_version()
-        if self.version >= Version(4, 4, 2):
-            self.support_maximize = True
-            self.support_minimize = True
-            self.support_simplify = True
-            self.support_reset = True
-
-        else:
-            logger.debug("Please install Z3 4.4.2 or newer to get optimization support. Current version: %r",self.version)
-            self.support_maximize = False
-            self.support_minimize = False
-            self.support_simplify = True
-            self.support_reset = True
-
-        super(Z3Solver, self).__init__()
-
-    def _check_solver_version(self):
-        '''
-        Check that the z3 version we're using is at least the minimum we need. If we
-        fail to parse the version, we assume z3's output has changed, meaning it's a newer
-        version than what's used now, and therefore ok.
-        
-        Anticipated version_cmd_output format: 'Z3 version 4.4.2'
-        '''
-        version_cmd = 'z3 -version'
-        try:
-            version_cmd_output = check_output(version_cmd.split())
-        except OSError:
-            raise Z3NotFoundError
-        try:
-            version = version_cmd_output.split()[2]
-            their_version = Version(*map(int, version.split('.')))
-            if their_version < self.min_version:
-                raise SolverException("Z3 Version >= {}.{}.{} required".format(*self.min_version))
-        except (IndexError, ValueError, TypeError):
-            pass
-        return their_version
 
 solver = Z3Solver()
