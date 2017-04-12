@@ -335,7 +335,7 @@ class Z3Solver(Solver):
         if isinstance(expression, Bool):
             return {'true': True, 'false': False}[ret[2:-2].split(' ')[1]]
         elif isinstance(expression, BitVec):
-            pattern, base = self.get_value_fmt
+            pattern, base = self._get_value_fmt
             m = pattern.match(ret)
             expr, value = m.group('expr'), m.group('value')
             return int(value, base)
@@ -488,7 +488,7 @@ class Z3Solver(Solver):
                     self._send('(get-value (%s))'%var[i].name)
                     ret = self._recv()
                     assert ret.startswith('((') and ret.endswith('))')
-                    pattern, base = self.get_value_fmt
+                    pattern, base = self._get_value_fmt
                     m = pattern.match(ret)
                     expr, value = m.group('expr'), m.group('value')
                     result += chr(int(value, base))
@@ -508,7 +508,7 @@ class Z3Solver(Solver):
         if isinstance(expression, Bool):
             return {'true':True, 'false':False}[ret[2:-2].split(' ')[1]]
         if isinstance(expression, BitVec):
-            pattern, base = self.get_value_fmt
+            pattern, base = self._get_value_fmt
             m = pattern.match(ret)
             expr, value = m.group('expr'), m.group('value')
             return int(value, base)
