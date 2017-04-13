@@ -5462,9 +5462,10 @@ class X86Cpu(Cpu):
             if (TEMP > 15) TEMP  =  16;
             DEST  =  DEST << (TEMP * 8);
         '''
-        count = src.read()
-        temp = Operators.ITEBV(src.size, count > 15, 16, count)
-        val = dest.read() << (Operators.ZEXTEND(temp*8, dest.size))
+        count = Operators.ZEXTEND(src.read(), dest.size*2)
+        temp = Operators.ITEBV(src.size*2, count > 15, 16, count)
+        val = Operators.ZEXTEND(dest.read(), dest.size*2)
+        val = val << (Operators.ZEXTEND(temp*8, dest.size*2))
         dest.write(Operators.EXTRACT(val, 0, dest.size))
 
     #FIXME
