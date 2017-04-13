@@ -60,9 +60,11 @@ class Operand(object):
 
     @property
     def type(self):
-        ''' This property encapsulate the operand type. It may be a:
+        ''' This property encapsulate the operand type. 
+            It may be one of the following:
                 register
                 memory
+                immediate
         '''
         raise NotImplementedError
         
