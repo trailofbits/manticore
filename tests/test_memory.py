@@ -41,7 +41,7 @@ class MemoryTest(unittest.TestCase):
         mem = Memory32()
         #Basic check ceil
         self.assertEqual(0x12346000, mem._ceil(0x12345678))
-        self.assertEqual(0x12347000, mem._ceil(0x12346000))
+        self.assertEqual(0x12346000, mem._ceil(0x12346000))
         self.assertEqual(0x00000000, mem._ceil(0xffffffff))
         #Basic check floor
         self.assertEqual(0x12345000, mem._floor(0x12345678))
@@ -54,7 +54,7 @@ class MemoryTest(unittest.TestCase):
 
     def test_ceil_floor_page_memory_page_13(self):
         mem = SMemory32L(ConstraintSet())
-        self.assertEqual(0x00004000, mem._ceil(0x00002000))
+        self.assertEqual(0x00002000, mem._ceil(0x00002000))
         self.assertEqual(0x00002000, mem._floor(0x00002000))
         self.assertEqual(0x00000001, mem._page(0x00003FFF))
 
@@ -133,7 +133,7 @@ class MemoryTest(unittest.TestCase):
 
         #---------alloc in the free spaces now!----------------
         forth = mem.mmap(second, 0x1000, 'x')
-        self.assertEqual(forth, mem._ceil(third))
+        self.assertEqual(forth, mem._ceil(third+1))
         self.assertTrue(forth in mem)
         self.assertTrue(mem.access_ok((forth), 'x'))
         

@@ -430,7 +430,7 @@ class Memory(object):
         :param address: the address to calculate its ceil.
         :return: the ceil of C{address}.
         '''
-        return ((address | self.page_mask) + 1 ) & self.memory_mask
+        return (((address-1)+self.page_size) & ~self.page_mask) & self.memory_mask
 
     def _floor(self, address):
         '''
@@ -518,7 +518,7 @@ class Memory(object):
             addr = self._floor(addr)
 
         #size value is rounded up to the next page boundary
-        size = self._ceil(size-1)
+        size = self._ceil(size)
 
         #If zero search for a spot
         addr = self._search(size, addr)
@@ -564,7 +564,7 @@ class Memory(object):
             addr = self._floor(addr)
 
         #size value is rounded up to the next page boundary
-        size = self._ceil(size-1)
+        size = self._ceil(size)
 
         #If zero search for a spot
         addr = self._search(size, addr)
@@ -663,7 +663,7 @@ class Memory(object):
         :param size: the length of the unmapping. 
         '''
         start = self._floor(start)
-        end = self._ceil(start+size-1)
+        end = self._ceil(start+size)
 
         for m in self._maps_in_range(start, end):
             self._del(m)
@@ -681,7 +681,7 @@ class Memory(object):
     def mprotect(self, start, size, perms):
         assert size > 0
         start = self._floor(start)
-        end = self._ceil(start+size-1)
+        end = self._ceil(start+size)
 
         for m in self._maps_in_range(start, end):
             self._del(m)
