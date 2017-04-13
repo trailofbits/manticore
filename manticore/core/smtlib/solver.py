@@ -23,9 +23,10 @@ import logging
 import re
 import time
 from visitors import *
-from ...utils.helpers import issymbolic
-logger = logging.getLogger("SMT")
+from ...utils.helpers import issymbolic, memoized
+import collections
 
+logger = logging.getLogger("SMT")
 
 class Z3NotFoundError(EnvironmentError):
     pass
@@ -104,56 +105,18 @@ class Solver(object):
         else:
             return x, x
 
-import collections
-import functools
-
-class memoized(object):
-   '''Decorator. Caches a function's return value each time it is called.
-   If called later with the same arguments, the cached value is returned
-   (not reevaluated).
-   '''
-   def __init__(self, func):
-      self.func = func
-      self.cache = {}
-   def __call__(self, *args, **kwargs):
-      key = args + tuple(sorted(kwargs.items()))
-      if not isinstance(key, collections.Hashable):
-         # uncacheable. a list, for instance.
-         # better to not cache than blow up.
-         return self.func(*args, **kwargs)
-      if key in self.cache:
-         return self.cache[key]
-      else:
-         value = self.func(*args, **kwargs)
-         self.cache[key] = value
-         return value
-   def __repr__(self):
-      '''Return the function's docstring.'''
-      return self.func.__doc__
-   def __get__(self, obj, objtype):
-      '''Support instance methods.'''
-      return functools.partial(self.__call__, obj)
-
 #FixME move this \/ This configuration should be registered as global config 
 consider_unknown_as_unsat = True
-
 
 
 Version = collections.namedtuple('Version', 'major minor patch')
 class Z3Solver(Solver):
     def __init__(self):
-        ''' Build a solver intance.
-            This is implemented using an external native solver via a subprocess.
-            Everytime a new symbol or assertion is added a smtlibv2 command is 
-            sent to the solver.
-            The actual state is also mantained in memory to be able to save and
-            restore the state. 
-            The analisys may be saved to disk and continued after a while or 
-            forked in memory or even sent over the network.
+        ''' Build a Z3 solver intance.
+            This is implemented using an external z3 solver (via a subprocess).
         '''
         super(Z3Solver, self).__init__()
         self._proc = None
-        self._constraints = None
         self._log = '' #this should be enabled only if we are debugging
 
         self.version = self._solver_version()
@@ -515,16 +478,12 @@ class Z3Solver(Solver):
         raise NotImplementedError("get_value only implemented for Bool and BitVec")
 
 
-    def simplify(self):
-        ''' Ask the solver to try to simplify the expression val.
-            This works only with z3.
-            :param val: a symbol or expression. 
+    def simplify(self, exp):
+        ''' Ask the solver to try simplify the expression exp
+            :param exp: a symbol or expression. 
         '''
-        simple_constraints = []
-        for exp in self._constraints:
-            new_constraint = exp.simplify()
-            if not isinstance(new_constraint, Bool):
-                simple_constraints.append(new_constraint)
-        self._constraints = set(simple_constraints)
+        #This function should send a simplify command to the smtlib 
+        # solver and parse back the result
+        raise NotImplemented
 
 solver = Z3Solver()
