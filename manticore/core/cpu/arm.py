@@ -72,9 +72,11 @@ class Armv7Operand(Operand):
 
     @property
     def type(self):
-        return { ARM_OP_REG: 'register',
-                 ARM_OP_MEM: 'memory',
-                 ARM_OP_IMM: 'immediate'}[self.op.type]
+        type_map = { ARM_OP_REG: 'register',
+                     ARM_OP_MEM: 'memory',
+                     ARM_OP_IMM: 'immediate'}
+
+        return type_map[self.op.type]
 
     def size(self):
         assert self.type == 'register'
