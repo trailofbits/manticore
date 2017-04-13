@@ -1108,9 +1108,9 @@ class Linux(object):
             assert brk > self.elf_brk
             size = brk-self.elf_brk
             perms = cpu.memory.perms(self.elf_brk-1)
-            if brk > cpu.memory._ceil(self.elf_brk-1):
-                addr = cpu.memory.mmap(cpu.memory._ceil(self.elf_brk-1), size, perms)
-                assert cpu.memory._ceil(self.elf_brk-1) == addr, "Error in brk!"
+            if brk > cpu.memory._ceil(self.elf_brk):
+                addr = cpu.memory.mmap(cpu.memory._ceil(self.elf_brk), size, perms)
+                assert cpu.memory._ceil(self.elf_brk) == addr, "Error in brk!"
             self.elf_brk += size
         logger.debug("sys_brk(0x%08x) -> 0x%08x", brk, self.elf_brk)
         return self.elf_brk 
