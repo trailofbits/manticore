@@ -5463,9 +5463,10 @@ class X86Cpu(Cpu):
             DEST  =  DEST << (TEMP * 8);
         '''
         count = Operators.ZEXTEND(src.read(), dest.size*2)
-        temp = Operators.ITEBV(src.size*2, count > 15, 16, count)
+        byte_count = Operators.ITEBV(src.size*2, count > 15, 16, count)
+        bit_count = byte_count * 8
         val = Operators.ZEXTEND(dest.read(), dest.size*2)
-        val = val << (Operators.ZEXTEND(temp*8, dest.size*2))
+        val = val << (Operators.ZEXTEND(bit_count, dest.size*2))
         dest.write(Operators.EXTRACT(val, 0, dest.size))
 
     #FIXME
