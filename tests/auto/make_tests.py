@@ -13,8 +13,6 @@ op_count = {}
 test_dic = {}
 for test in tests:
     try:
-	if test['mnemonic'] not in ('MOVHPD', 'MOVHPD', 'PSLLDQ'):
-		continue
         cnt = op_count.get(test['mnemonic'],0)
         if cnt > 20: #No more than 10000 instructions of each kind
             continue
