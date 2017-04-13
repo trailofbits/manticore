@@ -5111,8 +5111,8 @@ class X86Cpu(Cpu):
             dest.write(Operators.EXTRACT(src.read(), 64, 64))
         else:
             assert src.size == 64 and dest.size == 128
-            value = dest.read() &  0x00000000ffffffff #low part
-            dest.write(value | Operators.CONCAT(128, src.read(), 0))
+            value = Operators.EXTRACT(dest.read(),0, 64) #low part
+            dest.write(Operators.CONCAT(128, src.read(), value))
 
     @instruction
     def PSUBB(cpu, dest, src):
@@ -5462,10 +5462,9 @@ class X86Cpu(Cpu):
             if (TEMP > 15) TEMP  =  16;
             DEST  =  DEST << (TEMP * 8);
         '''
-        # TODO(yan):  verify correctness of the src extension/truncation
-        srcval = Operators.EXTRACT(src.read(), 0, 8)
-        temp = Operators.ITEBV(src.size, srcval > 15, 16, srcval)
-        val = dest.read() << (Operators.ZEXTEND(temp, dest.size))
+        count = src.read()
+        temp = Operators.ITEBV(src.size, count > 15, 16, count)
+        val = dest.read() << (Operators.ZEXTEND(temp*8, dest.size))
         dest.write(Operators.EXTRACT(val, 0, dest.size))
 
     #FIXME
