@@ -173,6 +173,6 @@ come from a reverse engineering or exploitation background, you may find Mantico
 
 Not exactly. The [Trail of Bits CRS](https://blog.trailofbits.com/2015/07/15/how-we-fared-in-the-cyber-grand-challenge/) used [FrankenPSE](https://blog.trailofbits.com/2016/08/02/engineering-solutions-to-hard-program-analysis-problems/) to provide its binary symbolic execution capabilities. FrankenPSE and Manticore share the same heritage: [PySymEmu](https://github.com/feliam/pysymemu). The difference between the two stems for their respective use-cases.
 
-Manticore was designed to be guided by an expert user, and therefore supports flexible APIs that help its users achieve specific goals. Manticore supports more architectures and binary file formats.
+Manticore is designed so an expert user can guide it, and therefore supports flexible APIs that help its users achieve specific goals. Manticore also supports more architectures and binary file formats.
 
 FrankenPSE was designed to tightly integrate with the Trail of Bits CRS. This includes sharing the same program snapshot representation as the [GRR fuzzer](https://github.com/trailofbits/grr). FrankenPSE is also x86-only and uses [microx](https://github.com/trailofbits/microx), a lightweight, single-instruction x86 instruction JIT executor.
