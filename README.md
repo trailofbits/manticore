@@ -21,7 +21,27 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 
 ## Requirements
 
-Manticore is officially supported on Linux and uses Python 2.7.
+Manticore is officially supported on Linux and requires Python 2.7.
+
+## Quick start
+
+Install and try Manticore in about ten shell commands:
+
+```
+# install z3 before beginning, see our README.md
+git clone git@github.com:trailofbits/manticore.git
+cd manticore
+pip install --user --no-binary capstone . # do this in a virtualenv if you want, but omit --user
+cd examples/linux
+make
+manticore basic
+cat mcore_*/*1.stdin | ./basic
+cat mcore_*/*2.stdin | ./basic
+cd ../script
+python count_instructions.py ../linux/helloworld # ok if the insn count is different
+```
+
+Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
 
 ## Installation
 
@@ -54,48 +74,6 @@ Then, install the Z3 Theorem Prover. Download the [latest release](https://githu
   "ImportError: ERROR: fail to load the dynamic library.", or another related
   to Capstone, try reinstalling via `pip install -I --no-binary capstone capstone`
 
-### For developers
-
-For a dev install, run:
-
-```
-pip install -e .[dev]
-```
-
-This installs a few other dependencies used for tests which you can run with some of the commands below:
-
-```
-cd /path/to/manticore/
-# all tests
-nosetests
-# just one file
-nosetests tests/test_armv7cpu.py
-# just one test class
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
-# just one test
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
-```
-
-## Quick start
-
-Install and try Manticore in about ten shell commands:
-
-```
-# install z3 before beginning, see our README.md
-git clone git@github.com:trailofbits/manticore.git
-cd manticore
-pip install --user --no-binary capstone . # do this in a virtualenv if you want, but omit --user
-cd examples/linux
-make
-manticore basic
-cat mcore_*/*1.stdin | ./basic
-cat mcore_*/*2.stdin | ./basic
-cd ../script
-python count_instructions.py ../linux/helloworld # ok if the insn count is different
-```
-
-Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
-
 ## Usage
 
 ```
@@ -121,6 +99,28 @@ def hook(state):
   m.terminate()  # tell Manticore to stop
 
 m.run()
+```
+
+### For developers
+
+For a dev install, run:
+
+```
+pip install -e .[dev]
+```
+
+This installs a few other dependencies used for tests which you can run with some of the commands below:
+
+```
+cd /path/to/manticore/
+# all tests
+nosetests
+# just one file
+nosetests tests/test_armv7cpu.py
+# just one test class
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
+# just one test
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 ```
 
 ## FAQ
