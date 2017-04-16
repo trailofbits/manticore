@@ -1,6 +1,7 @@
 # Manticore
 
 [![Build Status](https://travis-ci.com/trailofbits/manticore.svg?token=m4YsYkGcyttTxRXGVHMr&branch=master)](https://travis-ci.com/trailofbits/manticore)
+[![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 
 Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
@@ -101,7 +102,7 @@ def hook(state):
 m.run()
 ```
 
-### For developers
+## For developers
 
 For a dev install, run:
 
