@@ -133,12 +133,9 @@ def hook(state):
 
 m.run()
 ```
-
-<<<<<<< HEAD
 ### Examples
 
 Some example scripts using the Manticore API can be found in `examples/script`.
-=======
 ### For developers
 
 For a dev install, run:
@@ -160,7 +157,6 @@ nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
 # just one test
 nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 ```
->>>>>>> reorder instructions
 
 ## FAQ
 
