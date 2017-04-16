@@ -130,10 +130,10 @@ m.run()
 Manticore is simpler. It has a smaller codebase, fewer dependencies and features, and an easier learning curve. If you
 come from a reverse engineering or exploitation background, you may find Manticore intuitive due to its lack of intermediate representation and overall emphasis on staying close to machine abstractions.
 
-### Was Manticore part of the [Trail of Bits CRS](https://blog.trailofbits.com/2015/07/15/how-we-fared-in-the-cyber-grand-challenge/)?
+### Was Manticore part of the Trail of Bits CRS?
 
-Not exactly. The Trail of Bits CRS used [FrankenPSE](https://blog.trailofbits.com/2016/08/02/engineering-solutions-to-hard-program-analysis-problems/) to provide its binary symbolic execution capabilities. FrankenPSE and Manticore share the same heritage: [PySymEmu](https://github.com/feliam/pysymemu). The difference between the two stems for their respective use-cases.
+Not exactly. The [Trail of Bits CRS](https://blog.trailofbits.com/2015/07/15/how-we-fared-in-the-cyber-grand-challenge/) used [FrankenPSE](https://blog.trailofbits.com/2016/08/02/engineering-solutions-to-hard-program-analysis-problems/) to provide its binary symbolic execution capabilities. FrankenPSE and Manticore share the same heritage: [PySymEmu](https://github.com/feliam/pysymemu). The difference between the two stems for their respective use-cases.
 
 Manticore was designed to be guided by an expert user, and therefore supports flexible APIs that help its users achieve specific goals. Manticore supports more architectures and binary file formats.
 
-FrankenPSE was designed to tightly integrate with the Trail of Bits CRS. This includes sharing the same program snapshot representation as the GRR fuzzer. FrankenPSE is also x86-only and uses [microx](https://github.com/trailofbits/microx), a lightweight, single-instruction x86 instruction JIT executor.
+FrankenPSE was designed to tightly integrate with the Trail of Bits CRS. This includes sharing the same program snapshot representation as the [GRR fuzzer](https://github.com/trailofbits/grr). FrankenPSE is also x86-only and uses [microx](https://github.com/trailofbits/microx), a lightweight, single-instruction x86 instruction JIT executor.
