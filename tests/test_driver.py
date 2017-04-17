@@ -24,6 +24,7 @@ class ManticoreDriver(unittest.TestCase):
 
     def testCreating(self):
         m = Manticore('/bin/ls')
+        m.log_debug = False
         m.log_file = '/dev/null'
         
     def test_issymbolic(self):

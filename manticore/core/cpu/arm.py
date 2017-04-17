@@ -69,9 +69,9 @@ class Armv7Operand(Operand):
             return 32
 
     def read(self, nbits=None, withCarry=False):
-        carry = self.cpu.regfile.read(ARM_REG_APSR_C)
+        carry = self.cpu.regfile.read('APSR_C')
         if self.type == 'register':
-            reg = self.cpu.regfile.read(self.op.reg)
+            value = self.cpu.regfile.read(self.reg)
             # XXX This can be an offset of 8, depending on ARM mode
             if register in ('PC', 'R15'):
                 value += 4
@@ -81,8 +81,8 @@ class Armv7Operand(Operand):
             if self.op.subtracted:
                 value = -value
             if withCarry:
-                return reg, carry
-            return reg
+                return value, carry
+            return value
         elif self.type == 'immediate':
             imm = self.op.imm
             if self.op.subtracted:
@@ -101,7 +101,7 @@ class Armv7Operand(Operand):
 
     def write(self, value, nbits=None):
         if self.type == 'register':
-            self.cpu.regfile.write(self.op.reg, value)
+            self.cpu.regfile.write(self.reg, value)
         elif self.type == 'memory':
             raise NotImplementedError('need to impl arm store mem')
         else:
