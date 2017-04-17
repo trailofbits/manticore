@@ -1,6 +1,7 @@
 # Manticore
 
 [![Build Status](https://travis-ci.com/trailofbits/manticore.svg?token=m4YsYkGcyttTxRXGVHMr&branch=master)](https://travis-ci.com/trailofbits/manticore)
+[![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 
 Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
@@ -21,7 +22,27 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 
 ## Requirements
 
-Manticore is officially supported on Linux and uses Python 2.7.
+Manticore is officially supported on Linux and requires Python 2.7.
+
+## Quick start
+
+Install and try Manticore in about ten shell commands:
+
+```
+# install z3 before beginning, see our README.md
+git clone git@github.com:trailofbits/manticore.git
+cd manticore
+pip install --user --no-binary capstone . # do this in a virtualenv if you want, but omit --user
+cd examples/linux
+make
+manticore basic
+cat mcore_*/*1.stdin | ./basic
+cat mcore_*/*2.stdin | ./basic
+cd ../script
+python count_instructions.py ../linux/helloworld # ok if the insn count is different
+```
+
+Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
 
 ## Installation
 
@@ -54,48 +75,6 @@ Then, install the Z3 Theorem Prover. Download the [latest release](https://githu
   "ImportError: ERROR: fail to load the dynamic library.", or another related
   to Capstone, try reinstalling via `pip install -I --no-binary capstone capstone`
 
-### For developers
-
-For a dev install, run:
-
-```
-pip install -e .[dev]
-```
-
-This installs a few other dependencies used for tests which you can run with some of the commands below:
-
-```
-cd /path/to/manticore/
-# all tests
-nosetests
-# just one file
-nosetests tests/test_armv7cpu.py
-# just one test class
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
-# just one test
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
-```
-
-## Quick start
-
-Install and try Manticore in about ten shell commands:
-
-```
-# install z3 before beginning, see our README.md
-git clone git@github.com:trailofbits/manticore.git
-cd manticore
-pip install --user --no-binary capstone . # do this in a virtualenv if you want, but omit --user
-cd examples/linux
-make
-manticore basic
-cat mcore_*/*1.stdin | ./basic
-cat mcore_*/*2.stdin | ./basic
-cd ../script
-python count_instructions.py ../linux/helloworld # ok if the insn count is different
-```
-
-Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
-
 ## Usage
 
 ```
@@ -123,9 +102,39 @@ def hook(state):
 m.run()
 ```
 
+## For developers
+
+For a dev install, run:
+
+```
+pip install -e .[dev]
+```
+
+This installs a few other dependencies used for tests which you can run with some of the commands below:
+
+```
+cd /path/to/manticore/
+# all tests
+nosetests
+# just one file
+nosetests tests/test_armv7cpu.py
+# just one test class
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
+# just one test
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
+```
+
 ## FAQ
 
 ### How does Manticore compare to angr?
 
 Manticore is simpler. It has a smaller codebase, fewer dependencies and features, and an easier learning curve. If you
 come from a reverse engineering or exploitation background, you may find Manticore intuitive due to its lack of intermediate representation and overall emphasis on staying close to machine abstractions.
+
+### Was Manticore part of the Trail of Bits CRS?
+
+Not exactly. The [Trail of Bits CRS](https://blog.trailofbits.com/2015/07/15/how-we-fared-in-the-cyber-grand-challenge/) used [FrankenPSE](https://blog.trailofbits.com/2016/08/02/engineering-solutions-to-hard-program-analysis-problems/) to provide its binary symbolic execution capabilities. FrankenPSE and Manticore share the same heritage: [PySymEmu](https://github.com/feliam/pysymemu). The difference between the two stems for their respective use-cases.
+
+Manticore is designed so an expert user can guide it, and therefore supports flexible APIs that help its users achieve specific goals. Manticore also supports more architectures and binary file formats.
+
+FrankenPSE was designed to tightly integrate with the Trail of Bits CRS. This includes sharing the same program snapshot representation as the [GRR fuzzer](https://github.com/trailofbits/grr). FrankenPSE is also x86-only and uses [microx](https://github.com/trailofbits/microx), a lightweight, single-instruction x86 instruction JIT executor.
