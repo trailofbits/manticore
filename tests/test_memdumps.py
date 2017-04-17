@@ -63,9 +63,12 @@ class IntegrationTest(unittest.TestCase):
 
         return set(vitems)
 
-    def _runWithTimeout(self, procargs, timeout=600):
+    def _runWithTimeout(self, procargs, output=None, timeout=600):
 
-        po = subprocess.Popen(procargs)
+        if output is not None:
+            output = open(output, 'w+')
+
+        po = subprocess.Popen(procargs, stdout=output)
         secs_used = 0
 
         while po.poll() is None and secs_used < timeout:
@@ -73,6 +76,7 @@ class IntegrationTest(unittest.TestCase):
             sys.stderr.write("~")
             secs_used += 1
 
+        po.communicate()
         self.assertTrue(secs_used < timeout)
         sys.stderr.write("\n")
 
@@ -88,16 +92,19 @@ class IntegrationTest(unittest.TestCase):
         params = self._getDumpParams(jsonfile)
 
         workspace = os.path.join(self.test_dir, 'ws_{}'.format(dumpname))
+        # Ensure the workspace exists for the output
+        os.mkdir(workspace)
+
         logfile = os.path.join(workspace, "output.log")
 
         dumpfile = os.path.join(dumpdir, params['dump'])
 
-        args = ['manticore', '--workspace', workspace, '--log', logfile, dumpfile]
+        args = ['manticore', '--workspace', workspace, dumpfile]
 
         for k,v in params.iteritems():
             if k.startswith("--"):
                 args.extend([k, v.format(dumpdir=dumpdir, workspace=workspace)])
-        self._runWithTimeout(args)
+        self._runWithTimeout(args, output=logfile)
 
         efile = os.path.join(dumpdir, params['expected'])
         expected = self._loadVisitedSet(efile)
