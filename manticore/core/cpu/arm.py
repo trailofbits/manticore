@@ -73,7 +73,7 @@ class Armv7Operand(Operand):
         if self.type == 'register':
             value = self.cpu.regfile.read(self.reg)
             # XXX This can be an offset of 8, depending on ARM mode
-            if register in ('PC', 'R15'):
+            if self.reg in ('PC', 'R15'):
                 value += 4
             if self.is_shifted():
                 shift = self.op.shift
@@ -111,7 +111,7 @@ class Armv7Operand(Operand):
         if self.type == 'register':
             self.write(value)
         elif self.type == 'memory':
-            self.cpu.regfile.write(self.op.mem.base, value)
+            self.cpu.regfile.write(self.mem.base, value)
         else:
             raise NotImplementedError("writeback Operand unknown type", self.op.type)
 
@@ -764,6 +764,7 @@ class Armv7Cpu(Cpu):
 
         carry = cpu.regfile.read('APSR_C')
         if rest:
+            #FIXME we should make Operand.op private (and not accessible)
             result, carry = cpu._Shift(op.read(), srtype, rest[0].op.reg, carry)
         else:
             result, carry = op.read(withCarry=True)

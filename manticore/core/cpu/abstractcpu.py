@@ -71,6 +71,10 @@ class Operand(object):
         raise NotImplementedError
         
     @property
+    def reg(self):
+        return self._reg_name(self.op.reg)
+
+    @property
     def type(self):
         ''' This property encapsulate the operand type. 
             It may be one of the following:

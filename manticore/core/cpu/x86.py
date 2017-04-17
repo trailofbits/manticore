@@ -604,9 +604,11 @@ class AMD64Operand(Operand):
 
     @property
     def type(self):
-        return { X86_OP_REG: 'register',
-                 X86_OP_MEM: 'memory',
-                 X86_OP_IMM: 'immediate'}[self.op.type]
+        type_map = { X86_OP_REG: 'register',
+                     X86_OP_MEM: 'memory',
+                     X86_OP_IMM: 'immediate'}
+
+        return type_map[self.op.type]
 
     #################################3
     # Operand access
@@ -667,10 +669,6 @@ class AMD64Operand(Operand):
     @property
     def size(self):
         return self.op.size*8
-
-    @property
-    def reg(self):
-        return self._reg_name(self.op.reg)
 
     def __getattr__(self, name):
         return getattr(self.op, name)
