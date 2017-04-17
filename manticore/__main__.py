@@ -15,7 +15,6 @@ except ImportError:
     pass
 sys.setrecursionlimit(10000)
 
-logger = logging.getLogger('MAIN')
 
 def parse_arguments():
     ###########################################################################
@@ -23,6 +22,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Symbolically analyze a program')
     parser.add_argument('--workspace', type=str, default=None,
                         help='A folder name for temporaries and results. (default mcore_?????)')
+    parser.add_argument('--log', type=str, default='-',
+                        help='The log filename')
     parser.add_argument('--verbose', action='store_true', help='Enable debug mode.')
     parser.add_argument('--profile', action='store_true', help='Enable profiling mode.')
 
@@ -66,6 +67,8 @@ def parse_arguments():
     return parsed
 
 
+logger = logging.getLogger('MAIN')
+
 def main():
     args = parse_arguments()
 
@@ -76,6 +79,9 @@ def main():
 
     if args.workspace:
         m.workspace = args.workspace
+
+    if args.log:
+        m.log_file = args.log
 
     if args.profile:
         m.should_profile = args.profile
@@ -106,15 +112,44 @@ def main():
     if args.assertions:
         m.load_assertions(args.assertions)
 
-    if args.verbose:
-        m.verbosity = 5
-    else:
-        m.verbosity = 1
+    # logging
+    class ContextFilter(logging.Filter):
+        '''
+        This is a filter which injects contextual information into the log.
+        '''
+        def filter(self, record):
+            if hasattr(self, 'stateid') and isinstance(self.stateid, int):
+                record.stateid = '[%d]' % self.stateid
+            else:
+                record.stateid = ''
+            return True
+    
+    
+    def loggerSetState(logger, stateid):
+        logger.filters[0].stateid = stateid
+
+    logging.basicConfig(filename = args.log,
+                        format = '%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s',
+                        level = {False:logging.INFO, True:logging.DEBUG}[args.verbose])
+
+    verbosity = {False:logging.INFO, True:logging.DEBUG}[args.verbose]
+    ctxfilter = ContextFilter()
+
+    for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
+        logging.getLogger(loggername).addFilter(ctxfilter)
+        logging.getLogger(loggername).setLevel(verbosity)
+        logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
+
+    logging.getLogger('SMT').setLevel(logging.INFO)
+    logging.getLogger('MEMORY').setLevel(logging.INFO)
+    #logging.getLogger('CPU').setLevel(logging.INFO)
+    logging.getLogger('LIBC').setLevel(logging.INFO)
 
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
 
     m.run(args.timeout)
+
     m.dump_stats()
 
 if __name__ == '__main__':

@@ -84,7 +84,6 @@ class Armv7Operand(Operand):
                 return reg, carry
             return reg
         elif self.type == 'immediate':
->>>>>>> Capstone operand type cornered to one function
             imm = self.op.imm
             if self.op.subtracted:
                 imm = -imm
