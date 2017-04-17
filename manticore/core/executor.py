@@ -471,7 +471,11 @@ class Executor(object):
 
             if hasattr(cpu, "instruction"):
                 i = cpu.instruction
-                output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
+                if i is not None:
+                    output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address,
+                        i.mnemonic, i.op_str))
+                else:
+                    output.write("  Instruction: (None.)\n")
             else:
                 output.write("  Instruction: {symbolic}\n")
 
