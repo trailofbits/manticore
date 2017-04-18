@@ -631,9 +631,9 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def PUSH(cpu, *regs):
-        high_to_low_regs = regs[::-1]
+        high_to_low_regs = [r.read() for r in regs[::-1]]
         for reg in high_to_low_regs:
-            cpu.stack_push(reg.read())
+            cpu.stack_push(reg)
 
 
     @instruction
