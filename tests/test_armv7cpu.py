@@ -24,7 +24,7 @@ def assemble(asm):
 
 class Armv7CpuTest(unittest.TestCase):
     def setUp(self):
-        self.c = cpu(Memory32())
+        self.c = Cpu(Memory32())
         self.rf = self.c.regfile
         self._setupStack()
 
