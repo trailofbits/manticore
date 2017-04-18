@@ -15,6 +15,7 @@ setup(
             'keystone-engine',
             'coverage',
             'nose',
+            'Sphinx',
         ]
     },
     entry_points={

@@ -4,11 +4,14 @@ import sys
 import time
 import types
 import logging
+import binascii
 import tempfile
 import functools
 
 from multiprocessing import Manager, Pool
 from multiprocessing import Process
+
+from threading import Timer
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -125,12 +128,22 @@ def binary_type(path):
     elif magic == '\x7fCGC':
         return 'DECREE'
     else:
-        raise NotImplementedError("Binary {} not supported.".format(path))
+        raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
 
 class Manticore(object):
+    '''
+    The central analysis object.
 
-    def __init__(self, binary_path, args = []):
+    :param str binary_path: Path to binary to analyze
+    :param args: Arguments to provide to binary
+    :type args: list[str]
+    '''
+
+
+    def __init__(self, binary_path, args=None):
         assert os.path.isfile(binary_path)
+
+        args = [] if args is None else args
 
         self._binary = binary_path
         self._binary_type = binary_type(binary_path)
@@ -252,6 +265,10 @@ class Manticore(object):
 
     @property
     def verbosity(self):
+        '''
+        Convenience interface for setting logging verbosity to one of several predefined
+        logging presets. Valid values: 0-5
+        '''
         return self._verbosity
 
     @verbosity.setter
@@ -275,8 +292,11 @@ class Manticore(object):
 
     def hook(self, pc):
         '''
-        A decorator used to register a hook function for a given instruction address
-        (`pc`). Equivalent to calling `add_hook`.
+        A decorator used to register a hook function for a given instruction address.
+        Equivalent to calling :func:`~add_hook`.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
         '''
         def decorator(f):
             self.add_hook(pc, f)
@@ -285,9 +305,13 @@ class Manticore(object):
 
     def add_hook(self, pc, callback):
         '''
-        Add a callback to be invoked on executing a program counter. Pass 'None'
+        Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one `manticore.core.executor.State` argument.
+        that takes one :class:`~manticore.core.executor.State` argument.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
+        :param callable callback: Hook function
         '''
         if not (isinstance(pc, (int, long)) or pc is None):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
@@ -499,9 +523,9 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
 
-    def run(self):
+    def run(self, timeout=0):
         '''
-        Start Manticore, creating all necessary support classes.
+        Runs analysis.
         '''
         assert not self._running, "Manticore is already running."
         args = self._args
@@ -536,15 +560,24 @@ class Manticore(object):
 
         self._running = True
 
+
+        if timeout > 0:
+            t = Timer(timeout, self.terminate)
+            t.start()
         try:
             self._start_workers(self._num_processes)
 
             self._join_workers()
         finally:
             self._running = False
+            if timeout > 0:
+                t.cancel()
 
     def terminate(self):
-        'Gracefully terminate the currently-executing Manticore run.'
+        '''
+        Gracefully terminate the currently-executing run. Typically called from within
+        a :func:`~hook`.
+        '''
         self._executor.shutdown()
 
     def _assertions_callback(self, state, pc):

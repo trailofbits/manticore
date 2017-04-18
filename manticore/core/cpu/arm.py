@@ -4,7 +4,7 @@ from .abstractcpu import Cpu, RegisterFile, Operand
 from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
-from ..smtlib import Operators, Expression
+from ..smtlib import Operators, Expression, BitVecConstant
 from ...utils.helpers import issymbolic
 # from ..smtlib import *
 from functools import wraps
@@ -12,25 +12,6 @@ from bitwise import *
 
 from capstone import *
 from capstone.arm import *
-from capstone.x86 import *
-
-
-# no emulator by default
-try:
-    from unicorn import *
-    from unicorn.x86_const import *
-    from unicorn.arm_const import *
-except:
-    pass
-MU = None
-
-
-
-# Custom Constants (avoid conflicts with capstone's arm constants)
-ARM_REG_APSR_N = 1000
-ARM_REG_APSR_Z = 1001
-ARM_REG_APSR_C = 1002
-ARM_REG_APSR_V = 1003
 
 import logging
 logger = logging.getLogger("CPU")
@@ -70,28 +51,31 @@ class Armv7Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(Armv7Operand, self).__init__(cpu, op, **kwargs)
 
+    @property
     def size(self):
         assert self.op.type == ARM_OP_REG
         if self.op.reg >= ARM_REG_D0 and self.op.reg <= ARM_REG_D31:
-            return 8
+            return 64
         else:
-            return 4
+            #FIXME check other types of operand sizes
+            return 32
 
     def read(self, nbits=None, withCarry=False):
-        carry = self.cpu.regfile.read(ARM_REG_APSR_C)
+        carry = self.cpu.regfile.read('APSR_C')
         if self.op.type == ARM_OP_REG:
-            reg = self.cpu.regfile.read(self.op.reg)
+            register = self._reg_name(self.op.reg)
+            value = self.cpu.regfile.read(register)
             # XXX This can be an offset of 8, depending on ARM mode
-            if self.op.reg == ARM_REG_R15:
-                reg += 4
+            if register in ('PC', 'R15'):
+                value += 4
             if self.is_shifted():
                 shift = self.op.shift
-                reg, carry = self.cpu._Shift(reg, shift.type, shift.value, carry)
+                value, carry = self.cpu._Shift(value, shift.type, shift.value, carry)
             if self.op.subtracted:
-                reg = -reg
+                value = -value
             if withCarry:
-                return reg, carry
-            return reg
+                return value, carry
+            return value
         elif self.op.type == ARM_OP_IMM:
             imm = self.op.imm
             if self.op.subtracted:
@@ -110,7 +94,8 @@ class Armv7Operand(Operand):
 
     def write(self, value, nbits=None):
         if self.op.type == ARM_OP_REG:
-            self.cpu.regfile.write(self.op.reg, value)
+            register = self._reg_name(self.op.reg)
+            self.cpu.regfile.write(register, value)
         elif self.op.type == ARM_OP_MEM:
             raise NotImplementedError('need to impl arm store mem')
         else:
@@ -120,7 +105,8 @@ class Armv7Operand(Operand):
         if self.op.type == ARM_OP_REG:
             self.write(value)
         elif self.op.type == ARM_OP_MEM:
-            self.cpu.regfile.write(self.op.mem.base, value)
+            register = self._reg_name(self.op.mem.base)
+            self.cpu.regfile.write(register, value)
         else:
             raise NotImplementedError("writeback Operand unknown type", self.op.type)
 
@@ -136,29 +122,27 @@ class Armv7Operand(Operand):
     def get_mem_offset(self):
         assert self.op.type == ARM_OP_MEM
 
-        mem = self.op.mem
         off = 0
-        if mem.index:
-            idx = mem.scale * self.cpu.regfile.read(mem.index)
-            carry = self.cpu.regfile.read(ARM_REG_APSR_C)
+        if self.mem.index is not None:
+            idx = self.mem.scale * self.cpu.regfile.read(self.mem.index)
+            carry = self.cpu.regfile.read('APSR_C')
             if self.is_shifted():
                 shift = self.op.shift
                 idx, carry = self.cpu._Shift(idx, shift.type, shift.value,  carry)
             off = idx
         else:
-            off = mem.disp
+            off = self.mem.disp
         return -off if self.op.subtracted else off
 
     def get_mem_base_addr(self):
         assert self.op.type == ARM_OP_MEM
 
-        mem = self.op.mem
-        base = self.cpu.regfile.read(mem.base)
+        base = self.cpu.regfile.read(self.mem.base)
 
         # If pc is the base, we need to correct for the fact that the ARM
         # spec defines PC to point to the current insn + 8, which we are not
         # compliant with (we do current insn + 4)
-        return base+4 if mem.base == ARM_REG_PC else base
+        return base+4 if self.mem.base in ('PC', 'R15')  else base
 
     def _getExpandImmCarry(self, carryIn):
         '''Manually compute the carry bit produced by expanding an immediate
@@ -172,90 +156,48 @@ class Armv7Operand(Operand):
 
 
 class Armv7RegisterFile(RegisterFile):
-    REGMAP = {
-        ARM_REG_R0: 0,
-        ARM_REG_R1: 1,
-        ARM_REG_R2: 2,
-        ARM_REG_R3: 3,
-        ARM_REG_R4: 4,
-        ARM_REG_R5: 5,
-        ARM_REG_R6: 6,
-        ARM_REG_R7: 7,
-        ARM_REG_R8: 8,
-        ARM_REG_R9: 9,
-        ARM_REG_R10: 10,
-        ARM_REG_R11: 11,
-        ARM_REG_R12: 12,
-        ARM_REG_R13: 13,  # alias: ARM_REG_SP
-        ARM_REG_R14: 14,  # alias: ARM_REG_LR
-        ARM_REG_R15: 15,  # alias: ARM_REG_PC
-
-        ARM_REG_D0: 16,
-        ARM_REG_D1: 17,
-        ARM_REG_D2: 18,
-        ARM_REG_D3: 19,
-        ARM_REG_D4: 20,
-        ARM_REG_D5: 21,
-        ARM_REG_D6: 22,
-        ARM_REG_D7: 23,
-        ARM_REG_D8: 24,
-        ARM_REG_D9: 25,
-        ARM_REG_D10: 26,
-        ARM_REG_D11: 27,
-        ARM_REG_D12: 28,
-        ARM_REG_D13: 29,
-        ARM_REG_D14: 30,
-        ARM_REG_D15: 31,
-        ARM_REG_D16: 32,
-        ARM_REG_D17: 33,
-        ARM_REG_D18: 34,
-        ARM_REG_D19: 35,
-        ARM_REG_D20: 36,
-        ARM_REG_D21: 37,
-        ARM_REG_D22: 38,
-        ARM_REG_D23: 39,
-        ARM_REG_D24: 40,
-        ARM_REG_D25: 41,
-        ARM_REG_D26: 42,
-        ARM_REG_D27: 43,
-        ARM_REG_D28: 44,
-        ARM_REG_D29: 45,
-        ARM_REG_D30: 46,
-        ARM_REG_D31: 47,
-
-        ARM_REG_APSR_N: 48,
-        ARM_REG_APSR_Z: 49,
-        ARM_REG_APSR_C: 50,
-        ARM_REG_APSR_V: 51,
-
-    }
-
     def __init__(self):
-        '''ARM Register file abstraction. GPRs use ints for read/write. APSR
+        '''
+        ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         '''
-        super(Armv7RegisterFile, self).__init__(     )                                                    
-        self.aliases = { 'STACK': 'SP',
-                                                    'PC': 'PC',  # these three lines are technically unnecessary, but explicit is
-                                                    'SP': 'SP',  # better than implicit
-                                                    'LR': 'LR',  }#) 
-        gpr =  [Register(32) for x in xrange(16)]
-        vec = [Register(64) for x in xrange(32)]
-        bit_flags = [Register(1) for x in xrange(4)]
-        self.regs = gpr + vec + bit_flags
+        super(Armv7RegisterFile, self).__init__({  'SB':'R9', 
+                                                   'SL':'R10', 
+                                                   'FP':'R11', 
+                                                   'IP': 'R12',  
+                                                   'STACK': 'R13',
+                                                   'SP': 'R13',
+                                                   'LR': 'R14',
+                                                   'PC': 'R15', } )
+        self._regs = { }
+        #32 bit registers
+        for reg_name in ( 'R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',
+                          'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15' ):
+            self._regs[reg_name] = Register(32)
+        #64 bit registers
+        for reg_name in  ( 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 
+                           'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15', 'D16',
+                           'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24',
+                           'D25', 'D26', 'D27', 'D28', 'D29', 'D30', 'D31'):
+            self._regs[reg_name] = Register(64)
+        #Flags
+        self._regs['APSR_N'] = Register(1)
+        self._regs['APSR_Z'] = Register(1)
+        self._regs['APSR_C'] = Register(1)
+        self._regs['APSR_V'] = Register(1) 
 
     def _read_APSR(self):
-        N = self.read(ARM_REG_APSR_N)
-        Z = self.read(ARM_REG_APSR_Z)
-        C = self.read(ARM_REG_APSR_C)
-        V = self.read(ARM_REG_APSR_V)
-        apsr = 0
-
         def make_apsr_flag(flag_expr, offset):
             'Helper for constructing an expression for the APSR register'
-            return Operators.ITEBV(cpu.address_bit_size, flag_expr,
-                              BitVecConstant(cpu.address_bit_size, 1 << offset),
-                              BitVecConstant(cpu.address_bit_size, 0))
+            return Operators.ITEBV(32, flag_expr,
+                              BitVecConstant(32, 1 << offset),
+                              BitVecConstant(32, 0))
+        apsr = 0
+        N = self.read('APSR_N')
+        Z = self.read('APSR_Z')
+        C = self.read('APSR_C')
+        V = self.read('APSR_V')
+
         if any(issymbolic(x) for x in [N, Z, C, V]):
             apsr = (make_apsr_flag(N, 31) |
                     make_apsr_flag(Z, 30) |
@@ -268,53 +210,50 @@ class Armv7RegisterFile(RegisterFile):
             if V: apsr |= 1 << 28
         return apsr 
 
+
     def _write_APSR(self, apsr):
+        ''' Auxiliary function - Writes flags from a full APSR (only 4 msb used) '''
         V = Operators.EXTRACT(apsr, 28, 1)
         C = Operators.EXTRACT(apsr, 29, 1)
         Z = Operators.EXTRACT(apsr, 30, 1)
         N = Operators.EXTRACT(apsr, 31, 1)
 
-        self.write(ARM_REG_APSR_V, V)
-        self.write(ARM_REG_APSR_C, C)
-        self.write(ARM_REG_APSR_Z, Z)
-        self.write(ARM_REG_APSR_N, N)
+        self.write('APSR_V', V)
+        self.write('APSR_C', C)
+        self.write('APSR_Z', Z)
+        self.write('APSR_N', N)
 
-
-    def read(self, reg_id):
-        if reg_id == ARM_REG_APSR:
+    def read(self, register):
+        assert register in self
+        if register == 'APSR':
             return self._read_APSR()
-        return self.regs[self.REGMAP[reg_id]].read()
+        register = self._alias(register)
+        return self._regs[register].read()
 
-    def write(self, reg_id, val):
-        if reg_id == ARM_REG_APSR:
-            return self._write_APSR(val)
-        reg_offset = self.REGMAP[reg_id]
-        reg = self.regs[reg_offset]
-        reg.write(val)
+    def write(self, register, value):
+        assert register in self
+        if register == 'APSR':
+            return self._write_APSR(value)
+        register = self._alias(register)
+        self._regs[register].write(value)
 
     @property
     def all_registers(self):
-        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','D0','D1','D2',
+        return super(Armv7RegisterFile, self).all_registers + \
+                ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','D0','D1','D2',
                 'D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14','D15','D16','D17','D18','D19','D20',
-                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR_N','APSR_Z','APSR_C','APSR_V') + ('STACK','PC','SP','LR')
+                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V')
 
     @property
     def canonical_registers(self):
-        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12', 'SP', 'LR', 'PC', 'APSR')
+        return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
 
-    def reg_name(self, reg_id):
-        reg_offset = self.REGMAP[reg_id]
-        return self.all_registers[reg_offset]
-
-    def reg_id(self, reg_name):
-        reg_name = self.aliases.get(reg_name, reg_name)
-        return globals()['ARM_REG_'+reg_name]
-            
-    def __contains__(self, reg_id):
-        return reg_id in self.all_registers
 
 class Armv7Cpu(Cpu):
-    '''Note: In this implementation, PC contains address of current
+    '''
+    Cpu specialization handling the ARMv7 architecture.
+
+    Note: In this implementation, PC contains address of current
     instruction + 4. However, official spec defines PC to be address of
     current instruction + 8 (section A2.3).
     '''
@@ -342,42 +281,6 @@ class Armv7Cpu(Cpu):
         self._last_flags = state['_last_flags']
         self._force_next = state['_force_next']
 
-    def _concretize_registers(cpu, instruction):
-        reg_values = {}
-        if hasattr(instruction, 'regs_access'):
-            (regs_read, regs_write) = instruction.regs_access()
-            regs = [ instruction.reg_name(r).upper() for r in regs_read ] 
-            regs.append('R15')
-        else:
-            regs = self.canonical_registers
-
-        logger.debug("Emulator wants this regs %r", regs)
-        for reg in regs:
-            value = cpu.read_register(reg)
-            if issymbolic(value):
-                raise ConcretizeRegister(reg, "Passing control to emulator") #FIXME improve exception to handle multiple registers at a time 
-            reg_values[reg] = value 
-
-        logger.info("Emulator wants this regs %r", reg_values)
-        return reg_values
-
-    def stack_get(self):
-        return self.STACK
-
-    def stack_set(self, value):
-        self.STACK = value
-
-
-    def pc_get(self):
-        return self.PC
-    def pc_set(self, value):
-        self.PC=value
-
-    def stack_sub(self, value):
-        self.STACK -= value
-    def stack_add(self, value):
-        self.STACK += value
-
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
     #
@@ -395,7 +298,7 @@ class Armv7Cpu(Cpu):
         '''
         unupdated_flags = self._last_flags.viewkeys() - flags.viewkeys()
         for flag in unupdated_flags:
-            flag_name = globals()['ARM_REG_APSR_%s'%(flag,)]
+            flag_name = 'APSR_{}'.format(flag)
             self._last_flags[flag] = self.regfile.read(flag_name)
         self._last_flags.update(flags)
 
@@ -404,7 +307,7 @@ class Armv7Cpu(Cpu):
         if self.instruction.mnemonic == 'adc':
             return
         for flag, val in self._last_flags.iteritems():
-            flag_name = globals()['ARM_REG_APSR_%s'%(flag,)]
+            flag_name = 'APSR_{}'.format(flag)
             self.regfile.write(flag_name, val)
 
 
@@ -416,7 +319,8 @@ class Armv7Cpu(Cpu):
         if _type in (ARM_SFT_RRX, ARM_SFT_RRX_REG) and amount != 1:
             amount = 1
 
-        if _type in range(ARM_SFT_ASR_REG, ARM_SFT_RRX_REG + 1):
+        elif _type in range(ARM_SFT_ASR_REG, ARM_SFT_RRX_REG + 1):
+            amount = cpu.instruction.reg_name(amount).upper()
             amount = Operators.EXTRACT(cpu.regfile.read(amount), 0, 8)
 
         if amount == 0:
@@ -441,29 +345,29 @@ class Armv7Cpu(Cpu):
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
     def stack_push(self, data):
         if isinstance(data, (int, long)):
-            self.stack_sub(self.address_bit_size/8)
-            self.write_int(self.stack_get(), data, self.address_bit_size)
+            self.SP -= self.address_bit_size/8
+            self.write_int(self.SP, data, self.address_bit_size)
         elif isinstance(data, BitVec):
-            self.stack_sub(data.size/8)
-            self.write_int(self.stack_get(), data, data.size)
+            self.SP -= data.size/8
+            self.write_int(self.SP, data, data.size)
         elif isinstance(data, str):
-            self.stack_sub(len(data))
-            self.write(self.stack_get(), data)
+            self.SP -= len(data)
+            self.write(self.SP, data)
         else:
             raise NotImplementedError('unsupported type for stack push data')
-        return self.stack_get()
+        return self.SP
 
     def stack_peek(self, nbytes=4):
-        return self.read(self.stack_get(), nbytes)
+        return self.read(self.SP, nbytes)
 
     def stack_pop(self, nbytes=4):
         # TODO is the distinction between load and read really in the op size?
         nbits = nbytes * 8
         if nbits == self.address_bit_size:
-            val = self.read_int(self.stack_get(), nbits)
+            val = self.read_int(self.SP, nbits)
         else:
-            val = self.read(self.stack_get(), nbytes)
-        self.stack_add(nbytes)
+            val = self.read(self.SP, nbytes)
+        self.SP += nbytes
         return val
 
     def read(self, addr, nbytes):
@@ -485,28 +389,6 @@ class Armv7Cpu(Cpu):
                 return 'ASR'
         return OP_NAME_MAP.get(name, name)
 
-    def readOperand(self, op):
-        if op.type == ARM_OP_REG:
-            return self.regfile.read(op.reg)
-        elif op.type == ARM_OP_IMM:
-            return op.imm
-        elif op.type == ARM_OP_MEM:
-            raise NotImplementedError('need to impl arm load mem')
-        else:
-            raise NotImplementedError("readOperand unknown type", op.type)
-
-    def writeOperand(self, op, value):
-        if op.type == ARM_OP_REG:
-            self.regfile.write(op.reg, value)
-        elif op.type == ARM_OP_MEM:
-            raise NotImplementedError('need to impl arm store mem')
-        else:
-            raise NotImplementedError("writeOperand unknown type", op.type)
-
-    def getOperandAddress(self, op):
-        # TODO IMPLEMENT
-        return -1
-
     def _wrap_operands(self, ops):
         return [Armv7Operand(self, op) for op in ops]
 
@@ -524,10 +406,10 @@ class Armv7Cpu(Cpu):
             cpu._force_next = False
             return True
 
-        C = cpu.regfile.read(ARM_REG_APSR_C)
-        N = cpu.regfile.read(ARM_REG_APSR_N)
-        V = cpu.regfile.read(ARM_REG_APSR_V)
-        Z = cpu.regfile.read(ARM_REG_APSR_Z)
+        C = cpu.regfile.read('APSR_C')
+        N = cpu.regfile.read('APSR_N')
+        V = cpu.regfile.read('APSR_V')
+        Z = cpu.regfile.read('APSR_Z')
 
         if   cc == ARM_CC_AL: ret = True
         elif cc == ARM_CC_EQ: ret = Z
@@ -553,76 +435,38 @@ class Armv7Cpu(Cpu):
 
         return ret
 
-    def getCanonicalRegisters(cpu):
-        #TODO: Clean up the way this interacts with the regfile
-        names = ['r%d'%(i,) for i in range(13)] + ['sp', 'lr', 'pc']
-        values = [cpu.regfile.regs[i].read() for i in range(16)]
-        d = dict(zip(names, values))
- 
-        N = cpu.regfile.read(ARM_REG_APSR_N)
-        Z = cpu.regfile.read(ARM_REG_APSR_Z)
-        C = cpu.regfile.read(ARM_REG_APSR_C)
-        V = cpu.regfile.read(ARM_REG_APSR_V)
-
-        cpsr = 0
-
-        def make_cpsr_flag(flag_expr, offset):
-            'Helper for constructing an expression for the CPSR register'
-            return Operators.ITEBV(cpu.address_bit_size, flag_expr,
-                              BitVecConstant(cpu.address_bit_size, 1 << offset),
-                              BitVecConstant(cpu.address_bit_size, 0))
-        if any(issymbolic(x) for x in [N, Z, C, V]):
-            cpsr = (make_cpsr_flag(N, 31) |
-                    make_cpsr_flag(Z, 30) |
-                    make_cpsr_flag(C, 29) |
-                    make_cpsr_flag(V, 28))
-        else:
-            if N: cpsr |= 1 << 31
-            if Z: cpsr |= 1 << 30
-            if C: cpsr |= 1 << 29
-            if V: cpsr |= 1 << 28
-            
-        d['cpsr'] = cpsr
-
-        return d
-
-    def getSyscallRetReg(self):
-        return 'r0'
     def get_syscall_description(cpu):
         # EABI standards:
         #  syscall # is in R7
         #  arguments are passed in R0-R6
         #  retval is passed in R0
-        index = cpu.regfile.read(ARM_REG_R7)
+        index = cpu.regfile.read('R7')
 
-        arg_indeces = [globals()['ARM_REG_R%d' % i] for i in range(0, 7)]
+        arg_indeces = ['R{}'.format(i) for i in range(0, 7)]
         arguments = [cpu.regfile.read(idx) for idx in arg_indeces]
 
         def writeResult(result, cpu = cpu):
-            cpu.regfile.write(ARM_REG_R0, result)
+            cpu.regfile.write('R0', result)
 
         return (index, arguments, writeResult)
 
     def getSyscallResult(self):
-        return self.regfile.read(ARM_REG_R0)
+        return self.regfile.read('R0')
 
     @instruction
     def MOV(cpu, dest, src):
-        '''TODO: MOV imm should technically set carry bit.
-              XXX: We now set carry bit when it's a shift operation
-           Note: If src operand is PC, temporarily release our logical PC
-           view and conform to the spec, which dictates PC = curr instr + 8
         '''
-        result, carry = src.read(withCarry=True)
-        dest.write(result)
+        Implement the MOV{S} instruction.
 
-        # Setting flags in two separate setFlags calls clears earlier flags, set
-        # it once
-        flags = {'N' : HighBit(result),
-                 'Z': (result == 0)}
-        if src.is_shifted():
-            flags['C'] = carry
-        cpu.setFlags(**flags)
+        Note: If src operand is PC, temporarily release our logical PC
+        view and conform to the spec, which dictates PC = curr instr + 8
+
+        :param Armv7Operand dest: The destination operand; register.
+        :param Armv7Operand src: The source operand; register or immediate.
+        '''
+        result, carry_out = src.read(withCarry=True)
+        dest.write(result)
+        cpu.setFlags(C=carry_out, N=HighBit(result), Z=(result == 0))
 
     def _handleWriteback(cpu, src, dest, offset):
         # capstone bug doesn't set writeback correctly for postindex reg
@@ -707,7 +551,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def ADC(cpu, dest, op1, op2):
-        carry = cpu.regfile.read(ARM_REG_APSR_C)
+        carry = cpu.regfile.read('APSR_C')
         result, carry, overflow = cpu._ADD(op1.read(), op2.read(), carry)
         dest.write(result)
         return result, carry, overflow
@@ -732,7 +576,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def SBC(cpu, dest, src, add):
-        carry = cpu.regfile.read(ARM_REG_APSR_C)
+        carry = cpu.regfile.read('APSR_C')
         result, carry, overflow = cpu._ADD(src.read(), ~add.read(), carry)
         dest.write(result)
         return result, carry, overflow
@@ -749,13 +593,13 @@ class Armv7Cpu(Cpu):
     @instruction
     def BLE(cpu, dest):
         cpu.PC = Operators.ITEBV(cpu.address_bit_size,
-                       cpu.regfile.read(ARM_REG_APSR_Z), dest.read(), cpu.PC)
+                       cpu.regfile.read('APSR_Z'), dest.read(), cpu.PC)
 
     @instruction
     def BL(cpu, label):
-        next_instr_addr = cpu.regfile.read(ARM_REG_PC)
-        cpu.regfile.write(ARM_REG_LR, next_instr_addr)
-        cpu.regfile.write(ARM_REG_PC, label.read())
+        next_instr_addr = cpu.regfile.read('PC')
+        cpu.regfile.write('LR', next_instr_addr)
+        cpu.regfile.write('PC', label.read())
 
 
     @instruction
@@ -765,9 +609,9 @@ class Armv7Cpu(Cpu):
         ## THUMB and regular modes, so we use the addresses as is. TODO: Handle
         ## thumb correctly and fix this
         target = dest.read()
-        next_instr_addr = cpu.regfile.read(ARM_REG_PC) #- 2
-        cpu.regfile.write(ARM_REG_LR, next_instr_addr) # | 1)
-        cpu.regfile.write(ARM_REG_PC, target & ~1)
+        next_instr_addr = cpu.regfile.read('PC') #- 2
+        cpu.regfile.write('LR', next_instr_addr) # | 1)
+        cpu.regfile.write('PC', target & ~1)
 
     @instruction
     def CMP(cpu, reg, cmp):
@@ -776,28 +620,14 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def POP(cpu, *regs):
-        sp = cpu.stack_get()
-        invalid = 0
-
-        # "The SP can only be in the list before ARMv7. ARM deprecates any use
-        # of ARM instructions that include the SP, and the value of the SP after
-        # such an instruction is UNKNOWN" (pg A8-537)
-        valid = lambda r: r.op.type == ARM_OP_REG and r.op.reg != ARM_REG_SP
-
         for reg in regs:
-            assert valid(reg)
             val = cpu.stack_pop(cpu.address_bit_size / 8)
             reg.write(val)
 
     @instruction
     def PUSH(cpu, *regs):
-        # ARM deprecates the use of ARM instructions that include the PC in the
-        # list (pg A8-539)
-        valid = lambda r: r.op.type == ARM_OP_REG and r.op.reg != ARM_REG_PC
-
         high_to_low_regs = regs[::-1]
         for reg in high_to_low_regs:
-            assert valid(reg)
             cpu.stack_push(reg.read())
 
 
@@ -927,10 +757,9 @@ class Armv7Cpu(Cpu):
         elif insn_id == ARM_INS_LSR:
             srtype = ARM_SFT_LSR_REG
 
-        carry = cpu.regfile.read(ARM_REG_APSR_C)
+        carry = cpu.regfile.read('APSR_C')
         if rest:
-            amount_val = rest[0].op.reg
-            result, carry = cpu._Shift(op.read(), srtype, amount_val, carry)
+            result, carry = cpu._Shift(op.read(), srtype, rest[0].op.reg, carry)
         else:
             result, carry = op.read(withCarry=True)
         dest.write(result)
@@ -988,9 +817,8 @@ class Armv7Cpu(Cpu):
 
     def _VSTM(cpu, address, *regs):
         for reg in regs:
-            size = reg.size()
-            cpu.write_int(address, reg.read(), size * 8)
-            address += size
+            cpu.write_int(address, reg.read(), reg.size)
+            address += reg.size/8
 
         return address
 
@@ -1010,3 +838,12 @@ class Armv7Cpu(Cpu):
     @instruction
     def STCL(cpu, *operands):
         pass
+
+    @instruction
+    def DMB(cpu, *operands):
+        '''
+        Used by the the __kuser_dmb ARM Linux user-space handler. This is a nop
+        under Manticore's memory and execution model.
+        '''
+        pass
+

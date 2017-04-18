@@ -356,6 +356,7 @@ class BitVec(Expression):
     def Bool(self):
         return self != 0
 
+
 class BitVecVariable(BitVec, Variable):
     def __init__(self, *args, **kwargs):
         super(BitVecVariable, self).__init__(*args, **kwargs)
@@ -605,19 +606,8 @@ class ArrayStore(ArrayOperation):
 class ArrayProxy(ArrayVariable):
     def __init__(self, array):
         assert isinstance(array, ArrayVariable)
+        super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.name)
         self._array = array
-
-    @property
-    def name(self):
-        return self._array.name
-
-    @property
-    def index_bits(self):
-        return self._array._index_bits
-
-    @property
-    def index_max(self):
-        return self._array._index_max
 
     @property
     def operands(self):

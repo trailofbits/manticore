@@ -1,29 +1,3 @@
-# Copyright (c) 2013, Felipe Andres Manzano
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-#     * Redistributions of source code must retain the above copyright notice,
-#       this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice,this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the copyright holder nor the names of its
-#       contributors may be used to endorse or promote products derived from
-#       this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
 import sys
 import time
 import os
@@ -32,6 +6,7 @@ import cPickle
 import cProfile
 import random
 import logging
+import pstats
 import traceback
 import signal
 import weakref
@@ -43,7 +18,7 @@ from math import ceil, log
 
 from ..utils.nointerrupt import DelayedKeyboardInterrupt
 from .cpu.abstractcpu import ConcretizeRegister, ConcretizeMemory, \
-        InvalidPCException, IgnoreAPI
+        InvalidPCException, IgnoreAPI, SymbolicPCException
 from .memory import MemoryException, SymbolicMemoryException
 from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
 from ..utils.event import Signal
@@ -94,7 +69,30 @@ def sync(f):
             self._lock.release()
     return newFunction
 
+class ProfilingResults(object):
+    def __init__(self, raw_stats, instructions_executed):
+        self.raw_stats = raw_stats
+        self.instructions_executed = instructions_executed
+
+        self.time_elapsed = raw_stats.total_tt
+
+        self.loading_time = 0
+        self.saving_time = 0
+        self.solver_time = 0
+        for (func_file, _, func_name), (_, _, _, func_time, _) in raw_stats.stats.iteritems():
+            if func_name == '_getState':
+                self.loading_time += func_time
+            elif func_name == '_putState':
+                self.saving_time += func_time
+            elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
+                self.solver_time += func_time
+
 class Executor(object):
+    '''
+    The executor guides the execution of a single state, handles state forking 
+    and selection, maintains run statistics and handles all exceptional
+    conditions (system calls, memory faults, concretization, etc.)
+    '''
 
     def shutdown(self):
         with self._lock:
@@ -113,7 +111,6 @@ class Executor(object):
 
         self.max_states = options.get('maxstates', 0)
         self.max_storage = options.get('maxstorage', 0)
-        self.replay_path = options.get('replay', None) #(dest, cond, origin)
         self._dump_every = options.get('dumpafter', 0)
         self._profile = cProfile.Profile()
         self.profiling = options.get('dumpstats', False)
@@ -134,7 +131,6 @@ class Executor(object):
         self._running = manager.Value('i', 0 )
         self._count = manager.Value('i', 0 )
         self._shutdown = manager.Value('i', 0)
-        #self.timeout = manager.Event()
         self._visited = manager.list()
         self._errors = manager.list()
         self._all_branches = manager.list()
@@ -158,16 +154,12 @@ class Executor(object):
         #Normally...
         if len(saved_states) == 0 :
             self.putState( initial )
-        else:
-            #If we are continuin from a set of saved states replay is not supported
-            assert self.replay_path is None 
 
     def dump_stats(self):
         if not self.profiling:
             logger.debug("Profiling not enabled.")
             return
 
-        import pstats
         class PstatsFormatted:
             def __init__(self, d):
                 self.stats = dict(d)
@@ -199,26 +191,14 @@ class Executor(object):
                 How long it actually took (tottime: excludes the times of other functions) - 
                 What functions it called (callers) - 
                 What functions called it (callees)'''
+            results = ProfilingResults(ps, self.count)
 
-            getstate_time = 0.0
-            putstate_time = 0.0
-            solver_time = 0.0
-
-            for (func_file, func_line, func_name), (cc, nc, tt, ct, callers) in ps.stats.iteritems():
-                #This if tries to sum only independient stuff
-                if func_name == '_getState':
-                    getstate_time += ct
-                elif func_name == '_putState':
-                    putstate_time += ct
-                elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
-                    solver_time += ct
-                #print (func_file, func_line, func_name), (cc, nc, tt, ct)
-
-            logger.info("Total profiled time: %f", ps.total_tt)
-            logger.info("Loading state time: %f", getstate_time)
-            logger.info("Saving state time: %f", putstate_time)
-            logger.info("Solver time: %f", solver_time)
-            logger.info("Other time: %f", ps.total_tt - (getstate_time+putstate_time+solver_time))
+            logger.info("Total profiled time: %f", results.time_elapsed)
+            logger.info("Loading state time: %f", results.loading_time)
+            logger.info("Saving state time: %f", results.saving_time)
+            logger.info("Solver time: %f", results.solver_time)
+            logger.info("Other time: %f", results.time_elapsed - (results.loading_time + results.saving_time + results.solver_time))
+            return results
 
     def _getFilename(self, filename):
         return os.path.join(self.workspace, filename)
@@ -256,6 +236,11 @@ class Executor(object):
 
     @sync
     def putState(self, state):
+        '''
+        Serialize and store a given state.
+
+        :param state: The state to serialize
+        '''
         return self._putState(state)
 
     def _putState(self, state):
@@ -293,10 +278,6 @@ class Executor(object):
         # get last executed instruction
         last_cpu, last_pc = state.last_pc
 
-        try:
-            state.branches[(last_pc, state.cpu.PC)] += 1
-        except KeyError:
-            state.branches[(last_pc, state.cpu.PC)] = 1
         item = (last_pc, state.cpu.PC)
         assert not issymbolic(last_pc)
         assert not issymbolic(state.cpu.PC)
@@ -331,6 +312,14 @@ class Executor(object):
 
     @sync
     def getState(self, policy='random', order='max', fudge=1):
+        '''
+        Load a stored state according to policy and order.
+
+        :param policy: One of: 'random','adhoc','uncovered','dicount','icount','syscount','depth', or 'bucket'
+        :param order: 'max' or 'min'
+        :param fudge: Whether to skip any
+        :return: a State instance
+        '''
         return self._getState(policy, order, fudge)
 
     def _getState(self, policy='random', order='max', fudge=1):
@@ -426,6 +415,12 @@ class Executor(object):
         return new_state 
 
     def generate_testcase(self, state, message = 'Testcase generated'):
+        '''
+        Create a serialized description of a given state.
+
+        :param state: The state to generate information about
+        :param message: Accompanying message
+        '''
         with self._lock:
             self._test_number.value += 1
             test_number = self._test_number.value
@@ -469,7 +464,7 @@ class Executor(object):
 
             output.write("CPU:\n{}".format(cpu))
 
-            if hasattr(cpu, "instruction"):
+            if hasattr(cpu, "instruction") and cpu.instruction is not None:
                 i = cpu.instruction
                 output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
             else:
@@ -497,10 +492,14 @@ class Executor(object):
         file(self._getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.model.syscall_trace))
 
         stdout = ''
+        stderr = ''
         for sysname, fd, data in state.model.syscall_trace:
             if sysname in ('_transmit', '_write') and fd == 1:
                 stdout += ''.join(map(str, data))
+            if sysname in ('_transmit', '_write') and fd == 2:
+                stderr += ''.join(map(str, data))
         file(self._getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
+        file(self._getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
 
         # Save STDIN solution
         stdin_file = 'test_{:08x}.stdin'.format(test_number)
@@ -611,12 +610,14 @@ class Executor(object):
             self._lock.notify_all()
 
     def run(self):
+        '''
+        Entry point of the Executor; called by workers to start analysis.
+        '''
         if self.profiling:
             self._profile.enable()
 
         policy_order=self.policy_order
         policy=self.policy
-        replay_path = self.replay_path
 
         count = 0
         current_state = None
@@ -734,6 +735,9 @@ class Executor(object):
                     assert len(vals) > 0, "It should be at least one solution"
                     logger.debug("%s. Possible values are: %s", e.message, ["0x%016x"%x for x in vals])
 
+                    if isinstance(e, SymbolicPCException):
+                        current_state.record_branches(vals)
+
                     def setstate(state, val):
                         # XXX This only applies to ARM since x86 has no conditional instructions
                         if hasattr(state.cpu, 'forceNextInstruction'):
@@ -743,7 +747,7 @@ class Executor(object):
                     del vals, symbolic, setstate
 
                 except SymbolicMemoryException as e:
-                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.current.PC, e.cause)
+                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.PC, e.cause)
                     logger.info('Constraint for crashing! %s', e.constraint)
 
                     children = []

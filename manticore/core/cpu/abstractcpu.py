@@ -1,152 +1,163 @@
 from capstone import *
 from capstone.arm import *
 from capstone.x86 import *
-from unicorn import *
-from unicorn.x86_const import *
-from unicorn.arm_const import *
 from abc import ABCMeta, abstractmethod
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
-from ..memory import MemoryException
+from ..memory import MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
+from ...utils.emulate import UnicornEmulator
 import sys
 from functools import wraps
 import types
 import logging
 logger = logging.getLogger("CPU")
 
-######################################################################
-# Abstract classes for capstone/unicorn based cpus
-# no emulator by default
-MU = {
-        (CS_ARCH_ARM, CS_MODE_ARM): Uc(UC_ARCH_ARM, UC_MODE_ARM),
-        (CS_ARCH_X86, CS_MODE_32): Uc(UC_ARCH_X86, UC_MODE_32),
-        (CS_ARCH_X86, CS_MODE_64): Uc(UC_ARCH_X86, UC_MODE_64)
-     }
+
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 # This encapsulates how to acccess operands (regs/mem/immediates) for differents cpus
 class Operand(object):
-    __metaclass__ = ABCMeta
-    def _reg_name(self, reg_id):
-        return reg_id
 
     class MemSpec(object):
+        '''
+        Auxiliary class wraps capstone operand 'mem' attribute. This will
+        return register names instead of Ids
+        ''' 
         def __init__(self, parent):
             self.parent = parent
         segment = property( lambda self: self.parent._reg_name(self.parent.op.mem.segment) )
         base = property( lambda self: self.parent._reg_name(self.parent.op.mem.base) )
         index = property( lambda self: self.parent._reg_name(self.parent.op.mem.index) )
-        scale = property( lambda self: self.parent._reg_name(self.parent.op.mem.scale) )
-        disp = property( lambda self: self.parent._reg_name(self.parent.op.mem.disp) )
-
+        scale = property( lambda self: self.parent.op.mem.scale )
+        disp = property( lambda self: self.parent.op.mem.disp )
 
     def __init__(self, cpu, op, **kwargs):
         '''
-        This encapsulates the arch way to access instruction operands and immediates based on a 
-        capstone operand descriptor.
-        This class knows how to browse a capstone operand and get the details of operand.
-        It also knows how to access the specific Cpu to get the actual values from memory and registers.
+        This encapsulates the arch-independent way to access instruction
+        operands and immediates based on a capstone operand descriptor. This
+        class knows how to browse a capstone operand and get the details of
+        operand.
 
-        @param cpu:  A Cpu oinstance
-        @param op: a Capstone operand (eew)
+        It also knows how to access the specific Cpu to get the actual values
+        from memory and registers.
+
+        :param Cpu cpu: A Cpu instance
+        :param op: A Capstone operand
+        :type op: X86Op or ArmOp
         '''
-        self.cpu=cpu
-        self.op=op
-        if op.type == X86_OP_MEM:
-            self.mem = self.__class__.MemSpec(self)
+        assert isinstance(cpu, Cpu)
+        assert isinstance(op, (X86Op, ArmOp))
+        self.cpu = cpu
+        self.op = op
+        self.mem = Operand.MemSpec(self)
+
+    def _reg_name(self, reg_id):
+        '''
+        Translates a capstone register ID into the register name
+
+        :param int reg_id: Register ID
+        '''
+        cs_reg_name = self.cpu.instruction.reg_name(reg_id)
+        if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
+            return None
+        return self.cpu._regfile._alias(cs_reg_name.upper())
 
     def __getattr__(self, name):
         return getattr(self.op, name)
 
-    @abstractmethod
+    @property
+    def size(self):
+        ''' Return bit size of operand '''
+        raise NotImplementedError
+        
     def address(self):
         ''' On a memory operand it returns the effective address '''
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def read(self):
         ''' It reads the operand value from the registers or memory '''
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def write(self, value):
-        ''' It writes the value ofspecific type to the registers or memory '''
-        pass
+        ''' It writes the value of specific type to the registers or memory '''
+        raise NotImplementedError
 
-# Basic register file structure not actully need to abstract as it's used only from the cpu implementation
+# Basic register file structure not actully need to abstract as it's used only'
+# from the cpu implementation
 class RegisterFile(object):
-
 
     def __init__(self, aliases=None):
         if aliases is None:
             aliases = {}
+        # dict mapping from alias register name ('PC') to actual register
+        # name ('RIP')
         self._aliases = aliases
-        ''''dict mapping from alias register name ('PC') to actual register name
-            ('RSP'), which can be passed into reg_id()
-        '''
 
-    #@abstractmethod
-    def write(self, reg_id, value):
-        ''' Write value to the register reg_id 
-            @param reg_id: a register id. Must be listed on all_registers
-            @param value: a value of the expected type
-            @return the value actually written to the register
+    def _alias(self, register):
         '''
-        pass
-
-    #@abstractmethod
-    def read(self, reg_id):
-        ''' Read value from the register identified by reg_id 
-            @param reg_id: a register id. Must be listed on all_registers
-            @return the register value
+        Get register canonical alias. ex. PC->RIP or PC->R15
+        
+        :param str register: The register name
         '''
-        pass
+        return self._aliases.get(register, register) 
 
-    #@abstractmethod
-    def reg_name(self, reg_id):
-        ''' Gives a string representation (name) of a register (ID->name)
-            @param reg_id: a register ID
+    def write(self, register, value):
+        '''
+        Write value to the specified register 
+
+        :param str register: a register id. Must be listed on all_registers
+        :param value: a value of the expected type
+        :type value: int or long or Expression
+        :return: the value actually written to the register
         '''
         pass
 
-    #@abstractmethod
-    def reg_id(self, reg_name):
-        ''' Gives the register ID for a string representation of a register (name->ID)
-            @param reg_name: a string representation of reg_id register'''
+    def read(self, register):
+        '''
+        Read value from specified register 
+
+        :param str register: a register name. Must be listed on all_registers
+        :return: the register value
+        '''
         pass
 
     @property
     def all_registers(self):
         ''' Lists all possible register names (Including aliases) '''
-        pass
+        return tuple(self._aliases)
 
     @property
     def canonical_registers(self):
         ''' List the minimal most beautiful set of registers needed '''
         pass
         
-    def __contains__(self, reg_id):
-        ''' Check for register validity 
-            @param reg_id: a register ID
+    def __contains__(self, register):
         '''
-        return reg_id in self.all_registers
+        Check for register validity 
+
+        :param register: a register name
+        '''
+        return self._alias(register) in self.all_registers 
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
 class Cpu(object):
-    def __init__(self, regfile, memory):
-        '''
-        This is an abstract representation os a Cpu. Functionality common to all 
-        subyacent architectures (and expected from users of a Cpu) should be here.
+    '''
+    Base class for all Cpu architectures. Functionality common to all
+    architectures (and expected from users of a Cpu) should be here. Commonly
+    used by models and py:class:manticore.core.Executor
 
-        The following attributes need to be defined in any derived class
-        assert hasattr(self, 'arch')
-        assert hasattr(self, 'mode')
-        assert hasattr(self, 'max_instr_width')
-        assert hasattr(self, 'address_bit_size')
-        assert hasattr(self, 'pc_alias')
-        assert hasattr(self, 'stack_alias')
-        '''
+    The following attributes need to be defined in any derived class
+
+    - arch
+    - mode
+    - max_instr_width
+    - address_bit_size
+    - pc_alias
+    - stack_alias
+    '''
+
+    def __init__(self, regfile, memory):
         assert isinstance(regfile, RegisterFile)
         super(Cpu, self).__init__()
         self._regfile = regfile
@@ -158,7 +169,6 @@ class Cpu(object):
         self._md.detail = True
         self._md.syntax = 0
         self.instruction = None
-        #FIXME self.transactions = []
 
     def __getstate__(self):
         state = {}
@@ -185,50 +195,70 @@ class Cpu(object):
 
     @property
     def all_registers(self):
-        ''' Returns the list of all register names  for this CPU.
-        @rtype: tuple
-        @return: the list of register names for this CPU.
+        '''
+        Returns all register names for this CPU. Any register returned can be
+        accessed via a `cpu.REG` convenience interface (e.g. `cpu.EAX`) for both
+        reading and writing.
+
+        :return: valid register names
+        :rtype: tuple[str]
         '''
         return self._regfile.all_registers
 
-    #this operates on names
-    def write_register(self, name, value):
-        ''' A convenient method to write a register by name (this accepts alias)
-            @param name a register name as listed in all_registers
-            @param value a value
-            @return It will return the written value possibly croped
+    @property
+    def canonical_registers(self):
         '''
-        reg_id = self._regfile.reg_id(name)
-        return self._regfile.write(reg_id, value)
+        Returns the list of all register names  for this CPU.
 
-    def read_register(self, name):
-        ''' A convenient method to read a register by name (this accepts alias)
-            @param name a register name as listed in all_registers
-            @param value a value
-            @return It will return the written value possibly croped
+        :rtype: tuple
+        :return: the list of register names for this CPU.
         '''
-        reg_id = self._regfile.reg_id(name)
-        return self._regfile.read(reg_id)
+        return self._regfile.canonical_registers
+
+    def write_register(self, register, value):
+        '''
+        Dynamic interface for writing cpu registers
+
+        :param str register: register name (as listed in `self.all_registers`)
+        :param value: register value
+        :type value: int or long or Expression
+        '''
+        return self._regfile.write(register, value)
+
+    def read_register(self, register):
+        '''
+        Dynamic interface for reading cpu registers
+
+        :param str register: register name (as listed in `self.all_registers`)
+        :return: register value
+        :rtype int or long or Expression
+        '''
+        return self._regfile.read(register)
 
     # Pythonic acces to registers and aliases
     def __getattr__(self, name):
-        ''' A pythonic version of read_register '''
-        assert name != '_regfile'
-        if hasattr(self, '_regfile') and name in self.all_registers:
-            return self.read_register(name)
+        '''
+        A Pythonic version of read_register
 
+        :param str name: Name of the register
+        '''
+        assert name != '_regfile'
+        if hasattr(self, '_regfile') and name in self._regfile:
+            return self.read_register(name)
         raise AttributeError(name)
 
     def __setattr__(self, name, value):
-        ''' A pythonic version of write_register '''
-        if hasattr(self, '_regfile') and name in self.all_registers:
+        '''
+        A Pythonic version of write_register
+
+        :param str name: Name of the register to set
+        :param value: The value to set the register to
+        :type param: int or long or Expression
+        '''
+        if hasattr(self, '_regfile') and name in self._regfile:
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
     
-    def getCanonicalRegisters(self):
-        values = [self.read_register(rname) for rname in self.canonical_registers]
-        d = dict(zip(self.canonical_registers, values))
-        return d
 
     #############################
     # Memory access
@@ -238,11 +268,12 @@ class Cpu(object):
 
     def write_int(self, where, expr, size=None):
         '''
-        Writes an integer value of C{size} bits to memory at address C{where}.
-        
-        @param where: the address in memory where to store the value.
-        @param expr: the value to store in memory.
-        @param size: the amount of bytes to write. 
+        Writes int to memory
+
+        :param int where: address to write to
+        :param expr: value to write
+        :type expr: int or BitVec
+        :param size: bit size of `expr`
         '''
         if size is None:
             size = self.address_bit_size
@@ -251,12 +282,12 @@ class Cpu(object):
 
     def read_int(self, where, size=None):
         '''
-        Reads anm integuer value of C{size} bits from memory at address C{where}.
+        Reads int from memory
 
-        @rtype: int or L{BitVec}
-        @param where: the address to read from.
-        @param size: the number of bits to read.
-        @return: the value read.
+        :param int where: address to read from
+        :param size: number of bits to read
+        :return: the value read
+        :rtype: int or BitVec
         '''
         if size is None:
             size = self.address_bit_size
@@ -269,20 +300,23 @@ class Cpu(object):
 
     def write_bytes(self, where, data):
         '''
-        Writes C{data} in the address C{where}.
-        
-        @param where: address to write the data C{data}.
-        @param data: the data to write in the address C{where}.  
+        Write a concrete or symbolic (or mixed) buffer to memory
+
+        :param int where: address to write to
+        :param data: data to write
+        :type data: str or list
         '''
         for i in xrange(len(data)):
             self.write_int( where+i, Operators.ORD(data[i]), 8)
 
     def read_bytes(self, where, size):
         '''
-        Writes C{data} in the address C{where}.
-        
-        @param where: address to read the data C{data} from.
-        @param size: number of bytes.
+        Read from memory.
+
+        :param int where: address to read data from
+        :param int size: number of bytes
+        :return: data
+        :rtype: list[int or Expression]
         '''
         result = []
         for i in xrange(size):
@@ -293,12 +327,17 @@ class Cpu(object):
     # Decoder
     @abstractmethod
     def _wrap_operands(self, operands):
-        ''' Private method to decorate a capston Operand to our needs. See Operand class'''
+        '''
+        Private method to decorate a capstone Operand to our needs. See Operand
+        class
+        '''
         pass
 
     def decode_instruction(self, pc):
-        ''' This will decode an intructcion from memory pointed by @pc
-            @param pc address of the instruction
+        '''
+        This will decode an intructcion from memory pointed by @pc
+
+        :param int pc: address of the instruction
         '''
         #No dynamic code!!! #TODO! 
         #Check if instruction was already decoded 
@@ -345,8 +384,9 @@ class Cpu(object):
     # Execute
     @abstractmethod
     def canonicalize_instruction_name(self, instruction):
-        ''' Get the semantic name of an instruction. 
-        The subyacent arch implementations'''
+        '''
+        Get the semantic name of an instruction. 
+        '''
         pass
 
     def execute(self):
@@ -362,11 +402,14 @@ class Cpu(object):
 
         name = self.canonicalize_instruction_name(instruction)
 
-        try:
-            implementation = getattr(self, name)
-        except AttributeError as ae:
-            logger.debug("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s", instruction.address, ' '.join(map(lambda x: '%02x'%x, instruction.bytes)), instruction.mnemonic, instruction.op_str)
-            implementation = lambda *ops: self.emulate(instruction)
+        def fallback_to_emulate(*operands):
+            text_bytes = ' '.join('%02x'%x for x in instruction.bytes)
+            logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s",
+                    instruction.address, text_bytes, instruction.mnemonic,
+                    instruction.op_str)
+            self.emulate(instruction)
+
+        implementation = getattr(self, name, fallback_to_emulate)
 
         #log
         if logger.level == logging.DEBUG :
@@ -374,126 +417,33 @@ class Cpu(object):
                 logger.debug(l)
 
         implementation(*instruction.operands)
-
         self._icount+=1
 
     @abstractmethod
     def get_syscall_description(self):
         pass
 
-    #############################################################
-    # Emulation
-    def _concretize_registers(self, instruction):
-        pass
-
-    def _unicorn(self):
-        return MU[(self.arch, self.mode)]
-
     def emulate(self, instruction):
-        #Fix Taint propagation
-        needed_pages = set()
-        needed_bytes = set()
-        mapped = set()
-        accessed = set()
-        byte_values = {}
+        '''
+        If we could not handle emulating an instruction, use Unicorn to emulate
+        it.
 
-        reg_values = self._concretize_registers(instruction)
-        # Request any memory nearby the memory directly needed by the memory
-        # operands of the instruction. 
-        for op in instruction.operands:
-            if op.type != {CS_ARCH_ARM: ARM_OP_MEM, CS_ARCH_X86: X86_OP_MEM}[self.arch]:
-                continue
-            self.PC += instruction.size
-            addr = op.address()  #FIXME maybe add a kwarg parameter to operand.address() with the current pc?
-            self.PC -= instruction.size
-            assert not issymbolic(addr)
-            num_bytes = op.size/8
-            needed_bytes.update(range(addr, addr + num_bytes))
-        # Request the bytes of the instruction.
-        needed_bytes.update(range(self.PC, self.PC + instruction.size))
-
-        # Concretizes the bytes of memory potentially needed by the instruction.
-        for addr in needed_bytes:
-            needed_pages.add(addr & (~0xFFF))
-            val = self.read_int(addr, 8)
-            if issymbolic(val):
-                logger.debug("Concretizing bytes before passing it to unicorn")
-                raise ConcretizeMemory(addr, 8, "Passing control to emulator", 'SAMPLED')
-            byte_values[addr] = val
-
-        mu = self._unicorn()
-
-        touched = set()
-        def hook_mem_access(uc, access, address, size, value, user_data):
-            if access & UC_MEM_WRITE:
-                for i in range(address, address+size):
-                    user_data.add(i)
-            if access & UC_MEM_READ:
-                for i in range(address, address+size):
-                    if i not in needed_bytes:
-                        logger.error("Not initalized memory used by emulator at %x", address)
-        try:
-            # Copy in the concrete values of all needed registers.
-            for reg, value in reg_values.items():
-                #stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
-                stem = 'UC_X86_REG_'
-                mu.reg_write(globals()[stem+reg], value)
-
-            #Map needed pages
-            for page in needed_pages:
-                mapped.add(page)
-                mu.mem_map(page, 0x1000, UC_PROT_ALL)
-            # Copy in memory bytes needed by instruction.
-            for addr, value in byte_values.items():
-                mu.mem_write(addr, Operators.CHR(value))
-
-            # Run the instruction.
-            hook_id = mu.hook_add(UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, hook_mem_access, touched)
-            mu.emu_start(self.PC, self.PC+instruction.size)
-            mu.hook_del(hook_id)
-            mu.emu_stop()
-
-            # Copy back the memory modified by the unicorn emulation.
-            for addr in touched:
-                if not addr in needed_bytes:
-                    logger.error("Some address was touched in the emulation but not provided %x", addr)
-                assert addr in needed_bytes
-                try:
-                    cpu.write_int(addr, ord(mu.mem_read(addr, 1)), 8)
-                except:
-                    pass
-
-            # Copy back the new values of all registers.
-            if hasattr(instruction, 'regs_access') and instruction.regs_access is not None:
-                (regs_read, regs_write) = instruction.regs_access()
-                regs = [ instruction.reg_name(r).upper() for r in regs_write ] 
-                if self.arch == CS_ARCH_X86:
-                    regs += ['FPSW', 'FPCW', 'FPTAG', 'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7']
-            else:
-                regs = reg_values.keys()
-            logger.debug("Emulator wrote to this regs %r", regs)
-            for reg in regs:
-                #stem = {CS_ARCH_ARM: 'UC_ARM_REG_', CS_ARCH_X86: 'UC_X86_REG_'}[self.arch]
-                stem = 'UC_X86_REG_'
-                new_value = mu.reg_read(globals()[stem+reg])
-                self.write_register(reg, new_value)
-          
-            self.PC = self.PC+instruction.size
-            return
-        except Exception as e:
-            logger.error('Exception in emulatin code:')
-            logger.error(e, exc_info=True)
-        finally:
-            for i in mapped:
-                mu.mem_unmap(i,0x1000)
+        :param capstone.CsInsn instruction: The instruction object to emulate
+        '''
+        emu = UnicornEmulator(self)
+        emu.emulate(instruction)
+        # We have been seeing occasional Unicorn issues with it not clearing
+        # the backing unicorn instance. Saw fewer issues with the following
+        # line present.
+        del emu
 
     #Generic string representation
     def __str__(self):
         '''
         Returns a string representation of cpu state
         
-        @rtype: str
-        @return: a string containing the name and current value for all the registers. 
+        :rtype: str
+        :return: name and current value for all the registers. 
         '''
         result = ""
         try:
@@ -519,7 +469,7 @@ class Cpu(object):
 
 
 class DecodeException(Exception):
-    ''' You tried to decode an unknown or invalid intruction '''
+    ''' Raised when trying to decode an unknown or invalid intruction '''
     def __init__(self, pc, bytes, extra):
         super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
         self.pc=pc
@@ -527,16 +477,17 @@ class DecodeException(Exception):
         self.extra=extra
 
 class InvalidPCException(Exception):
-    ''' Exception raised when you try to execute invalid or not executable memory
+    '''
+    Exception raised when you try to execute invalid or not executable memory
     '''
     def __init__(self, pc):
         super(InvalidPCException, self).__init__("Trying to execute invalid memory @%08x"%pc)
         self.pc=pc
 
-class InstructionNotImplemented(Exception):
-    ''' Exception raised when you try to execute an instruction that is
-        not yet implemented in the emulator.
-        Go to cpu.py and add it!
+class InstructionNotImplementedError(Exception):
+    '''
+    Exception raised when you try to execute an instruction that is not yet
+    implemented in the emulator. Add it to the Cpu-specific implementation.
     '''
     pass
 
@@ -549,7 +500,7 @@ class CpuInterrupt(Exception):
     pass
 
 class Interruption(CpuInterrupt):
-    ''' '''
+    ''' A software interrupt. '''
     def __init__(self, N):
         super(Interruption,self).__init__("CPU Software Interruption %08x", N)
         self.N = N
@@ -559,36 +510,53 @@ class Syscall(CpuInterrupt):
     def __init__(self):
         super(Syscall, self).__init__("CPU Syscall")
 
-class ConcretizeRegister(Exception):
-    ''' '''
-    def __init__(self, reg_name, message, policy='MINMAX'):
-        assert policy in ['MINMAX', 'ALL', 'SAMPLED']
-        super(ConcretizeRegister, self).__init__("Concretizing %s (%s). %s"%(reg_name, policy, message))
-        self.reg_name = reg_name
-        self.policy = policy
+# TODO(yan): Move this into State or a more appropriate location
 
-class ConcretizeMemory(Exception):
-    ''' '''
+class ConcretizeException(Exception):
+    '''
+    Base class for all exceptions that trigger the concretization of a symbolic
+    value.
+    '''
+    _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
+    def __init__(self, message, policy):
+        assert policy in self._ValidPolicies, "Policy must be one of: %s"%(', '.join(self._ValidPolicies),)
+        self.policy = policy
+        super(ConcretizeException, self).__init__("%s (Policy: %s)"%(message, policy))
+
+class ConcretizeRegister(ConcretizeException):
+    '''
+    Raised when a symbolic register needs to be concretized.
+    '''
+    def __init__(self, reg_name, message, policy='MINMAX'):
+        message = "Concretizing %s. %s"%(reg_name, message)
+        super(ConcretizeRegister, self).__init__(message, policy)
+        self.reg_name = reg_name
+
+class ConcretizeMemory(ConcretizeException):
+    '''
+    Raised when a symbolic memory location needs to be concretized.
+    '''
     def __init__(self, address, size, message, policy='MINMAX'):
-        assert policy in ['MINMAX', 'ALL', 'SAMPLED']
-        super(ConcretizeMemory, self).__init__("Concretizing byte at %x (%s). %s"%(address, policy, message))
+        message = "Concretizing byte at %x. %s"%(address, message)
+        super(ConcretizeMemory, self).__init__(message, policy)
         self.address = address
         self.size = size
-        self.policy = policy
 
-class ConcretizeArgument(Exception):
-    ''' '''
+class ConcretizeArgument(ConcretizeException):
+    '''
+    Raised when a symbolic argument needs to be concretized.
+    '''
     def __init__(self, argnum, policy='MINMAX'):
-        assert policy in ['MINMAX', 'ALL', 'SAMPLED']
-        super(ConcretizeArgument, self).__init__("Concretizing argument #%d (%s): "%(argnum, policy))
+        message = "Concretizing argument #%d."%(argnum,)
+        super(ConcretizeArgument, self).__init__(message, policy)
         self.argnum = argnum
-        self.policy = policy
-
 
 class SymbolicPCException(ConcretizeRegister):
-    ''' '''
+    '''
+    Raised when we attempt to execute from a symbolic location.
+    '''
     def __init__(self):
-        super(SymbolicPCException, self).__init__("PC", "Symbolic PC", "ALL")
+        super(SymbolicPCException, self).__init__("PC", "Can't execute from a symbolic address.", "ALL")
 
 class IgnoreAPI(Exception):
     def __init__(self, name):
