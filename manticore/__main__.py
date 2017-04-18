@@ -32,7 +32,7 @@ def parse_arguments():
     parser.add_argument('--maxsymb', type=int, default=512, help='Maximun number of symbolic bytes to inject')
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
-    parser.add_argument('--env', type=str, nargs='+', default=[],
+    parser.add_argument('--env', type=str, nargs=1, default=[],
                         help='Specify symbolic environment variable VARNAME=++++++')
     parser.add_argument('--policy', type=str, default='random',
                         help='Search policy. random|adhoc|uncovered|dicount|icount|syscount|depth.'\
@@ -53,7 +53,6 @@ def parse_arguments():
     parser.add_argument('--names', type=str, default=None, help='File with function addresses to replace with known models')
     parser.add_argument('programs', type=str, nargs='+', metavar='PROGRAM',
                        help='Programs to analyze (arguments after ?)' )
-    parser.add_argument('--no-mp', action='store_true', help='Disable multiprocess')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0 :
@@ -115,7 +114,7 @@ def main():
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
 
-    m.run()
+    m.run(args.timeout)
 
     m.dump_stats()
 

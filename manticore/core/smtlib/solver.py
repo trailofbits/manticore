@@ -26,6 +26,10 @@ from visitors import *
 from ...utils.helpers import issymbolic
 logger = logging.getLogger("SMT")
 
+
+class Z3NotFoundError(EnvironmentError):
+    pass
+
 class SolverException(Exception):
     pass
 
@@ -48,8 +52,8 @@ class Solver(object):
     def optimize(self, X, operation, M=10000):
         ''' Iterativelly finds the maximun or minimal value for the operation 
             (Normally Operators.UGT or Operators.ULT)
-            @param X: a symbol or expression
-            @param M: maximun number of iterations allowed
+            :param X: a symbol or expression
+            :param M: maximun number of iterations allowed
         '''
         pass
 
@@ -72,21 +76,21 @@ class Solver(object):
         ''' Ask the solver for one possible assigment for expression using currrent set
             of constraints.
             The current set of assertions must be sat.
-            @param val: an expression or symbol '''
+            :param val: an expression or symbol '''
         pass
 
     def max(self, constraints, X, M=10000):
         ''' Iterativelly finds the maximum value for a symbol.
-            @param X: a symbol or expression
-            @param M: maximun number of iterations allowed
+            :param X: a symbol or expression
+            :param M: maximun number of iterations allowed
         '''
         assert isinstance(X, BitVec)
         return self.optimize(constraints, X, 'maximize')
 
     def min(self, constraints, X, M=10000):
         ''' Iterativelly finds the minimum value for a symbol.
-            @param X: a symbol or expression
-            @param M: maximun number of iterations allowed
+            :param X: a symbol or expression
+            :param M: maximun number of iterations allowed
         '''
         assert isinstance(X, BitVec)
         return self.optimize(constraints, X, 'minimize')
@@ -145,7 +149,10 @@ class SMTSolver(Solver):
             forked in memory or even sent over the network.
         '''
         super(SMTSolver, self).__init__()
-        version_cmd_output = check_output(self.version_cmd.split())
+        try:
+            version_cmd_output = check_output(self.version_cmd.split())
+        except OSError:
+            raise Z3NotFoundError
         self._check_solver_version(version_cmd_output)
         self._proc = None
         self._constraints = None
@@ -160,7 +167,10 @@ class SMTSolver(Solver):
     def _start_proc(self):
         ''' Auxiliary method to spawn the external solver pocess'''
         assert '_proc' not in dir(self) or self._proc is None
-        self._proc = Popen(self.command.split(' '), stdin=PIPE, stdout=PIPE )
+        try:
+            self._proc = Popen(self.command.split(' '), stdin=PIPE, stdout=PIPE )
+        except OSError:
+            raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
 
         #run solver specific initializations
         for cfg in self.init:
@@ -211,7 +221,7 @@ class SMTSolver(Solver):
 
     def _send(self, cmd):
         ''' Send a string to the solver.
-            @param cmd: a SMTLIBv2 command (ex. (check-sat))
+            :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s',cmd)
         self._log += str(cmd) + '\n'
@@ -275,7 +285,7 @@ class SMTSolver(Solver):
         ''' Ask the solver for one possible assigment for val using currrent set
             of constraints.
             The current set of assertions must be sat.
-            @param val: an expression or symbol '''
+            :param val: an expression or symbol '''
         if not issymbolic(expression):
             return expression
         assert isinstance(expression, Variable)
@@ -359,8 +369,8 @@ class SMTSolver(Solver):
     def optimize(self, constraints, x, goal, M=10000):
         ''' Iterativelly finds the maximun or minimal value for the operation 
             (Normally Operators.UGT or Operators.ULT)
-            @param X: a symbol or expression
-            @param M: maximun number of iterations allowed
+            :param X: a symbol or expression
+            :param M: maximun number of iterations allowed
         '''
         assert goal in ('maximize', 'minimize')
         assert isinstance(x, BitVec)
@@ -413,7 +423,7 @@ class SMTSolver(Solver):
         ''' Ask the solver for one possible assigment for val using currrent set
             of constraints.
             The current set of assertions must be sat.
-            @param val: an expression or symbol '''
+            :param val: an expression or symbol '''
         if not issymbolic(expression):
             if isinstance(expression, str):
                 expression = ord(expression)
@@ -470,7 +480,7 @@ class SMTSolver(Solver):
     def simplify(self):
         ''' Ask the solver to try to simplify the expression val.
             This works only with z3.
-            @param val: a symbol or expression. 
+            :param val: a symbol or expression. 
         '''
         simple_constraints = []
         for exp in self._constraints:
