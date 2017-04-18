@@ -20,18 +20,19 @@ class IntegrationTest(unittest.TestCase):
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
 
-    def _runWithTimeout(self, procargs, timeout=1200):
+    def _runWithTimeout(self, procargs, logfile, timeout=1200):
 
-        po = subprocess.Popen(procargs)
-        secs_used = 0
-
-        while po.poll() is None and secs_used < timeout:
-            time.sleep(1)
-            sys.stderr.write("~")
-            secs_used += 1
-
-        self.assertTrue(secs_used < timeout)
-        sys.stderr.write("\n")
+        with open(os.path.join(os.pardir, "logfile"), "w") as output:
+            po = subprocess.Popen(procargs, stdout=output)
+            secs_used = 0
+    
+            while po.poll() is None and secs_used < timeout:
+                time.sleep(1)
+                sys.stderr.write("~")
+                secs_used += 1
+    
+            self.assertTrue(secs_used < timeout)
+            sys.stderr.write("\n")
 
     def testTimeout(self):
         dirname = os.path.dirname(__file__)
@@ -43,13 +44,13 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(hashlib.md5(data).hexdigest() , '00fb23e47831a1054ca4a74656035472')
         workspace = '%s/workspace'%self.test_dir
         t = time.time()
-        po = subprocess.call(['python', '-m', 'manticore', 
-                            '--log', '%s/output.log'%self.test_dir,
-                            '--workspace', workspace,
-                            '--timeout', '1', 
-                            '--procs', '4',
-                            filename,
-                            '+++++++++'])
+        with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
+            po = subprocess.call(['python', '-m', 'manticore', 
+                                '--workspace', workspace,
+                                '--timeout', '1', 
+                                '--procs', '4',
+                                filename,
+                                '+++++++++'], stdout=output)
         self.assertTrue(time.time()-t < 20)
 
 
@@ -66,13 +67,13 @@ class IntegrationTest(unittest.TestCase):
         workspace = '%s/workspace'%self.test_dir
         assertions = '%s/assertions.txt'%self.test_dir
         file(assertions,'w').write('0x0000000000401003 ZF == 1')
-        self._runWithTimeout(['python', SE, 
-                    '--log', '%s/output.log'%self.test_dir,
-                    '--workspace', workspace,
-                    '--proc', '4',
-                    '--assertions', assertions,
-                    filename,
-                    '+++++++++'])
+        with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
+            self._runWithTimeout(['python', SE, 
+                                '--workspace', workspace,
+                                '--proc', '4',
+                                '--assertions', assertions,
+                                filename,
+                                '+++++++++'], stdout=output)
         data = file('%s/visited.txt'%workspace,'r').read()
         data = '\n'.join(sorted(set(data.split('\n'))))
         self.assertEqual(hashlib.md5(data).hexdigest() , 'c52d7d471ba5c94fcf59936086821a6b')
@@ -89,12 +90,11 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(hashlib.md5(data).hexdigest() , '8955a29d51c1edd39b0e53794ebcf464')
         workspace = '%s/workspace'%self.test_dir
         self._runWithTimeout(['python', '-m', 'manticore', 
-                    '--log', '%s/output.log'%self.test_dir,
                     '--workspace', workspace,
                     '--timeout', '20',
                     '--proc', '4',
                     '--policy', 'uncovered',
-                    filename])
+                    filename], '%s/output.log'%self.test_dir)
 
         data = file('%s/visited.txt'%workspace,'r').read()
         visited = len(set(data.split('\n')))
