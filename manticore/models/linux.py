@@ -1336,6 +1336,7 @@ class Linux(object):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
                 self.files[fd].write(Operators.CHR(cpu.read_int(buf + j, 8)))
             logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
+            self.syscall_trace.append(("_write", fd, data))
             total+=size
         return total
 
