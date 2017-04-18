@@ -71,7 +71,7 @@ class IntegrationTest(unittest.TestCase):
         for k,v in params.iteritems():
             if k.startswith("--"):
                 args.extend([k, v.format(dumpdir=dumpdir, workspace=workspace)])
-        self._runWithTimeout(args)
+        self._runWithTimeout(args, logfile)
 
         efile = os.path.join(dumpdir, params['expected'])
         expected = self._loadVisitedSet(efile)
