@@ -4,7 +4,7 @@
  * Example code for the state abandon example in the Manticore script corpus.
  *
  * # Compile binary
- * $ gcc -m32 -static -g state_explore.c -o state_explore
+ * $ gcc -static -g state_explore.c -o state_explore
  *
  * # Pull out the address of the branch we want to ignore
  * $ ADDRESS=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' | tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
@@ -12,12 +12,25 @@
  * # Run the analysis
  * $ python state_explore.py state_explore $ADDRESS
  */
+
+void
+fill_from_stdin(int *value)
+{
+    read(0, &value, sizeof value);
+}
+
 int
 main(int argc, char *argv[])
 {
     int value;
 
-    read(0, &value, sizeof value);
+    /**
+     * If we don't receive any arguments, read value from stdin. If we do 
+     * receive an argument, treat `value` as uninitialized.
+     */
+    //if (argc < 2) {
+        fill_from_stdin(&value);
+    //}
 
     if ((value & 0xff) != 0) {
         if (value >= 0x40) {

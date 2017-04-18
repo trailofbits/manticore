@@ -12,6 +12,7 @@ if __name__ == '__main__':
         sys.exit(2)
 
     m = Manticore(sys.argv[1])
+    m.verbosity = 2
 
     # Set to the address of the conditonal checking for the first complex branch
     to_abandon = int(sys.argv[2], 0)
