@@ -16,7 +16,7 @@
 void
 fill_from_stdin(int *value)
 {
-    read(0, &value, sizeof value);
+    read(0, value, sizeof *value);
 }
 
 int
@@ -28,9 +28,9 @@ main(int argc, char *argv[])
      * If we don't receive any arguments, read value from stdin. If we do 
      * receive an argument, treat `value` as uninitialized.
      */
-    //if (argc < 2) {
+    if (argc < 2) {
         fill_from_stdin(&value);
-    //}
+    }
 
     if ((value & 0xff) != 0) {
         if (value >= 0x40) {
