@@ -3,6 +3,7 @@ import sys
 import time
 import types
 import logging
+import binascii
 import tempfile
 import functools
 
@@ -127,7 +128,7 @@ def binary_type(path):
     elif magic == '\x7fCGC':
         return 'DECREE'
     else:
-        raise NotImplementedError("Binary {} not supported.".format(path))
+        raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
 
 class Manticore(object):
     '''

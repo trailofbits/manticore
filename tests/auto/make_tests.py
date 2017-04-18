@@ -26,9 +26,10 @@ for test in tests:
 
 print """
 import unittest
-from core.cpu.x86 import *
-from core.smtlib import *
-from core.memory import *
+from manticore.core.cpu.x86 import *
+from manticore.core.smtlib import Operators
+from manticore.core.memory import *
+
 
 class CPUTest(unittest.TestCase):
     class ROOperand(object):

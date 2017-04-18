@@ -12,65 +12,27 @@ Manticore is a prototyping tool for dynamic binary analysis, with support for sy
 - **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
 - **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
 
-Manticore supports binaries of the following formats, operating systems, and architectures. It has been primarily used on binaries compiled from C and C++.
+## Scope
+
+Manticore supports binaries of the following formats, operating systems, and
+architectures. It has been primarily used on binaries compiled from C and C++.
 
 - OS/Formats: Linux ELF, Windows Minidump
 - Architectures: x86, x86_64, ARMv7 (partial)
 
 ## Requirements
 
-Manticore is officially supported on Linux and uses Python 2.7.
-
-## Installation
-
-These install instructions require pip 7.1.0, due to `--no-binary`. If you have an older pip version, you might be able to use `--no-use-wheel` instead.
-
-We recommend using Manticore in a virtual environment with [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/). Run the following commands in the root of the Manticore repository to setup a virtual environment (note: The `--no-binary` flag is a workaround for a known Capstone [issue](https://github.com/aquynh/capstone/issues/445)).
-
-```
-mkvirtualenv manticore
-pip install --no-binary capstone .
-```
-
-or, if you didn't use a virtualenv and would like to do a user install:
-
-```
-pip install --user --no-binary capstone .
-```
-
-This installs the Manticore CLI tool `manticore` and the Python API.
-
-Then, install the Z3 Theorem Prover. Download the [latest release](https://github.com/Z3Prover/z3/releases/latest) for your platform and place the `z3` binary in your `$PATH`.
-
-### For developers
-
-For a dev install that includes dependencies for tests, run:
-
-```
-pip install --no-binary capstone --no-binary keystone-engine -e .[dev]
-```
-
-You can run the tests with the commands below:
-
-```
-cd /path/to/manticore/
-# all tests
-nosetests
-# just one file
-nosetests tests/test_armv7cpu.py
-# just one test class
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
-# just one test
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
-```
+Manticore is officially supported on Linux and requires Python 2.7.
 
 ## Quick start
 
-Install and try Manticore in a few shell commands:
+Install and try Manticore in about ten shell commands:
 
 ```
-# follow install instructions in README.md before beginning
-cd /path/to/manticore/
+# install z3 before beginning, see our README.md
+git clone git@github.com:trailofbits/manticore.git
+cd manticore
+pip install --user --no-binary capstone . # do this in a virtualenv if you want, but omit --user
 cd examples/linux
 make
 manticore basic
@@ -81,6 +43,37 @@ python count_instructions.py ../linux/helloworld # ok if the insn count is diffe
 ```
 
 Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
+
+## Installation
+
+We recommend the use of Manticore in a virtual environment, though this is optional.
+To manage this, we recommend installing [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/).
+Then, to set up a virtual environment, in the root of the Manticore repository, run
+
+```
+mkvirtualenv manticore
+```
+
+Then, from the root of the Manticore repository, run:
+
+```
+pip install .
+````
+
+or, if you would like to do a user install:
+
+```
+pip install --user .
+```
+
+This installs the Manticore CLI tool `manticore` and the Python API.
+
+Then, install the Z3 Theorem Prover. Download the [latest release](https://github.com/Z3Prover/z3/releases/latest) for your platform and place the `z3` binary in your `$PATH`.
+
+> Note: Due to a known [issue](https://github.com/aquynh/capstone/issues/445),
+  Capstone may not install correctly. If you get this error message,
+  "ImportError: ERROR: fail to load the dynamic library.", or another related
+  to Capstone, try reinstalling via `pip install -I --no-binary capstone capstone`
 
 ## Usage
 
@@ -109,9 +102,27 @@ def hook(state):
 m.run()
 ```
 
-### Examples
+## For developers
 
-Some example scripts using the Manticore API can be found in `examples/script`.
+For a dev install, run:
+
+```
+pip install -e .[dev]
+```
+
+This installs a few other dependencies used for tests which you can run with some of the commands below:
+
+```
+cd /path/to/manticore/
+# all tests
+nosetests
+# just one file
+nosetests tests/test_armv7cpu.py
+# just one test class
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
+# just one test
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
+```
 
 ## FAQ
 
@@ -119,3 +130,11 @@ Some example scripts using the Manticore API can be found in `examples/script`.
 
 Manticore is simpler. It has a smaller codebase, fewer dependencies and features, and an easier learning curve. If you
 come from a reverse engineering or exploitation background, you may find Manticore intuitive due to its lack of intermediate representation and overall emphasis on staying close to machine abstractions.
+
+### Was Manticore part of the Trail of Bits CRS?
+
+Not exactly. The [Trail of Bits CRS](https://blog.trailofbits.com/2015/07/15/how-we-fared-in-the-cyber-grand-challenge/) used [FrankenPSE](https://blog.trailofbits.com/2016/08/02/engineering-solutions-to-hard-program-analysis-problems/) to provide its binary symbolic execution capabilities. FrankenPSE and Manticore share the same heritage: [PySymEmu](https://github.com/feliam/pysymemu). The difference between the two stems for their respective use-cases.
+
+Manticore is designed so an expert user can guide it, and therefore supports flexible APIs that help its users achieve specific goals. Manticore also supports more architectures and binary file formats.
+
+FrankenPSE was designed to tightly integrate with the Trail of Bits CRS. This includes sharing the same program snapshot representation as the [GRR fuzzer](https://github.com/trailofbits/grr). FrankenPSE is also x86-only and uses [microx](https://github.com/trailofbits/microx), a lightweight, single-instruction x86 instruction JIT executor.
