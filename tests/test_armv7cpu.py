@@ -134,7 +134,7 @@ def itest_custom(asm):
 
 class Armv7CpuInstructions(unittest.TestCase):
     def setUp(self):
-        self.cpu = cpu(Memory32())
+        self.cpu = Cpu(Memory32())
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
