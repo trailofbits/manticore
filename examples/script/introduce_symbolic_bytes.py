@@ -33,6 +33,8 @@ if __name__ == '__main__':
     def introduce_sym(state):
         print "Introducing symbolic value to {:x}".format(state.cpu.RBP-0xc)
         val = state.new_symbolic_buffer(4)
+        # Can also be achieved by:
+        #val = state.symbolicate_buffer('++++')
         state.cpu.write_bytes(state.cpu.RBP - 0xc, val)
 
     m.run()
