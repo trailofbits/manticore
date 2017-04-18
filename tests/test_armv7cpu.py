@@ -24,7 +24,7 @@ def assemble(asm):
 
 class Armv7CpuTest(unittest.TestCase):
     def setUp(self):
-        self.c = Cpu(Memory32(), 'armv7')
+        self.c = cpu(Memory32())
         self.rf = self.c.regfile
         self._setupStack()
 
@@ -134,7 +134,7 @@ def itest_custom(asm):
 
 class Armv7CpuInstructions(unittest.TestCase):
     def setUp(self):
-        self.cpu = Cpu(Memory32(), 'armv7')
+        self.cpu = cpu(Memory32())
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
