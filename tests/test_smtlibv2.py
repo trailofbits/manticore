@@ -670,11 +670,6 @@ class Z3Test(unittest.TestCase):
         self.version = 'Z3 version 4.4.1'
         self.assertTrue(self.z3._solver_version() == Version(major=4, minor=4, patch=1))
 
-    def test_check_solver_too_old(self):
-        self.version = 'Z3 version 4.3.1'
-        with self.assertRaises(SolverException):
-            self.z3()
-
     def test_check_solver_newer(self):
         self.version = 'Z3 version 4.5.0'
         self.assertTrue(self.z3._solver_version() > Version(major=4, minor=4, patch=1))
