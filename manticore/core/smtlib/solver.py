@@ -156,7 +156,7 @@ class Z3Solver(Solver):
             version = version_cmd_output.split()[2]
             their_version = Version(*map(int, version.split('.')))
         except (IndexError, ValueError, TypeError):
-            raise SolverException("Z3 Version not supported {}".format(version_cmd_output))
+            pass
         return their_version
 
         

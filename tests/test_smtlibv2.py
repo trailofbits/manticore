@@ -674,20 +674,17 @@ class Z3Test(unittest.TestCase):
         self.version = 'Z3 version 4.5.0'
         self.assertTrue(self.z3._solver_version() > Version(major=4, minor=4, patch=1))
 
-    def test_check_solver_badfmt(self):
-        self.version = 'Z3 version 4.5.0.8'
-        with self.assertRaises(SolverException):
-            self.z3()
+    def test_check_solver_optimize(self):
+        self.version = 'Z3 version 4.5.0'
+        solver = self.z3()
+        self.assertTrue(solver.support_maximize)
+        self.assertTrue(solver.support_minimize)
 
-    def test_check_solver_badfmt2(self):
-        self.version = 'Z3 version 4.5.0.8'
-        with self.assertRaises(SolverException):
-            self.z3()
-
-    def test_check_solver_badfmt3(self):
-        self.version = 'Z3 version 4.5.what'
-        with self.assertRaises(SolverException):
-            self.z3()
+    def test_check_solver_optimize(self):
+        self.version = 'Z3 version 4.4.0'
+        solver = self.z3()
+        self.assertFalse(solver.support_maximize)
+        self.assertFalse(solver.support_minimize)
 
 if __name__ == '__main__':
     unittest.main()
