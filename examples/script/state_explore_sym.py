@@ -24,7 +24,7 @@ if __name__ == '__main__':
     m = Manticore(sys.argv[1], ['anything'])
 
     # Uncomment to see debug output
-    m.verbosity = 2
+    #m.verbosity = 2
 
     # Set to the address of the conditonal checking for the first complex branch
     introduce_at = int(sys.argv[2], 0)

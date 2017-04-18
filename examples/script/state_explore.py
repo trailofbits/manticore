@@ -22,7 +22,7 @@ if __name__ == '__main__':
     m = Manticore(sys.argv[1])
 
     # Uncomment to see debug output
-    m.verbosity = 2
+    #m.verbosity = 2
 
     # Set to the address of the conditonal checking for the first complex branch
     to_abandon = int(sys.argv[2], 0)
