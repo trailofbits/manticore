@@ -65,7 +65,7 @@ class IntegrationTest(unittest.TestCase):
 
     def _runWithTimeout(self, procargs, timeout=600):
 
-        po = subprocess.Popen(procargs)
+        po = subprocess.Popen(procargs, shell=True)
         secs_used = 0
 
         while po.poll() is None and secs_used < timeout:
@@ -92,7 +92,7 @@ class IntegrationTest(unittest.TestCase):
 
         dumpfile = os.path.join(dumpdir, params['dump'])
 
-        args = ['manticore', '--workspace', workspace, '--log', logfile, dumpfile]
+        args = ['manticore', '--workspace', workspace, dumpfile, '>', logfile]
 
         for k,v in params.iteritems():
             if k.startswith("--"):
