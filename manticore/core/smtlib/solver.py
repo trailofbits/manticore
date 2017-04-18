@@ -124,12 +124,13 @@ class Z3Solver(Solver):
         self.support_maximize = False
         self.support_minimize = False
         self.support_reset = True
+        logger.debug('Z3 version: %s', self.version)
 
         if self.version >= Version(4, 4, 1):
             self.support_maximize = True
             self.support_minimize = True
         else:
-            logger.debug("Please install Z3 4.4.1 or newer to get optimization support. Current version: %r",self.version)
+            logger.debug(' Please install Z3 4.4.1 or newer to get optimization support')
 
         self._command = 'z3 -t:30000 -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
