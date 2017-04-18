@@ -65,16 +65,17 @@ class IntegrationTest(unittest.TestCase):
 
     def _runWithTimeout(self, procargs, timeout=600):
 
-        po = subprocess.Popen(procargs)
-        secs_used = 0
-
-        while po.poll() is None and secs_used < timeout:
-            time.sleep(1)
-            sys.stderr.write("~")
-            secs_used += 1
-
-        self.assertTrue(secs_used < timeout)
-        sys.stderr.write("\n")
+        with open(os.path.join(os.pardir, "logfile"), "w") as output:
+            po = subprocess.Popen(procargs, stdout=output)
+            secs_used = 0
+    
+            while po.poll() is None and secs_used < timeout:
+                time.sleep(1)
+                sys.stderr.write("~")
+                secs_used += 1
+    
+            self.assertTrue(secs_used < timeout)
+            sys.stderr.write("\n")
 
     def _runManticore(self, dumpname):
 
