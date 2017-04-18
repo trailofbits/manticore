@@ -120,21 +120,16 @@ class Z3Solver(Solver):
         self._log = '' #this should be enabled only if we are debugging
 
         self.version = self._solver_version()
-        #Check that the z3 version we're using is at least the minimum we need. 
-        min_version = Version(4, 4, 0)
-        if self.version < min_version:
-            raise SolverException("Z3 Version >= {}.{}.{} required".format(*min_version))
 
         self.support_maximize = False
         self.support_minimize = False
-        self.support_simplify = True
         self.support_reset = True
 
-        if self.version >= Version(4, 4, 2):
+        if self.version >= Version(4, 4, 1):
             self.support_maximize = True
             self.support_minimize = True
         else:
-            logger.debug("Please install Z3 4.4.2 or newer to get optimization support. Current version: %r",self.version)
+            logger.debug("Please install Z3 4.4.1 or newer to get optimization support. Current version: %r",self.version)
 
         self._command = 'z3 -t:30000 -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
@@ -254,7 +249,7 @@ class Z3Solver(Solver):
             raise Exception("Error in smtlib: {}".format(bufl[0]))
         return buf
 
-    ## UTILS: check-sat get-value simplify 
+    ## UTILS: check-sat get-value 
     def _check(self):
         ''' Check the satisfiability of the current state '''
         logger.debug("Solver.check() ")
@@ -475,13 +470,5 @@ class Z3Solver(Solver):
             return int(value, base)
         raise NotImplementedError("get_value only implemented for Bool and BitVec")
 
-
-    def simplify(self, exp):
-        ''' Ask the solver to try simplify the expression exp
-            :param exp: a symbol or expression. 
-        '''
-        #This function should send a simplify command to the smtlib 
-        # solver and parse back the result
-        raise NotImplemented
 
 solver = Z3Solver()
