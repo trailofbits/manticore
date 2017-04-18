@@ -1336,6 +1336,7 @@ class Linux(object):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
                 self.files[fd].write(Operators.CHR(cpu.read_int(buf + j, 8)))
             logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
+            self.syscall_trace.append(("_write", fd, data))
             total+=size
         return total
 
@@ -1533,8 +1534,9 @@ class Linux(object):
                      0x0000008c: self.sys_setpriority,
                      0x0000008d: self.sys_getpriority,
                      0x00000092: self.sys_writev32,
-                     0x000000c0: self.sys_mmap2, 
-                     0x000000c5: self.sys_fstat, 
+                     0x000000c0: self.sys_mmap2,
+                     0x000000c3: self.sys_stat64,
+                     0x000000c5: self.sys_fstat,
                      0x000000c7: self.sys_getuid,
                      0x000000c8: self.sys_getgid,
                      0x000000c9: self.sys_geteuid,
