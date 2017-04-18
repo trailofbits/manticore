@@ -143,6 +143,9 @@ class Z3Solver(Solver):
         version than what's used now, and therefore ok.
         
         Anticipated version_cmd_output format: 'Z3 version 4.4.2'
+                                               'Z3 version 4.4.5 - 64 bit - build hashcode $Z3GITHASH'
+
+    
         '''
         their_version = Version(0,0,0)
         try:
