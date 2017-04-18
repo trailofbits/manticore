@@ -140,8 +140,6 @@ class Z3Solver(Solver):
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
-        super(Z3Solver, self).__init__()
-
     @staticmethod
     def _solver_version():
         '''
