@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # Uncomment to see debug output
     #m.verbosity = 2
 
-    # Set to the address of the conditonal checking for the first complex branch
+    # Set to the address of the conditional checking for the first complex branch
     to_abandon = int(sys.argv[2], 0)
 
     @m.hook(to_abandon)

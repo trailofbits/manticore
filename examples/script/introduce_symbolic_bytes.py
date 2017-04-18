@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # Uncomment to see debug output
     #m.verbosity = 2
 
-    # Set to the address of the conditonal checking for the first complex branch
+    # Set to the address of the conditional checking for the first complex branch
     introduce_at = int(sys.argv[2], 0)
 
     @m.hook(introduce_at)
