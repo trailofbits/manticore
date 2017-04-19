@@ -51,7 +51,7 @@ Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3
 
 ## Installation
 
-First, make sure that Z3 Theorum Prover is installed and available on your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
+Make sure that Z3 Theorum Prover is installed and available on your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
 
 Option 1: Perform a user install.
 
