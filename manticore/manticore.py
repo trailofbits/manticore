@@ -1,4 +1,3 @@
-
 import os
 import sys
 import time
@@ -139,6 +138,7 @@ class Manticore(object):
     :type args: list[str]
     '''
 
+
     def __init__(self, binary_path, args=None):
         assert os.path.isfile(binary_path)
 
@@ -200,9 +200,7 @@ class Manticore(object):
 
         ctxfilter = ContextFilter()
 
-        self.verbosity = self._verbosity
-
-        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s')
+        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
 
         for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
             logging.getLogger(loggername).addFilter(ctxfilter)
@@ -624,7 +622,7 @@ class Manticore(object):
                     f.write(fmt.format(m[1]))
                     
         if self.memory_errors_file is not None:
-            with open(args.errorfile, "w") as f:
+            with open(self._args.errorfile, "w") as f:
                 fmt = "0x{:016x}\n"
                 for m in self._executor.errors:
                     f.write(fmt.format(m))
