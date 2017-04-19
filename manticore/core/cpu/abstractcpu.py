@@ -31,7 +31,7 @@ class Operand(object):
         scale = property( lambda self: self.parent.op.mem.scale )
         disp = property( lambda self: self.parent.op.mem.disp )
 
-    def __init__(self, cpu, op, **kwargs):
+    def __init__(self, cpu, op):
         '''
         This encapsulates the arch-independent way to access instruction
         operands and immediates based on a capstone operand descriptor. This
@@ -82,8 +82,7 @@ class Operand(object):
         ''' It writes the value of specific type to the registers or memory '''
         raise NotImplementedError
 
-# Basic register file structure not actully need to abstract as it's used only'
-# from the cpu implementation
+# Basic register file structure not actually need to abstract as it's used only from the cpu implementation
 class RegisterFile(object):
 
     def __init__(self, aliases=None):
@@ -360,7 +359,7 @@ class Cpu(object):
                         break
                 assert isinstance(c, str)
                 text += c
-        except MemoryException as e:
+        except MemoryException:
             pass
         
         code = text.ljust(self.max_instr_width, '\x00')
@@ -462,7 +461,6 @@ class Cpu(object):
                 result += "%3s: 0x%016x"%(reg_name, value)
             else:
                 result += "%3s: %r"%(reg_name, value)
-            pos = 0
             result += '\n'
 
         return result
@@ -496,7 +494,7 @@ class DivideError(Exception):
     pass
 
 class CpuInterrupt(Exception):
-    ''' Any interruption triggred by the CPU '''
+    ''' Any interruption triggered by the CPU '''
     pass
 
 class Interruption(CpuInterrupt):
