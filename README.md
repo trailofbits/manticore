@@ -27,17 +27,15 @@ Manticore is supported on Linux and requires Python 2.7, pip 7.1.0, and Z3.
 Install and try Manticore in a few shell commands:
 
 ```
-XXX DAN: A quickstart assumes a pristine system. You need to go from 0 to Manticore. That means pasting in the instructions for 3rd party requirements and making educated guesses about what works for 99% of users. I probably got these wrong, so please check them!
-
-# Install the system requirements
+# Install system dependency
 sudo apt-get install z3
 
-# Install manticore and its dependencies
+# Install manticore and python dependencies
 git clone https://github.com/trailofbits/manticore.git
 cd manticore
-python -m pip install --user --no-binary --upgrade capstone
+pip install --user --upgrade --no-binary capstone .
 
-# Run one of the examples
+# Some example usage
 cd examples/linux
 make
 manticore basic
@@ -51,7 +49,8 @@ Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3
 
 ## Installation
 
-Make sure that Z3 Theorum Prover is installed and available on your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
+Make sure that Z3 Theorem Prover is installed and available on your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
+Then download the Manticore source, and `cd` to the project root.
 
 Option 1: Perform a user install.
 
@@ -62,7 +61,6 @@ pip install --user --no-binary capstone .
 Option 2: Use a [virtual environment](https://virtualenvwrapper.readthedocs.io/en/latest/).
 
 ```
-cd manticore
 mkvirtualenv manticore
 pip install --no-binary capstone .
 ```
