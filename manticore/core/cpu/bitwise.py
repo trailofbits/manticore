@@ -80,7 +80,6 @@ def LSL_C(value, amount, width):
     :return: Resultant value and the carry result
     :rtype tuple
     '''
-    assert amount <= width
     assert amount > 0
     result = GetNBits(value << amount, width)
     carry = Bit(value, width - amount)
@@ -114,7 +113,6 @@ def LSR_C(value, amount, width):
     :return: Resultant value and carry result
     :rtype tuple
     '''
-    assert amount <= width
     assert amount > 0
     result = GetNBits(value >> amount, width)
     carry = Bit(value >> (amount - 1), 0)
