@@ -396,8 +396,9 @@ class Cpu(object):
             raise InvalidPCException(self.PC)
 
         if not self.memory.access_ok(slice(pc, pc+instruction.size), 'x'):
-            logger.info("Trying to execute instructions from not executable memory")
+            logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidPCException(self.PC)
+
         instruction.operands = self._wrap_operands(instruction.operands)
 
         self._instruction_cache[pc] = instruction
@@ -428,7 +429,7 @@ class Cpu(object):
 
         def fallback_to_emulate(*operands):
             text_bytes = ' '.join('%02x'%x for x in instruction.bytes)
-            logger.info("UNIMPLEMENTED INSTRUCTION: 0x%016x:\t%s\t%s\t%s",
+            logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                     instruction.address, text_bytes, instruction.mnemonic,
                     instruction.op_str)
             self.emulate(instruction)
