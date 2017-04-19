@@ -66,10 +66,35 @@ class Operand(object):
         return getattr(self.op, name)
 
     @property
+    def type(self):
+        ''' This property encapsulate the operand type. 
+            It may be one of the following:
+                register
+                memory
+                immediate
+        '''
+        raise NotImplementedError
+
+    @property        
     def size(self):
         ''' Return bit size of operand '''
         raise NotImplementedError
         
+    @property
+    def reg(self):
+        return self._reg_name(self.op.reg)
+
+    @property
+    def type(self):
+        ''' This property encapsulate the operand type. 
+            It may be one of the following:
+                register
+                memory
+                immediate
+        '''
+        raise NotImplementedError
+        
+    @abstractmethod
     def address(self):
         ''' On a memory operand it returns the effective address '''
         raise NotImplementedError

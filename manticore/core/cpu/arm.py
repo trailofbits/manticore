@@ -52,8 +52,16 @@ class Armv7Operand(Operand):
         super(Armv7Operand, self).__init__(cpu, op, **kwargs)
 
     @property
+    def type(self):
+        type_map = { ARM_OP_REG: 'register',
+                     ARM_OP_MEM: 'memory',
+                     ARM_OP_IMM: 'immediate'}
+
+        return type_map[self.op.type]
+
+    @property
     def size(self):
-        assert self.op.type == ARM_OP_REG
+        assert self.type == 'register'
         if self.op.reg >= ARM_REG_D0 and self.op.reg <= ARM_REG_D31:
             return 64
         else:
@@ -62,11 +70,10 @@ class Armv7Operand(Operand):
 
     def read(self, nbits=None, withCarry=False):
         carry = self.cpu.regfile.read('APSR_C')
-        if self.op.type == ARM_OP_REG:
-            register = self._reg_name(self.op.reg)
-            value = self.cpu.regfile.read(register)
+        if self.type == 'register':
+            value = self.cpu.regfile.read(self.reg)
             # XXX This can be an offset of 8, depending on ARM mode
-            if register in ('PC', 'R15'):
+            if self.reg in ('PC', 'R15'):
                 value += 4
             if self.is_shifted():
                 shift = self.op.shift
@@ -76,7 +83,7 @@ class Armv7Operand(Operand):
             if withCarry:
                 return value, carry
             return value
-        elif self.op.type == ARM_OP_IMM:
+        elif self.type == 'immediate':
             imm = self.op.imm
             if self.op.subtracted:
                 imm = -imm
@@ -84,7 +91,7 @@ class Armv7Operand(Operand):
                 return imm, self._getExpandImmCarry(carry)
             return imm
 
-        elif self.op.type == ARM_OP_MEM:
+        elif self.type == 'memory':
             val = self.cpu.read_int(self.address(), nbits)
             if withCarry:
                 return (val, carry)
@@ -93,20 +100,18 @@ class Armv7Operand(Operand):
             raise NotImplementedError("readOperand unknown type", self.op.type)
 
     def write(self, value, nbits=None):
-        if self.op.type == ARM_OP_REG:
-            register = self._reg_name(self.op.reg)
-            self.cpu.regfile.write(register, value)
-        elif self.op.type == ARM_OP_MEM:
+        if self.type == 'register':
+            self.cpu.regfile.write(self.reg, value)
+        elif self.type == 'memory':
             raise NotImplementedError('need to impl arm store mem')
         else:
             raise NotImplementedError("writeOperand unknown type", self.op.type)
 
     def writeback(self, value):
-        if self.op.type == ARM_OP_REG:
+        if self.type == 'register':
             self.write(value)
-        elif self.op.type == ARM_OP_MEM:
-            register = self._reg_name(self.op.mem.base)
-            self.cpu.regfile.write(register, value)
+        elif self.type == 'memory':
+            self.cpu.regfile.write(self.mem.base, value)
         else:
             raise NotImplementedError("writeback Operand unknown type", self.op.type)
 
@@ -114,12 +119,12 @@ class Armv7Operand(Operand):
         return self.op.shift.type != ARM_SFT_INVALID
 
     def address(self):
-        assert self.op.type == ARM_OP_MEM
+        assert self.type == 'memory'
         addr = self.get_mem_base_addr() + self.get_mem_offset()
         return addr & Mask(self.cpu.address_bit_size)
 
     def get_mem_offset(self):
-        assert self.op.type == ARM_OP_MEM
+        assert self.type == 'memory'
 
         off = 0
         if self.mem.index is not None:
@@ -134,7 +139,7 @@ class Armv7Operand(Operand):
         return -off if self.op.subtracted else off
 
     def get_mem_base_addr(self):
-        assert self.op.type == ARM_OP_MEM
+        assert self.type == 'memory'
 
         base = self.cpu.regfile.read(self.mem.base)
 
@@ -758,6 +763,7 @@ class Armv7Cpu(Cpu):
 
         carry = cpu.regfile.read('APSR_C')
         if rest:
+            #FIXME we should make Operand.op private (and not accessible)
             result, carry = cpu._Shift(op.read(), srtype, rest[0].op.reg, carry)
         else:
             result, carry = op.read(withCarry=True)
