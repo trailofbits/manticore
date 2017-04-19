@@ -189,7 +189,7 @@ class ConstraintSet(object):
         return BoolVariable(name, taint=taint)
 
     def new_bitvec(self, size, name='V', taint=frozenset()):
-        ''' Declares a free symbolic bitvectore  in the constraint store
+        ''' Declares a free symbolic bitvector in the constraint store
             :param size: size in bits for the bitvector
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
