@@ -1,4 +1,3 @@
-
 import os
 import sys
 import time
@@ -623,7 +622,7 @@ class Manticore(object):
                     f.write(fmt.format(m[1]))
                     
         if self.memory_errors_file is not None:
-            with open(args.errorfile, "w") as f:
+            with open(self._args.errorfile, "w") as f:
                 fmt = "0x{:016x}\n"
                 for m in self._executor.errors:
                     f.write(fmt.format(m))
