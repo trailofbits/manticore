@@ -5,24 +5,6 @@
 
 Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
-## Quick Start
-
-Install and try Manticore in a few shell commands:
-
-```
-# follow install instructions in README.md before beginning
-cd /path/to/manticore/
-cd examples/linux
-make
-manticore basic
-cat mcore_*/*1.stdin | ./basic
-cat mcore_*/*2.stdin | ./basic
-cd ../script
-python count_instructions.py ../linux/helloworld # ok if the insn count is different
-```
-
-Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
-
 ## Features
 
 - **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
@@ -38,32 +20,54 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 
 ## Requirements
 
-Manticore is officially supported on Linux and requires Python 2.7.
+Manticore is supported on Linux and requires Python 2.7, pip 7.1.0, and Z3.
+
+## Quick Start
+
+Install and try Manticore in a few shell commands:
+
+```
+XXX DAN: A quickstart assumes a pristine system. You need to go from 0 to Manticore. That means pasting in the instructions for 3rd party requirements and making educated guesses about what works for 99% of users. I probably got these wrong, so please check them!
+
+# Install the system requirements
+sudo apt-get install z3
+
+# Install manticore and its dependencies
+git clone https://github.com/trailofbits/manticore.git
+cd manticore
+python -m pip install --user --no-binary --upgrade capstone
+
+# Run one of the examples
+cd examples/linux
+make
+manticore basic
+cat mcore_*/*1.stdin | ./basic
+cat mcore_*/*2.stdin | ./basic
+cd ../script
+python count_instructions.py ../linux/helloworld # ok if the insn count is different
+```
+
+Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
 
 ## Installation
 
-These install instructions require pip 7.1.0, due to `--no-binary`. If you have an older pip version, you might be able to use `--no-use-wheel` instead.
+First, make sure that Z3 Theorum Prover is installed and available on your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
 
-We recommend using Manticore in a virtual environment with [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/). Run the following commands in the root of the Manticore repository to setup a virtual environment (note: The `--no-binary` flag is a workaround for a known Capstone [issue](https://github.com/aquynh/capstone/issues/445)).
-
-```
-mkvirtualenv manticore
-pip install --no-binary capstone .
-```
-
-or, if you didn't use a virtualenv and would like to do a user install:
+Option 1: Perform a user install.
 
 ```
 pip install --user --no-binary capstone .
 ```
 
-This installs the Manticore CLI tool `manticore` and the Python API.
-
-Then, install the Z3 Theorem Prover. For example, on Ubuntu:
+Option 2: Use a [virtual environment](https://virtualenvwrapper.readthedocs.io/en/latest/).
 
 ```
-sudo apt-get install z3
+cd manticore
+mkvirtualenv manticore
+pip install --no-binary capstone .
 ```
+
+Once installed via either method, the `manticore` CLI tool and its Python API will be available.
 
 ### For developers
 
@@ -76,7 +80,7 @@ pip install --no-binary capstone --no-binary keystone-engine -e .[dev]
 You can run the tests with the commands below:
 
 ```
-cd /path/to/manticore/
+cd manticore
 # all tests
 nosetests
 # just one file
