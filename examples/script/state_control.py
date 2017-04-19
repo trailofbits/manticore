@@ -3,7 +3,8 @@ import sys
 from manticore import Manticore
 
 '''
-Demonstrates guiding Manticore's state exploration. 
+Demonstrates the ability to guide Manticore's state exploration. In this case,
+abandoning a state we're no longer interested in.
 
 Usage:
 
@@ -24,7 +25,9 @@ if __name__ == '__main__':
     # Uncomment to see debug output
     #m.verbosity = 2
 
-    # Set to the address of the conditional checking for the first complex branch
+    # Set to the address of the conditional at state_explore.c:38, which will be
+    # abandoned. If line 36 of this script is commented out, Manticore will
+    # explore all reachable states.
     to_abandon = int(sys.argv[2], 0)
 
     @m.hook(to_abandon)
