@@ -801,7 +801,7 @@ class Executor(object):
                 break
 
             except SyscallNotImplemented as e:
-                logger.error("Syscall not implemented\n%s", str(e))
+                logger.error("Syscall not implemented: %s", str(e))
                 self.generate_testcase(current_state, "Unimplemented syscall "+str(e))
                 current_state = None
 
@@ -823,7 +823,7 @@ class Executor(object):
             except Exception as e:
                 import traceback
                 trace = traceback.format_exc()
-                logger.error("Exception in user code: %s\n%s", str(e), trace)
+                logger.error("Exception: %s\n%s", str(e), trace)
                 for log in trace.splitlines():
                     logger.error(log) 
                 current_state = None
