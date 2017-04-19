@@ -3,7 +3,8 @@ import sys
 from manticore import Manticore
 
 '''
-Demonstrates the creation and copying of symbolic buffers.
+Replaces a variable that influences control flow with a symbolic buffer. This
+in turn explores all possible states under that variable's influence.
 
 Usage:
 
@@ -26,12 +27,21 @@ if __name__ == '__main__':
     # Uncomment to see debug output
     #m.verbosity = 2
 
-    # Set to the address of the conditional checking for the first complex branch
+    # Set to the address of the instruction before the first conditional.
     introduce_at = int(sys.argv[2], 0)
 
     @m.hook(introduce_at)
     def introduce_sym(state):
-        print "Introducing symbolic value to {:x}".format(state.cpu.RBP-0xc)
+        # RBP-0xC is where the value is read into:
+        #
+        #    if ((value & 0xff) != 0) {
+        #  400a08:       8b 45 f4                mov    -0xc(%rbp),%eax
+        #  400a0b:       0f b6 c0                movzbl %al,%eax
+        #  400a0e:       85 c0                   test   %eax,%eax
+        #
+
+        print "introducing symbolic value to {:x}".format(state.cpu.RBP-0xc)
+
         val = state.new_symbolic_buffer(4)
         # Can also be achieved by:
         #val = state.symbolicate_buffer('++++')
