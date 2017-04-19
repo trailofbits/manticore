@@ -9,7 +9,7 @@ in turn explores all possible states under that variable's influence.
 Usage:
 
  $ gcc -static -g state_explore.c -o state_explore # -static is optional
- $ ADDRESS=0x$(objdump -S state_explore | grep -A 1 'value & 0xff' |
+ $ ADDRESS=0x$(objdump -S state_explore | grep -A 1 '((value & 0xff) != 0)' |
          tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
  $ python ./introduce_symbolic_bytes.py state_explore $ADDRESS
 
