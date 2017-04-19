@@ -146,7 +146,7 @@ class UnicornEmulator(object):
         if self._cpu.arch == CS_ARCH_ARM:
             return globals()['UC_ARM_REG_' + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
-            # TODO(yan): This needs to handle AF regiseter
+            # TODO(yan): This needs to handle AF register
             return globals()['UC_X86_REG_' + reg_name]
         else:
             # TODO(yan): raise a more appropriate exception

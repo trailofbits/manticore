@@ -30,7 +30,7 @@ class SymbolicMemoryException(MemoryException):
 
     def __init__(self, cause, address, size, constraint):
         super(SymbolicMemoryException, self, ).__init__(cause, address)
-        #the crashing contraint you need to assert 
+        #the crashing constraint you need to assert 
         self.constraint = constraint 
         self.size = size
 
@@ -84,7 +84,7 @@ class Map(object):
     perms = property(_get_perms, _set_perms)
 
     def access_ok(self, access):
-        ''' Check if there is onough permissions for access '''
+        ''' Check if there is enough permissions for access '''
         for c in access:
             if c not in self.perms:
                 return False
@@ -719,7 +719,7 @@ class Memory(object):
         self.callback[name] = callback
 
     def perms(self, index):
-        # not happy with ths interface.
+        # not happy with this interface.
         if isinstance(index, slice):
             # get the more restrictive set of perms for the range
             raise NotImplementedError('No perms for slices')
@@ -898,7 +898,7 @@ class SMemory(Memory):
                     condition = Operators.OR(address == base, condition )
                 raise ForkState(condition)
 
-            #So here we have all potential solutions to addreess
+            #So here we have all potential solutions to address
             assert len(solutions) > 0
             
 

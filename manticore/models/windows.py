@@ -37,7 +37,7 @@ class SymbolicSyscallArgument(ConcretizeRegister):
         reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][number]
         super(SymbolicSyscallArgument, self).__init__(reg_name, message, policy)
 
-#FIXME Cosider movnig this to executor.state?
+#FIXME Cosider moving this to executor.state?
 def toStr(state, value):
     if issymbolic(value):
         minmax = solver.get_all_values(state.constraints, value, maxcnt=2, silent=True)
@@ -313,7 +313,7 @@ class Windows(object):
 
     def execute(self):
         """
-        Execute one cpu instruction in the current thread (only one suported).
+        Execute one cpu instruction in the current thread (only one supported).
         :rtype: bool
         :return: C{True}
         

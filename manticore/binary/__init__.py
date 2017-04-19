@@ -10,8 +10,8 @@ Ideally you should be able to do something like
         for th in binary.threads():
             setup(th)
 
-But there are difference between format that makes it difficult to find a siple and common API.
-interpreters? linkers? linked dlls?
+But there are difference between format that makes it difficult to find a simple
+and common API.  interpreters? linkers? linked DLLs?
 
 '''
 

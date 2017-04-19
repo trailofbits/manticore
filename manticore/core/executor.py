@@ -546,11 +546,11 @@ class Executor(object):
                         assert remaining > 0
                         vals = random.sample(vals, min(remaining, len(vals)) ) 
                     else:
-                        #No room really so keep only one (Which will replace the curent state)
+                        #No room really so keep only one (Which will replace the current state)
                         vals = random.sample(vals, 1) 
                     logger.debug("Sampled possible values are: %s", ["0x%016x"%x for x in vals])                        
 
-            #Check if we are using too much stoage
+            #Check if we are using too much storage
             if self.max_storage != 0:
                 total_used_storage = self.getTotalUsedStorage()
                 if total_used_storage > self.max_storage:
@@ -603,7 +603,7 @@ class Executor(object):
 
     def _stopRun(self, count=0):
         #notify siblings we are about to stop this run
-        #log how many intruction were executed
+        #log how many instructions were executed
         with self._lock:
             self._running.value-=1
             self._count.value += count
@@ -633,7 +633,7 @@ class Executor(object):
 
         while not self.isShutdown():
             try:
-                #select a suitable state to analize
+                #select a suitable state to analyze
                 if current_state is None:
 
                     #notify siblings we are about to stop this run
