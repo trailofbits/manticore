@@ -5,7 +5,7 @@ import mmap as MMAP
 mmap_function = None
 munmap_function = None
 
-#initialize glogal functions depeding on platform
+# initialize global functions depending on platform
 osname = sys.platform.lower()
 if osname == "darwin" or osname.startswith("linux"):
 
