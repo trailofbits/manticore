@@ -3,7 +3,7 @@ import sys
 from manticore import Manticore
 
 '''
-Replaces a variable that influences control flow with a symbolic buffer. This
+Replaces a variable that controls program flow with a symbolic buffer. This
 in turn explores all possible states under that variable's influence.
 
 Usage:
@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     @m.hook(introduce_at)
     def introduce_sym(state):
-        # RBP-0xC is where the value is read into:
+        # RBP-0xC is the location of the value we're interested in:
         #
         #    if ((value & 0xff) != 0) {
         #  400a08:       8b 45 f4                mov    -0xc(%rbp),%eax
