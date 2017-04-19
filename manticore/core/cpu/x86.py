@@ -602,6 +602,14 @@ class AMD64Operand(Operand):
     def __init__(self, cpu, op, **kwargs):
         super(AMD64Operand, self).__init__(cpu, op, **kwargs)
 
+    @property
+    def type(self):
+        type_map = { X86_OP_REG: 'register',
+                     X86_OP_MEM: 'memory',
+                     X86_OP_IMM: 'immediate'}
+
+        return type_map[self.op.type]
+
     #################################3
     # Operand access
     def address(self):
@@ -632,14 +640,14 @@ class AMD64Operand(Operand):
 
     def read(self):
         cpu, o = self.cpu, self.op
-        if o.type == X86_OP_REG:
+        if self.type == 'register':
             value = cpu.read_register(self.reg)
             #logger.info("Read from reg %s value: %x",self.reg, value)
             return value
-        elif o.type == X86_OP_IMM:
+        elif self.type == 'immediate':
             #logger.info("Read from immediate value: %x", o.imm)
             return o.imm
-        elif o.type == X86_OP_MEM:
+        elif self.type == 'memory':
             value = cpu.read_int(self.address(), self.size)
             #logger.info("read mem operand from %x value: %x",self.address(), value)
             return value    
@@ -648,10 +656,10 @@ class AMD64Operand(Operand):
 
     def write(self, value):
         cpu,o = self.cpu, self.op
-        if o.type == X86_OP_REG:
+        if self.type == 'register':
             #logger.info("Write to reg %s value: %x",self.reg, value)
             cpu.write_register(self.reg, value)
-        elif o.type == X86_OP_MEM:
+        elif self.type == 'memory':
             #logger.info("write mem operand to %x value: %x",self.address(), value)
             cpu.write_int(self.address(), value, self.size)
         else:
@@ -661,10 +669,6 @@ class AMD64Operand(Operand):
     @property
     def size(self):
         return self.op.size*8
-
-    @property
-    def reg(self):
-        return self._reg_name(self.op.reg)
 
     def __getattr__(self, name):
         return getattr(self.op, name)
@@ -3913,7 +3917,7 @@ class X86Cpu(Cpu):
     def _getMemoryBit(cpu, bitbase, bitoffset):
         ''' Calculate address and bit offset given a base address and a bit offset 
             relative to that address (in the form of asm operands) '''
-        assert bitbase.type == X86_OP_MEM
+        assert bitbase.type == 'memory'
         assert bitbase.size >= bitoffset.size
         addr = bitbase.address()
         offt = Operators.SEXTEND(bitoffset.read(), bitoffset.size, bitbase.size)
@@ -4028,9 +4032,9 @@ class X86Cpu(Cpu):
         :param dest: bit base.
         :param src: bit offset.
         '''
-        if dest.type == X86_OP_REG:
+        if dest.type == 'register':
             cpu.CF = ((dest.read() >> (src.read()%dest.size) ) &1) !=0
-        elif dest.type == X86_OP_MEM:
+        elif dest.type == 'memory':
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
             value = cpu.read_int(addr+base, 8)
@@ -4052,12 +4056,12 @@ class X86Cpu(Cpu):
         :param dest: bit base operand.
         :param src: bit offset operand.
         '''
-        if dest.type == X86_OP_REG:
+        if dest.type == 'register':
             value = dest.read()
             pos = src.read()%dest.size
             cpu.CF = value & (1<<pos) == 1<<pos
             dest.write(value ^ (1 << pos))
-        elif dest.type == X86_OP_MEM:
+        elif dest.type == 'memory':
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
             addr += base
@@ -4082,12 +4086,12 @@ class X86Cpu(Cpu):
         :param dest: bit base operand.
         :param src: bit offset operand.
         '''
-        if dest.type == X86_OP_REG:
+        if dest.type == 'register':
             value = dest.read()
             pos = src.read() % dest.size
             cpu.CF = value & (1<<pos) == 1<<pos
             dest.write(value & ~(1 << pos))
-        elif dest.type == X86_OP_MEM:
+        elif dest.type == 'memory':
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
             addr+=base
@@ -4113,12 +4117,12 @@ class X86Cpu(Cpu):
         :param src: bit offset operand.
         '''
 
-        if dest.type == X86_OP_REG:
+        if dest.type == 'register':
             value = dest.read()
             pos = src.read() % dest.size
             cpu.CF = value & (1<<pos) == 1<<pos
             dest.write(value | (1 << pos))
-        elif dest.type == X86_OP_MEM:
+        elif dest.type == 'memory':
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
             addr+=base
@@ -5283,7 +5287,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        assert dest.type != X86_OP_MEM or src.type != X86_OP_MEM 
+        assert dest.type != 'memory' or src.type != 'memory' 
         value = Operators.EXTRACT(src.read(), 0, 64)
         if dest.size > src.size:
             value = Operators.ZEXTEND(value, dest.size)
@@ -5318,14 +5322,14 @@ class X86Cpu(Cpu):
 	        Destination[32..127] = 0;
         }
         '''
-        if dest.type == X86_OP_REG and src.type == X86_OP_REG:
+        if dest.type == 'register' and src.type == 'register':
             assert dest.size==128 and src.size==128
             dest.write(dest.read() & ~0xffffffff | src.read()&0xffffffff)
-        elif dest.type == X86_OP_MEM:
-            assert src.type == X86_OP_REG
+        elif dest.type == 'memory':
+            assert src.type == 'register'
             dest.write(Operators.EXTRACT(src.read(),0,dest.size))
         else:
-            assert src.type == X86_OP_MEM and dest.type == X86_OP_REG
+            assert src.type == 'memory' and dest.type == 'register'
             assert src.size == 32 and dest.size == 128
             dest.write(Operators.ZEXTEND(src.read(),128))
 
