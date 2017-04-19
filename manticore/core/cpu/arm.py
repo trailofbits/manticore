@@ -115,7 +115,6 @@ class Armv7Operand(Operand):
 
     def address(self):
         assert self.op.type == ARM_OP_MEM
-        mem = self.op.mem
         addr = self.get_mem_base_addr() + self.get_mem_offset()
         return addr & Mask(self.cpu.address_bit_size)
 
@@ -265,7 +264,7 @@ class Armv7Cpu(Cpu):
     mode = CS_MODE_ARM
 
 
-    def __init__(self, memory, *args, **kwargs):
+    def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
         self._force_next = False
@@ -736,7 +735,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def SVC(cpu, op):
-        if (op.read() != 0):
+        if op.read() != 0:
             logger.warning("Bad SVC number: {:08}".format(op.read()))
         raise Interruption(0)
 

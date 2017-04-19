@@ -90,7 +90,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
     all semantics match.
     '''
     def setUp(self):
-        self.cpu = Cpu(Memory32(), 'armv7')
+        self.cpu = Cpu(Memory32())
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
