@@ -38,16 +38,17 @@ class IntegrationTest(unittest.TestCase):
 
     def _runWithTimeout(self, procargs, timeout=600):
 
-        po = subprocess.Popen(procargs)
-        secs_used = 0
-
-        while po.poll() is None and secs_used < timeout:
-            time.sleep(1)
-            sys.stderr.write("~")
-            secs_used += 1
-
-        self.assertTrue(secs_used < timeout)
-        sys.stderr.write("\n")
+        with open(os.path.join(os.pardir, "logfile"), "w") as output:
+            po = subprocess.Popen(procargs, stdout=output)
+            secs_used = 0
+    
+            while po.poll() is None and secs_used < timeout:
+                time.sleep(1)
+                sys.stderr.write("~")
+                secs_used += 1
+    
+            self.assertTrue(secs_used < timeout)
+            sys.stderr.write("\n")
 
     def _runManticore(self, dumpname):
 
@@ -65,12 +66,12 @@ class IntegrationTest(unittest.TestCase):
 
         dumpfile = os.path.join(dumpdir, params['dump'])
 
-        args = ['manticore', '--workspace', workspace, '--log', logfile, dumpfile]
+        args = ['manticore', '--workspace', workspace, dumpfile]
 
         for k,v in params.iteritems():
             if k.startswith("--"):
                 args.extend([k, v.format(dumpdir=dumpdir, workspace=workspace)])
-        self._runWithTimeout(args)
+        self._runWithTimeout(args, logfile)
 
         efile = os.path.join(dumpdir, params['expected'])
         expected = self._loadVisitedSet(efile)
