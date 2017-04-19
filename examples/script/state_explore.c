@@ -1,16 +1,10 @@
 #include <stdio.h>
 
 /**
- * Example code for the state abandon example in the Manticore script corpus.
+ * Example code for the state state_control.py and introduce_symbolic_bytes.py
+ * examples.
  *
- * # Compile binary
- * $ gcc -static -g state_explore.c -o state_explore
- *
- * # Pull out the address of the branch we want to ignore
- * $ ADDRESS=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' | tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
- *
- * # Run the analysis
- * $ python state_explore.py state_explore $ADDRESS
+ *  See scripts for more information.
  */
 
 void
