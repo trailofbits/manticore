@@ -136,7 +136,7 @@ class Armv7Operand(Operand):
             off = idx
         else:
             off = self.mem.disp
-        return -off if self.op.subtracted else off
+        return off
 
     def get_mem_base_addr(self):
         assert self.type == 'memory'
