@@ -25,7 +25,6 @@ from .utils.helpers import issymbolic
 
 logger = logging.getLogger('MANTICORE')
 
-
 def makeDecree(args):
     constraints = ConstraintSet()
     model = decree.SDecree(constraints, ','.join(args.programs))
@@ -139,6 +138,7 @@ class Manticore(object):
     :type args: list[str]
     '''
 
+
     def __init__(self, binary_path, args=None):
         assert os.path.isfile(binary_path)
 
@@ -165,8 +165,6 @@ class Manticore(object):
         self._hooks = {}
         self._running = False
         self._arch = None
-        self._log_debug = False
-        self._log_file = '/dev/stdout'
         self._concrete_data = ''
         self._dumpafter = 0
         self._maxstates = 0
@@ -183,16 +181,8 @@ class Manticore(object):
             self._binary_obj = ELFFile(file(self._binary))
 
         self._init_logging()
-        
+
     def _init_logging(self): 
-        fmt_str = '%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s'
-
-        if self._log_debug:
-            log_level = logging.DEBUG
-        else:
-            log_level = logging.WARNING
-
-        logging.basicConfig(filename=self._log_file, format=fmt_str, level=log_level)
 
         def loggerSetState(logger, stateid):
             logger.filters[0].stateid = stateid
@@ -209,27 +199,16 @@ class Manticore(object):
                 return True
 
         ctxfilter = ContextFilter()
-        for name, logger in logging.Logger.manager.loggerDict.items():
-            logger.addFilter(ctxfilter)
-            logger.setLevel(log_level)
-            logger.setState = types.MethodType(loggerSetState, logger)
 
-    @property
-    def log_file(self):
-        return self._log_file
+        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
 
-    @log_file.setter
-    def log_file(self, path):
-        if self._log_file == path:
-            return
-
-        if path == '-':
-            path = '/dev/stdout'
-
-        self._log_file = path
-
-        self._init_logging()
-
+        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
+            logging.getLogger(loggername).addFilter(ctxfilter)
+            logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
+        
+        logging.getLogger('SMT').setLevel(logging.INFO)
+        logging.getLogger('MEMORY').setLevel(logging.INFO)
+        logging.getLogger('LIBC').setLevel(logging.INFO)
 
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
@@ -282,19 +261,6 @@ class Manticore(object):
         self._maxstorage = max_storage
 
     @property
-    def log_debug(self):
-        return self._log_debug
-
-    @log_debug.setter
-    def log_debug(self, debug):
-        if self._log_debug == debug:
-            return
-
-        self._log_debug = debug
-
-        self._init_logging()
-
-    @property
     def verbosity(self):
         '''
         Convenience interface for setting logging verbosity to one of several predefined
@@ -305,11 +271,11 @@ class Manticore(object):
     @verbosity.setter
     def verbosity(self, setting):
         levels = [[],
-                  [('EXECUTOR', logging.INFO)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('SMTLIB', logging.DEBUG)]]
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('SMTLIB', logging.DEBUG)]]
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]
