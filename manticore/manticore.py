@@ -201,8 +201,6 @@ class Manticore(object):
 
         ctxfilter = ContextFilter()
 
-        self.verbosity = self._verbosity
-
         logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
 
         for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:

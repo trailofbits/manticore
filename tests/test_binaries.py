@@ -22,7 +22,7 @@ class IntegrationTest(unittest.TestCase):
 
     def _runWithTimeout(self, procargs, logfile, timeout=1200):
 
-        with open(os.path.join(os.pardir, "logfile"), "w") as output:
+        with open(os.path.join(os.pardir, logfile), "w") as output:
             po = subprocess.Popen(procargs, stdout=output)
             secs_used = 0
     
