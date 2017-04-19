@@ -5,34 +5,13 @@
 
 Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
-## Features
+## Quick Start
 
-- **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
-- **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations
-- **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
-- **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
-
-## Scope
-
-Manticore supports binaries of the following formats, operating systems, and
-architectures. It has been primarily used on binaries compiled from C and C++.
-
-- OS/Formats: Linux ELF, Windows Minidump
-- Architectures: x86, x86_64, ARMv7 (partial)
-
-## Requirements
-
-Manticore is officially supported on Linux and requires Python 2.7.
-
-## Quick start
-
-Install and try Manticore in about ten shell commands:
+Install and try Manticore in a few shell commands:
 
 ```
-# install z3 before beginning, see our README.md
-git clone git@github.com:trailofbits/manticore.git
-cd manticore
-pip install --user --no-binary capstone . # do this in a virtualenv if you want, but omit --user
+# follow install instructions in README.md before beginning
+cd /path/to/manticore/
 cd examples/linux
 make
 manticore basic
@@ -44,36 +23,69 @@ python count_instructions.py ../linux/helloworld # ok if the insn count is diffe
 
 Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
 
+## Features
+
+- **Input Generation**: Manticore automatically generates inputs that trigger unique code paths
+- **Crash Discovery**: Manticore discovers inputs that crash programs via memory safety violations
+- **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
+- **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
+
+Manticore supports binaries of the following formats, operating systems, and
+architectures. It has been primarily used on binaries compiled from C and C++.
+
+- OS/Formats: Linux ELF, Windows Minidump
+- Architectures: x86, x86_64, ARMv7 (partial)
+
+## Requirements
+
+Manticore is officially supported on Linux and requires Python 2.7.
+
 ## Installation
 
-We recommend the use of Manticore in a virtual environment, though this is optional.
-To manage this, we recommend installing [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/).
-Then, to set up a virtual environment, in the root of the Manticore repository, run
+These install instructions require pip 7.1.0, due to `--no-binary`. If you have an older pip version, you might be able to use `--no-use-wheel` instead.
+
+We recommend using Manticore in a virtual environment with [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/). Run the following commands in the root of the Manticore repository to setup a virtual environment (note: The `--no-binary` flag is a workaround for a known Capstone [issue](https://github.com/aquynh/capstone/issues/445)).
 
 ```
 mkvirtualenv manticore
+pip install --no-binary capstone .
 ```
 
-Then, from the root of the Manticore repository, run:
+or, if you didn't use a virtualenv and would like to do a user install:
 
 ```
-pip install .
-````
-
-or, if you would like to do a user install:
-
-```
-pip install --user .
+pip install --user --no-binary capstone .
 ```
 
 This installs the Manticore CLI tool `manticore` and the Python API.
 
-Then, install the Z3 Theorem Prover. Download the [latest release](https://github.com/Z3Prover/z3/releases/latest) for your platform and place the `z3` binary in your `$PATH`.
+Then, install the Z3 Theorem Prover. For example, on Ubuntu:
 
-> Note: Due to a known [issue](https://github.com/aquynh/capstone/issues/445),
-  Capstone may not install correctly. If you get this error message,
-  "ImportError: ERROR: fail to load the dynamic library.", or another related
-  to Capstone, try reinstalling via `pip install -I --no-binary capstone capstone`
+```
+sudo apt-get install z3
+```
+
+### For developers
+
+For a dev install that includes dependencies for tests, run:
+
+```
+pip install --no-binary capstone --no-binary keystone-engine -e .[dev]
+```
+
+You can run the tests with the commands below:
+
+```
+cd /path/to/manticore/
+# all tests
+nosetests
+# just one file
+nosetests tests/test_armv7cpu.py
+# just one test class
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
+# just one test
+nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
+```
 
 ## Usage
 
@@ -100,28 +112,6 @@ def hook(state):
   m.terminate()  # tell Manticore to stop
 
 m.run()
-```
-
-## For developers
-
-For a dev install, run:
-
-```
-pip install -e .[dev]
-```
-
-This installs a few other dependencies used for tests which you can run with some of the commands below:
-
-```
-cd /path/to/manticore/
-# all tests
-nosetests
-# just one file
-nosetests tests/test_armv7cpu.py
-# just one test class
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
-# just one test
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 ```
 
 ## FAQ
