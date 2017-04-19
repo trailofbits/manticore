@@ -558,7 +558,7 @@ class AMD64RegFile(RegisterFile):
 
         register_id, ty, offset, size, reset = self._table[name]
         if register_id != name:
-            #Fixme add a coulumn to _table with parent_size so we dont need to access the dict twice
+            #FIXME add a column to _table with parent_size so we don't need to access the dict twice
             register_size = self._table[register_id].size
         else:
             register_size = size
@@ -741,7 +741,7 @@ class X86Cpu(Cpu):
 
     ################################################
     # This its unused but shouldn't be deleted!!!
-    # The intruction cache must be invalidated after an executable 
+    # The instruction cache must be invalidated after an executable 
     # page was changed or removed or added 
     def invalidate_cache(cpu, address, size):
         ''' remove decoded instruction from instruction cache '''
@@ -814,7 +814,7 @@ class X86Cpu(Cpu):
         
         :param cpu: current CPU. 
         '''
-        #FIXME Choose conserative values and consider returning some default when eax not here
+        #FIXME Choose conservative values and consider returning some default when eax not here
         conf = {   0x0:        (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
                    0x1:        (0x000306c3, 0x05100800, 0x7ffafbff, 0xbfebfbff),
                    0x2:        (0x76035a01, 0x00f0b5ff, 0x00000000, 0x00c10000),
@@ -3606,7 +3606,7 @@ class X86Cpu(Cpu):
             dest.write(new_val)
 
             cpu.CF = Operators.ITE(tempCount != 0, (left & 1) == 1, cpu.CF)
-            #for RCR these are calcualted before rotation starts
+            #for RCR these are calculated before rotation starts
             s_MSB = ((new_val >> (OperandSize-1)) & 0x1) == 1
             s_MSB2 = ((new_val >> (OperandSize-2)) & 0x1) == 1
             cpu.OF = Operators.ITE(tempCount==1, 
@@ -3762,7 +3762,7 @@ class X86Cpu(Cpu):
 
         SIGN_MASK = (1<<(OperandSize-1))
 
-        # We can't use this one as the 'true' expresion gets eagerly calculated even on count == 0		 +        cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
+        # We can't use this one as the 'true' expression gets eagerly calculated even on count == 0		 +        cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
         # cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
 
         if issymbolic(count):
@@ -4353,7 +4353,7 @@ class X86Cpu(Cpu):
         the ES:RDI, ES:EDI or the ES:DI registers (depending on the address-size 
         attribute of the instruction, 32 or 16, respectively)::
 
-                IF (byte cmparison)
+                IF (byte comparison)
                 THEN
                     temp  =  AL - SRC;
                     SetStatusFlags(temp);
@@ -4799,7 +4799,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
-        @todo: check alingment.
+        @todo: check alignment.
         '''
         op0.write(op1.read())
 
@@ -5120,7 +5120,7 @@ class X86Cpu(Cpu):
         Packed subtract.
         
         Performs a SIMD subtract of the packed integers of the source operand (second operand) from the packed 
-        integers of the destpination operand (first operand), and stores the packed integer results in the 
+        integers of the destination operand (first operand), and stores the packed integer results in the 
         destination operand. The source operand can be an MMX(TM) technology register or a 64-bit memory location, 
         or it can be an XMM register or a 128-bit memory location. The destination operand can be an MMX or an XMM 
         register.
@@ -5341,9 +5341,9 @@ class X86Cpu(Cpu):
         to move data between two XMM registers. 
 
         When the source or destination operand is a memory operand, the operand 
-        must be aligned on a 16-byte boundaryor a general-protection exception 
+        must be aligned on a 16-byte boundary or a general-protection exception 
         (#GP) will be generated. To move integer data to and from unaligned 
-        memorylocations, use the VMOVDQU instruction.'''
+        memory locations, use the VMOVDQU instruction.'''
         #TODO raise exception when unaligned!
         dest.write(src.read())
 
@@ -5516,7 +5516,7 @@ class X86Cpu(Cpu):
 
         if issymbolic(selector):
             # need to check if selector can be any of cpu_segments.keys()
-            # and if so concretize acordinglyi
+            # and if so concretize accordingly
             raise NotImplementedError("Do not yet implement symbolic LSL")
 
         #Checks that the segment selector is not null.
