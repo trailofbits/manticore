@@ -81,8 +81,9 @@ def LSL_C(value, amount, width):
     :rtype tuple
     '''
     assert amount > 0
-    result = GetNBits(value << amount, width)
-    carry = Bit(value, width - amount)
+    shifted = value << amount
+    result = GetNBits(shifted, width)
+    carry = Bit(shifted, width)
     return (result, carry)
 
 def LSL(value, amount, width):
