@@ -253,7 +253,7 @@ class Executor(object):
                 # there recursion limit exceeded problem, 
                 # try a slower, iterative solution
                 from ..utils import iterpickle
-                logger.info("WARNING: using iterpickle to dump state")
+                logger.warning("Using iterpickle to dump state")
                 f.write(iterpickle.dumps(state, 2))
 
             filesize = f.tell()
@@ -383,7 +383,7 @@ class Executor(object):
 
 
         if policy == 'bucket':
-            logger.info("Metric %r", 'bucket'*10 )
+            logger.info("Metric: bucket")
 
             for st_name, st_stat in sorted( self._states.items(), key = lambda (st_name,st_stat): metric(st_stat) ):
                 brs = st_stat['branches']
@@ -801,8 +801,8 @@ class Executor(object):
                 break
 
             except SyscallNotImplemented as e:
-                logger.error("SYSCALL NOT IMPLEMENTED, PLEASE IMPLEMENT\n%s", str(e))
-                self.generate_testcase(current_state, "UNIMPLEMENTED syscall "+str(e))
+                logger.error("Syscall not implemented: %s", str(e))
+                self.generate_testcase(current_state, "Unimplemented syscall "+str(e))
                 current_state = None
 
             except AssertionError as e:
@@ -823,7 +823,7 @@ class Executor(object):
             except Exception as e:
                 import traceback
                 trace = traceback.format_exc()
-                logger.error("THIS SHOULD NOT REACHABLE! Exception in user code: %s\n%s", str(e), trace)
+                logger.error("Exception: %s\n%s", str(e), trace)
                 for log in trace.splitlines():
                     logger.error(log) 
                 current_state = None

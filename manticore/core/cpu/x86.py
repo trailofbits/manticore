@@ -5262,8 +5262,9 @@ class X86Cpu(Cpu):
         elif dest.size == 64 and src.size == 128:
             dest.write(Operators.EXTRACT(src.read(), 0, dest.size))
         else:
-            logger.error("INVALID SIZES IN MOVQ!")
-            raise Exception("INVALID SIZES IN MOVQ!")
+            msg = 'Invalid size in MOVQ'
+            logger.error(msg)
+            raise Exception(msg)
 
     @instruction
     def MOVSD(cpu, dest, src):
