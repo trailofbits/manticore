@@ -442,7 +442,7 @@ class CONTEXT_amd64(Structure):
                 ("LastExceptionFromRip", "<Q")]
 
 class CONTEXT_arm32(Structure):
-    # XXX: this structure is UNCOMPLETE
+    # XXX: this structure is INCOMPLETE
     _fields_ = [("ContextFlags", "<I"), \
                  ("R0", "<I"), \
                  ("R1", "<I"), \

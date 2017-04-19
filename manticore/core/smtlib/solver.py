@@ -1,17 +1,17 @@
 ###############################################################################
 # Solver
-# A solver maintains a companion smtlib capable proceess connected via stdio.
+# A solver maintains a companion smtlib capable process connected via stdio.
 # It can be in 4 main states: None, unknown, sat, unsat
-# None      nothing was yet sent to the smtlib proccess. Al the state is only at the python side
+# None      nothing was yet sent to the smtlib process. Al the state is only at the python side
 # unknown   is an error state. Some query sent early was unsuccessful or timed out. Further 
-#           interaction with the smtlib proccess will probably kept beign unknown. An exception is raised.
-# sat       the current set of constraints is sat-isfiable and has at least one solution
+#           interaction with the smtlib process will probably kept beign unknown. An exception is raised.
+# sat       the current set of constraints is satisfiable and has at least one solution
 # unsat     the current set of constraints is impossible
 #
 # It starts at None.
 # Once you Solver.check() it the status is changed to sat or unsat (or unknown+exception)
-# You can create new symbols operate on them. The declarations will be sended to the smtlib proceess when needed.
-# You can add new constraints. A new contraint may change the state from {None, sat} to {sat, unsat, unknown}
+# You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
+# You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
 from subprocess import PIPE, Popen, check_output
 from abc import ABCMeta, abstractmethod
@@ -51,10 +51,10 @@ class Solver(object):
 
     @abstractmethod
     def optimize(self, X, operation, M=10000):
-        ''' Iterativelly finds the maximun or minimal value for the operation 
+        ''' Iterativelly finds the maximum or minimal value for the operation 
             (Normally Operators.UGT or Operators.ULT)
             :param X: a symbol or expression
-            :param M: maximun number of iterations allowed
+            :param M: maximum number of iterations allowed
         '''
         pass
 
@@ -74,7 +74,7 @@ class Solver(object):
 
     @abstractmethod
     def get_value(self, constraints, expression):
-        ''' Ask the solver for one possible assigment for expression using currrent set
+        ''' Ask the solver for one possible assignment for expression using current set
             of constraints.
             The current set of assertions must be sat.
             :param val: an expression or symbol '''
@@ -83,7 +83,7 @@ class Solver(object):
     def max(self, constraints, X, M=10000):
         ''' Iterativelly finds the maximum value for a symbol.
             :param X: a symbol or expression
-            :param M: maximun number of iterations allowed
+            :param M: maximum number of iterations allowed
         '''
         assert isinstance(X, BitVec)
         return self.optimize(constraints, X, 'maximize')
@@ -91,7 +91,7 @@ class Solver(object):
     def min(self, constraints, X, M=10000):
         ''' Iterativelly finds the minimum value for a symbol.
             :param X: a symbol or expression
-            :param M: maximun number of iterations allowed
+            :param M: maximum number of iterations allowed
         '''
         assert isinstance(X, BitVec)
         return self.optimize(constraints, X, 'minimize')
@@ -112,7 +112,7 @@ consider_unknown_as_unsat = True
 Version = collections.namedtuple('Version', 'major minor patch')
 class Z3Solver(Solver):
     def __init__(self):
-        ''' Build a Z3 solver intance.
+        ''' Build a Z3 solver instance.
             This is implemented using an external z3 solver (via a subprocess).
         '''
         super(Z3Solver, self).__init__()
@@ -162,7 +162,7 @@ class Z3Solver(Solver):
 
         
     def _start_proc(self):
-        ''' Auxiliary method to spawn the external solver pocess'''
+        ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
             self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE )
@@ -280,7 +280,7 @@ class Z3Solver(Solver):
         self._send('(assert %s)'%smtlib)
 
     def _getvalue(self, expression):
-        ''' Ask the solver for one possible assigment for val using currrent set
+        ''' Ask the solver for one possible assignment for val using current set
             of constraints.
             The current set of assertions must be sat.
             :param val: an expression or symbol '''
@@ -365,10 +365,10 @@ class Z3Solver(Solver):
 
     #@memoized
     def optimize(self, constraints, x, goal, M=10000):
-        ''' Iterativelly finds the maximun or minimal value for the operation 
+        ''' Iterativelly finds the maximum or minimal value for the operation 
             (Normally Operators.UGT or Operators.ULT)
             :param X: a symbol or expression
-            :param M: maximun number of iterations allowed
+            :param M: maximum number of iterations allowed
         '''
         assert goal in ('maximize', 'minimize')
         assert isinstance(x, BitVec)
@@ -418,7 +418,7 @@ class Z3Solver(Solver):
 
     #@memoized
     def get_value(self, constraints, expression):
-        ''' Ask the solver for one possible assigment for val using currrent set
+        ''' Ask the solver for one possible assignment for val using current set
             of constraints.
             The current set of assertions must be sat.
             :param val: an expression or symbol '''

@@ -291,7 +291,7 @@ class Armv7Cpu(Cpu):
     # Register file has the actual CPU flags
     def setFlags(self, **flags):
         '''
-        Note: For any unupdated flags, update _last_flags with the most recent
+        Note: For any unmodified flags, update _last_flags with the most recent
         committed value. Otherwise, for example, this could happen:
 
             overflow=0

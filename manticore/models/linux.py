@@ -293,7 +293,7 @@ class Linux(object):
         stdin.peer = self.output
         stdout.peer = self.output
         stderr.peer = self.stderr
-        #A receive from stdin will get data from inp
+        #A receive from stdin will get data from input
         self.input.peer = stdin
         #A receive on stdout or stderr will return no data (rx_bytes: 0)
 
@@ -1232,7 +1232,7 @@ class Linux(object):
         :param cpu: current CPU.
         :param start: the starting address to change the permissions.
         :param size: the size of the portion of memory to change the permissions.
-        :param prot: the new acces premission for the memory.
+        :param prot: the new access permission for the memory.
         :return: C{0} on success.
         '''
         perms = perms_from_protflags(prot)
@@ -1610,8 +1610,8 @@ class Linux(object):
         self._current = next
 
     def wait(self, readfds, writefds, timeout):
-        ''' Wait for filedescriptors or timout.
-            Adds the current process in the correspondant wainting list and
+        ''' Wait for file descriptors or timeout.
+            Adds the current process in the correspondent waiting list and
             yield the cpu to another running process.
         '''
         logger.debug("WAIT:")
@@ -1642,8 +1642,8 @@ class Linux(object):
             self.check_timers()
 
     def awake(self, procid):
-        ''' Remove procid from waitlists and restablish it in the running list '''
-        logger.debug("Remove procid:%d from waitlists and restablish it in the running list", procid)
+        ''' Remove procid from waitlists and reestablish it in the running list '''
+        logger.debug("Remove procid:%d from waitlists and reestablish it in the running list", procid)
         for wait_list in self.rwait:
             if procid in wait_list: wait_list.remove(procid)
         for wait_list in self.twait:

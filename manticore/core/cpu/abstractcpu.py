@@ -15,7 +15,7 @@ logger = logging.getLogger("CPU")
 
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
-# This encapsulates how to acccess operands (regs/mem/immediates) for differents cpus
+# This encapsulates how to access operands (regs/mem/immediates) for different CPUs
 class Operand(object):
 
     class MemSpec(object):
@@ -259,7 +259,7 @@ class Cpu(object):
         '''
         return self._regfile.read(register)
 
-    # Pythonic acces to registers and aliases
+    # Pythonic access to registers and aliases
     def __getattr__(self, name):
         '''
         A Pythonic version of read_register
@@ -359,7 +359,7 @@ class Cpu(object):
 
     def decode_instruction(self, pc):
         '''
-        This will decode an intructcion from memory pointed by @pc
+        This will decode an instruction from memory pointed by @pc
 
         :param int pc: address of the instruction
         '''
@@ -414,7 +414,7 @@ class Cpu(object):
         pass
 
     def execute(self):
-        ''' Decode, and execute one intruction pointed by register PC'''
+        ''' Decode, and execute one instruction pointed by register PC'''
         if not isinstance(self.PC, (int,long)):
             raise SymbolicPCException()
 
@@ -492,7 +492,7 @@ class Cpu(object):
 
 
 class DecodeException(Exception):
-    ''' Raised when trying to decode an unknown or invalid intruction '''
+    ''' Raised when trying to decode an unknown or invalid instruction '''
     def __init__(self, pc, bytes, extra):
         super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
         self.pc=pc
