@@ -37,7 +37,7 @@ class SymbolicSyscallArgument(ConcretizeRegister):
         reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][number]
         super(SymbolicSyscallArgument, self).__init__(reg_name, message, policy)
 
-#FIXME Cosider moving this to executor.state?
+#FIXME Consider moving this to executor.state?
 def toStr(state, value):
     if issymbolic(value):
         minmax = solver.get_all_values(state.constraints, value, maxcnt=2, silent=True)
