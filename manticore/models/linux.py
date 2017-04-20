@@ -1535,7 +1535,7 @@ class Linux(object):
                      0x0000008d: self.sys_getpriority,
                      0x00000092: self.sys_writev32,
                      0x000000c0: self.sys_mmap2,
-                     0x000000c3: self.sys_stat64,
+                     0x000000c3: self.sys_stat32,
                      0x000000c5: self.sys_fstat,
                      0x000000c7: self.sys_getuid,
                      0x000000c8: self.sys_getgid,
@@ -1789,8 +1789,17 @@ class Linux(object):
         :param buf: a buffer where data about the file will be stored. 
         :return: C{0} on success.   
         '''
+        return self._stat(cpu, path, buf, True)
+
+    def sys_stat32(self, cpu, path, buf):
+        return self._stat(cpu, path, buf, False)
+
+    def _stat(self, cpu, path, buf, is64bit):
         fd = self.sys_open(cpu, path, 0, 'r')
-        ret = self.sys_fstat64(cpu, fd, buf)
+        if is64bit:
+            ret = self.sys_fstat64(cpu, fd, buf)
+        else:
+            ret = self.sys_fstat(cpu, fd, buf)
         self.sys_close(cpu, fd)
         return ret
     
