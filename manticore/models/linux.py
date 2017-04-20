@@ -1535,7 +1535,7 @@ class Linux(object):
                      0x0000008d: self.sys_getpriority,
                      0x00000092: self.sys_writev32,
                      0x000000c0: self.sys_mmap2,
-                     0x000000c3: self.sys_stat64,
+                     0x000000c3: self.sys_stat32,
                      0x000000c5: self.sys_fstat,
                      0x000000c7: self.sys_getuid,
                      0x000000c8: self.sys_getgid,
@@ -1789,8 +1789,17 @@ class Linux(object):
         :param buf: a buffer where data about the file will be stored. 
         :return: C{0} on success.   
         '''
+        return self._stat(cpu, path, buf, True)
+
+    def sys_stat32(self, cpu, path, buf):
+        return self._stat(cpu, path, buf, False)
+
+    def _stat(self, cpu, path, buf, is64bit):
         fd = self.sys_open(cpu, path, 0, 'r')
-        ret = self.sys_fstat64(cpu, fd, buf)
+        if is64bit:
+            ret = self.sys_fstat64(cpu, fd, buf)
+        else:
+            ret = self.sys_fstat(cpu, fd, buf)
         self.sys_close(cpu, fd)
         return ret
     
@@ -1938,26 +1947,22 @@ class SLinux(Linux):
         '''
         stat = self.files[fd].stat()
         bufstat = ''
-        bufstat += struct.pack('<L', stat.st_dev)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
+        bufstat += struct.pack('<Q', stat.st_dev)
+        bufstat += struct.pack('<L', 0)  # pad1
         bufstat += struct.pack('<L', stat.st_ino)
         bufstat += struct.pack('<L', stat.st_mode)
         bufstat += struct.pack('<L', stat.st_nlink)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
+        bufstat += struct.pack('<L', 0)  # uid
+        bufstat += struct.pack('<L', 0)  # gid
+        bufstat += struct.pack('<Q', 0)  # rdev
+        bufstat += struct.pack('<L', 0)  # pad2
         bufstat += struct.pack('<L', stat.st_size)
-        bufstat += struct.pack('<L', 0)
         bufstat += struct.pack('<L', stat.st_blksize)
         bufstat += struct.pack('<L', stat.st_blocks)
-        bufstat += struct.pack('<L', 0)
 
-        bufstat += struct.pack('d', stat.st_atime)
-        bufstat += struct.pack('d', stat.st_ctime)
-        bufstat += struct.pack('d', stat.st_mtime)
+        bufstat += struct.pack('<Q', stat.st_atime)
+        bufstat += struct.pack('<Q', stat.st_ctime)
+        bufstat += struct.pack('<Q', stat.st_mtime)
         cpu.write_bytes(buf, bufstat)
         return 0
 
