@@ -1938,26 +1938,22 @@ class SLinux(Linux):
         '''
         stat = self.files[fd].stat()
         bufstat = ''
-        bufstat += struct.pack('<L', stat.st_dev)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
+        bufstat += struct.pack('<Q', stat.st_dev)
+        bufstat += struct.pack('<L', 0)  # pad1
         bufstat += struct.pack('<L', stat.st_ino)
         bufstat += struct.pack('<L', stat.st_mode)
         bufstat += struct.pack('<L', stat.st_nlink)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
-        bufstat += struct.pack('<L', 0)
+        bufstat += struct.pack('<L', 0) # uid
+        bufstat += struct.pack('<L', 0)  # gid
+        bufstat += struct.pack('<Q', 0)  # rdev
+        bufstat += struct.pack('<L', 0) # pad2
         bufstat += struct.pack('<L', stat.st_size)
-        bufstat += struct.pack('<L', 0)
         bufstat += struct.pack('<L', stat.st_blksize)
         bufstat += struct.pack('<L', stat.st_blocks)
-        bufstat += struct.pack('<L', 0)
 
-        bufstat += struct.pack('d', stat.st_atime)
-        bufstat += struct.pack('d', stat.st_ctime)
-        bufstat += struct.pack('d', stat.st_mtime)
+        bufstat += struct.pack('<Q', stat.st_atime)
+        bufstat += struct.pack('<Q', stat.st_ctime)
+        bufstat += struct.pack('<Q', stat.st_mtime)
         cpu.write_bytes(buf, bufstat)
         return 0
 
