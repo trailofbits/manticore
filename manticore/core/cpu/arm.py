@@ -841,6 +841,10 @@ class Armv7Cpu(Cpu):
             base.writeback(updated_address)
 
     @instruction
+    def VLDMIA(cpu, base, *regs):
+        cpu._LDM(ARM_INS_VLDMIA, base, regs)
+
+    @instruction
     def STCL(cpu, *operands):
         pass
 
