@@ -133,7 +133,7 @@ class Armv7Operand(Operand):
             if self.is_shifted():
                 shift = self.op.shift
                 idx, carry = self.cpu._Shift(idx, shift.type, shift.value,  carry)
-            off = idx
+            off = -idx if self.op.subtracted else idx
         else:
             off = self.mem.disp
         return off
