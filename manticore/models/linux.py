@@ -1952,10 +1952,10 @@ class SLinux(Linux):
         bufstat += struct.pack('<L', stat.st_ino)
         bufstat += struct.pack('<L', stat.st_mode)
         bufstat += struct.pack('<L', stat.st_nlink)
-        bufstat += struct.pack('<L', 0) # uid
+        bufstat += struct.pack('<L', 0)  # uid
         bufstat += struct.pack('<L', 0)  # gid
         bufstat += struct.pack('<Q', 0)  # rdev
-        bufstat += struct.pack('<L', 0) # pad2
+        bufstat += struct.pack('<L', 0)  # pad2
         bufstat += struct.pack('<L', stat.st_size)
         bufstat += struct.pack('<L', stat.st_blksize)
         bufstat += struct.pack('<L', stat.st_blocks)
