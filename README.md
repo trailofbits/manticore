@@ -94,7 +94,7 @@ nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 - [Multiple Styles: The Writeup](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10)
 
 ```
-$ manticore ./path/to/binary  # runs, and creates a mcore_* with analysis results
+$ manticore ./path/to/binary  # runs, and creates a mcore_* directory with analysis results
 ```
 
 or
