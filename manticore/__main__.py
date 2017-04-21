@@ -32,7 +32,7 @@ def parse_arguments():
     parser.add_argument('--maxsymb', type=int, default=512, help='Maximun number of symbolic bytes to inject')
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
-    parser.add_argument('--env', type=str, nargs=1, default=[],
+    parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Specify symbolic environment variable VARNAME=++++++')
     parser.add_argument('--policy', type=str, default='random',
                         help='Search policy. random|adhoc|uncovered|dicount|icount|syscount|depth.'\
@@ -100,7 +100,7 @@ def main():
 
     if args.env:
         for entry in args.env:
-            name, val = entry.split('=')
+            name, val = entry[0].split('=')
             m.env_add(name, val)
 
     if args.assertions:
