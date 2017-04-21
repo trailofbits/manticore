@@ -33,7 +33,7 @@ sudo apt-get install z3
 # Install manticore and python dependencies
 git clone https://github.com/trailofbits/manticore.git
 cd manticore
-pip install --user --upgrade --no-binary capstone .
+pip install --user --no-binary capstone .
 
 # Some example usage
 cd examples/linux
