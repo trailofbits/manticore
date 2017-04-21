@@ -472,21 +472,24 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         cpu.setFlags(C=carry_out, N=HighBit(result), Z=(result == 0))
 
-    def _handleWriteback(cpu, src, dest, offset):
+    def _compute_writeback(cpu, operand, offset):
+        if offset:
+            off = offset.read()
+        else:
+            off = operand.get_mem_offset()
+        wbaddr = operand.get_mem_base_addr() + off
+        return wbaddr
+
+    def _cs_hack_ldr_str_writeback(cpu, operand, offset, val):
         # capstone bug doesn't set writeback correctly for postindex reg
         if cpu.instruction.writeback or offset:
-            if offset:
-                off = offset.read()
-            else:
-                off = dest.get_mem_offset()
-
-            wbaddr = dest.get_mem_base_addr() + off
-            dest.writeback(wbaddr)
+            operand.writeback(val)
 
     def _STR(cpu, width, src, dest, offset=None):
         val = src.read()
+        writeback = cpu._compute_writeback(dest, offset)
         cpu.write_int(dest.address(), val, width)
-        cpu._handleWriteback(src, dest, offset)
+        cpu._cs_hack_ldr_str_writeback(dest, offset, writeback)
 
     @instruction
     def STR(cpu, *args): return cpu._STR(cpu.address_bit_size, *args)
@@ -499,12 +502,13 @@ class Armv7Cpu(Cpu):
 
     def _LDR(cpu, dest, src, width, is_signed, offset):
         mem = cpu.read_int(src.address(), width)
+        writeback = cpu._compute_writeback(src, offset)
         if is_signed:
             word = Operators.SEXTEND(mem, width, cpu.address_bit_size)
         else:
             word = Operators.ZEXTEND(mem, cpu.address_bit_size)
         dest.write(word)
-        cpu._handleWriteback(dest, src, offset)
+        cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
 
     @instruction
     def LDR(cpu, dest, src, offset=None):
