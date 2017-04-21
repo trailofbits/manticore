@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/trailofbits/manticore.svg?token=m4YsYkGcyttTxRXGVHMr&branch=master)](https://travis-ci.com/trailofbits/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 
-Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
+Manticore is a prototyping tool for dynamic binary analysis, with support for [symbolic execution](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10#file-2multiple_styles_symbolic_solve-py), taint analysis, and [binary instrumentation](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10#file-1multiple_styles_concrete_solve-py).
 
 ## Features
 
@@ -91,8 +91,10 @@ nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 
 ## Usage
 
+- [Multiple Styles: The Writeup](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10)
+
 ```
-$ manticore ./path/to/binary  # runs, and creates a directory with analysis results
+$ manticore ./path/to/binary  # runs, and creates a mcore_* with analysis results
 ```
 
 or
