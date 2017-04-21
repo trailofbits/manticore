@@ -73,7 +73,7 @@ Option 3: Perform a system install.
 [sudo] pip install --no-binary capstone .
 ```
 
-Once installed via either method, the `manticore` CLI tool and its Python API will be available.
+Once installed, the `manticore` CLI tool and its Python API will be available.
 
 ### For developers
 
