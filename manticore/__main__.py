@@ -113,6 +113,17 @@ def main():
 
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
+    logger.info('Policy: {}'.format(m.policy))
+    if args.profile:            logger.info('Profile: {}'.format(m.should_profile))
+    if args.dumpafter != 0:     logger.info('Dump after: {}'.format(m.dumpafter))
+    if args.maxstorage != 0:    logger.info('Max storage: {}'.format(m.maxstorage))
+    if args.maxstates != 0:     logger.info('Max states: {}'.format(m.maxstates))
+    if args.coverage:           logger.info('Coverage file: {}'.format(m.coverage_file))
+    if args.names is not None:  logger.info('Names: {}'.format(args.names))
+    if args.procs:              logger.info('Procs: {}'.format(m.workers))
+    if args.env:                logger.info('Env: {}'.format(args.env))
+    if args.assertions:         logger.info('Assertions: {}'.format(args.assertions))
+    if args.verbose:            logger.info('Verbosity: {}'.format(m.verbosity))
 
     m.run(args.timeout)
 
