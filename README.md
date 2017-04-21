@@ -33,7 +33,7 @@ sudo apt-get install z3
 # Install manticore and python dependencies
 git clone https://github.com/trailofbits/manticore.git
 cd manticore
-pip install --user --no-binary capstone .
+sudo pip install --no-binary capstone .
 
 # Some example usage
 cd examples/linux
@@ -49,10 +49,12 @@ Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3
 
 ## Installation
 
-Make sure that Z3 Theorem Prover is installed and available on your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
+Make sure that Z3 Theorem Prover is installed and available in your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
 Then download the Manticore source, and `cd` to the project root.
 
 Option 1: Perform a user install.
+
+> This will require `~/.local/bin` to be in your path.
 
 ```
 pip install --user --no-binary capstone .
@@ -63,6 +65,12 @@ Option 2: Use a [virtual environment](https://virtualenvwrapper.readthedocs.io/e
 ```
 mkvirtualenv manticore
 pip install --no-binary capstone .
+```
+
+Option 3: Perform a system install.
+
+```
+[sudo] pip install --no-binary capstone .
 ```
 
 Once installed via either method, the `manticore` CLI tool and its Python API will be available.
