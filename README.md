@@ -24,18 +24,18 @@ Manticore is supported on Linux and requires Python 2.7, pip 7.1.0, and Z3.
 
 ## Quick Start
 
-Install and try Manticore in a few shell commands:
+Install and try Manticore in a few shell commands (see an [asciinema](https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z)):
 
 ```
-# Install system dependency
-sudo apt-get install z3 python-pip
+# Install system dependencies
+sudo apt-get update && sudo apt-get install z3 python-pip
 
-# Install manticore and python dependencies
+# Install manticore and its dependencies
 git clone https://github.com/trailofbits/manticore.git
 cd manticore
 sudo pip install --no-binary capstone .
 
-# Some example usage
+# Run an example with manticore
 cd examples/linux
 make
 manticore basic
@@ -45,16 +45,12 @@ cd ../script
 python count_instructions.py ../linux/helloworld # ok if the insn count is different
 ```
 
-Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
-
 ## Installation
 
 Make sure that Z3 Theorem Prover is installed and available in your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
 Then download the Manticore source, and `cd` to the project root.
 
-Option 1: Perform a user install.
-
-> This will require `~/.local/bin` to be in your path.
+Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
 ```
 pip install --user --no-binary capstone .
