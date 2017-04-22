@@ -26,7 +26,7 @@ int main(int argc, char* argv[], char* envp[]){
     }
     else 
     {
-        printf("Message: It is smaller or equal than 0x41\n");
+        printf("Message: It is less than or equal to 0x41\n");
     }
 
 return 0;
