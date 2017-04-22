@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.com/trailofbits/manticore.svg?token=m4YsYkGcyttTxRXGVHMr&branch=master)](https://travis-ci.com/trailofbits/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
+[![Bountysource](https://img.shields.io/bountysource/team/trailofbits/activity.svg)](https://www.bountysource.com/teams/trailofbits)
 
 Manticore is a prototyping tool for dynamic binary analysis, with support for [symbolic execution](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10#file-2multiple_styles_symbolic_solve-py), [taint analysis](/examples/script/introduce_symbolic_bytes.py), and [binary instrumentation](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10#file-1multiple_styles_concrete_solve-py).
 
