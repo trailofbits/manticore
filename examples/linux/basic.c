@@ -1,5 +1,5 @@
-/* Minimal toy example with input output using libc
- * Symbolic values are read from stdin using standar libc calls. 
+/* Minimal toy example with input/output using libc
+ * Symbolic values are read from stdin using standard libc calls. 
  *    
  * Compile with :
  *   $ gcc toy002-libc.c -o toy002-libc
