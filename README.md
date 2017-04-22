@@ -4,7 +4,7 @@
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 [![Bountysource](https://img.shields.io/bountysource/team/trailofbits/activity.svg)](https://www.bountysource.com/teams/trailofbits)
 
-Manticore is a prototyping tool for dynamic binary analysis, with support for [symbolic execution](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10#file-2multiple_styles_symbolic_solve-py), [taint analysis](/examples/script/introduce_symbolic_bytes.py), and [binary instrumentation](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10#file-1multiple_styles_concrete_solve-py).
+Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
 ## Features
 
@@ -96,8 +96,6 @@ nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 
 ## Usage
 
-- [Multiple Styles: The Writeup](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10)
-
 ```
 $ manticore ./path/to/binary  # runs, and creates a mcore_* directory with analysis results
 ```
@@ -122,3 +120,5 @@ def hook(state):
 
 m.run()
 ```
+
+See the [examples](examples) directory and the [wiki](https://github.com/trailofbits/manticore/wiki) for more documentation and example scripts.
