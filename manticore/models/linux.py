@@ -885,7 +885,6 @@ class Linux(object):
             cpu.write_bytes(cpu.STACK, value)
             return cpu.STACK
 
-        at_platform = push_bytes('x86_%02d\x00'%addressbitsize)
         at_random = push_bytes('A'*16)
         at_execfn = push_bytes(filename+'\x00')
 
@@ -903,8 +902,7 @@ class Linux(object):
         auxv['AT_GID']      = 1000                         # Real gid 
         auxv['AT_EGID']     = 1000                         # Effective gid 
         auxv['AT_CLKTCK']   = 100                          # Frequency of times() 
-        auxv['AT_PLATFORM'] = at_platform                  # String identifying platform.
-        auxv['AT_HWCAP']    = 0xbfebfbff                   # Machine-dependent hints about processor capabilities.
+        auxv['AT_HWCAP']    = 0                            # Machine-dependent hints about processor capabilities.
         auxv['AT_RANDOM']   = at_random                    # Address of 16 random bytes.
         auxv['AT_EXECFN']   = at_execfn                    # Filename of executable.
         self.auxv = auxv
