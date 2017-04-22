@@ -28,7 +28,7 @@ Install and try Manticore in a few shell commands:
 
 ```
 # Install system dependency
-sudo apt-get install z3
+sudo apt-get install z3 python-pip
 
 # Install manticore and python dependencies
 git clone https://github.com/trailofbits/manticore.git
