@@ -37,7 +37,7 @@ git clone https://github.com/trailofbits/manticore.git
 cd manticore
 sudo pip install --no-binary capstone .
 
-# Run some examples!
+# Build the examples
 cd examples/linux
 make
 
@@ -59,12 +59,19 @@ Then download the Manticore source, and `cd` to the project root.
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
 ```
+echo "PATH=\$PATH:~/.local/bin" >> ~/.profile
+source ~/.profile
+cd manticore
 pip install --user --no-binary capstone .
 ```
 
 Option 2: Use a [virtual environment](https://virtualenvwrapper.readthedocs.io/en/latest/).
 
 ```
+pip install virtualenvwrapper
+echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
+source ~/.profile
+cd manticore
 mkvirtualenv manticore
 pip install --no-binary capstone .
 ```
@@ -72,6 +79,7 @@ pip install --no-binary capstone .
 Option 3: Perform a system install.
 
 ```
+cd manticore
 [sudo] pip install --no-binary capstone .
 ```
 
@@ -126,4 +134,4 @@ def hook(state):
 m.run()
 ```
 
-See the [examples](examples) directory and the [wiki](https://github.com/trailofbits/manticore/wiki) for documentation, binaries to run the CLI on, and example scripts that use the API.
+See the [examples](examples) directory and the [wiki](https://github.com/trailofbits/manticore/wiki) for further documentation and examples.
