@@ -21,7 +21,7 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 
 ## Requirements
 
-Manticore is supported on Linux and requires Python 2.7, pip 7.1.0, and the [Z3 Theorum Prover](https://github.com/Z3Prover/z3/releases).
+Manticore is supported on Linux and requires Python 2.7, pip 7.1.0 or higher, and the [Z3 Theorum Prover](https://github.com/Z3Prover/z3/releases).
 
 ## Quick Start
 
@@ -65,7 +65,7 @@ cd manticore
 pip install --user --no-binary capstone .
 ```
 
-Option 2: Use a [virtual environment](https://virtualenvwrapper.readthedocs.io/en/latest/).
+Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) or [similar](https://virtualenv.pypa.io/en/stable/)).
 
 ```
 pip install virtualenvwrapper
