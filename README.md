@@ -30,20 +30,25 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 ```
 # Install system dependencies
 sudo apt-get update && sudo apt-get install z3 python-pip -y
+python -m pip install -U pip
 
 # Install manticore and its dependencies
 git clone https://github.com/trailofbits/manticore.git
 cd manticore
 sudo pip install --no-binary capstone .
 
-# Run an example with manticore
+# Run some examples!
 cd examples/linux
 make
+
+# Use the Manticore CLI
 manticore basic
 cat mcore_*/*1.stdin | ./basic
 cat mcore_*/*2.stdin | ./basic
+
+# Use the Manticore API
 cd ../script
-python count_instructions.py ../linux/helloworld # ok if the insn count is different
+python count_instructions.py ../linux/helloworld
 ```
 
 ## Installation
@@ -121,4 +126,4 @@ def hook(state):
 m.run()
 ```
 
-See the [examples](examples) directory and the [wiki](https://github.com/trailofbits/manticore/wiki) for more documentation and example scripts.
+See the [examples](examples) directory and the [wiki](https://github.com/trailofbits/manticore/wiki) for documentation, binaries to run the CLI on, and example scripts that use the API.
