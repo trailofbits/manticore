@@ -54,7 +54,6 @@ python count_instructions.py ../linux/helloworld
 ## Installation
 
 Make sure that Z3 is installed and available on your `PATH`. On Ubuntu, this is as simple as `sudo apt-get install z3`.
-Then download the Manticore source, and `cd` to the project root.
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
