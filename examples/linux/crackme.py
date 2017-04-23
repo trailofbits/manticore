@@ -2,7 +2,7 @@ import random, string, random
 chars = string.ascii_uppercase + string.digits
 
 antitrace = False
-password = 'CBAHACKS#2016#01'
+password = 'SCRT'
 
 
 PROGRAM = ''
@@ -56,20 +56,7 @@ if antitrace:
 
 pad = ''.join(random.choice(chars) for _ in range(len(password)))
 
-banner = '''
-This computer system is for authorized use only. All activity is logged and
-regularly checked by system administrators. Individuals attempting to connect
-to, port-scan, deface, hack, or otherwise interfere with any services on this
-system will be reported.
- _____                                    _ 
-|  __ \                                  | |
-| |__) |_ _ ___ _____      _____  _ __ __| |
-|  ___/ _` / __/ __\ \ /\ / / _ \| '__/ _` |
-| |  | (_| \__ \__ \\\\ V  V / (_) | | | (_|
-|_|   \__,_|___/___/ \_/\_/ \___/|_|  \__,_|
-Authorized use only!
-
-Please enter your password: 
+banner = '''Please enter your password: 
 '''
 import json
 

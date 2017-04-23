@@ -1,7 +1,4 @@
 /* This program parses a commandline argument.
- * It has two interesting paths
- *   One when argv[1] matches '--dostuff',
- *   And another one when it does not match   
  *
  * Compile with :
  *   $ gcc -static -Os arguments.c -o arguments
@@ -55,7 +52,6 @@
 */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 
