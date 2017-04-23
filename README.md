@@ -21,7 +21,7 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 
 ## Requirements
 
-Manticore is supported on Linux and requires Python 2.7, pip 7.1.0 or higher, and the [Z3 Theorum Prover](https://github.com/Z3Prover/z3/releases).
+Manticore is supported on Linux and requires Python 2.7, pip 7.1.0 or higher, and the [Z3 Theorum Prover](https://github.com/Z3Prover/z3/releases). Ubuntu 16.04 is strongly recommended.
 
 ## Quick Start
 
