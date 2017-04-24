@@ -133,4 +133,4 @@ def hook(state):
 m.run()
 ```
 
-See the [examples](examples) directory, [wiki](https://github.com/trailofbits/manticore/wiki), and [API reference](http://manticore.readthedocs.io/en/latest/) for further documentation and examples.
+See the [wiki](https://github.com/trailofbits/manticore/wiki), [examples](examples) directory, and [API reference](http://manticore.readthedocs.io/en/latest/) for further documentation.
