@@ -153,4 +153,19 @@ texinfo_documents = [
 ]
 
 
+# -- Custom
+
+# mock z3 existence so readthedocs will not error out when
+# generating docs
+
+import subprocess
+
+saved_check_output = subprocess.check_output
+def z3_mock_check_output(*args, **kwargs):
+    if args and 'z3' in args[0]:
+        return 'Z3 Version 4.4.2'
+
+    return saved_check_output(*args, **kwargs)
+
+subprocess.check_output = z3_mock_check_output
 
