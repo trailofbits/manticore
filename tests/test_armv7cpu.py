@@ -1237,6 +1237,12 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R4'), 0x1 << 31)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
+    @itest_setregs("R2=0xffffffff")
+    @itest("lsls r2, r2, #0x1f")
+    def test_lsl_imm_carry(self):
+        self.assertEqual(self.cpu.R2, 0x1 << 31)
+        self._checkFlagsNZCV(1, 0, 1, 0)
+
     # lsr
     @itest_setregs("R0=0x1000", "R2=3")
     @itest("lsr r0, r0, r2")
