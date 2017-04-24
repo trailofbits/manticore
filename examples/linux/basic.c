@@ -1,5 +1,5 @@
-/* Minimal toy example with input output using libc
- * Symbolic values are read from stdin using standar libc calls. 
+/* Minimal toy example with input/output using libc
+ * Symbolic values are read from stdin using standard libc calls. 
  *    
  * Compile with :
  *   $ gcc toy002-libc.c -o toy002-libc
@@ -26,7 +26,7 @@ int main(int argc, char* argv[], char* envp[]){
     }
     else 
     {
-        printf("Message: It is smaller or equal than 0x41\n");
+        printf("Message: It is less than or equal to 0x41\n");
     }
 
 return 0;
