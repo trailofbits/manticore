@@ -6,7 +6,7 @@
  * Analize it with:
  *   $ manticore arguments ++++++++++
  *
- *   - Not that the character + will be replaced by a symbolic byte
+ *   - Note that the character + will be replaced by a symbolic byte
  *     representing all possible bytes (except \x00)
  *     The length of the argument is important as it wont allow \x00
  *     in the middle of the argument
