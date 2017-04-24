@@ -34,7 +34,7 @@
  *  test_00000001.stdin         #stdin an example stdin input 
  *  test_00000001.stdout        #stdout output of the program
  *  test_00000001.syscalls      #The trace of IO syscalls
- *  test_00000001.trace         #The list of visitad instructions
+ *  test_00000001.trace         #The list of visited instructions
  *  test_00000001.txt           #A solution to all symbolic variables used. (Includes ARGV/ENVP)
  * 
  * $ cat t*txt |grep ARGV
