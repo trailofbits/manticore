@@ -2,8 +2,9 @@
 
 [![Build Status](https://travis-ci.com/trailofbits/manticore.svg?token=m4YsYkGcyttTxRXGVHMr&branch=master)](https://travis-ci.com/trailofbits/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
+[![Bountysource](https://img.shields.io/bountysource/team/trailofbits/activity.svg)](https://www.bountysource.com/teams/trailofbits)
 
-Manticore is a prototyping tool for dynamic binary analysis, with support for [symbolic execution](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10#file-2multiple_styles_symbolic_solve-py), [taint analysis](/examples/script/introduce_symbolic_bytes.py), and [binary instrumentation](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10#file-1multiple_styles_concrete_solve-py).
+Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
 ## Features
 
@@ -20,52 +21,67 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 
 ## Requirements
 
-Manticore is supported on Linux and requires Python 2.7, pip 7.1.0, and Z3.
+Manticore is supported on Linux and requires Python 2.7, pip 7.1.0 or higher, and the [Z3 Theorem Prover](https://github.com/Z3Prover/z3/releases). Ubuntu 16.04 is strongly recommended.
 
 ## Quick Start
 
-Install and try Manticore in a few shell commands:
+Install and try Manticore in a few shell commands (see an [asciinema](https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z)):
 
 ```
-# Install system dependency
-sudo apt-get install z3
+# Install system dependencies
+sudo apt-get update && sudo apt-get install z3 python-pip -y
+python -m pip install -U pip
 
-# Install manticore and python dependencies
-git clone https://github.com/trailofbits/manticore.git
-cd manticore
-pip install --user --no-binary capstone .
+# Install manticore and its dependencies
+git clone https://github.com/trailofbits/manticore.git && cd manticore
+sudo pip install --no-binary capstone .
 
-# Some example usage
+# Build the examples
 cd examples/linux
 make
+
+# Use the Manticore CLI
 manticore basic
 cat mcore_*/*1.stdin | ./basic
 cat mcore_*/*2.stdin | ./basic
-cd ../script
-python count_instructions.py ../linux/helloworld # ok if the insn count is different
-```
 
-Here's an asciinema of what it should look like: https://asciinema.org/a/567nko3eh2yzit099s0nq4e8z
+# Use the Manticore API
+cd ../script
+python count_instructions.py ../linux/helloworld
+```
 
 ## Installation
 
-Make sure that Z3 Theorem Prover is installed and available on your path. On Ubuntu, this is as simple as `sudo apt-get install z3`.
-Then download the Manticore source, and `cd` to the project root.
+Make sure that Z3 is installed and available on your `PATH`. On Ubuntu, this is as simple as `sudo apt-get install z3`.
 
-Option 1: Perform a user install.
+Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
 ```
+echo "PATH=\$PATH:~/.local/bin" >> ~/.profile
+source ~/.profile
+git clone https://github.com/trailofbits/manticore.git && cd manticore
 pip install --user --no-binary capstone .
 ```
 
-Option 2: Use a [virtual environment](https://virtualenvwrapper.readthedocs.io/en/latest/).
+Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) or [similar](https://virtualenv.pypa.io/en/stable/)).
 
 ```
+pip install virtualenvwrapper
+echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
+source ~/.profile
+git clone https://github.com/trailofbits/manticore.git && cd manticore
 mkvirtualenv manticore
 pip install --no-binary capstone .
 ```
 
-Once installed via either method, the `manticore` CLI tool and its Python API will be available.
+Option 3: Perform a system install.
+
+```
+git clone https://github.com/trailofbits/manticore.git && cd manticore
+sudo pip install --no-binary capstone .
+```
+
+Once installed, the `manticore` CLI tool and its Python API will be available.
 
 ### For developers
 
@@ -91,8 +107,6 @@ nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 
 ## Usage
 
-- [Multiple Styles: The Writeup](https://gist.github.com/ehennenfent/a5ad9746615d1490c618a88b98769c10)
-
 ```
 $ manticore ./path/to/binary  # runs, and creates a mcore_* directory with analysis results
 ```
@@ -117,3 +131,5 @@ def hook(state):
 
 m.run()
 ```
+
+See the [examples](examples) directory and the [wiki](https://github.com/trailofbits/manticore/wiki) for further documentation and examples.
