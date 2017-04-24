@@ -33,8 +33,7 @@ sudo apt-get update && sudo apt-get install z3 python-pip -y
 python -m pip install -U pip
 
 # Install manticore and its dependencies
-git clone https://github.com/trailofbits/manticore.git
-cd manticore
+git clone https://github.com/trailofbits/manticore.git && cd manticore
 sudo pip install --no-binary capstone .
 
 # Build the examples
@@ -60,7 +59,7 @@ Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 ```
 echo "PATH=\$PATH:~/.local/bin" >> ~/.profile
 source ~/.profile
-cd manticore
+git clone https://github.com/trailofbits/manticore.git && cd manticore
 pip install --user --no-binary capstone .
 ```
 
@@ -70,7 +69,7 @@ Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtua
 pip install virtualenvwrapper
 echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
 source ~/.profile
-cd manticore
+git clone https://github.com/trailofbits/manticore.git && cd manticore
 mkvirtualenv manticore
 pip install --no-binary capstone .
 ```
@@ -78,7 +77,7 @@ pip install --no-binary capstone .
 Option 3: Perform a system install.
 
 ```
-cd manticore
+git clone https://github.com/trailofbits/manticore.git && cd manticore
 sudo pip install --no-binary capstone .
 ```
 
