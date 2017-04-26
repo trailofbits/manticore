@@ -572,7 +572,16 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def RSB(cpu, dest, src, add):
-        result, carry, overflow = cpu._ADD(~src.read(), add.read(), 1)
+        inv_src = GetNBits(~src.read(), cpu.address_bit_size)
+        result, carry, overflow = cpu._ADD(inv_src, add.read(), 1)
+        dest.write(result)
+        return result, carry, overflow
+
+    @instruction
+    def RSC(cpu, dest, src, add):
+        carry = cpu.regfile.read('APSR_C')
+        inv_src = GetNBits(~src.read(), cpu.address_bit_size)
+        result, carry, overflow = cpu._ADD(inv_src, add.read(), carry)
         dest.write(result)
         return result, carry, overflow
 

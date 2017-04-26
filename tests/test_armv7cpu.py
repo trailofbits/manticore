@@ -1260,6 +1260,12 @@ class Armv7CpuInstructions(unittest.TestCase):
         # Diverging instruction from trace
         self.assertEqual(self.rf.read('R2'), 2)
 
+    @itest_setregs("R6=2", "R8=0xfffffffe")
+    @itest("RSBS r8, r6, #0")
+    def test_rsbs_carry(self):
+        self.assertEqual(self.rf.read('R8'), 0xFFFFFFFE)
+        self._checkFlagsNZCV(1, 0, 0, 0)
+
     def test_flag_state_continuity(self):
         '''If an instruction only partially updates flags, cpu.setFlags should
         ensure unupdated flags are preserved.
