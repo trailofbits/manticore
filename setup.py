@@ -4,6 +4,7 @@ setup(
     name='Manticore',
     description='Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.',
     url='https://github.com/trailofbits/manticore',
+    author='Trail of Bits',
     version='0.1.0',
     packages=find_packages(),
     install_requires=[
