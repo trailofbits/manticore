@@ -217,7 +217,6 @@ class AnonMap(Map):
             return map(chr, self._data[index])
         return chr(self._data[index])
 
-
 class FileMap(Map):
     '''
     A file map.
@@ -387,6 +386,7 @@ class Memory(object):
             self._maps = set(maps)
         self._page2map = WeakValueDictionary()   #{page -> ref{MAP}}
         self._callbacks = {}
+        self._recording_stack = []
         for m in self._maps:
             for i in range(self._page(m.start), self._page(m.end)):
                 assert i not in self._page2map
@@ -771,7 +771,43 @@ class Memory(object):
 
         return result
 
+
+    def start_write_trace(self):
+        '''
+        Begin recording all writes. Retrieve all writes with `stop_write_trace()`
+
+        :return: None
+        '''
+        print '[d] starting trace..'
+        self._recording_stack.append([])
+
+    def stop_write_trace(self):
+        '''
+        Stop recording trace and return a list[(address, value)] of all the writes
+        that occurred. Can be called without intermediate `stop_write_trace()`.
+
+        For example,
+            mem.start_write_trace()
+                mem.write(1, 'a')
+                mem.start_write_trace()
+                    mem.write(2, 'b')
+                mem.stop_write_trace()  # Will return [(2, 'b')]
+            mem.stop_write_trace()  # Will return [(1, 'a'), (2, 'b')]
+
+        :return: list[tuple]
+        '''
+
+        lst = self._recording_stack.pop()
+        # Append the current list to a previously-started trace.
+        if self._recording_stack:
+            self._recording_stack[-1].extend(lst)
+        return lst
+
     def write(self, addr, buf):
+
+        if self._recording_stack:
+            self._recording_stack[-1].append((addr, buf))
+
         size = len(buf)
         if not self.access_ok(slice(addr, addr + size), 'w'):
             raise MemoryException('No access writing', addr)
