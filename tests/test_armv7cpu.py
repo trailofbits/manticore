@@ -1367,9 +1367,9 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("vldmia  r1, {d8, d9, d10}")
     def test_vldmia(self):
-        self.cpu.stack_push(20)
-        self.cpu.stack_push(21)
-        self.cpu.stack_push(22)
+        self.cpu.stack_push(20, 8)
+        self.cpu.stack_push(21, 8)
+        self.cpu.stack_push(22, 8)
         self.cpu.R1 = self.cpu.SP
         pre = self.cpu.R1
         self.cpu.execute()
@@ -1381,9 +1381,9 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("vldmia  r1!, {d8, d9, d10}")
     def test_vldmia_wb(self):
         pre = self.cpu.SP
-        self.cpu.stack_push(20)
-        self.cpu.stack_push(21)
-        self.cpu.stack_push(22)
+        self.cpu.stack_push(20, 8)
+        self.cpu.stack_push(21, 8)
+        self.cpu.stack_push(22, 8)
         self.cpu.R1 = self.cpu.SP
         self.cpu.execute()
         self.assertEqual(self.cpu.D8, 22)

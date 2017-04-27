@@ -347,10 +347,11 @@ class Armv7Cpu(Cpu):
 
 
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
-    def stack_push(self, data):
+    def stack_push(self, data, nbytes=None):
         if isinstance(data, (int, long)):
-            self.SP -= self.address_bit_size/8
-            self.write_int(self.SP, data, self.address_bit_size)
+            nbytes = nbytes or self.address_bit_size/8
+            self.SP -= nbytes
+            self.write_int(self.SP, data, nbytes * 8)
         elif isinstance(data, BitVec):
             self.SP -= data.size/8
             self.write_int(self.SP, data, data.size)
@@ -677,10 +678,10 @@ class Armv7Cpu(Cpu):
 
         for reg in regs:
             reg.write(cpu.read_int(address, cpu.address_bit_size))
-            address += cpu.address_bit_size/8
+            address += reg.size/8
 
         if insn_id == ARM_INS_LDMIB:
-            address -= cpu.address_bit_size/8
+            address -= reg.size/8
 
         if cpu.instruction.writeback:
             base.writeback(address)
