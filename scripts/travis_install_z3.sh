@@ -7,5 +7,5 @@ mkdir z3
 pushd z3
 wget https://s3.amazonaws.com/manticore-z3/${Z3_VERSION}.zip -O z3.zip
 unzip z3.zip
-export PATH=$PATH:$PWD/${Z3_VERSION}/bin/
+sudo cp -v ${Z3_VERSION}/bin/z3 /usr/bin/z3
 popd
