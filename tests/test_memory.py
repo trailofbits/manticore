@@ -1643,7 +1643,7 @@ class MemoryTest(unittest.TestCase):
         self.assertIn((addr, ['a']), writes)
         self.assertIn((addr, ['b']), writes)
 
-    def test_mem_nested(self):
+    def test_mem_trace_nested(self):
         cs = ConstraintSet()
         mem = SMemory32(cs)
 
@@ -1670,6 +1670,20 @@ class MemoryTest(unittest.TestCase):
         # Make sure the last two are also in the outer write
         self.assertIn((addr+2, ['c']), outer_writes)
         self.assertIn((addr+3, ['d']), outer_writes)
+
+
+    def test_mem_trace_ignores_failing(self):
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        addr = mem.mmap(None, 0x1000, 'rw')
+
+        mem.start_write_trace()
+        with self.assertRaises(MemoryException):
+            mem.write(addr-0x5000, 'a')
+        trace = mem.stop_write_trace()
+
+        # Make sure erroring writes don't get recorded
+        self.assertEqual(len(trace), 0)
 
 
 if __name__ == '__main__':

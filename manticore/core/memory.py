@@ -217,6 +217,7 @@ class AnonMap(Map):
             return map(chr, self._data[index])
         return chr(self._data[index])
 
+
 class FileMap(Map):
     '''
     A file map.
@@ -809,15 +810,16 @@ class Memory(object):
 
     def write(self, addr, buf):
 
-        if self._recording_stack:
-            self._recording_stack[-1].append((addr, buf))
-
         size = len(buf)
         if not self.access_ok(slice(addr, addr + size), 'w'):
             raise MemoryException('No access writing', addr)
         assert size > 0
         stop = addr + size
         start = addr
+
+        if self._recording_stack:
+            self._recording_stack[-1].append((addr, buf))
+
         while addr < stop:
             m = self.map_containing(addr)
             size = min(m.end-addr, stop-addr)
