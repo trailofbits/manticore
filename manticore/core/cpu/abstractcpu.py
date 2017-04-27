@@ -438,8 +438,8 @@ class Cpu(object):
         implementation = getattr(self, name, fallback_to_emulate)
 
         if logger.level == logging.DEBUG :
-            logger.debug(self.print_instruction())
-            for l in self.print_registers().split('\n'):
+            logger.debug(self.render_instruction())
+            for l in self.render_registers():
                 register_logger.debug(l)
 
         implementation(*instruction.operands)
@@ -463,29 +463,27 @@ class Cpu(object):
         # line present.
         del emu
 
-    def print_instruction(self):
+    def render_instruction(self):
         try:
             instruction = self.instruction
             return "INSTRUCTION: 0x%016x:\t%s\t%s"%( instruction.address, instruction.mnemonic, instruction.op_str)
         except:
             return "{can't decode instruction }"
 
-    def print_registers(self):
+    def render_register(self, reg_name):
         result = ""
-        regs = self._regfile.canonical_registers
+        value = self.read_register(reg_name)
+        if issymbolic(value):
+            aux = "%3s: "%reg_name +"%16s"%value
+            result += aux
+        elif isinstance(value, (int, long)):
+            result += "%3s: 0x%016x"%(reg_name, value)
+        else:
+            result += "%3s: %r"%(reg_name, value)
+        return result
 
-        for reg_name in regs:
-            value = self.read_register(reg_name)
-            if issymbolic(value):
-                aux = "%3s: "%reg_name +"%16s"%value
-                result += aux
-            elif isinstance(value, (int, long)):
-                result += "%3s: 0x%016x"%(reg_name, value)
-            else:
-                result += "%3s: %r"%(reg_name, value)
-            result += '\n'
-        return result[:-1] # Last newline is unnecessary
-
+    def render_registers(self):
+        return map(self.render_register, self._regfile.canonical_registers)
 
     #Generic string representation
     def __str__(self):
@@ -495,7 +493,11 @@ class Cpu(object):
         :rtype: str
         :return: name and current value for all the registers. 
         '''
-        return self.print_instruction() + "\n" + self.print_registers()
+        result =  self.render_instruction()
+        result += "\n"
+        for reg in self.render_registers():
+            result += reg
+            result += "\n"
 
 
 class DecodeException(Exception):
