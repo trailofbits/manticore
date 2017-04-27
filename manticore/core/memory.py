@@ -783,8 +783,9 @@ class Memory(object):
 
     def stop_write_trace(self):
         '''
-        Stop recording trace and return a list[(address, value)] of all the writes
-        that occurred. Can be called without intermediate `stop_write_trace()`.
+        Stop recording trace and return a `list[(address, value)]` of all the writes
+        that occurred, where `value` is of type list[str]. Can be called without
+        intermediate `stop_write_trace()`.
 
         For example,
             mem.start_write_trace()
@@ -793,6 +794,9 @@ class Memory(object):
                     mem.write(2, 'b')
                 mem.stop_write_trace()  # Will return [(2, 'b')]
             mem.stop_write_trace()  # Will return [(1, 'a'), (2, 'b')]
+
+        Multiple writes to the same address will all be included in the trace in the
+        same order they occurred.
 
         :return: list[tuple]
         '''
