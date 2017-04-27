@@ -11,6 +11,7 @@ from functools import wraps
 import types
 import logging
 logger = logging.getLogger("CPU")
+register_logger = logging.getLogger("REGISTERS")
 
 
 
@@ -436,10 +437,10 @@ class Cpu(object):
 
         implementation = getattr(self, name, fallback_to_emulate)
 
-        #log
         if logger.level == logging.DEBUG :
-            for l in str(self).split('\n'):
-                logger.debug(l)
+            logger.debug(self.print_instruction())
+            for l in self.print_registers().split('\n'):
+                register_logger.debug(l)
 
         implementation(*instruction.operands)
         self._icount+=1
@@ -462,22 +463,17 @@ class Cpu(object):
         # line present.
         del emu
 
-    #Generic string representation
-    def __str__(self):
-        '''
-        Returns a string representation of cpu state
-        
-        :rtype: str
-        :return: name and current value for all the registers. 
-        '''
-        result = ""
+    def print_instruction(self):
         try:
             instruction = self.instruction
-            result += "INSTRUCTION: 0x%016x:\t%s\t%s\n"%( instruction.address, instruction.mnemonic, instruction.op_str)
+            return "INSTRUCTION: 0x%016x:\t%s\t%s"%( instruction.address, instruction.mnemonic, instruction.op_str)
         except:
-            result += "{can't decode instruction }\n"
+            return "{can't decode instruction }"
 
+    def print_registers(self):
+        result = ""
         regs = self._regfile.canonical_registers
+
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
@@ -488,8 +484,18 @@ class Cpu(object):
             else:
                 result += "%3s: %r"%(reg_name, value)
             result += '\n'
+        return result[:-1] # Last newline is unnecessary
 
-        return result
+
+    #Generic string representation
+    def __str__(self):
+        '''
+        Returns a string representation of cpu state
+        
+        :rtype: str
+        :return: name and current value for all the registers. 
+        '''
+        return self.print_instruction() + "\n" + self.print_registers()
 
 
 class DecodeException(Exception):
