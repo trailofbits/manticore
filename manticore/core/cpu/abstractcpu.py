@@ -495,6 +495,7 @@ class Cpu(object):
         '''
         result =  self.render_instruction() + "\n"
         result += '\n'.join(self.render_registers())
+        return result
 
 
 class DecodeException(Exception):
