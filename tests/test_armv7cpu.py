@@ -1260,6 +1260,12 @@ class Armv7CpuInstructions(unittest.TestCase):
         # Diverging instruction from trace
         self.assertEqual(self.rf.read('R2'), 2)
 
+    @itest_setregs("R6=2", "R8=0xfffffffe")
+    @itest("RSBS r8, r6, #0")
+    def test_rsbs_carry(self):
+        self.assertEqual(self.rf.read('R8'), 0xFFFFFFFE)
+        self._checkFlagsNZCV(1, 0, 0, 0)
+
     def test_flag_state_continuity(self):
         '''If an instruction only partially updates flags, cpu.setFlags should
         ensure unupdated flags are preserved.
@@ -1361,9 +1367,9 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     @itest_custom("vldmia  r1, {d8, d9, d10}")
     def test_vldmia(self):
-        self.cpu.stack_push(20)
-        self.cpu.stack_push(21)
-        self.cpu.stack_push(22)
+        self.cpu.stack_push(20, 8)
+        self.cpu.stack_push(21, 8)
+        self.cpu.stack_push(22, 8)
         self.cpu.R1 = self.cpu.SP
         pre = self.cpu.R1
         self.cpu.execute()
@@ -1375,9 +1381,9 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest_custom("vldmia  r1!, {d8, d9, d10}")
     def test_vldmia_wb(self):
         pre = self.cpu.SP
-        self.cpu.stack_push(20)
-        self.cpu.stack_push(21)
-        self.cpu.stack_push(22)
+        self.cpu.stack_push(20, 8)
+        self.cpu.stack_push(21, 8)
+        self.cpu.stack_push(22, 8)
         self.cpu.R1 = self.cpu.SP
         self.cpu.execute()
         self.assertEqual(self.cpu.D8, 22)
