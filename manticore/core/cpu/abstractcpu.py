@@ -493,11 +493,8 @@ class Cpu(object):
         :rtype: str
         :return: name and current value for all the registers. 
         '''
-        result =  self.render_instruction()
-        result += "\n"
-        for reg in self.render_registers():
-            result += reg
-            result += "\n"
+        result =  self.render_instruction() + "\n"
+        result += '\n'.join(self.render_registers())
 
 
 class DecodeException(Exception):
