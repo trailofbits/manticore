@@ -202,7 +202,7 @@ class Manticore(object):
 
         logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
 
-        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
+        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
             logging.getLogger(loggername).addFilter(ctxfilter)
             logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
         
@@ -275,7 +275,7 @@ class Manticore(object):
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('SMTLIB', logging.DEBUG)]]
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('SMT', logging.DEBUG), ('REGISTERS', logging.DEBUG)]]
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]

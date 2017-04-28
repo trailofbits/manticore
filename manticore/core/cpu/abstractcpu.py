@@ -11,6 +11,7 @@ from functools import wraps
 import types
 import logging
 logger = logging.getLogger("CPU")
+register_logger = logging.getLogger("REGISTERS")
 
 
 
@@ -436,10 +437,10 @@ class Cpu(object):
 
         implementation = getattr(self, name, fallback_to_emulate)
 
-        #log
         if logger.level == logging.DEBUG :
-            for l in str(self).split('\n'):
-                logger.debug(l)
+            logger.debug(self.render_instruction())
+            for l in self.render_registers():
+                register_logger.debug(l)
 
         implementation(*instruction.operands)
         self._icount+=1
@@ -462,6 +463,28 @@ class Cpu(object):
         # line present.
         del emu
 
+    def render_instruction(self):
+        try:
+            instruction = self.instruction
+            return "INSTRUCTION: 0x%016x:\t%s\t%s"%( instruction.address, instruction.mnemonic, instruction.op_str)
+        except:
+            return "{can't decode instruction }"
+
+    def render_register(self, reg_name):
+        result = ""
+        value = self.read_register(reg_name)
+        if issymbolic(value):
+            aux = "%3s: "%reg_name +"%16s"%value
+            result += aux
+        elif isinstance(value, (int, long)):
+            result += "%3s: 0x%016x"%(reg_name, value)
+        else:
+            result += "%3s: %r"%(reg_name, value)
+        return result
+
+    def render_registers(self):
+        return map(self.render_register, self._regfile.canonical_registers)
+
     #Generic string representation
     def __str__(self):
         '''
@@ -470,25 +493,8 @@ class Cpu(object):
         :rtype: str
         :return: name and current value for all the registers. 
         '''
-        result = ""
-        try:
-            instruction = self.instruction
-            result += "INSTRUCTION: 0x%016x:\t%s\t%s\n"%( instruction.address, instruction.mnemonic, instruction.op_str)
-        except:
-            result += "{can't decode instruction }\n"
-
-        regs = self._regfile.canonical_registers
-        for reg_name in regs:
-            value = self.read_register(reg_name)
-            if issymbolic(value):
-                aux = "%3s: "%reg_name +"%16s"%value
-                result += aux
-            elif isinstance(value, (int, long)):
-                result += "%3s: 0x%016x"%(reg_name, value)
-            else:
-                result += "%3s: %r"%(reg_name, value)
-            result += '\n'
-
+        result =  self.render_instruction() + "\n"
+        result += '\n'.join(self.render_registers())
         return result
 
 
