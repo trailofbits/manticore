@@ -302,22 +302,19 @@ class Linux(object):
         assert self._open(stderr) == 2
 
         #Load process and setup socketpairs
-        self.procs = []
         arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[ELFFile(file(program)).get_machine_arch()]
-        cpu = self._mk_proc(arch)
-        self.load(cpu, program)
-        self._arch_specific_init(cpu, arch)
-        self._stack_top = cpu.STACK
-        self.setup_stack(cpu, [program]+argv, envp)
+        self.procs = [self._mk_proc(arch)]
 
-
-        self.procs.append(cpu)
+        self._current = 0
+        self.load(program)
+        self._arch_specific_init(arch)
+        self._stack_top = self.current.STACK
+        self.setup_stack([program]+argv, envp)
 
         nprocs = len(self.procs)
         nfiles = len(self.files)
         assert nprocs > 0
         self.running = range(nprocs)
-        self._current = 0
 
         #Each process can wait for one timeout
         self.timers = [ None ] * nprocs
@@ -416,20 +413,20 @@ class Linux(object):
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
 
-    def _read_string(self, cpu, buf):
+    def _read_string(self, buf):
         """
         Reads a null terminated concrete buffer form memory
         :todo: FIX. move to cpu or memory 
         """
         filename = ""
         for i in xrange(0,1024):
-            c = Operators.CHR(cpu.read_int(buf + i, 8))
+            c = Operators.CHR(self.current.read_int(buf + i, 8))
             if c == '\x00':
                 break
             filename += c
         return filename
 
-    def _init_arm_kernel_helpers(self, cpu):
+    def _init_arm_kernel_helpers(self):
         '''
         ARM kernel helpers
 
@@ -482,7 +479,7 @@ class Linux(object):
                 ).decode('hex')
 
         # Map a TLS segment
-        self._arm_tls_memory = cpu.memory.mmap(None, 4, 'rw ')
+        self._arm_tls_memory = self.current.memory.mmap(None, 4, 'rw ')
 
         __kuser_get_tls = (
                 '04009FE5' + # ldr r0, [pc, #4]
@@ -506,7 +503,7 @@ class Linux(object):
         update(0xff0, tls_area)
         update(0xffc, version)
 
-        cpu.memory.mmap(0xffff0000, len(page_data), 'r x', page_data)
+        self.current.memory.mmap(0xffff0000, len(page_data), 'r x', page_data)
 
     def load_vdso(self, bits):
         #load vdso #TODO or #IGNORE
@@ -519,7 +516,7 @@ class Linux(object):
         return vdso_addr
 
 
-    def setup_stack(self, cpu, argv, envp):
+    def setup_stack(self, argv, envp):
         '''
         :param Cpu cpu: The cpu instance
         :param argv: list of parameters for the program to execute.
@@ -555,6 +552,7 @@ class Linux(object):
          (0xc0000000)      < top of stack >              0   (virtual)
          ----------------------------------------------------------------------
         '''
+        cpu = self.current
 
         # In case setup_stack() is called again, we make sure we're growing the
         # stack from the original top
@@ -654,7 +652,7 @@ class Linux(object):
         push_int(len(argvlst))
 
 
-    def load(self, cpu, filename):
+    def load(self, filename):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state. 
         Creates the stack and loads the environment variables and the arguments in it.
@@ -666,6 +664,7 @@ class Linux(object):
         '''
         #load elf See binfmt_elf.c
         #read the ELF object file
+        cpu = self.current
         elf = ELFFile(file(filename))
         arch = {'x86':'i386','x64':'amd64', 'ARM': 'armv7'}[elf.get_machine_arch()]
         addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
@@ -945,7 +944,7 @@ class Linux(object):
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
 
-    def sys_lseek(self, cpu, fd, offset, whence):
+    def sys_lseek(self, fd, offset, whence):
         '''
         lseek - reposition read/write file offset
 
@@ -978,7 +977,7 @@ class Linux(object):
         logger.debug("LSEEK(%d, 0x%08x, %d)"%(fd, offset, whence))
         return 0
         
-    def sys_read(self, cpu, fd, buf, count):
+    def sys_read(self, fd, buf, count):
         data = ''
         if count != 0:
             if not self._is_open(fd):
@@ -986,7 +985,7 @@ class Linux(object):
                 return errno.EBADF
 
             # TODO check count bytes from buf
-            if not buf in cpu.memory: # or not  cpu.memory.isValid(buf+count):
+            if not buf in self.current.memory: # or not  self.current.memory.isValid(buf+count):
                 logger.info("READ: buf points to invalid address. Returning EFAULT")
                 return errno.EFAULT
 
@@ -996,18 +995,17 @@ class Linux(object):
             # Read the data and put in tin memory
             data = self.files[fd].read(count)
             self.syscall_trace.append(("_read", fd, data))
-            cpu.write_bytes(buf, data)
+            self.current.write_bytes(buf, data)
 
         logger.debug("READ(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)"%(fd, buf, count, len(data), repr(data)[:min(count,10)],len(data)))
         return len(data)
 
-    def sys_write(self, cpu, fd, buf, count):
+    def sys_write(self, fd, buf, count):
         ''' write - send bytes through a file descriptor
           The write system call writes up to count bytes from the buffer pointed
           to by buf to the file descriptor fd. If count is zero, write returns 0
           and optionally sets *tx_bytes to zero.
 
-          :param cpu           current CPU
           :param fd            a valid file descriptor
           :param buf           a memory buffer
           :param count         number of bytes to send 
@@ -1016,6 +1014,7 @@ class Linux(object):
                     EFAULT     buf or tx_bytes points to an invalid address.
         '''
         data = []
+        cpu = self.current
         if count != 0:
 
             if not self._is_open(fd):
@@ -1042,12 +1041,11 @@ class Linux(object):
 
         return len(data)
 
-    def sys_access(self, cpu, buf, mode):
+    def sys_access(self, buf, mode):
         '''
         Checks real user's permissions for a file 
         :rtype: int
         
-        :param cpu: current CPU.
         :param buf: a buffer containing the pathname to the file to check its permissions.
         :param mode: the access permissions to check.
         :return: 
@@ -1056,7 +1054,7 @@ class Linux(object):
         '''
         filename = ""
         for i in xrange(0,255):
-            c = Operators.CHR(cpu.read_int(buf + i, 8))
+            c = Operators.CHR(self.current.read_int(buf + i, 8))
             if c == '\x00':
                 break
             filename += c
@@ -1071,11 +1069,10 @@ class Linux(object):
         else:
             return -1
 
-    def sys_uname(self, cpu, old_utsname):
+    def sys_uname(self, old_utsname):
         '''
         Writes system information in the variable C{old_utsname}.
         :rtype: int
-        :param cpu: current CPU.
         :param old_utsname: the buffer to write the system info.
         :return: C{0} on success  
         '''
@@ -1088,15 +1085,14 @@ class Linux(object):
         uname += pad('#4 SMP '+  datetime.now().strftime("%a %b %d %H:%M:%S ART %Y") )
         uname += pad('x86_64')
         uname += pad('(none)')
-        cpu.write_bytes(old_utsname, uname)
+        self.current.write_bytes(old_utsname, uname)
         logger.debug("sys_uname(...) -> %s", uname)
         return 0
 
-    def sys_brk(self, cpu, brk):
+    def sys_brk(self, brk):
         '''
         Changes data segment size (moves the C{elf_brk} to the new address)
         :rtype: int
-        :param cpu: current CPU.
         :param brk: the new address for C{elf_brk}.
         :return: the value of the new C{elf_brk}.
         :raises error: 
@@ -1104,21 +1100,21 @@ class Linux(object):
         '''
         if brk != 0:
             assert brk > self.elf_brk
+            mem = self.current.memory
             size = brk-self.elf_brk
-            perms = cpu.memory.perms(self.elf_brk-1)
-            if brk > cpu.memory._ceil(self.elf_brk):
-                addr = cpu.memory.mmap(cpu.memory._ceil(self.elf_brk), size, perms)
-                assert cpu.memory._ceil(self.elf_brk) == addr, "Error in brk!"
+            perms = mem.perms(self.elf_brk-1)
+            if brk > mem._ceil(self.elf_brk):
+                addr = mem.mmap(mem._ceil(self.elf_brk), size, perms)
+                assert mem._ceil(self.elf_brk) == addr, "Error in brk!"
             self.elf_brk += size
         logger.debug("sys_brk(0x%08x) -> 0x%08x", brk, self.elf_brk)
         return self.elf_brk 
 
-    def sys_arch_prctl(self, cpu, code, addr):
+    def sys_arch_prctl(self, code, addr):
         '''
         Sets architecture-specific thread state
         :rtype: int
         
-        :param cpu: current CPU.
         :param code: must be C{ARCH_SET_FS}.
         :param addr: the base address of the FS segment.
         :return: C{0} on success
@@ -1130,23 +1126,23 @@ class Linux(object):
         ARCH_GET_FS = 0x1003
         ARCH_GET_GS = 0x1004
         assert code == ARCH_SET_FS
-        cpu.FS=0x63
-        cpu.set_descriptor(cpu.FS, addr, 0x4000, 'rw')
+        self.current.FS=0x63
+        self.current.set_descriptor(self.current.FS, addr, 0x4000, 'rw')
         logger.debug("sys_arch_prctl(%04x, %016x) -> 0", code, addr)
         return 0
 
-    def sys_ioctl(self, cpu, fd, request, argp):
+    def sys_ioctl(self, fd, request, argp):
         if fd > 2:
             return self.files[fd].ioctl(request, argp)
         else:
             return 0
 
 
-    def sys_open(self, cpu, buf, flags, mode):
+    def sys_open(self, buf, flags, mode):
         # buf: address of zero-terminated pathname
         # flags/access: file access bits
         # perms: file permission mode
-        filename = self._read_string(cpu, buf)
+        filename = self._read_string(buf)
         try :
             if os.path.abspath(filename).startswith('/proc/self'):
                 if filename == '/proc/self/exe':
@@ -1167,21 +1163,21 @@ class Linux(object):
 
         return self._open(f)
 
-    def sys_getpid(self, cpu, v):
+    def sys_getpid(self, v):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
         return 1000
     
-    def sys_ARM_NR_set_tls(self, cpu, val):
+    def sys_ARM_NR_set_tls(self, val):
         if hasattr(self, '_arm_tls_memory'):
-            cpu.write_int(self._arm_tls_memory, val)
+            self.current.write_int(self._arm_tls_memory, val)
         return 0
 
     #Signals..
-    def sys_kill(self, cpu, pid, sig):
+    def sys_kill(self, pid, sig):
         logger.debug("KILL, Ignoring Sending signal %d to pid %d", sig, pid )
         return 0
 
-    def sys_sigaction(self, cpu, signum, act, oldact):
+    def sys_sigaction(self, signum, act, oldact):
         logger.debug("SIGACTION, Ignoring changing signal handler for signal %d", signum)
         return 0
 
@@ -1189,11 +1185,10 @@ class Linux(object):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
         return 0
 
-    def sys_close(self, cpu, fd):
+    def sys_close(self, fd):
         '''
         Closes a file descriptor
         :rtype: int
-        :param cpu: current CPU.
         :param fd: the file descriptor to close.
         :return: C{0} on success.  
         '''
@@ -1202,12 +1197,11 @@ class Linux(object):
         logger.debug('sys_close(%d)', fd)
         return 0
 
-    def sys_readlink(self, cpu, path, buf, bufsize):
+    def sys_readlink(self, path, buf, bufsize):
         '''
         Read
         :rtype: int
         
-        :param cpu: current CPU.
         :param path: the "link path id"
         :param buf: the buffer where the bytes will be putted. 
         :param bufsize: the max size for read the link.
@@ -1215,85 +1209,78 @@ class Linux(object):
         '''
         if bufsize <= 0:
             return -errno.EINVAL
-        filename = self._read_string(cpu, path)
+        filename = self._read_string(path)
         data = os.readlink(filename)[:bufsize]
-        cpu.write_bytes(buf, data)
+        self.current.write_bytes(buf, data)
         logger.debug("READLINK %d %x %d -> %s",path,buf,bufsize,data)
         return len(data)
 
-    def sys_mprotect(self, cpu, start, size, prot):
+    def sys_mprotect(self, start, size, prot):
         '''
         Sets protection on a region of memory. Changes protection for the calling process's 
         memory page(s) containing any part of the address range in the interval [C{start}, C{start}+C{size}-1].  
         :rtype: int
         
-        :param cpu: current CPU.
         :param start: the starting address to change the permissions.
         :param size: the size of the portion of memory to change the permissions.
         :param prot: the new access permission for the memory.
         :return: C{0} on success.
         '''
         perms = perms_from_protflags(prot)
-        ret = cpu.memory.mprotect(start, size, perms)
+        ret = self.current.memory.mprotect(start, size, perms)
         logger.debug("sys_mprotect(0x%016x, 0x%x, %s) -> %r (%r)", start, size, perms, ret, prot)
         return 0
 
-    def sys_munmap(self, cpu, addr, size):
+    def sys_munmap(self, addr, size):
         '''
         Unmaps a file from memory. It deletes the mappings for the specified address range
         :rtype: int
         
-        :param cpu: current CPU.
         :param addr: the starting address to unmap.
         :param size: the size of the portion to unmap.
         :return: C{0} on success.  
         '''
-        cpu.memory.munmap(addr, size)
+        self.current.memory.munmap(addr, size)
         return 0
 
-    def sys_getuid(self, cpu):
+    def sys_getuid(self):
         '''
         Gets user identity.
         :rtype: int
         
-        :param cpu: current CPU.
         :return: this call returns C{1000} for all the users.  
         '''
         return 1000
-    def sys_getgid(self, cpu):
+    def sys_getgid(self):
         '''
         Gets group identity.
         :rtype: int
         
-        :param cpu: current CPU.
         :return: this call returns C{1000} for all the groups.  
         '''
         return 1000
-    def sys_geteuid(self, cpu):
+    def sys_geteuid(self):
         '''
         Gets user identity.
         :rtype: int
         
-        :param cpu: current CPU.
         :return: This call returns C{1000} for all the users.  
         '''
         return 1000
-    def sys_getegid(self, cpu):
+    def sys_getegid(self):
         '''
         Gets group identity.
         :rtype: int
         
-        :param cpu: current CPU.
         :return: this call returns C{1000} for all the groups.  
         '''
         return 1000
 
-    def sys_writev(self, cpu, fd, iov, count):
+    def sys_writev(self, fd, iov, count):
         '''
         Works just like C{sys_write} except that multiple buffers are written out (for Linux 64 bits).
         :rtype: int
         
-        :param cpu: current CPU.
         :param fd: the file descriptor of the file to write.
         :param iov: the buffer where the the bytes to write are taken. 
         :param count: amount of C{iov} buffers to write into the file.
@@ -1301,24 +1288,23 @@ class Linux(object):
         '''
         total = 0
         for i in xrange(0, count):
-            buf = cpu.read_int(iov + i * 16, 64)
-            size = cpu.read_int(iov + i * 16 + 8, 64)
+            buf = self.current.read_int(iov + i * 16, 64)
+            size = self.current.read_int(iov + i * 16 + 8, 64)
 
             data = ""
             for j in xrange(0,size):
-                data += Operators.CHR(cpu.read_int(buf + j, 8))
+                data += Operators.CHR(self.current.read_int(buf + j, 8))
             logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
             self.files[fd].write(data)
             self.syscall_trace.append(("_write", fd, data))
             total+=size
         return total
 
-    def sys_writev32(self, cpu, fd, iov, count):
+    def sys_writev32(self, fd, iov, count):
         '''
         Works just like C{sys_write} except that multiple buffers are written out. (32 bit version)
         :rtype: int
         
-        :param cpu: current CPU.
         :param fd: the file descriptor of the file to write.
         :param iov: the buffer where the the bytes to write are taken. 
         :param count: amount of C{iov} buffers to write into the file.
@@ -1326,39 +1312,38 @@ class Linux(object):
         '''
         total = 0
         for i in xrange(0, count):
-            buf = cpu.read_int(iov + i * 8, 32)
-            size = cpu.read_int(iov + i * 8 + 4, 32)
+            buf = self.current.read_int(iov + i * 8, 32)
+            size = self.current.read_int(iov + i * 8 + 4, 32)
 
             data = ""
             for j in xrange(0,size):
-                data += Operators.CHR(cpu.read_int(buf + j, 8))
-                self.files[fd].write(Operators.CHR(cpu.read_int(buf + j, 8)))
+                data += Operators.CHR(self.current.read_int(buf + j, 8))
+                self.files[fd].write(Operators.CHR(self.current.read_int(buf + j, 8)))
             logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
             self.syscall_trace.append(("_write", fd, data))
             total+=size
         return total
 
-    def sys_set_thread_area32(self, cpu, user_info):
+    def sys_set_thread_area32(self, user_info):
         '''
         Sets a thread local storage (TLS) area. Sets the base address of the GS segment.
         :rtype: int
         
-        :param cpu: current CPU.
         :param user_info: the TLS array entry set corresponds to the value of C{u_info->entry_number}.
         :return: C{0} on success.   
         '''
-        n = cpu.read_int(user_info, 32)
-        pointer = cpu.read_int(user_info + 4, 32)
-        m = cpu.read_int(user_info + 8, 32)
-        flags = cpu.read_int(user_info + 12, 32)
+        n = self.current.read_int(user_info, 32)
+        pointer = self.current.read_int(user_info + 4, 32)
+        m = self.current.read_int(user_info + 8, 32)
+        flags = self.current.read_int(user_info + 12, 32)
         assert n == 0xffffffff
         assert flags == 0x51  #TODO: fix
-        cpu.GS=0x63
-        cpu.set_descriptor(cpu.GS, pointer, 0x4000, 'rw')
-        cpu.write_int(user_info, (0x63 - 3) / 8, 32)
+        self.current.GS=0x63
+        self.current.set_descriptor(self.current.GS, pointer, 0x4000, 'rw')
+        self.current.write_int(user_info, (0x63 - 3) / 8, 32)
         return 0
 
-    def sys_getpriority(self, cpu, which, who):
+    def sys_getpriority(self, which, who):
         '''
         System call ignored. 
         :rtype: int
@@ -1368,7 +1353,7 @@ class Linux(object):
         logger.debug("Ignoring sys_get_priority")
         return 0
 
-    def sys_setpriority(self, cpu, which, who, prio):
+    def sys_setpriority(self, which, who, prio):
         '''
         System call ignored.
         :rtype: int
@@ -1378,7 +1363,7 @@ class Linux(object):
         logger.debug("Ignoring sys_set_priority")
         return 0
 
-    def sys_acct(self, cpu, path):
+    def sys_acct(self, path):
         '''
         System call not implemented.
         :rtype: int
@@ -1388,13 +1373,12 @@ class Linux(object):
         logger.debug("BSD account not implemented!")
         return -1
 
-    def sys_exit_group(self, cpu, error_code):
+    def sys_exit_group(self, error_code):
         '''
         Exits all threads in a process
-        :param cpu: current CPU.
         :raises Exception: 'Finished'
         '''
-        procid = self.procs.index(cpu)
+        procid = self.procs.index(self.current)
         self.sched()
         self.running.remove(procid)
         #self.procs[procid] = None
@@ -1403,41 +1387,40 @@ class Linux(object):
             raise ProcessExit(error_code)
         return error_code
 
-    def sys_ptrace(self, cpu, request, pid, addr, data):
+    def sys_ptrace(self, request, pid, addr, data):
         logger.debug("sys_ptrace(%016x, %d, %016x, %016x) -> 0", request, pid, addr, data)
         return 0
-    def sys_nanosleep(self, cpu, req, rem):
+    def sys_nanosleep(self, req, rem):
         logger.debug("sys_nanosleep(...)")
         return 0
-    def sys_set_tid_address(self, cpu, tidptr):
+    def sys_set_tid_address(self, tidptr):
         logger.debug("sys_set_tid_address(%016x) -> 0", tidptr)
         return 1000 #tha pid
-    def sys_faccessat(self, cpu, dirfd, pathname, mode, flags):
-        filename = self._read_string(cpu, pathname)
+    def sys_faccessat(self, dirfd, pathname, mode, flags):
+        filename = self._read_string(pathname)
         logger.debug("sys_faccessat(%016x, %s, %x, %x) -> 0", dirfd, filename, mode, flags)
         return -1
 
-    def sys_set_robust_list(self, cpu, head, length):
+    def sys_set_robust_list(self, head, length):
         logger.debug("sys_set_robust_list(%016x, %d) -> -1", head, length)
         return -1
-    def sys_futex(self, cpu, uaddr, op, val, timeout, uaddr2, val3):
+    def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
         logger.debug("sys_futex(...) -> -1")
         return -1
-    def sys_getrlimit(self, cpu, resource, rlim):
+    def sys_getrlimit(self, resource, rlim):
         logger.debug("sys_getrlimit(%x, %x) -> -1",resource, rlim)
         return -1
-    def sys_fadvise64(self, cpu, fd, offset, length, advice):
+    def sys_fadvise64(self, fd, offset, length, advice):
         logger.debug("sys_fadvise64(%x, %x, %x, %x) -> 0", fd, offset, length, advice)
         return 0
-    def sys_gettimeofday(self, cpu, tv, tz):
+    def sys_gettimeofday(self, tv, tz):
         logger.debug("sys_gettimeofday(%x, %x) -> 0", tv, tz)
         return 0
 
     #Distpatchers...
-    def syscall(self, cpu):
+    def syscall(self):
         ''' 
         64 bit dispatcher.
-        :param cpu: current CPU. 
         '''
         syscalls = { 
                  0x0000000000000008: self.sys_lseek, 
@@ -1564,15 +1547,15 @@ class Linux(object):
         writeResult(result)
         return result
 
-    def sys_clock_gettime(self, cpu, clock_id, timespec):
+    def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
 	return 0
 
-    def sys_time(self, cpu, tloc):
+    def sys_time(self, tloc):
         import time
         t = time.time()
         if tloc != 0 :
-            cpu.write_int(tloc, int(t), cpu.address_bit_size)
+            self.current.write_int(tloc, int(t), self.current.address_bit_size)
         return int(t)
 
 
@@ -1704,25 +1687,25 @@ class Linux(object):
                 self.sched()
         except Interruption, e:
             try:
-                syscallret = self.int80(self.current)
+                syscallret = self.int80()
             except RestartSyscall:
                 pass
         except Syscall, e:
             try:
-                syscallret = self.syscall(self.current)
+                syscallret = self.syscall()
             except RestartSyscall:
                 pass
+
 
         return True
         
 
     #64bit syscalls
     
-    def sys_fstat64(self, cpu, fd, buf):
+    def sys_fstat64(self, fd, buf):
         '''
         Determines information about a file based on its file descriptor (for Linux 64 bits).
         :rtype: int
-        :param cpu: current CPU.
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored. 
         :return: C{0} on success.
@@ -1776,35 +1759,34 @@ class Linux(object):
         bufstat += struct.pack('<L', 0) #pad
         bufstat += struct.pack('<L', 0) #pad
 
-        cpu.write_bytes(buf, bufstat)
+        self.current.write_bytes(buf, bufstat)
         return 0
-    def sys_stat64(self, cpu, path, buf):
+    def sys_stat64(self, path, buf):
         '''
         Determines information about a file based on its filename (for Linux 64 bits).
         :rtype: int
-        :param cpu: current CPU.
         :param path: the pathname of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored. 
         :return: C{0} on success.   
         '''
-        return self._stat(cpu, path, buf, True)
+        return self._stat(path, buf, True)
 
-    def sys_stat32(self, cpu, path, buf):
-        return self._stat(cpu, path, buf, False)
+    def sys_stat32(self, path, buf):
+        return self._stat(path, buf, False)
 
-    def _stat(self, cpu, path, buf, is64bit):
-        fd = self.sys_open(cpu, path, 0, 'r')
+    def _stat(self, path, buf, is64bit):
+        fd = self.sys_open(path, 0, 'r')
         if is64bit:
-            ret = self.sys_fstat64(cpu, fd, buf)
+            ret = self.sys_fstat64(fd, buf)
         else:
-            ret = self.sys_fstat(cpu, fd, buf)
-        self.sys_close(cpu, fd)
+            ret = self.sys_fstat(fd, buf)
+        self.sys_close(fd)
         return ret
     
-    def _arch_specific_init(self, cpu, arch):
+    def _arch_specific_init(self, arch):
         assert arch in {'i386', 'amd64', 'armv7'}
 
-        self._arch_reg_init(cpu, arch)
+        self._arch_reg_init(arch)
 
         if arch == 'i386':
             self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
@@ -1812,10 +1794,10 @@ class Linux(object):
             self.syscall_arg_regs = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']
         elif arch == 'armv7':
             self.syscall_arg_regs = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6']
-            self._init_arm_kernel_helpers(cpu)
+            self._init_arm_kernel_helpers()
 
 
-    def _arch_reg_init(self, cpu, arch):
+    def _arch_reg_init(self, arch):
         if arch in {'i386', 'amd64'}:
             x86_defaults = {
                 'CS': 0x23,
@@ -1824,7 +1806,7 @@ class Linux(object):
                 'ES': 0x2b,
             }
             for reg, val in x86_defaults.iteritems():
-                cpu.regfile.write(reg, val)
+                self.current.regfile.write(reg, val)
 
     @staticmethod
     def _interp_total_size(interp):
@@ -1851,7 +1833,6 @@ class SLinux(Linux):
         '''
         Builds a symbolic extension of a Decree OS
         :param constraints: a constraints.
-        :param cpus: CPU for this model.
         :param mem: memory for this model.
         '''
         self._constraints = ConstraintSet()
@@ -1885,25 +1866,24 @@ class SLinux(Linux):
         super(SLinux, self).__setstate__(state)
 
     #Distpatchers...
-    def syscall(self, cpu):
+    def syscall(self):
         try:
-            return super(SLinux, self).syscall(cpu)
+            return super(SLinux, self).syscall()
         except SymbolicSyscallArgument, e:
-            cpu.PC = cpu.PC - cpu.instruction.size
+            self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
             raise ConcretizeRegister(reg_name,e.message,e.policy)
 
-    def int80(self, cpu):
+    def int80(self):
         try:
-            return super(SLinux, self).int80(cpu)
+            return super(SLinux, self).int80()
         except SymbolicSyscallArgument, e:
-            cpu.PC = cpu.PC - cpu.instruction.size
+            self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
             raise ConcretizeRegister(reg_name,e.message,e.policy)
 
 
-
-    def sys_read(self, cpu, fd, buf, count):
+    def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
             raise SymbolicSyscallArgument(0)
@@ -1916,14 +1896,13 @@ class SLinux(Linux):
             logger.debug("Ask to read a symbolic number of bytes ")
             raise SymbolicSyscallArgument(2)
 
-        return super(SLinux, self).sys_read(cpu, fd, buf, count)
+        return super(SLinux, self).sys_read(fd, buf, count)
 
 
-    def sys_fstat(self, cpu, fd, buf):
+    def sys_fstat(self, fd, buf):
         '''
         Determines information about a file based on its file descriptor.
         :rtype: int
-        :param cpu: current CPU.
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored. 
         :return: C{0} on success.   
@@ -1961,14 +1940,13 @@ class SLinux(Linux):
         bufstat += struct.pack('<Q', stat.st_atime)
         bufstat += struct.pack('<Q', stat.st_ctime)
         bufstat += struct.pack('<Q', stat.st_mtime)
-        cpu.write_bytes(buf, bufstat)
+        self.current.write_bytes(buf, bufstat)
         return 0
 
-    def sys_mmap2(self, cpu, address, size, prot, flags, fd, offset):
+    def sys_mmap2(self, address, size, prot, flags, fd, offset):
         ''' 
         Creates a new mapping in the virtual address space of the calling process.
         :rtype: int
-        :param cpu: current CPU.
         :param address: the starting address for the new mapping. This address is used as hint unless the
                         flag contains C{MAP_FIXED}.
         :param size: the length of the mapping.
@@ -1984,14 +1962,13 @@ class SLinux(Linux):
             - C{-1} In case you use C{MAP_FIXED} in the flags and the mapping can not be place at the desired address.
             - the address of the new mapping.
         '''
-        return self.sys_mmap(cpu, address, size, prot, flags, fd, offset*0x1000)
+        return self.sys_mmap(address, size, prot, flags, fd, offset*0x1000)
 
-    def sys_mmap(self, cpu, address, size, prot, flags, fd, offset):
+    def sys_mmap(self, address, size, prot, flags, fd, offset):
         ''' 
         Creates a new mapping in the virtual address space of the calling process. 
         :rtype: int
         
-        :param cpu: current CPU.
         :param address: the starting address for the new mapping. This address is used as hint unless the
                         flag contains C{MAP_FIXED}.
         :param size: the length of the mapping.
@@ -2011,6 +1988,8 @@ class SLinux(Linux):
 
         if address == 0:
             address = None
+
+        cpu = self.current
         if flags & 0x10 !=0 :
             cpu.memory.munmap(address,size)
 
@@ -2034,7 +2013,7 @@ class SLinux(Linux):
         return result
 
 
-    def sys_write(self, cpu, fd, buf, count):
+    def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
             raise SymbolicSyscallArgument(0)
@@ -2047,7 +2026,7 @@ class SLinux(Linux):
             logger.debug("Ask to write a symbolic number of bytes ")
             raise SymbolicSyscallArgument(2)
 
-        return super(SLinux, self).sys_write(cpu, fd, buf, count)
+        return super(SLinux, self).sys_write(fd, buf, count)
 
 class DecreeEmu(object):
 
