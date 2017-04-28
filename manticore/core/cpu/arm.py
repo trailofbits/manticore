@@ -275,8 +275,9 @@ class Armv7ABI(ABI):
     def syscall_write_result(self, result):
         self._cpu.R0 = result
 
-    def funcall_arguments(self, count):
+    def funcall_arguments(self, count, convention):
         # First four passed via R0-R3, then on stack
+        # TODO(yan): Assuming cdecl, ignore convention for now
         args = [self._cpu.R0, self._cpu.R1, self._cpu.R2, self._cpu.R3]
         if count <= len(args):
             return args[:count]
@@ -288,7 +289,7 @@ class Armv7ABI(ABI):
 
         return args
 
-    def funcall_write_result(self, result):
+    def funcall_write_result(self, result, convention):
         self.R0 = result
 
 class Armv7Cpu(Cpu):

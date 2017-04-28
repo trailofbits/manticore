@@ -182,6 +182,13 @@ class ABI(object):
         raise NotImplementedError
 
     def invoke_syscall(self, implementation):
+        '''
+        Invoke a system call modeled by `implementation`, correctly marshaling
+        arguments and return value
+
+        :param callable implementation: Python model of the syscall
+        :return: The result of calling `implementation`
+        '''
         spec = inspect.getargspec(implementation)
 
         if spec.varargs:
@@ -204,12 +211,19 @@ class ABI(object):
 
         return result
 
-
     def invoke_function(self, implementation, convention=None):
+        '''
+        Invoke a function modeled by `implementation` using `convention` as the
+        calling convention.
+
+        :param callable implementation: Python model of the syscall
+        :param str convention: Calling convention; None for default.
+        :return: The result of calling `implementation`
+        '''
         nargs = implementation.func_code.co_argcount
-        arguments = self.funcall_arguments(nargs)
+        arguments = self.funcall_arguments(nargs, convention)
         result = implementation(*arguments)
-        self.funcall_write_result(result)
+        self.funcall_write_result(result, convention)
         return result
 
     def syscall_arguments(self, count):
@@ -226,24 +240,25 @@ class ABI(object):
         Write the result of a system call.
 
         :param result: result of the syscall
-        :return: None
         '''
         raise NotImplementedError
 
-    def funcall_arguments(self, count):
+    def funcall_arguments(self, count, convention):
         '''
         Return `count` function arguments following Cpu's calling convention.
 
-        :param count: How many arguments to extract
+        :param int count: How many arguments to extract
+        :param str convention: Calling convention being used. `None` for default
         :return: tuple
         '''
         raise NotImplementedError
 
-    def funcall_write_result(self, result):
+    def funcall_write_result(self, result, convention):
         '''
         Write the result (return value) of a function call.
 
         :param result: return value of the function
+        :param str convention: Calling convention being used. `None` for default
         :return: None
         '''
         raise NotImplementedError

@@ -5758,6 +5758,8 @@ class AMD64ABI(ABI):
         for i in range(count):
             args.append(self._cpu.pop(self._cpu.address_bit_size))
 
+        self._invocations.append(count)
+
         return args
 
     def funcall_write_result(self, result):
@@ -5878,6 +5880,10 @@ class I386ABI(ABI):
     x86-32 syscall and funcall conventions.
     '''
 
+    def __init__(self, cpu):
+        super(I386ABI, self).__init__(cpu)
+        self._invocations = []
+
     def syscall_number(self):
         return self._cpu.EAX
 
@@ -5892,15 +5898,32 @@ class I386ABI(ABI):
     def syscall_write_result(self, result):
         self._cpu.EAX = result
 
-    def funcall_arguments(self, count):
-        # Arguments are pushed left-to-right order
-        args = []
-        for i in range(count):
-            args.append(self._cpu.pop(self._cpu.address_bit_size))
-        return args
+    def funcall_arguments(self, count, convention):
+        # cdecl is default
+        convention = convention or 'cdecl'
 
-    def funcall_write_result(self, result):
-        self._cpu.EAX = result
+        if convention in ('cdecl', 'stdcall'):
+            # Arguments are pushed left-to-right order
+            args = []
+            for i in range(count):
+                args.append(self._cpu.pop(self._cpu.address_bit_size))
+            # with stdcall, callee needs to clean up the arguments
+            self._invocations.append(count)
+            return args
+        else:
+            raise NotImplementedError('Unsupported calling convention: {}'.format(convention))
+
+    def funcall_write_result(self, result, convention):
+        convention = convention or 'cdecl'
+        
+        if convention == 'cdecl':
+            self._cpu.EAX = result
+            self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
+        elif convention == 'stdcall':
+            self._cpu.EAX = result
+            self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
+            self._cpu.STACK += self._invocations.pop() * (cpu.address_bit_size / 8)
+
 
 
 class I386Cpu(X86Cpu):
