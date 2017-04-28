@@ -9,6 +9,7 @@ from ...utils.emulate import UnicornEmulator
 import sys
 from functools import wraps
 import types
+import inspect
 import logging
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
@@ -162,7 +163,90 @@ class RegisterFile(object):
 
         :param register: a register name
         '''
-        return self._alias(register) in self.all_registers 
+        return self._alias(register) in self.all_registers
+
+
+class ABI(object):
+    '''
+    Represents a CPU's syscall and function calling convention.
+    '''
+    def __init__(self, cpu):
+        self._cpu = cpu
+
+    def syscall_number(self):
+        '''
+        Extract the index of the invoked syscall.
+
+        :return: int
+        '''
+        raise NotImplementedError
+
+    def invoke_syscall(self, implementation):
+        spec = inspect.getargspec(implementation)
+
+        if spec.varargs:
+            logger.warning("ABI: syscalls and models should not have varargs")
+
+        nargs = len(spec.args)
+
+        # If the implementation is a method, we need to account for `self`
+        if inspect.ismethod(implementation):
+            nargs -= 1
+
+        arguments = self.syscall_arguments(nargs)
+
+        logger.debug("syscall: {}, args: {}".format(implementation.__name__,
+            repr(arguments)))
+
+        result = implementation(*arguments)
+
+        self.syscall_write_result(result)
+
+        return result
+
+
+    def invoke_function(self, implementation, convention=None):
+        nargs = implementation.func_code.co_argcount
+        arguments = self.funcall_arguments(nargs)
+        result = implementation(*arguments)
+        self.funcall_write_result(result)
+        return result
+
+    def syscall_arguments(self, count):
+        '''
+        Extract `count` arguments to the current syscall.
+
+        :param count: How many arguments to extract
+        :return: tuple
+        '''
+        raise NotImplementedError
+
+    def syscall_write_result(self, result):
+        '''
+        Write the result of a system call.
+
+        :param result: result of the syscall
+        :return: None
+        '''
+        raise NotImplementedError
+
+    def funcall_arguments(self, count):
+        '''
+        Return `count` function arguments following Cpu's calling convention.
+
+        :param count: How many arguments to extract
+        :return: tuple
+        '''
+        raise NotImplementedError
+
+    def funcall_write_result(self, result):
+        '''
+        Write the result (return value) of a function call.
+
+        :param result: return value of the function
+        :return: None
+        '''
+        raise NotImplementedError
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
@@ -189,6 +273,7 @@ class Cpu(object):
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
+        self._abi = None
 
         self._md = Cs(self.arch, self.mode)
         self._md.detail = True
@@ -198,6 +283,7 @@ class Cpu(object):
     def __getstate__(self):
         state = {}
         state['regfile'] = self._regfile
+        state['abi'] = self._abi
         state['memory'] = self._memory
         state['icount'] = self._icount
         return state
@@ -205,11 +291,22 @@ class Cpu(object):
     def __setstate__(self, state):
         Cpu.__init__(self, state['regfile'], state['memory'])
         self._icount = state['icount']
-        return 
+        self._abi = state['abi']
+        return
 
     @property
     def icount(self):
         return self._icount
+
+    @property
+    def ABI(self):
+        '''
+        Return an `ABI` instance describing how to call functions and syscalls.
+
+        :return: An `ABI`
+        :rtype: ABI
+        '''
+        return self._abi
 
     ##############################
     # Register access
