@@ -1,6 +1,6 @@
 import struct
 import sys
-from .abstractcpu import Cpu, RegisterFile, Operand
+from .abstractcpu import ABI, Cpu, RegisterFile, Operand
 from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
@@ -253,6 +253,44 @@ class Armv7RegisterFile(RegisterFile):
         return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
 
 
+class Armv7ABI(ABI):
+    '''
+    ARMv7 ABI
+    '''
+    # EABI standards:
+    #  syscall # is in R7
+    #  arguments are passed in R0-R6
+    #  retval is passed in R0
+
+    def syscall_number(self):
+        return self._cpu.R7
+
+    def syscall_arguments(self, count):
+        assert count <= 6
+        args = []
+        for i in range(count):
+            args.append(self._cpu.read_register('R{}'.format(i)))
+        return tuple(args)
+
+    def syscall_write_result(self, result):
+        self._cpu.R0 = result
+
+    def funcall_arguments(self, count):
+        # First four passed via R0-R3, then on stack
+        args = [self._cpu.R0, self._cpu.R1, self._cpu.R2, self._cpu.R3]
+        if count <= len(args):
+            return args[:count]
+        else:
+            count = count - len(args)
+
+        for i in range(count):
+            args.append(self._cpu.stack_pop())
+
+        return args
+
+    def funcall_write_result(self, result):
+        self.R0 = result
+
 class Armv7Cpu(Cpu):
     '''
     Cpu specialization handling the ARMv7 architecture.
@@ -273,6 +311,7 @@ class Armv7Cpu(Cpu):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
         self._force_next = False
+        self._abi = Armv7ABI(self)
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()
