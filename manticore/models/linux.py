@@ -1477,25 +1477,17 @@ class Linux(object):
 
 
                 }
-        index, arguments, writeResult  = cpu.get_syscall_description()
+
+        index = self.current.ABI.syscall_number()
 
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
-        func = syscalls[index]
 
-        logger.debug("SYSCALL64: %s %r ", func.func_name
-                                    , arguments[:func.func_code.co_argcount])
-        nargs = func.func_code.co_argcount
-        args = [ cpu ] + arguments
+        return self.current.ABI.invoke_syscall(syscalls[index])
 
-        result = func(*args[:nargs-1])
-        writeResult(result)
-        return result
-
-    def int80(self, cpu):
+    def int80(self):
         ''' 
         32 bit dispatcher.
-        :param cpu: current CPU.
         '''
         syscalls = { 0x00000001: self.sys_exit_group, 
                      0x00000003: self.sys_read, 
@@ -1532,20 +1524,11 @@ class Linux(object):
                      0x00000014: self.sys_getpid,
                      0x000f0005: self.sys_ARM_NR_set_tls,
                     }
-        index, arguments, writeResult  = cpu.get_syscall_description()
-
+        index = self.current.ABI.syscall_number()
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
-        func = syscalls[index]
 
-        logger.debug("int80: %s %r ", func.func_name
-                                    , arguments[:func.func_code.co_argcount])
-        nargs = func.func_code.co_argcount
-        args = [ cpu ] + arguments
-
-        result = func(*args[:nargs-1])
-        writeResult(result)
-        return result
+        return self.current.ABI.invoke_syscall(syscalls[index])
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
