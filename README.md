@@ -97,7 +97,7 @@ You can run the tests with the commands below:
 ```
 cd manticore
 # all tests
-nosetests
+nosetests --exe
 # just one file
 nosetests tests/test_armv7cpu.py
 # just one test class

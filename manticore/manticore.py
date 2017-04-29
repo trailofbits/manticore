@@ -499,7 +499,8 @@ class Manticore(object):
                 # TODO(yan) this should be a dict
                 self._model_hooks.setdefault(int(address,0), set()).add(cb)
 
-    def _model_hook_callback(self, state, pc):
+    def _model_hook_callback(self, state):
+        pc = state.cpu.pc
         if pc not in self._model_hooks:
             return
 
@@ -577,7 +578,8 @@ class Manticore(object):
         '''
         self._executor.shutdown()
 
-    def _assertions_callback(self, state, pc):
+    def _assertions_callback(self, state):
+        pc = state.cpu.pc
         if pc not in self._assertions:
             return
 
@@ -597,8 +599,9 @@ class Manticore(object):
         #Everything is good add it.
         state.constraints.add(assertion)
 
-    def _hook_callback(self, state, pc):
+    def _hook_callback(self, state):
         'Invoke all registered generic hooks'
+        pc = state.cpu.pc
 
         # Ignore symbolic pc.
         # TODO(yan): Should we ask the solver if any of the hooks are possible,

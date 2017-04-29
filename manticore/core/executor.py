@@ -665,7 +665,7 @@ class Executor(object):
                     # allow us to terminate manticore processes
                     while not self.isShutdown():
                         # Announce that we're about to execute
-                        self.will_execute_pc(current_state, current_state.cpu.PC)
+                        self.will_execute_pc(current_state)
 
                         if not current_state.execute():
                             break
