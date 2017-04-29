@@ -747,7 +747,7 @@ class Executor(object):
                     del vals, symbolic, setstate
 
                 except SymbolicMemoryException as e:
-                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.PC, e.cause)
+                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.cpu.PC, e.cause)
                     logger.info('Constraint for crashing! %s', e.constraint)
 
                     children = []
@@ -760,7 +760,7 @@ class Executor(object):
                     with current_state as new_state:
                         children.append(new_state.co)
                         new_state.add(e.constraint)
-                        self.newerror(new_state.current.PC)
+                        self.newerror(new_state.model.current.PC)
                         self.generate_testcase(new_state, "Symbolic Memory Exception: " + str(e))
 
                     logger.info("Forking state %d into states %r",current_state.co, children)

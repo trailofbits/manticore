@@ -500,7 +500,7 @@ class Manticore(object):
                 self._model_hooks.setdefault(int(address,0), set()).add(cb)
 
     def _model_hook_callback(self, state):
-        pc = state.cpu.pc
+        pc = state.cpu.PC
         if pc not in self._model_hooks:
             return
 
@@ -579,7 +579,7 @@ class Manticore(object):
         self._executor.shutdown()
 
     def _assertions_callback(self, state):
-        pc = state.cpu.pc
+        pc = state.cpu.PC
         if pc not in self._assertions:
             return
 
@@ -593,7 +593,7 @@ class Manticore(object):
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                    state.cpu.pc, program)
+                    state.cpu.PC, program)
             raise AbandonState()
 
         #Everything is good add it.
@@ -601,7 +601,7 @@ class Manticore(object):
 
     def _hook_callback(self, state):
         'Invoke all registered generic hooks'
-        pc = state.cpu.pc
+        pc = state.cpu.PC
 
         # Ignore symbolic pc.
         # TODO(yan): Should we ask the solver if any of the hooks are possible,
