@@ -211,19 +211,27 @@ class ABI(object):
 
         return result
 
-    def invoke_function(self, implementation, convention=None):
+    def invoke_function(self, implementation, convention=None, prefix_args=None):
         '''
         Invoke a function modeled by `implementation` using `convention` as the
         calling convention.
 
         :param callable implementation: Python model of the syscall
         :param str convention: Calling convention; None for default.
+        :param tuple prefix_args: Pass these parametrs to implementation before those read from state
         :return: The result of calling `implementation`
         '''
-        nargs = implementation.func_code.co_argcount
-        arguments = self.funcall_arguments(nargs, convention)
-        result = implementation(*arguments)
+        prefix_args = prefix_args or ()
+
+        nargs = implementation.func_code.co_argcount - len(prefix_args)
+        arguments = prefix_args + self.funcall_arguments(nargs, convention)
+        try:
+            result = implementation(*arguments)
+        except ConcretizeArgument as e:
+            self.funcall_concretize_argument(e.argnum, convention)
+
         self.funcall_write_result(result, convention)
+
         return result
 
     def syscall_arguments(self, count):
@@ -263,6 +271,16 @@ class ABI(object):
         '''
         raise NotImplementedError
 
+    def funcall_concretize_argument(self, idx, convention):
+        '''
+        Concretize the `idx`th argument of a function, according to `convention`
+        This will throw one of the Concretize exceptions.
+
+        :param int idx: The index of the argument requiring concretization
+        :param str convention: Calling convention being used. `None` for default
+        :return: None
+        '''
+        raise NotImplementedError
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
 class Cpu(object):

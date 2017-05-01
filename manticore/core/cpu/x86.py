@@ -5731,7 +5731,6 @@ class AMD64ABI(ABI):
     '''
     x64 syscall and funcall conventions.
     '''
-
     def syscall_number(self):
         return self._cpu.RAX
 
@@ -5905,11 +5904,14 @@ class I386ABI(ABI):
         if convention in ('cdecl', 'stdcall'):
             # Arguments are pushed left-to-right order
             args = []
+            base = self._cpu.STACK + self._cpu.address_bit_size / 8
             for i in range(count):
-                args.append(self._cpu.pop(self._cpu.address_bit_size))
+                val = self._cpu.read_int(base + i*4, self._cpu.address_bit_size)
+                args.append(val)
+                #args.append(self._cpu.pop(self._cpu.address_bit_size))
             # with stdcall, callee needs to clean up the arguments
             self._invocations.append(count)
-            return args
+            return tuple(args)
         else:
             raise NotImplementedError('Unsupported calling convention: {}'.format(convention))
 
@@ -5922,8 +5924,17 @@ class I386ABI(ABI):
         elif convention == 'stdcall':
             self._cpu.EAX = result
             self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
-            self._cpu.STACK += self._invocations.pop() * (cpu.address_bit_size / 8)
+            self._cpu.STACK += self._invocations.pop() * (self._cpu.address_bit_size / 8)
 
+    def funcall_concretize_argument(self, idx, convention):
+        convention = convention or 'cdecl'
+
+        if convention in ('cdecl', 'stdcall'):
+            address = self._cpu.STACK + 4 + idx * (cpu.address_bit_size/8)
+            raise ConcretizeMemory(___, self._cpu.address_bit_size,
+                    "Concretizing function argument")
+        else:
+            raise NotImplementedError('Unsupported calling convention: {}'.format(convention))
 
 
 class I386Cpu(X86Cpu):
