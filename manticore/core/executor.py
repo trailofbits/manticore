@@ -747,7 +747,12 @@ class Executor(object):
                     del vals, symbolic, setstate
 
                 except SymbolicMemoryException as e:
-                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.cpu.PC, e.cause)
+                    # TODO: This is clearly wrong and should be replaced by the commented out line
+                    # but that makes the simple_parse test in test_memdumps fail, because the rest of the
+                    # exception handling code gets run when the below line is correct and that seems to
+                    # expand more states.
+                    # logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.cpu.PC, e.cause)
+                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.PC, e.cause)
                     logger.info('Constraint for crashing! %s', e.constraint)
 
                     children = []
