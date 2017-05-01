@@ -891,7 +891,7 @@ class Linux(object):
 
         auxv = {}
         auxv['AT_PHDR']     = load_addr+elf.header.e_phoff # Program headers for program 
-        auxv['AT_PHENT']    = elf.header.e_ehsize          # Size of program header entry 
+        auxv['AT_PHENT']    = elf.header.e_phentsize       # Size of program header entry
         auxv['AT_PHNUM']    = elf.header.e_phnum           # Number of program headers 
         auxv['AT_PAGESZ']   = cpu.memory.page_size         # System page size 
         auxv['AT_BASE']     = interpreter_base             # Base address of interpreter 
