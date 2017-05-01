@@ -578,7 +578,7 @@ class Manticore(object):
         '''
         self._executor.shutdown()
 
-    def _assertions_callback(self, state):
+    def _assertions_callback(self, state ):
         pc = state.cpu.PC
         if pc not in self._assertions:
             return
@@ -600,8 +600,8 @@ class Manticore(object):
         state.constraints.add(assertion)
 
     def _hook_callback(self, state):
-        'Invoke all registered generic hooks'
         pc = state.cpu.PC
+        'Invoke all registered generic hooks'
 
         # Ignore symbolic pc.
         # TODO(yan): Should we ask the solver if any of the hooks are possible,
