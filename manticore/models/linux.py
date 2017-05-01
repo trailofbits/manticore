@@ -1484,7 +1484,7 @@ class Linux(object):
                  0x000000000000003f: self.sys_uname, 
                  0x00000000000000c9: self.sys_time,
                  0x00000000000000da: self.sys_set_tid_address,
-                 0x00000000000000da: self.sys_faccessat,
+                 0x000000000000010d: self.sys_faccessat,
                  0x0000000000000111: self.sys_set_robust_list,
                  0x00000000000000ca: self.sys_futex,
                  0x000000000000000d: self.sys_sigaction,
