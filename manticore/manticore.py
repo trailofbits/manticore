@@ -16,14 +16,35 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 from .core.executor import Executor
-from .core.state import State, AbandonState
+from .core.state import State, TerminateState
 from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
-
 logger = logging.getLogger('MANTICORE')
+
+
+
+class ProfilingResults(object):
+    def __init__(self, raw_stats, instructions_executed):
+        self.raw_stats = raw_stats
+        self.instructions_executed = instructions_executed
+
+        self.time_elapsed = raw_stats.total_tt
+
+        self.loading_time = 0
+        self.saving_time = 0
+        self.solver_time = 0
+        for (func_file, _, func_name), (_, _, _, func_time, _) in raw_stats.stats.iteritems():
+            if func_name == 'restore':
+                self.loading_time += func_time
+            elif func_name == 'backup':
+                self.saving_time += func_time
+            elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
+                self.solver_time += func_time
+
+
 
 def makeDecree(args):
     constraints = ConstraintSet()
@@ -446,13 +467,27 @@ class Manticore(object):
         return self._arch
         
 
-    def _start_workers(self, num_processes):
+    def _start_workers(self, num_processes, profiling=False):
         assert num_processes > 0, "Must have more than 0 worker processes"
 
         logger.info("Starting %d processes.", num_processes)
 
+        if profiling:
+            profile = cProfile.Profile()
+            def profile_this(func, *args, **kwargs):
+                profile.enable()
+                result = func(*args, **kwargs)
+                profile.disable()
+                profile.create_stats()
+                self.profile_stats.append(_profile.stats.items())
+                return result
+            return func
+            target = profile_this(self._executor.run)
+        else:
+            target = self._executor.run
+
         for _ in range(num_processes):
-            p = Process(target=self._executor.run, args=())
+            p = Process(target=target, args=())
             self._workers.append(p)
             p.start()
 
@@ -466,7 +501,6 @@ class Manticore(object):
                 # multiprocessing.dummy.Process does not support terminate
                 if hasattr(w, 'terminate'):
                     w.terminate()
-
                 self._workers.append(w)
 
 
@@ -560,13 +594,60 @@ class Manticore(object):
             t = Timer(timeout, self.terminate)
             t.start()
         try:
-            self._start_workers(self._num_processes)
+            self._start_workers(self._num_processes, profiling=False)
 
             self._join_workers()
         finally:
             self._running = False
             if timeout > 0:
                 t.cancel()
+
+
+        if self.should_profile:
+
+            class PstatsFormatted:
+                def __init__(self, d):
+                    self.stats = dict(d)
+                def create_stats(self):
+                    pass
+
+            ps = None
+            for item in self._stats:
+                try:
+                    stat = PstatsFormatted(item)
+                    if ps is None:
+                        ps = pstats.Stats(stat)
+                    else:
+                        ps.add(stat)
+                except TypeError:
+                    logger.debug("Incorrectly formatted profiling information in _stats, skipping")
+
+            if ps is None:
+                logger.info("Profiling failed")
+            else:
+                filename = self._getFilename('profiling.bin') 
+                logger.info("Dumping profiling info at %s", filename)
+                ps.dump_stats(filename)
+
+            results = ProfilingResults(ps, self.count)
+
+            logger.info("Total profiled time: %f", results.time_elapsed)
+            logger.info("Loading state time: %f", results.loading_time)
+            logger.info("Saving state time: %f", results.saving_time)
+            logger.info("Solver time: %f", results.solver_time)
+            logger.info("Other time: %f", results.time_elapsed - (results.loading_time + results.saving_time + results.solver_time))
+            return results
+
+
+
+
+
+        logger.info('Results dumped in %s', self.workspace)
+        #logger.info('Instructions executed: %d', self._executor.count)
+        #logger.info('Coverage: %d different instructions executed', len(self._executor.visited))
+        #logger.info('Number of paths covered %r', State.state_count())
+        logger.info('Total time: %s', time.time()-self._time_started)
+        #logger.info('IPS: %d', self._executor.count/(time.time()-self._time_started))
 
     def terminate(self):
         '''
@@ -591,7 +672,7 @@ class Manticore(object):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
                     state.cpu.PC, program)
-            raise AbandonState()
+            raise TerminateState()
 
         #Everything is good add it.
         state.constraints.add(assertion)
@@ -614,32 +695,4 @@ class Manticore(object):
         for cb in self._hooks.get(None, []):
             cb(state)
 
-    def dump_stats(self):
-        if self.coverage_file is not None:
-            with open(self.coverage_file, "w") as f:
-                fmt = "0x{:016x}\n"
-                for m in self._executor.visited:
-                    f.write(fmt.format(m[1]))
-                    
-        if self.memory_errors_file is not None:
-            with open(self._args.errorfile, "w") as f:
-                fmt = "0x{:016x}\n"
-                for m in self._executor.errors:
-                    f.write(fmt.format(m))
 
-        self._executor.dump_stats()
-
-        logger.info('Results dumped in %s', self.workspace)
-        logger.info('Instructions executed: %d', self._executor.count)
-        logger.info('Coverage: %d different instructions executed', len(self._executor.visited))
-        logger.info('Number of paths covered %r', State.state_count())
-        logger.info('Total time: %s', time.time()-self._time_started)
-        logger.info('IPS: %d', self._executor.count/(time.time()-self._time_started))
-
-        visited = ['%d:%08x'%site for site in self._executor.visited]
-        with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
-            for entry in sorted(visited):
-                f.write(entry + '\n')
-
-        with file(os.path.join(self.workspace,'command.sh'),'w') as f:
-            f.write(' '.join(sys.argv))

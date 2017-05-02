@@ -1,11 +1,8 @@
 from collections import OrderedDict
 
-from .executor import manager
+from .executor import TerminateState
 from .smtlib import solver
 from ..utils.helpers import issymbolic
-
-class AbandonState(Exception):
-    pass
 
 
 class State(object):
@@ -31,7 +28,6 @@ class State(object):
     def __init__(self, constraints, platform):
         self.platform = platform
         self.forks = 0
-        self.co = self.get_new_id()
         self.constraints = constraints
         self.platform._constraints = constraints
         for proc in self.platform.procs:
@@ -48,7 +44,7 @@ class State(object):
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.platform),
                 {'visited': self.visited, 'last_pc': self.last_pc, 'forks': self.forks,
-                 'co': self.co, 'input_symbols': self.input_symbols,
+                 'input_symbols': self.input_symbols,
                  'branches': self.branches})
 
     @staticmethod
@@ -63,16 +59,11 @@ class State(object):
     def mem(self):
         return self.platform.current.memory
 
-    @property
-    def name(self):
-        return 'state_%06d.pkl' % (self.co)
-
     def __enter__(self):
         assert self._child is None
         new_state = State(self.constraints.__enter__(), self.platform)
         new_state.visited = set(self.visited)
         new_state.forks = self.forks + 1
-        new_state.co = State.get_new_id()
         new_state.input_symbols = self.input_symbols
         new_state.branches = self.branches
         self._child = new_state
@@ -107,7 +98,7 @@ class State(object):
 
         Note: This must be called from the Executor loop, or a :func:`~manticore.Manticore.hook`.
         '''
-        raise AbandonState
+        raise TerminateState("Abandoned state")
 
     def new_symbolic_buffer(self, nbytes, **options):
         '''Create and return a symbolic buffer of length `nbytes`. The buffer is

@@ -1,4 +1,4 @@
-import cgcrandom
+import cgcrandom    
 import weakref
 import sys, os, struct
 # TODO use cpu factory
@@ -6,7 +6,7 @@ from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.memory import SMemory32
 from ..core.smtlib import *
-from ..core.executor import SyscallNotImplemented, ProcessExit, Deadlock, RestartSyscall
+from ..core.executor import SyscallNotImplemented, ProcessExit, TerminateState
 from ..utils.helpers import issymbolic
 from ..binary import CGCElf
 from ..binary import CGCGrr
@@ -17,6 +17,8 @@ import random
 
 logger = logging.getLogger("PLATFORM")
 
+class RestartSyscall(Exception):
+    pass
 
 class SymbolicSyscallArgument(ConcretizeRegister):
     def __init__(self, number, message='Concretizing syscall argument', policy='SAMPLED'):
