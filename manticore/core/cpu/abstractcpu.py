@@ -1,7 +1,6 @@
 from capstone import *
 from capstone.arm import *
 from capstone.x86 import *
-from abc import ABCMeta, abstractmethod
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
@@ -536,16 +535,7 @@ class Syscall(CpuInterrupt):
 
 # TODO(yan): Move this into State or a more appropriate location
 
-class ConcretizeException(Exception):
-    '''
-    Base class for all exceptions that trigger the concretization of a symbolic
-    value.
-    '''
-    _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
-    def __init__(self, message, policy):
-        assert policy in self._ValidPolicies, "Policy must be one of: %s"%(', '.join(self._ValidPolicies),)
-        self.policy = policy
-        super(ConcretizeException, self).__init__("%s (Policy: %s)"%(message, policy))
+
 
 class ConcretizeRegister(ConcretizeException):
     '''
@@ -555,6 +545,7 @@ class ConcretizeRegister(ConcretizeException):
         message = "Concretizing %s. %s"%(reg_name, message)
         super(ConcretizeRegister, self).__init__(message, policy)
         self.reg_name = reg_name
+
 
 class ConcretizeMemory(ConcretizeException):
     '''
