@@ -106,7 +106,7 @@ class SymbolicFile(object):
         symbols_cnt = 0
         data = path.read()
         size = len(data)
-        self.array = constraints.new_array(name=path.name, max_size=size)
+        self.array = constraints.new_array(name=path.name, index_max=size)
         for i in range(size):
             if data[i] != WILDCARD:
                 self.array[i] = data[i]
@@ -885,14 +885,13 @@ class Linux(object):
             cpu.write_bytes(cpu.STACK, value)
             return cpu.STACK
 
-        at_platform = push_bytes('x86_%02d\x00'%addressbitsize)
         at_random = push_bytes('A'*16)
         at_execfn = push_bytes(filename+'\x00')
 
 
         auxv = {}
         auxv['AT_PHDR']     = load_addr+elf.header.e_phoff # Program headers for program 
-        auxv['AT_PHENT']    = elf.header.e_ehsize          # Size of program header entry 
+        auxv['AT_PHENT']    = elf.header.e_phentsize       # Size of program header entry
         auxv['AT_PHNUM']    = elf.header.e_phnum           # Number of program headers 
         auxv['AT_PAGESZ']   = cpu.memory.page_size         # System page size 
         auxv['AT_BASE']     = interpreter_base             # Base address of interpreter 
@@ -903,8 +902,7 @@ class Linux(object):
         auxv['AT_GID']      = 1000                         # Real gid 
         auxv['AT_EGID']     = 1000                         # Effective gid 
         auxv['AT_CLKTCK']   = 100                          # Frequency of times() 
-        auxv['AT_PLATFORM'] = at_platform                  # String identifying platform.
-        auxv['AT_HWCAP']    = 0xbfebfbff                   # Machine-dependent hints about processor capabilities.
+        auxv['AT_HWCAP']    = 0                            # Machine-dependent hints about processor capabilities.
         auxv['AT_RANDOM']   = at_random                    # Address of 16 random bytes.
         auxv['AT_EXECFN']   = at_execfn                    # Filename of executable.
         self.auxv = auxv
@@ -1452,6 +1450,7 @@ class Linux(object):
                  0x0000000000000005: self.sys_fstat64,
                  0x0000000000000009: self.sys_mmap,
                  0x0000000000000001: self.sys_write,
+                 0x0000000000000010: self.sys_ioctl,
                  0x0000000000000027: self.sys_getpid,
                  0x000000000000003e: self.sys_kill,
                  0x0000000000000065: self.sys_ptrace,
@@ -1485,7 +1484,7 @@ class Linux(object):
                  0x000000000000003f: self.sys_uname, 
                  0x00000000000000c9: self.sys_time,
                  0x00000000000000da: self.sys_set_tid_address,
-                 0x00000000000000da: self.sys_faccessat,
+                 0x000000000000010d: self.sys_faccessat,
                  0x0000000000000111: self.sys_set_robust_list,
                  0x00000000000000ca: self.sys_futex,
                  0x000000000000000d: self.sys_sigaction,

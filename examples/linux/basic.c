@@ -1,5 +1,5 @@
 /**
- * Symbolic values are read from stdin using standard libc calls. 
+ * Symbolic values are read from stdin using standard libc calls.
  * Program checks if a binary packed integer at the input is 0x41 or less.
  *
  * Compile with :
@@ -51,7 +51,7 @@ int main(int argc, char* argv[], char* envp[]){
     }
     else 
     {
-        printf("Message: It is smaller or equal than 0x41\n");
+        printf("Message: It is less than or equal to 0x41\n");
     }
 
 return 0;

@@ -347,10 +347,11 @@ class Armv7Cpu(Cpu):
 
 
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
-    def stack_push(self, data):
+    def stack_push(self, data, nbytes=None):
         if isinstance(data, (int, long)):
-            self.SP -= self.address_bit_size/8
-            self.write_int(self.SP, data, self.address_bit_size)
+            nbytes = nbytes or self.address_bit_size/8
+            self.SP -= nbytes
+            self.write_int(self.SP, data, nbytes * 8)
         elif isinstance(data, BitVec):
             self.SP -= data.size/8
             self.write_int(self.SP, data, data.size)
@@ -472,21 +473,24 @@ class Armv7Cpu(Cpu):
         dest.write(result)
         cpu.setFlags(C=carry_out, N=HighBit(result), Z=(result == 0))
 
-    def _handleWriteback(cpu, src, dest, offset):
+    def _compute_writeback(cpu, operand, offset):
+        if offset:
+            off = offset.read()
+        else:
+            off = operand.get_mem_offset()
+        wbaddr = operand.get_mem_base_addr() + off
+        return wbaddr
+
+    def _cs_hack_ldr_str_writeback(cpu, operand, offset, val):
         # capstone bug doesn't set writeback correctly for postindex reg
         if cpu.instruction.writeback or offset:
-            if offset:
-                off = offset.read()
-            else:
-                off = dest.get_mem_offset()
-
-            wbaddr = dest.get_mem_base_addr() + off
-            dest.writeback(wbaddr)
+            operand.writeback(val)
 
     def _STR(cpu, width, src, dest, offset=None):
         val = src.read()
+        writeback = cpu._compute_writeback(dest, offset)
         cpu.write_int(dest.address(), val, width)
-        cpu._handleWriteback(src, dest, offset)
+        cpu._cs_hack_ldr_str_writeback(dest, offset, writeback)
 
     @instruction
     def STR(cpu, *args): return cpu._STR(cpu.address_bit_size, *args)
@@ -499,12 +503,13 @@ class Armv7Cpu(Cpu):
 
     def _LDR(cpu, dest, src, width, is_signed, offset):
         mem = cpu.read_int(src.address(), width)
+        writeback = cpu._compute_writeback(src, offset)
         if is_signed:
             word = Operators.SEXTEND(mem, width, cpu.address_bit_size)
         else:
             word = Operators.ZEXTEND(mem, cpu.address_bit_size)
         dest.write(word)
-        cpu._handleWriteback(dest, src, offset)
+        cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
 
     @instruction
     def LDR(cpu, dest, src, offset=None):
@@ -568,7 +573,16 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def RSB(cpu, dest, src, add):
-        result, carry, overflow = cpu._ADD(~src.read(), add.read(), 1)
+        inv_src = GetNBits(~src.read(), cpu.address_bit_size)
+        result, carry, overflow = cpu._ADD(inv_src, add.read(), 1)
+        dest.write(result)
+        return result, carry, overflow
+
+    @instruction
+    def RSC(cpu, dest, src, add):
+        carry = cpu.regfile.read('APSR_C')
+        inv_src = GetNBits(~src.read(), cpu.address_bit_size)
+        result, carry, overflow = cpu._ADD(inv_src, add.read(), carry)
         dest.write(result)
         return result, carry, overflow
 
@@ -664,10 +678,10 @@ class Armv7Cpu(Cpu):
 
         for reg in regs:
             reg.write(cpu.read_int(address, cpu.address_bit_size))
-            address += cpu.address_bit_size/8
+            address += reg.size/8
 
         if insn_id == ARM_INS_LDMIB:
-            address -= cpu.address_bit_size/8
+            address -= reg.size/8
 
         if cpu.instruction.writeback:
             base.writeback(address)
@@ -856,3 +870,9 @@ class Armv7Cpu(Cpu):
         '''
         pass
 
+    @instruction
+    def LDCL(cpu, *operands):
+        '''
+        Occasionally used in glibc (longjmp in ld.so). Nop under our execution model.
+        '''
+        pass

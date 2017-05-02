@@ -107,7 +107,7 @@ def main():
         m.load_assertions(args.assertions)
 
     if args.verbose:
-        m.verbosity = 5
+        m.verbosity = 4
     else:
         m.verbosity = 1
 

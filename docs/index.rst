@@ -1,7 +1,7 @@
 Welcome to Manticore's documentation!
 =====================================
 
-This is the documentation for the Manticore project.
+Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
 
 .. toctree::
    :maxdepth: 2
