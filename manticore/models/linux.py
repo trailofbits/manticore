@@ -1450,6 +1450,7 @@ class Linux(object):
                  0x0000000000000005: self.sys_fstat64,
                  0x0000000000000009: self.sys_mmap,
                  0x0000000000000001: self.sys_write,
+                 0x0000000000000010: self.sys_ioctl,
                  0x0000000000000027: self.sys_getpid,
                  0x000000000000003e: self.sys_kill,
                  0x0000000000000065: self.sys_ptrace,
