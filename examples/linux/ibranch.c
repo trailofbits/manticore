@@ -1,13 +1,29 @@
-/* Minimal toy example with input output
+/* The symbolic input is taken from command line argument and it is
+ * used as an index in a function pointer table. Analysis should explore 
+ * both functions.
  *
- * The symbolic input is taken from command line argumets passed to the interpreted program
- * Will use the argv input to select a pointer from a lit and call it.
+* Compile with :
+ *   $ gcc -static -Os ibranch.c -o ibranch
  *
- * Compile with :
- *   $ gcc toy006-ibranch.c  -o toy006-ibranch
+ * Analyze it with:
+ *   $ manticore ibranch +
  *
- * Analize it with:
- *   $ python system.py example/toy006-ibranch +
+ *   - The character + at the argument will be replaced by a free symbolic byte
+ *
+ * Expected output:
+ * $ manticore ibranch +
+ * 2017-04-24 12:05:09,089: [13266] MAIN:INFO: Loading program: ['ibranch', '+']
+ * 2017-04-24 12:05:09,090: [13266] MAIN:INFO: Workspace: ./mcore_1DLM6g
+ * 2017-04-24 12:05:19,750: [13316][0] MEMORY:INFO: Reading 8 bytes from symbolic address <manticore.core.smtlib.expression.BitVecAnd object at 0x7f629e40b590>
+ * 2017-04-24 12:05:27,061: [13316][3] EXECUTOR:INFO: Generating testcase No. 1 for state No.3 - Program finished correctly
+ * 2017-04-24 12:05:28,577: [13316][5] EXECUTOR:INFO: Generating testcase No. 2 for state No.5 - Program finished correctly
+ *
+ *  Look at ./mcore_1DLM6g for results, you will find something like this:
+ *  $ cat *.stdout
+ *  Function g
+ *  Function f
+ *   - It found two finishing paths and explore both functions. -
+ *   
 */
 
 #include <stdio.h>
