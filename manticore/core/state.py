@@ -1,11 +1,8 @@
 from collections import OrderedDict
 
-from .executor import manager
+from .executor import TerminateState
 from .smtlib import solver
 from ..utils.helpers import issymbolic
-
-class AbandonState(Exception):
-    pass
 
 
 class State(object):
@@ -17,21 +14,9 @@ class State(object):
     :type model: Decree or Linux or Windows
     '''
 
-    # Class global counter
-    _state_count = manager.Value('i', 0)
-    _lock = manager.Lock()
-
-    @staticmethod
-    def get_new_id():
-        with State._lock:
-            ret = State._state_count.value
-            State._state_count.value += 1
-        return ret
-
     def __init__(self, constraints, model):
         self.model = model
         self.forks = 0
-        self.co = self.get_new_id()
         self.constraints = constraints
         self.model._constraints = constraints
         for proc in self.model.procs:
@@ -48,7 +33,7 @@ class State(object):
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.model),
                 {'visited': self.visited, 'last_pc': self.last_pc, 'forks': self.forks,
-                 'co': self.co, 'input_symbols': self.input_symbols,
+                 'input_symbols': self.input_symbols,
                  'branches': self.branches})
 
     @staticmethod
@@ -63,16 +48,11 @@ class State(object):
     def mem(self):
         return self.model.current.memory
 
-    @property
-    def name(self):
-        return 'state_%06d.pkl' % (self.co)
-
     def __enter__(self):
         assert self._child is None
         new_state = State(self.constraints.__enter__(), self.model)
         new_state.visited = set(self.visited)
         new_state.forks = self.forks + 1
-        new_state.co = State.get_new_id()
         new_state.input_symbols = self.input_symbols
         new_state.branches = self.branches
         self._child = new_state
@@ -107,7 +87,7 @@ class State(object):
 
         Note: This must be called from the Executor loop, or a :func:`~manticore.Manticore.hook`.
         '''
-        raise AbandonState
+        raise TerminateState("Abandoned state")
 
     def new_symbolic_buffer(self, nbytes, **options):
         '''Create and return a symbolic buffer of length `nbytes`. The buffer is
