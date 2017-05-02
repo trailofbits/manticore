@@ -5735,27 +5735,28 @@ class AMD64ABI(ABI):
         return self._cpu.RAX
 
     def syscall_arguments(self, count):
-        args = (self._cpu.RDI, self._cpu.RSI, self._cpu.RDX,
-                self._cpu.R10, self._cpu.R8, self._cpu.R9)
+        params = ('RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9')
 
-        assert count < len(args)
+        assert count < len(params)
 
-        return args[:count]
+        return params[:count]
 
     def syscall_write_result(self, result):
         self._cpu.RAX = result
 
     def funcall_arguments(self, count):
         # First 6 arguments go in registers, rest are popped from stack
-        args = [self._cpu.RDI, self._cpu.RSI, self._cpu.RDX,
-                self._cpu.RCX, self._cpu.R8, self._cpu.R9]
+        args = ['RDI', 'RSI', 'RDX', 'RCX', 'R8', 'R9']
+
         if count <= len(args):
             return args[:count]
         else:
             count = count - len(args)
 
+        base = self._cpu.RSP
+        bytewidth = self._cpu.address_bit_size / 8
         for i in range(count):
-            args.append(self._cpu.pop(self._cpu.address_bit_size))
+            args.append(self._cpu.RSP + (bytewidth * i))
 
         self._invocations.append(count)
 
@@ -5887,55 +5888,41 @@ class I386ABI(ABI):
         return self._cpu.EAX
 
     def syscall_arguments(self, count):
-        args = (self._cpu.EBX, self._cpu.ECX, self._cpu.EDX,
-                self._cpu.ESI, self._cpu.EDI, self._cpu.EBP)
+        args = ('EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP')
 
         assert count < len(args)
 
         return args[:count]
 
     def syscall_write_result(self, result):
-        self._cpu.EAX = result
+        if result is not None:
+            self._cpu.EAX = result
 
     def funcall_arguments(self, count, convention):
         # cdecl is default
         convention = convention or 'cdecl'
 
-        if convention in ('cdecl', 'stdcall'):
-            # Arguments are pushed left-to-right order
-            args = []
-            base = self._cpu.STACK + self._cpu.address_bit_size / 8
-            for i in range(count):
-                val = self._cpu.read_int(base + i*4, self._cpu.address_bit_size)
-                args.append(val)
-                #args.append(self._cpu.pop(self._cpu.address_bit_size))
-            # with stdcall, callee needs to clean up the arguments
-            self._invocations.append(count)
-            return tuple(args)
-        else:
-            raise NotImplementedError('Unsupported calling convention: {}'.format(convention))
+        assert convention in ('cdecl', 'stdcall')
+
+        # Arguments are pushed left-to-right order
+        # with stdcall, callee needs to clean up the arguments
+        self._invocations.append(count)
+        bytewidth = self._cpu.address_bit_size / 8
+        base = self._cpu.ESP + bytewidth
+        self._cpu.ESP += bytewidth * count
+        return tuple(base+bytewidth*i for i in range(count))
 
     def funcall_write_result(self, result, convention):
         convention = convention or 'cdecl'
         
-        if convention == 'cdecl':
+        if result is not None:
             self._cpu.EAX = result
-            self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
-        elif convention == 'stdcall':
-            self._cpu.EAX = result
-            self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
-            self._cpu.STACK += self._invocations.pop() * (self._cpu.address_bit_size / 8)
+        self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
 
-    def funcall_concretize_argument(self, idx, convention):
-        convention = convention or 'cdecl'
-
-        if convention in ('cdecl', 'stdcall'):
-            address = self._cpu.STACK + 4 + idx * (cpu.address_bit_size/8)
-            raise ConcretizeMemory(___, self._cpu.address_bit_size,
-                    "Concretizing function argument")
-        else:
-            raise NotImplementedError('Unsupported calling convention: {}'.format(convention))
-
+        written = self._invocations.pop()
+        if convention == 'stdcall':
+            bytewidth = self._cpu.address_bit_size / 8
+            self._cpu.ESP += written * bytewidth
 
 class I386Cpu(X86Cpu):
     #Config

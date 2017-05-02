@@ -267,30 +267,30 @@ class Armv7ABI(ABI):
 
     def syscall_arguments(self, count):
         assert count <= 6
-        args = []
-        for i in range(count):
-            args.append(self._cpu.read_register('R{}'.format(i)))
-        return tuple(args)
+        return tuple('R{}'.format(i) for i in range(count))
 
     def syscall_write_result(self, result):
-        self._cpu.R0 = result
+        if result is not None:
+            self._cpu.R0 = result
 
     def funcall_arguments(self, count, convention):
         # First four passed via R0-R3, then on stack
-        # TODO(yan): Assuming cdecl, ignore convention for now
-        args = [self._cpu.R0, self._cpu.R1, self._cpu.R2, self._cpu.R3]
-        if count <= len(args):
-            return args[:count]
+        reg_args = ('R0', 'R1', 'R2', 'R3')
+        if count <= len(reg_args):
+            return reg_args[:count]
         else:
-            count = count - len(args)
+            count = count - len(reg_args)
 
-        for i in range(count):
-            args.append(self._cpu.stack_pop())
+        bwidth = self._cpu.address_bit_size / 8
+        base = self._cpu.SP + bwidth
+        mem_args = tuple(base+bwidth*i for i in range(count))
+        base += count * bwidth
 
-        return args
+        return reg_args + mem_args
 
     def funcall_write_result(self, result, convention):
         self.R0 = result
+        #todo update SP
 
 class Armv7Cpu(Cpu):
     '''

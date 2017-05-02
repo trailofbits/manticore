@@ -200,12 +200,16 @@ class ABI(object):
         if inspect.ismethod(implementation):
             nargs -= 1
 
-        arguments = self.syscall_arguments(nargs)
-
         logger.debug("syscall: {}, args: {}".format(implementation.__name__,
             repr(arguments)))
 
-        result = implementation(*arguments)
+        regs = self.syscall_arguments(nargs)
+
+        arguments = [self._cpu.read_register(n) for n in regs]
+        try:
+            result = implementation(*arguments)
+        except ConcretizeArgument as e:
+            raise ConcretizeRegister(regs[e.argnum], "Concretizing for syscall")
 
         self.syscall_write_result(result)
 
@@ -224,11 +228,25 @@ class ABI(object):
         prefix_args = prefix_args or ()
 
         nargs = implementation.func_code.co_argcount - len(prefix_args)
-        arguments = prefix_args + self.funcall_arguments(nargs, convention)
+        argument_descriptors = self.funcall_arguments(nargs, convention)
+        argument_values = []
+        for src in argument_descriptors:
+            if isinstance(src, str):
+                argument_values.append(self._cpu.read_register(src))
+            else:
+                argument_values.append(self._cpu.read_int(src))
+
+        arguments = list(prefix_args) + argument_values
         try:
             result = implementation(*arguments)
         except ConcretizeArgument as e:
-            self.funcall_concretize_argument(e.argnum, convention)
+            src = argument_descriptors[e.argnum]
+            msg = 'Concretizing due to function call'
+            if isinstance(src, str):
+                raise ConcretizeRegister(src, msg)
+            else:
+                bwidth = self._cpu.address_bit_size / 8
+                raise ConcretizeMemory(size, bwidth, msg)
 
         self.funcall_write_result(result, convention)
 
@@ -253,11 +271,19 @@ class ABI(object):
 
     def funcall_arguments(self, count, convention):
         '''
-        Return `count` function arguments following Cpu's calling convention.
+        Return `count` tuples representing function arguments following Cpu's
+        calling convention.
+
+        Tuples are of the format:
+          ('type', value)
+
+        where type can be 'register' or 'memory'. If type is 'memory', the value
+        represents the address at which to acquire the parameter. If type is
+        'register', the value is used as is.
 
         :param int count: How many arguments to extract
         :param str convention: Calling convention being used. `None` for default
-        :return: tuple
+        :return: list[tuple]
         '''
         raise NotImplementedError
 
@@ -305,6 +331,7 @@ class Cpu(object):
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
+        self._decoded_pc = None
         self._icount = 0
         self._abi = None
 
