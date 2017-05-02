@@ -106,7 +106,7 @@ class SymbolicFile(object):
         symbols_cnt = 0
         data = path.read()
         size = len(data)
-        self.array = constraints.new_array(name=path.name, max_size=size)
+        self.array = constraints.new_array(name=path.name, index_max=size)
         for i in range(size):
             if data[i] != WILDCARD:
                 self.array[i] = data[i]
