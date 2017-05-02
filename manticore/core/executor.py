@@ -760,7 +760,7 @@ class Executor(object):
                     with current_state as new_state:
                         children.append(new_state.co)
                         new_state.add(e.constraint)
-                        self.newerror(new_state.model.current.PC)
+                        self.newerror(new_state.cpu.PC)
                         self.generate_testcase(new_state, "Symbolic Memory Exception: " + str(e))
 
                     logger.info("Forking state %d into states %r",current_state.co, children)
