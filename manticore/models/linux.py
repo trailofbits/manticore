@@ -1290,7 +1290,7 @@ class Linux(object):
 
     def sys_readv(self, cpu, fd, iov, count):
         '''
-        Works just like C{sys_read} except that data is read into multiple buffers (for Linux 64 bits).
+        Works just like C{sys_read} except that data is read into multiple buffers.
         :rtype: int
 
         :param cpu: current CPU.
@@ -1299,33 +1299,12 @@ class Linux(object):
         :param count: amount of C{iov} buffers to read from the file.
         :return: the amount of bytes read in total.
         '''
+        ptrsize = cpu.address_bit_size
+        sizeof_iovec = 2 * (ptrsize // 8)
         total = 0
         for i in xrange(0, count):
-            buf = cpu.read_int(iov + i * 16, 64)
-            size = cpu.read_int(iov + i * 16 + 8, 64)
-
-            data = self.files[fd].read(size)
-            total += len(data)
-            cpu.write_bytes(buf, data)
-            self.syscall_trace.append(("_read", fd, data))
-            logger.debug("READV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
-        return total
-
-    def sys_readv32(self, cpu, fd, iov, count):
-        '''
-        Works just like C{sys_read} except that data is read into multiple buffers (for Linux 32 bits).
-        :rtype: int
-
-        :param cpu: current CPU.
-        :param fd: the file descriptor of the file to read.
-        :param iov: the buffer where the the bytes to read are stored.
-        :param count: amount of C{iov} buffers to read from the file.
-        :return: the amount of bytes read in total.
-        '''
-        total = 0
-        for i in xrange(0, count):
-            buf = cpu.read_int(iov + i * 16, 32)
-            size = cpu.read_int(iov + i * 16 + 8, 32)
+            buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
+            size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             data = self.files[fd].read(size)
             total += len(data)
@@ -1336,7 +1315,7 @@ class Linux(object):
 
     def sys_writev(self, cpu, fd, iov, count):
         '''
-        Works just like C{sys_write} except that multiple buffers are written out (for Linux 64 bits).
+        Works just like C{sys_write} except that multiple buffers are written out.
         :rtype: int
         
         :param cpu: current CPU.
@@ -1345,41 +1324,18 @@ class Linux(object):
         :param count: amount of C{iov} buffers to write into the file.
         :return: the amount of bytes written in total.
         '''
+        ptrsize = cpu.address_bit_size
+        sizeof_iovec = 2 * (ptrsize // 8)
         total = 0
         for i in xrange(0, count):
-            buf = cpu.read_int(iov + i * 16, 64)
-            size = cpu.read_int(iov + i * 16 + 8, 64)
+            buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
+            size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             data = ""
             for j in xrange(0,size):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
             logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
             self.files[fd].write(data)
-            self.syscall_trace.append(("_write", fd, data))
-            total+=size
-        return total
-
-    def sys_writev32(self, cpu, fd, iov, count):
-        '''
-        Works just like C{sys_write} except that multiple buffers are written out. (32 bit version)
-        :rtype: int
-        
-        :param cpu: current CPU.
-        :param fd: the file descriptor of the file to write.
-        :param iov: the buffer where the the bytes to write are taken. 
-        :param count: amount of C{iov} buffers to write into the file.
-        :return: the amount of bytes written in total.
-        '''
-        total = 0
-        for i in xrange(0, count):
-            buf = cpu.read_int(iov + i * 8, 32)
-            size = cpu.read_int(iov + i * 8 + 4, 32)
-
-            data = ""
-            for j in xrange(0,size):
-                data += Operators.CHR(cpu.read_int(buf + j, 8))
-                self.files[fd].write(Operators.CHR(cpu.read_int(buf + j, 8)))
-            logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
             self.syscall_trace.append(("_write", fd, data))
             total+=size
         return total
@@ -1578,8 +1534,8 @@ class Linux(object):
                      0x0000007d: self.sys_mprotect,
                      0x0000008c: self.sys_setpriority,
                      0x0000008d: self.sys_getpriority,
-                     0x00000091: self.sys_readv32,
-                     0x00000092: self.sys_writev32,
+                     0x00000091: self.sys_readv,
+                     0x00000092: self.sys_writev,
                      0x000000c0: self.sys_mmap2,
                      0x000000c3: self.sys_stat32,
                      0x000000c5: self.sys_fstat,
