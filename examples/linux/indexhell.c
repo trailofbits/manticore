@@ -1,14 +1,14 @@
-/* This programs reads a M bytes from stdin, scramble them sum all. 
+/* This programs reads a M bytes from stdin, scrambles them, and sums them all. 
  * Only some buffers make the program print "You won!".
- * Increasing the number of symbolic bytes can generate patch constraints too hard to solve.
+ * Increasing the number of symbolic bytes can generate path constraints too hard to solve.
  *
  * Compile with :
  *   $ gcc -static -Os indexhell.c -o indexhell
  *
- * Analize it with:
+ * Analyze it with:
  *   $ manticore indexhell
  *
- *   - By default manticore will consider` all input of stdin symbolic
+ *   - By default manticore will consider all input of stdin symbolic
  *
  * 2017-04-24 12:46:46,227: [15880] MAIN:INFO: Loading program: ['indexhell']
  * 2017-04-24 12:46:46,228: [15880] MAIN:INFO: Workspace: ./mcore_72BTxZ

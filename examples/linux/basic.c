@@ -1,11 +1,11 @@
 /**
- * Symbolic values are read from stdin using standar libc calls. 
+ * Symbolic values are read from stdin using standard libc calls. 
  * Program checks if a binary packed integer at the input is 0x41 or less.
  *
  * Compile with :
  *   $ gcc -static -Os basic.c -o basic
  *
- * Analize it with:
+ * Analyze it with:
  *   $ manticore basic
  *
  *   - By default manticore will consider all input of stdin symbolic

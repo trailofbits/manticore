@@ -7,7 +7,7 @@
  * Compile with :
  *   $ gcc -static -Os sindex.c -o sindex
  *
- * Analize it with:
+ * Analyze it with:
  *   $ manticore sindex
  *
  *   - By default manticore will consider` all input of stdin symbolic
@@ -53,7 +53,7 @@
  *
  *  test_00000001.stdin contains a single solution for it.
  *  $ hexdump test_00000001.stdin 
- *  But there where 3 possible indexes! { 0xfe, 0xfc, 0xfd } !!
+ *  But there were 3 possible indexes! { 0xfe, 0xfc, 0xfd } !!
  *  The path constraint describing the full set of solutions can 
  *  be found at test_00000001.smt
 */

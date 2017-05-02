@@ -1,11 +1,11 @@
-/* The symbolic input is taken from command line argumet and it is
+/* The symbolic input is taken from command line argument and it is
  * used as an index in a function pointer table. Analysis should explore 
  * both functions.
  *
 * Compile with :
  *   $ gcc -static -Os ibranch.c -o ibranch
  *
- * Analize it with:
+ * Analyze it with:
  *   $ manticore ibranch +
  *
  *   - The character + at the argument will be replaced by a free symbolic byte

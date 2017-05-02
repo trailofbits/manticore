@@ -3,7 +3,7 @@
  * Compile with :
  *   $ gcc -static -Os arguments.c -o arguments
  *
- * Analize it with:
+ * Analyze it with:
  *   $ manticore arguments ++++++++++
  *
  *   - Note that the character + will be replaced by a symbolic byte

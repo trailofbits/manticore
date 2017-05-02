@@ -12,7 +12,7 @@ PROGRAM += '''
  * Compile with :
  *   $ gcc -static -Os crackme.c -o crackme
  *
- * Analize it with:
+ * Analyze it with:
  *   $ manticore crackme 
  *
  *   - By default manticore will consider all input of stdin symbolic

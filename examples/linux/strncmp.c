@@ -5,7 +5,7 @@
  * Compile with :
  *   $ gcc -static -Os strncmp.c -o strncmp
  *
- * Analize it with:
+ * Analyze it with:
  *  $ manticore strncmp
  *   - By default manticore will consider` all input of stdin symbolic
  *
