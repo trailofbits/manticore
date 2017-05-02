@@ -92,3 +92,6 @@ ENV/
 
 # macOS Finder files
 .DS_Store
+
+# PyCharm files
+.idea/

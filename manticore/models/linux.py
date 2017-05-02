@@ -1885,7 +1885,7 @@ class SLinux(Linux):
         self.symbolic_files = state['symbolic_files']
         super(SLinux, self).__setstate__(state)
 
-    #Distpatchers...
+    #Dispatchers...
     def syscall(self, cpu):
         try:
             return super(SLinux, self).syscall(cpu)
