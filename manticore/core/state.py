@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+<<<<<<< HEAD
 from .smtlib import solver
 from ..utils.helpers import issymbolic
 
@@ -55,6 +56,12 @@ class ForkState(Concretize):
 
 
 from ..utils.event import Signal
+=======
+from .executor import TerminateState
+from .smtlib import solver
+from ..utils.helpers import issymbolic
+
+>>>>>>> Wip refactoring
 
 class State(object):
     '''
@@ -65,8 +72,13 @@ class State(object):
     :type platform: Platform
     '''
 
+<<<<<<< HEAD
     def __init__(self, constraints, platform):
         self.platform = platform
+=======
+    def __init__(self, constraints, model):
+        self.model = model
+>>>>>>> Wip refactoring
         self.forks = 0
         self.constraints = constraints
         self.platform._constraints = constraints
@@ -82,8 +94,15 @@ class State(object):
         self._child = None
 
     def __reduce__(self):
+<<<<<<< HEAD
         return (self.__class__, (self.constraints, self.platform),
                 {'context': self.context, '_child': self._child})
+=======
+        return (self.__class__, (self.constraints, self.model),
+                {'visited': self.visited, 'last_pc': self.last_pc, 'forks': self.forks,
+                 'input_symbols': self.input_symbols,
+                 'branches': self.branches})
+>>>>>>> Wip refactoring
 
     @staticmethod
     def state_count():
@@ -95,7 +114,11 @@ class State(object):
 
     @property
     def mem(self):
+<<<<<<< HEAD
         return self.platform.current.memory
+=======
+        return self.model.current.memory
+>>>>>>> Wip refactoring
 
     def __enter__(self):
         assert self._child is None

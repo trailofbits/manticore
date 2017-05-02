@@ -32,9 +32,78 @@ def mgr_init():
 manager = SyncManager()
 manager.start(mgr_init)
 
-#module wide logger
 logger = logging.getLogger("EXECUTOR")
 
+class ExcecutorException(Exception):
+    def __init__(self, *args, **kwargs):
+        super(ExcecutorException, self).__init__(*args)
+        
+
+class TerminateState(ExcecutorException):
+    ''' Terminates state exploration '''
+    def __init__(self, *args, **kwargs):
+        super(TerminateState, self).__init__(*args, **kwargs)
+        self.testcase = kwargs.get('testcase', False)
+
+
+class Concretize(ExcecutorException):
+    ''' Base class for all exceptions that trigger the concretization 
+        of a symbolic value.
+
+        This will fork the state. 
+        Each child state will have expression constrained to each value.
+        Optional `setstate` function set the state to the actual concretized value.
+        #Fixme Doc.
+
+    '''
+    def __init__(self, state, message, expression, values=(), setstate=None, **kwargs):
+        assert policy in self._ValidPolicies, "Policy must be one of: %s"%(', '.join(self._ValidPolicies),)
+        super(Concretize, self).__init__("Concretize: {}".format(message), **kwargs)
+        self.state = state
+        self.expression = expression
+        self.setstate = setstate #FIXME better name for this
+        self.values = values
+
+
+class ForkState(Concretize):
+    ''' Specialized concretization class for Bool expressions. 
+        It tries True and False as concrete solutions.
+    '''
+    def __init__(self, state, message, expression, **kwargs):
+        assert isinstance(expression, Bool), 'Need a Bool to fork a state in two states'
+        super(ForkState, self).__init__(state, message, expression, values=(True, False), **kwargs)
+
+
+class ConcretizePolicy(Concretize):
+    ''' This uses a policy to sample solution space. Then concretize the expression to those values.
+    '''
+    _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
+    def __init__(self, state, message, expression, setstate=None, policy='ALL',  **kwargs):
+        assert policy in self._ValidPolicies, "Policy must be one of: %s"%(', '.join(self._ValidPolicies),)
+        message = "%s (Policy: %s)"%(message, policy)
+        values = state.concretize(expression, policy)
+        super(ConcretizePolicy, self).__init__(state, message, setstate=setstate, values=values, **kwargs)
+
+
+
+
+
+#Beging models
+#This should go into models/__init__.py or similar not here
+class SyscallNotImplemented(TerminateState):
+    ''' Exception raised when you try to call a not implemented
+        system call. Go to linux.py and add it!
+    '''
+    def __init__(self, *args, **kwargs):
+        super(SyscallNotImplemented, self).__init__(*args, testcase=True, **kwargs)
+
+class ProcessExit(TerminateState):
+    ''' The process has exited correctly '''
+    def __init__(self, code, *args, **kwargs):
+        kwargs['testcase'] = True
+        super(ProcessExit, self).__init__("Process exited correctly. Code: %s"%code, *args, **kwargs) #"Process exited correctly. Code: %s"%code, testcase=True, **kwargs)
+
+#End models
 
 def sync(f):
     """ Synchronization decorator. """
@@ -172,7 +241,7 @@ class Executor(object):
         return True
 
     ################################################
-    # Workspace filenames 
+    #workspace filenames and ids
     def _workspace_filename(self, filename):
         return os.path.join(self.workspace, filename)
 
@@ -228,7 +297,6 @@ class Executor(object):
         ''' Returns True if shutdown was requested '''
         return self._shutdown.is_set()
 
-
     ###############################################
     # Priority queue 
     @sync
@@ -281,6 +349,7 @@ class Executor(object):
 
             filesize = f.tell()
             f.flush()
+        return state_id
 
         #broadcast event
         self.will_backup_state(state, state_id)
@@ -433,8 +502,7 @@ class Executor(object):
 
                     # Allows to terminate manticore worker on user request
                     while not self.is_shutdown():
-                        # Announce that we're about to execute
-                        self.will_execute_state(current_state)
+
                         if not current_state.execute():
                             break
                     else:
@@ -464,6 +532,7 @@ class Executor(object):
                     self.will_terminate_state(current_state, e)
 
                     logger.info("Generic terminate state")
+
                     if e.testcase:
                         self.generate_testcase(current_state, str(e))
                     current_state = None
@@ -524,7 +593,6 @@ class Executor(object):
         with DelayedKeyboardInterrupt():
             #notify siblings we are about to stop this run
             self._stop_run()
-
 
         #Notify this worker is done (not sure it's needed)
         self.will_finish_run()

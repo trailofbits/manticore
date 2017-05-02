@@ -7,6 +7,10 @@ from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.memory import SMemory32
 from ..core.smtlib import *
+<<<<<<< HEAD:manticore/platforms/decree.py
+=======
+from ..core.executor import SyscallNotImplemented, ProcessExit, TerminateState
+>>>>>>> Wip refactoring:manticore/models/decree.py
 from ..utils.helpers import issymbolic
 from ..binary import CGCElf
 from ..binary import CGCGrr

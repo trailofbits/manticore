@@ -777,6 +777,10 @@ class Manticore(object):
             if timeout > 0:
                 t.cancel()
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> Wip refactoring
         if self.should_profile:
 
             class PstatsFormatted:
@@ -815,7 +819,10 @@ class Manticore(object):
 
 
 
+<<<<<<< HEAD
         self._dump_stats_callback()
+=======
+>>>>>>> Wip refactoring
 
         logger.info('Results dumped in %s', self.workspace)
         #logger.info('Instructions executed: %d', self._executor.count)
@@ -846,8 +853,17 @@ class Manticore(object):
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
+<<<<<<< HEAD
                     state.cpu.PC, program)
+<<<<<<< HEAD
             raise TerminateState()
+=======
+            raise AbandonState()
+=======
+                    state.cpu.pc, program)
+            raise TerminateState()
+>>>>>>> Wip refactoring
+>>>>>>> Wip refactoring
 
         #Everything is good add it.
         state.constraints.add(assertion)
