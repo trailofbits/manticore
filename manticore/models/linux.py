@@ -890,7 +890,7 @@ class Linux(object):
 
         auxv = {}
         auxv['AT_PHDR']     = load_addr+elf.header.e_phoff # Program headers for program 
-        auxv['AT_PHENT']    = elf.header.e_ehsize          # Size of program header entry 
+        auxv['AT_PHENT']    = elf.header.e_phentsize       # Size of program header entry
         auxv['AT_PHNUM']    = elf.header.e_phnum           # Number of program headers 
         auxv['AT_PAGESZ']   = cpu.memory.page_size         # System page size 
         auxv['AT_BASE']     = interpreter_base             # Base address of interpreter 
@@ -1466,7 +1466,7 @@ class Linux(object):
                  0x000000000000003f: self.sys_uname, 
                  0x00000000000000c9: self.sys_time,
                  0x00000000000000da: self.sys_set_tid_address,
-                 0x00000000000000da: self.sys_faccessat,
+                 0x000000000000010d: self.sys_faccessat,
                  0x0000000000000111: self.sys_set_robust_list,
                  0x00000000000000ca: self.sys_futex,
                  0x000000000000000d: self.sys_sigaction,
