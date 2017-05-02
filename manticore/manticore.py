@@ -578,7 +578,7 @@ class Manticore(object):
         '''
         self._executor.shutdown()
 
-    def _assertions_callback(self, state ):
+    def _assertions_callback(self, state):
         pc = state.cpu.PC
         if pc not in self._assertions:
             return
