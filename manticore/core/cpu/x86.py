@@ -1,7 +1,7 @@
 from capstone import *
 from capstone.x86 import *
 from .abstractcpu import Cpu, RegisterFile, Operand, SANE_SIZES, instruction
-from .abstractcpu import Interruption, Sysenter, Syscall
+from .abstractcpu import ConcretizeRegister, Interruption, Sysenter, Syscall
 import sys
 import struct
 import types
