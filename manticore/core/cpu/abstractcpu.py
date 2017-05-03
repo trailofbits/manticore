@@ -62,46 +62,13 @@ class ConcretizeRegister(CpuException):
     '''
     Raised when a symbolic register needs to be concretized.
     '''
-    def __init__(self, cpu, reg_name, policy='MINMAX'):
-        self.message = "Concretizing {}".format(reg_name)
+    def __init__(self, cpu, reg_name, message=None, policy='MINMAX'):
+        self.message = message if message else "Concretizing {}".format(reg_name)
+            
         self.cpu = cpu
         self.reg_name = reg_name
         self.policy = policy
 
-"""
-
-class ConcretizeMemory(ConcretizeWithPolicy):
-    '''
-    Raised when a symbolic memory location needs to be concretized.
-    '''
-    def __init__(self, state, address, size, policy='MINMAX'):
-        assert not issymbolic(address), 'Concretizing Symbolic address not supported'
-        message = "Concretizing {:d} bits at {:x}".format(size, address)
-        def setstate(state, value):
-            return state.cpu.write_int(address, value, size)
-        expression = state.cpu.read_int(address, size)
-        super(ConcretizeMemory, self).__init__(state, message,  
-                                                    expression=expression, 
-                                                    setstate=setstate,
-                                                    policy=policy)
-        #self.address = address
-        #self.size = size
-
-class ConcretizeArgument(ConcretizeWithPolicy):
-    '''
-    Raised when a symbolic argument needs to be concretized.
-    '''
-    def __init__(self, state, argnum, policy='MINMAX'):
-        message = "Concretizing argument #%d."%(argnum,)
-        super(ConcretizeArgument, self).__init__(state, message, policy)
-        self.argnum = argnum
-class SymbolicPCException(ConcretizeRegister):
-    '''
-    Raised when we attempt to execute from a symbolic location.
-    '''
-    def __init__(self):
-        super(SymbolicPCException, self).__init__("PC", "Can't execute from a symbolic address.", "ALL")
-"""
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 # This encapsulates how to access operands (regs/mem/immediates) for different CPUs
@@ -377,6 +344,8 @@ class SyscallAbi(Abi):
         '''
         raise NotImplementedError
 
+from ...utils.event import Signal
+
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
 class Cpu(object):
@@ -407,6 +376,12 @@ class Cpu(object):
         self._md.detail = True
         self._md.syntax = 0
         self.instruction = None
+
+        #events
+        self.will_read_register = Signal()
+        self.will_write_register = Signal()
+        self.will_read_memory = Signal()
+        self.will_write_memory = Signal()
 
     def __getstate__(self):
         state = {}
@@ -461,6 +436,7 @@ class Cpu(object):
         :param value: register value
         :type value: int or long or Expression
         '''
+        self.will_write_register(self, register, value)
         return self._regfile.write(register, value)
 
     def read_register(self, register):
@@ -471,7 +447,9 @@ class Cpu(object):
         :return: register value
         :rtype int or long or Expression
         '''
-        return self._regfile.read(register)
+        value = self._regfile.read(register)
+        self.will_read_register(self, register, value)
+        return value
 
     # Pythonic access to registers and aliases
     def __getattr__(self, name):
@@ -504,7 +482,7 @@ class Cpu(object):
     def memory(self):
         return self._memory
 
-    def write_int(self, where, expr, size=None):
+    def write_int(self, where, expression, size=None):
         '''
         Writes int to memory
 
@@ -516,7 +494,8 @@ class Cpu(object):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self.memory[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
+        self.will_write_memory(self, where, expression, size)
+        self.memory[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in xrange(0, size, 8)]
 
     def read_int(self, where, size=None):
         '''
@@ -533,6 +512,7 @@ class Cpu(object):
         data = self.memory[where:where+size/8]
         total_size = 8 * len(data)
         value = Operators.CONCAT(total_size, *map(Operators.ORD, reversed(data)))
+        self.will_read_memory(self, where, value, size)
         return value
 
 

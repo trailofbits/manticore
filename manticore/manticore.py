@@ -552,6 +552,128 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
 
+
+    def _backup_state_callback(self, state, state_id):
+        logger.debug("Backup state %r", state_id)
+
+    def _restore_state_callback(self, state, state_id):
+        state.cpu.will_read_register += self._read_register_callback
+        state.cpu.will_write_register += self._write_register_callback
+        state.cpu.will_read_memory += self._read_memory_callback
+        state.cpu.will_write_memory += self._write_memory_callback
+        #print "Restore state", state, state_id, state.cpu.will_read_register
+
+    def _terminate_state_callback(self, state, state_id):
+        logger.debug("Terminate state %r %r ", state, state_id)
+        state_visited = state.context.get('visited', set())
+        with self._executor.context() as context:
+            executor_visited = context.get('visited', set())
+            context['visited'] = executor_visited.union(state_visited)
+
+    def _fork_state_callback(self, state, expression, values):
+        logger.debug("About to backup state %r %r %r", state, expression, values)
+    def _read_register_callback(self, state, reg_name, value):
+        logger.debug("Read Register %r %r", reg_name, value)
+    def _write_register_callback(self, state, reg_name, value):
+        logger.debug("Write Register %r %r", reg_name, value)
+    def _read_memory_callback(self, state, address, value, size):
+        logger.debug("Read Memory %r %r %r", address, value, size)
+    def _write_memory_callback(self, state, address, value, size):
+        logger.debug("Write Memory %r %r %r", address, value, size)
+
+    def _execute_state_callback(self, state):
+        address = state.cpu.PC
+        state.context.setdefault('visited', set()).add(address)
+
+    def _generate_testcase_callback(self, state, testcase_id, message = 'Testcase generated'):
+        #Fix me spil this!
+        '''
+        Create a serialized description of a given state.
+        :param state: The state to generate information about
+        :param message: Accompanying message
+        '''
+        import StringIO
+        _getFilename = self._executor._workspace_filename
+        logger.debug("testcase",state, testcase_id, message)
+        test_number = testcase_id
+
+        logger.info("Generating testcase No. %d - %s",
+                test_number, message)
+
+        # Summarize state
+        output = StringIO.StringIO()
+        memories = set()
+
+        output.write("Command line:\n  " + ' '.join(sys.argv) + '\n')
+        output.write('Status:\n  {}\n'.format(message))
+        output.write('\n')
+
+        for cpu in filter(None, state.model.procs):
+            idx = state.model.procs.index(cpu)
+            output.write("================ PROC: %02d ================\n"%idx)
+
+            output.write("Memory:\n")
+            if hash(cpu.memory) not in memories:
+                for m in str(cpu.memory).split('\n'):
+                    output.write("  %s\n"%m)
+                memories.add(hash(cpu.memory))
+
+            output.write("CPU:\n{}".format(cpu))
+
+            if hasattr(cpu, "instruction") and cpu.instruction is not None:
+                i = cpu.instruction
+                output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
+            else:
+                output.write("  Instruction: {symbolic}\n")
+
+        with open(_getFilename('test_%08x.messages'%test_number),'a') as f:
+            f.write(output.getvalue())
+            output.close()
+
+        tracefile = 'test_{:08x}.trace'.format(test_number)
+        with open(_getFilename(tracefile), 'w') as f:
+            for pc in state.context['visited']:
+                f.write('0x{:08x}\n'.format(pc))
+
+        # Save constraints formula
+        smtfile = 'test_{:08x}.smt'.format(test_number)
+        with open(_getFilename(smtfile), 'wb') as f:
+            f.write(str(state.constraints))
+        
+        assert solver.check(state.constraints)
+        for symbol in state.input_symbols:
+            buf = solver.get_value(state.constraints, symbol)
+            file(_getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
+        
+        file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.model.syscall_trace))
+
+        stdout = ''
+        stderr = ''
+        for sysname, fd, data in state.model.syscall_trace:
+            if sysname in ('_transmit', '_write') and fd == 1:
+                stdout += ''.join(map(str, data))
+            if sysname in ('_transmit', '_write') and fd == 2:
+                stderr += ''.join(map(str, data))
+        file(_getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
+        file(_getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
+
+        # Save STDIN solution
+        stdin_file = 'test_{:08x}.stdin'.format(test_number)
+        with open(_getFilename(stdin_file), 'wb') as f:
+            try:
+                for sysname, fd, data in state.model.syscall_trace:
+                    if sysname not in ('_receive', '_read') or fd != 0:
+                        continue
+                    for c in data:
+                        f.write(chr(solver.get_value(state.constraints, c)))
+            except SolverException, e:
+                f.seek(0)
+                f.write("{SolverException}\n")
+                f.truncate()
+
+        return test_number
+
+        
     def run(self, timeout=0):
         '''
         Runs analysis.
@@ -564,9 +686,9 @@ class Manticore(object):
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
-        state = self._make_state(self._binary)
+        initial_state = self._make_state(self._binary)
 
-        self._executor = Executor(state,
+        self._executor = Executor(initial_state,
                                   workspace=self.workspace, 
                                   policy=self._policy, 
                                   dumpafter=self.dumpafter, 
@@ -577,14 +699,21 @@ class Manticore(object):
         
 
         if self._hooks:
-            self._executor.will_execute_pc += self._hook_callback
+            self._executor.will_executec += self._hook_callback
 
         if self._model_hooks:
-            self._executor.will_execute_pc += self._model_hook_callback
+            self._executor.will_execute += self._model_hook_callback
 
         if self._assertions:
-            self._executor.will_execute_pc += self._assertions_callback
+            self._executor.will_execute += self._assertions_callback
 
+
+        self._executor.will_backup_state += self._backup_state_callback
+        self._executor.will_restore_state += self._restore_state_callback
+        self._executor.will_fork_state += self._fork_state_callback
+        self._executor.will_execute_state += self._execute_state_callback
+        self._executor.will_terminate_state += self._terminate_state_callback
+        self._executor.will_generate_testcase += self._generate_testcase_callback
         self._time_started = time.time()
 
         self._running = True
@@ -602,6 +731,9 @@ class Manticore(object):
             if timeout > 0:
                 t.cancel()
 
+        with self._executor.context() as context:
+            print "Visited #%d"% len(context['visited'])
+            logger.info("Visited #%d", len(context['visited']))
 
         if self.should_profile:
 

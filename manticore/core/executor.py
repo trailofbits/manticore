@@ -24,6 +24,7 @@ from ..utils.event import Signal
 from ..utils.helpers import issymbolic
 from .state import Concretize, TerminateState
 from multiprocessing.managers import SyncManager
+from contextlib import contextmanager
 
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -77,10 +78,13 @@ class Executor(object):
         logger.debug("Workspace set: %s", self.workspace)
 
         # Signals
-        self.will_execute = Signal()
-        self.will_fork = Signal()
         self.will_finish_run = Signal()
+        self.will_execute_state = Signal()
+        self.will_fork_state = Signal()
+        self.will_backup_state = Signal()
+        self.will_restore_state = Signal()
         self.will_terminate_state = Signal()
+        self.will_generate_testcase = Signal()
 
         #The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
@@ -110,12 +114,18 @@ class Executor(object):
             state_id = self.backup(initial)
             self._states.append(state_id)
 
+    @contextmanager
+    def context(self):
+        ''' Executor context is a shared memory object. It needs a lock '''
+        with self._lock:
+            yield self._shared_context   
+
     def _load_workspace(self):
         #Browse workspace in case we are trying to continue a paused run
         #search paused analysis in workspace
         saved_states = []
         for filename in os.listdir(self.workspace):
-            if filename.startsswith('state_') and filename.endswith('.pkl'):
+            if filename.startswith('state_') and filename.endswith('.pkl'):
                 saved_states.append(self._getFilename(filename)) 
         
         #We didn't find any saved intermediate states in the workspace
@@ -258,6 +268,10 @@ class Executor(object):
 
             filesize = f.tell()
             f.flush()
+
+        #broadcast event
+        self.will_backup_state(state, state_id)
+
         return state_id
 
     def restore(self, state_id):
@@ -272,6 +286,10 @@ class Executor(object):
 
         logger.info("Removing state %s from storage", state_id)
         os.remove(filename)
+
+        #Broadcast event
+        self.will_restore_state(loaded_state, state_id)
+
         return loaded_state 
 
     def list(self):
@@ -290,7 +308,7 @@ class Executor(object):
 
         #broadcast test generation. This is the time for other modules 
         #to output whatever helps to understand this testcase
-        self.will_generate_testcase(state, testcase_id)
+        self.will_generate_testcase(state, testcase_id, message)
 
         # Save state
         start = time.time()
@@ -337,7 +355,7 @@ class Executor(object):
 
         #We are about to fork current_state
         with self._lock:
-            self.will_fork(state, expression, solutions)
+            self.will_fork_state(state, expression, solutions)
 
         #Build and enqueue a state for each solution 
         children = []
@@ -403,8 +421,7 @@ class Executor(object):
                     # Allows to terminate manticore worker on user request
                     while not self.is_shutdown():
                         # Announce that we're about to execute
-                        self.will_execute(current_state)
-
+                        self.will_execute_state(current_state)
                         if not current_state.execute():
                             break
 
@@ -428,8 +445,7 @@ class Executor(object):
                     #Notify this worker is done
                     self.will_terminate_state(current_state, e)
 
-
-                    logger.info("Generic terminatestate")
+                    logger.info("Generic terminate state")
                     if e.testcase:
                         self.generate_testcase(current_state, str(e))
                     current_state = None
@@ -478,7 +494,7 @@ class Executor(object):
             #notify siblings we are about to stop this run
             self._stop_run()
 
-        #Notify this worker is done
+        #Notify this worker is done (not sure it's needed)
         self.will_finish_run()
 
 

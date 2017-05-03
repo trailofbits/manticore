@@ -56,7 +56,7 @@ def rep(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8] 
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -84,7 +84,7 @@ def repe(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8] 
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -101,7 +101,7 @@ def repe(old_method):
                     FLAG = Operators.AND(cpu.ZF == False, count != 0) #true FLAG means loop
 
             #if issymbolic(FLAG):
-            #    raise ConcretizeRegister('ZF', "Concretizing ZF on REP instruction", policy='ALL')
+            #    raise ConcretizeRegister(cpu, 'ZF', "Concretizing ZF on REP instruction", policy='ALL')
 
             #if not FLAG:
             cpu.PC += Operators.ITEBV(cpu.address_bit_size, FLAG, 0, cpu.instruction.size)

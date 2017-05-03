@@ -54,6 +54,7 @@ class ForkState(Concretize):
         super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
 
 
+from ..utils.event import Signal
 
 class State(object):
     '''
@@ -63,17 +64,6 @@ class State(object):
     :param platform: Initial constraints on state
     :type platform: Platform
     '''
-
-    # Class global counter
-    _state_count = manager.Value('i', 0)
-    _lock = manager.Lock()
-
-    @staticmethod
-    def get_new_id():
-        with State._lock:
-            ret = State._state_count.value
-            State._state_count.value += 1
-        return ret
 
     def __init__(self, constraints, platform):
         self.platform = platform
@@ -93,9 +83,7 @@ class State(object):
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.platform),
-                {'visited': self.visited, 'last_pc': self.last_pc, 'forks': self.forks,
-                 'input_symbols': self.input_symbols,
-                 'branches': self.branches})
+                {'context': self.context, '_child': self._child})
 
     @staticmethod
     def state_count():
@@ -147,7 +135,7 @@ class State(object):
                                 setstate=setstate,
                                 policy=e.policy)
         except ProcessExit as e:
-            raise TerminateState(self, e.message)
+            raise TerminateState(self, message=e.message, testcase=True)
 
         #Remove when code gets stable?
         assert self.platform.constraints is self.platform.constraints
@@ -283,11 +271,3 @@ class State(object):
         '''
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
 
-    def record_branches(self, targets):
-        _, branch = self.last_pc
-        for target in targets:
-            key = (branch, target)
-            try:
-                self.branches[key] += 1
-            except KeyError:
-                self.branches[key] = 1
