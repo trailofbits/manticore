@@ -101,7 +101,7 @@ def repe(old_method):
                     FLAG = Operators.AND(cpu.ZF == False, count != 0) #true FLAG means loop
 
             #if issymbolic(FLAG):
-            #    raise ConcretizeRegister(cpu, 'ZF', "Concretizing ZF on REP instruction", policy='ALL')
+            #    raise ConcretizeRegister('ZF', "Concretizing ZF on REP instruction", policy='ALL')
 
             #if not FLAG:
             cpu.PC += Operators.ITEBV(cpu.address_bit_size, FLAG, 0, cpu.instruction.size)
@@ -823,7 +823,7 @@ class X86Cpu(Cpu):
                           0x1: (0x1c004122, 0x01c0003f, 0x0000003f, 0x00000000),
                           0x2: (0x1c004143, 0x01c0003f, 0x000001ff, 0x00000000),
                           0x3: (0x1c03c163, 0x03c0003f, 0x00000fff, 0x00000006)},
-                   0x7:        (0x00000000, 0xffffffff, 0x00000000, 0x00000000),
+                   0x7:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
                    0x8:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
                    0xb: { 0x0: (0x00000001, 0x00000002, 0x00000100, 0x00000005),
                           0x1: (0x00000004, 0x00000004, 0x00000201, 0x00000003)},

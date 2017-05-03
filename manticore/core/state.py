@@ -56,12 +56,10 @@ class ForkState(Concretize):
 
 
 from ..utils.event import Signal
-=======
 from .executor import TerminateState
 from .smtlib import solver
 from ..utils.helpers import issymbolic
 
->>>>>>> Wip refactoring
 
 class State(object):
     '''
@@ -72,13 +70,8 @@ class State(object):
     :type platform: Platform
     '''
 
-<<<<<<< HEAD
-    def __init__(self, constraints, platform):
-        self.platform = platform
-=======
     def __init__(self, constraints, model):
         self.model = model
->>>>>>> Wip refactoring
         self.forks = 0
         self.constraints = constraints
         self.platform._constraints = constraints
@@ -94,15 +87,8 @@ class State(object):
         self._child = None
 
     def __reduce__(self):
-<<<<<<< HEAD
         return (self.__class__, (self.constraints, self.platform),
                 {'context': self.context, '_child': self._child})
-=======
-        return (self.__class__, (self.constraints, self.model),
-                {'visited': self.visited, 'last_pc': self.last_pc, 'forks': self.forks,
-                 'input_symbols': self.input_symbols,
-                 'branches': self.branches})
->>>>>>> Wip refactoring
 
     @staticmethod
     def state_count():
@@ -110,15 +96,11 @@ class State(object):
 
     @property
     def cpu(self):
-        return self.platform.current
+        return self.model.current
 
     @property
     def mem(self):
-<<<<<<< HEAD
-        return self.platform.current.memory
-=======
         return self.model.current.memory
->>>>>>> Wip refactoring
 
     def __enter__(self):
         assert self._child is None
@@ -135,8 +117,9 @@ class State(object):
         self._child = None
 
     def execute(self):
+        trace_item = (self.model._current, self.cpu.PC)
         try:
-            result = self.platform.execute()
+            result = self.model.execute()
 
         #Instead of State importing SymbolicRegisterException and SymbolicMemoryException 
         # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ?? 
@@ -157,12 +140,12 @@ class State(object):
                                 expression=expression, 
                                 setstate=setstate,
                                 policy=e.policy)
-        except Exception as e:
-            print e
-            raise TerminateState(self, message=str(e), testcase=True)
+        except ProcessExit as e:
+            raise TerminateState(self, e.message)
 
         #Remove when code gets stable?
-        assert self.platform.constraints is self.platform.constraints
+        assert self.model.constraints is self.constraints
+        assert self.mem.constraints is self.constraints
 
     def constrain(self, constraint):
         '''Constrain state.
@@ -247,9 +230,6 @@ class State(object):
         return data
 
     def concretize(self, symbolic, policy, maxcount=100):
-        ''' This finds a set of solutions for symbolic using policy.
-            This raises TooManySolutions if more solutions than maxcount 
-        '''
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self.constraints, symbolic)
@@ -298,3 +278,11 @@ class State(object):
         '''
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
 
+    def record_branches(self, targets):
+        _, branch = self.last_pc
+        for target in targets:
+            key = (branch, target)
+            try:
+                self.branches[key] += 1
+            except KeyError:
+                self.branches[key] = 1

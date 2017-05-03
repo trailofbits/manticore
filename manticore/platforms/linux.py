@@ -1,5 +1,3 @@
-
-
 import fcntl
 import errno
 import os, struct
@@ -8,16 +6,13 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
-from ..platforms.platform import Platform
-#Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 import logging
 import random
 from ..core.cpu.arm import *
 from ..core.executor import SyscallNotImplemented, ProcessExit
-logger = logging.getLogger("PLATFORM")
+logger = logging.getLogger("MODEL")
 
-from .system import *
 
 class RestartSyscall(Exception):
     pass
@@ -30,6 +25,13 @@ def perms_from_elf(elf_flags):
 
 def perms_from_protflags(prot_flags):
     return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
+
+class SymbolicSyscallArgument(Exception):
+    def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
+        self.reg_num = reg_num
+        self.message = message
+        self.policy = policy
+        super(SymbolicSyscallArgument, self).__init__(message)
 
 
 class File(object):
@@ -95,6 +97,7 @@ class SymbolicFile(object):
             path = File(path, mode)
         assert isinstance(path, File)
 
+        #self._constraints = weakref.ref(constraints)
         WILDCARD = '+'
 
         symbols_cnt = 0
@@ -250,20 +253,20 @@ class Socket(object):
         return len(buf)
 
 
-class Linux(Platform):
+class Linux(object):
     '''
-    A simple Linux Operating System Platform.
+    A simple Linux Operating System Model.
     This class emulates the most common Linux system calls
     '''
 
     def __init__(self, program, argv=None, envp=None):
         '''
-        Builds a Linux OS platform
+        Builds a Linux OS model
         :param string program: The path to ELF binary
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         '''
-        super(Linux, self).__init__(program)
+
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
@@ -297,10 +300,7 @@ class Linux(Platform):
 
         #Load process and setup socketpairs
         arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[ELFFile(file(program)).get_machine_arch()]
-        cpu = self._mk_proc(arch)
-        self.procs = [cpu]
-        self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
-        self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
+        self.procs = [self._mk_proc(arch)]
 
         self._current = 0
         self.load(program)
@@ -359,8 +359,6 @@ class Linux(Platform):
         state['auxv'] = self.auxv
         state['program'] = self.program
         state['syscall_arg_regs'] = self.syscall_arg_regs
-        state['functionabi'] = self._function_abi
-        state['syscallabi'] = self._syscall_abi
         if hasattr(self, '_arm_tls_memory'):
             state['_arm_tls_memory'] = self._arm_tls_memory
         return state
@@ -409,8 +407,6 @@ class Linux(Platform):
         self.auxv = state['auxv']
         self.program = state['program']
         self.syscall_arg_regs = state['syscall_arg_regs']
-        self._function_abi = state['functionabi']
-        self._syscall_abi = state['syscallabi']
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
 
@@ -944,6 +940,7 @@ class Linux(Platform):
     def _is_open(self, fd):
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
+
     def sys_lseek(self, fd, offset, whence):
         '''
         lseek - reposition read/write file offset
@@ -1389,7 +1386,7 @@ class Linux(Platform):
         #self.procs[procid] = None
         logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
-            raise ProcessExit('Process exited correctly. Code: {}'.format(error_code))
+            raise ProcessExit(error_code)
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
@@ -1485,13 +1482,20 @@ class Linux(Platform):
 
                 }
 
-        index = self._syscall_abi.syscall_number()
+        index, arguments, writeResult  = self.current.get_syscall_description()
 
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
 
-        return self._syscall_abi.invoke(syscalls[index])
+        func = syscalls[index]
 
+        logger.debug("SYSCALL64: %s %r ", func.func_name
+                                    , arguments[:func.func_code.co_argcount])
+        nargs = func.func_code.co_argcount
+
+        result = func(*arguments[:nargs-1])
+        writeResult(result)
+        return result
 
     def int80(self):
         ''' 
@@ -1533,13 +1537,19 @@ class Linux(Platform):
                      0x00000014: self.sys_getpid,
                      0x000f0005: self.sys_ARM_NR_set_tls,
                     }
-
-        index = self._syscall_abi.syscall_number()
+        index, arguments, writeResult  = self.current.get_syscall_description()
 
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
+        func = syscalls[index]
 
-        return self._syscall_abi.invoke(syscalls[index])
+        logger.debug("int80: %s %r ", func.func_name
+                                    , arguments[:func.func_code.co_argcount])
+        nargs = func.func_code.co_argcount
+
+        result = func(*arguments[:nargs-1])
+        writeResult(result)
+        return result
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
@@ -1821,13 +1831,13 @@ class Linux(Platform):
 
 class SLinux(Linux):
     '''
-    A symbolic extension of a Decree Operating System Platform.
+    A symbolic extension of a Decree Operating System Model.
     '''
     def __init__(self, constraints, programs, argv, envp, symbolic_random=None, symbolic_files=()):
         '''
         Builds a symbolic extension of a Decree OS
         :param constraints: a constraints.
-        :param mem: memory for this platform.
+        :param mem: memory for this model.
         '''
         self._constraints = ConstraintSet()
         self.random = 0
@@ -1839,7 +1849,6 @@ class SLinux(Linux):
             mem = SMemory32(self.constraints)
         else:
             mem = SMemory64(self.constraints)
-
         return CpuFactory.get_cpu(mem, arch)
 
     @property
@@ -1868,7 +1877,7 @@ class SLinux(Linux):
         except SymbolicSyscallArgument, e:
             self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(cpu, reg_name, e.message, e.policy)
+            raise ConcretizeRegister(reg_name,e.message,e.policy)
 
     def int80(self):
         try:
@@ -1876,21 +1885,21 @@ class SLinux(Linux):
         except SymbolicSyscallArgument, e:
             self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(cpu, reg_name, e.message, e.policy)
+            raise ConcretizeRegister(reg_name,e.message,e.policy)
 
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise ConcretizeSyscallArgument(0)
+            raise SymbolicSyscallArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise ConcretizeSyscallArgument(1)
+            raise SymbolicSyscallArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise ConcretizeSyscallArgument(2)
+            raise SymbolicSyscallArgument(2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
@@ -2012,15 +2021,15 @@ class SLinux(Linux):
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise ConcretizeSyscallArgument(0)
+            raise SymbolicSyscallArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise ConcretizeSyscallArgument(1)
+            raise SymbolicSyscallArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise ConcretizeSyscallArgument(2)
+            raise SymbolicSyscallArgument(2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
 

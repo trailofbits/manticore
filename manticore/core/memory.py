@@ -3,7 +3,7 @@ from weakref import WeakValueDictionary
 from cStringIO import StringIO
 from .smtlib import *
 import logging
-from ..utils.mappings import _mmap, _munmap
+from .mappings import _mmap, _munmap
 from ..utils.helpers import issymbolic
 
 logger = logging.getLogger('MEMORY')
@@ -31,27 +31,14 @@ class InvalidMemoryAccess(MemoryException):
         self.mode = mode
         super(InvalidMemoryAccess, self, ).__init__('Invalid mode trying to access memory in mode {}'.format(mode), address)
 
-class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
     def __init__(self, cause, address, size, constraint):
-        super(InvalidSymbolicMemoryAccess, self, ).__init__(cause, address)
+        super(SymbolicMemoryException, self, ).__init__(cause, address)
         #the crashing constraint you need to assert 
         self.constraint = constraint 
         self.size = size
 
     def __str__(self):
-        return '%s <%s>'%(self.cause, repr(self.address))
-
-
-class ConcretizeMemory(MemoryException):
-    '''
-    Raised when a symbolic memory cell needs to be concretized.
-    '''
-    def __init__(self, mem, address, size, policy='MINMAX'):
-        self.message = "Concretizing memory address {} size {}".format(address, size)
-        self.mem = mem
-        self.address = address
-        self.size = size
-        self.policy = policy
+        return '%s <%s>'%(self.cause, issymbolic(self.address) and repr(self.address) or '%08x'%self.address)
 
 class Map(object):
     '''
@@ -403,7 +390,6 @@ class Memory(object):
             self._maps = set(maps)
         self._page2map = WeakValueDictionary()   #{page -> ref{MAP}}
         self._callbacks = {}
-        self._recording_stack = []
         for m in self._maps:
             for i in range(self._page(m.start), self._page(m.end)):
                 assert i not in self._page2map
@@ -788,40 +774,6 @@ class Memory(object):
 
         return result
 
-
-    def push_record_writes(self):
-        '''
-        Begin recording all writes. Retrieve all writes with `pop_record_writes()`
-        '''
-        self._recording_stack.append([])
-
-    def pop_record_writes(self):
-        '''
-        Stop recording trace and return a `list[(address, value)]` of all the writes
-        that occurred, where `value` is of type list[str]. Can be called without
-        intermediate `pop_record_writes()`.
-
-        For example::
-
-            mem.push_record_writes()
-                mem.write(1, 'a')
-                mem.push_record_writes()
-                    mem.write(2, 'b')
-                mem.pop_record_writes()  # Will return [(2, 'b')]
-            mem.pop_record_writes()  # Will return [(1, 'a'), (2, 'b')]
-
-        Multiple writes to the same address will all be included in the trace in the
-        same order they occurred.
-
-        :return: list[tuple]
-        '''
-
-        lst = self._recording_stack.pop()
-        # Append the current list to a previously-started trace.
-        if self._recording_stack:
-            self._recording_stack[-1].extend(lst)
-        return lst
-
     def write(self, addr, buf):
         size = len(buf)
         if not self.access_ok(slice(addr, addr + size), 'w'):
@@ -829,10 +781,6 @@ class Memory(object):
         assert size > 0
         stop = addr + size
         start = addr
-
-        if self._recording_stack:
-            self._recording_stack[-1].append((addr, buf))
-
         while addr < stop:
             m = self.map_containing(addr)
             size = min(m.end-addr, stop-addr)
@@ -943,7 +891,7 @@ class SMemory(Memory):
                             crashing_condition = Operators.AND(Operators.OR( (address+size).ult(start), address.uge(end) ), crashing_condition)
 
                 if solver.can_be_true(self.constraints, crashing_condition):
-                    raise InvalidSymbolicMemoryAccess('No access reading symbolic', address, size, crashing_condition)
+                    raise SymbolicMemoryException('No access reading symbolic', address, size, crashing_condition)
 
 
                 #INCOMPLETE Result! We could also fork once for every map
@@ -963,7 +911,7 @@ class SMemory(Memory):
                     crashing_condition = Operators.OR(address == base, crashing_condition)
 
             if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess('No access reading symbolic', address, size, crashing_condition)
+                raise SymbolicMemoryException('No access reading symbolic', address, size, crashing_condition)
 
             condition = False
             for base in solutions:
@@ -1015,7 +963,7 @@ class SMemory(Memory):
                     crashing_condition = Operators.OR(address == base, crashing_condition)
 
             if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess('No access writing symbolic', address, size, crashing_condition)
+                raise SymbolicMemoryException('No access writing symbolic', address, size, crashing_condition)
 
             for offset in xrange(size):
                 for base in solutions:

@@ -32,6 +32,7 @@ def mgr_init():
 manager = SyncManager()
 manager.start(mgr_init)
 
+
 logger = logging.getLogger("EXECUTOR")
 
 class ExcecutorException(Exception):
@@ -104,6 +105,7 @@ class ProcessExit(TerminateState):
         super(ProcessExit, self).__init__("Process exited correctly. Code: %s"%code, *args, **kwargs) #"Process exited correctly. Code: %s"%code, testcase=True, **kwargs)
 
 #End models
+
 
 def sync(f):
     """ Synchronization decorator. """
@@ -185,25 +187,12 @@ class Executor(object):
             state_id = self.backup(initial)
             self._states.append(state_id)
 
-    @contextmanager
-    def context(self):
-        ''' Executor context is a shared memory object. All workers share this. 
-            It needs a lock. Its used like this:
-
-            with executor.context() as context:
-                vsited = context['visited']
-                visited.append(state.cpu.PC)
-                context['visited'] = visited
-        '''
-        with self._lock:
-            yield self._shared_context   
-
     def _load_workspace(self):
-        #Browse and load states in a workspace in case we are trying to 
-        # continue from paused run
+        #Browse workspace in case we are trying to continue a paused run
+        #search paused analysis in workspace
         saved_states = []
         for filename in os.listdir(self.workspace):
-            if filename.startswith('state_') and filename.endswith('.pkl'):
+            if filename.startsswith('state_') and filename.endswith('.pkl'):
                 saved_states.append(self._getFilename(filename)) 
         
         #We didn't find any saved intermediate states in the workspace
@@ -253,17 +242,13 @@ class Executor(object):
         filename = 'test_%06d.pkl'%state_id
         return self._workspace_filename(filename)
 
-    ################################################
-    #Shared counters 
     @sync
     def _new_state_id(self):
-        ''' This gets an uniq shared id for a new state '''
         self._state_count.value += 1
         return self._state_count.value
 
     @sync
     def _new_testcase_id(self):
-        ''' This gets an uniq shared id for a new testcase '''
         self._test_count.value += 1
         return self._test_count.value
 
@@ -296,6 +281,7 @@ class Executor(object):
     def is_shutdown(self):
         ''' Returns True if shutdown was requested '''
         return self._shutdown.is_set()
+
 
     ###############################################
     # Priority queue 
@@ -338,6 +324,7 @@ class Executor(object):
         state_filename = self._state_filename(state_id)
         logger.debug("Saving state %d to file %s", state_id, state_filename)
         with open(state_filename, 'w+') as f:
+            print dir(f), f.name
             try:
                 f.write(cPickle.dumps(state, 2))
             except RuntimeError:
@@ -349,11 +336,6 @@ class Executor(object):
 
             filesize = f.tell()
             f.flush()
-        return state_id
-
-        #broadcast event
-        self.will_backup_state(state, state_id)
-
         return state_id
 
     def restore(self, state_id):
@@ -368,10 +350,6 @@ class Executor(object):
 
         logger.info("Removing state %s from storage", state_id)
         os.remove(filename)
-
-        #Broadcast event
-        self.will_restore_state(loaded_state, state_id)
-
         return loaded_state 
 
     def list(self):
@@ -390,7 +368,7 @@ class Executor(object):
 
         #broadcast test generation. This is the time for other modules 
         #to output whatever helps to understand this testcase
-        self.will_generate_testcase(state, testcase_id, message)
+        self.will_generate_testcase(state, testcase_id)
 
         # Save state
         start = time.time()
@@ -428,6 +406,7 @@ class Executor(object):
         
         '''
         assert isinstance(expression, Expression)
+        print setstate, dir(setstate)
 
         if setstate is None:
             setstate = lambda x,y: None
@@ -442,8 +421,8 @@ class Executor(object):
         #Build and enqueue a state for each solution 
         children = []
         for new_value in solutions:
-            with state as new_state:
-                new_state.add(expression == new_value, check=False) #We already know it's sat
+            with current_state as new_state:
+                new_state.add(symbolic == new_value, check=False) #We already know it's sat
                 #and set the PC of the new state to the concrete pc-dest
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value) 
@@ -453,9 +432,12 @@ class Executor(object):
                 self.put(state_id)
                 #maintain a list of childres for logging purpose
                 children.append(state_id)
-        
+
+
         logger.debug("Forking current state into states %r",children)
-        return None
+        current_state = None
+
+        return current_state
 
     def run(self):
         '''
@@ -500,24 +482,24 @@ class Executor(object):
 
                 try:
 
-                    # Allows to terminate manticore worker on user request
-                    while not self.is_shutdown():
+                    # allow us to terminate manticore processes
+                    while not self.isShutdown():
+                        # Make sure current instruction is decoded so that hooks can access it
+                        current_state.cpu.decode_instruction(current_state.cpu.PC)
+
+                        # Announce that we're about to execute
+                        self.will_execute_pc(current_state)
 
                         if not current_state.execute():
                             break
-                    else:
-                        #Notify this worker is done
-                        self.will_terminate_state(current_state, 'Shutdown')
-                        current_state = None
-
 
                 #Handling Forking and terminating exceptions
-                except Concretize as e:
-                    #expression
+                except ForkState as e:
+                    #symbol
                     #policy
                     #setstate()
 
-                    logger.info("Generic state fork on condition")
+                    logger.debug("Generic state fork on condition")
                     self.fork(current_state, e.expression, e.policy, e.setstate)
                     current_state = None
 
@@ -527,7 +509,6 @@ class Executor(object):
                     #self.generate_testcase(current_state, "Invalid PC Exception" + str(e))
                     #self.generate_testcase(current_state, "Program finished correctly")
                     #logger.error("Syscall not implemented: %s", str(e))
-
                     #Notify this worker is done
                     self.will_terminate_state(current_state, e)
 
@@ -544,28 +525,17 @@ class Executor(object):
                     print "*** print_exc:"
                     traceback.print_exc()
 
-                    #Notify this worker is done
-                    self.will_terminate_state(current_state, e)
-
                     if solver.check(current_state.constraints):
                         self.generate_testcase(current_state, "Solver failed" + str(e))
                     current_state = None
 
             except KeyboardInterrupt as e:
                 logger.error("Interrupted!")
-                #Notify this worker is done
-                self.will_terminate_state(current_state, e)
-
                 logger.setState(None)
                 current_state = None
                 break
 
             except AssertionError as e:
-
-                #Notify this worker is done
-                self.will_terminate_state(current_state, e)
-
-
                 import traceback
                 trace = traceback.format_exc()
                 logger.error("Failed an internal assertion: %s\n%s", str(e), trace )
@@ -586,15 +556,13 @@ class Executor(object):
                 logger.error("Exception: %s\n%s", str(e), trace)
                 for log in trace.splitlines():
                     logger.error(log) 
-                #Notify this worker is done
-                self.will_terminate_state(current_state, e)
                 current_state = None
 
         with DelayedKeyboardInterrupt():
             #notify siblings we are about to stop this run
             self._stop_run()
 
-        #Notify this worker is done (not sure it's needed)
+        #Notify this worker is done
         self.will_finish_run()
 
 
