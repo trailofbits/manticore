@@ -5744,27 +5744,31 @@ class AMD64ABI(ABI):
     def syscall_write_result(self, result):
         self._cpu.RAX = result
 
-    def funcall_arguments(self, count):
+    def funcall_arguments(self, count, convention):
         # First 6 arguments go in registers, rest are popped from stack
-        args = ['RDI', 'RSI', 'RDX', 'RCX', 'R8', 'R9']
+        reg_args = ['RDI', 'RSI', 'RDX', 'RCX', 'R8', 'R9']
 
-        if count <= len(args):
-            return args[:count]
+        if count <= len(reg_args):
+            return reg_args[:count]
         else:
-            count = count - len(args)
+            count = count - len(reg_args)
 
-        base = self._cpu.RSP
-        bytewidth = self._cpu.address_bit_size / 8
-        for i in range(count):
-            args.append(self._cpu.RSP + (bytewidth * i))
+        bwidth = self._cpu.address_bit_size / 8
+        base = self._cpu.RSP - count * bwidth
+        mem_args = tuple(base+bwidth*i for i in range(count))
 
-        self._invocations.append(count)
-
-        return args
+        return reg_args + mem_args
 
     def funcall_write_result(self, result):
         # XXX(yan): Can also return in rdx
-        self._cpu.RAX = result
+        if result is not None:
+            self._cpu.RAX = result
+        self._cpu.RIP = self._cpu.pop(self._cpu.address_bit_size)
+
+    def funcall_epilog(self, convention, nargs):
+        pass
+
+        
 
 
 class AMD64Cpu(X86Cpu):
@@ -5882,7 +5886,6 @@ class I386ABI(ABI):
 
     def __init__(self, cpu):
         super(I386ABI, self).__init__(cpu)
-        self._invocations = []
 
     def syscall_number(self):
         return self._cpu.EAX
@@ -5895,8 +5898,7 @@ class I386ABI(ABI):
         return args[:count]
 
     def syscall_write_result(self, result):
-        if result is not None:
-            self._cpu.EAX = result
+        self._cpu.EAX = result
 
     def funcall_arguments(self, count, convention):
         # cdecl is default
@@ -5906,23 +5908,23 @@ class I386ABI(ABI):
 
         # Arguments are pushed left-to-right order
         # with stdcall, callee needs to clean up the arguments
-        self._invocations.append(count)
-        bytewidth = self._cpu.address_bit_size / 8
-        base = self._cpu.ESP + bytewidth
-        self._cpu.ESP += bytewidth * count
-        return tuple(base+bytewidth*i for i in range(count))
+        bwidth = self._cpu.address_bit_size / 8
+        base = self._cpu.ESP - count * bwidth # + bwidth
+        return tuple(base+bwidth*i for i in range(count))
 
-    def funcall_write_result(self, result, convention):
-        convention = convention or 'cdecl'
-        
+    def funcall_write_result(self, result):
         if result is not None:
             self._cpu.EAX = result
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
 
-        written = self._invocations.pop()
+    def funcall_epilog(self, convention, nargs):
+        convention = convention or 'cdecl'
+
+        # Function only cleans up itself with stdcall
         if convention == 'stdcall':
             bytewidth = self._cpu.address_bit_size / 8
-            self._cpu.ESP += written * bytewidth
+            self._cpu.ESP += nargs * bytewidth
+        
 
 class I386Cpu(X86Cpu):
     #Config

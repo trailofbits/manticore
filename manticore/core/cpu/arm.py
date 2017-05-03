@@ -261,6 +261,7 @@ class Armv7ABI(ABI):
     #  syscall # is in R7
     #  arguments are passed in R0-R6
     #  retval is passed in R0
+    # TODO(yan): Stack alignment
 
     def syscall_number(self):
         return self._cpu.R7
@@ -270,8 +271,7 @@ class Armv7ABI(ABI):
         return tuple('R{}'.format(i) for i in range(count))
 
     def syscall_write_result(self, result):
-        if result is not None:
-            self._cpu.R0 = result
+        self._cpu.R0 = result
 
     def funcall_arguments(self, count, convention):
         # First four passed via R0-R3, then on stack
@@ -282,15 +282,20 @@ class Armv7ABI(ABI):
             count = count - len(reg_args)
 
         bwidth = self._cpu.address_bit_size / 8
-        base = self._cpu.SP + bwidth
-        mem_args = tuple(base+bwidth*i for i in range(count))
-        base += count * bwidth
+        self._cpu.SP -= count * bwidth
+        mem_args = tuple(self._cpu.SP+bwidth*i for i in range(count))
 
         return reg_args + mem_args
 
-    def funcall_write_result(self, result, convention):
-        self.R0 = result
-        #todo update SP
+    def funcall_epilog(self, convention, nargs):
+        bwidth = self._cpu.address_bit_size / 8
+        count = nargs - 4 # First four were passed in registers
+        self._cpu.SP += count * bwidth
+
+    def funcall_write_result(self, result):
+        if result is not None:
+            self._cpu.R0 = result
+        self._cpu.PC = self._cpu.LR 
 
 class Armv7Cpu(Cpu):
     '''
@@ -319,6 +324,7 @@ class Armv7Cpu(Cpu):
         state['_last_flags'] = self._last_flags
         state['_force_next'] = self._force_next
         return state
+
 
     def __setstate__(self, state):
         super(Armv7Cpu, self).__setstate__(state)
