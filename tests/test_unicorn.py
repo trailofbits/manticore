@@ -3,8 +3,8 @@ import struct
 from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
-from manticore.core.cpu.abstractcpu import ConcretizeMemory, ConcretizeRegister
-from manticore.core.memory import Memory32, SMemory32
+from manticore.core.cpu.abstractcpu import ConcretizeRegister
+from manticore.core.memory import ConcretizeMemory, Memory32, SMemory32
 from manticore.core.executor import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
 from manticore.models import linux

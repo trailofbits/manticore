@@ -29,7 +29,7 @@ class MemoryException(Exception):
 class InvalidMemoryAccess(MemoryException):
     def __init__(self, address, mode):
         self.mode = mode
-        super(InvalidMemoryAccess, self, ).__init__('Invalid mode trying to access memory in mode {}'.cormat(mode), address)
+        super(InvalidMemoryAccess, self, ).__init__('Invalid mode trying to access memory in mode {}'.format(mode), address)
 
 class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
     def __init__(self, cause, address, size, constraint):
