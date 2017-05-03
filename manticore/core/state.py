@@ -1,8 +1,58 @@
 from collections import OrderedDict
 
-from .executor import TerminateState
 from .smtlib import solver
 from ..utils.helpers import issymbolic
+
+#import exceptions
+from .cpu.abstractcpu import ConcretizeRegister
+from .memory import ConcretizeMemory
+from ..models.system import *
+
+class StateException(Exception):
+    ''' All state related exceptions '''
+    def __init__(self, *args, **kwargs):
+        super(StateException, self).__init__(*args)
+        
+
+class TerminateState(StateException):
+    ''' Terminates current state exploration '''
+    def __init__(self, *args, **kwargs):
+        super(TerminateState, self).__init__(*args, **kwargs)
+        self.testcase = kwargs.get('testcase', False)
+
+
+class Concretize(StateException):
+    ''' Base class for all exceptions that trigger the concretization 
+        of a symbolic expression
+
+        This will fork the state using a pre-set concretization policy
+        Optional `setstate` function set the state to the actual concretized value.
+        #Fixme Doc.
+
+    '''
+    _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
+    def __init__(self, message, expression, setstate=None, policy='ALL',  **kwargs):
+        assert policy in self._ValidPolicies, "Policy must be one of: %s"%(', '.join(self._ValidPolicies),)
+        self.expression = expression
+        self.setstate = setstate
+        self.policy = policy
+        self.message = "Concretize: %s (Policy: %s)"%(message, policy)
+        super(Concretize, self).__init__(**kwargs)
+
+
+
+class ForkState(Concretize):
+    ''' Specialized concretization class for Bool expressions. 
+        It tries True and False as concrete solutions. /
+
+        Note: as setstate is None the concrete value is not written back 
+        to the state. So the expression could still by symbolic(but constrained) 
+        in forked states.
+    '''
+    def __init__(self, message, expression, **kwargs):
+        assert isinstance(expression, Bool), 'Need a Bool to fork a state in two states'
+        super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
+
 
 
 class State(object):
@@ -74,17 +124,33 @@ class State(object):
         self._child = None
 
     def execute(self):
-        trace_item = (self.platform._current, self.cpu.PC)
         try:
             result = self.platform.execute()
-        except:
-            trace_item = None
-            raise
-        assert self.platform.constraints is self.constraints
-        assert self.mem.constraints is self.constraints
-        self.visited.add(trace_item)
-        self.last_pc = trace_item
-        return result
+
+        #Instead of State importing SymbolicRegisterException and SymbolicMemoryException 
+        # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ?? 
+        # We are forcing State to have abstractcpu
+        except ConcretizeRegister as e:
+            expression = self.cpu.read_register(e.reg_name)
+            def setstate(state, value):
+                state.cpu.write_register(e.reg_name, value)
+            raise Concretize(e.message,
+                                expression=expression, 
+                                setstate=setstate,
+                                policy=e.policy)
+        except ConcretizeMemory as e:
+            expression = self.cpu.read_int(e.address, e.size)
+            def setstate(state, value):
+                state.cpu.write_int(e.reg_name, value, e.size)
+            raise Concretize(e.message,
+                                expression=expression, 
+                                setstate=setstate,
+                                policy=e.policy)
+        except ProcessExit as e:
+            raise TerminateState(self, e.message)
+
+        #Remove when code gets stable?
+        assert self.platform.constraints is self.platform.constraints
 
     def constrain(self, constraint):
         '''Constrain state.

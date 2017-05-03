@@ -1,7 +1,7 @@
 import struct
 import sys
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
-from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
+from .abstractcpu import Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant

@@ -2,7 +2,7 @@ from capstone import *
 from capstone.arm import *
 from capstone.x86 import *
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
-from ..memory import MemoryException, FileMap, AnonMap
+from ..memory import InvalidMemoryAccess, MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from functools import wraps
@@ -15,7 +15,93 @@ import logging
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
 
+###################################################################################
+#Exceptions
+class CpuException(Exception):
+    ''' Base cpu exception '''
+    pass
 
+class DecodeException(CpuException):
+    ''' Raised when trying to decode an unknown or invalid instruction '''
+    def __init__(self, pc, bytes, extra):
+        super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
+        self.pc=pc
+        self.bytes=bytes
+        self.extra=extra
+
+class InstructionNotImplementedError(DecodeException):
+    '''
+    Exception raised when you try to execute an instruction that is not yet
+    implemented in the emulator. Add it to the Cpu-specific implementation.
+    '''
+    pass
+
+
+class DivideError(CpuException):
+    ''' A division by zero '''
+    pass
+
+class Interruption(CpuException):
+    ''' A software interrupt. '''
+    def __init__(self, N):
+        super(Interruption,self).__init__("CPU Software Interruption %08x", N)
+        self.N = N
+
+class Syscall(CpuException):
+    ''' '''
+    def __init__(self):
+        super(Syscall, self).__init__("CPU Syscall")
+
+class Sysenter(CpuException):
+    ''' '''
+    def __init__(self):
+        super(Sysenter, self).__init__("CPU Sysenter")
+
+
+class ConcretizeRegister(CpuException):
+    '''
+    Raised when a symbolic register needs to be concretized.
+    '''
+    def __init__(self, cpu, reg_name, policy='MINMAX'):
+        self.message = "Concretizing {}".format(reg_name)
+        self.cpu = cpu
+        self.reg_name = reg_name
+        self.policy = policy
+
+"""
+
+class ConcretizeMemory(ConcretizeWithPolicy):
+    '''
+    Raised when a symbolic memory location needs to be concretized.
+    '''
+    def __init__(self, state, address, size, policy='MINMAX'):
+        assert not issymbolic(address), 'Concretizing Symbolic address not supported'
+        message = "Concretizing {:d} bits at {:x}".format(size, address)
+        def setstate(state, value):
+            return state.cpu.write_int(address, value, size)
+        expression = state.cpu.read_int(address, size)
+        super(ConcretizeMemory, self).__init__(state, message,  
+                                                    expression=expression, 
+                                                    setstate=setstate,
+                                                    policy=policy)
+        #self.address = address
+        #self.size = size
+
+class ConcretizeArgument(ConcretizeWithPolicy):
+    '''
+    Raised when a symbolic argument needs to be concretized.
+    '''
+    def __init__(self, state, argnum, policy='MINMAX'):
+        message = "Concretizing argument #%d."%(argnum,)
+        super(ConcretizeArgument, self).__init__(state, message, policy)
+        self.argnum = argnum
+class SymbolicPCException(ConcretizeRegister):
+    '''
+    Raised when we attempt to execute from a symbolic location.
+    '''
+    def __init__(self):
+        super(SymbolicPCException, self).__init__("PC", "Can't execute from a symbolic address.", "ALL")
+"""
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 # This encapsulates how to access operands (regs/mem/immediates) for different CPUs
@@ -97,7 +183,6 @@ class Operand(object):
         '''
         raise NotImplementedError
         
-    @abstractmethod
     def address(self):
         ''' On a memory operand it returns the effective address '''
         raise NotImplementedError
@@ -478,13 +563,12 @@ class Cpu(object):
 
     #######################################
     # Decoder
-    @abstractmethod
     def _wrap_operands(self, operands):
         '''
         Private method to decorate a capstone Operand to our needs. See Operand
         class
         '''
-        pass
+        raise NotImplemented
 
     def decode_instruction(self, pc):
         '''
@@ -517,7 +601,11 @@ class Cpu(object):
                     if isinstance(c, Constant):
                         c = chr(c.value)
                     else:
+                        logger.info("Trying to execute instructions from invalid memory")
                         logger.error('Concretize executable memory %r %r', c, text )
+                        raise ComcretizeMemory(address = pc,
+                                                size = 8 * self.max_instr_width, 
+                                                policy = 'INSTRUCTION' )
                         break
                 assert isinstance(c, str)
                 text += c
@@ -527,14 +615,9 @@ class Cpu(object):
         code = text.ljust(self.max_instr_width, '\x00')
         instruction = next(self._md.disasm(code, pc))
 
-        #PC points to symbolic memory 
-        if instruction.size > len(text):
-            logger.info("Trying to execute instructions from invalid memory")
-            raise InvalidPCException(pc)
-
         if not self.memory.access_ok(slice(pc, pc+instruction.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
-            raise InvalidPCException(pc)
+            raise InvalidMemoryAccess(pc, 'x')
 
         instruction.operands = self._wrap_operands(instruction.operands)
 
@@ -544,21 +627,21 @@ class Cpu(object):
 
     #######################################
     # Execute
-    @abstractmethod
     def canonicalize_instruction_name(self, instruction):
         '''
         Get the semantic name of an instruction. 
         '''
-        pass
+        raise NotImplemented
 
     def execute(self):
         '''
         Decode, and execute one instruction pointed by register PC
         '''
+        if issymbolic(self.PC):
+            raise ConcretizeRegister(self, 'PC', policy='ALL')
 
-        # Decode the instruction if it wasn't explicitly decoded
-        if self.instruction is None or self.instruction.address != self.PC:
-            self.decode_instruction(self.PC)
+        if not self.memory.access_ok(self.PC, 'x'):
+            raise InvalidMemoryAccess(self.PC, 'x')
 
         instruction = self.instruction
 
@@ -628,100 +711,6 @@ class Cpu(object):
         result =  self.render_instruction() + "\n"
         result += '\n'.join(self.render_registers())
         return result
-
-
-class DecodeException(Exception):
-    ''' Raised when trying to decode an unknown or invalid instruction '''
-    def __init__(self, pc, bytes, extra):
-        super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
-        self.pc=pc
-        self.bytes=bytes
-        self.extra=extra
-
-class InvalidPCException(Exception):
-    '''
-    Exception raised when you try to execute invalid or not executable memory
-    '''
-    def __init__(self, pc):
-        super(InvalidPCException, self).__init__("Trying to execute invalid memory @%08x"%pc)
-        self.pc=pc
-
-class InstructionNotImplementedError(Exception):
-    '''
-    Exception raised when you try to execute an instruction that is not yet
-    implemented in the emulator. Add it to the Cpu-specific implementation.
-    '''
-    pass
-
-class DivideError(Exception):
-    ''' A division by zero '''
-    pass
-
-class CpuInterrupt(Exception):
-    ''' Any interruption triggered by the CPU '''
-    pass
-
-class Interruption(CpuInterrupt):
-    ''' A software interrupt. '''
-    def __init__(self, N):
-        super(Interruption,self).__init__("CPU Software Interruption %08x", N)
-        self.N = N
-
-class Syscall(CpuInterrupt):
-    ''' '''
-    def __init__(self):
-        super(Syscall, self).__init__("CPU Syscall")
-
-# TODO(yan): Move this into State or a more appropriate location
-
-
-
-class ConcretizeRegister(ConcretizeException):
-    '''
-    Raised when a symbolic register needs to be concretized.
-    '''
-    def __init__(self, reg_name, message, policy='MINMAX'):
-        message = "Concretizing %s. %s"%(reg_name, message)
-        super(ConcretizeRegister, self).__init__(message, policy)
-        self.reg_name = reg_name
-
-
-class ConcretizeMemory(ConcretizeException):
-    '''
-    Raised when a symbolic memory location needs to be concretized.
-    '''
-    def __init__(self, address, size, message, policy='MINMAX'):
-        message = "Concretizing byte at %x. %s"%(address, message)
-        super(ConcretizeMemory, self).__init__(message, policy)
-        self.address = address
-        self.size = size
-
-class ConcretizeArgument(ConcretizeException):
-    '''
-    Raised when a symbolic argument needs to be concretized.
-    '''
-    def __init__(self, argnum, policy='MINMAX'):
-        message = "Concretizing argument #%d."%(argnum,)
-        super(ConcretizeArgument, self).__init__(message, policy)
-        self.argnum = argnum
-
-class SymbolicPCException(ConcretizeRegister):
-    '''
-    Raised when we attempt to execute from a symbolic location.
-    '''
-    def __init__(self):
-        super(SymbolicPCException, self).__init__("PC", "Can't execute from a symbolic address.", "ALL")
-
-class IgnoreAPI(Exception):
-    def __init__(self, name):
-        super(IgnoreAPI, self).__init__("Ignoring API: {}".format(name))
-        self.name = name
-
-class Sysenter(CpuInterrupt):
-    ''' '''
-    def __init__(self):
-        super(Sysenter, self).__init__("CPU Sysenter")
-
 
 #Instruction decorators
 def instruction(old_method):

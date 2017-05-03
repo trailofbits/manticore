@@ -1,7 +1,6 @@
-import fcntl
 
-import cgcrandom
-import weakref
+
+import fcntl
 import errno
 import os, struct
 from ..utils.helpers import issymbolic
@@ -10,6 +9,7 @@ from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
 from ..platforms.platform import Platform
+#Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 import logging
 import random
@@ -17,6 +17,7 @@ from ..core.cpu.arm import *
 from ..core.executor import SyscallNotImplemented, ProcessExit
 logger = logging.getLogger("PLATFORM")
 
+from .system import *
 
 class RestartSyscall(Exception):
     pass
@@ -29,13 +30,6 @@ def perms_from_elf(elf_flags):
 
 def perms_from_protflags(prot_flags):
     return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
-
-class SymbolicSyscallArgument(Exception):
-    def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
-        self.reg_num = reg_num
-        self.message = message
-        self.policy = policy
-        super(SymbolicSyscallArgument, self).__init__(message)
 
 
 class File(object):
@@ -101,7 +95,6 @@ class SymbolicFile(object):
             path = File(path, mode)
         assert isinstance(path, File)
 
-        #self._constraints = weakref.ref(constraints)
         WILDCARD = '+'
 
         symbols_cnt = 0
@@ -1396,7 +1389,7 @@ class Linux(Platform):
         #self.procs[procid] = None
         logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
-            raise ProcessExit(error_code)
+            raise ProcessExit('Process exited correctly. Code: {}'.format(error_code))
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
@@ -1875,7 +1868,7 @@ class SLinux(Linux):
         except SymbolicSyscallArgument, e:
             self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(reg_name,e.message,e.policy)
+            raise ConcretizeRegister(cpu, reg_name, e.message, e.policy)
 
     def int80(self):
         try:
@@ -1883,21 +1876,21 @@ class SLinux(Linux):
         except SymbolicSyscallArgument, e:
             self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(reg_name,e.message,e.policy)
+            raise ConcretizeRegister(cpu, reg_name, e.message, e.policy)
 
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise SymbolicSyscallArgument(0)
+            raise ConcretizeSyscallArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise SymbolicSyscallArgument(1)
+            raise ConcretizeSyscallArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(2)
+            raise ConcretizeSyscallArgument(2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
@@ -2019,51 +2012,15 @@ class SLinux(Linux):
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise SymbolicSyscallArgument(0)
+            raise ConcretizeSyscallArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise SymbolicSyscallArgument(1)
+            raise ConcretizeSyscallArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(2)
+            raise ConcretizeSyscallArgument(2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
 
-class DecreeEmu(object):
-
-    RANDOM = 0
-
-    @staticmethod
-    def cgc_initialize_secret_page(platform):
-        logger.info("Skipping: cgc_initialize_secret_page()")
-        return 0
-
-    @staticmethod
-    def cgc_random(platform, buf, count, rnd_bytes):
-        import cgcrandom
-        if issymbolic(buf):
-            logger.info("Ask to write random bytes to a symbolic buffer")
-            raise ConcretizeArgument(0)
-
-        if issymbolic(count):
-            logger.info("Ask to read a symbolic number of random bytes ")
-            raise ConcretizeArgument(1)
-
-        if issymbolic(rnd_bytes):
-            logger.info("Ask to return rnd size to a symbolic address ")
-            raise ConcretizeArgument(2)
-
-        data = []
-        for i in xrange(count):
-            value = cgcrandom.stream[DecreeEmu.RANDOM]
-            data.append(value)
-            DecreeEmu.random += 1
-
-        cpu = platform.current
-        cpu.write(buf, data)
-        if rnd_bytes:
-            cpu.store(rnd_bytes, len(data), 32)
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf, count, rnd_bytes, len(data))
-        return 0

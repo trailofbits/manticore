@@ -3,6 +3,7 @@ from capstone.x86 import *
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
 from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
 from functools import wraps
+
 import collections
 from ..smtlib import *
 from ...utils.helpers import issymbolic
