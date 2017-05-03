@@ -54,13 +54,14 @@ class ForkState(Concretize):
         super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
 
 
+from ..utils.event import Signal
 
 class State(object):
     '''
     Representation of a unique program state/path.
 
-    :param ConstraintSet constraints: Initial constraints on state
-    :param model: Initial constraints on state
+    :param ConstraintSet constraints: Initial constraints 
+    :param model: Initial operating system state
     :type model: Decree or Linux or Windows
     '''
 
@@ -74,17 +75,14 @@ class State(object):
             proc.memory._constraints = constraints
 
         self.input_symbols = list()
-        # Stats I'm not sure we need in general
-        self.last_pc = (None, None)
-        self.visited = set()
-        self.branches = OrderedDict()
         self._child = None
+
+        #Events
+        self.context = dict()
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.model),
-                {'visited': self.visited, 'last_pc': self.last_pc, 'forks': self.forks,
-                 'input_symbols': self.input_symbols,
-                 'branches': self.branches})
+                {'context': self.context, '_child': self._child})
 
     @staticmethod
     def state_count():
@@ -101,10 +99,7 @@ class State(object):
     def __enter__(self):
         assert self._child is None
         new_state = State(self.constraints.__enter__(), self.model)
-        new_state.visited = set(self.visited)
-        new_state.forks = self.forks + 1
         new_state.input_symbols = self.input_symbols
-        new_state.branches = self.branches
         self._child = new_state
         return new_state
 
@@ -137,7 +132,7 @@ class State(object):
                                 setstate=setstate,
                                 policy=e.policy)
         except ProcessExit as e:
-            raise TerminateState(self, e.message)
+            raise TerminateState(self, message=e.message, testcase=True)
 
         #Remove when code gets stable?
         assert self.model.constraints is self.constraints
@@ -270,11 +265,3 @@ class State(object):
         '''
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
 
-    def record_branches(self, targets):
-        _, branch = self.last_pc
-        for target in targets:
-            key = (branch, target)
-            try:
-                self.branches[key] += 1
-            except KeyError:
-                self.branches[key] = 1
