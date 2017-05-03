@@ -1,7 +1,8 @@
-import fcntl
 
-import cgcrandom
-import weakref
+#Remove in favor of binary.py
+from elftools.elf.elffile import ELFFile
+
+import fcntl
 import errno
 import os, struct
 from ..utils.helpers import issymbolic
@@ -100,7 +101,6 @@ class SymbolicFile(object):
             path = File(path, mode)
         assert isinstance(path, File)
 
-        #self._constraints = weakref.ref(constraints)
         WILDCARD = '+'
 
         symbols_cnt = 0
@@ -1006,6 +1006,7 @@ class Linux(object):
           to by buf to the file descriptor fd. If count is zero, write returns 0
           and optionally sets *tx_bytes to zero.
 
+          :param cpu           current CPU
           :param fd            a valid file descriptor
           :param buf           a memory buffer
           :param count         number of bytes to send 
@@ -1251,6 +1252,7 @@ class Linux(object):
         :return: this call returns C{1000} for all the users.  
         '''
         return 1000
+
     def sys_getgid(self):
         '''
         Gets group identity.
@@ -1259,6 +1261,7 @@ class Linux(object):
         :return: this call returns C{1000} for all the groups.  
         '''
         return 1000
+
     def sys_geteuid(self):
         '''
         Gets user identity.
@@ -1267,6 +1270,7 @@ class Linux(object):
         :return: This call returns C{1000} for all the users.  
         '''
         return 1000
+
     def sys_getegid(self):
         '''
         Gets group identity.
@@ -1275,7 +1279,6 @@ class Linux(object):
         :return: this call returns C{1000} for all the groups.  
         '''
         return 1000
-
 
     def sys_readv(self, fd, iov, count):
         '''
@@ -1703,7 +1706,6 @@ class Linux(object):
             except RestartSyscall:
                 pass
 
-
         return True
         
 
@@ -1872,7 +1874,6 @@ class SLinux(Linux):
         self.symbolic_files = state['symbolic_files']
         super(SLinux, self).__setstate__(state)
 
-
     #Dispatchers...
     def syscall(self):
         try:
@@ -1889,7 +1890,6 @@ class SLinux(Linux):
             self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
             raise ConcretizeRegister(reg_name,e.message,e.policy)
-
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
@@ -2036,39 +2036,4 @@ class SLinux(Linux):
 
         return super(SLinux, self).sys_write(fd, buf, count)
 
-class DecreeEmu(object):
 
-    RANDOM = 0
-
-    @staticmethod
-    def cgc_initialize_secret_page(model):
-        logger.info("Skipping: cgc_initialize_secret_page()")
-        return 0
-
-    @staticmethod
-    def cgc_random(model, buf, count, rnd_bytes):
-        import cgcrandom
-        if issymbolic(buf):
-            logger.info("Ask to write random bytes to a symbolic buffer")
-            raise ConcretizeArgument(0)
-
-        if issymbolic(count):
-            logger.info("Ask to read a symbolic number of random bytes ")
-            raise ConcretizeArgument(1)
-
-        if issymbolic(rnd_bytes):
-            logger.info("Ask to return rnd size to a symbolic address ")
-            raise ConcretizeArgument(2)
-
-        data = []
-        for i in xrange(count):
-            value = cgcrandom.stream[DecreeEmu.RANDOM]
-            data.append(value)
-            DecreeEmu.random += 1
-
-        cpu = model.current
-        cpu.write(buf, data)
-        if rnd_bytes:
-            cpu.store(rnd_bytes, len(data), 32)
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf, count, rnd_bytes, len(data))
-        return 0
