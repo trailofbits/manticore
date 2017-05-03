@@ -95,7 +95,11 @@ class State(object):
         self.last_pc = trace_item
         return result
 
-    def add(self, constraint, check=False):
+    def constrain(self, constraint):
+        '''Constrain state.
+
+        :param manticore.core.smtlib.Bool constraint: Constraint to add
+        '''
         self.constraints.add(constraint)
 
     def abandon(self):
