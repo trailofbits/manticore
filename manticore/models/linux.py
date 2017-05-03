@@ -1812,9 +1812,9 @@ class Linux(object):
         self._arch_reg_init(cpu, arch)
 
         if arch == 'i386':
-            self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
-        elif arch == 'amd64':
             self.syscall_arg_regs = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']
+        elif arch == 'amd64':
+            self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
         elif arch == 'armv7':
             self.syscall_arg_regs = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6']
             self._init_arm_kernel_helpers(cpu)
