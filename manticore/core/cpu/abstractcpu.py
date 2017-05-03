@@ -210,12 +210,13 @@ class ABI(object):
             result = implementation(*arguments)
         except ConcretizeArgument as e:
             raise ConcretizeRegister(regs[e.argnum], "Concretizing for syscall")
-
-        self.syscall_write_result(result)
+        else:
+            self.syscall_write_result(result)
 
         return result
 
-    def invoke_function(self, implementation, convention=None, prefix_args=None):
+    def invoke_function(self, implementation, convention=None, prefix_args=None,
+            varargs=False):
         '''
         Invoke a function modeled by `implementation` using `convention` as the
         calling convention.
@@ -223,32 +224,35 @@ class ABI(object):
         :param callable implementation: Python model of the syscall
         :param str convention: Calling convention; None for default.
         :param tuple prefix_args: Pass these parametrs to implementation before those read from state
+        :param bool varargs: Whether the function expects a variable number of arguments
         :return: The result of calling `implementation`
         '''
         prefix_args = prefix_args or ()
 
         nargs = implementation.func_code.co_argcount - len(prefix_args)
-        argument_descriptors = self.funcall_arguments(nargs, convention)
-        argument_values = []
-        for src in argument_descriptors:
-            if isinstance(src, str):
-                argument_values.append(self._cpu.read_register(src))
-            else:
-                argument_values.append(self._cpu.read_int(src))
+        descriptors = self.funcall_arguments(nargs, convention)
 
-        arguments = list(prefix_args) + argument_values
+        def resolve_argument(arg):
+            if isinstance(arg, str):
+                return self._cpu.read_register(arg)
+            else:
+                return self._cpu.read_int(arg)
+
+        arguments = list(prefix_args) + map(resolve_argument, descriptors)
         try:
             result = implementation(*arguments)
         except ConcretizeArgument as e:
-            src = argument_descriptors[e.argnum]
-            msg = 'Concretizing due to function call'
+            # First, undo the stack that was taken by argument passing
+            self.funcall_epilog(convention, nargs)
+            src,msg = descriptors[e.argnum], 'Concretizing due to function call'
             if isinstance(src, str):
                 raise ConcretizeRegister(src, msg)
             else:
-                bwidth = self._cpu.address_bit_size / 8
-                raise ConcretizeMemory(size, bwidth, msg)
+                raise ConcretizeMemory(src, self._cpu.address_bit_size, msg)
+        else:
+            self.funcall_epilog(convention, nargs)
+            self.funcall_write_result(result)
 
-        self.funcall_write_result(result, convention)
 
         return result
 
@@ -271,29 +275,33 @@ class ABI(object):
 
     def funcall_arguments(self, count, convention):
         '''
-        Return `count` tuples representing function arguments following Cpu's
-        calling convention.
-
-        Tuples are of the format:
-          ('type', value)
-
-        where type can be 'register' or 'memory'. If type is 'memory', the value
-        represents the address at which to acquire the parameter. If type is
-        'register', the value is used as is.
+        Return `count` argument descriptors following the calling convention. 
+        Descriptors are either strings (specifying register names) or addresses
+        specifying memory locations.
 
         :param int count: How many arguments to extract
         :param str convention: Calling convention being used. `None` for default
-        :return: list[tuple]
+        :return: descriptors
+        :rtype: list
         '''
         raise NotImplementedError
 
-    def funcall_write_result(self, result, convention):
+    def funcall_write_result(self, result):
         '''
         Write the result (return value) of a function call.
 
         :param result: return value of the function
-        :param str convention: Calling convention being used. `None` for default
         :return: None
+        '''
+        raise NotImplementedError
+
+    def funcall_epilog(self, convention, nargs):
+        '''
+        Perform function epilog (reclaim stack space, write PC, etc). This can
+        be invoked even if a function raises an exception (and should undo)
+
+        :param str convention: Calling convention being used. `None` for default
+        :param int nargs: How many arguments the function took
         '''
         raise NotImplementedError
 
