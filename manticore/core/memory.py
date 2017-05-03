@@ -32,7 +32,7 @@ class InvalidMemoryAccess(MemoryException):
         super(InvalidMemoryAccess, self, ).__init__('Invalid mode trying to access memory in mode {}'.format(mode), address)
 
     def __init__(self, cause, address, size, constraint):
-        super(SymbolicMemoryException, self, ).__init__(cause, address)
+        super(InvalidSymbolicMemoryAccess, self, ).__init__(cause, address)
         #the crashing constraint you need to assert 
         self.constraint = constraint 
         self.size = size
@@ -891,7 +891,7 @@ class SMemory(Memory):
                             crashing_condition = Operators.AND(Operators.OR( (address+size).ult(start), address.uge(end) ), crashing_condition)
 
                 if solver.can_be_true(self.constraints, crashing_condition):
-                    raise SymbolicMemoryException('No access reading symbolic', address, size, crashing_condition)
+                    raise InvalidSymbolicMemoryAccess('No access reading symbolic', address, size, crashing_condition)
 
 
                 #INCOMPLETE Result! We could also fork once for every map
@@ -911,7 +911,7 @@ class SMemory(Memory):
                     crashing_condition = Operators.OR(address == base, crashing_condition)
 
             if solver.can_be_true(self.constraints, crashing_condition):
-                raise SymbolicMemoryException('No access reading symbolic', address, size, crashing_condition)
+                raise InvalidSymbolicMemoryAccess('No access reading symbolic', address, size, crashing_condition)
 
             condition = False
             for base in solutions:
@@ -963,7 +963,7 @@ class SMemory(Memory):
                     crashing_condition = Operators.OR(address == base, crashing_condition)
 
             if solver.can_be_true(self.constraints, crashing_condition):
-                raise SymbolicMemoryException('No access writing symbolic', address, size, crashing_condition)
+                raise InvalidSymbolicMemoryAccess('No access writing symbolic', address, size, crashing_condition)
 
             for offset in xrange(size):
                 for base in solutions:
