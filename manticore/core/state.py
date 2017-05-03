@@ -1,6 +1,5 @@
 from collections import OrderedDict
 
-<<<<<<< HEAD
 from .smtlib import solver
 from ..utils.helpers import issymbolic
 
@@ -74,8 +73,8 @@ class State(object):
         self.model = model
         self.forks = 0
         self.constraints = constraints
-        self.platform._constraints = constraints
-        for proc in self.platform.procs:
+        self.model._constraints = constraints
+        for proc in self.model.procs:
             proc._constraints = constraints
             proc.memory._constraints = constraints
 
@@ -104,7 +103,7 @@ class State(object):
 
     def __enter__(self):
         assert self._child is None
-        new_state = State(self.constraints.__enter__(), self.platform)
+        new_state = State(self.constraints.__enter__(), self.model)
         new_state.visited = set(self.visited)
         new_state.forks = self.forks + 1
         new_state.input_symbols = self.input_symbols

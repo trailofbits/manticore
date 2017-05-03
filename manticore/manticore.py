@@ -20,7 +20,7 @@ from .core.state import State, TerminateState
 from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
-from .platforms import linux, decree, windows
+from .models import linux, decree, windows
 from .utils.helpers import issymbolic
 logger = logging.getLogger('MANTICORE')
 
@@ -48,23 +48,23 @@ class ProfilingResults(object):
 
 def makeDecree(args):
     constraints = ConstraintSet()
-    platform = decree.SDecree(constraints, ','.join(args.programs))
-    initial_state = State(constraints, platform)
+    model = decree.SDecree(constraints, ','.join(args.programs))
+    initial_state = State(constraints, model)
     logger.info('Loading program %s', args.programs)
 
     #if args.data != '':
     #    logger.info('Starting with concrete input: {}'.format(args.data))
-    platform.input.transmit(args.data)
-    platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
+    model.input.transmit(args.data)
+    model.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
 def makeLinux(program, argv, env, concrete_start = ''):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-    platform = linux.SLinux(constraints, program, argv=argv, envp=env,
+    model = linux.SLinux(constraints, program, argv=argv, envp=env,
             symbolic_files=('symbolic.txt'))
-    initial_state = State(constraints, platform)
+    initial_state = State(constraints, model)
 
     if concrete_start != '':
         logger.info('Starting with concrete input: {}'.format(concrete_start))
@@ -80,12 +80,12 @@ def makeLinux(program, argv, env, concrete_start = ''):
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
     if any(issymbolic(x) for val in argv + env for x in val):
-        platform.setup_stack([program] + argv, env)
+        model.setup_stack(initial_state.cpu, [program] + argv, env)
 
-    platform.input.transmit(concrete_start)
+    model.input.transmit(concrete_start)
 
     #set stdin input...
-    platform.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
+    model.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
     return initial_state 
 
@@ -101,14 +101,14 @@ def makeWindows(args):
             logger.debug('Additional context loaded with contents {}'.format(additional_context)) #DEBUG
 
     constraints = ConstraintSet()
-    platform = windows.SWindows(constraints, args.programs[0], additional_context, snapshot_folder=args.workspace)
+    model = windows.SWindows(constraints, args.programs[0], additional_context, snapshot_folder=args.workspace)
 
     #This will interpret the buffer specification written in INTEL ASM. (It may dereference pointers)
-    data_size = parse(args.size, platform.current.read_bytes, platform.current.read_register)
-    data_ptr  = parse(args.buffer, platform.current.read_bytes, platform.current.read_register)
+    data_size = parse(args.size, model.current.read_bytes, model.current.read_register)
+    data_ptr  = parse(args.buffer, model.current.read_bytes, model.current.read_register)
 
     logger.debug('Buffer at %x size %d bytes)', data_ptr, data_size)
-    buf_str = "".join(platform.current.read_bytes(data_ptr, data_size))
+    buf_str = "".join(model.current.read_bytes(data_ptr, data_size))
     logger.debug('Original buffer: %s', buf_str.encode('hex'))
 
     offset = args.offset 
@@ -117,20 +117,20 @@ def makeWindows(args):
     size = min(args.maxsymb, data_size - offset - len(concrete_data))
     symb = constraints.new_array(name='RAWMSG', index_max=size)
 
-    platform.current.write_bytes(data_ptr + offset, concrete_data)
-    platform.current.write_bytes(data_ptr + offset + len(concrete_data), [symb[i] for i in xrange(size)] )
+    model.current.write_bytes(data_ptr + offset, concrete_data)
+    model.current.write_bytes(data_ptr + offset + len(concrete_data), [symb[i] for i in xrange(size)] )
 
     logger.debug('First %d bytes are left concrete', offset)
     logger.debug('followed by %d bytes of concrete start', len(concrete_data))
-    hex_head = "".join(platform.current.read_bytes(data_ptr, offset+len(concrete_data)))
+    hex_head = "".join(model.current.read_bytes(data_ptr, offset+len(concrete_data)))
     logger.debug('Hexdump head: %s', hex_head.encode('hex'))
     logger.debug('Total symbolic characters inserted: %d', size)
     logger.debug('followed by %d bytes of unmodified concrete bytes at end.', (data_size-offset-len(concrete_data))-size )
-    hex_tail = "".join(map(chr, platform.current.read_bytes(data_ptr+offset+len(concrete_data)+size, data_size-(offset+len(concrete_data)+size))))
+    hex_tail = "".join(map(chr, model.current.read_bytes(data_ptr+offset+len(concrete_data)+size, data_size-(offset+len(concrete_data)+size))))
     logger.debug('Hexdump tail: %s', hex_tail.encode('hex'))
-    logger.info("Starting PC is: {:08x}".format(platform.current.PC))
+    logger.info("Starting PC is: {:08x}".format(model.current.PC))
 
-    return State(constraints, platform)
+    return State(constraints, model)
 
 def binary_type(path):
     '''
@@ -157,7 +157,6 @@ class Manticore(object):
     :param str binary_path: Path to binary to analyze
     :param args: Arguments to provide to binary
     :type args: list[str]
-    :ivar context: SyncManager managed `dict` shared between Manticore worker processes
     '''
 
 
@@ -224,7 +223,7 @@ class Manticore(object):
 
         logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
 
-        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
+        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
             logging.getLogger(loggername).addFilter(ctxfilter)
             logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
         
@@ -294,10 +293,10 @@ class Manticore(object):
     def verbosity(self, setting):
         levels = [[],
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('PLATFORM', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('PLATFORM', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('PLATFORM', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('PLATFORM', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG), ('SMT', logging.DEBUG)]]
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG), ('SMT', logging.DEBUG)]]
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]
@@ -515,20 +514,24 @@ class Manticore(object):
         # event code is in place.
         import core.cpu
         import importlib
-        import platforms
+        import models
 
         with open(path, 'r') as fnames:
             for line in fnames.readlines():
                 address, cc_name, name = line.strip().split(' ')
-                fmodel = platforms
+                cc = getattr(core.cpu.x86.ABI, cc_name)
+                fmodel = models
                 name_parts = name.split('.')
-                importlib.import_module(".platforms.{}".format(name_parts[0]), 'manticore')
+                importlib.import_module(".models.{}".format(name_parts[0]), 'manticore')
                 for n in name_parts:
                     fmodel = getattr(fmodel,n)
-                assert fmodel != platforms
-                def cb_function(state):
-                    state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
-                self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
+                assert fmodel != models
+                logger.debug("[+] Hooking 0x%x %s %s", int(address,0), cc_name, name )
+                def cb_function(cc, fmodel, state):
+                    cc(fmodel)(state.model)
+                cb = functools.partial(cb_function, cc, fmodel)
+                # TODO(yan) this should be a dict
+                self._model_hooks.setdefault(int(address,0), set()).add(cb)
 
     def _model_hook_callback(self, state):
         pc = state.cpu.PC
@@ -732,9 +735,9 @@ class Manticore(object):
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
-        initial_state = self._make_state(self._binary)
+        state = self._make_state(self._binary)
 
-        self._executor = Executor(initial_state,
+        self._executor = Executor(state,
                                   workspace=self.workspace, 
                                   policy=self._policy, 
                                   dumpafter=self.dumpafter, 
@@ -753,13 +756,6 @@ class Manticore(object):
         if self._assertions:
             self._executor.will_execute_state += self._assertions_callback
 
-
-        self._executor.will_backup_state += self._backup_state_callback
-        self._executor.will_restore_state += self._restore_state_callback
-        self._executor.will_fork_state += self._fork_state_callback
-        self._executor.will_execute_state += self._execute_state_callback
-        self._executor.will_terminate_state += self._terminate_state_callback
-        self._executor.will_generate_testcase += self._generate_testcase_callback
         self._time_started = time.time()
 
         self._running = True
@@ -777,10 +773,10 @@ class Manticore(object):
             if timeout > 0:
                 t.cancel()
 
-<<<<<<< HEAD
-=======
+        with self._executor.context() as context:
+            print "Visited #%d"% len(context['visited'])
+            logger.info("Visited #%d", len(context['visited']))
 
->>>>>>> Wip refactoring
         if self.should_profile:
 
             class PstatsFormatted:
@@ -819,10 +815,6 @@ class Manticore(object):
 
 
 
-<<<<<<< HEAD
-        self._dump_stats_callback()
-=======
->>>>>>> Wip refactoring
 
         logger.info('Results dumped in %s', self.workspace)
         #logger.info('Instructions executed: %d', self._executor.count)
@@ -855,14 +847,10 @@ class Manticore(object):
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
 <<<<<<< HEAD
                     state.cpu.PC, program)
-<<<<<<< HEAD
-            raise TerminateState()
-=======
             raise AbandonState()
 =======
                     state.cpu.pc, program)
             raise TerminateState()
->>>>>>> Wip refactoring
 >>>>>>> Wip refactoring
 
         #Everything is good add it.
