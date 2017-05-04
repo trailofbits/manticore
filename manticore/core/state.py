@@ -131,8 +131,9 @@ class State(object):
                                 expression=expression, 
                                 setstate=setstate,
                                 policy=e.policy)
-        except ProcessExit as e:
-            raise TerminateState(self, message=e.message, testcase=True)
+        except Exception as e:
+            print e
+            raise TerminateState(self, message=str(e), testcase=True)
 
         #Remove when code gets stable?
         assert self.model.constraints is self.constraints
@@ -221,6 +222,9 @@ class State(object):
         return data
 
     def concretize(self, symbolic, policy, maxcount=100):
+        ''' This finds a set of solutions for symbolic using policy.
+            This raises TooManySolutions if more solutions than maxcount 
+        '''
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self.constraints, symbolic)

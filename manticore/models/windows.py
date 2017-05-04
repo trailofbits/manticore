@@ -18,6 +18,11 @@ import random
 from windows_syscalls import syscalls_num
 logger = logging.getLogger("MODEL")
 
+
+class SyscallNotImplemented(TerminateState):
+    def __ini__(self, message):
+        super(SyscallNotImplemented,self).__init__(message, testcase=True)
+
 class RestartSyscall(Exception):
     pass
 

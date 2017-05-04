@@ -567,11 +567,16 @@ class Manticore(object):
         #print "Restore state", state, state_id, state.cpu.will_read_register
 
     def _terminate_state_callback(self, state, state_id):
+        #aggregates state statistics into exceutor statistics. FIXME split
         logger.debug("Terminate state %r %r ", state, state_id)
         state_visited = state.context.get('visited', set())
+        state_instructions_count = state.context.get('instructions_count', 0)
         with self._executor.context() as context:
             executor_visited = context.get('visited', set())
             context['visited'] = executor_visited.union(state_visited)
+
+            executor_instructions_count = context.get('instructions_count', 0)
+            context['instructions_count'] = executor_instructions_count + state_instructions_count 
 
     def _fork_state_callback(self, state, expression, values):
         logger.debug("About to backup state %r %r %r", state, expression, values)
@@ -586,10 +591,14 @@ class Manticore(object):
 
     def _execute_state_callback(self, state):
         address = state.cpu.PC
-        state.context.setdefault('visited', set()).add(address)
+        if not issymbolic(address):
+            state.context.setdefault('visited', set()).add(address)
+            count = state.context.get('instructions_count', 0)
+            state.context['instructions_count'] = count + 1
+
 
     def _generate_testcase_callback(self, state, testcase_id, message = 'Testcase generated'):
-        #Fix me spil this!
+        #Fixme split this!
         '''
         Create a serialized description of a given state.
         :param state: The state to generate information about
@@ -676,6 +685,43 @@ class Manticore(object):
 
         return test_number
 
+
+    def _dump_stats_callback(self):
+
+        #Fixme this is duplicated?
+        if self.coverage_file is not None:
+            executor_visited = _shared_context.get('visited', set())
+
+            with open(self.coverage_file, "w") as f:
+                fmt = "0x{:016x}\n"
+                for m in executor_visited:
+                    f.write(fmt.format(m[1]))
+
+        visited = ['%d:%08x'%(0,site) for site in self._executor._shared_context['visited']]
+        with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
+            for entry in sorted(visited):
+                f.write(entry + '\n')
+
+                    
+        #if self.memory_errors_file is not None:
+        #    with open(self._args.errorfile, "w") as f:
+        #        fmt = "0x{:016x}\n"
+        #        for m in self._executor.errors:
+        #            f.write(fmt.format(m))
+
+
+        instructions_count = self._executor._shared_context['instructions_count']
+        elapsed = time.time()-self._time_started
+        logger.info('Results dumped in %s', self.workspace)
+        logger.info('Instructions executed: %d', instructions_count)
+        logger.info('Coverage: %d different instructions executed', len(self._executor._shared_context['visited']))
+        #logger.info('Number of paths covered %r', State.state_count())
+        logger.info('Total time: %s', elapsed)
+        logger.info('IPS: %d', instructions_count/elapsed)
+
+
+        with file(os.path.join(self.workspace,'command.sh'),'w') as f:
+            f.write(' '.join(sys.argv))
         
     def run(self, timeout=0):
         '''
@@ -702,13 +748,13 @@ class Manticore(object):
         
 
         if self._hooks:
-            self._executor.will_executec += self._hook_callback
+            self._executor.will_execute_state += self._hook_callback
 
         if self._model_hooks:
-            self._executor.will_execute += self._model_hook_callback
+            self._executor.will_execute_state += self._model_hook_callback
 
         if self._assertions:
-            self._executor.will_execute += self._assertions_callback
+            self._executor.will_execute_state += self._assertions_callback
 
 
         self._executor.will_backup_state += self._backup_state_callback
@@ -733,10 +779,6 @@ class Manticore(object):
             self._running = False
             if timeout > 0:
                 t.cancel()
-
-        with self._executor.context() as context:
-            print "Visited #%d"% len(context['visited'])
-            logger.info("Visited #%d", len(context['visited']))
 
         if self.should_profile:
 
@@ -776,6 +818,7 @@ class Manticore(object):
 
 
 
+        self._dump_stats_callback()
 
         logger.info('Results dumped in %s', self.workspace)
         #logger.info('Instructions executed: %d', self._executor.count)
