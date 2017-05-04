@@ -664,6 +664,9 @@ class Executor(object):
 
                     # allow us to terminate manticore processes
                     while not self.isShutdown():
+                        # Make sure current instruction is decoded so that hooks can access it
+                        current_state.cpu.decode_instruction(current_state.cpu.PC)
+
                         # Announce that we're about to execute
                         self.will_execute_pc(current_state)
 
