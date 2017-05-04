@@ -485,19 +485,16 @@ class Manticore(object):
         with open(path, 'r') as fnames:
             for line in fnames.readlines():
                 address, cc_name, name = line.strip().split(' ')
-                cc = getattr(core.cpu.x86.ABI, cc_name)
                 fmodel = models
                 name_parts = name.split('.')
                 importlib.import_module(".models.{}".format(name_parts[0]), 'manticore')
                 for n in name_parts:
                     fmodel = getattr(fmodel,n)
                 assert fmodel != models
-                logger.debug("[+] Hooking 0x%x %s %s", int(address,0), cc_name, name )
-                def cb_function(cc, fmodel, state):
-                    cc(fmodel)(state.model)
-                cb = functools.partial(cb_function, cc, fmodel)
-                # TODO(yan) this should be a dict
-                self._model_hooks.setdefault(int(address,0), set()).add(cb)
+                def cb_function(state):
+                    state.cpu.ABI.invoke_function(fmodel, convention=cc_name,
+                                                     prefix_args=(state.model,))
+                self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
 
     def _model_hook_callback(self, state):
         pc = state.cpu.PC
