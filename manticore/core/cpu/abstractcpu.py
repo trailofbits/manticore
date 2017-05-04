@@ -364,12 +364,10 @@ class Cpu(object):
         it in self.instruction.
 
         :param int pc: address of the instruction
-        :return: None
         '''
-        #No dynamic code!!! #TODO!
+        # No dynamic code!!! #TODO!
 
-        # Make sure PC is concrete and we can access it
-        if not isinstance(pc, (int,long)):
+        if issymbolic(pc):
             raise SymbolicPCException()
 
         if not self.memory.access_ok(pc,'x'):
