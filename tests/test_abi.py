@@ -40,9 +40,6 @@ class ABITests(unittest.TestCase):
         for val in range(0, 0x100, 8):
             write(mem64, 0x1000+val, val, 64)
 
-    def tearDown(self):
-        pass
-
     # ✓ test ARM abi
     # ✓ test concretization
     # _ test x86 cdecl abi
@@ -168,6 +165,52 @@ class ABITests(unittest.TestCase):
         self.assertEquals(base, cpu.ESP)
         self.assertEquals(cpu.EIP, 0x1234)
 
+    def test_i386_stdcall(self):
+        cpu = self._cpu_x86
+
+        base = cpu.ESP 
+
+        bwidth = cpu.address_bit_size / 8
+        self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
+
+        cpu.push(0x1234, cpu.address_bit_size)
+
+        def test(one, two, three, four, five):
+            self.assertEqual(one,   0x80)
+            self.assertEqual(two,   0x84)
+            self.assertEqual(three, 0x88)
+            self.assertEqual(four,  0x8c)
+            self.assertEqual(five,  0x90)
+            return 3
+
+        cpu.ABI.invoke_function(test, convention='stdcall')
+
+        self.assertEquals(cpu.EAX, 3)
+        self.assertEquals(base + bwidth * 5, cpu.ESP)
+        self.assertEquals(cpu.EIP, 0x1234)
+
+    def test_i386_stdcall_concretize(self):
+        cpu = self._cpu_x86
+
+        bwidth = cpu.address_bit_size / 8
+        self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
+
+        cpu.push(0x1234, cpu.address_bit_size)
+
+        eip = 0xDEADBEEF
+        base = cpu.ESP 
+        cpu.EIP = eip
+        def test(one, two, three, four, five):
+            raise ConcretizeArgument(2)
+
+        with self.assertRaises(ConcretizeMemory) as cr:
+            cpu.ABI.invoke_function(test, convention='stdcall')
+
+        # Make sure ESP hasn't changed if exception was raised
+        self.assertEquals(base, cpu.ESP)
+        # Make sure EIP hasn't changed (i.e. return value wasn't popped)
+        self.assertEquals(cpu.EIP, eip)
+
     def test_i386_cdecl_concretize(self):
         cpu = self._cpu_x86
 
@@ -276,3 +319,21 @@ class ABITests(unittest.TestCase):
         # Should not update RIP
         self.assertNotEqual(cpu.RIP, 0x1234)
         self.assertEquals(cr.exception.reg_name, 'RDI')
+
+    def test_amd64_vararg(self):
+        cpu = self._cpu_x64
+
+        cpu.RDI = 0
+        cpu.RSI = 1
+        cpu.RDX = 2
+
+        # save return
+        cpu.push(0x1234, cpu.address_bit_size)
+
+        def test(params):
+            for val, idx in zip(params, range(3)):
+                self.assertEqual(val, idx)
+
+        cpu.ABI.invoke_function(test, varargs=True)
+
+        self.assertEquals(cpu.RIP, 0x1234)

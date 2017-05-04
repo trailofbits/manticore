@@ -259,16 +259,18 @@ class ABI(object):
             descriptors = self.funcall_arguments(convention)
             src = next(islice(descriptors, idx, idx+1))
 
-            # First, undo the stack that was taken by argument passing
-            self.funcall_epilog(convention, nargs)
+            # First, undo the stack that was taken by argument passing if 
+            # necessary (i.e. in stdcall)
+            #self.funcall_epilog(convention, nargs)
+
             msg = 'Concretizing due to function call'
             if isinstance(src, str):
                 raise ConcretizeRegister(src, msg)
             else:
                 raise ConcretizeMemory(src, self._cpu.address_bit_size, msg)
         else:
-            self.funcall_epilog(convention, nargs)
-            self.function_return(result)
+            #self.funcall_epilog(convention, nargs)
+            self.funcall_return(result, convention, nargs)
 
 
         return result
@@ -303,12 +305,14 @@ class ABI(object):
         '''
         raise NotImplementedError
 
-    def function_return(self, result):
+    def funcall_return(self, result, convention, count):
         '''
         Write the result (return value) of a function call.
 
         :param result: return value of the function
-        :return: None
+        :param str convention: Calling convention being used. `None` for default
+        :param int count: How many arguments were passed (some conventions have
+                                the callee clean up)
         '''
         raise NotImplementedError
 

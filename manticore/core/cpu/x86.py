@@ -5754,16 +5754,18 @@ class AMD64ABI(ABI):
             offset += bwidth
             yield offset
 
-    def function_return(self, result):
+    def funcall_return(self, result, convention, count):
         # XXX(yan): Can also return in rdx
         if result is not None:
             self._cpu.RAX = result
+
         self._cpu.RIP = self._cpu.pop(self._cpu.address_bit_size)
 
-    def funcall_epilog(self, convention, nargs):
-        pass
+        if convention == 'stdcall' and count > 6:
+            count -= 6
+            bwidth = self._cpu.address_bit_size / 8
+            self._cpu.RSP += count * bwidth
 
-        
 
 
 class AMD64Cpu(X86Cpu):
@@ -5898,26 +5900,23 @@ class I386ABI(ABI):
 
         assert convention in ('cdecl', 'stdcall')
 
-        # Arguments are pushed left-to-right order
-        # with stdcall, callee needs to clean up the arguments
+        # Arguments are pushed left-to-right order with stdcall, callee needs to
+        # clean up the arguments
         bwidth = self._cpu.address_bit_size / 8
         offset = self._cpu.ESP
         while True:
             offset += bwidth
             yield offset
 
-    def function_return(self, result):
+    def funcall_return(self, result, convention, count):
         if result is not None:
             self._cpu.EAX = result
+
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
 
-    def funcall_epilog(self, convention, nargs):
-        convention = convention or 'cdecl'
-
-        # Function only cleans up itself with stdcall
         if convention == 'stdcall':
-            bytewidth = self._cpu.address_bit_size / 8
-            self._cpu.ESP += nargs * bytewidth
+            bwidth = self._cpu.address_bit_size / 8
+            self._cpu.ESP += count * bwidth
         
 
 class I386Cpu(X86Cpu):
