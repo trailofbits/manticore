@@ -561,7 +561,7 @@ class Executor(object):
         children = []
         if len(vals) == 1:
             constraint = symbolic == vals[0]
-            current_state.constrain(constraint, check=True) #We already know it's sat
+            current_state.constrain(constraint)
             setstate(current_state, vals[0])
             #current_state._try_simplify()
         else:
@@ -572,7 +572,7 @@ class Executor(object):
 
             for new_value in vals:
                 with current_state as new_state:
-                    new_state.constrain(symbolic == new_value, check=False) #We already know it's sat
+                    new_state.constrain(symbolic == new_value)
                     #and set the PC of the new state to the concrete pc-dest
                     #(or other register or memory address to concrete)
                     setstate(new_state, new_value) 
