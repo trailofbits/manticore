@@ -55,18 +55,14 @@ class ForkState(Concretize):
 
 
 from ..utils.event import Signal
-from .executor import TerminateState
-from .smtlib import solver
-from ..utils.helpers import issymbolic
-
 
 class State(object):
     '''
     Representation of a unique program state/path.
 
-    :param ConstraintSet constraints: Initial constraints on state
-    :param platform: Initial constraints on state
-    :type platform: Platform
+    :param ConstraintSet constraints: Initial constraints 
+    :param model: Initial operating system state
+    :type model: Decree or Linux or Windows
     '''
 
     def __init__(self, constraints, model):
@@ -79,14 +75,13 @@ class State(object):
             proc.memory._constraints = constraints
 
         self.input_symbols = list()
-        # Stats I'm not sure we need in general
-        self.last_pc = (None, None)
-        self.visited = set()
-        self.branches = OrderedDict()
         self._child = None
 
+        #Events
+        self.context = dict()
+
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self.platform),
+        return (self.__class__, (self.constraints, self.model),
                 {'context': self.context, '_child': self._child})
 
     @staticmethod
@@ -104,10 +99,7 @@ class State(object):
     def __enter__(self):
         assert self._child is None
         new_state = State(self.constraints.__enter__(), self.model)
-        new_state.visited = set(self.visited)
-        new_state.forks = self.forks + 1
         new_state.input_symbols = self.input_symbols
-        new_state.branches = self.branches
         self._child = new_state
         return new_state
 
@@ -139,8 +131,9 @@ class State(object):
                                 expression=expression, 
                                 setstate=setstate,
                                 policy=e.policy)
-        except ProcessExit as e:
-            raise TerminateState(self, e.message)
+        except Exception as e:
+            print e
+            raise TerminateState(self, message=str(e), testcase=True)
 
         #Remove when code gets stable?
         assert self.model.constraints is self.constraints
@@ -277,11 +270,3 @@ class State(object):
         '''
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
 
-    def record_branches(self, targets):
-        _, branch = self.last_pc
-        for target in targets:
-            key = (branch, target)
-            try:
-                self.branches[key] += 1
-            except KeyError:
-                self.branches[key] = 1

@@ -755,6 +755,10 @@ class Manticore(object):
 
         if self._assertions:
             self._executor.will_execute_state += self._assertions_callback
+<<<<<<< HEAD
+=======
+
+>>>>>>> Aggregating state statistics into executor statistics
 
         self._time_started = time.time()
 
@@ -772,10 +776,6 @@ class Manticore(object):
             self._running = False
             if timeout > 0:
                 t.cancel()
-
-        with self._executor.context() as context:
-            print "Visited #%d"% len(context['visited'])
-            logger.info("Visited #%d", len(context['visited']))
 
         if self.should_profile:
 
@@ -815,6 +815,7 @@ class Manticore(object):
 
 
 
+        self._dump_stats_callback()
 
         logger.info('Results dumped in %s', self.workspace)
         #logger.info('Instructions executed: %d', self._executor.count)

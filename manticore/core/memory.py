@@ -38,7 +38,7 @@ class InvalidMemoryAccess(MemoryException):
         self.size = size
 
     def __str__(self):
-        return '%s <%s>'%(self.cause, issymbolic(self.address) and repr(self.address) or '%08x'%self.address)
+        return '%s <%s>'%(self.cause, repr(self.address))
 
 class Map(object):
     '''

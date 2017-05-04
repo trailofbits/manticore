@@ -24,7 +24,9 @@ from ..utils.event import Signal
 from ..utils.helpers import issymbolic
 from .state import Concretize, TerminateState
 from multiprocessing.managers import SyncManager
+from contextlib import contextmanager
 
+#This is the single global manager that will handle all shared memory among workers
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 manager = SyncManager()
@@ -78,7 +80,12 @@ class Executor(object):
 
         # Signals
         self.will_finish_run = Signal()
+        self.will_execute_state = Signal()
+        self.will_fork_state = Signal()
+        self.will_backup_state = Signal()
+        self.will_restore_state = Signal()
         self.will_terminate_state = Signal()
+        self.will_generate_testcase = Signal()
 
         #The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
@@ -108,12 +115,25 @@ class Executor(object):
             state_id = self.backup(initial)
             self._states.append(state_id)
 
+    @contextmanager
+    def context(self):
+        ''' Executor context is a shared memory object. All workers share this. 
+            It needs a lock. Its used like this:
+
+            with executor.context() as context:
+                vsited = context['visited']
+                visited.append(state.cpu.PC)
+                context['visited'] = visited
+        '''
+        with self._lock:
+            yield self._shared_context   
+
     def _load_workspace(self):
         #Browse workspace in case we are trying to continue a paused run
         #search paused analysis in workspace
         saved_states = []
         for filename in os.listdir(self.workspace):
-            if filename.startsswith('state_') and filename.endswith('.pkl'):
+            if filename.startswith('state_') and filename.endswith('.pkl'):
                 saved_states.append(self._getFilename(filename)) 
         
         #We didn't find any saved intermediate states in the workspace
@@ -256,6 +276,10 @@ class Executor(object):
 
             filesize = f.tell()
             f.flush()
+
+        #broadcast event
+        self.will_backup_state(state, state_id)
+
         return state_id
 
     def restore(self, state_id):
@@ -270,6 +294,10 @@ class Executor(object):
 
         logger.info("Removing state %s from storage", state_id)
         os.remove(filename)
+
+        #Broadcast event
+        self.will_restore_state(loaded_state, state_id)
+
         return loaded_state 
 
     def list(self):
@@ -288,7 +316,7 @@ class Executor(object):
 
         #broadcast test generation. This is the time for other modules 
         #to output whatever helps to understand this testcase
-        self.will_generate_testcase(state, testcase_id)
+        self.will_generate_testcase(state, testcase_id, message)
 
         # Save state
         start = time.time()
@@ -335,7 +363,7 @@ class Executor(object):
 
         #We are about to fork current_state
         with self._lock:
-            self.will_fork(state, expression, solutions)
+            self.will_fork_state(state, expression, solutions)
 
         #Build and enqueue a state for each solution 
         children = []
@@ -398,14 +426,13 @@ class Executor(object):
 
                 try:
 
-                    # allow us to terminate manticore processes
-                    while not self.isShutdown():
+                    # Allows to terminate manticore worker on user request
+                    while not self.is_shutdown():
                         # Make sure current instruction is decoded so that hooks can access it
                         current_state.cpu.decode_instruction(current_state.cpu.PC)
 
                         # Announce that we're about to execute
-                        self.will_execute_pc(current_state)
-
+                        self.will_execute_state(current_state)
                         if not current_state.execute():
                             break
 
@@ -425,6 +452,7 @@ class Executor(object):
                     #self.generate_testcase(current_state, "Invalid PC Exception" + str(e))
                     #self.generate_testcase(current_state, "Program finished correctly")
                     #logger.error("Syscall not implemented: %s", str(e))
+
                     #Notify this worker is done
                     self.will_terminate_state(current_state, e)
 
@@ -477,7 +505,7 @@ class Executor(object):
             #notify siblings we are about to stop this run
             self._stop_run()
 
-        #Notify this worker is done
+        #Notify this worker is done (not sure it's needed)
         self.will_finish_run()
 
 
