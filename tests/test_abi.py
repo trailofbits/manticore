@@ -19,7 +19,7 @@ from manticore.core.cpu.x86 import I386Cpu, AMD64Cpu
 from manticore.core.memory import SMemory32, Memory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
 
-class ManticoreDriver(unittest.TestCase):
+class ABITests(unittest.TestCase):
     def setUp(self):
         mem32 = SMemory32(ConstraintSet())
         mem32.mmap(0x1000, 0x1000, 'rw ')
@@ -38,7 +38,7 @@ class ManticoreDriver(unittest.TestCase):
         for val in range(0, 0x100, 4):
             write(mem32, 0x1000+val, val, 32)
         for val in range(0, 0x100, 8):
-            write(mem64, 0x1000, val, 64)
+            write(mem64, 0x1000+val, val, 64)
 
     def tearDown(self):
         pass
@@ -48,7 +48,10 @@ class ManticoreDriver(unittest.TestCase):
     # _ test x86 cdecl abi
     # _ test x86 stdcall abi
     # _ test x64 abi
+    # _ test prefix args
 
+    def test_executor(self):
+        pass
     
     def test_arm_abi_simple(self):
         cpu = self._cpu_arm
@@ -84,14 +87,16 @@ class ManticoreDriver(unittest.TestCase):
 
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
 
-        def test(one, two, three, four, five, six):
+        def test(one, two, three, four, five, six, seven):
             self.assertEqual(one,     0)
             self.assertEqual(two,     1)
             self.assertEqual(three,   2)
             self.assertEqual(four,    3)
-            self.assertEqual(five,    0x78)
-            self.assertEqual(six,     0x7c)
-            self.assertEqual(cpu.SP,  0x1078)
+            self.assertEqual(five,    0x80)
+            self.assertEqual(six,     0x84)
+            self.assertEqual(seven,   0x88)
+
+            self.assertEqual(cpu.SP,  0x1080)
             return 34
 
         cpu.ABI.invoke_function(test)
@@ -122,7 +127,7 @@ class ManticoreDriver(unittest.TestCase):
         self.assertEquals(cr.exception.reg_name, 'R0')
         self.assertEquals(cpu.SP, 0x1080)
 
-    def test_arm_abi_concretize_register(self):
+    def test_arm_abi_concretize_memory(self):
         cpu = self._cpu_arm
 
         for i in range(4):
@@ -138,7 +143,7 @@ class ManticoreDriver(unittest.TestCase):
             cpu.ABI.invoke_function(test)
 
         self.assertEquals(cpu.R0, previous_r0)
-        self.assertEquals(cr.exception.address, cpu.SP-4)
+        self.assertEquals(cr.exception.address, cpu.SP)
         self.assertEquals(cpu.SP, 0x1080)
 
     def test_i386_cdecl(self):
@@ -150,11 +155,11 @@ class ManticoreDriver(unittest.TestCase):
         cpu.push(0x1234, cpu.address_bit_size)
 
         def test(one, two, three, four, five):
-            self.assertEqual(one, 0x68)
-            self.assertEqual(two, 0x6c)
-            self.assertEqual(three, 0x70)
-            self.assertEqual(four, 0x74)
-            self.assertEqual(five, 0x78)
+            self.assertEqual(one,   0x80)
+            self.assertEqual(two,   0x84)
+            self.assertEqual(three, 0x88)
+            self.assertEqual(four,  0x8c)
+            self.assertEqual(five,  0x90)
             return 3
 
         cpu.ABI.invoke_function(test)
@@ -181,12 +186,30 @@ class ManticoreDriver(unittest.TestCase):
             cpu.ABI.invoke_function(test)
 
         # Make sure we're concretizing
-        self.assertEquals(cr.exception.address, 0x1068)
+        self.assertEquals(cr.exception.address, 0x1080)
         # Make sure eax is unchanged
         self.assertEquals(cpu.EAX, prev_eax)
         # Make sure EIP wasn't popped
         self.assertEquals(base, cpu.ESP+4)
         self.assertNotEquals(cpu.EIP, 0x1234)
+
+
+    def test_i386_vararg(self):
+        cpu = self._cpu_x86
+
+        cpu.push(3, cpu.address_bit_size)
+        cpu.push(2, cpu.address_bit_size)
+        cpu.push(1, cpu.address_bit_size)
+
+        # save return
+        cpu.push(0x1234, cpu.address_bit_size)
+
+        def test(params):
+            for val, idx in zip(params, range(1, 4)):
+                self.assertEqual(val, idx)
+
+        cpu.ABI.invoke_function(test, varargs=True)
+        self.assertEquals(cpu.EIP, 0x1234)
 
 
     def test_amd64_basic_funcall(self):
@@ -208,6 +231,32 @@ class ManticoreDriver(unittest.TestCase):
             self.assertEqual(four, 4)
             self.assertEqual(five, 5)
             self.assertEqual(six, 6)
+
+        cpu.ABI.invoke_function(test)
+
+        self.assertEqual(cpu.RIP, 0x1234)
+
+    def test_amd64_reg_mem_funcall(self):
+        cpu = self._cpu_x64
+
+        cpu.RDI = 1
+        cpu.RSI = 2
+        cpu.RDX = 3
+        cpu.RCX = 4
+        cpu.R8 = 5
+        cpu.R9 = 6
+
+        cpu.push(0x1234, cpu.address_bit_size)
+
+        def test(one, two, three, four, five, six, seven, eight):
+            self.assertEqual(one, 1)
+            self.assertEqual(two, 2)
+            self.assertEqual(three, 3)
+            self.assertEqual(four, 4)
+            self.assertEqual(five, 5)
+            self.assertEqual(six, 6)
+            self.assertEqual(seven, 0x80)
+            self.assertEqual(eight, 0x88)
 
         cpu.ABI.invoke_function(test)
 

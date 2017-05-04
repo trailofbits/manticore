@@ -5744,22 +5744,20 @@ class AMD64ABI(ABI):
     def syscall_write_result(self, result):
         self._cpu.RAX = result
 
-    def funcall_arguments(self, count, convention):
+    def funcall_arguments(self, convention):
         # First 6 arguments go in registers, rest are popped from stack
-        reg_args = ['RDI', 'RSI', 'RDX', 'RCX', 'R8', 'R9']
+        reg_args = ('RDI', 'RSI', 'RDX', 'RCX', 'R8', 'R9')
 
-        if count <= len(reg_args):
-            return reg_args[:count]
-        else:
-            count = count - len(reg_args)
+        for reg in reg_args:
+            yield reg
 
         bwidth = self._cpu.address_bit_size / 8
-        base = self._cpu.RSP - count * bwidth
-        mem_args = tuple(base+bwidth*i for i in range(count))
+        offset = self._cpu.RSP
+        while True:
+            offset += bwidth
+            yield offset
 
-        return reg_args + mem_args
-
-    def funcall_write_result(self, result):
+    def function_return(self, result):
         # XXX(yan): Can also return in rdx
         if result is not None:
             self._cpu.RAX = result
@@ -5900,7 +5898,7 @@ class I386ABI(ABI):
     def syscall_write_result(self, result):
         self._cpu.EAX = result
 
-    def funcall_arguments(self, count, convention):
+    def funcall_arguments(self, convention):
         # cdecl is default
         convention = convention or 'cdecl'
 
@@ -5909,10 +5907,12 @@ class I386ABI(ABI):
         # Arguments are pushed left-to-right order
         # with stdcall, callee needs to clean up the arguments
         bwidth = self._cpu.address_bit_size / 8
-        base = self._cpu.ESP - count * bwidth # + bwidth
-        return tuple(base+bwidth*i for i in range(count))
+        offset = self._cpu.ESP
+        while True:
+            offset += bwidth
+            yield offset
 
-    def funcall_write_result(self, result):
+    def function_return(self, result):
         if result is not None:
             self._cpu.EAX = result
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)

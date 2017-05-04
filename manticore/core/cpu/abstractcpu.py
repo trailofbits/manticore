@@ -6,11 +6,13 @@ from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
-import sys
+from itertools import islice, chain, imap
 from functools import wraps
+import sys
 import types
 import inspect
 import logging
+
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
 
@@ -219,7 +221,8 @@ class ABI(object):
             varargs=False):
         '''
         Invoke a function modeled by `implementation` using `convention` as the
-        calling convention.
+        calling convention. If `varargs` is true, implementation receives a single
+        argument that is a generator for function arguments.
 
         :param callable implementation: Python model of the syscall
         :param str convention: Calling convention; None for default.
@@ -230,7 +233,6 @@ class ABI(object):
         prefix_args = prefix_args or ()
 
         nargs = implementation.func_code.co_argcount - len(prefix_args)
-        descriptors = self.funcall_arguments(nargs, convention)
 
         def resolve_argument(arg):
             if isinstance(arg, str):
@@ -238,20 +240,34 @@ class ABI(object):
             else:
                 return self._cpu.read_int(arg)
 
-        arguments = list(prefix_args) + map(resolve_argument, descriptors)
+        # Create a stream of argument descriptors, 
+        descriptors = self.funcall_arguments(convention)
+        argument_iter = imap(resolve_argument, descriptors)
+
         try:
-            result = implementation(*arguments)
+            if varargs:
+                result = implementation(chain(prefix_args, argument_iter))
+            else:
+                argument_tuple = tuple(islice(argument_iter, nargs))
+                result = implementation(*(prefix_args + argument_tuple))
         except ConcretizeArgument as e:
+            assert e.argnum >= len(prefix_args), "Can't concretize a constant arg"
+            idx = e.argnum - len(prefix_args)
+
+            # Arguments were lazily computed, so recompute here
+            descriptors = self.funcall_arguments(convention)
+            src = next(islice(descriptors, idx, idx+1))
+
             # First, undo the stack that was taken by argument passing
             self.funcall_epilog(convention, nargs)
-            src,msg = descriptors[e.argnum], 'Concretizing due to function call'
+            msg = 'Concretizing due to function call'
             if isinstance(src, str):
                 raise ConcretizeRegister(src, msg)
             else:
                 raise ConcretizeMemory(src, self._cpu.address_bit_size, msg)
         else:
             self.funcall_epilog(convention, nargs)
-            self.funcall_write_result(result)
+            self.function_return(result)
 
 
         return result
@@ -286,7 +302,7 @@ class ABI(object):
         '''
         raise NotImplementedError
 
-    def funcall_write_result(self, result):
+    def function_return(self, result):
         '''
         Write the result (return value) of a function call.
 

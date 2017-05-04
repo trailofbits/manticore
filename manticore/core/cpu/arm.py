@@ -273,26 +273,35 @@ class Armv7ABI(ABI):
     def syscall_write_result(self, result):
         self._cpu.R0 = result
 
-    def funcall_arguments(self, count, convention):
+    def funcall_arguments(self, convention):
         # First four passed via R0-R3, then on stack
-        reg_args = ('R0', 'R1', 'R2', 'R3')
-        if count <= len(reg_args):
-            return reg_args[:count]
-        else:
-            count = count - len(reg_args)
+        #reg_args = ('R0', 'R1', 'R2', 'R3')
+        for reg in ('R0', 'R1', 'R2', 'R3'):
+            yield reg
+
+        #if count <= len(reg_args):
+            #return reg_args[:count]
+        #else:
+            #count = count - len(reg_args)
 
         bwidth = self._cpu.address_bit_size / 8
-        self._cpu.SP -= count * bwidth
-        mem_args = tuple(self._cpu.SP+bwidth*i for i in range(count))
+        offset = self._cpu.SP
+        while True:
+            yield offset
+            offset += bwidth
+            
+        #self._cpu.SP -= count * bwidth
+        #mem_args = tuple(self._cpu.SP+bwidth*i for i in range(count))
 
-        return reg_args + mem_args
+        #return reg_args + mem_args
 
     def funcall_epilog(self, convention, nargs):
-        bwidth = self._cpu.address_bit_size / 8
-        count = nargs - 4 # First four were passed in registers
-        self._cpu.SP += count * bwidth
+        pass
+        #bwidth = self._cpu.address_bit_size / 8
+        #count = nargs - 4 # First four were passed in registers
+        #self._cpu.SP += count * bwidth
 
-    def funcall_write_result(self, result):
+    def function_return(self, result):
         if result is not None:
             self._cpu.R0 = result
         self._cpu.PC = self._cpu.LR 
