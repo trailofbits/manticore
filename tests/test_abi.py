@@ -337,3 +337,49 @@ class ABITests(unittest.TestCase):
         cpu.ABI.invoke_function(test, varargs=True)
 
         self.assertEquals(cpu.RIP, 0x1234)
+
+    def test_i386_syscall(self):
+        cpu = self._cpu_x86
+
+        cpu.EAX = 5
+        for idx, reg in enumerate(['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']):
+            cpu.write_register(reg, idx)
+
+        def test(one, two, three, four, five, six):
+            self.assertEqual(one, 0)
+            self.assertEqual(two, 1)
+            self.assertEqual(three, 2)
+            self.assertEqual(four, 3)
+            self.assertEqual(five, 4)
+            self.assertEqual(six, 5)
+            return 34
+
+        self.assertEqual(cpu.ABI.syscall_number(), 5)
+
+        cpu.ABI.invoke_syscall(test)
+
+        self.assertEqual(cpu.EAX, 34)
+
+    def test_amd64_syscall(self):
+        cpu = self._cpu_x64
+
+        cpu.RAX = 5
+        for idx, reg in enumerate(['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']):
+            cpu.write_register(reg, idx)
+
+        def test(one, two, three, four, five, six):
+            self.assertEqual(one, 0)
+            self.assertEqual(two, 1)
+            self.assertEqual(three, 2)
+            self.assertEqual(four, 3)
+            self.assertEqual(five, 4)
+            self.assertEqual(six, 5)
+            return 34
+
+        self.assertEqual(cpu.ABI.syscall_number(), 5)
+
+        cpu.ABI.invoke_syscall(test)
+
+        self.assertEqual(cpu.RAX, 34)
+
+
