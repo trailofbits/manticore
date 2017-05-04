@@ -1,0 +1,3 @@
+## Unreleased
+
+- Added: `State.constrain`
