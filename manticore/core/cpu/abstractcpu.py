@@ -6,7 +6,7 @@ from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
-from itertools import islice, chain, imap
+from itertools import islice, imap
 from functools import wraps
 import sys
 import types
@@ -247,7 +247,7 @@ class ABI(object):
 
         try:
             if varargs:
-                result = implementation(chain(prefix_args, argument_iter))
+                result = implementation(*(prefix_args + (argument_iter,)))
             else:
                 argument_tuple = tuple(islice(argument_iter, nargs))
                 result = implementation(*(prefix_args + argument_tuple))
@@ -631,10 +631,6 @@ class Cpu(object):
 
         implementation(*instruction.operands)
         self._icount+=1
-
-    @abstractmethod
-    def get_syscall_description(self):
-        pass
 
     def emulate(self, instruction):
         '''
