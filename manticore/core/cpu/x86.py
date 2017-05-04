@@ -5734,12 +5734,9 @@ class AMD64ABI(ABI):
     def syscall_number(self):
         return self._cpu.RAX
 
-    def syscall_arguments(self, count):
-        params = ('RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9')
-
-        assert count < len(params)
-
-        return params[:count]
+    def syscall_arguments(self):
+        for reg in ('RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9'):
+            yield reg
 
     def syscall_write_result(self, result):
         self._cpu.RAX = result
@@ -5888,12 +5885,9 @@ class I386ABI(ABI):
     def syscall_number(self):
         return self._cpu.EAX
 
-    def syscall_arguments(self, count):
-        args = ('EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP')
-
-        assert count < len(args)
-
-        return args[:count]
+    def syscall_arguments(self):
+        for reg in ('EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'):
+            yield reg
 
     def syscall_write_result(self, result):
         self._cpu.EAX = result

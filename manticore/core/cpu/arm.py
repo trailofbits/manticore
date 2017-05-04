@@ -266,9 +266,9 @@ class Armv7ABI(ABI):
     def syscall_number(self):
         return self._cpu.R7
 
-    def syscall_arguments(self, count):
-        assert count <= 6
-        return tuple('R{}'.format(i) for i in range(count))
+    def syscall_arguments(self):
+        for i in range(6):
+            yield 'R{}'.format(i)
 
     def syscall_write_result(self, result):
         self._cpu.R0 = result

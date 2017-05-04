@@ -202,12 +202,13 @@ class ABI(object):
         if inspect.ismethod(implementation):
             nargs -= 1
 
+
+        regs = islice(self.syscall_arguments(), nargs)
+        arguments = [self._cpu.read_register(n) for n in regs]
+
         logger.debug("syscall: {}, args: {}".format(implementation.__name__,
             repr(arguments)))
 
-        regs = self.syscall_arguments(nargs)
-
-        arguments = [self._cpu.read_register(n) for n in regs]
         try:
             result = implementation(*arguments)
         except ConcretizeArgument as e:
@@ -224,9 +225,9 @@ class ABI(object):
         calling convention. If `varargs` is true, implementation receives a single
         argument that is a generator for function arguments.
 
-        :param callable implementation: Python model of the syscall
-        :param str convention: Calling convention; None for default.
-        :param tuple prefix_args: Pass these parametrs to implementation before those read from state
+        :param callable implementation: Python model of the function
+        :param str convention: String describing the alling convention; `None` for default.
+        :param tuple prefix_args: Pass these parametrs to implementation before those read from state.
         :param bool varargs: Whether the function expects a variable number of arguments
         :return: The result of calling `implementation`
         '''
@@ -272,7 +273,7 @@ class ABI(object):
 
         return result
 
-    def syscall_arguments(self, count):
+    def syscall_arguments(self):
         '''
         Extract `count` arguments to the current syscall.
 
@@ -313,8 +314,9 @@ class ABI(object):
 
     def funcall_epilog(self, convention, nargs):
         '''
-        Perform function epilog (reclaim stack space, write PC, etc). This can
-        be invoked even if a function raises an exception (and should undo)
+        Perform function epilog (reclaim stack space, etc). This can be invoked
+        even if a function raises an exception and should undo things like 
+        bumping the stack pointer.
 
         :param str convention: Calling convention being used. `None` for default
         :param int nargs: How many arguments the function took
@@ -618,10 +620,10 @@ class Cpu(object):
 
         implementation = getattr(self, name, fallback_to_emulate)
 
-        if logger.level == logging.DEBUG :
-            logger.debug(self.render_instruction())
-            for l in self.render_registers():
-                register_logger.debug(l)
+        #if logger.level == logging.DEBUG :
+        #    logger.debug(self.render_instruction())
+        #    for l in self.render_registers():
+        #        register_logger.debug(l)
 
         implementation(*instruction.operands)
         self._icount+=1
