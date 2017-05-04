@@ -23,7 +23,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Symbolically analyze a program')
     parser.add_argument('--workspace', type=str, default=None,
                         help='A folder name for temporaries and results. (default mcore_?????)')
-    parser.add_argument('--verbose', action='store_true', help='Enable debug mode.')
+    parser.add_argument('-v', action='count', default=1, help='Specify verbosity level from -v to -vvvv')
     parser.add_argument('--profile', action='store_true', help='Enable profiling mode.')
 
     parser.add_argument('--buffer', type=str, help='Specify buffer to make symbolic')
@@ -106,10 +106,7 @@ def main():
     if args.assertions:
         m.load_assertions(args.assertions)
 
-    if args.verbose:
-        m.verbosity = 4
-    else:
-        m.verbosity = 1
+    m.verbosity = args.v
 
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
