@@ -106,7 +106,7 @@ class SymbolicFile(object):
         symbols_cnt = 0
         data = path.read()
         size = len(data)
-        self.array = constraints.new_array(name=path.name, max_size=size)
+        self.array = constraints.new_array(name=path.name, index_max=size)
         for i in range(size):
             if data[i] != WILDCARD:
                 self.array[i] = data[i]
@@ -1276,33 +1276,35 @@ class Linux(object):
         '''
         return 1000
 
-    def sys_writev(self, fd, iov, count):
+
+    def sys_readv(self, fd, iov, count):
         '''
-        Works just like C{sys_write} except that multiple buffers are written out (for Linux 64 bits).
+        Works just like C{sys_read} except that data is read into multiple buffers.
         :rtype: int
-        
-        :param fd: the file descriptor of the file to write.
-        :param iov: the buffer where the the bytes to write are taken. 
-        :param count: amount of C{iov} buffers to write into the file.
-        :return: the amount of bytes written in total.
+
+        :param fd: the file descriptor of the file to read.
+        :param iov: the buffer where the the bytes to read are stored.
+        :param count: amount of C{iov} buffers to read from the file.
+        :return: the amount of bytes read in total.
         '''
+        cpu = self.current
+        ptrsize = cpu.address_bit_size
+        sizeof_iovec = 2 * (ptrsize // 8)
         total = 0
         for i in xrange(0, count):
-            buf = self.current.read_int(iov + i * 16, 64)
-            size = self.current.read_int(iov + i * 16 + 8, 64)
+            buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
+            size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
-            data = ""
-            for j in xrange(0,size):
-                data += Operators.CHR(self.current.read_int(buf + j, 8))
-            logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
-            self.files[fd].write(data)
-            self.syscall_trace.append(("_write", fd, data))
-            total+=size
+            data = self.files[fd].read(size)
+            total += len(data)
+            cpu.write_bytes(buf, data)
+            self.syscall_trace.append(("_read", fd, data))
+            logger.debug("READV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
         return total
 
-    def sys_writev32(self, fd, iov, count):
+    def sys_writev(self, fd, iov, count):
         '''
-        Works just like C{sys_write} except that multiple buffers are written out. (32 bit version)
+        Works just like C{sys_write} except that multiple buffers are written out.
         :rtype: int
         
         :param fd: the file descriptor of the file to write.
@@ -1310,16 +1312,19 @@ class Linux(object):
         :param count: amount of C{iov} buffers to write into the file.
         :return: the amount of bytes written in total.
         '''
+        cpu = self.current
+        ptrsize = cpu.address_bit_size
+        sizeof_iovec = 2 * (ptrsize // 8)
         total = 0
         for i in xrange(0, count):
-            buf = self.current.read_int(iov + i * 8, 32)
-            size = self.current.read_int(iov + i * 8 + 4, 32)
+            buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
+            size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             data = ""
             for j in xrange(0,size):
-                data += Operators.CHR(self.current.read_int(buf + j, 8))
-                self.files[fd].write(Operators.CHR(self.current.read_int(buf + j, 8)))
+                data += Operators.CHR(cpu.read_int(buf + j, 8))
             logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
+            self.files[fd].write(data)
             self.syscall_trace.append(("_write", fd, data))
             total+=size
         return total
@@ -1433,6 +1438,7 @@ class Linux(object):
                  0x0000000000000005: self.sys_fstat64,
                  0x0000000000000009: self.sys_mmap,
                  0x0000000000000001: self.sys_write,
+                 0x0000000000000010: self.sys_ioctl,
                  0x0000000000000027: self.sys_getpid,
                  0x000000000000003e: self.sys_kill,
                  0x0000000000000065: self.sys_ptrace,
@@ -1444,6 +1450,7 @@ class Linux(object):
                  0x0000000000000015: self.sys_access,
                  0x000000000000000a: self.sys_mprotect,
                  0x000000000000000b: self.sys_munmap,
+                 0x0000000000000013: self.sys_readv,
                  0x0000000000000014: self.sys_writev,
                  0x0000000000000004: self.sys_stat64,
                  0x0000000000000059: self.sys_acct,
@@ -1506,7 +1513,8 @@ class Linux(object):
                      0x0000007d: self.sys_mprotect,
                      0x0000008c: self.sys_setpriority,
                      0x0000008d: self.sys_getpriority,
-                     0x00000092: self.sys_writev32,
+                     0x00000091: self.sys_readv,
+                     0x00000092: self.sys_writev,
                      0x000000c0: self.sys_mmap2,
                      0x000000c3: self.sys_stat32,
                      0x000000c5: self.sys_fstat,
@@ -1772,9 +1780,9 @@ class Linux(object):
         self._arch_reg_init(arch)
 
         if arch == 'i386':
-            self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
-        elif arch == 'amd64':
             self.syscall_arg_regs = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']
+        elif arch == 'amd64':
+            self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
         elif arch == 'armv7':
             self.syscall_arg_regs = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6']
             self._init_arm_kernel_helpers()
@@ -1848,7 +1856,8 @@ class SLinux(Linux):
         self.symbolic_files = state['symbolic_files']
         super(SLinux, self).__setstate__(state)
 
-    #Distpatchers...
+
+    #Dispatchers...
     def syscall(self):
         try:
             return super(SLinux, self).syscall()

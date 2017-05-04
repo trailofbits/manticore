@@ -4,7 +4,7 @@
  * Note: Challenge was ported to use read(2) instead of scanf(3)
  *
  * To run:
- *   $ python main.py baby-re
+ *   $ manticore baby-re
  *
  * Look in the output directory for a .stdout file containing "The flag"
  */

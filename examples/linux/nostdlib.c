@@ -4,7 +4,7 @@
  * Compile with :
  *   $ gcc -fno-builtin -static -nostdlib -m32  -fomit-frame-pointer  toy001.c  -o toy001
  * 
- * Analize it with:
+ * Analyze it with:
  *   $ python system.py --sym stdin examples/toy001-nostdlib
 */
 

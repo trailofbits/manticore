@@ -34,9 +34,9 @@ def assemble(asm):
 
 def emulate_next(cpu):
     'Read the next instruction and emulate it with Unicorn '
-    instruction = cpu.decode_instruction(cpu.PC)
+    cpu.decode_instruction(cpu.PC)
     emu = UnicornEmulator(cpu)
-    emu.emulate(instruction)
+    emu.emulate(cpu.instruction)
 
 
 def itest(asm):

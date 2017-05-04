@@ -547,12 +547,20 @@ class Cpu(object):
 
     def decode_instruction(self, pc):
         '''
-        This will decode an instruction from memory pointed by @pc
+        This will decode an instruction from memory pointed by `pc` and store
+        it in self.instruction.
 
         :param int pc: address of the instruction
         '''
-        #No dynamic code!!! #TODO! 
-        #Check if instruction was already decoded 
+        # No dynamic code!!! #TODO!
+
+        if issymbolic(pc):
+            raise SymbolicPCException()
+
+        if not self.memory.access_ok(pc,'x'):
+            raise InvalidPCException(pc)
+
+        #Check if instruction was already decoded
         self._instruction_cache = {}
         if pc in self._instruction_cache:
             logger.debug("Intruction cache hit at %x", pc)
@@ -581,16 +589,16 @@ class Cpu(object):
         #PC points to symbolic memory 
         if instruction.size > len(text):
             logger.info("Trying to execute instructions from invalid memory")
-            raise InvalidPCException(self.PC)
+            raise InvalidPCException(pc)
 
         if not self.memory.access_ok(slice(pc, pc+instruction.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
-            raise InvalidPCException(self.PC)
+            raise InvalidPCException(pc)
 
         instruction.operands = self._wrap_operands(instruction.operands)
 
         self._instruction_cache[pc] = instruction
-        return instruction
+        self.instruction = instruction
 
 
     #######################################
@@ -603,15 +611,15 @@ class Cpu(object):
         pass
 
     def execute(self):
-        ''' Decode, and execute one instruction pointed by register PC'''
-        if not isinstance(self.PC, (int,long)):
-            raise SymbolicPCException()
+        '''
+        Decode, and execute one instruction pointed by register PC
+        '''
 
-        if not self.memory.access_ok(self.PC,'x'):
-            raise InvalidPCException(self.PC)
+        # Decode the instruction if it wasn't explicitly decoded
+        if self.instruction is None or self.instruction.address != self.PC:
+            self.decode_instruction(self.PC)
 
-        instruction = self.decode_instruction(self.PC)
-        self.instruction = instruction #FIX
+        instruction = self.instruction
 
         name = self.canonicalize_instruction_name(instruction)
 

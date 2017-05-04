@@ -274,8 +274,8 @@ class Manticore(object):
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('SMT', logging.DEBUG), ('REGISTERS', logging.DEBUG)]]
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG), ('SMT', logging.DEBUG)]]
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]
@@ -499,7 +499,8 @@ class Manticore(object):
                 # TODO(yan) this should be a dict
                 self._model_hooks.setdefault(int(address,0), set()).add(cb)
 
-    def _model_hook_callback(self, state, pc):
+    def _model_hook_callback(self, state):
+        pc = state.cpu.PC
         if pc not in self._model_hooks:
             return
 
@@ -577,7 +578,8 @@ class Manticore(object):
         '''
         self._executor.shutdown()
 
-    def _assertions_callback(self, state, pc):
+    def _assertions_callback(self, state):
+        pc = state.cpu.PC
         if pc not in self._assertions:
             return
 
@@ -591,13 +593,14 @@ class Manticore(object):
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                    state.cpu.pc, program)
+                    state.cpu.PC, program)
             raise AbandonState()
 
         #Everything is good add it.
         state.constraints.add(assertion)
 
-    def _hook_callback(self, state, pc):
+    def _hook_callback(self, state):
+        pc = state.cpu.PC
         'Invoke all registered generic hooks'
 
         # Ignore symbolic pc.
