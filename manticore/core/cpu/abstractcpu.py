@@ -188,7 +188,6 @@ class Cpu(object):
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
-        self._decoded_pc = None
         self._icount = 0
 
         self._md = Cs(self.arch, self.mode)
@@ -414,7 +413,6 @@ class Cpu(object):
         instruction.operands = self._wrap_operands(instruction.operands)
 
         self._instruction_cache[pc] = instruction
-        self._decoded_pc = pc
         self.instruction = instruction
 
 
@@ -433,7 +431,7 @@ class Cpu(object):
         '''
 
         # Decode the instruction if it wasn't explicitly decoded
-        if self._decoded_pc != self.PC:
+        if self.instruction is None or self.instruction.address != self.PC:
             self.decode_instruction(self.PC)
 
         instruction = self.instruction
