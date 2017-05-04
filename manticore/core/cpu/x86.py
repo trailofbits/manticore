@@ -749,17 +749,6 @@ class X86Cpu(Cpu):
             if address+offset in cache:
                 del cache[address+offset]
 
-    def get_syscall_description(self):
-        # Syscall number is in RAX
-        # Arguments are in RDI, RSI, RDX, R10, R8 and R9
-        # Return is in RAX
-        index = self.RAX
-        arguments = [ self.RDI, self.RSI, self.RDX, self.R10, self.R8, self.R9 ]
-        def writeResult(result, self=self):
-            self.RAX = result
-        return (index, arguments, writeResult)
-
-
     def canonicalize_instruction_name(self, instruction):
         #MOVSD
         if instruction.opcode[0] in (0xa4, 0xa5): 
@@ -5631,102 +5620,6 @@ class X86Cpu(Cpu):
 ################################################################################
 #Calling conventions
 
-# TODO(yan) Temporarily commented out until it's ported to new ABI
-
-#class ABI:
-#    '''IA32 Calling conventions
-#        https://en.wikipedia.org/wiki/X86_calling_conventions
-#    '''
-#    @staticmethod
-#    def cdecl(function):
-#        '''C declaration
-#            Subroutine arguments are passed on the stack. 
-#            Integer values and memory addresses are returned in the EAX register
-#        '''
-#        argcount = function.func_code.co_argcount - 1
-#        assert argcount >= 0
-#        def cdecl_function(model):
-#            cpu = model.current
-#            base = cpu.STACK+4 #skip ret address
-#            arguments = [ cpu.read_int(base + (i*4), 32) for i in xrange(argcount) ]
-#            try:
-#                cpu.EAX = function(model, *arguments)
-#            except ConcretizeArgument as cae:
-#                assert 0 <= cae.argnum < argcount
-#                # concretize here
-#                mem_addr = base+cae.argnum*4
-#                raise ConcretizeMemory(mem_addr, 32, "Concretizing Function Argument", 'MINMAX')
-#
-#            cpu.EIP = cpu.pop(32)
-#        return cdecl_function
-#
-#    @staticmethod
-#    def stdcall(function):
-#        '''Standard calling convention
-#            Subroutine arguments are passed on the stack. 
-#            Callee is responsible for cleaning up the stack.
-#            Return values are stored in the EAX register.
-#        '''
-#        argcount = function.func_code.co_argcount - 1
-#        assert argcount >= 0
-#        def stdcall_function(model):
-#            cpu = model.current
-#            # skip saved EIP on stack
-#            base = cpu.STACK+4
-#            arguments = [ cpu.read_int(base+(pos*4), 32) for pos in xrange(argcount) ]
-#            try:
-#                cpu.EAX = function(model, *arguments)
-#            except ConcretizeArgument as cae:
-#                assert 0 <= cae.argnum < argcount
-#                # concretize here
-#                mem_addr = base+cae.argnum*4
-#                raise ConcretizeMemory(mem_addr, 32, "Concretizing Function Argument", 'MINMAX')
-#
-#            cpu.EIP = cpu.pop(32)
-#            cpu.STACK += argcount*4
-#        return stdcall_function
-#
-#    @staticmethod
-#    def thiscall(function):
-#        pass
-#
-#    @staticmethod
-#    def vectorcall(function):
-#        pass
-#
-#    '''AMD64 Calling conventions '''
-#    @staticmethod
-#    def systemV(function):
-#        '''System V AMD64 calling convention
-#            The first six integer or pointer arguments are passed in registers:
-#                RDI, RSI, RDX, RCX, R8, and R9, 
-#            Additional arguments are passed on the stack.
-#            Return value is stored in RAX.[16]:22
-#        '''
-#        argcount = function.func_code.co_argcount - 1
-#        assert argcount >= 0
-#        def argument(cpu):
-#            yield cpu.RDI
-#            yield cpu.RSI
-#            yield cpu.RDX
-#            yield cpu.RCX
-#            yield cpu.R8
-#            yield cpu.R9
-#            stack = cpu.STACK+8
-#            while True:
-#                yield cpu.read_int(stack,64)
-#                stack += 8
-#        def systemV_function(model):
-#            cpu = model.current
-#            arguments = [ next(argument(cpu)) for _ in xrange(argcount) ]
-#            cpu.RAX = function(cpu, *arguments)
-#            cpu.RIP = cpu.pop(64)
-#        return systemV_function
-#
-#    @staticmethod
-#    def msx64(function):
-#        pass
-#
 class AMD64ABI(ABI):
     '''
     x64 syscall and funcall conventions.
@@ -5895,11 +5788,6 @@ class I386ABI(ABI):
         self._cpu.EAX = result
 
     def funcall_arguments(self, convention):
-        # cdecl is default
-        convention = convention or 'cdecl'
-
-        assert convention in ('cdecl', 'stdcall')
-
         # Arguments are pushed left-to-right order with stdcall, callee needs to
         # clean up the arguments
         bwidth = self._cpu.address_bit_size / 8
@@ -5925,17 +5813,6 @@ class I386Cpu(X86Cpu):
     address_bit_size = 32
     arch = CS_ARCH_X86
     mode = CS_MODE_32
-
-    def get_syscall_description(self):
-        # Syscall number is in RAX
-        # Arguments are in RDI, RSI, RDX, R10, R8 and R9
-        # Return is in RAX
-        index = self.EAX
-        arguments = [self.EBX, self.ECX, self.EDX, self.ESI, self.EDI, self.EBP]
-        def writeResult(result, self=self):
-            self.RAX = result
-        return (index, arguments, writeResult)
-
 
     def __init__(self, memory, *args, **kwargs):
         '''
