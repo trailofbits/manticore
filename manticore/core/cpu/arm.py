@@ -284,7 +284,7 @@ class Armv7ABI(ABI):
             yield offset
             offset += bwidth
 
-    def funcall_return(self, result, convention, count):
+    def funcall_return(self, result, count, convention=None):
         if result is not None:
             self._cpu.R0 = result
         self._cpu.PC = self._cpu.LR 

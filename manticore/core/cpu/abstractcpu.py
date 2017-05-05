@@ -170,9 +170,20 @@ class RegisterFile(object):
 
 class ABI(object):
     '''
-    Represents a CPU's syscall and function calling convention.
+    Represents a CPU's system call and function calling conventions.
+
+    Implement the following methods in subclasses:
+     - syscall_number
+     - syscall_arguments
+     - syscall_write_result
+     - funcall_arguments
+     - funcall_return
+
     '''
     def __init__(self, cpu):
+        '''
+        :param manticore.core.cpu.Cpu cpu: CPU to initialize with
+        '''
         self._cpu = cpu
 
     def syscall_number(self):
@@ -186,7 +197,7 @@ class ABI(object):
     def invoke_syscall(self, implementation):
         '''
         Invoke a system call modeled by `implementation`, correctly marshaling
-        arguments and return value
+        arguments and return value.
 
         :param callable implementation: Python model of the syscall
         :return: The result of calling `implementation`
@@ -201,7 +212,6 @@ class ABI(object):
         # If the implementation is a method, we need to account for `self`
         if inspect.ismethod(implementation):
             nargs -= 1
-
 
         regs = islice(self.syscall_arguments(), nargs)
         arguments = [self._cpu.read_register(n) for n in regs]
@@ -223,10 +233,11 @@ class ABI(object):
         '''
         Invoke a function modeled by `implementation` using `convention` as the
         calling convention. If `varargs` is true, implementation receives a single
-        argument that is a generator for function arguments.
+        argument that is a generator for function arguments. Pass a tuple for
+        `prefix_args` of arguments you'd like to precede the actual arguments.
 
         :param callable implementation: Python model of the function
-        :param str convention: String describing the alling convention; `None` for default.
+        :param str convention: String describing the calling convention; leave out for default.
         :param tuple prefix_args: Pass these parametrs to implementation before those read from state.
         :param bool varargs: Whether the function expects a variable number of arguments
         :return: The result of calling `implementation`
@@ -241,7 +252,7 @@ class ABI(object):
             else:
                 return self._cpu.read_int(arg)
 
-        # Create a stream of argument descriptors, 
+        # Create a stream of resolved arguments from argument descriptors 
         descriptors = self.funcall_arguments(convention)
         argument_iter = imap(resolve_argument, descriptors)
 
@@ -249,19 +260,15 @@ class ABI(object):
             if varargs:
                 result = implementation(*(prefix_args + (argument_iter,)))
             else:
-                argument_tuple = tuple(islice(argument_iter, nargs))
-                result = implementation(*(prefix_args + argument_tuple))
+                argument_tuple = prefix_args + tuple(islice(argument_iter, nargs))
+                result = implementation(*argument_tuple)
         except ConcretizeArgument as e:
             assert e.argnum >= len(prefix_args), "Can't concretize a constant arg"
             idx = e.argnum - len(prefix_args)
 
-            # Arguments were lazily computed, so recompute here
+            # Arguments were lazily computed in case of varargs, so recompute here
             descriptors = self.funcall_arguments(convention)
             src = next(islice(descriptors, idx, idx+1))
-
-            # First, undo the stack that was taken by argument passing if 
-            # necessary (i.e. in stdcall)
-            #self.funcall_epilog(convention, nargs)
 
             msg = 'Concretizing due to function call'
             if isinstance(src, str):
@@ -269,18 +276,19 @@ class ABI(object):
             else:
                 raise ConcretizeMemory(src, self._cpu.address_bit_size, msg)
         else:
-            #self.funcall_epilog(convention, nargs)
-            self.funcall_return(result, convention, nargs)
-
+            # nargs will be inaccurate in case of stdcall, but stdcall functions
+            # must not be vararg according to:
+            # http://msdn.microsoft.com/en-us/library/zxk0tw93.aspx
+            self.funcall_return(result, nargs, convention)
 
         return result
 
     def syscall_arguments(self):
         '''
-        Extract `count` arguments to the current syscall.
+        Extract syscall arguments.
 
-        :param count: How many arguments to extract
-        :return: tuple
+        :return: iterable returning syscall arguments.
+        :rtype: iterable
         '''
         raise NotImplementedError
 
@@ -288,42 +296,30 @@ class ABI(object):
         '''
         Write the result of a system call.
 
-        :param result: result of the syscall
+        :param result: result of the syscall implementation
         '''
         raise NotImplementedError
 
-    def funcall_arguments(self, count, convention):
+    def funcall_arguments(self, convention=None):
         '''
-        Return `count` argument descriptors following the calling convention. 
-        Descriptors are either strings (specifying register names) or addresses
-        specifying memory locations.
+        Return an iterable of argument descriptors following the calling 
+        convention. Descriptors are either strings (specifying register names)
+        or addresses specifying memory locations.
 
-        :param int count: How many arguments to extract
         :param str convention: Calling convention being used. `None` for default
-        :return: descriptors
-        :rtype: list
+        :return: A generator of function arguments according to `convention`
+        :rtype: iterable
         '''
         raise NotImplementedError
 
-    def funcall_return(self, result, convention, count):
+    def funcall_return(self, result, count, convention=None):
         '''
         Write the result (return value) of a function call.
 
         :param result: return value of the function
-        :param str convention: Calling convention being used. `None` for default
-        :param int count: How many arguments were passed (some conventions have
+        :param int count: How many arguments were read (some conventions have
                                 the callee clean up)
-        '''
-        raise NotImplementedError
-
-    def funcall_epilog(self, convention, nargs):
-        '''
-        Perform function epilog (reclaim stack space, etc). This can be invoked
-        even if a function raises an exception and should undo things like 
-        bumping the stack pointer.
-
-        :param str convention: Calling convention being used. `None` for default
-        :param int nargs: How many arguments the function took
+        :param str convention: Calling convention that is used. `None` for default
         '''
         raise NotImplementedError
 
@@ -337,6 +333,7 @@ class ABI(object):
         :return: None
         '''
         raise NotImplementedError
+
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by models and executor.
 class Cpu(object):

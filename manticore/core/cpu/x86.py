@@ -5647,7 +5647,7 @@ class AMD64ABI(ABI):
             offset += bwidth
             yield offset
 
-    def funcall_return(self, result, convention, count):
+    def funcall_return(self, result, count, convention):
         # XXX(yan): Can also return in rdx
         if result is not None:
             self._cpu.RAX = result
@@ -5788,20 +5788,19 @@ class I386ABI(ABI):
         self._cpu.EAX = result
 
     def funcall_arguments(self, convention):
-        # Arguments are pushed left-to-right order with stdcall, callee needs to
-        # clean up the arguments
         bwidth = self._cpu.address_bit_size / 8
         offset = self._cpu.ESP
         while True:
             offset += bwidth
             yield offset
 
-    def funcall_return(self, result, convention, count):
+    def funcall_return(self, result, count, convention):
         if result is not None:
             self._cpu.EAX = result
 
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
 
+        # Callee needs to clean up the arguments with stdcall
         if convention == 'stdcall':
             bwidth = self._cpu.address_bit_size / 8
             self._cpu.ESP += count * bwidth
