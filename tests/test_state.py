@@ -43,28 +43,28 @@ class StateTest(unittest.TestCase):
     def test_solve_one(self):
         val = 42
         expr = BitVecVariable(32, 'tmp')
-        self.state.add(expr == val)
+        self.state.constrain(expr == val)
         solved = self.state.solve_one(expr)
         self.assertEqual(solved, val)
 
     def test_solve_n(self):
         expr = BitVecVariable(32, 'tmp')
-        self.state.add(expr > 4)
-        self.state.add(expr < 7)
+        self.state.constrain(expr > 4)
+        self.state.constrain(expr < 7)
         solved = self.state.solve_n(expr, 2)
         self.assertEqual(solved, [5,6])
 
     def test_solve_n2(self):
         expr = BitVecVariable(32, 'tmp')
-        self.state.add(expr > 4)
-        self.state.add(expr < 100)
+        self.state.constrain(expr > 4)
+        self.state.constrain(expr < 100)
         solved = self.state.solve_n(expr, 5)
         self.assertEqual(len(solved), 5)
 
     def test_policy_one(self):
         expr = BitVecVariable(32, 'tmp')
-        self.state.add(expr > 0)
-        self.state.add(expr < 100)
+        self.state.constrain(expr > 0)
+        self.state.constrain(expr < 100)
         solved = self.state.concretize(expr, 'ONE')
         self.assertEqual(len(solved), 1)
         self.assertIn(solved[0], xrange(100))
@@ -74,7 +74,7 @@ class StateTest(unittest.TestCase):
         initial_state = State(constraints, FakeModel())
 
         arr = initial_state.symbolicate_buffer('+'*100, label='SYMBA')
-        initial_state.add(arr[0] > 0x41)
+        initial_state.constrain(arr[0] > 0x41)
         self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
         with initial_state as new_state:
 
@@ -85,7 +85,7 @@ class StateTest(unittest.TestCase):
             self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
             self.assertTrue(len(new_state.constraints.declarations) == 1 ) 
 
-            new_state.add(arrb[0] > 0x42)
+            new_state.constrain(arrb[0] > 0x42)
 
 
             self.assertTrue(len(new_state.constraints.declarations) == 2 ) 

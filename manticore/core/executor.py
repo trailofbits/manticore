@@ -560,8 +560,7 @@ class Executor(object):
 
         children = []
         if len(vals) == 1:
-            constraint = symbolic == vals[0]
-            current_state.add(constraint, check=True) #We already know it's sat
+            current_state.constrain(symbolic == vals[0])
             setstate(current_state, vals[0])
             #current_state._try_simplify()
         else:
@@ -572,7 +571,7 @@ class Executor(object):
 
             for new_value in vals:
                 with current_state as new_state:
-                    new_state.add(symbolic == new_value, check=False) #We already know it's sat
+                    new_state.constrain(symbolic == new_value)
                     #and set the PC of the new state to the concrete pc-dest
                     #(or other register or memory address to concrete)
                     setstate(new_state, new_value) 
@@ -755,14 +754,14 @@ class Executor(object):
 
                     children = []
                     with current_state as new_state:
-                        new_state.add(e.constraint==False)
+                        new_state.constrain(e.constraint==False)
                         if solver.check(new_state.constraints):
                             self.putState(new_state)
                             children.append(new_state.co)
 
                     with current_state as new_state:
                         children.append(new_state.co)
-                        new_state.add(e.constraint)
+                        new_state.constrain(e.constraint)
                         self.newerror(new_state.cpu.PC)
                         self.generate_testcase(new_state, "Symbolic Memory Exception: " + str(e))
 
