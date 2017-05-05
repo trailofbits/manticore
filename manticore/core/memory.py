@@ -773,28 +773,28 @@ class Memory(object):
         return result
 
 
-    def start_write_trace(self):
+    def push_record_writes(self):
         '''
-        Begin recording all writes. Retrieve all writes with `stop_write_trace()`
+        Begin recording all writes. Retrieve all writes with `pop_record_writes()`
 
         :return: None
         '''
-        print '[d] starting trace..'
         self._recording_stack.append([])
 
-    def stop_write_trace(self):
+    def pop_record_writes(self):
         '''
         Stop recording trace and return a `list[(address, value)]` of all the writes
         that occurred, where `value` is of type list[str]. Can be called without
-        intermediate `stop_write_trace()`.
+        intermediate `pop_record_writes()`.
 
-        For example,
-            mem.start_write_trace()
+        For example::
+
+            mem.push_record_writes()
                 mem.write(1, 'a')
-                mem.start_write_trace()
+                mem.push_record_writes()
                     mem.write(2, 'b')
-                mem.stop_write_trace()  # Will return [(2, 'b')]
-            mem.stop_write_trace()  # Will return [(1, 'a'), (2, 'b')]
+                mem.pop_record_writes()  # Will return [(2, 'b')]
+            mem.pop_record_writes()  # Will return [(1, 'a'), (2, 'b')]
 
         Multiple writes to the same address will all be included in the trace in the
         same order they occurred.

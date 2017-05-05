@@ -1620,10 +1620,10 @@ class MemoryTest(unittest.TestCase):
 
         addr = mem.mmap(None, 0x1000, 'rw')
 
-        mem.start_write_trace()
+        mem.push_record_writes()
         mem.write(addr, 'a')
         mem.write(addr+1, 'b')
-        writes = mem.stop_write_trace()
+        writes = mem.pop_record_writes()
 
         self.assertIn((addr, ['a']), writes)
         self.assertIn((addr+1, ['b']), writes)
@@ -1635,10 +1635,10 @@ class MemoryTest(unittest.TestCase):
 
         addr = mem.mmap(None, 0x1000, 'rw')
 
-        mem.start_write_trace()
+        mem.push_record_writes()
         mem.write(addr, 'a')
         mem.write(addr, 'b')
-        writes = mem.stop_write_trace()
+        writes = mem.pop_record_writes()
 
         self.assertIn((addr, ['a']), writes)
         self.assertIn((addr, ['b']), writes)
@@ -1649,21 +1649,21 @@ class MemoryTest(unittest.TestCase):
 
         addr = mem.mmap(None, 0x1000, 'rw')
 
-        mem.start_write_trace()
+        mem.push_record_writes()
         mem.write(addr, 'a')
         mem.write(addr+1, 'b')
-        mem.start_write_trace()
+        mem.push_record_writes()
         mem.write(addr+2, 'c')
         mem.write(addr+3, 'd')
-        inner_writes = mem.stop_write_trace()
-        outer_writes = mem.stop_write_trace()
+        inner_writes = mem.pop_record_writes()
+        outer_writes = mem.pop_record_writes()
 
-        # Make sure the first ones aren't in the inner write
+        # Make sure writes do not appear in a trace started after them
         self.assertNotIn((addr, ['a']), inner_writes)
         self.assertNotIn((addr+1, ['b']), inner_writes)
         # Make sure the first two are in the outer write
-        self.assertNotIn((addr, ['c']), outer_writes)
-        self.assertNotIn((addr+1, ['d']), outer_writes)
+        self.assertIn((addr, ['a']), outer_writes)
+        self.assertIn((addr+1, ['b']), outer_writes)
         # Make sure the last two are in the inner write
         self.assertIn((addr+2, ['c']), inner_writes)
         self.assertIn((addr+3, ['d']), inner_writes)
@@ -1677,10 +1677,10 @@ class MemoryTest(unittest.TestCase):
         mem = SMemory32(cs)
         addr = mem.mmap(None, 0x1000, 'rw')
 
-        mem.start_write_trace()
+        mem.push_record_writes()
         with self.assertRaises(MemoryException):
             mem.write(addr-0x5000, 'a')
-        trace = mem.stop_write_trace()
+        trace = mem.pop_record_writes()
 
         # Make sure erroring writes don't get recorded
         self.assertEqual(len(trace), 0)
