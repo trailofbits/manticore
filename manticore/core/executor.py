@@ -560,8 +560,7 @@ class Executor(object):
 
         children = []
         if len(vals) == 1:
-            constraint = symbolic == vals[0]
-            current_state.constrain(constraint)
+            current_state.constrain(symbolic == vals[0])
             setstate(current_state, vals[0])
             #current_state._try_simplify()
         else:
