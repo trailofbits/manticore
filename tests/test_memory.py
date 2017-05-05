@@ -1614,6 +1614,28 @@ class MemoryTest(unittest.TestCase):
         m = pickle.loads(pickle.dumps(m))
         self.assertItemsEqual(m[0x10000000:0x10003000], 'X'*0x27f0 + 'Y'*0x20 + '\x00'*0x7f0)
 
+    def testMultiSymbolicDereferences(self):
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        base = mem.mmap(0x10000, 0x1000, 'rwx')
+        self.assertEqual(len(mem.mappings()), 1)
+
+        M = 10
+        for i in xrange(M):
+            mem[base+i] = i+1
+
+        for i in xrange(M, 0x100):
+            mem[base+i] = 0xff-1
+        #mem -> { 0x1 , 0x2 , 0x3 , 0xff , 0xff , 0xff , ....  0xff }
+
+        initial = cs.new_bitvec(8)
+        value = Operators.ZEXTEND(initial, 32)
+        for i in xrange(0x100):
+            value = Operators.ZEXTEND(Operators.ORD(mem[value+base]), 32)+1
+        
+        self.assertEqual(value, 0xff)
+
+
 
 
 if __name__ == '__main__':
