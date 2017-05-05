@@ -382,4 +382,26 @@ class ABITests(unittest.TestCase):
 
         self.assertEqual(cpu.RAX, 34)
 
+    def test_test_prefix(self):
+        cpu = self._cpu_x86
+
+        cpu.push(2, cpu.address_bit_size)
+        cpu.push(0x1234, cpu.address_bit_size)
+        
+        def test(prefix, extracted):
+            self.assertEquals(prefix, 1)
+            self.assertEquals(extracted, 2)
+
+        cpu.ABI.invoke_function(test, prefix_args=(1,))
+
+        self.assertEquals(cpu.EIP, 0x1234)
+
+    def test_fail_concretize_prefix_arg(self):
+        cpu = self._cpu_x86
+
+        def test(prefix, extracted):
+            raise ConcretizeArgument(0)
+
+        with self.assertRaises(AssertionError) as cr:
+            cpu.ABI.invoke_function(test, prefix_args=(1,))
 
