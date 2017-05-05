@@ -776,8 +776,6 @@ class Memory(object):
     def push_record_writes(self):
         '''
         Begin recording all writes. Retrieve all writes with `pop_record_writes()`
-
-        :return: None
         '''
         self._recording_stack.append([])
 
@@ -809,7 +807,6 @@ class Memory(object):
         return lst
 
     def write(self, addr, buf):
-
         size = len(buf)
         if not self.access_ok(slice(addr, addr + size), 'w'):
             raise MemoryException('No access writing', addr)
