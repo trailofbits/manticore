@@ -405,3 +405,19 @@ class ABITests(unittest.TestCase):
         with self.assertRaises(AssertionError) as cr:
             cpu.ABI.invoke_function(test, prefix_args=(1,))
 
+    def test_funcall_method(self):
+        cpu = self._cpu_x86
+
+        cpu.push(2, cpu.address_bit_size)
+        cpu.push(1, cpu.address_bit_size)
+        cpu.push(0x1234, cpu.address_bit_size)
+
+        class Kls(object):
+            def method(self, a, b):
+                return a+b
+
+        obj = Kls()
+        result = cpu.ABI.invoke_function(obj.method)
+
+        self.assertEquals(result, 3)
+

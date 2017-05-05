@@ -244,7 +244,17 @@ class ABI(object):
         '''
         prefix_args = prefix_args or ()
 
-        nargs = implementation.func_code.co_argcount - len(prefix_args)
+        spec = inspect.getargspec(implementation)
+
+        if spec.varargs:
+            logger.warning("ABI: Python function models should not have varargs")
+            logger.warning("ABI: varargs should be implemented as taking a single parameter")
+
+        nargs = len(spec.args) - len(prefix_args)
+
+        # If the implementation is a method, we need to account for `self`
+        if inspect.ismethod(implementation):
+            nargs -= 1
 
         def resolve_argument(arg):
             if isinstance(arg, str):
