@@ -386,8 +386,19 @@ class Z3Solver(Solver):
                 try:
                     self._assert( operation(X, aux) )
                     self._send('(%s %s)' % (goal, aux.name) )
-                    self._send('(check-sat)' )
-                    if self._recv() == 'sat': #first line
+                    self._send('(check-sat)')
+                    _status = self._recv()
+                    if _status not in ('sat', 'unsat', 'unknown'):
+                        # Minimize (or Maximize) sometimes prints the objective before the status
+                        # This will be a line like NAME |-> VALUE
+                        maybe_sat = self._recv()
+                        if maybe_sat == 'sat':
+                            pattern = re.compile('(?P<expr>.*?)\s+\|->\s+(?P<value>.*)', re.DOTALL)
+                            m = pattern.match(_status)
+                            expr, value = m.group('expr'), m.group('value')
+                            assert expr == aux.name
+                            return int(value)
+                    elif _status == 'sat':
                         ret = self._recv()
                         if not (ret.startswith('(') and ret.endswith(')')):
                             raise SolverException('bad output on max, z3 may have been killed')

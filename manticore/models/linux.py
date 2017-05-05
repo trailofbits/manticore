@@ -1181,7 +1181,7 @@ class Linux(object):
         logger.debug("SIGACTION, Ignoring changing signal handler for signal %d", signum)
         return 0
 
-    def sys_sigprocmask(self, how, newset, oldset):
+    def sys_sigprocmask(self, cpu, how, newset, oldset):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
         return 0
 
@@ -1492,6 +1492,7 @@ class Linux(object):
 
         return self.current.ABI.invoke_syscall(syscalls[index])
 
+
     def int80(self):
         ''' 
         32 bit dispatcher.
@@ -1537,6 +1538,7 @@ class Linux(object):
             raise SyscallNotImplemented(64, index)
 
         return self.current.ABI.invoke_syscall(syscalls[index])
+
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
