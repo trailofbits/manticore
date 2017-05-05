@@ -37,10 +37,10 @@ class LinuxTest(unittest.TestCase):
         envp_ptr = argv_ptr + len(real_argv)*8 + 8
 
         for i, arg in enumerate(real_argv):
-            self.assertEqual(self.linux._read_string(cpu, cpu.read_int(argv_ptr + i*8)), arg)
+            self.assertEqual(self.linux._read_string(cpu.read_int(argv_ptr + i*8)), arg)
 
         for i, env in enumerate(envp):
-            self.assertEqual(self.linux._read_string(cpu, cpu.read_int(envp_ptr + i*8)), env)
+            self.assertEqual(self.linux._read_string(cpu.read_int(envp_ptr + i*8)), env)
 
     def test_load_maps(self):
         mappings = self.linux.current.memory.mappings()
