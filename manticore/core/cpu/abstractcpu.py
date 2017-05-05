@@ -368,7 +368,6 @@ class Cpu(object):
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
-        self._decoded_pc = None
         self._icount = 0
         self._abi = None
 
