@@ -1185,7 +1185,7 @@ class Linux(object):
         logger.debug("SIGACTION, Ignoring changing signal handler for signal %d", signum)
         return 0
 
-    def sys_sigprocmask(self, how, newset, oldset):
+    def sys_sigprocmask(self, cpu, how, newset, oldset):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
         return 0
 
