@@ -629,10 +629,10 @@ class Cpu(object):
 
         implementation = getattr(self, name, fallback_to_emulate)
 
-        #if logger.level == logging.DEBUG :
-        #    logger.debug(self.render_instruction())
-        #    for l in self.render_registers():
-        #        register_logger.debug(l)
+        if logger.level == logging.DEBUG :
+            logger.debug(self.render_instruction())
+            for l in self.render_registers():
+                register_logger.debug(l)
 
         implementation(*instruction.operands)
         self._icount+=1
