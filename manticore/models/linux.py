@@ -1,5 +1,5 @@
 import fcntl
-
+import resource
 import cgcrandom
 import weakref
 import errno
@@ -1412,9 +1412,12 @@ class Linux(object):
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
         logger.debug("sys_futex(...) -> -1")
         return -1
-    def sys_getrlimit(self, resource, rlim):
-        logger.debug("sys_getrlimit(%x, %x) -> -1",resource, rlim)
-        return -1
+    def sys_getrlimit(self, res, rlim):
+        rlimit = resource.getrlimit(res)
+        self.current.write_int(rlim, rlimit[0], 32)
+        self.current.write_int(rlim+4, rlimit[1], 32)
+        logger.debug("sys_getrlimit(%d, 0x%x) -> (%d, %d)", res, rlim, rlimit[0], rlimit[1])
+        return 0
     def sys_fadvise64(self, fd, offset, length, advice):
         logger.debug("sys_fadvise64(%x, %x, %x, %x) -> 0", fd, offset, length, advice)
         return 0
@@ -1523,6 +1526,7 @@ class Linux(object):
                      0x0000008d: self.sys_getpriority,
                      0x00000091: self.sys_readv,
                      0x00000092: self.sys_writev,
+                     0x000000bf: self.sys_getrlimit,
                      0x000000c0: self.sys_mmap2,
                      0x000000c3: self.sys_stat32,
                      0x000000c5: self.sys_fstat,
@@ -1543,7 +1547,7 @@ class Linux(object):
         index, arguments, writeResult  = self.current.get_syscall_description()
 
         if index not in syscalls:
-            raise SyscallNotImplemented(64, index)
+            raise SyscallNotImplemented(32, index)
         func = syscalls[index]
 
         logger.debug("int80: %s %r ", func.func_name
