@@ -492,8 +492,7 @@ class Manticore(object):
                     fmodel = getattr(fmodel,n)
                 assert fmodel != models
                 def cb_function(state):
-                    state.cpu.abi.invoke_function(fmodel, convention=cc_name,
-                                                     prefix_args=(state.model,))
+                    state.model.invoke_model(fmodel, prefix_args=(state.model,))
                 self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
 
     def _model_hook_callback(self, state):

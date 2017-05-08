@@ -4,7 +4,7 @@ import sys, os, struct
 from ..core.memory import Memory, MemoryException, SMemory32, Memory32
 from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
-from ..core.cpu.x86 import I386Cpu, Sysenter
+from ..core.cpu.x86 import I386Cpu, Sysenter, I386StdcallAbi
 from ..core.cpu.abstractcpu import Interruption, Syscall, \
         ConcretizeRegister, ConcretizeArgument, IgnoreAPI
 from ..core.executor import ForkState, SyscallNotImplemented
@@ -174,6 +174,8 @@ class Windows(Platform):
                 self.running.append(self.procs.index(cpu))
         
 
+        self._function_abi = I386StdcallAbi(self.procs[0])
+        #self._syscall_abi = 
         # open standard files stdin, stdout, stderr
         logger.info("Not Opening any file")
 
@@ -196,6 +198,7 @@ class Windows(Platform):
         state['syscall_trace'] = self.syscall_trace
         state['files'] = self.files
         state['flavor'] = self.flavor
+        state['function_abi'] = self._function_abi
 
         return state
 
@@ -211,6 +214,7 @@ class Windows(Platform):
         self.syscall_trace = state['syscall_trace']
         self.files = state['files']
         self.flavor = state['flavor']
+        self._function_abi = state['function_abi']
 
     def _read_string(self, cpu, buf):
         """
