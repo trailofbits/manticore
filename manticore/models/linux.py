@@ -1485,12 +1485,12 @@ class Linux(object):
 
                 }
 
-        index = self.current.ABI.syscall_number()
+        index = self.current.abi.syscall_number()
 
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
 
-        return self.current.ABI.invoke_syscall(syscalls[index])
+        return self.current.abi.invoke_syscall(syscalls[index])
 
 
     def int80(self):
@@ -1533,11 +1533,11 @@ class Linux(object):
                      0x00000014: self.sys_getpid,
                      0x000f0005: self.sys_ARM_NR_set_tls,
                     }
-        index = self.current.ABI.syscall_number()
+        index = self.current.abi.syscall_number()
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
 
-        return self.current.ABI.invoke_syscall(syscalls[index])
+        return self.current.abi.invoke_syscall(syscalls[index])
 
 
     def sys_clock_gettime(self, clock_id, timespec):

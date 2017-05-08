@@ -1,6 +1,6 @@
 from capstone import *
 from capstone.x86 import *
-from .abstractcpu import ABI, Cpu, RegisterFile, Operand, instruction
+from .abstractcpu import Abi, Cpu, RegisterFile, Operand, instruction
 from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
 from functools import wraps
 import collections
@@ -5620,9 +5620,9 @@ class X86Cpu(Cpu):
 ################################################################################
 #Calling conventions
 
-class AMD64ABI(ABI):
+class SystemVAbi(Abi):
     '''
-    x64 syscall and funcall conventions.
+    x64 SystemV syscall and funcall conventions.
     '''
     def syscall_number(self):
         return self._cpu.RAX
@@ -5675,7 +5675,7 @@ class AMD64Cpu(X86Cpu):
         :param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
         '''
         super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},  ), memory, *args, **kwargs)
-        self._abi = AMD64ABI(self)
+        self._abi = SystemVAbi(self)
 
     def __str__(self):
         '''
@@ -5769,13 +5769,13 @@ class AMD64Cpu(X86Cpu):
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
 
-class I386ABI(ABI):
+class I386Abi(Abi):
     '''
     x86-32 syscall and funcall conventions.
     '''
 
     def __init__(self, cpu):
-        super(I386ABI, self).__init__(cpu)
+        super(I386Abi, self).__init__(cpu)
 
     def syscall_number(self):
         return self._cpu.EAX
@@ -5820,7 +5820,7 @@ class I386Cpu(X86Cpu):
         :param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
         '''
         super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}), memory, *args, **kwargs)
-        self._abi = I386ABI(self)
+        self._abi = I386Abi(self)
 
     def __str__(self):
         '''

@@ -168,7 +168,7 @@ class RegisterFile(object):
         return self._alias(register) in self.all_registers
 
 
-class ABI(object):
+class Abi(object):
     '''
     Represents a CPU's system call and function calling conventions.
 
@@ -395,12 +395,12 @@ class Cpu(object):
         return self._icount
 
     @property
-    def ABI(self):
+    def abi(self):
         '''
-        Return an `ABI` instance describing how to call functions and syscalls.
+        Return an `Abi` instance describing how to call functions and syscalls.
 
-        :return: An `ABI`
-        :rtype: ABI
+        :return: An `Abi`
+        :rtype: Abi
         '''
         return self._abi
 

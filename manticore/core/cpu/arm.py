@@ -1,6 +1,6 @@
 import struct
 import sys
-from .abstractcpu import ABI, Cpu, RegisterFile, Operand
+from .abstractcpu import Abi, Cpu, RegisterFile, Operand
 from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
@@ -253,7 +253,7 @@ class Armv7RegisterFile(RegisterFile):
         return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
 
 
-class Armv7ABI(ABI):
+class Armv7Abi(Abi):
     '''
     ARMv7 ABI
     '''
@@ -309,7 +309,7 @@ class Armv7Cpu(Cpu):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
         self._force_next = False
-        self._abi = Armv7ABI(self)
+        self._abi = Armv7Abi(self)
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()
