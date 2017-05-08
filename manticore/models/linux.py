@@ -304,7 +304,10 @@ class Linux(Platform):
 
         #Load process and setup socketpairs
         arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[ELFFile(file(program)).get_machine_arch()]
-        self.procs = [self._mk_proc(arch)]
+        cpu = self._mk_proc(arch)
+        self.procs = [cpu]
+        self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
+        self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
 
         self._current = 0
         self.load(program)
@@ -363,6 +366,8 @@ class Linux(Platform):
         state['auxv'] = self.auxv
         state['program'] = self.program
         state['syscall_arg_regs'] = self.syscall_arg_regs
+        state['functionabi'] = self._function_abi
+        state['syscallabi'] = self._syscall_abi
         if hasattr(self, '_arm_tls_memory'):
             state['_arm_tls_memory'] = self._arm_tls_memory
         return state
@@ -411,6 +416,8 @@ class Linux(Platform):
         self.auxv = state['auxv']
         self.program = state['program']
         self.syscall_arg_regs = state['syscall_arg_regs']
+        self._function_abi = state['functionabi']
+        self._syscall_abi = state['syscallabi']
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
 
@@ -943,7 +950,6 @@ class Linux(Platform):
 
     def _is_open(self, fd):
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
-
 
     def sys_lseek(self, fd, offset, whence):
         '''
@@ -1486,12 +1492,12 @@ class Linux(Platform):
 
                 }
 
-        index = self.current.abi.syscall_number()
+        index = self._syscall_abi.syscall_number()
 
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
 
-        return self.current.abi.invoke_syscall(syscalls[index])
+        return self._syscall_abi.invoke(syscalls[index])
 
 
     def int80(self):
@@ -1534,12 +1540,13 @@ class Linux(Platform):
                      0x00000014: self.sys_getpid,
                      0x000f0005: self.sys_ARM_NR_set_tls,
                     }
-        index = self.current.abi.syscall_number()
+
+        index = self._syscall_abi.syscall_number()
+
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
 
-        return self.current.abi.invoke_syscall(syscalls[index])
-
+        return self._syscall_abi.invoke(syscalls[index])
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
@@ -1839,7 +1846,9 @@ class SLinux(Linux):
             mem = SMemory32(self.constraints)
         else:
             mem = SMemory64(self.constraints)
-        return CpuFactory.get_cpu(mem, arch)
+
+        cpu = CpuFactory.get_cpu(mem, arch)
+        return cpu
 
     @property
     def constraints(self):

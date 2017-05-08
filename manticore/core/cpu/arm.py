@@ -1,6 +1,6 @@
 import struct
 import sys
-from .abstractcpu import Abi, Cpu, RegisterFile, Operand
+from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
 from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
@@ -253,27 +253,29 @@ class Armv7RegisterFile(RegisterFile):
         return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
 
 
-class Armv7Abi(Abi):
+class Armv7LinuxSyscallAbi(SyscallAbi):
     '''
-    ARMv7 ABI
+    ARMv7 Linux system call ABI
     '''
     # EABI standards:
     #  syscall # is in R7
     #  arguments are passed in R0-R6
     #  retval is passed in R0
-    # TODO(yan): Stack alignment
-
     def syscall_number(self):
         return self._cpu.R7
 
-    def syscall_arguments(self):
+    def get_arguments(self):
         for i in range(6):
             yield 'R{}'.format(i)
 
-    def syscall_write_result(self, result):
+    def write_result(self, result):
         self._cpu.R0 = result
 
-    def funcall_arguments(self, convention):
+class Armv7CdeclAbi(Abi):
+    '''
+    ARMv7 Cdecl function call ABI
+    '''
+    def get_arguments(self):
         # First four passed via R0-R3, then on stack
         for reg in ('R0', 'R1', 'R2', 'R3'):
             yield reg
@@ -284,7 +286,7 @@ class Armv7Abi(Abi):
             yield offset
             offset += bwidth
 
-    def funcall_return(self, result, count, convention=None):
+    def write_result(self, result):
         if result is not None:
             self._cpu.R0 = result
         self._cpu.PC = self._cpu.LR 
@@ -309,7 +311,6 @@ class Armv7Cpu(Cpu):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
         self._force_next = False
-        self._abi = Armv7Abi(self)
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()

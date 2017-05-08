@@ -6,11 +6,11 @@ from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
-from itertools import islice, imap
 from functools import wraps
+from itertools import islice, imap
+import inspect
 import sys
 import types
-import inspect
 import logging
 
 logger = logging.getLogger("CPU")
@@ -167,18 +167,12 @@ class RegisterFile(object):
         '''
         return self._alias(register) in self.all_registers
 
-
 class Abi(object):
     '''
-    Represents a CPU's system call and function calling conventions.
-
-    Implement the following methods in subclasses:
-     - syscall_number
-     - syscall_arguments
-     - syscall_write_result
-     - funcall_arguments
-     - funcall_return
-
+    Represents the ability to extract arguments from the environment and write
+    back a result.
+    
+    Used for function call and system call models.
     '''
     def __init__(self, cpu):
         '''
@@ -186,58 +180,34 @@ class Abi(object):
         '''
         self._cpu = cpu
 
-    def syscall_number(self):
+    def get_arguments(self):
         '''
-        Extract the index of the invoked syscall.
+        Extract model arguments conforming to `convention`. Produces an iterable
+        of argument descriptors following the calling convention. A descriptor
+        is either a string describing a register, or an address (concrete or
+        symbolic).
 
-        :return: int
+        :return: iterable returning syscall arguments.
+        :rtype: iterable
         '''
         raise NotImplementedError
 
-    def invoke_syscall(self, implementation):
+    def write_result(self, result):
         '''
-        Invoke a system call modeled by `implementation`, correctly marshaling
-        arguments and return value.
+        Write the result of a model back to the environment.
 
-        :param callable implementation: Python model of the syscall
-        :return: The result of calling `implementation`
+        :param result: result of the model implementation
         '''
-        spec = inspect.getargspec(implementation)
+        raise NotImplementedError
 
-        if spec.varargs:
-            logger.warning("ABI: syscalls and models should not have varargs")
-
-        nargs = len(spec.args)
-
-        # If the implementation is a method, we need to account for `self`
-        if inspect.ismethod(implementation):
-            nargs -= 1
-
-        regs = islice(self.syscall_arguments(), nargs)
-        arguments = [self._cpu.read_register(n) for n in regs]
-
-        logger.debug("syscall: {}, args: {}".format(implementation.__name__,
-            repr(arguments)))
-
-        try:
-            result = implementation(*arguments)
-        except ConcretizeArgument as e:
-            raise ConcretizeRegister(regs[e.argnum], "Concretizing for syscall")
-        else:
-            self.syscall_write_result(result)
-
-        return result
-
-    def invoke_function(self, implementation, convention=None, prefix_args=None,
-            varargs=False):
+    def invoke(self, implementation, prefix_args=None, varargs=False):
         '''
-        Invoke a function modeled by `implementation` using `convention` as the
-        calling convention. If `varargs` is true, implementation receives a single
-        argument that is a generator for function arguments. Pass a tuple for
-        `prefix_args` of arguments you'd like to precede the actual arguments.
+        Invoke a function modeled by `implementation`. If `varargs` is true,
+        implementation receives a single argument that is a generator for
+        function arguments. Pass a tuple for `prefix_args` of arguments you'd
+        like to precede the actual arguments.
 
         :param callable implementation: Python model of the function
-        :param str convention: String describing the calling convention; leave out for default.
         :param tuple prefix_args: Pass these parametrs to implementation before those read from state.
         :param bool varargs: Whether the function expects a variable number of arguments
         :return: The result of calling `implementation`
@@ -247,8 +217,7 @@ class Abi(object):
         spec = inspect.getargspec(implementation)
 
         if spec.varargs:
-            logger.warning("ABI: Python function models should not have varargs")
-            logger.warning("ABI: varargs should be implemented as taking a single parameter")
+            logger.warning("ABI: Vararg models should implemented as taking a single parameter")
 
         nargs = len(spec.args) - len(prefix_args)
 
@@ -263,7 +232,7 @@ class Abi(object):
                 return self._cpu.read_int(arg)
 
         # Create a stream of resolved arguments from argument descriptors 
-        descriptors = self.funcall_arguments(convention)
+        descriptors = self.get_arguments()
         argument_iter = imap(resolve_argument, descriptors)
 
         try:
@@ -277,7 +246,7 @@ class Abi(object):
             idx = e.argnum - len(prefix_args)
 
             # Arguments were lazily computed in case of varargs, so recompute here
-            descriptors = self.funcall_arguments(convention)
+            descriptors = self.get_arguments()
             src = next(islice(descriptors, idx, idx+1))
 
             msg = 'Concretizing due to function call'
@@ -286,61 +255,19 @@ class Abi(object):
             else:
                 raise ConcretizeMemory(src, self._cpu.address_bit_size, msg)
         else:
-            # nargs will be inaccurate in case of stdcall, but stdcall functions
-            # must not be vararg according to:
-            # http://msdn.microsoft.com/en-us/library/zxk0tw93.aspx
-            self.funcall_return(result, nargs, convention)
+            self.write_result(result)
 
         return result
 
-    def syscall_arguments(self):
+class SyscallAbi(Abi):
+    '''
+    A system-call specific ABI.
+    '''
+    def syscall_number(self):
         '''
-        Extract syscall arguments.
+        Extract the index of the invoked syscall.
 
-        :return: iterable returning syscall arguments.
-        :rtype: iterable
-        '''
-        raise NotImplementedError
-
-    def syscall_write_result(self, result):
-        '''
-        Write the result of a system call.
-
-        :param result: result of the syscall implementation
-        '''
-        raise NotImplementedError
-
-    def funcall_arguments(self, convention=None):
-        '''
-        Return an iterable of argument descriptors following the calling 
-        convention. Descriptors are either strings (specifying register names)
-        or addresses specifying memory locations.
-
-        :param str convention: Calling convention being used. `None` for default
-        :return: A generator of function arguments according to `convention`
-        :rtype: iterable
-        '''
-        raise NotImplementedError
-
-    def funcall_return(self, result, count, convention=None):
-        '''
-        Write the result (return value) of a function call.
-
-        :param result: return value of the function
-        :param int count: How many arguments were read (some conventions have
-                                the callee clean up)
-        :param str convention: Calling convention that is used. `None` for default
-        '''
-        raise NotImplementedError
-
-    def funcall_concretize_argument(self, idx, convention):
-        '''
-        Concretize the `idx`th argument of a function, according to `convention`
-        This will throw one of the Concretize exceptions.
-
-        :param int idx: The index of the argument requiring concretization
-        :param str convention: Calling convention being used. `None` for default
-        :return: None
+        :return: int
         '''
         raise NotImplementedError
 
@@ -369,7 +296,6 @@ class Cpu(object):
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
-        self._abi = None
 
         self._md = Cs(self.arch, self.mode)
         self._md.detail = True
@@ -379,7 +305,6 @@ class Cpu(object):
     def __getstate__(self):
         state = {}
         state['regfile'] = self._regfile
-        state['abi'] = self._abi
         state['memory'] = self._memory
         state['icount'] = self._icount
         return state
@@ -387,22 +312,11 @@ class Cpu(object):
     def __setstate__(self, state):
         Cpu.__init__(self, state['regfile'], state['memory'])
         self._icount = state['icount']
-        self._abi = state['abi']
         return
 
     @property
     def icount(self):
         return self._icount
-
-    @property
-    def abi(self):
-        '''
-        Return an `Abi` instance describing how to call functions and syscalls.
-
-        :return: An `Abi`
-        :rtype: Abi
-        '''
-        return self._abi
 
     ##############################
     # Register access

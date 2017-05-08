@@ -1,6 +1,6 @@
 from capstone import *
 from capstone.x86 import *
-from .abstractcpu import Abi, Cpu, RegisterFile, Operand, instruction
+from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
 from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
 from functools import wraps
 import collections
@@ -5620,21 +5620,77 @@ class X86Cpu(Cpu):
 ################################################################################
 #Calling conventions
 
-class SystemVAbi(Abi):
+class I386LinuxSyscallAbi(SyscallAbi):
     '''
-    x64 SystemV syscall and funcall conventions.
+    i386 Linux system call ABI
+    '''
+    def syscall_number(self):
+        return self._cpu.EAX
+
+    def get_arguments(self):
+        for reg in ('EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'):
+            yield reg
+
+    def write_result(self, result):
+        self._cpu.EAX = result
+
+class AMD64LinuxSyscallAbi(SyscallAbi):
+    '''
+    AMD64 Linux system call ABI
     '''
     def syscall_number(self):
         return self._cpu.RAX
 
-    def syscall_arguments(self):
+    def get_arguments(self):
         for reg in ('RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9'):
             yield reg
 
-    def syscall_write_result(self, result):
+    def write_result(self, result):
         self._cpu.RAX = result
+    
 
-    def funcall_arguments(self, convention):
+class I386CdeclAbi(Abi):
+    '''
+    i386 cdecl function call semantics
+    '''
+    def get_arguments(self):
+        bwidth = self._cpu.address_bit_size / 8
+        offset = self._cpu.ESP
+        while True:
+            offset += bwidth
+            yield offset
+
+    def write_result(self, result):
+        if result is not None:
+            self._cpu.EAX = result
+
+        self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
+        
+class I386StdcallAbi(I386CdeclAbi):
+    '''
+    x86 Stdcall function call convention
+    '''
+    def __init__(self, cpu):
+        super(I386StdcallAbi, self).__init__(cpu)
+        self._arguments = 0
+
+    def get_arguments(self):
+        for descriptor in super(I386StdcallAbi, self).get_arguments():
+            self._arguments += 1
+            yield descriptor
+
+    def write_result(self, result):
+        super(I386StdcallAbi, self).write_result(result)
+        bwidth = self._cpu.address_bit_size / 8
+        self._cpu.ESP += self._arguments * bwidth
+        self._arguments = 0
+
+class SystemVAbi(Abi):
+    '''
+    x64 SystemV function call convention
+    '''
+
+    def get_arguments(self):
         # First 6 arguments go in registers, rest are popped from stack
         reg_args = ('RDI', 'RSI', 'RDX', 'RCX', 'R8', 'R9')
 
@@ -5647,18 +5703,12 @@ class SystemVAbi(Abi):
             offset += bwidth
             yield offset
 
-    def funcall_return(self, result, count, convention):
+    def write_result(self, result):
         # XXX(yan): Can also return in rdx
         if result is not None:
             self._cpu.RAX = result
 
         self._cpu.RIP = self._cpu.pop(self._cpu.address_bit_size)
-
-        if convention == 'stdcall' and count > 6:
-            count -= 6
-            bwidth = self._cpu.address_bit_size / 8
-            self._cpu.RSP += count * bwidth
-
 
 
 class AMD64Cpu(X86Cpu):
@@ -5675,7 +5725,6 @@ class AMD64Cpu(X86Cpu):
         :param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
         '''
         super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},  ), memory, *args, **kwargs)
-        self._abi = SystemVAbi(self)
 
     def __str__(self):
         '''
@@ -5769,43 +5818,6 @@ class AMD64Cpu(X86Cpu):
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
 
-class I386Abi(Abi):
-    '''
-    x86-32 syscall and funcall conventions.
-    '''
-
-    def __init__(self, cpu):
-        super(I386Abi, self).__init__(cpu)
-
-    def syscall_number(self):
-        return self._cpu.EAX
-
-    def syscall_arguments(self):
-        for reg in ('EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'):
-            yield reg
-
-    def syscall_write_result(self, result):
-        self._cpu.EAX = result
-
-    def funcall_arguments(self, convention):
-        bwidth = self._cpu.address_bit_size / 8
-        offset = self._cpu.ESP
-        while True:
-            offset += bwidth
-            yield offset
-
-    def funcall_return(self, result, count, convention):
-        if result is not None:
-            self._cpu.EAX = result
-
-        self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
-
-        # Callee needs to clean up the arguments with stdcall
-        if convention == 'stdcall':
-            bwidth = self._cpu.address_bit_size / 8
-            self._cpu.ESP += count * bwidth
-        
-
 class I386Cpu(X86Cpu):
     #Config
     max_instr_width = 15
@@ -5820,7 +5832,6 @@ class I386Cpu(X86Cpu):
         :param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
         '''
         super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}), memory, *args, **kwargs)
-        self._abi = I386Abi(self)
 
     def __str__(self):
         '''
