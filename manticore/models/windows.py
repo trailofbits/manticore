@@ -9,6 +9,7 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, \
         ConcretizeRegister, ConcretizeArgument, IgnoreAPI
 from ..core.executor import ForkState, SyscallNotImplemented
 from ..utils.helpers import issymbolic
+from ..models.platform import Platform
 
 from ..binary.pe import minidump
 
@@ -47,7 +48,7 @@ def toStr(state, value):
             value = minmax[0]
     return '{:08x}'.format(value)
 
-class Windows(object):
+class Windows(Platform):
     '''
     A simple Windows Operating System Model.
     This class emulates some Windows system calls
@@ -70,6 +71,8 @@ class Windows(object):
         '''
         Builds a Windows OS model
         '''
+        super(Windows, self).__init__(path)
+
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []

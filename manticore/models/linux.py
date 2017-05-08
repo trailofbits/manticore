@@ -9,6 +9,7 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
+from ..models.platform import Platform
 from elftools.elf.elffile import ELFFile
 import logging
 import random
@@ -256,7 +257,7 @@ class Socket(object):
         return len(buf)
 
 
-class Linux(object):
+class Linux(Platform):
     '''
     A simple Linux Operating System Model.
     This class emulates the most common Linux system calls
@@ -269,7 +270,7 @@ class Linux(object):
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         '''
-
+        super(Linux, self).__init__(program)
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
