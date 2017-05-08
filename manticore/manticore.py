@@ -136,6 +136,7 @@ class Manticore(object):
     :param str binary_path: Path to binary to analyze
     :param args: Arguments to provide to binary
     :type args: list[str]
+    :ivar context: SyncManager managed `dict` shared between Manticore worker processes
     '''
 
 
