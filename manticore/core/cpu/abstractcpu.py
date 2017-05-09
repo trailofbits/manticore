@@ -448,8 +448,12 @@ class Cpu(object):
                     if isinstance(c, Constant):
                         c = chr(c.value)
                     else:
-                        logger.error( 'Concretize executable memory %r %r',c,text )
-                        raise ConcretizeMemory(self.memory, pc, 8 * self.max_instr_width,  policy = 'INSTRUCTION' )
+                        logger.info('Trying to execute instructions from invalid memory')
+                        logger.error('Concretize executable memory %r %r', c, text )
+                        raise ConcretizeMemory(address = pc,
+                                                size = 8 * self.max_instr_width, 
+                                                policy = 'INSTRUCTION' )
+                        break
                 assert isinstance(c, str)
                 text += c
         except MemoryException:
@@ -575,8 +579,6 @@ class Cpu(object):
         result =  self.render_instruction() + "\n"
         result += '\n'.join(self.render_registers())
         return result
-
-
 
 #Instruction decorators
 def instruction(old_method):

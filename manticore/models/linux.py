@@ -30,14 +30,6 @@ def perms_from_protflags(prot_flags):
     return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
 
 
-class SymbolicSyscallArgument(Exception):
-    def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
-        self.reg_num = reg_num
-        self.message = message
-        self.policy = policy
-        super(SymbolicSyscallArgument, self).__init__(message)
-
-
 class File(object):
     def __init__(self, *args, **kwargs):
         #Todo: assert file is seekable otherwise we should save what was
@@ -1392,7 +1384,7 @@ class Linux(object):
         #self.procs[procid] = None
         logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
-            raise ProcessExit(error_code)
+            raise ProcessExit('Process exited correctly. Code: {}'.format(error_code))
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
@@ -1878,31 +1870,31 @@ class SLinux(Linux):
     def syscall(self):
         try:
             return super(SLinux, self).syscall()
-        except SymbolicSyscallArgument, e:
+        except ConcretizeSyscallArgument, e:
             self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(reg_name,e.message,e.policy)
+            raise ConcretizeRegister(cpu, reg_name, e.message, e.policy)
 
     def int80(self):
         try:
             return super(SLinux, self).int80()
-        except SymbolicSyscallArgument, e:
+        except ConcretizeSyscallArgument, e:
             self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(reg_name,e.message,e.policy)
+            raise ConcretizeRegister(cpu, reg_name, e.message, e.policy)
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise SymbolicSyscallArgument(0)
+            raise ConcretizeSyscallArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise SymbolicSyscallArgument(1)
+            raise ConcretizeSyscallArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(2)
+            raise ConcretizeSyscallArgument(2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
@@ -2024,15 +2016,15 @@ class SLinux(Linux):
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise SymbolicSyscallArgument(0)
+            raise ConcretizeSyscallArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise SymbolicSyscallArgument(1)
+            raise ConcretizeSyscallArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(2)
+            raise ConcretizeSyscallArgument(2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
 

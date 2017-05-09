@@ -557,10 +557,12 @@ class Manticore(object):
     def _backup_state_callback(self, state, state_id):
         logger.debug("Backup state %r", state_id)
 
+
     def _restore_state_callback(self, state, state_id):
         logger.debug("Restore state %r", state_id)
+        #print "Restore state", state, state_id, state.cpu.will_read_register
 
-    def _terminate_state_callback(self, state, state_id, e):
+    def _terminate_state_callback(self, state, state_id, ex):
         executor = self._executor
         #aggregates state statistics into exceutor statistics. FIXME split
         logger.debug("Terminate state %r %r ", state, state_id)
@@ -593,7 +595,6 @@ class Manticore(object):
 
     def _execute_instruction_callback(self, state, cpu, instruction):
         address = state.cpu.PC
-
         if not issymbolic(address):
             state.context.setdefault('visited', set()).add(address)
             count = state.context.get('instructions_count', 0)
@@ -607,7 +608,6 @@ class Manticore(object):
 
         if self._assertions:
             self._assertions_callback(state)
-
 
     def _generate_testcase_callback(self, state, testcase_id, message = 'Testcase generated'):
         #Fixme split this!
@@ -772,6 +772,15 @@ class Manticore(object):
         self._executor.will_fork_state += self._fork_state_callback
         self._executor.will_terminate_state += self._terminate_state_callback
         self._executor.will_generate_testcase += self._generate_testcase_callback
+
+        if self._hooks:
+            self._executor.will_execute_state += self._hook_callback
+
+        if self._model_hooks:
+            self._executor.will_execute_state += self._model_hook_callback
+
+        if self._assertions:
+            self._executor.will_execute_state += self._assertions_callback
 
         self._time_started = time.time()
 

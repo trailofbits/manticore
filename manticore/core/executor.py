@@ -64,8 +64,14 @@ class Random(Policy):
     def __init__(self):
         super(Random, self).__init__()
 
+    def features(self, state):
+        ''' Save state features for prioritization before a state is stored '''
+        pass
+
     def priority(self, state_id):
-        return random.uniform(0,1)
+        ''' A numeric value representing likelihood to reach the interesting program spot '''
+        return 1.0
+
 
 class Executor(object):
     '''
@@ -316,7 +322,6 @@ class Executor(object):
 
         #broadcast event
         self.will_backup_state(state, state_id)
-
         return state_id
 
     def restore(self, state_id):

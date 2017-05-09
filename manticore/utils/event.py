@@ -42,6 +42,7 @@ class Signal(object):
             if '__predicate__' in f.__dict__:
                 if not f.__dict__['__predicate__']():
                     continue
+
             results.append(f(*args, **kwargs))
 
         for obj, funcs in self._methods.items():
@@ -49,6 +50,7 @@ class Signal(object):
                 if '__predicate__' in f.__dict__:
                     if not f.__dict__['__predicate__']():
                         continue
+
                 results.append(f(obj, *args, **kwargs))
 
         return results
@@ -76,23 +78,21 @@ class Signal(object):
         else:
             if predicate is not None:
                 dest.__dict__['__predicate__'] = predicate
-
             self._functions.add(dest)
 
-        self._forward()
+        for signal, methods in self._forwards.items():
+            for method in methods:
+                signal.connect(method)
+        self._forwards.clear()
 
     def when(self, obj, signal):
         ''' This forwards signal from obj '''
-        self._forwards.setdefault(obj, set()).add(signal)
-        if self.__len__():
-            self._forward()
-
-    def _forward(self):
-        for obj, signals in self._forwards.items():
-            for signal in signals:
-                #will reemit forwarded signal prepending obj to arguments 
-                method = MethodType(lambda *args, **kwargs: self.emit(*args, **kwargs), obj)
-                signal.connect(method)
+        #will reemit forwarded signal prepending obj to arguments 
+        method = MethodType(lambda *args, **kwargs: self.emit(*args, **kwargs), obj)
+        if len(self):
+            signal.connect(method)
+        else:
+            self._forwards.setdefault(signal, set()).add(method)
 
     def __iadd__(self, dest):
         self.connect(dest)
