@@ -9,6 +9,7 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
+from ..models.platform import Platform
 from elftools.elf.elffile import ELFFile
 import logging
 import random
@@ -256,7 +257,7 @@ class Socket(object):
         return len(buf)
 
 
-class Linux(object):
+class Linux(Platform):
     '''
     A simple Linux Operating System Model.
     This class emulates the most common Linux system calls
@@ -269,7 +270,7 @@ class Linux(object):
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         '''
-
+        super(Linux, self).__init__(program)
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
@@ -303,7 +304,10 @@ class Linux(object):
 
         #Load process and setup socketpairs
         arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[ELFFile(file(program)).get_machine_arch()]
-        self.procs = [self._mk_proc(arch)]
+        cpu = self._mk_proc(arch)
+        self.procs = [cpu]
+        self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
+        self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
 
         self._current = 0
         self.load(program)
@@ -362,6 +366,8 @@ class Linux(object):
         state['auxv'] = self.auxv
         state['program'] = self.program
         state['syscall_arg_regs'] = self.syscall_arg_regs
+        state['functionabi'] = self._function_abi
+        state['syscallabi'] = self._syscall_abi
         if hasattr(self, '_arm_tls_memory'):
             state['_arm_tls_memory'] = self._arm_tls_memory
         return state
@@ -410,6 +416,8 @@ class Linux(object):
         self.auxv = state['auxv']
         self.program = state['program']
         self.syscall_arg_regs = state['syscall_arg_regs']
+        self._function_abi = state['functionabi']
+        self._syscall_abi = state['syscallabi']
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
 
@@ -942,7 +950,6 @@ class Linux(object):
 
     def _is_open(self, fd):
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
-
 
     def sys_lseek(self, fd, offset, whence):
         '''
@@ -1488,20 +1495,13 @@ class Linux(object):
 
                 }
 
-        index, arguments, writeResult  = self.current.get_syscall_description()
+        index = self._syscall_abi.syscall_number()
 
         if index not in syscalls:
             raise SyscallNotImplemented(64, index)
 
-        func = syscalls[index]
+        return self._syscall_abi.invoke(syscalls[index])
 
-        logger.debug("SYSCALL64: %s %r ", func.func_name
-                                    , arguments[:func.func_code.co_argcount])
-        nargs = func.func_code.co_argcount
-
-        result = func(*arguments[:nargs-1])
-        writeResult(result)
-        return result
 
     def int80(self):
         ''' 
@@ -1544,19 +1544,13 @@ class Linux(object):
                      0x00000014: self.sys_getpid,
                      0x000f0005: self.sys_ARM_NR_set_tls,
                     }
-        index, arguments, writeResult  = self.current.get_syscall_description()
+
+        index = self._syscall_abi.syscall_number()
 
         if index not in syscalls:
             raise SyscallNotImplemented(32, index)
-        func = syscalls[index]
 
-        logger.debug("int80: %s %r ", func.func_name
-                                    , arguments[:func.func_code.co_argcount])
-        nargs = func.func_code.co_argcount
-
-        result = func(*arguments[:nargs-1])
-        writeResult(result)
-        return result
+        return self._syscall_abi.invoke(syscalls[index])
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
@@ -1856,6 +1850,7 @@ class SLinux(Linux):
             mem = SMemory32(self.constraints)
         else:
             mem = SMemory64(self.constraints)
+
         return CpuFactory.get_cpu(mem, arch)
 
     @property
