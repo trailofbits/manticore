@@ -78,14 +78,33 @@ class Executor(object):
         self.workspace = workspace
         logger.debug("Workspace set: %s", self.workspace)
 
+<<<<<<< HEAD
         # Signals
+=======
+        # Signals / Callbacks handlers will be invoked potentially at differeent 
+        # worker processes. State provides a local context to save data.
+
+        #Executor
+        self.will_start_run = Signal()
+>>>>>>> forwarding events wip
         self.will_finish_run = Signal()
-        self.will_execute_state = Signal()
         self.will_fork_state = Signal()
         self.will_backup_state = Signal()
         self.will_restore_state = Signal()
         self.will_terminate_state = Signal()
         self.will_generate_testcase = Signal()
+
+        #Cpu
+        self.will_decode_instruction = Signal()
+        self.will_execute_instruction = Signal()
+        self.will_read_register = Signal()
+        self.will_write_register = Signal()
+        self.will_read_memory = Signal()
+        self.will_write_memory = Signal()
+
+
+        #Be sure every state will forward us their signals
+        self.will_restore_state += self._register_state_callbacks
 
         #The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
@@ -116,7 +135,7 @@ class Executor(object):
             self._states.append(state_id)
 
     @contextmanager
-    def context(self):
+    def locked_context(self):
         ''' Executor context is a shared memory object. All workers share this. 
             It needs a lock. Its used like this:
 
@@ -126,7 +145,25 @@ class Executor(object):
                 context['visited'] = visited
         '''
         with self._lock:
-            yield self._shared_context   
+            yield self._shared_context
+        #FIXME What if we do a: 
+        # for name,value in self._shared_context.items():
+        #   self._shared_context[name]=value
+        # too expensive ?
+
+
+    def _register_state_callbacks(self, state, state_id):
+        '''
+            Install forwarding callbacks in state so the events can go up. 
+            Going up, we prepend state in the arguments.
+        ''' 
+        self.will_decode_instruction.when(state, state.will_decode_instruction)
+        self.will_execute_instruction.when(state, state.will_execute_instruction)
+        self.will_read_register.when(state, state.will_read_register)
+        self.will_write_register.when(state, state.will_write_register)
+        self.will_read_memory.when(state, state.will_read_memory)
+        self.will_write_memory.when(state, state.will_write_memory)
+
 
     def _load_workspace(self):
         #Browse workspace in case we are trying to continue a paused run
@@ -297,7 +334,6 @@ class Executor(object):
 
         #Broadcast event
         self.will_restore_state(loaded_state, state_id)
-
         return loaded_state 
 
     def list(self):
@@ -363,13 +399,13 @@ class Executor(object):
 
         #We are about to fork current_state
         with self._lock:
-            self.will_fork_state(state, expression, solutions)
+            self.will_fork_state(state, expression, solutions, policy)
 
         #Build and enqueue a state for each solution 
         children = []
         for new_value in solutions:
             with state as new_state:
-                new_state.add(expression == new_value, check=False) #We already know it's sat
+                new_state.constrain(expression == new_value) #We already know it's sat
                 #and set the PC of the new state to the concrete pc-dest
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value) 
@@ -428,11 +464,6 @@ class Executor(object):
 
                     # Allows to terminate manticore worker on user request
                     while not self.is_shutdown():
-                        # Make sure current instruction is decoded so that hooks can access it
-                        current_state.cpu.decode_instruction(current_state.cpu.PC)
-
-                        # Announce that we're about to execute
-                        self.will_execute_state(current_state)
                         if not current_state.execute():
                             break
 
@@ -454,7 +485,7 @@ class Executor(object):
                     #logger.error("Syscall not implemented: %s", str(e))
 
                     #Notify this worker is done
-                    self.will_terminate_state(current_state, e)
+                    self.will_terminate_state(current_state, current_state_id, e)
 
                     logger.info("Generic terminate state")
                     if e.testcase:

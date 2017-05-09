@@ -1,7 +1,14 @@
 class OSException(Exception):
     pass
 
-class ProcessExit(OSException):
+class ProcessExit(Exception):
+    def __init__(self, code):
+        super(ProcessExit, self).__init__("Process exited correctly. Code: %s"%code)
+
+class SyscallNotImplemented(OSException):
+    ''' Exception raised when you try to call a not implemented
+        system call. Go to linux.py and add it!
+    '''
     pass
 
 class ConcretizeSyscallArgument(Exception):
@@ -10,4 +17,6 @@ class ConcretizeSyscallArgument(Exception):
         self.message = message
         self.policy = policy
         super(ConcretizeSyscallArgument, self).__init__(message)
+
+
 

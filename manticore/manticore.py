@@ -735,9 +735,9 @@ class Manticore(object):
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
-        state = self._make_state(self._binary)
+        initial_state = self._make_state(self._binary)
 
-        self._executor = Executor(state,
+        self._executor = Executor(initial_state,
                                   workspace=self.workspace, 
                                   policy=self._policy, 
                                   dumpafter=self.dumpafter, 
@@ -750,16 +750,18 @@ class Manticore(object):
         if self._hooks:
             self._executor.will_execute_state += self._hook_callback
 
-        if self._model_hooks:
-            self._executor.will_execute_state += self._model_hook_callback
-
-        if self._assertions:
-            self._executor.will_execute_state += self._assertions_callback
-<<<<<<< HEAD
-=======
-
->>>>>>> Aggregating state statistics into executor statistics
-
+        #Link Executor events to default callbacks in manticore object
+        self._executor.will_read_register += self._read_register_callback
+        self._executor.will_write_register += self._write_register_callback
+        self._executor.will_read_memory += self._read_memory_callback
+        self._executor.will_write_memory += self._write_memory_callback
+        self._executor.will_execute_instruction += self._execute_instruction_callback
+        self._executor.will_decode_instruction += self._decode_instruction_callback
+        self._executor.will_backup_state += self._backup_state_callback
+        self._executor.will_restore_state += self._restore_state_callback
+        self._executor.will_fork_state += self._fork_state_callback
+        self._executor.will_terminate_state += self._terminate_state_callback
+        self._executor.will_generate_testcase += self._generate_testcase_callback
         self._time_started = time.time()
 
         self._running = True

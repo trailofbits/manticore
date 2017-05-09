@@ -40,7 +40,6 @@ class Concretize(StateException):
         super(Concretize, self).__init__(**kwargs)
 
 
-
 class ForkState(Concretize):
     ''' Specialized concretization class for Bool expressions. 
         It tries True and False as concrete solutions. /
@@ -77,8 +76,33 @@ class State(object):
         self.input_symbols = list()
         self._child = None
 
-        #Events
         self.context = dict()
+        ##################################################################33
+        # Signals are lost in serialization and fork !!
+        self.will_decode_instruction = Signal()
+        self.will_execute_instruction = Signal()
+        self.will_read_register = Signal()
+        self.will_write_register = Signal()
+        self.will_read_memory = Signal()
+        self.will_write_memory = Signal()
+        #self.will_add_constraint = Signal()
+
+        #Install event forwarders
+        for proc in self.model.procs:
+            self._register_cpu_callbacks(proc)
+
+
+    def _register_cpu_callbacks(self, cpu):
+        '''
+            Install callbacks in cpu so the events are forwarded up. 
+            Going up, we prepend cpu in the arguments.
+        '''
+        self.will_decode_instruction.when(cpu, cpu.will_decode_instruction)
+        self.will_execute_instruction.when(cpu, cpu.will_execute_instruction)
+        self.will_read_register.when(cpu, cpu.will_read_register)
+        self.will_write_register.when(cpu, cpu.will_write_register)
+        self.will_read_memory.when(cpu, cpu.will_read_memory)
+        self.will_write_memory.when(cpu, cpu.will_write_memory)
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.model),
@@ -100,7 +124,11 @@ class State(object):
         assert self._child is None
         new_state = State(self.constraints.__enter__(), self.model)
         new_state.input_symbols = self.input_symbols
+        import copy
+        new_state.context = copy.deepcopy(self.context)
         self._child = new_state
+        
+        #fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
         return new_state
 
     def __exit__(self, ty, value, traceback):
@@ -132,7 +160,6 @@ class State(object):
                                 setstate=setstate,
                                 policy=e.policy)
         except Exception as e:
-            print e
             raise TerminateState(self, message=str(e), testcase=True)
 
         #Remove when code gets stable?

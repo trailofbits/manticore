@@ -1,6 +1,6 @@
 import inspect
 from weakref import WeakSet, WeakKeyDictionary
-from multiprocessing import Manager
+from types import MethodType
 
 # Inspired by:
 # http://code.activestate.com/recipes/577980-improved-signalsslots-implementation-in-python/
@@ -26,6 +26,10 @@ class Signal(object):
         '''
         self._functions = WeakSet()
         self._methods = WeakKeyDictionary()
+        self._forwards = WeakKeyDictionary()
+
+    def __len__(self):
+        return len(self._functions) + len(self._methods)
 
     def __call__(self, *args, **kwargs):
         return self.emit(*args, **kwargs)
@@ -62,7 +66,6 @@ class Signal(object):
 
         '''
         assert callable(dest)
-
         if inspect.ismethod(dest):
             obj, impl = dest.__self__, dest.__func__
 
@@ -73,12 +76,27 @@ class Signal(object):
         else:
             if predicate is not None:
                 dest.__dict__['__predicate__'] = predicate
+
             self._functions.add(dest)
+
+        self._forward()
+
+    def when(self, obj, signal):
+        ''' This forwards signal from obj '''
+        self._forwards.setdefault(obj, set()).add(signal)
+        if self.__len__():
+            self._forward()
+
+    def _forward(self):
+        for obj, signals in self._forwards.items():
+            for signal in signals:
+                #will reemit forwarded signal prepending obj to arguments 
+                method = MethodType(lambda *args, **kwargs: self.emit(*args, **kwargs), obj)
+                signal.connect(method)
 
     def __iadd__(self, dest):
         self.connect(dest)
         return self
-
 
     def disconnect(self, dest):
         try:
@@ -97,4 +115,5 @@ class Signal(object):
     def reset(self):
         self._functions.clear()
         self._methods.clear()
+        self._forwards.clear()
 
