@@ -27,10 +27,10 @@ def hook(state):
 
     # We are given in the challenge that the flag begins with CTF{
     # So we can apply constraints to ensure that is true
-    state.add(buffer[0] == ord('C'))
-    state.add(buffer[1] == ord('T'))
-    state.add(buffer[2] == ord('F'))
-    state.add(buffer[3] == ord('{'))
+    state.constrain(buffer[0] == ord('C'))
+    state.constrain(buffer[1] == ord('T'))
+    state.constrain(buffer[2] == ord('F'))
+    state.constrain(buffer[3] == ord('{'))
 
     # Store our symbolic input in the global buffer read by the check
     state.cpu.write_bytes(input_addr, buffer)
