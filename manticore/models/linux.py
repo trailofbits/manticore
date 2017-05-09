@@ -10,13 +10,12 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
-from elftools.elf.elffile import ELFFile
 import logging
 import random
 from ..core.cpu.arm import *
-from ..core.executor import SyscallNotImplemented, ProcessExit
 logger = logging.getLogger("MODEL")
 
+from .system import *
 
 class RestartSyscall(Exception):
     pass
@@ -29,6 +28,7 @@ def perms_from_elf(elf_flags):
 
 def perms_from_protflags(prot_flags):
     return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
+
 
 class SymbolicSyscallArgument(Exception):
     def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
