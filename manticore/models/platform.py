@@ -9,5 +9,5 @@ class Platform(object):
     def __init__(self, path):
         self._path = path
 
-    def invoke_model(self, implementation, prefix_args=None, varargs=False):
-        self._function_abi.invoke(implementation, prefix_args, varargs)
+    def invoke_model(self, model, prefix_args=None, varargs=False):
+        self._function_abi.invoke(model, prefix_args, varargs)

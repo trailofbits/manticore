@@ -1847,8 +1847,7 @@ class SLinux(Linux):
         else:
             mem = SMemory64(self.constraints)
 
-        cpu = CpuFactory.get_cpu(mem, arch)
-        return cpu
+        return CpuFactory.get_cpu(mem, arch)
 
     @property
     def constraints(self):
