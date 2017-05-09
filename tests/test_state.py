@@ -3,7 +3,7 @@ import unittest
 from manticore.core.executor import State
 from manticore.core.smtlib import BitVecVariable
 from manticore.core.smtlib import ConstraintSet
-from manticore.models import linux
+from manticore.platforms import linux
 
 class FakeMemory(object):
     def __init__(self):
@@ -21,7 +21,7 @@ class FakeCpu(object):
     def memory(self):
         return self._memory
 
-class FakeModel(object):
+class FakePlatform(object):
     def __init__(self):
         self._constraints = None
         self.procs = [FakeCpu()]
@@ -71,7 +71,7 @@ class StateTest(unittest.TestCase):
     
     def test_state(self):
         constraints = ConstraintSet()
-        initial_state = State(constraints, FakeModel())
+        initial_state = State(constraints, FakePlatform())
 
         arr = initial_state.symbolicate_buffer('+'*100, label='SYMBA')
         initial_state.constrain(arr[0] > 0x41)

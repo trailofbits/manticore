@@ -7,7 +7,7 @@ from manticore.core.cpu.abstractcpu import ConcretizeMemory, ConcretizeRegister
 from manticore.core.memory import Memory32, SMemory32
 from manticore.core.executor import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
-from manticore.models import linux
+from manticore.platforms import linux
 from manticore.utils.emulate import UnicornEmulator
 
 from capstone.arm import *
@@ -1317,9 +1317,9 @@ class UnicornConcretization(unittest.TestCase):
     def get_state(cls):
         if cls.cpu is None:
             constraints = ConstraintSet()
-            model = linux.SLinux(constraints, '/bin/ls', argv=[], envp=[])
-            cls.state = State(constraints, model)
-            cls.cpu = model._mk_proc('armv7')
+            platform = linux.SLinux(constraints, '/bin/ls', argv=[], envp=[])
+            cls.state = State(constraints, platform)
+            cls.cpu = platform._mk_proc('armv7')
         return (cls.cpu, cls.state)
 
 
