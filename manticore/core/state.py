@@ -106,7 +106,7 @@ class State(object):
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.model),
-                {'context': self.context, '_child': self._child})
+                {'context': self.context, '_child': self._child, 'input_symbols': self.input_symbols})
 
     @staticmethod
     def state_count():
