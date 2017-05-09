@@ -5657,19 +5657,17 @@ class I386CdeclAbi(Abi):
     i386 cdecl function call semantics
     '''
     def get_arguments(self):
-        bwidth = self._cpu.address_bit_size / 8
-        offset = self._cpu.ESP
-        while True:
-            offset += bwidth
-            yield offset
+        base = self._cpu.STACK + self._cpu.address_bit_size / 8
+        for address in self.values_from(base):
+            yield address
 
     def write_result(self, result):
-        if result is not None:
-            self._cpu.EAX = result
+        self._cpu.EAX = result
 
+    def ret(self):
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
         
-class I386StdcallAbi(I386CdeclAbi):
+class I386StdcallAbi(Abi):
     '''
     x86 Stdcall function call convention. Callee cleans up the stack.
     '''
@@ -5678,12 +5676,17 @@ class I386StdcallAbi(I386CdeclAbi):
         self._arguments = 0
 
     def get_arguments(self):
-        for descriptor in super(I386StdcallAbi, self).get_arguments():
+        base = self._cpu.STACK + self._cpu.address_bit_size / 8
+        for address in self.values_from(base):
             self._arguments += 1
-            yield descriptor
+            yield address
 
     def write_result(self, result):
-        super(I386StdcallAbi, self).write_result(result)
+        self._cpu.EAX = result
+
+    def ret(self):
+        self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
+
         bwidth = self._cpu.address_bit_size / 8
         self._cpu.ESP += self._arguments * bwidth
         self._arguments = 0
@@ -5711,9 +5714,9 @@ class SystemVAbi(Abi):
 
     def write_result(self, result):
         # XXX(yan): Can also return in rdx for wide values.
-        if result is not None:
-            self._cpu.RAX = result
+        self._cpu.RAX = result
 
+    def ret(self):
         self._cpu.RIP = self._cpu.pop(self._cpu.address_bit_size)
 
 

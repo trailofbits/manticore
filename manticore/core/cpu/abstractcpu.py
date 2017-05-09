@@ -200,6 +200,25 @@ class Abi(object):
         '''
         raise NotImplementedError
 
+    def ret(self):
+        '''
+        Handle the "ret" semantics of the ABI, i.e. reclaiming stack space,
+        popping PC, etc.
+        
+        A null operation by default.
+        '''
+        return
+
+    def values_from(self, base):
+        '''
+        A reusable generator for increasing pointer-sized values from an address
+        (usually the stack).
+        '''
+        bwidth = self._cpu.address_bit_size / 8
+        while True:
+            yield base
+            base += bwidth
+
     def invoke(self, implementation, prefix_args=None, varargs=False):
         '''
         Invoke a function modeled by `implementation`. If `varargs` is true,
@@ -255,7 +274,10 @@ class Abi(object):
             else:
                 raise ConcretizeMemory(src, self._cpu.address_bit_size, msg)
         else:
-            self.write_result(result)
+            if result is not None:
+                self.write_result(result)
+
+            self.ret()
 
         return result
 

@@ -280,15 +280,13 @@ class Armv7CdeclAbi(Abi):
         for reg in ('R0', 'R1', 'R2', 'R3'):
             yield reg
 
-        bwidth = self._cpu.address_bit_size / 8
-        offset = self._cpu.SP
-        while True:
-            yield offset
-            offset += bwidth
+        for address in self.values_from(self._cpu.STACK):
+            yield address
 
     def write_result(self, result):
-        if result is not None:
-            self._cpu.R0 = result
+        self._cpu.R0 = result
+
+    def ret(self):
         self._cpu.PC = self._cpu.LR 
 
 class Armv7Cpu(Cpu):
