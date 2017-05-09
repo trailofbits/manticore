@@ -80,7 +80,7 @@ def makeLinux(program, argv, env, concrete_start = ''):
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
     if any(issymbolic(x) for val in argv + env for x in val):
-        model.setup_stack(initial_state.cpu, [program] + argv, env)
+        model.setup_stack([program] + argv, env)
 
     model.input.transmit(concrete_start)
 
