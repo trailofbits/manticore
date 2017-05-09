@@ -5688,8 +5688,8 @@ class I386StdcallAbi(Abi):
     def ret(self):
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
 
-        bwidth = self._cpu.address_bit_size / 8
-        self._cpu.ESP += self._arguments * bwidth
+        word_bytes = self._cpu.address_bit_size / 8
+        self._cpu.ESP += self._arguments * word_bytes
         self._arguments = 0
 
 class SystemVAbi(Abi):
@@ -5707,11 +5707,9 @@ class SystemVAbi(Abi):
         for reg in reg_args:
             yield reg
 
-        bwidth = self._cpu.address_bit_size / 8
-        offset = self._cpu.RSP
-        while True:
-            offset += bwidth
-            yield offset
+        word_bytes = self._cpu.address_bit_size / 8
+        for address in self.values_from(self._cpu.RSP + word_bytes):
+            yield address
 
     def write_result(self, result):
         # XXX(yan): Can also return in rdx for wide values.

@@ -214,34 +214,34 @@ class Abi(object):
         A reusable generator for increasing pointer-sized values from an address
         (usually the stack).
         '''
-        bwidth = self._cpu.address_bit_size / 8
+        word_bytes = self._cpu.address_bit_size / 8
         while True:
             yield base
-            base += bwidth
+            base += word_bytes
 
-    def invoke(self, implementation, prefix_args=None, varargs=False):
+    def invoke(self, model, prefix_args=None, varargs=False):
         '''
-        Invoke a function modeled by `implementation`. If `varargs` is true,
-        implementation receives a single argument that is a generator for
-        function arguments. Pass a tuple for `prefix_args` of arguments you'd
+        Invoke a callable `model` as if it was a native function. If `varargs`
+        is true, model receives a single argument that is a generator for
+        function arguments. Pass a tuple of arguments for `prefix_args` you'd
         like to precede the actual arguments.
 
-        :param callable implementation: Python model of the function
-        :param tuple prefix_args: Pass these parametrs to implementation before those read from state.
+        :param callable model: Python model of the function
+        :param tuple prefix_args: Parameters to pass to model before actual ones
         :param bool varargs: Whether the function expects a variable number of arguments
-        :return: The result of calling `implementation`
+        :return: The result of calling `model`
         '''
         prefix_args = prefix_args or ()
 
-        spec = inspect.getargspec(implementation)
+        spec = inspect.getargspec(model)
 
         if spec.varargs:
-            logger.warning("ABI: Vararg models must be unary functions.")
+            logger.warning("ABI: A vararg model must be a unary function.")
 
         nargs = len(spec.args) - len(prefix_args)
 
-        # If the implementation is a method, we need to account for `self`
-        if inspect.ismethod(implementation):
+        # If the model is a method, we need to account for `self`
+        if inspect.ismethod(model):
             nargs -= 1
 
         def resolve_argument(arg):
@@ -256,10 +256,10 @@ class Abi(object):
 
         try:
             if varargs:
-                result = implementation(*(prefix_args + (argument_iter,)))
+                result = model(*(prefix_args + (argument_iter,)))
             else:
                 argument_tuple = prefix_args + tuple(islice(argument_iter, nargs))
-                result = implementation(*argument_tuple)
+                result = model(*argument_tuple)
         except ConcretizeArgument as e:
             assert e.argnum >= len(prefix_args), "Can't concretize a constant arg"
             idx = e.argnum - len(prefix_args)
@@ -268,7 +268,7 @@ class Abi(object):
             descriptors = self.get_arguments()
             src = next(islice(descriptors, idx, idx+1))
 
-            msg = 'Concretizing due to function call'
+            msg = 'Concretizing due to model invocation'
             if isinstance(src, str):
                 raise ConcretizeRegister(src, msg)
             else:
