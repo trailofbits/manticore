@@ -48,13 +48,6 @@ class ABITests(unittest.TestCase):
         for val in range(0, 0x100, 8):
             write(mem64, 0x1000+val, val, 64)
 
-    # ✓ test ARM abi
-    # ✓ test concretization
-    # _ test x86 cdecl abi
-    # _ test x86 stdcall abi
-    # _ test x64 abi
-    # _ test prefix args
-
     def test_executor(self):
         pass
     
