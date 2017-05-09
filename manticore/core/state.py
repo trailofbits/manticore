@@ -234,3 +234,11 @@ class State(object):
                 self.branches[key] += 1
             except KeyError:
                 self.branches[key] = 1
+
+    def invoke_model(self, model):
+        '''
+        Invoke a model.
+
+        :param callable model: Model to invoke
+        '''
+        self.platform.invoke_model(model, (self,))  # TODO(mark): this can't support varargs core models!
