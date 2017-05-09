@@ -1,15 +1,10 @@
 from capstone import *
 from capstone.x86 import *
-from .abstractcpu import Cpu, RegisterFile, Operand, SANE_SIZES, instruction
-from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
-import sys
-import struct
-import types
-import weakref
-from functools import wraps, partial
+from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
+from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
+from functools import wraps
 import collections
 from ..smtlib import *
-from ..memory import MemoryException
 from ...utils.helpers import issymbolic
 import logging
 logger = logging.getLogger("CPU")
@@ -753,17 +748,6 @@ class X86Cpu(Cpu):
         for offset in range(size):
             if address+offset in cache:
                 del cache[address+offset]
-
-    def get_syscall_description(self):
-        # Syscall number is in RAX
-        # Arguments are in RDI, RSI, RDX, R10, R8 and R9
-        # Return is in RAX
-        index = self.RAX
-        arguments = [ self.RDI, self.RSI, self.RDX, self.R10, self.R8, self.R9 ]
-        def writeResult(result, self=self):
-            self.RAX = result
-        return (index, arguments, writeResult)
-
 
     def canonicalize_instruction_name(self, instruction):
         #MOVSD
@@ -5636,99 +5620,104 @@ class X86Cpu(Cpu):
 ################################################################################
 #Calling conventions
 
-class ABI:
-    '''IA32 Calling conventions
-        https://en.wikipedia.org/wiki/X86_calling_conventions
+class I386LinuxSyscallAbi(SyscallAbi):
     '''
-    @staticmethod
-    def cdecl(function):
-        '''C declaration
-            Subroutine arguments are passed on the stack. 
-            Integer values and memory addresses are returned in the EAX register
-        '''
-        argcount = function.func_code.co_argcount - 1
-        assert argcount >= 0
-        def cdecl_function(model):
-            cpu = model.current
-            base = cpu.STACK+4 #skip ret address
-            arguments = [ cpu.read_int(base + (i*4), 32) for i in xrange(argcount) ]
-            try:
-                cpu.EAX = function(model, *arguments)
-            except ConcretizeArgument as cae:
-                assert 0 <= cae.argnum < argcount
-                # concretize here
-                mem_addr = base+cae.argnum*4
-                raise ConcretizeMemory(mem_addr, 32, "Concretizing Function Argument", 'MINMAX')
+    i386 Linux system call ABI
+    '''
+    def syscall_number(self):
+        return self._cpu.EAX
 
-            cpu.EIP = cpu.pop(32)
-        return cdecl_function
+    def get_arguments(self):
+        for reg in ('EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'):
+            yield reg
 
-    @staticmethod
-    def stdcall(function):
-        '''Standard calling convention
-            Subroutine arguments are passed on the stack. 
-            Callee is responsible for cleaning up the stack.
-            Return values are stored in the EAX register.
-        '''
-        argcount = function.func_code.co_argcount - 1
-        assert argcount >= 0
-        def stdcall_function(model):
-            cpu = model.current
-            # skip saved EIP on stack
-            base = cpu.STACK+4
-            arguments = [ cpu.read_int(base+(pos*4), 32) for pos in xrange(argcount) ]
-            try:
-                cpu.EAX = function(model, *arguments)
-            except ConcretizeArgument as cae:
-                assert 0 <= cae.argnum < argcount
-                # concretize here
-                mem_addr = base+cae.argnum*4
-                raise ConcretizeMemory(mem_addr, 32, "Concretizing Function Argument", 'MINMAX')
+    def write_result(self, result):
+        self._cpu.EAX = result
 
-            cpu.EIP = cpu.pop(32)
-            cpu.STACK += argcount*4
-        return stdcall_function
+class AMD64LinuxSyscallAbi(SyscallAbi):
+    '''
+    AMD64 Linux system call ABI
+    '''
 
-    @staticmethod
-    def thiscall(function):
-        pass
+    #TODO(yan): Floating point or wide arguments that deviate from the norm are
+    # not yet supported.
 
-    @staticmethod
-    def vectorcall(function):
-        pass
+    def syscall_number(self):
+        return self._cpu.RAX
 
-    '''AMD64 Calling conventions '''
-    @staticmethod
-    def systemV(function):
-        '''System V AMD64 calling convention
-            The first six integer or pointer arguments are passed in registers:
-                RDI, RSI, RDX, RCX, R8, and R9, 
-            Additional arguments are passed on the stack.
-            Return value is stored in RAX.[16]:22
-        '''
-        argcount = function.func_code.co_argcount - 1
-        assert argcount >= 0
-        def argument(cpu):
-            yield cpu.RDI
-            yield cpu.RSI
-            yield cpu.RDX
-            yield cpu.RCX
-            yield cpu.R8
-            yield cpu.R9
-            stack = cpu.STACK+8
-            while True:
-                yield cpu.read_int(stack,64)
-                stack += 8
-        def systemV_function(model):
-            cpu = model.current
-            arguments = [ next(argument(cpu)) for _ in xrange(argcount) ]
-            cpu.RAX = function(cpu, *arguments)
-            cpu.RIP = cpu.pop(64)
-        return systemV_function
+    def get_arguments(self):
+        for reg in ('RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9'):
+            yield reg
 
-    @staticmethod
-    def msx64(function):
-        pass
+    def write_result(self, result):
+        self._cpu.RAX = result
+    
+
+class I386CdeclAbi(Abi):
+    '''
+    i386 cdecl function call semantics
+    '''
+    def get_arguments(self):
+        base = self._cpu.STACK + self._cpu.address_bit_size / 8
+        for address in self.values_from(base):
+            yield address
+
+    def write_result(self, result):
+        self._cpu.EAX = result
+
+    def ret(self):
+        self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
+        
+class I386StdcallAbi(Abi):
+    '''
+    x86 Stdcall function call convention. Callee cleans up the stack.
+    '''
+    def __init__(self, cpu):
+        super(I386StdcallAbi, self).__init__(cpu)
+        self._arguments = 0
+
+    def get_arguments(self):
+        base = self._cpu.STACK + self._cpu.address_bit_size / 8
+        for address in self.values_from(base):
+            self._arguments += 1
+            yield address
+
+    def write_result(self, result):
+        self._cpu.EAX = result
+
+    def ret(self):
+        self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
+
+        word_bytes = self._cpu.address_bit_size / 8
+        self._cpu.ESP += self._arguments * word_bytes
+        self._arguments = 0
+
+class SystemVAbi(Abi):
+    '''
+    x64 SystemV function call convention
+    '''
+
+    #TODO(yan): Floating point or wide arguments that deviate from the norm are
+    # not yet supported.
+
+    def get_arguments(self):
+        # First 6 arguments go in registers, rest are popped from stack
+        reg_args = ('RDI', 'RSI', 'RDX', 'RCX', 'R8', 'R9')
+
+        for reg in reg_args:
+            yield reg
+
+        word_bytes = self._cpu.address_bit_size / 8
+        for address in self.values_from(self._cpu.RSP + word_bytes):
+            yield address
+
+    def write_result(self, result):
+        # XXX(yan): Can also return in rdx for wide values.
+        self._cpu.RAX = result
+
+    def ret(self):
+        self._cpu.RIP = self._cpu.pop(self._cpu.address_bit_size)
+
 
 class AMD64Cpu(X86Cpu):
     #Config
@@ -5837,24 +5826,12 @@ class AMD64Cpu(X86Cpu):
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
 
-
 class I386Cpu(X86Cpu):
     #Config
     max_instr_width = 15
     address_bit_size = 32
     arch = CS_ARCH_X86
     mode = CS_MODE_32
-
-    def get_syscall_description(self):
-        # Syscall number is in RAX
-        # Arguments are in RDI, RSI, RDX, R10, R8 and R9
-        # Return is in RAX
-        index = self.EAX
-        arguments = [self.EBX, self.ECX, self.EDX, self.ESI, self.EDI, self.EBP]
-        def writeResult(result, self=self):
-            self.RAX = result
-        return (index, arguments, writeResult)
-
 
     def __init__(self, memory, *args, **kwargs):
         '''
