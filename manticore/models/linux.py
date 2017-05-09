@@ -1548,7 +1548,7 @@ class Linux(object):
         index, arguments, writeResult  = self.current.get_syscall_description()
 
         if index not in syscalls:
-            raise SyscallNotImplemented(64, index)
+            raise SyscallNotImplemented(32, index)
         func = syscalls[index]
 
         logger.debug("int80: %s %r ", func.func_name
