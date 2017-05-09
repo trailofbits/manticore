@@ -5637,6 +5637,9 @@ class I386LinuxSyscallAbi(SyscallAbi):
 class AMD64LinuxSyscallAbi(SyscallAbi):
     '''
     AMD64 Linux system call ABI
+
+    Floating point or wide arguments that deviate from the norm are not yet
+    supported.
     '''
     def syscall_number(self):
         return self._cpu.RAX
@@ -5668,7 +5671,7 @@ class I386CdeclAbi(Abi):
         
 class I386StdcallAbi(I386CdeclAbi):
     '''
-    x86 Stdcall function call convention
+    x86 Stdcall function call convention. Callee cleans up the stack.
     '''
     def __init__(self, cpu):
         super(I386StdcallAbi, self).__init__(cpu)
@@ -5688,6 +5691,9 @@ class I386StdcallAbi(I386CdeclAbi):
 class SystemVAbi(Abi):
     '''
     x64 SystemV function call convention
+
+    Floating point or wide arguments that deviate from the norm are not yet
+    supported.
     '''
 
     def get_arguments(self):
@@ -5704,7 +5710,7 @@ class SystemVAbi(Abi):
             yield offset
 
     def write_result(self, result):
-        # XXX(yan): Can also return in rdx
+        # XXX(yan): Can also return in rdx for wide values.
         if result is not None:
             self._cpu.RAX = result
 
