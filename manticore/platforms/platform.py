@@ -4,7 +4,7 @@ import inspect
 
 class Platform(object):
     '''
-    Base class for all operating system models.
+    Base class for all operating system platforms.
     '''
     def __init__(self, path):
         self._path = path

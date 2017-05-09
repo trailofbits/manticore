@@ -9,13 +9,13 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
-from ..models.platform import Platform
+from ..platforms.platform import Platform
 from elftools.elf.elffile import ELFFile
 import logging
 import random
 from ..core.cpu.arm import *
 from ..core.executor import SyscallNotImplemented, ProcessExit
-logger = logging.getLogger("MODEL")
+logger = logging.getLogger("PLATFORM")
 
 
 class RestartSyscall(Exception):
@@ -259,13 +259,13 @@ class Socket(object):
 
 class Linux(Platform):
     '''
-    A simple Linux Operating System Model.
+    A simple Linux Operating System Platform.
     This class emulates the most common Linux system calls
     '''
 
     def __init__(self, program, argv=None, envp=None):
         '''
-        Builds a Linux OS model
+        Builds a Linux OS platform
         :param string program: The path to ELF binary
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
@@ -1828,13 +1828,13 @@ class Linux(Platform):
 
 class SLinux(Linux):
     '''
-    A symbolic extension of a Decree Operating System Model.
+    A symbolic extension of a Decree Operating System Platform.
     '''
     def __init__(self, constraints, programs, argv, envp, symbolic_random=None, symbolic_files=()):
         '''
         Builds a symbolic extension of a Decree OS
         :param constraints: a constraints.
-        :param mem: memory for this model.
+        :param mem: memory for this platform.
         '''
         self._constraints = ConstraintSet()
         self.random = 0
@@ -2036,12 +2036,12 @@ class DecreeEmu(object):
     RANDOM = 0
 
     @staticmethod
-    def cgc_initialize_secret_page(model):
+    def cgc_initialize_secret_page(platform):
         logger.info("Skipping: cgc_initialize_secret_page()")
         return 0
 
     @staticmethod
-    def cgc_random(model, buf, count, rnd_bytes):
+    def cgc_random(platform, buf, count, rnd_bytes):
         import cgcrandom
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
@@ -2061,7 +2061,7 @@ class DecreeEmu(object):
             data.append(value)
             DecreeEmu.random += 1
 
-        cpu = model.current
+        cpu = platform.current
         cpu.write(buf, data)
         if rnd_bytes:
             cpu.store(rnd_bytes, len(data), 32)

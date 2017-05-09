@@ -294,12 +294,12 @@ class SyscallAbi(Abi):
         raise NotImplementedError
 
 ############################################################################
-# Abstract cpu encapsulating common cpu methods used by models and executor.
+# Abstract cpu encapsulating common cpu methods used by platforms and executor.
 class Cpu(object):
     '''
     Base class for all Cpu architectures. Functionality common to all
     architectures (and expected from users of a Cpu) should be here. Commonly
-    used by models and py:class:manticore.core.Executor
+    used by platforms and py:class:manticore.core.Executor
 
     The following attributes need to be defined in any derived class
 

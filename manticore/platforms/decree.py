@@ -15,7 +15,7 @@ import StringIO
 import logging
 import random
 
-logger = logging.getLogger("MODEL")
+logger = logging.getLogger("PLATFORM")
 
 
 class SymbolicSyscallArgument(ConcretizeRegister):
@@ -73,7 +73,7 @@ class Socket(object):
 
 class Decree(object):
     '''
-    A simple Decree Operating System Model.
+    A simple Decree Operating System Platform.
     This class emulates the most common Decree system calls
     '''
     CGC_EBADF=1
@@ -88,9 +88,9 @@ class Decree(object):
 
     def __init__(self, programs):
         '''
-        Builds a Decree OS model
-        :param cpus: CPU for this model.
-        :param mem: memory for this model.
+        Builds a Decree OS platform
+        :param cpus: CPU for this platform.
+        :param mem: memory for this platform.
         :todo: generalize for more CPUs.
         :todo: fix deps?
         '''
@@ -909,14 +909,14 @@ class Decree(object):
 
 class SDecree(Decree):
     '''
-    A symbolic extension of a Decree Operating System Model.
+    A symbolic extension of a Decree Operating System Platform.
     '''
     def __init__(self, constraints, programs, symbolic_random=None):
         '''
         Builds a symbolic extension of a Decree OS
         :param constraints: a constraint set
-        :param cpus: CPU for this model
-        :param mem: memory for this model
+        :param cpus: CPU for this platform
+        :param mem: memory for this platform
         '''
         self._constraints = constraints
         self.random = 0
