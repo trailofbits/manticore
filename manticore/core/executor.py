@@ -263,7 +263,7 @@ class Executor(object):
         # without loading the file later.
         receive_size = 0
         transmit_size = 0
-        for sysname, fd, data in state.model.syscall_trace:
+        for sysname, fd, data in state.platform.syscall_trace:
             if sysname in ('_receive', '_read'):
                 receive_size += len(data)
             if sysname in ('_transmit', '_write'):
@@ -288,14 +288,14 @@ class Executor(object):
 
         self._states[state.name] = {'received' : receive_size,
                                     'transmited': transmit_size,
-                                    'icount': state.model.current.icount,
+                                    'icount': state.platform.current.icount,
                                     'dicount': len(state.visited),
                                     'proc': last_cpu,
                                     'pc': last_pc,
-                                    'syscount': len(state.model.syscall_trace),
-                                    'smem': len(state.model.current.memory._symbols),
+                                    'syscount': len(state.platform.syscall_trace),
+                                    'smem': len(state.platform.current.memory._symbols),
                                     'symbols': len(str(state.constraints)),
-                                    'nsyscalls': len(state.model.syscall_trace),
+                                    'nsyscalls': len(state.platform.syscall_trace),
                                     'forks': state.forks,
                                     'filesize':filesize,
                                     'branches':state.branches,
@@ -452,8 +452,8 @@ class Executor(object):
         output.write('Status:\n  {}\n'.format(message))
         output.write('\n')
 
-        for cpu in filter(None, state.model.procs):
-            idx = state.model.procs.index(cpu)
+        for cpu in filter(None, state.platform.procs):
+            idx = state.platform.procs.index(cpu)
             output.write("================ PROC: %02d ================\n"%idx)
 
             output.write("Memory:\n")
@@ -489,11 +489,11 @@ class Executor(object):
             buf = solver.get_value(state.constraints, symbol)
             file(self._getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
         
-        file(self._getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.model.syscall_trace))
+        file(self._getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
 
         stdout = ''
         stderr = ''
-        for sysname, fd, data in state.model.syscall_trace:
+        for sysname, fd, data in state.platform.syscall_trace:
             if sysname in ('_transmit', '_write') and fd == 1:
                 stdout += ''.join(map(str, data))
             if sysname in ('_transmit', '_write') and fd == 2:
@@ -505,7 +505,7 @@ class Executor(object):
         stdin_file = 'test_{:08x}.stdin'.format(test_number)
         with open(self._getFilename(stdin_file), 'wb') as f:
             try:
-                for sysname, fd, data in state.model.syscall_trace:
+                for sysname, fd, data in state.platform.syscall_trace:
                     if sysname not in ('_receive', '_read') or fd != 0:
                         continue
                     for c in data:

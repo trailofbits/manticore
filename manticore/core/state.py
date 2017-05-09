@@ -13,8 +13,8 @@ class State(object):
     Representation of a unique program state/path.
 
     :param ConstraintSet constraints: Initial constraints on state
-    :param model: Initial constraints on state
-    :type model: Decree or Linux or Windows
+    :param platform: Initial constraints on state
+    :type platform: Platform
     '''
 
     # Class global counter
@@ -28,13 +28,13 @@ class State(object):
             State._state_count.value += 1
         return ret
 
-    def __init__(self, constraints, model):
-        self.model = model
+    def __init__(self, constraints, platform):
+        self.platform = platform
         self.forks = 0
         self.co = self.get_new_id()
         self.constraints = constraints
-        self.model._constraints = constraints
-        for proc in self.model.procs:
+        self.platform._constraints = constraints
+        for proc in self.platform.procs:
             proc._constraints = constraints
             proc.memory._constraints = constraints
 
@@ -46,7 +46,7 @@ class State(object):
         self._child = None
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self.model),
+        return (self.__class__, (self.constraints, self.platform),
                 {'visited': self.visited, 'last_pc': self.last_pc, 'forks': self.forks,
                  'co': self.co, 'input_symbols': self.input_symbols,
                  'branches': self.branches})
@@ -57,11 +57,11 @@ class State(object):
 
     @property
     def cpu(self):
-        return self.model.current
+        return self.platform.current
 
     @property
     def mem(self):
-        return self.model.current.memory
+        return self.platform.current.memory
 
     @property
     def name(self):
@@ -69,7 +69,7 @@ class State(object):
 
     def __enter__(self):
         assert self._child is None
-        new_state = State(self.constraints.__enter__(), self.model)
+        new_state = State(self.constraints.__enter__(), self.platform)
         new_state.visited = set(self.visited)
         new_state.forks = self.forks + 1
         new_state.co = State.get_new_id()
@@ -83,13 +83,13 @@ class State(object):
         self._child = None
 
     def execute(self):
-        trace_item = (self.model._current, self.cpu.PC)
+        trace_item = (self.platform._current, self.cpu.PC)
         try:
-            result = self.model.execute()
+            result = self.platform.execute()
         except:
             trace_item = None
             raise
-        assert self.model.constraints is self.constraints
+        assert self.platform.constraints is self.constraints
         assert self.mem.constraints is self.constraints
         self.visited.add(trace_item)
         self.last_pc = trace_item
