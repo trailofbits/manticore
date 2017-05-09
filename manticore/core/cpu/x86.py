@@ -5637,10 +5637,11 @@ class I386LinuxSyscallAbi(SyscallAbi):
 class AMD64LinuxSyscallAbi(SyscallAbi):
     '''
     AMD64 Linux system call ABI
-
-    Floating point or wide arguments that deviate from the norm are not yet
-    supported.
     '''
+
+    #TODO(yan): Floating point or wide arguments that deviate from the norm are
+    # not yet supported.
+
     def syscall_number(self):
         return self._cpu.RAX
 
@@ -5694,10 +5695,10 @@ class I386StdcallAbi(Abi):
 class SystemVAbi(Abi):
     '''
     x64 SystemV function call convention
-
-    Floating point or wide arguments that deviate from the norm are not yet
-    supported.
     '''
+
+    #TODO(yan): Floating point or wide arguments that deviate from the norm are
+    # not yet supported.
 
     def get_arguments(self):
         # First 6 arguments go in registers, rest are popped from stack

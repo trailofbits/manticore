@@ -175,7 +175,6 @@ class Windows(Platform):
         
 
         self._function_abi = I386StdcallAbi(self.procs[0])
-        #self._syscall_abi = 
         # open standard files stdin, stdout, stderr
         logger.info("Not Opening any file")
 

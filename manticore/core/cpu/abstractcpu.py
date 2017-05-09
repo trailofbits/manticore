@@ -236,7 +236,7 @@ class Abi(object):
         spec = inspect.getargspec(implementation)
 
         if spec.varargs:
-            logger.warning("ABI: Vararg models should implemented as taking a single parameter")
+            logger.warning("ABI: Vararg models must be unary functions.")
 
         nargs = len(spec.args) - len(prefix_args)
 
