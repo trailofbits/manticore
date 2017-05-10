@@ -237,7 +237,9 @@ class State(object):
 
     def invoke_model(self, model):
         '''
-        Invoke a model.
+        Invoke a `model`. A `model` is a callable whose first argument is a
+        :class:`~manticore.core.state.State`, and whose following arguments correspond to
+        the C function being modeled.
 
         :param callable model: Model to invoke
         '''

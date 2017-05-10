@@ -305,7 +305,7 @@ class Manticore(object):
         '''
         Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one :class:`~manticore.core.executor.State` argument.
+        that takes one :class:`~manticore.core.state.State` argument.
 
         :param pc: Address of instruction to hook
         :type pc: int or None
