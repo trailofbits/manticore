@@ -511,6 +511,9 @@ class Manticore(object):
     def run(self, procs=1, timeout=0):
         '''
         Runs analysis.
+
+        :param int procs: Number of parallel worker processes
+        :param timeout: Analysis timeout, in seconds
         '''
         assert not self._running, "Manticore is already running."
         args = self._args
