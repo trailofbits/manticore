@@ -42,6 +42,7 @@ class Signal(object):
             if '__predicate__' in f.__dict__:
                 if not f.__dict__['__predicate__']():
                     continue
+
             results.append(f(*args, **kwargs))
 
         for obj, funcs in self._methods.items():
@@ -49,6 +50,7 @@ class Signal(object):
                 if '__predicate__' in f.__dict__:
                     if not f.__dict__['__predicate__']():
                         continue
+
                 results.append(f(obj, *args, **kwargs))
 
         return results

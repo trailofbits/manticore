@@ -1,3 +1,4 @@
+
 import fcntl
 import errno
 import os, struct
@@ -7,12 +8,12 @@ from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
 from ..platforms.platform import Platform
+#Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 import logging
 import random
 from ..core.cpu.arm import *
 logger = logging.getLogger("MODEL")
-
 
 class RestartSyscall(Exception):
     pass
@@ -90,7 +91,6 @@ class SymbolicFile(object):
             path = File(path, mode)
         assert isinstance(path, File)
 
-        #self._constraints = weakref.ref(constraints)
         WILDCARD = '+'
 
         symbols_cnt = 0
@@ -996,6 +996,7 @@ class Linux(object):
           to by buf to the file descriptor fd. If count is zero, write returns 0
           and optionally sets *tx_bytes to zero.
 
+          :param cpu           current CPU
           :param fd            a valid file descriptor
           :param buf           a memory buffer
           :param count         number of bytes to send 
@@ -2026,4 +2027,3 @@ class SLinux(Linux):
             raise ConcretizeSyscallArgument(2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
-

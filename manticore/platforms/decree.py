@@ -2,7 +2,6 @@ import cgcrandom
 import weakref
 import sys, os, struct
 # TODO use cpu factory
-from ..core.state import TerminateState
 from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.memory import SMemory32
@@ -1054,6 +1053,44 @@ class SDecree(Decree):
             cpu.write_int(rnd_bytes, len(data), 32)
         logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf,count,rnd_bytes,len(data))
         self.syscall_trace.append(("_random", -1, data))
+        return 0
+
+
+class DecreeEmu(object):
+
+    RANDOM = 0
+
+    @staticmethod
+    def cgc_initialize_secret_page(model):
+        logger.info("Skipping: cgc_initialize_secret_page()")
+        return 0
+
+    @staticmethod
+    def cgc_random(model, buf, count, rnd_bytes):
+        import cgcrandom
+        if issymbolic(buf):
+            logger.info("Ask to write random bytes to a symbolic buffer")
+            raise ConcretizeArgument(0)
+
+        if issymbolic(count):
+            logger.info("Ask to read a symbolic number of random bytes ")
+            raise ConcretizeArgument(1)
+
+        if issymbolic(rnd_bytes):
+            logger.info("Ask to return rnd size to a symbolic address ")
+            raise ConcretizeArgument(2)
+
+        data = []
+        for i in xrange(count):
+            value = cgcrandom.stream[DecreeEmu.RANDOM]
+            data.append(value)
+            DecreeEmu.random += 1
+
+        cpu = model.current
+        cpu.write(buf, data)
+        if rnd_bytes:
+            cpu.store(rnd_bytes, len(data), 32)
+        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf, count, rnd_bytes, len(data))
         return 0
 
 

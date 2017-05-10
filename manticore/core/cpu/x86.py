@@ -4,7 +4,6 @@ from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instructio
 from .abstractcpu import ConcretizeRegister, ConcretizeRegister, ConcretizeArgument
 from .abstractcpu import Interruption, Sysenter, Syscall
 from functools import wraps
-
 import collections
 from ..smtlib import *
 from ..memory import MemoryException
