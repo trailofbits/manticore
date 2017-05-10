@@ -7,6 +7,7 @@ from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 import sys
 from functools import wraps
+import inspect
 import types
 import logging
 logger = logging.getLogger("CPU")
