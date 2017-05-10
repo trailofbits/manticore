@@ -5655,7 +5655,7 @@ class ABI:
                 assert 0 <= cae.argnum < argcount
                 # concretize here
                 mem_addr = base+cae.argnum*4
-                raise ConcretizeMemory(mem_addr, 32, "Concretizing Function Argument", 'MINMAX')
+                raise ConcretizeMemory(cpu.memory, mem_addr, 32, "Concretizing Function Argument", 'MINMAX')
 
             cpu.EIP = cpu.pop(32)
         return cdecl_function
@@ -5680,7 +5680,7 @@ class ABI:
                 assert 0 <= cae.argnum < argcount
                 # concretize here
                 mem_addr = base+cae.argnum*4
-                raise ConcretizeMemory(mem_addr, 32, "Concretizing Function Argument", 'MINMAX')
+                raise ConcretizeMemory(cpu.memory, mem_addr, 32, "Concretizing Function Argument", 'MINMAX')
 
             cpu.EIP = cpu.pop(32)
             cpu.STACK += argcount*4
