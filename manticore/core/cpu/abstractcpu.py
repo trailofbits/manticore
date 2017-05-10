@@ -65,6 +65,16 @@ class ConcretizeRegister(CpuException):
         self.reg_name = reg_name
         self.policy = policy
 
+class ConcretizeArgument(CpuException):
+    '''
+    Raised when a symbolic argument needs to be concretized.
+    '''
+    def __init__(self, cpu, argnum, policy='MINMAX'):
+        self.message = "Concretizing argument #%d."%(argnum,)
+        self.cpu = cpu
+        self.policy = policy
+        self.argnum = argnum
+
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
 # This encapsulates how to access operands (regs/mem/immediates) for different CPUs
@@ -213,6 +223,133 @@ class RegisterFile(object):
         :param register: a register name
         '''
         return self._alias(register) in self.all_registers 
+
+
+class Abi(object):
+    '''
+    Represents the ability to extract arguments from the environment and write
+    back a result.
+    
+    Used for function call and system call models.
+    '''
+    def __init__(self, cpu):
+        '''
+        :param manticore.core.cpu.Cpu cpu: CPU to initialize with
+        '''
+        self._cpu = cpu
+
+    def get_arguments(self):
+        '''
+        Extract model arguments conforming to `convention`. Produces an iterable
+        of argument descriptors following the calling convention. A descriptor
+        is either a string describing a register, or an address (concrete or
+        symbolic).
+
+        :return: iterable returning syscall arguments.
+        :rtype: iterable
+        '''
+        raise NotImplementedError
+
+    def write_result(self, result):
+        '''
+        Write the result of a model back to the environment.
+
+        :param result: result of the model implementation
+        '''
+        raise NotImplementedError
+
+    def ret(self):
+        '''
+        Handle the "ret" semantics of the ABI, i.e. reclaiming stack space,
+        popping PC, etc.
+        
+        A null operation by default.
+        '''
+        return
+
+    def values_from(self, base):
+        '''
+        A reusable generator for increasing pointer-sized values from an address
+        (usually the stack).
+        '''
+        word_bytes = self._cpu.address_bit_size / 8
+        while True:
+            yield base
+            base += word_bytes
+
+    def invoke(self, model, prefix_args=None, varargs=False):
+        '''
+        Invoke a callable `model` as if it was a native function. If `varargs`
+        is true, model receives a single argument that is a generator for
+        function arguments. Pass a tuple of arguments for `prefix_args` you'd
+        like to precede the actual arguments.
+
+        :param callable model: Python model of the function
+        :param tuple prefix_args: Parameters to pass to model before actual ones
+        :param bool varargs: Whether the function expects a variable number of arguments
+        :return: The result of calling `model`
+        '''
+        prefix_args = prefix_args or ()
+
+        spec = inspect.getargspec(model)
+
+        if spec.varargs:
+            logger.warning("ABI: A vararg model must be a unary function.")
+
+        nargs = len(spec.args) - len(prefix_args)
+
+        # If the model is a method, we need to account for `self`
+        if inspect.ismethod(model):
+            nargs -= 1
+
+        def resolve_argument(arg):
+            if isinstance(arg, str):
+                return self._cpu.read_register(arg)
+            else:
+                return self._cpu.read_int(arg)
+
+        # Create a stream of resolved arguments from argument descriptors 
+        descriptors = self.get_arguments()
+        argument_iter = imap(resolve_argument, descriptors)
+
+        try:
+            if varargs:
+                result = model(*(prefix_args + (argument_iter,)))
+            else:
+                argument_tuple = prefix_args + tuple(islice(argument_iter, nargs))
+                result = model(*argument_tuple)
+        except ConcretizeArgument as e:
+            assert e.argnum >= len(prefix_args), "Can't concretize a constant arg"
+            idx = e.argnum - len(prefix_args)
+
+            # Arguments were lazily computed in case of varargs, so recompute here
+            descriptors = self.get_arguments()
+            src = next(islice(descriptors, idx, idx+1))
+
+            msg = 'Concretizing due to model invocation'
+            if isinstance(src, str):
+                raise ConcretizeRegister(src, msg)
+            else:
+                raise ConcretizeMemory(src, self._cpu.address_bit_size, msg)
+        else:
+            if result is not None:
+                self.write_result(result)
+
+            self.ret()
+
+        return result
+
+class SyscallAbi(Abi):
+    '''
+    A system-call specific ABI.
+    '''
+    def syscall_number(self):
+        '''
+        Extract the index of the invoked syscall.
+
+        :return: int
+        '''
+        raise NotImplementedError
 
 from ...utils.event import Signal
 

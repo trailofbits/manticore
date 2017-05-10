@@ -20,7 +20,7 @@ from .core.state import State, TerminateState
 from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
-from .models import linux, decree, windows
+from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
 logger = logging.getLogger('MANTICORE')
 
@@ -554,42 +554,44 @@ class Manticore(object):
                     logger.debug("Repeated PC in assertions file %s", path)
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
-
-
     def _backup_state_callback(self, state, state_id):
         logger.debug("Backup state %r", state_id)
 
     def _restore_state_callback(self, state, state_id):
-        state.cpu.will_read_register += self._read_register_callback
-        state.cpu.will_write_register += self._write_register_callback
-        state.cpu.will_read_memory += self._read_memory_callback
-        state.cpu.will_write_memory += self._write_memory_callback
-        #print "Restore state", state, state_id, state.cpu.will_read_register
+        logger.debug("Restore state %r", state_id)
 
-    def _terminate_state_callback(self, state, state_id):
+    def _terminate_state_callback(self, state, state_id, ex):
+        executor = self._executor
         #aggregates state statistics into exceutor statistics. FIXME split
         logger.debug("Terminate state %r %r ", state, state_id)
         state_visited = state.context.get('visited', set())
         state_instructions_count = state.context.get('instructions_count', 0)
-        with self._executor.context() as context:
+        with self._executor.locked_context() as context:
             executor_visited = context.get('visited', set())
             context['visited'] = executor_visited.union(state_visited)
 
             executor_instructions_count = context.get('instructions_count', 0)
             context['instructions_count'] = executor_instructions_count + state_instructions_count 
 
-    def _fork_state_callback(self, state, expression, values):
-        logger.debug("About to backup state %r %r %r", state, expression, values)
-    def _read_register_callback(self, state, reg_name, value):
+    def _fork_state_callback(self, state, expression, values, policy):
+        logger.debug("About to backup state %r %r %r", state, expression, values, policy)
+
+    def _read_register_callback(self, state, cpu, reg_name, value):
         logger.debug("Read Register %r %r", reg_name, value)
-    def _write_register_callback(self, state, reg_name, value):
+
+    def _write_register_callback(self, state, cpu, reg_name, value):
         logger.debug("Write Register %r %r", reg_name, value)
-    def _read_memory_callback(self, state, address, value, size):
+
+    def _read_memory_callback(self, state, cpu, address, value, size):
         logger.debug("Read Memory %r %r %r", address, value, size)
-    def _write_memory_callback(self, state, address, value, size):
+
+    def _write_memory_callback(self, state, cpu, address, value, size):
         logger.debug("Write Memory %r %r %r", address, value, size)
 
-    def _execute_state_callback(self, state):
+    def _decode_instruction_callback(self, state, cpu):
+        logger.debug("Decoding stuff instruction not available")
+
+    def _execute_instruction_callback(self, state, cpu, instruction):
         address = state.cpu.PC
         if not issymbolic(address):
             state.context.setdefault('visited', set()).add(address)
@@ -747,8 +749,6 @@ class Manticore(object):
                                   dumpstats=self.should_profile)
         
 
-        if self._hooks:
-            self._executor.will_execute_state += self._hook_callback
 
         #Link Executor events to default callbacks in manticore object
         self._executor.will_read_register += self._read_register_callback
@@ -762,10 +762,19 @@ class Manticore(object):
         self._executor.will_fork_state += self._fork_state_callback
         self._executor.will_terminate_state += self._terminate_state_callback
         self._executor.will_generate_testcase += self._generate_testcase_callback
+
+        if self._hooks:
+            self._executor.will_execute_state += self._hook_callback
+
+        if self._model_hooks:
+            self._executor.will_execute_state += self._model_hook_callback
+
+        if self._assertions:
+            self._executor.will_execute_state += self._assertions_callback
+
         self._time_started = time.time()
 
         self._running = True
-
 
         if timeout > 0:
             t = Timer(timeout, self.terminate)
@@ -848,13 +857,8 @@ class Manticore(object):
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-<<<<<<< HEAD
-                    state.cpu.PC, program)
-            raise AbandonState()
-=======
                     state.cpu.pc, program)
             raise TerminateState()
->>>>>>> Wip refactoring
 
         #Everything is good add it.
         state.constraints.add(assertion)

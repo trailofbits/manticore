@@ -1,7 +1,8 @@
 from capstone import *
 from capstone.x86 import *
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
-from .abstractcpu import ConcretizeRegister, Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
+from .abstractcpu import ConcretizeRegister, ConcretizeRegister, ConcretizeArgument
+from .abstractcpu import Interruption, Sysenter, Syscall
 from functools import wraps
 
 import collections
@@ -5726,6 +5727,108 @@ class ABI:
     @staticmethod
     def msx64(function):
         pass
+################################################################################
+#Calling conventions
+
+class I386LinuxSyscallAbi(SyscallAbi):
+    '''
+    i386 Linux system call ABI
+    '''
+    def syscall_number(self):
+        return self._cpu.EAX
+
+    def get_arguments(self):
+        for reg in ('EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'):
+            yield reg
+
+    def write_result(self, result):
+        self._cpu.EAX = result
+
+class AMD64LinuxSyscallAbi(SyscallAbi):
+    '''
+    AMD64 Linux system call ABI
+    '''
+
+    #TODO(yan): Floating point or wide arguments that deviate from the norm are
+    # not yet supported.
+
+    def syscall_number(self):
+        return self._cpu.RAX
+
+    def get_arguments(self):
+        for reg in ('RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9'):
+            yield reg
+
+    def write_result(self, result):
+        self._cpu.RAX = result
+    
+
+class I386CdeclAbi(Abi):
+    '''
+    i386 cdecl function call semantics
+    '''
+    def get_arguments(self):
+        base = self._cpu.STACK + self._cpu.address_bit_size / 8
+        for address in self.values_from(base):
+            yield address
+
+    def write_result(self, result):
+        self._cpu.EAX = result
+
+    def ret(self):
+        self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
+        
+class I386StdcallAbi(Abi):
+    '''
+    x86 Stdcall function call convention. Callee cleans up the stack.
+    '''
+    def __init__(self, cpu):
+        super(I386StdcallAbi, self).__init__(cpu)
+        self._arguments = 0
+
+    def get_arguments(self):
+        base = self._cpu.STACK + self._cpu.address_bit_size / 8
+        for address in self.values_from(base):
+            self._arguments += 1
+            yield address
+
+    def write_result(self, result):
+        self._cpu.EAX = result
+
+    def ret(self):
+        self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
+
+        word_bytes = self._cpu.address_bit_size / 8
+        self._cpu.ESP += self._arguments * word_bytes
+        self._arguments = 0
+
+class SystemVAbi(Abi):
+    '''
+    x64 SystemV function call convention
+    '''
+
+    #TODO(yan): Floating point or wide arguments that deviate from the norm are
+    # not yet supported.
+
+    def get_arguments(self):
+        # First 6 arguments go in registers, rest are popped from stack
+        reg_args = ('RDI', 'RSI', 'RDX', 'RCX', 'R8', 'R9')
+
+        for reg in reg_args:
+            yield reg
+
+        word_bytes = self._cpu.address_bit_size / 8
+        for address in self.values_from(self._cpu.RSP + word_bytes):
+            yield address
+
+    def write_result(self, result):
+        # XXX(yan): Can also return in rdx for wide values.
+        self._cpu.RAX = result
+
+    def ret(self):
+        self._cpu.RIP = self._cpu.pop(self._cpu.address_bit_size)
+
+
 
 class AMD64Cpu(X86Cpu):
     #Config

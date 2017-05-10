@@ -6,7 +6,7 @@ from ..utils.helpers import issymbolic
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
 from .memory import ConcretizeMemory
-from ..models.system import *
+from ..platforms.platform import *
 
 class StateException(Exception):
     ''' All state related exceptions '''
@@ -249,6 +249,9 @@ class State(object):
         return data
 
     def concretize(self, symbolic, policy, maxcount=100):
+        ''' This finds a set of solutions for symbolic using policy.
+            This raises TooManySolutions if more solutions than maxcount 
+        '''
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self.constraints, symbolic)

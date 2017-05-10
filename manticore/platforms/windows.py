@@ -5,9 +5,8 @@ from ..core.memory import Memory, MemoryException, SMemory32, Memory32
 from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu, Sysenter
-from ..core.cpu.abstractcpu import Interruption, Syscall, \
-        ConcretizeRegister, ConcretizeArgument, IgnoreAPI
-from ..core.executor import ForkState, SyscallNotImplemented
+from ..core.cpu.abstractcpu import Interruption, Syscall
+from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
 
 from ..binary.pe import minidump
@@ -33,7 +32,7 @@ class Deadlock(Exception):
 class SymbolicAPIArgument(Exception):
     pass
 
-class SymbolicSyscallArgument(ConcretizeRegister):
+class SymbolicSyscallArgument(object):
     def __init__(self, number, message='Concretizing syscall argument', policy='SAMPLED'):
         reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][number]
         super(SymbolicSyscallArgument, self).__init__(reg_name, message, policy)

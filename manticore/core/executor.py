@@ -525,6 +525,7 @@ class Executor(object):
                 #Notify this worker is done
                 self.will_terminate_state(current_state, current_state_id, e)
                 current_state = None
+                logger.setState(None)
 
         with DelayedKeyboardInterrupt():
             #notify siblings we are about to stop this run

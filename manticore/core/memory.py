@@ -3,7 +3,7 @@ from weakref import WeakValueDictionary
 from cStringIO import StringIO
 from .smtlib import *
 import logging
-from .mappings import _mmap, _munmap
+from ..utils.mappings import _mmap, _munmap
 from ..utils.helpers import issymbolic
 
 logger = logging.getLogger('MEMORY')
@@ -31,6 +31,7 @@ class InvalidMemoryAccess(MemoryException):
         self.mode = mode
         super(InvalidMemoryAccess, self, ).__init__('Invalid mode trying to access memory in mode {}'.format(mode), address)
 
+class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
     def __init__(self, cause, address, size, constraint):
         super(InvalidSymbolicMemoryAccess, self, ).__init__(cause, address)
         #the crashing constraint you need to assert 
@@ -39,6 +40,18 @@ class InvalidMemoryAccess(MemoryException):
 
     def __str__(self):
         return '%s <%s>'%(self.cause, repr(self.address))
+
+
+class ConcretizeMemory(MemoryException):
+    '''
+    Raised when a symbolic memory cell needs to be concretized.
+    '''
+    def __init__(self, mem, address, size, policy='MINMAX'):
+        self.message = "Concretizing memory address {} size {}".format(address, size)
+        self.mem = mem
+        self.address = address
+        self.size = size
+        self.policy = policy
 
 class Map(object):
     '''
