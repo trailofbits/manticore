@@ -1,9 +1,16 @@
 import unittest
+<<<<<<< HEAD
 
 from manticore.core.executor import State
 from manticore.core.smtlib import BitVecVariable
 from manticore.core.smtlib import ConstraintSet
 from manticore.platforms import linux
+=======
+from manticore.utils.event import Signal
+from manticore.core.state import State
+from manticore.core.smtlib import BitVecVariable, ConstraintSet
+from manticore.models import linux
+>>>>>>> will_terminate_state fix and tests skipped
 
 class FakeMemory(object):
     def __init__(self):
@@ -15,6 +22,13 @@ class FakeMemory(object):
 
 class FakeCpu(object):
     def __init__(self):
+        self.will_decode_instruction = Signal()
+        self.will_execute_instruction = Signal()
+        self.will_read_register = Signal()
+        self.will_write_register = Signal()
+        self.will_read_memory = Signal()
+        self.will_write_memory = Signal()
+
         self._memory = FakeMemory()
 
     @property
@@ -108,6 +122,7 @@ class StateTest(unittest.TestCase):
         with self.assertRaises(Exception):
             expr = self.state.new_symbolic_value(length)
 
+    @unittest.skip('Record branches not a part of state anymore')
     def test_record_branches(self):
         branch = 0x80488bb
         target = 0x8048997

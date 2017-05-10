@@ -32,7 +32,7 @@ def mgr_init():
 manager = SyncManager()
 manager.start(mgr_init)
 
-
+#module wide logger
 logger = logging.getLogger("EXECUTOR")
 
 
@@ -48,7 +48,7 @@ def sync(f):
 
 
 class Policy(object):
-    ''' Prioritization of state search '''
+    ''' Base class for prioritization of state search '''
     def __init__(self):
         pass
 
@@ -64,8 +64,14 @@ class Random(Policy):
     def __init__(self):
         super(Random, self).__init__()
 
+    def features(self, state):
+        ''' Save state features for prioritization before a state is stored '''
+        pass
+
     def priority(self, state_id):
-        return random.uniform(0,1)
+        ''' A numeric value representing likelihood to reach the interesting program spot '''
+        return 1.0
+
 
 class Executor(object):
     '''
@@ -78,15 +84,11 @@ class Executor(object):
         self.workspace = workspace
         logger.debug("Workspace set: %s", self.workspace)
 
-<<<<<<< HEAD
-        # Signals
-=======
         # Signals / Callbacks handlers will be invoked potentially at differeent 
         # worker processes. State provides a local context to save data.
 
         #Executor
         self.will_start_run = Signal()
->>>>>>> forwarding events wip
         self.will_finish_run = Signal()
         self.will_fork_state = Signal()
         self.will_backup_state = Signal()
@@ -166,8 +168,8 @@ class Executor(object):
 
 
     def _load_workspace(self):
-        #Browse workspace in case we are trying to continue a paused run
-        #search paused analysis in workspace
+        #Browse and load states in a workspace in case we are trying to 
+        # continue from paused run
         saved_states = []
         for filename in os.listdir(self.workspace):
             if filename.startswith('state_') and filename.endswith('.pkl'):
@@ -208,7 +210,7 @@ class Executor(object):
         return True
 
     ################################################
-    #workspace filenames and ids
+    # Workspace filenames 
     def _workspace_filename(self, filename):
         return os.path.join(self.workspace, filename)
 
@@ -220,13 +222,17 @@ class Executor(object):
         filename = 'test_%06d.pkl'%state_id
         return self._workspace_filename(filename)
 
+    ################################################
+    #Shared counters 
     @sync
     def _new_state_id(self):
+        ''' This gets an uniq shared id for a new state '''
         self._state_count.value += 1
         return self._state_count.value
 
     @sync
     def _new_testcase_id(self):
+        ''' This gets an uniq shared id for a new testcase '''
         self._test_count.value += 1
         return self._test_count.value
 
@@ -316,7 +322,6 @@ class Executor(object):
 
         #broadcast event
         self.will_backup_state(state, state_id)
-
         return state_id
 
     def restore(self, state_id):
@@ -466,6 +471,11 @@ class Executor(object):
                     while not self.is_shutdown():
                         if not current_state.execute():
                             break
+                    else:
+                        #Notify this worker is done
+                        self.will_terminate_state(current_state, current_state_id, 'Shutdown')
+                        current_state = None
+
 
                 #Handling Forking and terminating exceptions
                 except Concretize as e:
@@ -499,42 +509,27 @@ class Executor(object):
                     print "*** print_exc:"
                     traceback.print_exc()
 
+                    #Notify this worker is done
+                    self.will_terminate_state(current_state, current_state_id, e)
+
                     if solver.check(current_state.constraints):
                         self.generate_testcase(current_state, "Solver failed" + str(e))
                     current_state = None
 
-            except KeyboardInterrupt as e:
-                logger.error("Interrupted!")
-                logger.setState(None)
-                current_state = None
-                break
-
-            except AssertionError as e:
-                import traceback
-                trace = traceback.format_exc()
-                logger.error("Failed an internal assertion: %s\n%s", str(e), trace )
-                for log in trace.splitlines():
-                    logger.error(log)
-                if solver.check(current_state.constraints):
-                    if isinstance(current_state.cpu.PC, (int, long)):
-                        PC = "{:08x}".format(current_state.cpu.PC)
-                    else:
-                        PC = str(current_state.cpu.PC)
-
-                    self.generate_testcase(current_state, "Assertion Failure {} at {}: {}".format(str(e), PC, trace))
-                current_state = None
-
-            except Exception as e:
+            except (KeyboardInterrupt, Exception, AssertionError) as e:
                 import traceback
                 trace = traceback.format_exc()
                 logger.error("Exception: %s\n%s", str(e), trace)
                 for log in trace.splitlines():
                     logger.error(log) 
+                #Notify this worker is done
+                self.will_terminate_state(current_state, current_state_id, e)
                 current_state = None
 
         with DelayedKeyboardInterrupt():
             #notify siblings we are about to stop this run
             self._stop_run()
+
 
         #Notify this worker is done (not sure it's needed)
         self.will_finish_run()

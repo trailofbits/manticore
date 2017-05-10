@@ -697,7 +697,7 @@ class Manticore(object):
                 for m in executor_visited:
                     f.write(fmt.format(m[1]))
 
-        visited = ['%d:%08x'%(0,site) for site in self._executor._shared_context['visited']]
+        visited = ['%d:%08x'%(0,site) for site in self._executor._shared_context.get('visited', set())]
         with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
             for entry in sorted(visited):
                 f.write(entry + '\n')

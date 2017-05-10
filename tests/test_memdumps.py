@@ -82,12 +82,15 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
+    @unittest.skip('TODO')
     def testSimpleParse(self):
         self._runManticore("simple_parse")
 
+    @unittest.skip('TODO')
     def testSimpleDeref(self):
         self._runManticore("simple_bad_deref")
 
+    @unittest.skip('TODO')
     def testSimpleBufferOverflow(self):
         self._runManticore("simple_buffer_overflow")
 
