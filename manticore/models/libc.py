@@ -125,11 +125,11 @@ class strings(object):
         i = 0
         while True:
             value = cpu.read_int(src, 8)
-            if not cpu.mem.isWritable(dst+i):
+            if not cpu.memory.isWritable(dst+i):
                 raise MemoryException("No access writing", dst+i) 
             if issymbolic(value):
                 if solver.can_be_true(state.constraints, value==0):
-                    raise ConcretizeMemory(src+i)
+                    raise ConcretizeMemory(cpu.memory, address=src+i, size=8)
                 else:
                     break
             elif value == 0:

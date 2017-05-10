@@ -450,7 +450,7 @@ class Cpu(object):
                     else:
                         logger.info('Trying to execute instructions from invalid memory')
                         logger.error('Concretize executable memory %r %r', c, text )
-                        raise ConcretizeMemory(address = pc,
+                        raise ConcretizeMemory(self.memory, address = pc,
                                                 size = 8 * self.max_instr_width, 
                                                 policy = 'INSTRUCTION' )
                         break
