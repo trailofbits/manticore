@@ -58,5 +58,4 @@ def hook(state):
     # We found the flag, no need to continue execution
     m.terminate()
 
-m.workers = 10
-m.run()
+m.run(procs=10)

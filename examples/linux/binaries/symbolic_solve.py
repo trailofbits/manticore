@@ -33,6 +33,6 @@ def solve(state):
 
 # play with these numbers!
 m.verbosity = 0
-m.workers = 1
+procs = 1
 
-m.run()
+m.run(procs)

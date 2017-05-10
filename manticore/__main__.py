@@ -40,7 +40,7 @@ def parse_arguments():
     parser.add_argument('--dumpafter', type=int, default=0, help='Dump state after every N instructions; 0 to disable')
     parser.add_argument('--maxstorage', type=int, default=0, help='Storage use cap in megabytes.')
     parser.add_argument('--maxstates', type=int, default=0, help='Maximun number of states to mantain at the same time')
-    parser.add_argument('--procs', type=int, default=1, help='Number of parallel workers to spawn')
+    parser.add_argument('--procs', type=int, default=1, help='Number of parallel processes to spawn')
     parser.add_argument('--timeout', type=int, default=0, help='Timeout. Abort exploration aftr TIMEOUT seconds')
     parser.add_argument('--replay', type=str, default=None,
                        help='The trace filename to replay')
@@ -95,9 +95,6 @@ def main():
     if args.names is not None:
         m.apply_model_hooks(args.names)
 
-    if args.procs:
-        m.workers = args.procs
-
     if args.env:
         for entry in args.env:
             name, val = entry[0].split('=')
@@ -111,7 +108,7 @@ def main():
     logger.info('Loading program: {}'.format(args.programs))
     logger.info('Workspace: {}'.format(m.workspace))
 
-    m.run(args.timeout)
+    m.run(args.procs, args.timeout)
 
     m.dump_stats()
 
