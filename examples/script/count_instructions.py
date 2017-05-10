@@ -17,13 +17,12 @@ if __name__ == '__main__':
         sys.exit(2)
 
     m = Manticore(sys.argv[1])
-    m.workers = 3
     m.context['count'] = 0
 
     @m.hook(None)
     def explore(state):
         m.context['count'] += 1
 
-    m.run()
+    m.run(procs=3)
 
     print "Executed ", m.context['count'], " instructions."

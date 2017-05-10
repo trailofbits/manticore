@@ -159,7 +159,6 @@ class Manticore(object):
         # XXX(yan) '_args' will be removed soon; exists currently to ease porting
         self._args = args
         self._time_started = 0
-        self._num_processes = 1
         self._begun_trace = False
         self._assertions = {}
         self._model_hooks = {}
@@ -372,15 +371,6 @@ class Manticore(object):
         return tempfile.mkdtemp(prefix="mcore_", dir='./')
 
     @property
-    def workers(self):
-        return self._num_processes
-
-    @workers.setter
-    def workers(self, n):
-        assert not self._running, "Can't set workers if Manticore is running."
-        self._num_processes = n
-
-    @property
     def policy(self):
         return self._policy
 
@@ -518,7 +508,7 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
 
-    def run(self, timeout=0):
+    def run(self, procs=1, timeout=0):
         '''
         Runs analysis.
         '''
@@ -560,7 +550,7 @@ class Manticore(object):
             t = Timer(timeout, self.terminate)
             t.start()
         try:
-            self._start_workers(self._num_processes)
+            self._start_workers(procs)
 
             self._join_workers()
         finally:
