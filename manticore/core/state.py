@@ -241,4 +241,5 @@ class State(object):
 
         :param callable model: Model to invoke
         '''
-        self.platform.invoke_model(model, (self,))  # TODO(mark): this can't support varargs core models!
+        # TODO(mark): this can't support varargs core models!
+        self.platform.invoke_model(model, prefix_args=(self,))
