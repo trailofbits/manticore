@@ -473,7 +473,7 @@ class Executor(object):
                             break
                     else:
                         #Notify this worker is done
-                        self.will_terminate_state(current_state, 'Shutdown')
+                        self.will_terminate_state(current_state, current_state_id, 'Shutdown')
                         current_state = None
 
 
@@ -510,50 +510,22 @@ class Executor(object):
                     traceback.print_exc()
 
                     #Notify this worker is done
-                    self.will_terminate_state(current_state, e)
+                    self.will_terminate_state(current_state, current_state_id, e)
 
                     if solver.check(current_state.constraints):
                         self.generate_testcase(current_state, "Solver failed" + str(e))
                     current_state = None
 
-            except KeyboardInterrupt as e:
-                logger.error("Interrupted!")
-                #Notify this worker is done
-                self.will_terminate_state(current_state, e)
-
-                logger.setState(None)
-                current_state = None
-                break
-
-            except AssertionError as e:
-
-                #Notify this worker is done
-                self.will_terminate_state(current_state, e)
-
-
-                import traceback
-                trace = traceback.format_exc()
-                logger.error("Failed an internal assertion: %s\n%s", str(e), trace )
-                for log in trace.splitlines():
-                    logger.error(log)
-                if solver.check(current_state.constraints):
-                    if isinstance(current_state.cpu.PC, (int, long)):
-                        PC = "{:08x}".format(current_state.cpu.PC)
-                    else:
-                        PC = str(current_state.cpu.PC)
-
-                    self.generate_testcase(current_state, "Assertion Failure {} at {}: {}".format(str(e), PC, trace))
-                current_state = None
-
-            except Exception as e:
+            except (KeyboardInterrupt, Exception, AssertionError) as e:
                 import traceback
                 trace = traceback.format_exc()
                 logger.error("Exception: %s\n%s", str(e), trace)
                 for log in trace.splitlines():
                     logger.error(log) 
                 #Notify this worker is done
-                self.will_terminate_state(current_state, e)
+                self.will_terminate_state(current_state, current_state_id, e)
                 current_state = None
+                logger.setState(None)
 
         with DelayedKeyboardInterrupt():
             #notify siblings we are about to stop this run
