@@ -1076,7 +1076,7 @@ class Linux(Platform):
         else:
             return -1
 
-    def sys_uname(self, old_utsname):
+    def sys_newuname(self, old_utsname):
         '''
         Writes system information in the variable C{old_utsname}.
         :rtype: int
@@ -1093,7 +1093,7 @@ class Linux(Platform):
         uname += pad('x86_64')
         uname += pad('(none)')
         self.current.write_bytes(old_utsname, uname)
-        logger.debug("sys_uname(...) -> %s", uname)
+        logger.debug("sys_newuname(...) -> %s", uname)
         return 0
 
     def sys_brk(self, brk):
@@ -1336,7 +1336,7 @@ class Linux(Platform):
             total+=size
         return total
 
-    def sys_set_thread_area32(self, user_info):
+    def sys_set_thread_area(self, user_info):
         '''
         Sets a thread local storage (TLS) area. Sets the base address of the GS segment.
         :rtype: int
@@ -1703,6 +1703,12 @@ class Linux(Platform):
 
     #64bit syscalls
     
+    def sys_newfstat(self, fd, buf):
+        '''
+        Wrapper for fstat64()
+        '''
+        return self.sys_fstat64(fd, buf)
+
     def sys_fstat64(self, fd, buf):
         '''
         Determines information about a file based on its file descriptor (for Linux 64 bits).
