@@ -16,83 +16,109 @@ def dump_gdb(cpu, addr, count):
         val2 = int(cpu.read_int(offset))
         print '{:x}: g{:08x} m{:08x}'.format(offset, val, val2)
 
+def cmp_regs(cpu, should_print=False):
+    '''
+    Compare registers from a remote gdb session to current mcore.
+
+    :param manticore.core.cpu Cpu: Current cpu
+    :param bool should_print: Whether to print values to stdout
+    :return: Whether or not any differences were detected
+    :rtype: bool
+    '''
+    differing = False
+    regs = {}
+    gdb_regs = gdb.getCanonicalRegisters()
+    for name in sorted(gdb_regs):
+        vg = gdb_regs[name]
+        if name.endswith('psr'):
+            name = 'apsr'
+        v = cpu.read_register(name.upper())
+        if should_print:
+            print '{} gdb:{:x} mcore:{:x}'.format(name, vg, v)
+        if vg != v:
+            if should_print:
+                print '^^ unequal'
+            differing = True
+    return differing
+
+def on_after(m, state):
+    '''
+    Handle syscalls (import memory) and bail if we diverge
+    '''
+    m.context['icount'] += 1
+
+    # Synchronize qemu state to manticore's after a system call
+    if state.cpu.instruction.mnemonic == 'svc':
+        writes = state.cpu.memory.stop_write_trace()
+        for addr, val in writes:
+            gdb.setByte(addr, val[0])
+            for reg in state.cpu.canonical_registers:
+                if reg.endswith('psr'):
+                    continue
+                gdb.setR(reg, state.cpu.read_register(reg))
+
+        # Write return val to gdb
+        gdb.setR('R0', state.cpu.R0)
+
+    # Ignore Linux kernel helpers
+    if (state.cpu.PC >> 16) == 0xffff:
+        return
+
+    if cmp_regs(state.cpu):
+        state.abandon()
+
+def sync_svc(m, state):
+    name = linux_syscalls.armv7[syscall]
+    try:
+        # Make sure mmap returns the same address
+        if 'mmap' in name:
+            returned = gdb.getR('R0')
+            state.cpu.write_register('R0', returned)
+        if 'exit' in name:
+            return
+    except ValueError:
+        for reg in state.cpu.canonical_registers:
+            print '{}: {:x}'.format(reg, state.cpu.read_register(reg))
+        raise
+
+    logger.debug('Syscall: {} {}'.format(syscall, linux_syscalls.armv7[syscall]))
+    for i in range(4):
+        logger.debug("R{}: {:x}".format(i, gdb.getR('R%d'%i)))
+
+def init(m, state):
+    gdb_regs = gdb.getCanonicalRegisters()
+    logger.debug("Copying stack..")
+    for address in range(state.cpu.SP, 0xf7000000):
+        b = gdb.getByte(address)
+        state.cpu.write_int(address, b, 8)
+    logger.debug("Done")
+    for reg in gdb_regs:
+        state.cpu.write_register(reg.upper(), gdb_regs[reg])
+    m.context['initialized'] = True
+
+
 def verify(argv):
-    logger.debug("Verifying program \"{}\"".format(argv[0]))
+    logger.debug("Verifying program \"{}\"".format(argv))
 
     qemu.start('arm', argv)
     gdb.start('arm', argv)
 
     m = Manticore(argv[0], argv[1:])
+
     m.verbosity = 1
     m.context['icount'] = 0
     m.context['initialized'] = False
+    m.context['last_pc_executed'] = None
 
-    def cmp_regs(cpu, should_print=False):
-        '''
-        Compare registers from a remote gdb session to current mcore.
-
-        :param manticore.core.cpu Cpu: Current cpu
-        :param bool should_print: Whether to print values to stdout
-        :return: Whether or not any differences were detected
-        :rtype: bool
-        '''
-        differing = False
-        regs = {}
-        gdb_regs = gdb.getCanonicalRegisters()
-        for name in sorted(gdb_regs):
-            vg = gdb_regs[name]
-            if name.endswith('psr'):
-                name = 'apsr'
-            v = cpu.read_register(name.upper())
-            if should_print:
-                print '{} gdb:{:x} mcore:{:x}'.format(name, vg, v)
-            if vg != v:
-                if should_print:
-                    print '^^ unequal'
-                differing = True
-        return differing
-
-
-    @m.hook_after(None)
-    def on_after(state):
-        '''
-        Handle syscalls (import memory) and bail if we diverge
-        '''
-        m.context['icount'] += 1
-
-        # Synchronize qemu state to manticore's after a system call
-        if state.cpu.instruction.mnemonic == 'svc':
-            writes = state.cpu.memory.stop_write_trace()
-            for addr, val in writes:
-                gdb.setByte(addr, val[0])
-                for reg in state.cpu.canonical_registers:
-                    if reg.endswith('psr'):
-                        continue
-                    gdb.setR(reg, state.cpu.read_register(reg))
-
-            # Write return val to gdb
-            gdb.setR('R0', state.cpu.R0)
-
-        # Ignore Linux kernel helpers
-        if (state.cpu.PC >> 16) == 0xffff:
-            return
-
-        if cmp_regs(state.cpu):
-            state.abandon()
 
     @m.hook(None)
     def on_instruction(state):
         # Initialize our state to QEMU's
         if not m.context['initialized']:
-            gdb_regs = gdb.getCanonicalRegisters()
-            logger.debug("Copying stack..")
-            for address in range(state.cpu.SP, 0xf7000000):
-                b = gdb.getByte(address)
-                state.cpu.write_int(address, b, 8)
-            logger.debug("Done")
-            for reg in gdb_regs:
-                state.cpu.write_register(reg.upper(), gdb_regs[reg])
-            m.context['initialized'] = True
+            init(m, state)
+
+        if m.context['last_pc_executed'] != state.cpu.PC:
+            on_after(m, state)
 
         # XXX(yan): The trace would diverge at this offset in the value of R4
         # in the example I was using. This might need to be adjusted for other
@@ -112,22 +138,7 @@ def verify(argv):
             gdb.stepi()
 
         if mnemonic == 'svc':
-            name = linux_syscalls.armv7[syscall]
-            try:
-                # Make sure mmap returns the same address
-                if 'mmap' in name:
-                    returned = gdb.getR('R0')
-                    state.cpu.write_register('R0', returned)
-                if 'exit' in name:
-                    return
-            except ValueError:
-                for reg in state.cpu.canonical_registers:
-                    print '{}: {:x}'.format(reg, state.cpu.read_register(reg))
-                raise
-
-            logger.debug('Syscall: {} {}'.format(syscall, linux_syscalls.armv7[syscall]))
-            for i in range(4):
-                logger.debug("R{}: {:x}".format(i, gdb.getR('R%d'%i))
+            sync_svc(m, state)
 
     m.run()
 
