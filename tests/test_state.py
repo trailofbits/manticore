@@ -1,6 +1,6 @@
 import unittest
 
-from manticore.core.executor import State
+from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable
 from manticore.core.smtlib import ConstraintSet
 from manticore.platforms import linux
