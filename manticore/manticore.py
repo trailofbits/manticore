@@ -712,7 +712,7 @@ class Manticore(object):
         #            f.write(fmt.format(m))
 
 
-        instructions_count = self._executor._shared_context['instructions_count']
+        instructions_count = self._executor._shared_context.get('instructions_count',0)
         elapsed = time.time()-self._time_started
         logger.info('Results dumped in %s', self.workspace)
         logger.info('Instructions executed: %d', instructions_count)
