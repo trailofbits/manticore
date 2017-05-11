@@ -13,13 +13,13 @@ Manticore
 ---------
 
 .. autoclass:: manticore.Manticore
-   :members:
+   :members: add_hook, hook, run, terminate, verbosity
 
 State
 -----
 
 .. autoclass:: manticore.core.state.State
-   :members:
+   :members: abandon, constrain, new_symbolic_buffer, new_symbolic_value, solve_n, solve_one, symbolicate_buffer, invoke_model
 
 Cpu
 ---

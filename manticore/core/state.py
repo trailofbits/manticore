@@ -234,3 +234,14 @@ class State(object):
                 self.branches[key] += 1
             except KeyError:
                 self.branches[key] = 1
+
+    def invoke_model(self, model):
+        '''
+        Invoke a `model`. A `model` is a callable whose first argument is a
+        :class:`~manticore.core.state.State`, and whose following arguments correspond to
+        the C function being modeled.
+
+        :param callable model: Model to invoke
+        '''
+        # TODO(mark): this can't support varargs core models!
+        self.platform.invoke_model(model, prefix_args=(self,))
