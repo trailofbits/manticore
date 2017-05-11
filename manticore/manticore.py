@@ -41,7 +41,7 @@ def makeLinux(program, argv, env, concrete_start = ''):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-    platform = linux.SLinux(constraints, program, argv=argv, envp=env,
+    platform = linux.SLinux(program, argv=argv, envp=env,
             symbolic_files=('symbolic.txt'))
     initial_state = State(constraints, platform)
 

@@ -1730,7 +1730,7 @@ class SLinux(Linux):
     '''
     A symbolic extension of a Decree Operating System Platform.
     '''
-    def __init__(self, constraints, programs, argv, envp, symbolic_random=None, symbolic_files=()):
+    def __init__(self,programs, argv, envp, symbolic_files=()):
         '''
         Builds a symbolic extension of a Decree OS
         :param constraints: a constraints.
