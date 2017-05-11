@@ -1,3 +1,4 @@
+import os
 from collections import OrderedDict
 
 from .executor import manager
@@ -234,3 +235,35 @@ class State(object):
                 self.branches[key] += 1
             except KeyError:
                 self.branches[key] = 1
+
+    def generate_inputs(self, workspace, generate_files = False):
+        '''
+        Save the inputs of the state
+
+        :param str workspace: the working directory 
+        :param bool generate_files: true if symbolic files are also generated
+        '''
+
+        # Save constraints formula
+        smtfile = 'state_{:08x}.smt'.format(self.co)
+        with open(os.path.join(workspace,smtfile), 'wb') as f:
+            f.write(str(self.constraints))
+
+        # check that the state is sat
+        assert solver.check(self.constraints)
+
+        # save the inputs
+        for symbol in self.input_symbols:
+            buf = solver.get_value(self.constraints, symbol)
+            filename = os.path.join(workspace,'state_%08x.txt'%self.co)
+            file(filename,'a').write("%s: %s\n"%(symbol.name, repr(buf)))
+       
+        # save the symbolic files
+        if generate_files:
+            if hasattr(self.platform, 'files'):
+                for f in self.platform.files:
+                    if hasattr(f,'array'):
+                        buf = solver.get_value(self.constraints, f.array)
+                        filename = 'file_%s_state_%d.txt'%(f.array.name, self.co)
+                        filename = os.path.join(workspace, filename)
+                        file(filename,'a').write("%s"%(buf))

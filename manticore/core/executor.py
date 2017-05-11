@@ -491,6 +491,14 @@ class Executor(object):
         
         file(self._getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
 
+        # save symbolic files
+        if hasattr(state.platform, 'files'):
+            for f in state.platform.files:
+                if hasattr(f,'array'):
+                    buf = solver.get_value(state.constraints, f.array)
+                    filename = 'test_file_%s_%d.txt'%(f.array.name, test_number)
+                    file(filename,'a').write("%s"%(buf))
+
         stdout = ''
         stderr = ''
         for sysname, fd, data in state.platform.syscall_trace:
