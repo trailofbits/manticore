@@ -1737,10 +1737,8 @@ class SLinux(Linux):
         :param mem: memory for this platform.
         '''
 
-        if argv is None:
-            argv = []
-        if envp is None:
-            envp = {}
+        argv = [] if argv is None else argv
+        envp = {} if envp is None else envp
 
         self._constraints = ConstraintSet()
         self.random = 0
