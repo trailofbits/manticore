@@ -350,8 +350,12 @@ class Z3Solver(Solver):
             val = None
             while self._check() == 'sat':
                 value = self._getvalue(var)
+                # reset the solver to avoid the incremental mode 
+                # triggered with two consecutive calls to check-sat
+                self._reset(temp_cs.related_to(var) )
                 result.append(value)
-                self._assert( var != value )
+                for value in result:
+                    self._assert( var != value )
                 if len(result) >= maxcnt:
                     if silent:
                         # do not throw an exception if set to silent
