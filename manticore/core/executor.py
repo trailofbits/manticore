@@ -497,7 +497,7 @@ class Executor(object):
                 if hasattr(f,'array'):
                     buf = solver.get_value(state.constraints, f.array)
                     filename = 'test_file_%s_%d.txt'%(f.array.name, test_number)
-                    file(filename,'a').write("%s"%(buf))
+                    file(self._getFilename(filename),'a').write("%s"%(buf))
 
         stdout = ''
         stderr = ''
