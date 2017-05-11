@@ -7,6 +7,7 @@ from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 import sys
 from functools import wraps
+from itertools import islice, imap
 import inspect
 import types
 import logging
@@ -328,9 +329,9 @@ class Abi(object):
 
             msg = 'Concretizing due to model invocation'
             if isinstance(src, str):
-                raise ConcretizeRegister(src, msg)
+                raise ConcretizeRegister(self._cpu, src, msg)
             else:
-                raise ConcretizeMemory(src, self._cpu.address_bit_size, msg)
+                raise ConcretizeMemory(self._cpu.memory, src, self._cpu.address_bit_size, msg)
         else:
             if result is not None:
                 self.write_result(result)
