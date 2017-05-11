@@ -147,6 +147,7 @@ class PrettyPrinter(Visitor):
         else:
             self._print('...')
         self.indent -= 2
+        return ''
 
     def visit_BitVecExtract(self, expression):
         self._print(expression.__class__.__name__+'{%d:%d}'%(expression.begining,expression.end), expression)
@@ -157,12 +158,15 @@ class PrettyPrinter(Visitor):
         else:
             self._print('...')
         self.indent -= 2
+        return ''
 
     def visit_Constant(self, expression):
         self._print(expression.value)
+        return ''
 
     def visit_Variable(self, expression):
         self._print(expression.name)
+        return ''
        
     @property
     def result(self):
@@ -195,6 +199,10 @@ class ConstantFolderSimplifier(Visitor):
                     Equal : operator.__eq__ ,
                     GreaterThan : operator.__gt__ ,
                     GreaterOrEqual : operator.__ge__ ,
+                    # None, as visit_<name> is called
+                    BitVecConcat : None ,
+                    BitVecZeroExtend : None ,
+                    BitVecExtract: None ,
                  }
 
     def visit_BitVecConcat(self, expression, *operands):
@@ -205,6 +213,19 @@ class ConstantFolderSimplifier(Visitor):
                 result |= o.value 
             return BitVecConstant(expression.size, result, taint=expression.taint)
         
+    def visit_BitVecZeroExtend(self, expression, *operands):
+        if all( isinstance(o, Constant) for o in operands):
+            return BitVecConstant(expression.size, operands[0].value, taint=expression.taint)
+
+    def visit_BitVecExtract(self, expression, *operands):
+        if all( isinstance(o, Constant) for o in expression.operands):
+            value=expression.operands[0].value
+            begining = expression.begining
+            end = expression.end
+            value = value >> begining
+            mask = 2**(end - begining +1) - 1
+            value = value & mask
+            return BitVecConstant(expression.size, value, taint=expression.taint)
 
     def visit_Operation(self, expression, *operands):
         ''' constant folding, if all operands of an expression are a Constant do the math '''
@@ -232,28 +253,48 @@ class ArithmeticSimplifier(Visitor):
     def __init__(self, parent=None, **kw):
         super(ArithmeticSimplifier, self).__init__(**kw)
 
-    def _method(self, expression, *operands):
-        value = super(ArithmeticSimplifier, self)._method(expression, *operands)
-        #while value is not expression:
-        #    expression = value
-        #    if isinstance(expression, Operation):
-        #        print "A", expression.operands
-        #        operands = [self._method(op, *op.operands) for op in expression.operands]
-        #        print "B", operands
-        #        value = super(ArithmeticSimplifier, self)._method(expression, *operands)
-        #something changed recursively visit the new node.
-        if expression is not value:
-            self.visit(value)
-            value = self.pop()
+    def visit(self, node):
+        if isinstance(node, (int,long)):
+            self.push(node)
+            return
+        simp= self.visit_bounded(node, 0)
+        self.push(simp)
 
+    def visit_bounded(self, node, depth):
+        '''
+         Use of a bounded recursive approach to visit expression
+         Faster than using a double stack
+	 Post order traversal
 
-        #if value is not expression
-        #    if isinstance(value, Operation):
-        #        for i in xrange(len(value.operands)):
-        #            self.visit(op)
-        #        new_operands = reversed([self.pop() for _ in range(len(value.operands))])
-        #        value = super(ArithmeticSimplifier, self)._method(value, *new_operands)
-        return value
+	:param node: Expression to optimized
+	:param int depth: Current depth of the exploration
+	
+	:return : the optimized expression
+	'''
+        if node in self._cache:
+            return self._cache[node]
+        depth = depth + 1
+        if depth > 500:
+            logging.debug("Max depth reached")
+            return node
+        if isinstance(node, Operation):
+            new_ops = []
+            for op in node.operands:
+                new_op= self.visit_bounded(op, depth)
+                new_ops.append(new_op)
+            new_node = self._rebuild(node, new_ops)
+            value = self._method(new_node, *new_ops)
+            while value is not new_node:
+                    new_node = value
+                    if isinstance(new_node, Operation):
+                        value = self._method(new_node, *new_node.operands)
+            self._cache[node] = new_node
+            return new_node
+        else:
+            value = self._method(node)
+            self._cache[node] = value
+            return value
+
                    
 
     @staticmethod
@@ -280,13 +321,7 @@ class ArithmeticSimplifier(Visitor):
         ''' constant folding, if all operands of an expression are a Constant do the math '''
         if all( isinstance(o, Constant) for o in operands) :
             if type(expression) in ConstantFolderSimplifier.operations:
-                operation = ConstantFolderSimplifier.operations[type(expression)]
-                value = operation(*(x.value for x in operands))
-                if isinstance(expression, BitVec):
-                    return BitVecConstant(expression.size, value, taint=expression.taint)
-                else:
-                    isinstance(expression, Bool)
-                    return BoolConstant(value, taint=expression.taint)
+                return constant_folder(expression)
         else:
             if self._changed(expression, operands):
                 expression = self._rebuild(expression, operands)
@@ -418,6 +453,23 @@ class ArithmeticSimplifier(Visitor):
             elif right.value >= right.size:
                 return left
 
+    def visit_ArraySelect(self, expression, *operands):
+        ''' ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
+                -> v0
+        '''
+        arr = expression.array
+        index = expression.index
+        if isinstance(index, BitVecConstant):
+            index = index.value
+            prev_arr = arr
+            while isinstance(arr, ArrayStore):
+               prev_arr = arr
+               index_store = arr.index
+               if isinstance(index_store, BitVecConstant):
+                   if index_store.value == index:
+                       return arr.byte
+                   arr = arr.array
+
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
@@ -525,9 +577,6 @@ class TranslatorSmtlib(Visitor):
             operation = operation % expression.extend
         elif isinstance(expression, BitVecExtract):
             operation = operation % (expression.end, expression.begining)
-
-        for x in zip(expression.operands, operands):
-            self._add_binding(*x)
 
         operands = map(lambda x: self._add_binding(*x), zip(expression.operands, operands))
         smtlib = '(%s %s)' % (operation, ' '.join(operands))
