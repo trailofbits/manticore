@@ -155,8 +155,24 @@ class StrlenTest(ModelTest):
         ret = strlen(self.state, s)
         self.assertFalse(solver.can_be_true(self.state.constraints, ret != 3))
 
+    def test_symbolic_mixed(self):
+        sy = self.state.symbolicate_buffer('a+b+\0')
+        s = self._push_string(sy)
 
+        self.state.constrain(sy[1] == 0)
+        ret = strlen(self.state, s)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 1))
+        self._clear_constraints()
 
+        self.state.constrain(sy[1] != 0)
+        self.state.constrain(sy[3] == 0)
+        ret = strlen(self.state, s)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 3))
+        self._clear_constraints()
 
+        self.state.constrain(sy[1] != 0)
+        self.state.constrain(sy[3] != 0)
+        ret = strlen(self.state, s)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 4))
 
 
