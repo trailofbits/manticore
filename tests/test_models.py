@@ -104,11 +104,11 @@ class StrcmpTest(ModelTest):
 
 
 class StrlenTest(ModelTest):
-    '''
+    """
     concrete
     all symbolic
     a*b*d*f0 mixed
-    '''
+    """
 
     def test_concrete(self):
         s = self._push_string('abc\0')
@@ -126,6 +126,17 @@ class StrlenTest(ModelTest):
         s = self._push_string(sy)
         ret = strlen(self.state, s)
         self.assertEqual(ret, 2)
+
+    def test_symbolic(self):
+        sy = self.state.symbolicate_buffer('+++\0')
+        s = self._push_string(sy)
+        ret = strlen(self.state, s)
+
+        self.state.constrain(sy[0] == 0)
+        self.assertEqual(ret)
+
+
+
 
 
 
