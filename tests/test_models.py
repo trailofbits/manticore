@@ -130,10 +130,30 @@ class StrlenTest(ModelTest):
     def test_symbolic(self):
         sy = self.state.symbolicate_buffer('+++\0')
         s = self._push_string(sy)
-        ret = strlen(self.state, s)
 
         self.state.constrain(sy[0] == 0)
-        self.assertEqual(ret)
+        ret = strlen(self.state, s)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 0))
+        self._clear_constraints()
+
+        self.state.constrain(sy[0] != 0)
+        self.state.constrain(sy[1] == 0)
+        ret = strlen(self.state, s)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 1))
+        self._clear_constraints()
+
+        self.state.constrain(sy[0] != 0)
+        self.state.constrain(sy[1] != 0)
+        self.state.constrain(sy[2] == 0)
+        ret = strlen(self.state, s)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 2))
+        self._clear_constraints()
+
+        self.state.constrain(sy[0] != 0)
+        self.state.constrain(sy[1] != 0)
+        self.state.constrain(sy[2] != 0)
+        ret = strlen(self.state, s)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 3))
 
 
 
