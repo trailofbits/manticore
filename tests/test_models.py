@@ -1,6 +1,6 @@
 import unittest
 
-from manticore.core.smtlib import ConstraintSet
+from manticore.core.smtlib import ConstraintSet, solver
 from manticore.core.state import State
 from manticore.platforms import linux
 
@@ -8,9 +8,16 @@ from manticore.models import strcmp
 
 
 class StrcmpTest(unittest.TestCase):
-    def setUp(self):
-        l = linux.SLinux('/bin/ls')
-        self.state = State(ConstraintSet(), l)
+    l = linux.SLinux('/bin/ls')
+    state = State(ConstraintSet(), l)
+    stack_top = state.cpu.RSP
+
+    def _clear_constraints(self):
+        self.state.constraints = ConstraintSet()
+
+    def tearDown(self):
+        self._clear_constraints()
+        self.state.cpu.RSP = self.stack_top
 
     def _push_string(self, s):
         cpu = self.state.cpu
@@ -47,23 +54,38 @@ class StrcmpTest(unittest.TestCase):
         _concrete_gt('bc\0', 'b\0')
 
     def test_symbolic_concrete(self):
-        cpu = self.state.cpu
         s1 = 'hi\0'
-        z = self._push_string(s1)
-
         s2 = self.state.symbolicate_buffer('+++\0')
-        cpu.RSP -= len(s2)
-        cpu.write_bytes(cpu.RSP, s2)
-        assert 0
-
-
-
-        # print s2
-
-
-        # strs = self._push2(s1, s2)
+        strs = self._push2(s1, s2)
 
         ret = strcmp(self.state, *strs)
-        print ret
-        assert 0
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret > 0))
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret < 0))
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret == 0))
 
+        self.state.constrain(s2[0] == ord('a'))
+        ret = strcmp(self.state, *strs)
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret > 0))
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret < 0))
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret == 0))
+        self._clear_constraints()
+
+        self.state.constrain(s2[0] == ord('z'))
+        ret = strcmp(self.state, *strs)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret > 0))
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret < 0))
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret == 0))
+        self._clear_constraints()
+
+        self.state.constrain(s2[0] == ord('h'))
+        self.state.constrain(s2[1] == ord('i'))
+        ret = strcmp(self.state, *strs)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret > 0))
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret < 0))
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret == 0))
+
+        self.state.constrain(s2[2] == ord('\0'))
+        ret = strcmp(self.state, *strs)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret > 0))
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret < 0))
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret == 0))
