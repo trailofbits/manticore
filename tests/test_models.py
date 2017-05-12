@@ -4,10 +4,10 @@ from manticore.core.smtlib import ConstraintSet, solver
 from manticore.core.state import State
 from manticore.platforms import linux
 
-from manticore.models import strcmp
+from manticore.models import strcmp, strlen
 
 
-class StrcmpTest(unittest.TestCase):
+class ModelTest(unittest.TestCase):
     l = linux.SLinux('/bin/ls')
     state = State(ConstraintSet(), l)
     stack_top = state.cpu.RSP
@@ -25,6 +25,8 @@ class StrcmpTest(unittest.TestCase):
         cpu.write_bytes(cpu.RSP, s)
         return cpu.RSP
 
+
+class StrcmpTest(ModelTest):
     def _push2(self, s1, s2):
         s1ptr = self._push_string(s1)
         s2ptr = self._push_string(s2)
@@ -99,3 +101,31 @@ class StrcmpTest(unittest.TestCase):
         self.state.constrain(s2[2] == ord('\0'))
         ret = strcmp(self.state, *strs)
         self.assertFalse(solver.can_be_true(self.state.constraints, ret != 0))
+
+
+class StrlenTest(ModelTest):
+    '''
+    concrete
+    all symbolic
+    a*b*d*f0 mixed
+    '''
+
+    def test_concrete(self):
+        s = self._push_string('abc\0')
+        ret = strlen(self.state, s)
+        self.assertEqual(ret, 3)
+
+    def test_concrete_empty(self):
+        s = self._push_string('\0')
+        ret = strlen(self.state, s)
+        self.assertEqual(ret, 0)
+
+    def test_symbolic_effective_null(self):
+        sy = self.state.symbolicate_buffer('ab+')
+        self.state.constrain(sy[2] == 0)
+        s = self._push_string(sy)
+        ret = strlen(self.state, s)
+        self.assertEqual(ret, 2)
+
+
+
