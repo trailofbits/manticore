@@ -1727,18 +1727,17 @@ class Linux(Platform):
 # Symbolic versions follows
 
 class SLinux(Linux):
-    '''
-    A symbolic extension of a Decree Operating System Platform.
-    '''
-    def __init__(self, programs, argv=None, envp=None, symbolic_files=()):
-        '''
-        Builds a symbolic extension of a Decree OS
-        :param constraints: a constraints.
-        :param mem: memory for this platform.
-        '''
+    """
+    Builds a symbolic extension of a Linux OS
 
+    :param str programs: path to ELF binary
+    :param list argv: argv not including binary
+    :param list envp: environment variables
+    :param tuple[str] symbolic_files: files to consider symbolic
+    """
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=()):
         argv = [] if argv is None else argv
-        envp = {} if envp is None else envp
+        envp = [] if envp is None else envp
 
         self._constraints = ConstraintSet()
         self.random = 0
