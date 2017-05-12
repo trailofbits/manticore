@@ -61,6 +61,17 @@ class StrcmpTest(unittest.TestCase):
         ret = strcmp(self.state, *strs)
         self.assertFalse(solver.can_be_true(self.state.constraints, ret >= 0))
 
+    def test_effective_null(self):
+        s1 = self.state.symbolicate_buffer('a+')
+        s2 = self.state.symbolicate_buffer('++')
+
+        strs = self._push2(s1, s2)
+        self.state.constrain(s1[1] == 0)
+        self.state.constrain(s2[0] == ord('z'))
+
+        ret = strcmp(self.state, *strs)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret >= 0))
+
     def test_symbolic_concrete(self):
         s1 = 'hi\0'
         s2 = self.state.symbolicate_buffer('+++\0')
