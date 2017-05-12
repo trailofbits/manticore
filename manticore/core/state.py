@@ -81,6 +81,9 @@ class State(object):
         # Signals are lost in serialization and fork !!
         self.will_decode_instruction = Signal()
         self.will_execute_instruction = Signal()
+        self.did_execute_instruction = Signal()
+        self.will_emulate_instruction = Signal()
+        self.did_emulate_instruction = Signal()
         self.will_read_register = Signal()
         self.will_write_register = Signal()
         self.will_read_memory = Signal()
@@ -99,6 +102,9 @@ class State(object):
         '''
         self.will_decode_instruction.when(cpu, cpu.will_decode_instruction)
         self.will_execute_instruction.when(cpu, cpu.will_execute_instruction)
+        self.did_execute_instruction.when(cpu, cpu.did_execute_instruction)
+        self.will_emulate_instruction.when(cpu, cpu.will_emulate_instruction)
+        self.did_emulate_instruction.when(cpu, cpu.did_emulate_instruction)
         self.will_read_register.when(cpu, cpu.will_read_register)
         self.will_write_register.when(cpu, cpu.will_write_register)
         self.will_read_memory.when(cpu, cpu.will_read_memory)

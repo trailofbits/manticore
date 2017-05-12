@@ -391,6 +391,9 @@ class Cpu(object):
         # handler(cpu, *args, **kwargs)
         self.will_decode_instruction = Signal()
         self.will_execute_instruction = Signal()
+        self.did_execute_instruction = Signal()
+        self.will_emulate_instruction = Signal()
+        self.did_emulate_instruction = Signal()
         self.will_read_register = Signal()
         self.will_write_register = Signal()
         self.will_read_memory = Signal()
@@ -643,7 +646,13 @@ class Cpu(object):
             logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                     instruction.address, text_bytes, instruction.mnemonic,
                     instruction.op_str)
+            #broadcast event
+            self.will_emulate_instruction(instruction)
+
             self.emulate(instruction)
+
+            #broadcast event
+            self.did_emulate_instruction(instruction)
 
         implementation = getattr(self, name, fallback_to_emulate)
 
@@ -658,6 +667,10 @@ class Cpu(object):
         self.instruction = None
         self._icount+=1
 
+        #broadcast event
+        self.did_execute_instruction(instruction)
+
+
     def get_syscall_description(self):
         raise NotImplemented
 
@@ -668,8 +681,11 @@ class Cpu(object):
 
         :param capstone.CsInsn instruction: The instruction object to emulate
         '''
+
         emu = UnicornEmulator(self)
         emu.emulate(instruction)
+
+
         # We have been seeing occasional Unicorn issues with it not clearing
         # the backing unicorn instance. Saw fewer issues with the following
         # line present.

@@ -99,6 +99,10 @@ class Executor(object):
         #Cpu
         self.will_decode_instruction = Signal()
         self.will_execute_instruction = Signal()
+        self.did_execute_instruction = Signal()
+        self.will_emulate_instruction = Signal()
+        self.did_emulate_instruction = Signal()
+
         self.will_read_register = Signal()
         self.will_write_register = Signal()
         self.will_read_memory = Signal()
@@ -161,6 +165,10 @@ class Executor(object):
         ''' 
         self.will_decode_instruction.when(state, state.will_decode_instruction)
         self.will_execute_instruction.when(state, state.will_execute_instruction)
+        self.did_execute_instruction.when(state, state.will_execute_instruction)
+        self.will_emulate_instruction.when(state, state.will_emulate_instruction)
+        self.did_emulate_instruction.when(state, state.did_emulate_instruction)
+
         self.will_read_register.when(state, state.will_read_register)
         self.will_write_register.when(state, state.will_write_register)
         self.will_read_memory.when(state, state.will_read_memory)

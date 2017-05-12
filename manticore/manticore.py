@@ -591,6 +591,13 @@ class Manticore(object):
     def _decode_instruction_callback(self, state, cpu):
         logger.debug("Decoding stuff instruction not available")
 
+
+    def _emulate_instruction_callback(self, state, cpu, instruction):
+        logger.debug("About to emulate instruction")
+
+    def _did_execute_instruction_callback(self, state, cpu, instruction):
+        logger.debug("Did execute an instruction")
+
     def _execute_instruction_callback(self, state, cpu, instruction):
         address = state.cpu.PC
         if not issymbolic(address):
