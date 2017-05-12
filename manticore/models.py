@@ -78,3 +78,24 @@ def strcmp(state, s1, s2):
                 ret = 0
 
     return ret
+
+
+def strlen(state, s):
+    '''
+    walks from end of string to the beginning (not including null at the end)
+    building tree of ITEs for each
+    symbolic byte encountered, accounting for the possibility that that symbolic
+    byte will be zero
+    '''
+
+    cpu = state.cpu
+    zero_idx = _find_zero(cpu, state.constraints, s)
+    ret = zero_idx
+
+    for offset in range(zero_idx)[::-1]:
+        byt = cpu.read_int(s + offset, 8)
+        if issymbolic(byt):
+            ret = ITEBV(64, byt == 0, offset, ret)
+
+    return ret
+
