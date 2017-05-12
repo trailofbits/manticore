@@ -84,7 +84,7 @@ def strlen(state, s):
     """
     strlen symbolic model.
 
-    Algorithm: Walks from end of string building ITE tree when current byte is symbolic.
+    Algorithm: Walks from end of string not including NULL building ITE tree when current byte is symbolic.
 
     :param State state: current program state
     :param int s: Address of string
