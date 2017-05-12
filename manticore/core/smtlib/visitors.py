@@ -254,48 +254,34 @@ class ArithmeticSimplifier(Visitor):
         super(ArithmeticSimplifier, self).__init__(**kw)
 
     def visit(self, node):
-        if isinstance(node, (int,long)):
-            self.push(node)
-            return
-        simp= self.visit_bounded(node, 0)
-        self.push(simp)
+        cache = self._cache
 
-    def visit_bounded(self, node, depth):
-        '''
-         Use of a bounded recursive approach to visit expression
-         Faster than using a double stack
-	 Post order traversal
-
-	:param node: Expression to optimized
-	:param int depth: Current depth of the exploration
-	
-	:return : the optimized expression
-	'''
-        if node in self._cache:
-            return self._cache[node]
-        depth = depth + 1
-        if depth > 500:
-            logging.debug("Max depth reached")
-            return node
-        if isinstance(node, Operation):
-            new_ops = []
-            for op in node.operands:
-                new_op= self.visit_bounded(op, depth)
-                new_ops.append(new_op)
-            new_node = self._rebuild(node, new_ops)
-            value = self._method(new_node, *new_ops)
-            while value is not new_node:
-                    new_node = value
-                    if isinstance(new_node, Operation):
-                        value = self._method(new_node, *new_node.operands)
-            self._cache[node] = new_node
-            return new_node
-        else:
-            value = self._method(node)
-            self._cache[node] = value
-            return value
-
-                   
+        visited = set()
+        stack = []
+        stack.append(node)
+        while stack:
+            node = stack.pop()
+ 
+            if node in cache:
+                self.push(cache[node])
+            elif isinstance(node, Operation):
+                if node in visited:
+                    operands = [self.pop() for _ in xrange(len(node.operands))]
+                    new_node = self._rebuild(node, operands)
+                    value = self._method(new_node, *operands)
+                    while value is not new_node:
+                        new_node = value
+                        if isinstance(new_node, Operation):
+                            value = self._method(new_node, *new_node.operands)
+                    visited.remove(node)
+                    self.push(value)
+                    cache[node] = value
+                else:
+                    visited.add(node)
+                    stack.append(node)
+                    stack.extend(node.operands)
+            else:
+                self.push(self._method(node))
 
     @staticmethod
     def _same_constant(a,b):
@@ -469,6 +455,8 @@ class ArithmeticSimplifier(Visitor):
                    if index_store.value == index:
                        return arr.byte
                    arr = arr.array
+               else:
+                    break
 
 
     def visit_Expression(self, expression, *operands):
