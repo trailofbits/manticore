@@ -90,6 +90,7 @@ def strlen(state, s):
 
     cpu = state.cpu
     zero_idx = _find_zero(cpu, state.constraints, s)
+
     ret = zero_idx
 
     for offset in xrange(zero_idx-1, -1, -1):
@@ -98,4 +99,3 @@ def strlen(state, s):
             ret = ITEBV(64, byt == 0, offset, ret)
 
     return ret
-
