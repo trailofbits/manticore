@@ -104,12 +104,6 @@ class StrcmpTest(ModelTest):
 
 
 class StrlenTest(ModelTest):
-    """
-    concrete
-    all symbolic
-    a*b*d*f0 mixed
-    """
-
     def test_concrete(self):
         s = self._push_string('abc\0')
         ret = strlen(self.state, s)
@@ -174,5 +168,3 @@ class StrlenTest(ModelTest):
         self.state.constrain(sy[3] != 0)
         ret = strlen(self.state, s)
         self.assertFalse(solver.can_be_true(self.state.constraints, ret != 4))
-
-
