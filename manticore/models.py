@@ -81,12 +81,16 @@ def strcmp(state, s1, s2):
 
 
 def strlen(state, s):
-    '''
-    walks from end of string to the beginning (not including null at the end)
-    building tree of ITEs for each
-    symbolic byte encountered, accounting for the possibility that that symbolic
-    byte will be zero
-    '''
+    """
+    strlen symbolic model.
+
+    Algorithm: Walks from end of string building ITE tree when current byte is symbolic.
+
+    :param State state: current program state
+    :param int s: Address of string
+    :return: Symbolic strlen result
+    :rtype: Expression or int
+    """
 
     cpu = state.cpu
     zero_idx = _find_zero(cpu, state.constraints, s)
