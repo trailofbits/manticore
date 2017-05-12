@@ -53,39 +53,38 @@ class StrcmpTest(unittest.TestCase):
         _concrete_gt('c\0', 'b\0')
         _concrete_gt('bc\0', 'b\0')
 
+    def test_symbolic_actually_concrete(self):
+        s1 = 'ab\0'
+        s2 = self.state.symbolicate_buffer('d+\0')
+        strs = self._push2(s1, s2)
+
+        ret = strcmp(self.state, *strs)
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret >= 0))
+
     def test_symbolic_concrete(self):
         s1 = 'hi\0'
         s2 = self.state.symbolicate_buffer('+++\0')
         strs = self._push2(s1, s2)
 
         ret = strcmp(self.state, *strs)
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret > 0))
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret < 0))
+        self.assertTrue(solver.can_be_true(self.state.constraints, ret != 0))
         self.assertTrue(solver.can_be_true(self.state.constraints, ret == 0))
 
         self.state.constrain(s2[0] == ord('a'))
         ret = strcmp(self.state, *strs)
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret > 0))
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret < 0))
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret == 0))
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret <= 0))
         self._clear_constraints()
 
         self.state.constrain(s2[0] == ord('z'))
         ret = strcmp(self.state, *strs)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret > 0))
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret < 0))
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret == 0))
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret >= 0))
         self._clear_constraints()
 
         self.state.constrain(s2[0] == ord('h'))
         self.state.constrain(s2[1] == ord('i'))
         ret = strcmp(self.state, *strs)
         self.assertFalse(solver.can_be_true(self.state.constraints, ret > 0))
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret < 0))
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret == 0))
 
         self.state.constrain(s2[2] == ord('\0'))
         ret = strcmp(self.state, *strs)
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret > 0))
-        self.assertFalse(solver.can_be_true(self.state.constraints, ret < 0))
-        self.assertTrue(solver.can_be_true(self.state.constraints, ret == 0))
+        self.assertFalse(solver.can_be_true(self.state.constraints, ret != 0))
