@@ -92,7 +92,7 @@ def strlen(state, s):
     zero_idx = _find_zero(cpu, state.constraints, s)
     ret = zero_idx
 
-    for offset in range(zero_idx)[::-1]:
+    for offset in xrange(zero_idx-1, -1, -1):
         byt = cpu.read_int(s + offset, 8)
         if issymbolic(byt):
             ret = ITEBV(64, byt == 0, offset, ret)
