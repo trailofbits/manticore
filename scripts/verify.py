@@ -10,6 +10,8 @@ import gdb
 
 logger = logging.getLogger('TRACE')
 
+stack_top = 0xf7000000
+
 def dump_gdb(cpu, addr, count):
     for offset in range(addr, addr+count, 4):
         val = int(gdb.getM(offset)  & 0xffffffff)
@@ -41,15 +43,15 @@ def cmp_regs(cpu, should_print=False):
             differing = True
     return differing
 
-def on_after(m, state):
+def on_after(m, state, last_instruction):
     '''
     Handle syscalls (import memory) and bail if we diverge
     '''
     m.context['icount'] += 1
 
     # Synchronize qemu state to manticore's after a system call
-    if state.cpu.instruction.mnemonic == 'svc':
-        writes = state.cpu.memory.stop_write_trace()
+    if last_instruction.mnemonic == 'svc':
+        writes = state.cpu.memory.pop_record_writes()
         for addr, val in writes:
             gdb.setByte(addr, val[0])
             for reg in state.cpu.canonical_registers:
@@ -64,7 +66,7 @@ def on_after(m, state):
     if (state.cpu.PC >> 16) == 0xffff:
         return
 
-    if cmp_regs(state.cpu):
+    if cmp_regs(state.cpu, True):
         state.abandon()
 
 def sync_svc(m, state):
@@ -85,10 +87,14 @@ def sync_svc(m, state):
     for i in range(4):
         logger.debug("R{}: {:x}".format(i, gdb.getR('R%d'%i)))
 
-def init(m, state):
+    state.cpu.memory.push_record_writes()
+
+def initialize(m, state):
     gdb_regs = gdb.getCanonicalRegisters()
-    logger.debug("Copying stack..")
-    for address in range(state.cpu.SP, 0xf7000000):
+    logger.debug("Copying {} bytes in the stack..".format(stack_top - state.cpu.SP))
+    state.cpu.SP = min(state.cpu.SP, gdb.getR('SP'))
+    #logger.debug("gdb val: %d", gdb.getR('SP')-state.cpu.SP)
+    for address in range(state.cpu.SP, stack_top):
         b = gdb.getByte(address)
         state.cpu.write_int(address, b, 8)
     logger.debug("Done")
@@ -104,11 +110,10 @@ def verify(argv):
     gdb.start('arm', argv)
 
     m = Manticore(argv[0], argv[1:])
-
-    m.verbosity = 1
+    m.verbosity = 3
     m.context['icount'] = 0
     m.context['initialized'] = False
-    m.context['last_pc_executed'] = None
+    m.context['last_instruction'] = None
 
 
     @m.hook(None)
@@ -117,8 +122,11 @@ def verify(argv):
         if not m.context['initialized']:
             init(m, state)
 
-        if m.context['last_pc_executed'] != state.cpu.PC:
-            on_after(m, state)
+        if m.context['last_instruction'] != state.cpu.PC:
+            if m.context['last_instruction'] is not None:
+                on_after(m, state, m.context['last_instruction'])
+
+        m.context['last_instruction'] = state.cpu.instruction
 
         # XXX(yan): The trace would diverge at this offset in the value of R4
         # in the example I was using. This might need to be adjusted for other
@@ -138,9 +146,10 @@ def verify(argv):
             gdb.stepi()
 
         if mnemonic == 'svc':
+            print 'starting svc'
             sync_svc(m, state)
 
-    m.run()
+    m.run(stack_top=stack_top)#, interpreter_base=0xf67ce810, stack_offset=-0x9c0)
 
 if __name__ == "__main__":
     args = argv[1:]
