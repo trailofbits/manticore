@@ -1442,7 +1442,7 @@ class Linux(Platform):
             table = getattr(linux_syscalls, self.current.machine)
             name = table[index]
             implementation = getattr(self, name)
-        except AttributeError:
+        except (AttributeError, KeyError):
             raise SyscallNotImplemented(self.current.address_bit_size, index)
 
         return self._syscall_abi.invoke(implementation)
