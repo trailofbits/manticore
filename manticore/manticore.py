@@ -42,7 +42,7 @@ def makeLinux(program, argv, env, concrete_start = ''):
 
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
-            symbolic_files=('symbolic.txt'))
+            symbolic_files=('symbolic.txt'), **options)
     initial_state = State(constraints, platform)
 
     if concrete_start != '':
