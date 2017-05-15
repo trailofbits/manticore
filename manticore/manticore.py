@@ -49,12 +49,10 @@ def makeLinux(program, argv, env, concrete_start = ''):
         logger.info('Starting with concrete input: {}'.format(concrete_start))
 
     for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1),
-                string=True)
+        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1))
 
     for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1),
-                string=True)
+        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1))
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
