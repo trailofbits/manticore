@@ -928,7 +928,7 @@ class SMemory(Memory):
 
         if issymbolic(address):
             assert solver.check(self.constraints)
-            logger.info('Reading %d bytes from symbolic address %s', size, address)
+            logger.debug('Reading %d bytes from symbolic address %s', size, address)
             try:
                 solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
             except TooManySolutions, e:

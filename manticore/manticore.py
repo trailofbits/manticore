@@ -561,6 +561,9 @@ class Manticore(object):
         logger.debug("Restore state %r", state_id)
 
     def _terminate_state_callback(self, state, state_id, ex):
+        print "Terminate state", state.context
+
+        logger.info("Terminate_state_callback for %d", state_id)
         executor = self._executor
         #aggregates state statistics into exceutor statistics. FIXME split
         logger.debug("Terminate state %r %r ", state, state_id)
@@ -599,6 +602,7 @@ class Manticore(object):
         logger.debug("Did execute an instruction")
 
     def _execute_instruction_callback(self, state, cpu, instruction):
+        logger.info("exe\n")
         address = state.cpu.PC
         if not issymbolic(address):
             state.context.setdefault('visited', set()).add(address)
@@ -696,17 +700,18 @@ class Manticore(object):
 
 
     def _dump_stats_callback(self):
+        _shared_context = self._executor._shared_context
+        executor_visited = _shared_context.get('visited', set())
 
         #Fixme this is duplicated?
         if self.coverage_file is not None:
-            executor_visited = _shared_context.get('visited', set())
 
             with open(self.coverage_file, "w") as f:
                 fmt = "0x{:016x}\n"
                 for m in executor_visited:
                     f.write(fmt.format(m[1]))
 
-        visited = ['%d:%08x'%(0,site) for site in self._executor._shared_context.get('visited', set())]
+        visited = ['%d:%08x'%(0,site) for site in executor_visited]
         with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
             for entry in sorted(visited):
                 f.write(entry + '\n')
@@ -719,11 +724,11 @@ class Manticore(object):
         #            f.write(fmt.format(m))
 
 
-        instructions_count = self._executor._shared_context.get('instructions_count',0)
+        instructions_count = _shared_context.get('instructions_count',0)
         elapsed = time.time()-self._time_started
         logger.info('Results dumped in %s', self.workspace)
         logger.info('Instructions executed: %d', instructions_count)
-        logger.info('Coverage: %d different instructions executed', len(self._executor._shared_context['visited']))
+        logger.info('Coverage: %d different instructions executed', len(executor_visited))
         #logger.info('Number of paths covered %r', State.state_count())
         logger.info('Total time: %s', elapsed)
         logger.info('IPS: %d', instructions_count/elapsed)

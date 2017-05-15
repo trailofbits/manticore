@@ -165,7 +165,7 @@ class Executor(object):
         ''' 
         self.will_decode_instruction.when(state, state.will_decode_instruction)
         self.will_execute_instruction.when(state, state.will_execute_instruction)
-        self.did_execute_instruction.when(state, state.will_execute_instruction)
+        self.did_execute_instruction.when(state, state.did_execute_instruction)
         self.will_emulate_instruction.when(state, state.will_emulate_instruction)
         self.did_emulate_instruction.when(state, state.did_emulate_instruction)
 
@@ -444,103 +444,104 @@ class Executor(object):
         current_state = None
         current_state_id = None
 
-        with DelayedKeyboardInterrupt():
+        with DelayedKeyboardInterrupt(self.shutdown):
             #notify siblings we are about to start a run
             self._start_run()
 
-        logger.debug("Starting Manticore Symbolic Emulator Worker (pid %d).",os.getpid())
+            logger.debug("Starting Manticore Symbolic Emulator Worker (pid %d).",os.getpid())
 
 
-        while not self.is_shutdown():
-            try:
-                #select a suitable state to analyze
-                if current_state is None:
-
-                    with self._lock:
-                        #notify siblings we are about to stop this run
-                        self._stop_run()
-                        #Select a single state_id
-                        current_state_id = self.get()
-                        #Restore selected state from secondary storage
-                        current_state = self.restore(current_state_id)
-                        #notify siblings we have a state to play with
-                        self._start_run()
-
-                    #If current_state is still None. We are done.
-                    if current_state is None:
-                        logger.debug("No more states in the queue, byte bye!")
-                        break
-                    
-                    assert current_state is not None
-
+            while not self.is_shutdown():
                 try:
+                    #select a suitable state to analyze
+                    if current_state is None:
 
-                    # Allows to terminate manticore worker on user request
-                    while not self.is_shutdown():
-                        if not current_state.execute():
+                        with self._lock:
+                            #notify siblings we are about to stop this run
+                            self._stop_run()
+                            #Select a single state_id
+                            current_state_id = self.get()
+                            #Restore selected state from secondary storage
+                            current_state = self.restore(current_state_id)
+                            #notify siblings we have a state to play with
+                            self._start_run()
+
+                        #If current_state is still None. We are done.
+                        if current_state is None:
+                            logger.debug("No more states in the queue, byte bye!")
                             break
-                    else:
+                        
+                        assert current_state is not None
+
+                    try:
+
+                        # Allows to terminate manticore worker on user request
+                        while not self.is_shutdown():
+                            if not current_state.execute():
+                                break
+                        else:
+                            #Notify this worker is done
+                            self.will_terminate_state(current_state, current_state_id, 'Shutdown')
+                            current_state = None
+
+
+                    #Handling Forking and terminating exceptions
+                    except Concretize as e:
+                        #expression
+                        #policy
+                        #setstate()
+
+                        logger.info("Generic state fork on condition")
+                        self.fork(current_state, e.expression, e.policy, e.setstate)
+                        current_state = None
+
+                    except TerminateState as e:
+                        #logger.error("MemoryException at PC: 0x{:016x}. Cause: {}\n".format(current_state.cpu.instruction.address, e.cause))
+                        #self.generate_testcase(current_state, "Memory Exception: " + str(e))
+                        #self.generate_testcase(current_state, "Invalid PC Exception" + str(e))
+                        #self.generate_testcase(current_state, "Program finished correctly")
+                        #logger.error("Syscall not implemented: %s", str(e))
+
                         #Notify this worker is done
-                        self.will_terminate_state(current_state, current_state_id, 'Shutdown')
+                        self.will_terminate_state(current_state, current_state_id, e)
+
+                        logger.info("Generic terminate state")
+                        if e.testcase:
+                            self.generate_testcase(current_state, str(e))
                         current_state = None
 
 
-                #Handling Forking and terminating exceptions
-                except Concretize as e:
-                    #expression
-                    #policy
-                    #setstate()
+                    except SolverException as e:
+                        import traceback
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        print "*** print_exc:"
+                        traceback.print_exc()
 
-                    logger.info("Generic state fork on condition")
-                    self.fork(current_state, e.expression, e.policy, e.setstate)
-                    current_state = None
+                        #Notify this state is done
+                        self.will_terminate_state(current_state, current_state_id, e)
 
-                except TerminateState as e:
-                    #logger.error("MemoryException at PC: 0x{:016x}. Cause: {}\n".format(current_state.cpu.instruction.address, e.cause))
-                    #self.generate_testcase(current_state, "Memory Exception: " + str(e))
-                    #self.generate_testcase(current_state, "Invalid PC Exception" + str(e))
-                    #self.generate_testcase(current_state, "Program finished correctly")
-                    #logger.error("Syscall not implemented: %s", str(e))
+                        if solver.check(current_state.constraints):
+                            self.generate_testcase(current_state, "Solver failed" + str(e))
+                        current_state = None
 
-                    #Notify this worker is done
-                    self.will_terminate_state(current_state, current_state_id, e)
-
-                    logger.info("Generic terminate state")
-                    if e.testcase:
-                        self.generate_testcase(current_state, str(e))
-                    current_state = None
-
-
-                except SolverException as e:
+                except (Exception, AssertionError) as e:
                     import traceback
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    print "*** print_exc:"
-                    traceback.print_exc()
+                    trace = traceback.format_exc()
+                    logger.error("Exception: %s\n%s", str(e), trace)
+                    for trace_line in trace.splitlines():
+                        logger.error(trace_line) 
 
-                    #Notify this worker is done
-                    self.will_terminate_state(current_state, current_state_id, e)
 
-                    if solver.check(current_state.constraints):
-                        self.generate_testcase(current_state, "Solver failed" + str(e))
-                    current_state = None
-
-            except (KeyboardInterrupt, Exception, AssertionError) as e:
-                import traceback
-                trace = traceback.format_exc()
-                logger.error("Exception: %s\n%s", str(e), trace)
-                for log in trace.splitlines():
-                    logger.error(log) 
+            if current_state != None:
                 #Notify this worker is done
-                self.will_terminate_state(current_state, current_state_id, e)
+                self.will_terminate_state(current_state, current_state_id, 'Shutdown')
                 current_state = None
                 logger.setState(None)
 
-        with DelayedKeyboardInterrupt():
             #notify siblings we are about to stop this run
             self._stop_run()
 
-
-        #Notify this worker is done (not sure it's needed)
-        self.will_finish_run()
+            #Notify this worker is done (not sure it's needed)
+            self.will_finish_run()
 
 

@@ -17,6 +17,10 @@ class FakeCpu(object):
     def __init__(self):
         self.will_decode_instruction = Signal()
         self.will_execute_instruction = Signal()
+        self.did_execute_instruction = Signal()
+        self.will_emulate_instruction = Signal()
+        self.did_emulate_instruction = Signal()
+
         self.will_read_register = Signal()
         self.will_write_register = Signal()
         self.will_read_memory = Signal()

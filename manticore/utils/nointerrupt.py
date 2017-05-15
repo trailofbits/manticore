@@ -2,6 +2,11 @@ import signal
 import logging
 
 class DelayedKeyboardInterrupt(object):
+    def __init__(self, callback= None):
+        if callback is None:
+            callback = lambda *args, **kwargs: None
+        self.callback = callback
+
     def __enter__(self):
         self.signal_received = False
         self.old_handler = signal.getsignal(signal.SIGINT)
@@ -9,6 +14,7 @@ class DelayedKeyboardInterrupt(object):
 
     def handler(self, sig, frame):
         self.signal_received = (sig, frame)
+        self.callback(sig, frame)
         logging.debug('SIGINT received. Delaying KeyboardInterrupt.')
 
     def __exit__(self, type, value, traceback):
