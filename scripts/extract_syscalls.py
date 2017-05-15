@@ -25,6 +25,18 @@ arch_tables = {
     'amd64': 'arch/x86/entry/syscalls/syscall_64.tbl',
 }
 
+__ARM_NR_BASE = 0xf0000
+additional_syscalls = {
+    'armv7': [
+        ('sys_ARM_NR_breakpoint', __ARM_NR_BASE + 1),
+        ('sys_ARM_NR_cacheflush', __ARM_NR_BASE + 2),
+        ('sys_ARM_NR_usr26', __ARM_NR_BASE + 3),
+        ('sys_ARM_NR_usr32', __ARM_NR_BASE + 4),
+        ('sys_ARM_NR_set_tls', __ARM_NR_BASE + 5),
+    ]
+}
+
+
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Generate syscall tables')
@@ -54,6 +66,8 @@ if __name__=='__main__':
             if len(columns) < 4:
                 continue
             num, abi, name, entry = columns[:4]
+            output.write('    {}: "{}",\n'.format(num, entry))
+        for entry, num in additional_syscalls.get(arch, {}):
             output.write('    {}: "{}",\n'.format(num, entry))
         output.write('}\n')
         
