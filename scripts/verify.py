@@ -10,7 +10,15 @@ import gdb
 
 logger = logging.getLogger('TRACE')
 
+## We need to keep some complex objects in between hook invocations so we keep them
+## as globals. Tracing is inherently a single-threaded process, so using a 
+## manticore context would be heavier than needed.
 stack_top = 0xf7000000
+icount = 0
+initialized = False
+last_instruction = None
+syscall = 0
+in_helper = False
 
 def dump_gdb(cpu, addr, count):
     for offset in range(addr, addr+count, 4):
@@ -47,11 +55,14 @@ def on_after(m, state, last_instruction):
     '''
     Handle syscalls (import memory) and bail if we diverge
     '''
-    m.context['icount'] += 1
+    global icount, in_helper
+
+    icount += 1
 
     # Synchronize qemu state to manticore's after a system call
     if last_instruction.mnemonic == 'svc':
         writes = state.cpu.memory.pop_record_writes()
+        logger.debug("Got %d writes", len(writes))
         for addr, val in writes:
             gdb.setByte(addr, val[0])
             for reg in state.cpu.canonical_registers:
@@ -64,12 +75,28 @@ def on_after(m, state, last_instruction):
 
     # Ignore Linux kernel helpers
     if (state.cpu.PC >> 16) == 0xffff:
+        in_helper = True
         return
 
-    if cmp_regs(state.cpu, True):
+    # If we executed a few instructions of a helper, we need to sync Manticore's
+    # state to GDB as soon as we stop executing a helper.
+    if in_helper:
+        for reg in state.cpu.canonical_registers:
+            if reg.endswith('psr'):
+                continue
+            # Don't sync pc
+            if reg == 'pc':
+                continue
+            gdb.setR(reg, state.cpu.read_register(reg))
+        in_helper = False
+
+    if cmp_regs(state.cpu, should_print=True):
         state.abandon()
 
 def sync_svc(m, state):
+    '''
+    Mirror some service calls in manticore. 
+    '''
     name = linux_syscalls.armv7[syscall]
     try:
         # Make sure mmap returns the same address
@@ -90,6 +117,9 @@ def sync_svc(m, state):
     state.cpu.memory.push_record_writes()
 
 def initialize(m, state):
+    '''
+    Synchronize the stack and register state
+    '''
     gdb_regs = gdb.getCanonicalRegisters()
     logger.debug("Copying {} bytes in the stack..".format(stack_top - state.cpu.SP))
     state.cpu.SP = min(state.cpu.SP, gdb.getR('SP'))
@@ -111,30 +141,21 @@ def verify(argv):
 
     m = Manticore(argv[0], argv[1:])
     m.verbosity = 3
-    m.context['icount'] = 0
-    m.context['initialized'] = False
-    m.context['last_instruction'] = None
 
 
     @m.hook(None)
     def on_instruction(state):
+        global initialized, last_instruction, syscall
         # Initialize our state to QEMU's
-        if not m.context['initialized']:
-            init(m, state)
+        if not initialized:
+            initialize(m, state)
+            initialized = True
 
-        if m.context['last_instruction'] != state.cpu.PC:
-            if m.context['last_instruction'] is not None:
-                on_after(m, state, m.context['last_instruction'])
+        if last_instruction != state.cpu.PC:
+            if last_instruction is not None:
+                on_after(m, state, last_instruction)
 
-        m.context['last_instruction'] = state.cpu.instruction
-
-        # XXX(yan): The trace would diverge at this offset in the value of R4
-        # in the example I was using. This might need to be adjusted for other
-        # binaries.
-        # TODO: Investigate further
-        if m.context['icount'] == 6879:
-            addr = state.cpu.R4
-            state.cpu.write_int(addr, gdb.getM(addr)&0xffffffff)
+        last_instruction = state.cpu.instruction
 
         loc, instr = [x.strip() for x in gdb.getInstruction().split(':')]
         mnemonic = instr.split('\t')[0]
@@ -146,10 +167,9 @@ def verify(argv):
             gdb.stepi()
 
         if mnemonic == 'svc':
-            print 'starting svc'
             sync_svc(m, state)
 
-    m.run(stack_top=stack_top)#, interpreter_base=0xf67ce810, stack_offset=-0x9c0)
+    m.run(stack_top=stack_top)
 
 if __name__ == "__main__":
     args = argv[1:]

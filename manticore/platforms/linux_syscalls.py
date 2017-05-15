@@ -1089,4 +1089,9 @@ armv7 = {
     395: "sys_pkey_alloc",
     396: "sys_pkey_free",
     397: "sys_statx",
+    983041: "sys_ARM_NR_breakpoint",
+    983042: "sys_ARM_NR_cacheflush",
+    983043: "sys_ARM_NR_usr26",
+    983044: "sys_ARM_NR_usr32",
+    983045: "sys_ARM_NR_set_tls",
 }
