@@ -53,7 +53,7 @@ def isFlag(x):
     return x in ['OF', 'SF', 'ZF', 'AF', 'PF', 'CF', 'DF']            
 
 def regSize(x):
-    if x in ('AH', 'CH', 'DH', 'BH', 'AL', 'CL', 'DL', 'BL', 'SIL', 'DIL', 'SIH', 'DIH', 'R8B', 'R9B', 'R10B', 'R11B', 'R12B', 'R13B', 'R14B', 'R15B'):
+    if x in ('BPL', 'AH', 'CH', 'DH', 'BH', 'AL', 'CL', 'DL', 'BL', 'SIL', 'DIL', 'SIH', 'DIH', 'R8B', 'R9B', 'R10B', 'R11B', 'R12B', 'R13B', 'R14B', 'R15B'):
         return 8
 
     if x in ('GS', 'AX', 'CX', 'DX', 'BX', 'SI', 'DI', 'R8W', 'R9W', 'R10W', 'R11W', 'R12W', 'R13W', 'R14W', 'R15W'):
