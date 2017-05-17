@@ -109,7 +109,7 @@ def strlen(state, s):
 
     for offset in xrange(zero_idx-1, -1, -1):
         byt = cpu.read_int(s + offset, 8)
-        if issymbolic(byt): # and offset != zero
+        if issymbolic(byt):
             ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)
 
     return ret
