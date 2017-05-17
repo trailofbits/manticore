@@ -4,10 +4,17 @@ from manticore.core.smtlib import ConstraintSet, solver
 from manticore.core.state import State
 from manticore.platforms import linux
 
+<<<<<<< HEAD
 from manticore.models import strcmp, strlen
 
 
 class ModelTest(unittest.TestCase):
+=======
+from manticore.models import strcmp
+
+
+class StrcmpTest(unittest.TestCase):
+>>>>>>> master
     l = linux.SLinux('/bin/ls')
     state = State(ConstraintSet(), l)
     stack_top = state.cpu.RSP
@@ -25,8 +32,11 @@ class ModelTest(unittest.TestCase):
         cpu.write_bytes(cpu.RSP, s)
         return cpu.RSP
 
+<<<<<<< HEAD
 
 class StrcmpTest(ModelTest):
+=======
+>>>>>>> master
     def _push2(self, s1, s2):
         s1ptr = self._push_string(s1)
         s2ptr = self._push_string(s2)
@@ -101,6 +111,7 @@ class StrcmpTest(ModelTest):
         self.state.constrain(s2[2] == ord('\0'))
         ret = strcmp(self.state, *strs)
         self.assertFalse(solver.can_be_true(self.state.constraints, ret != 0))
+<<<<<<< HEAD
 
 
 class StrlenTest(ModelTest):
@@ -168,3 +179,5 @@ class StrlenTest(ModelTest):
         self.state.constrain(sy[3] != 0)
         ret = strlen(self.state, s)
         self.assertFalse(solver.can_be_true(self.state.constraints, ret != 4))
+=======
+>>>>>>> master
