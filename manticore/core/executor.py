@@ -496,7 +496,8 @@ class Executor(object):
             for f in state.platform.files:
                 if hasattr(f,'array'):
                     buf = solver.get_value(state.constraints, f.array)
-                    filename = 'test_file_%s_%d.txt'%(f.array.name, test_number)
+                    filename = os.path.basename(f.array.name)
+                    filename = 'test_file_%s_%d.txt'%(filename, test_number)
                     file(self._getFilename(filename),'a').write("%s"%(buf))
 
         stdout = ''

@@ -264,6 +264,7 @@ class State(object):
                 for f in self.platform.files:
                     if hasattr(f,'array'):
                         buf = solver.get_value(self.constraints, f.array)
+                        filename = os.path.basename(f.array.name)
                         filename = 'file_%s_state_%d.txt'%(f.array.name, self.co)
                         filename = os.path.join(workspace, filename)
                         file(filename,'a').write("%s"%(buf))
