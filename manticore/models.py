@@ -1,3 +1,4 @@
+from .core.cpu.abstractcpu import ConcretizeArgument
 from .utils.helpers import issymbolic
 from .core.smtlib.solver import solver
 from .core.smtlib.operators import ITEBV, ZEXTEND
@@ -55,6 +56,11 @@ def strcmp(state, s1, s2):
     """
 
     cpu = state.cpu
+
+    if issymbolic(s1):
+        raise ConcretizeArgument(1)
+    if issymbolic(s2):
+        raise ConcretizeArgument(2)
 
     s1_zero_idx = _find_zero(cpu, state.constraints, s1)
     s2_zero_idx = _find_zero(cpu, state.constraints, s2)
