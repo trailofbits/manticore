@@ -1627,11 +1627,10 @@ class Linux(Platform):
         stat = self.files[fd].stat()
 
         def add(bytes, val):
-            if bytes == 2:   format = 'S'
+            if bytes == 2:   format = 'H'
             elif bytes == 4: format = 'L'
             elif bytes == 8: format = 'Q'
             return struct.pack('<'+format, val)
-
 
         bufstat  = add(8, stat.st_dev)        # unsigned long long      st_dev;
         bufstat += add(4, 0)                  # unsigned char   __pad0[4];
@@ -1643,9 +1642,8 @@ class Linux(Platform):
         bufstat += add(8, 0)                  # unsigned long long      st_rdev;
         bufstat += add(4, 0)                  # unsigned char   __pad3[4];
         bufstat += add(8, stat.st_size)       # long long       st_size;
-        bufstat += add(4, 512)                # unsigned long   st_blksize;
-        # /* Number 512-byte blocks allocated. */
-        bufstat += add(8, stat.st_size / 512) # unsigned long long st_blocks;   
+        bufstat += add(4, stat.st_blksize)    # unsigned long   st_blksize;
+        bufstat += add(8, stat.st_blocks)     # unsigned long long st_blocks;
         bufstat += add(4, stat.st_atime)      # unsigned long   st_atime;
         bufstat += add(4, 0)                  # unsigned long   st_atime_nsec;
         bufstat += add(4, stat.st_mtime)      # unsigned long   st_mtime;
@@ -1805,31 +1803,32 @@ class SLinux(Linux):
         :param buf: a buffer where data about the file will be stored. 
         :return: C{0} on success.   
         '''
+        stat = self.files[fd].stat()
+
         def add(bytes, val):
-            if bytes == 2:   format = 'S'
+            if bytes == 2:   format = 'H'
             elif bytes == 4: format = 'L'
             elif bytes == 8: format = 'Q'
             return struct.pack('<'+format, val)
-        stat = self.files[fd].stat()
 
-        bufstat  = add(4, stat.st_dev)   # unsigned long  st_dev;
-        bufstat += add(4, stat.st_ino)   # unsigned long  st_ino;
-        bufstat += add(4, stat.st_mode)  # unsigned short st_mode;
-        bufstat += add(4, stat.st_nlink) # unsigned short st_nlink;
-        bufstat += add(4, stat.st_uid)   # unsigned short st_uid;
-        bufstat += add(4, stat.st_gid)   # unsigned short st_gid;
-        bufstat += add(4, stat.st_rdev)  # unsigned long  st_rdev;
-        bufstat += add(4, stat.st_size)  # unsigned long  st_size;
-        bufstat += add(4, 512)           # unsigned long  st_blksize;
-        bufstat += add(4, stat.st_size/512)  # unsigned long  st_blocks;
-        bufstat += add(4, stat.st_atime) # unsigned long  st_atime;
-        bufstat += add(4, 0)             # unsigned long  st_atime_nsec;
-        bufstat += add(4, stat.st_mtime) # unsigned long  st_mtime;
-        bufstat += add(4, 0)             # unsigned long  st_mtime_nsec;
-        bufstat += add(4, stat.st_ctime) # unsigned long  st_ctime;
-        bufstat += add(4, 0)             # unsigned long  st_ctime_nsec;
-        bufstat += add(4, 0)             # unsigned long  __unused4;
-        bufstat += add(4, 0)             # unsigned long  __unused5;
+        bufstat  = add(4, stat.st_dev)    # unsigned long  st_dev;
+        bufstat += add(4, stat.st_ino)    # unsigned long  st_ino;
+        bufstat += add(4, stat.st_mode)   # unsigned short st_mode;
+        bufstat += add(4, stat.st_nlink)  # unsigned short st_nlink;
+        bufstat += add(4, stat.st_uid)    # unsigned short st_uid;
+        bufstat += add(4, stat.st_gid)    # unsigned short st_gid;
+        bufstat += add(4, stat.st_rdev)   # unsigned long  st_rdev;
+        bufstat += add(4, stat.st_size)   # unsigned long  st_size;
+        bufstat += add(4, stat.st_blksize)# unsigned long  st_blksize;
+        bufstat += add(4, stat.st_blocks) # unsigned long  st_blocks;
+        bufstat += add(4, stat.st_atime)  # unsigned long  st_atime;
+        bufstat += add(4, 0)              # unsigned long  st_atime_nsec;
+        bufstat += add(4, stat.st_mtime)  # unsigned long  st_mtime;
+        bufstat += add(4, 0)              # unsigned long  st_mtime_nsec;
+        bufstat += add(4, stat.st_ctime)  # unsigned long  st_ctime;
+        bufstat += add(4, 0)              # unsigned long  st_ctime_nsec;
+        bufstat += add(4, 0)              # unsigned long  __unused4;
+        bufstat += add(4, 0)              # unsigned long  __unused5;
 
         self.current.write_bytes(buf, bufstat)
         return 0
