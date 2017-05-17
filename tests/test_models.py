@@ -125,6 +125,10 @@ class StrlenTest(ModelTest):
         sy = self.state.symbolicate_buffer('+++\0')
         s = self._push_string(sy)
 
+        ret = strlen(self.state, s)
+        print solver.get_all_values(self.state.constraints, ret)
+        self.assertItemsEqual(range(4), solver.get_all_values(self.state.constraints, ret))
+
         self.state.constrain(sy[0] == 0)
         ret = strlen(self.state, s)
         self.assertFalse(solver.can_be_true(self.state.constraints, ret != 0))
