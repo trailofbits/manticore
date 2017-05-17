@@ -4568,8 +4568,28 @@ class X86Cpu(Cpu):
         res = dest.write(dest.read() ^ src.read())
 
 
+
+    def _PUNPCKL(cpu, op0, op1, item_size):
+        '''
+        Generic PUNPCKL
+        '''
+        assert op0.size == op1.size
+        size = op0.size
+        arg0 = op0.read()
+        arg1 = op1.read()
+        mask = (1 << item_size)-1
+        res = 0
+        for pos in reversed(xrange(0, op0.size, item_size)):
+            item0 = Operators.ZEXTEND( ( arg0 >> pos )& mask, size)
+            item1 = Operators.ZEXTEND( ( arg1 >> pos )& mask, size)
+            res = res << item_size
+            res |= item1
+            res = res << item_size
+            res |= item0
+        op0.write(res)
+
     @instruction
-    def PUNPCKLBW(cpu, op0, op1):
+    def PUNPCKLBW(cpu, dest, src):
         '''
         Interleaves the low-order bytes of the source and destination operands.
         
@@ -4578,22 +4598,10 @@ class X86Cpu(Cpu):
         destination operand.
 
         :param cpu: current CPU.
-        :param op0: destination operand.
-        :param op1: source operand.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
-        size = op0.size
-        arg0 = op0.read()
-        arg1 = op1.read()
-
-        res = 0
-        for pos in reversed(xrange(0, size/2, 8)):
-            byte0 = Operators.ZEXTEND( ( arg0 >> pos )& 0xff, size)
-            byte1 = Operators.ZEXTEND( ( arg1 >> pos )& 0xff, size)
-            res = res << 8
-            res |= byte1
-            res = res << 8
-            res |= byte0
-        op0.write(res)
+        cpu._PUNPCKL(dest, src, 8)
 
     @instruction
     def PUNPCKLWD(cpu, dest, src):
@@ -4605,23 +4613,10 @@ class X86Cpu(Cpu):
         destination operand.
 
         :param cpu: current CPU.
-        :param op0: destination operand.
-        :param op1: source operand.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
-        size = dest.size
-        arg0 = dest.read()
-        arg1 = src.read()
-
-        res = 0
-        for pos in reversed(xrange(0, size, 8)):
-            elem0 = Operators.ZEXTEND( ( arg0 >> pos )& 0xff, size)
-            elem1 = Operators.ZEXTEND( ( arg1 >> pos )& 0xff, size)
-            res = res << 8
-            res |= elem1
-            res = res << 8
-            res |= elem0
-            
-        dest.write(res)
+        cpu._PUNPCKL(dest, src, 16)
 
     @instruction
     def PUNPCKLQDQ(cpu, dest, src):
@@ -4633,49 +4628,25 @@ class X86Cpu(Cpu):
         destination operand.
 
         :param cpu: current CPU.
-        :param op0: destination operand.
-        :param op1: source operand.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
-        size = dest.size
-        arg0 = dest.read()
-        arg1 = src.read()
-
-        res = 0
-        for pos in reversed(xrange(0, size/2, 8)):
-            elem0 = Operators.ZEXTEND( ( arg0 >> pos )& ((1 << size/2)-1), size)
-            elem1 = Operators.ZEXTEND( ( arg1 >> pos )& ((1 << size/2)-1), size)
-            res = res << (size/2)
-            res |= elem1
-            res = res << (size/2)
-            res |= elem0
-        dest.write(res)
+        cpu._PUNPCKL(dest, src, 64)
 
     @instruction
     def PUNPCKLDQ(cpu, dest, src):
         '''
-        Interleaves the low-order quad-words of the source and destination operands.
+        Interleaves the low-order double-words of the source and destination operands.
         
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
         of the destination operand (first operand) and source operand (second operand) into the 
         destination operand.
 
         :param cpu: current CPU.
-        :param op0: destination operand.
-        :param op1: source operand.
+        :param dest: destination operand.
+        :param src: source operand.
         '''
-        size = dest.size
-        arg0 = dest.read()
-        arg1 = src.read()
-
-        res = 0
-        for pos in reversed(xrange(0, size/2, 8)):
-            elem0 = Operators.ZEXTEND( ( arg0 >> pos )& ((1 << size/2)-1), size)
-            elem1 = Operators.ZEXTEND( ( arg1 >> pos )& ((1 << size/2)-1), size)
-            res = res << (size/2)
-            res |= elem1
-            res = res << (size/2)
-            res |= elem0
-        dest.write(res)
+        cpu._PUNPCKL(dest, src, 32)
 
 
     @instruction
