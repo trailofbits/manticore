@@ -1611,9 +1611,9 @@ class Linux(Platform):
     
     def sys_newfstat(self, fd, buf):
         '''
-        Wrapper for fstat64()
+        Wrapper for fstat
         '''
-        return self.sys_fstat64(fd, buf)
+        return self.sys_fstat(fd, buf)
 
     def sys_fstat64(self, fd, buf):
         '''
@@ -1624,53 +1624,35 @@ class Linux(Platform):
         :return: C{0} on success.
         :todo: Fix device number.   
         '''
-        ''' unsigned long	st_dev;		/* Device.  */
-            unsigned long	st_ino;		/* File serial number.  */
-            unsigned int	st_mode;	/* File mode.  */
-            unsigned int	st_nlink;	/* Link count.  */
-            unsigned int	st_uid;		/* User ID of the file's owner.  */
-            unsigned int	st_gid;		/* Group ID of the file's group. */
-            unsigned long	st_rdev;	/* Device number, if device.  */
-            unsigned long	__pad1;
-            long		st_size;	/* Size of file, in bytes.  */
-            int		st_blksize;	/* Optimal block size for I/O.  */
-            int		__pad2;
-            long		st_blocks;	/* Number 512-byte blocks allocated. */
-            long		st_atime;	/* Time of last access.  */
-            unsigned long	st_atime_nsec;
-            long		st_mtime;	/* Time of last modification.  */
-            unsigned long	st_mtime_nsec;
-            long		st_ctime;	/* Time of last status change.  */
-            unsigned long	st_ctime_nsec;
-            unsigned int	__unused4;
-            unsigned int	__unused5;'''
         stat = self.files[fd].stat()
 
-        bufstat = ''
-        bufstat += struct.pack('<Q', stat.st_dev)
-        bufstat += struct.pack('<Q', stat.st_ino)
-        bufstat += struct.pack('<L', stat.st_mode)
-        bufstat += struct.pack('<L', stat.st_nlink)
-        bufstat += struct.pack('<L', stat.st_uid)
-        bufstat += struct.pack('<L', stat.st_gid)
+        def add(bytes, val):
+            if bytes == 2:   format = 'S'
+            elif bytes == 4: format = 'L'
+            elif bytes == 8: format = 'Q'
+            return struct.pack('<'+format, val)
 
-        bufstat += struct.pack('<Q', 0)
-        bufstat += struct.pack('<Q', 0) #pad
 
-        bufstat += struct.pack('<Q', stat.st_size)
-        bufstat += struct.pack('<L', 1000 )
-        bufstat += struct.pack('<L', 0) #pad
-
-        bufstat += struct.pack('<Q', stat.st_size/512)
-
-        bufstat += struct.pack('d', stat.st_atime)
-        bufstat += struct.pack('<Q', 0)
-        bufstat += struct.pack('d', stat.st_mtime)
-        bufstat += struct.pack('<Q', 0)
-        bufstat += struct.pack('d', stat.st_ctime)
-        bufstat += struct.pack('<Q', 0)
-        bufstat += struct.pack('<L', 0) #pad
-        bufstat += struct.pack('<L', 0) #pad
+        bufstat  = add(8, stat.st_dev)        # unsigned long long      st_dev;
+        bufstat += add(4, 0)                  # unsigned char   __pad0[4];
+        bufstat += add(4, stat.st_dev)        # unsigned long   __st_ino;
+        bufstat += add(4, stat.st_mode)       # unsigned int    st_mode;
+        bufstat += add(4, stat.st_nlink)      # unsigned int    st_nlink;
+        bufstat += add(4, stat.st_uid)        # unsigned long   st_uid;
+        bufstat += add(4, stat.st_gid)        # unsigned long   st_gid;
+        bufstat += add(8, 0)                  # unsigned long long      st_rdev;
+        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
+        bufstat += add(8, stat.st_size)       # long long       st_size;
+        bufstat += add(4, 512)                # unsigned long   st_blksize;
+        # /* Number 512-byte blocks allocated. */
+        bufstat += add(8, stat.st_size / 512) # unsigned long long st_blocks;   
+        bufstat += add(4, stat.st_atime)      # unsigned long   st_atime;
+        bufstat += add(4, 0)                  # unsigned long   st_atime_nsec;
+        bufstat += add(4, stat.st_mtime)      # unsigned long   st_mtime;
+        bufstat += add(4, 0)                  # unsigned long   st_mtime_nsec;
+        bufstat += add(4, stat.st_ctime)      # unsigned long   st_ctime;
+        bufstat += add(4, 0)                  # unsigned long   st_ctime_nsec;
+        bufstat += add(8, stat.st_ino)        # unsigned long long      st_ino;
 
         self.current.write_bytes(buf, bufstat)
         return 0
@@ -1823,39 +1805,32 @@ class SLinux(Linux):
         :param buf: a buffer where data about the file will be stored. 
         :return: C{0} on success.   
         '''
-        '''
-           dev_t     st_dev;     /* ID of device containing file */
-           ino_t     st_ino;     /* inode number */
-           mode_t    st_mode;    /* protection */
-           nlink_t   st_nlink;   /* number of hard links */
-           uid_t     st_uid;     /* user ID of owner */
-           gid_t     st_gid;     /* group ID of owner */
-           dev_t     st_rdev;    /* device ID (if special file) */
-           off_t     st_size;    /* total size, in bytes */
-           blksize_t st_blksize; /* blocksize for file system I/O */
-           blkcnt_t  st_blocks;  /* number of 512B blocks allocated */
-           time_t    st_atime;   /* time of last access */
-           time_t    st_mtime;   /* time of last modification */
-           time_t    st_ctime;   /* time of last status change */
-        '''
+        def add(bytes, val):
+            if bytes == 2:   format = 'S'
+            elif bytes == 4: format = 'L'
+            elif bytes == 8: format = 'Q'
+            return struct.pack('<'+format, val)
         stat = self.files[fd].stat()
-        bufstat = ''
-        bufstat += struct.pack('<Q', stat.st_dev)
-        bufstat += struct.pack('<L', 0)  # pad1
-        bufstat += struct.pack('<L', stat.st_ino)
-        bufstat += struct.pack('<L', stat.st_mode)
-        bufstat += struct.pack('<L', stat.st_nlink)
-        bufstat += struct.pack('<L', 0)  # uid
-        bufstat += struct.pack('<L', 0)  # gid
-        bufstat += struct.pack('<Q', 0)  # rdev
-        bufstat += struct.pack('<L', 0)  # pad2
-        bufstat += struct.pack('<L', stat.st_size)
-        bufstat += struct.pack('<L', stat.st_blksize)
-        bufstat += struct.pack('<L', stat.st_blocks)
 
-        bufstat += struct.pack('<Q', stat.st_atime)
-        bufstat += struct.pack('<Q', stat.st_ctime)
-        bufstat += struct.pack('<Q', stat.st_mtime)
+        bufstat  = add(4, stat.st_dev)   # unsigned long  st_dev;
+        bufstat += add(4, stat.st_ino)   # unsigned long  st_ino;
+        bufstat += add(4, stat.st_mode)  # unsigned short st_mode;
+        bufstat += add(4, stat.st_nlink) # unsigned short st_nlink;
+        bufstat += add(4, stat.st_uid)   # unsigned short st_uid;
+        bufstat += add(4, stat.st_gid)   # unsigned short st_gid;
+        bufstat += add(4, stat.st_rdev)  # unsigned long  st_rdev;
+        bufstat += add(4, stat.st_size)  # unsigned long  st_size;
+        bufstat += add(4, 512)           # unsigned long  st_blksize;
+        bufstat += add(4, stat.st_size/512)  # unsigned long  st_blocks;
+        bufstat += add(4, stat.st_atime) # unsigned long  st_atime;
+        bufstat += add(4, 0)             # unsigned long  st_atime_nsec;
+        bufstat += add(4, stat.st_mtime) # unsigned long  st_mtime;
+        bufstat += add(4, 0)             # unsigned long  st_mtime_nsec;
+        bufstat += add(4, stat.st_ctime) # unsigned long  st_ctime;
+        bufstat += add(4, 0)             # unsigned long  st_ctime_nsec;
+        bufstat += add(4, 0)             # unsigned long  __unused4;
+        bufstat += add(4, 0)             # unsigned long  __unused5;
+
         self.current.write_bytes(buf, bufstat)
         return 0
 
