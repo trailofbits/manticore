@@ -41,7 +41,8 @@ def makeLinux(program, argv, env, concrete_start = '', symbolic_files=[]):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-    platform = linux.SLinux(constraints, program, argv=argv, envp=env,
+
+    platform = linux.SLinux(program, argv=argv, envp=env,
                             symbolic_files=symbolic_files)
     initial_state = State(constraints, platform)
 
@@ -49,12 +50,10 @@ def makeLinux(program, argv, env, concrete_start = '', symbolic_files=[]):
         logger.info('Starting with concrete input: {}'.format(concrete_start))
 
     for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1),
-                string=True)
+        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1))
 
     for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1),
-                string=True)
+        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1))
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
@@ -305,7 +304,7 @@ class Manticore(object):
         '''
         Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one :class:`~manticore.core.executor.State` argument.
+        that takes one :class:`~manticore.core.state.State` argument.
 
         :param pc: Address of instruction to hook
         :type pc: int or None

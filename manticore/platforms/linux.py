@@ -15,6 +15,7 @@ import logging
 import random
 from ..core.cpu.arm import *
 from ..core.executor import SyscallNotImplemented, ProcessExit
+from . import linux_syscalls
 logger = logging.getLogger("PLATFORM")
 
 
@@ -1076,7 +1077,7 @@ class Linux(Platform):
         else:
             return -1
 
-    def sys_uname(self, old_utsname):
+    def sys_newuname(self, old_utsname):
         '''
         Writes system information in the variable C{old_utsname}.
         :rtype: int
@@ -1093,7 +1094,7 @@ class Linux(Platform):
         uname += pad('x86_64')
         uname += pad('(none)')
         self.current.write_bytes(old_utsname, uname)
-        logger.debug("sys_uname(...) -> %s", uname)
+        logger.debug("sys_newuname(...) -> %s", uname)
         return 0
 
     def sys_brk(self, brk):
@@ -1336,7 +1337,7 @@ class Linux(Platform):
             total+=size
         return total
 
-    def sys_set_thread_area32(self, user_info):
+    def sys_set_thread_area(self, user_info):
         '''
         Sets a thread local storage (TLS) area. Sets the base address of the GS segment.
         :rtype: int
@@ -1432,121 +1433,19 @@ class Linux(Platform):
     #Distpatchers...
     def syscall(self):
         ''' 
-        64 bit dispatcher.
+        Syscall dispatcher.
         '''
-        syscalls = { 
-                 0x0000000000000008: self.sys_lseek, 
-                 0x000000000000000c: self.sys_brk, 
-                 0x000000000000000e: self.sys_sigprocmask,
-                 0x000000000000009e: self.sys_arch_prctl,
-                 0x0000000000000002: self.sys_open,
-                 0x0000000000000000: self.sys_read,
-                 0x0000000000000003: self.sys_close,
-                 0x0000000000000005: self.sys_fstat64,
-                 0x0000000000000009: self.sys_mmap,
-                 0x0000000000000001: self.sys_write,
-                 0x0000000000000010: self.sys_ioctl,
-                 0x0000000000000027: self.sys_getpid,
-                 0x000000000000003e: self.sys_kill,
-                 0x0000000000000065: self.sys_ptrace,
-                 0x0000000000000066: self.sys_getuid,
-                 0x0000000000000068: self.sys_getgid,
-                 0x000000000000006b: self.sys_geteuid,
-                 0x000000000000006c: self.sys_getegid,
-                 0x00000000000000e7: self.sys_exit_group,
-                 0x0000000000000015: self.sys_access,
-                 0x000000000000000a: self.sys_mprotect,
-                 0x000000000000000b: self.sys_munmap,
-                 0x0000000000000013: self.sys_readv,
-                 0x0000000000000014: self.sys_writev,
-                 0x0000000000000004: self.sys_stat64,
-                 0x0000000000000059: self.sys_acct,
-                 0x0000000000000023: self.sys_nanosleep,
-#                 0x0000000000000029: self.sys_socket,
-#                 0x000000000000002a: self.sys_connect,
-#                 0x000000000000002b: self.sys_accept,
-#                 0x000000000000002c: self.sys_sendto,
-#                 0x000000000000002d: self.sys_recvfrom,
-#                 0x000000000000002e: self.sys_sendmsg,
-#                 0x000000000000002f: self.sys_recvmsg,
-#                 0x0000000000000030: self.sys_shutdown,
-#                 0x0000000000000031: self.sys_bind,
-#                 0x0000000000000032: self.sys_listen,
-#                 0x0000000000000033: self.sys_getsockname,
-#                 0x0000000000000034: self.sys_getpeername,
-#                 0x0000000000000035: self.sys_socketpair,
-#                 0x0000000000000036: self.sys_setsockopt,
-#                 0x0000000000000037: self.sys_getsockopt,
-                 0x000000000000003f: self.sys_uname, 
-                 0x00000000000000c9: self.sys_time,
-                 0x00000000000000da: self.sys_set_tid_address,
-                 0x000000000000010d: self.sys_faccessat,
-                 0x0000000000000111: self.sys_set_robust_list,
-                 0x00000000000000ca: self.sys_futex,
-                 0x000000000000000d: self.sys_sigaction,
-                 0x0000000000000060: self.sys_gettimeofday,
-                 0x0000000000000061: self.sys_getrlimit,
-                 0x00000000000000dd: self.sys_fadvise64,
-                 0x00000000000000e4: self.sys_clock_gettime,
-
-
-                }
 
         index = self._syscall_abi.syscall_number()
 
-        if index not in syscalls:
-            raise SyscallNotImplemented(64, index)
+        try:
+            table = getattr(linux_syscalls, self.current.machine)
+            name = table[index]
+            implementation = getattr(self, name)
+        except (AttributeError, KeyError):
+            raise SyscallNotImplemented(self.current.address_bit_size, index)
 
-        return self._syscall_abi.invoke(syscalls[index])
-
-
-    def int80(self):
-        ''' 
-        32 bit dispatcher.
-        '''
-        syscalls = { 0x00000001: self.sys_exit_group, 
-                     0x00000003: self.sys_read, 
-                     0x00000004: self.sys_write,
-                     0x00000005: self.sys_open,
-                     0x00000006: self.sys_close,
-                     0x00000021: self.sys_access, 
-                     0x00000025: self.sys_kill,
-                     0x0000002d: self.sys_brk,
-                     0x00000036: self.sys_ioctl,
-                     0x0000004e: self.sys_gettimeofday,
-                     0x00000055: self.sys_readlink,
-                     0x00000059: self.sys_acct,
-                     0x0000005b: self.sys_munmap,
-                     0x0000007a: self.sys_uname, 
-                     0x0000007d: self.sys_mprotect,
-                     0x0000008c: self.sys_setpriority,
-                     0x0000008d: self.sys_getpriority,
-                     0x00000091: self.sys_readv,
-                     0x00000092: self.sys_writev,
-                     0x000000c0: self.sys_mmap2,
-                     0x000000c3: self.sys_stat32,
-                     0x000000c5: self.sys_fstat,
-                     0x000000c7: self.sys_getuid,
-                     0x000000c8: self.sys_getgid,
-                     0x000000c9: self.sys_geteuid,
-                     0x000000ca: self.sys_getegid,
-                     0x000000f3: self.sys_set_thread_area32,
-                     0x000000fc: self.sys_exit_group, 
-                     0x000000ae: self.sys_sigaction, 
-                     0x000000f8: self.sys_exit_group, # XXX
-#                     0x00000066: self.sys_socketcall, 
-#                     0x000000dd: self.sys_fcntl64, 
-                     0x0000000d: self.sys_time, 
-                     0x00000014: self.sys_getpid,
-                     0x000f0005: self.sys_ARM_NR_set_tls,
-                    }
-
-        index = self._syscall_abi.syscall_number()
-
-        if index not in syscalls:
-            raise SyscallNotImplemented(64, index)
-
-        return self._syscall_abi.invoke(syscalls[index])
+        return self._syscall_abi.invoke(implementation)
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
@@ -1686,12 +1585,7 @@ class Linux(Platform):
             if self.clocks % 10000 == 0:
                 self.check_timers()
                 self.sched()
-        except Interruption, e:
-            try:
-                syscallret = self.int80()
-            except RestartSyscall:
-                pass
-        except Syscall, e:
+        except (Interruption, Syscall) as e:
             try:
                 syscallret = self.syscall()
             except RestartSyscall:
@@ -1703,6 +1597,12 @@ class Linux(Platform):
 
     #64bit syscalls
     
+    def sys_newfstat(self, fd, buf):
+        '''
+        Wrapper for fstat64()
+        '''
+        return self.sys_fstat64(fd, buf)
+
     def sys_fstat64(self, fd, buf):
         '''
         Determines information about a file based on its file descriptor (for Linux 64 bits).
@@ -1827,15 +1727,18 @@ class Linux(Platform):
 # Symbolic versions follows
 
 class SLinux(Linux):
-    '''
-    A symbolic extension of a Decree Operating System Platform.
-    '''
-    def __init__(self, constraints, programs, argv, envp, symbolic_random=None, symbolic_files=[]):
-        '''
-        Builds a symbolic extension of a Decree OS
-        :param constraints: a constraints.
-        :param mem: memory for this platform.
-        '''
+    """
+    Builds a symbolic extension of a Linux OS
+
+    :param str programs: path to ELF binary
+    :param list argv: argv not including binary
+    :param list envp: environment variables
+    :param tuple[str] symbolic_files: files to consider symbolic
+    """
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=[]):
+        argv = [] if argv is None else argv
+        envp = [] if envp is None else envp
+
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files=symbolic_files
@@ -1876,15 +1779,6 @@ class SLinux(Linux):
             self.current.PC = self.current.PC - self.current.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
             raise ConcretizeRegister(reg_name,e.message,e.policy)
-
-    def int80(self):
-        try:
-            return super(SLinux, self).int80()
-        except SymbolicSyscallArgument, e:
-            self.current.PC = self.current.PC - self.current.instruction.size
-            reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(reg_name,e.message,e.policy)
-
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
