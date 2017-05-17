@@ -1,3 +1,4 @@
+from .core.cpu.abstractcpu import ConcretizeArgument
 from .utils.helpers import issymbolic
 from .core.smtlib.solver import solver
 from .core.smtlib.operators import ITEBV, ZEXTEND
@@ -93,6 +94,10 @@ def strlen(state, s):
     """
 
     cpu = state.cpu
+
+    if issymbolic(s):
+        raise ConcretizeArgument(1)
+
     zero_idx = _find_zero(cpu, state.constraints, s)
 
     ret = zero_idx
