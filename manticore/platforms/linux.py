@@ -1185,9 +1185,17 @@ class Linux(Platform):
         logger.debug("KILL, Ignoring Sending signal %d to pid %d", sig, pid )
         return 0
 
+    def sys_rt_sigaction(self, signum, act,oldact):
+        'Wrapper for sys_sigaction'
+        return self.sys_sigaction(signum, act, oldact)
+
     def sys_sigaction(self, signum, act, oldact):
         logger.debug("SIGACTION, Ignoring changing signal handler for signal %d", signum)
         return 0
+
+    def sys_rt_sigprocmask(self, cpu, how, newset, oldset):
+        'Wrapper for sys_sigprocmask'
+        return self.sys_sigprocmask(cpu, how, newset, oldset)
 
     def sys_sigprocmask(self, cpu, how, newset, oldset):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
@@ -1373,7 +1381,7 @@ class Linux(Platform):
         
         :return: C{0}
         '''
-        logger.debug("Ignoring sys_set_priority")
+        logger.debug("Ignoring sys_setpriority")
         return 0
 
     def sys_acct(self, path):
@@ -1385,6 +1393,10 @@ class Linux(Platform):
         '''
         logger.debug("BSD account not implemented!")
         return -1
+
+    def sys_exit(self, error_code):
+        'Wrapper for sys_exit_group'
+        return self.sys_exit_group(error_code)
 
     def sys_exit_group(self, error_code):
         '''
@@ -1662,6 +1674,13 @@ class Linux(Platform):
 
         self.current.write_bytes(buf, bufstat)
         return 0
+
+    def sys_newstat(self, fd, buf):
+        '''
+        Wrapper for stat64()
+        '''
+        return self.sys_stat64(fd, buf)
+
     def sys_stat64(self, path, buf):
         '''
         Determines information about a file based on its filename (for Linux 64 bits).
@@ -1839,6 +1858,10 @@ class SLinux(Linux):
         bufstat += struct.pack('<Q', stat.st_mtime)
         self.current.write_bytes(buf, bufstat)
         return 0
+
+    def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
+        'Wrapper for mmap2'
+        return self.sys_mmap2(address, size, prot, flags, fd, offset)
 
     def sys_mmap2(self, address, size, prot, flags, fd, offset):
         ''' 
