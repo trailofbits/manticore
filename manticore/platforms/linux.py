@@ -5,7 +5,7 @@ import weakref
 import errno
 import os, struct
 from ..utils.helpers import issymbolic
-from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
+from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
@@ -30,14 +30,6 @@ def perms_from_elf(elf_flags):
 
 def perms_from_protflags(prot_flags):
     return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
-
-class SymbolicSyscallArgument(Exception):
-    def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
-        self.reg_num = reg_num
-        self.message = message
-        self.policy = policy
-        super(SymbolicSyscallArgument, self).__init__(message)
-
 
 class File(object):
     def __init__(self, *args, **kwargs):
@@ -366,7 +358,6 @@ class Linux(Platform):
         state['elf_brk'] = self.elf_brk
         state['auxv'] = self.auxv
         state['program'] = self.program
-        state['syscall_arg_regs'] = self.syscall_arg_regs
         state['functionabi'] = self._function_abi
         state['syscallabi'] = self._syscall_abi
         if hasattr(self, '_arm_tls_memory'):
@@ -416,7 +407,6 @@ class Linux(Platform):
         self.elf_brk = state['elf_brk']
         self.auxv = state['auxv']
         self.program = state['program']
-        self.syscall_arg_regs = state['syscall_arg_regs']
         self._function_abi = state['functionabi']
         self._syscall_abi = state['syscallabi']
         if '_arm_tls_memory' in state:
@@ -1684,30 +1674,17 @@ class Linux(Platform):
         self.sys_close(fd)
         return ret
     
-    def _arch_specific_init(self, arch):
-        assert arch in {'i386', 'amd64', 'armv7'}
+    def _arch_specific_init(self):
+        assert self.arch in {'i386', 'amd64', 'armv7'}
 
-        self._arch_reg_init(arch)
-
-        if arch == 'i386':
-            self.syscall_arg_regs = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']
-        elif arch == 'amd64':
-            self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
-        elif arch == 'armv7':
-            self.syscall_arg_regs = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6']
-            self._init_arm_kernel_helpers()
-
-
-    def _arch_reg_init(self, arch):
-        if arch in {'i386', 'amd64'}:
-            x86_defaults = {
-                'CS': 0x23,
-                'SS': 0x2b,
-                'DS': 0x2b,
-                'ES': 0x2b,
-            }
+        # Establish segment registers for x86 arches
+        if self.arch in {'i386', 'amd64'}:
+            x86_defaults = { 'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b, }
             for reg, val in x86_defaults.iteritems():
                 self.current.regfile.write(reg, val)
+
+        if self.arch == 'armv7':
+            self._init_arm_kernel_helpers()
 
     @staticmethod
     def _interp_total_size(interp):
@@ -1772,26 +1749,19 @@ class SLinux(Linux):
 
 
     #Dispatchers...
-    def syscall(self):
-        try:
-            return super(SLinux, self).syscall()
-        except SymbolicSyscallArgument, e:
-            self.current.PC = self.current.PC - self.current.instruction.size
-            reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(reg_name,e.message,e.policy)
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise SymbolicSyscallArgument(0)
+            raise ConcretizeArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise SymbolicSyscallArgument(1)
+            raise ConcretizeArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(2)
+            raise ConcretizeArgument(2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
@@ -1913,15 +1883,15 @@ class SLinux(Linux):
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise SymbolicSyscallArgument(0)
+            raise ConcretizeArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise SymbolicSyscallArgument(1)
+            raise ConcretizeArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(2)
+            raise ConcretizeArgument(2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
 
