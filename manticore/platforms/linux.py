@@ -1868,8 +1868,8 @@ class SLinux(Linux):
     def syscall(self):
         try:
             return super(SLinux, self).syscall()
-        except ConcretizeSyscallArgument, e:
-            cpu = self.current
+        except ConcretizeArgument as e:
+            cpu = e.cpu
             cpu.PC = cpu.PC - cpu.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
             raise ConcretizeRegister(cpu, reg_name, e.message, e.policy)
@@ -1877,8 +1877,8 @@ class SLinux(Linux):
     def int80(self):
         try:
             return super(SLinux, self).int80()
-        except ConcretizeSyscallArgument, e:
-            cpu = self.current
+        except ConcretizeArgument as e:
+            cpu = e.cpu
             cpu.PC = cpu.PC - cpu.instruction.size
             reg_name = self.syscall_arg_regs[e.reg_num]
             raise ConcretizeRegister(cpu, reg_name, e.message, e.policy)
@@ -1886,15 +1886,15 @@ class SLinux(Linux):
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise ConcretizeSyscallArgument(0)
+            raise ConcretizeArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise ConcretizeSyscallArgument(1)
+            raise ConcretizeArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise ConcretizeSyscallArgument(2)
+            raise ConcretizeArgument(2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
@@ -2016,14 +2016,14 @@ class SLinux(Linux):
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise ConcretizeSyscallArgument(0)
+            raise ConcretizeArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise ConcretizeSyscallArgument(1)
+            raise ConcretizeArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise ConcretizeSyscallArgument(2)
+            raise ConcretizeArgument(2)
 
         return super(SLinux, self).sys_write(fd, buf, count)

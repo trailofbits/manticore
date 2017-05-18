@@ -165,8 +165,6 @@ class State(object):
                                 expression=expression, 
                                 setstate=setstate,
                                 policy=e.policy)
-        except Exception as e:
-            raise TerminateState(self, message=str(e), testcase=True)
 
         #Remove when code gets stable?
         assert self.model.constraints is self.constraints
