@@ -544,18 +544,6 @@ class Linux(Platform):
         # stack from the original top
         cpu.STACK = self._stack_top
 
-        # TODO cpu.STACK_push_bytes() pls
-        def push_bytes(data):
-            cpu.STACK -= len(data)
-            cpu.write_bytes(cpu.STACK, data)
-            return cpu.STACK
-
-        def push_int(value):
-            cpu.STACK -= cpu.address_bit_size/8
-            cpu.write_int(cpu.STACK, value, cpu.address_bit_size)
-            return cpu.STACK
-
-
         auxv = self.auxv
         logger.debug("Setting argv, envp and auxv.")
         logger.debug("\tArguments: %s"%repr(argv))
@@ -570,12 +558,12 @@ class Linux(Platform):
 
         #end envp marker empty string
         for evar in envp:
-            push_bytes('\x00')
-            envplst.append(push_bytes(evar))
+            cpu.push_bytes('\x00')
+            envplst.append(cpu.push_bytes(evar))
 
-        for arg in argv:                
-            push_bytes('\x00')
-            argvlst.append(push_bytes(arg))
+        for arg in argv:
+            cpu.push_bytes('\x00')
+            argvlst.append(cpu.push_bytes(arg))
 
 
         #Put all auxv strings into the string stack area.
@@ -583,7 +571,7 @@ class Linux(Platform):
 
         for name, value in auxv.items():
             if hasattr(value, '__len__'):
-                push_bytes(value)
+                cpu.push_bytes(value)
                 auxv[name]=cpu.STACK
 
         #The "secure execution" mode of secure_getenv() is controlled by the
@@ -615,27 +603,27 @@ class Linux(Platform):
                     'AT_SYSINFO_EHDR': 33, #Pointer to the global system page used for system calls and other nice things.
         }
         #AT_NULL
-        push_int(0)       
-        push_int(0)       
+        cpu.push_int(0)       
+        cpu.push_int(0)       
         for name, val in auxv.items():
-            push_int(val)
-            push_int(auxvnames[name])
+            cpu.push_int(val)
+            cpu.push_int(auxvnames[name])
 
 
         # NULL ENVP
-        push_int(0)
+        cpu.push_int(0)
         for var in reversed(envplst):              # ENVP n
-            push_int(var)
+            cpu.push_int(var)
         envp = cpu.STACK
 
         # NULL ARGV
-        push_int(0)
+        cpu.push_int(0)
         for arg in reversed(argvlst):              # Argv n
-            push_int(arg)
+            cpu.push_int(arg)
         argv = cpu.STACK
 
         #ARGC
-        push_int(len(argvlst))
+        cpu.push_int(len(argvlst))
 
 
     def load(self, filename):
@@ -863,16 +851,6 @@ class Linux(Platform):
         self.elf_brk = real_elf_brk
 
 
-        #put auxv strings in stack
-        # TODO move into cpu as cpu.stack_push(), possibly removing the need for stack_sub, stack_add?
-        def push_bytes( value ):
-            cpu.STACK -= len(value)
-            cpu.write_bytes(cpu.STACK, value)
-            return cpu.STACK
-
-        at_random = push_bytes('A'*16)
-        at_execfn = push_bytes(filename+'\x00')
-
 
         auxv = {}
         auxv['AT_PHDR']     = load_addr+elf.header.e_phoff # Program headers for program 
@@ -891,6 +869,8 @@ class Linux(Platform):
         auxv['AT_RANDOM']   = at_random                    # Address of 16 random bytes.
         auxv['AT_EXECFN']   = at_execfn                    # Filename of executable.
         self.auxv = auxv
+        at_random = cpu.push_bytes('A'*16)
+        at_execfn = cpu.push_bytes(filename+'\x00')
   
     def _open(self, f):
         '''

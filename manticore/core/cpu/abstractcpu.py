@@ -502,6 +502,50 @@ class Cpu(object):
             where += 1
         return s.getvalue()
 
+    def push_bytes(self, data):
+        '''
+        Write `data` to the stack and decrement the stack pointer accordingly.
+
+        :param str data: Data to write
+        '''
+        self.STACK -= len(data)
+        self.write_bytes(self.STACK, data)
+        return self.STACK
+
+    def pop_bytes(self, nbytes):
+        '''
+        Read `nbytes` from the stack, increment the stack pointer, and return
+        data.
+
+        :param int nbytes: How many bytes to read
+        :return: Data read from the stack
+        '''
+        data = self.read_bytes(self.STACK, nbytes)
+        self.STACK += nbytes
+        return data
+
+    def push_int(self, value):
+        '''
+        Decrement the stack pointer and write `value` to the stack.
+
+        :param int value: The value to write
+        :return: New stack pointer
+        '''
+        self.STACK -= self.address_bit_size / 8
+        self.write_int(self.STACK, value)
+        return self.STACK
+
+    def pop_int(self):
+        '''
+        Read a value from the stack and increment the stack pointer.
+
+        :return: Value read
+        '''
+        value = self.read_int(self.STACK)
+        self.STACK += self.address_bit_size / 8
+        return value
+
+
     #######################################
     # Decoder
     @abstractmethod
