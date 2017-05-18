@@ -5726,6 +5726,7 @@ class AMD64Cpu(X86Cpu):
     #Config
     max_instr_width = 15
     address_bit_size = 64
+    machine = 'amd64'
     arch = CS_ARCH_X86
     mode = CS_MODE_64
 
@@ -5834,6 +5835,7 @@ class I386Cpu(X86Cpu):
     #Config
     max_instr_width = 15
     address_bit_size = 32
+    machine = 'i386'
     arch = CS_ARCH_X86
     mode = CS_MODE_32
 

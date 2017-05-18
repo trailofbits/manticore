@@ -461,7 +461,7 @@ class Cpu(object):
 
         :param str register: register name (as listed in `self.all_registers`)
         :return: register value
-        :rtype int or long or Expression
+        :rtype: int or long or Expression
         '''
         value = self._regfile.read(register)
         self.will_read_register(register, value)

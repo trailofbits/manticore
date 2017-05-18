@@ -62,30 +62,28 @@ def makeLinux(program, argv, env, concrete_start = ''):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-    model = linux.SLinux(constraints, program, argv=argv, envp=env,
+    platform = linux.SLinux(program, argv=argv, envp=env,
             symbolic_files=('symbolic.txt'))
-    initial_state = State(constraints, model)
+    initial_state = State(constraints, platform)
 
     if concrete_start != '':
         logger.info('Starting with concrete input: {}'.format(concrete_start))
 
     for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1),
-                string=True)
+        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1))
 
     for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1),
-                string=True)
+        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1))
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
     if any(issymbolic(x) for val in argv + env for x in val):
         model.setup_stack([program] + argv, env)
 
-    model.input.transmit(concrete_start)
+    platform.input.transmit(concrete_start)
 
     #set stdin input...
-    model.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
+    platform.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
     return initial_state 
 
@@ -179,7 +177,6 @@ class Manticore(object):
         # XXX(yan) '_args' will be removed soon; exists currently to ease porting
         self._args = args
         self._time_started = 0
-        self._num_processes = 1
         self._begun_trace = False
         self._assertions = {}
         self._model_hooks = {}
@@ -325,7 +322,7 @@ class Manticore(object):
         '''
         Add a callback to be invoked on executing a program counter. Pass `None`
         for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one :class:`~manticore.core.executor.State` argument.
+        that takes one :class:`~manticore.core.state.State` argument.
 
         :param pc: Address of instruction to hook
         :type pc: int or None
@@ -390,15 +387,6 @@ class Manticore(object):
     def _make_workspace(self):
         ''' Make working directory '''
         return tempfile.mkdtemp(prefix="mcore_", dir='./')
-
-    @property
-    def workers(self):
-        return self._num_processes
-
-    @workers.setter
-    def workers(self, n):
-        assert not self._running, "Can't set workers if Manticore is running."
-        self._num_processes = n
 
     @property
     def policy(self):
@@ -737,9 +725,12 @@ class Manticore(object):
         with file(os.path.join(self.workspace,'command.sh'),'w') as f:
             f.write(' '.join(sys.argv))
         
-    def run(self, timeout=0):
+    def run(self, procs=1, timeout=0):
         '''
         Runs analysis.
+
+        :param int procs: Number of parallel worker processes
+        :param timeout: Analysis timeout, in seconds
         '''
         assert not self._running, "Manticore is already running."
         args = self._args
@@ -792,7 +783,7 @@ class Manticore(object):
             t = Timer(timeout, self.terminate)
             t.start()
         try:
-            self._start_workers(self._num_processes, profiling=False)
+            self._start_workers(procs, profiling=False)
 
             self._join_workers()
         finally:
