@@ -412,19 +412,6 @@ class Linux(Platform):
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
 
-    def _read_string(self, buf):
-        """
-        Reads a null terminated concrete buffer form memory
-        :todo: FIX. move to cpu or memory 
-        """
-        filename = ""
-        for i in xrange(0,1024):
-            c = Operators.CHR(self.current.read_int(buf + i, 8))
-            if c == '\x00':
-                break
-            filename += c
-        return filename
-
     def _init_arm_kernel_helpers(self):
         '''
         ARM kernel helpers
@@ -1140,7 +1127,7 @@ class Linux(Platform):
         # buf: address of zero-terminated pathname
         # flags/access: file access bits
         # perms: file permission mode
-        filename = self._read_string(buf)
+        filename = self.current.read_string(buf)
         try :
             if os.path.abspath(filename).startswith('/proc/self'):
                 if filename == '/proc/self/exe':
@@ -1207,7 +1194,7 @@ class Linux(Platform):
         '''
         if bufsize <= 0:
             return -errno.EINVAL
-        filename = self._read_string(path)
+        filename = self.current.read_string(path)
         data = os.readlink(filename)[:bufsize]
         self.current.write_bytes(buf, data)
         logger.debug("READLINK %d %x %d -> %s",path,buf,bufsize,data)
@@ -1400,7 +1387,7 @@ class Linux(Platform):
         logger.debug("sys_set_tid_address(%016x) -> 0", tidptr)
         return 1000 #tha pid
     def sys_faccessat(self, dirfd, pathname, mode, flags):
-        filename = self._read_string(pathname)
+        filename = self.current.read_string(pathname)
         logger.debug("sys_faccessat(%016x, %s, %x, %x) -> 0", dirfd, filename, mode, flags)
         return -1
 

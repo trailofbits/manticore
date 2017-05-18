@@ -12,6 +12,7 @@ import inspect
 import sys
 import types
 import logging
+import StringIO
 
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
@@ -476,6 +477,30 @@ class Cpu(object):
         for i in xrange(size):
             result.append(Operators.CHR(self.read_int( where+i, 8)))
         return result
+
+    def read_string(self, where, max_length=None):
+        '''
+        Read a NUL-terminated concrete buffer from memory.
+
+        :param int where: Address to read string from
+        :param int max_length:
+            The size in bytes to cap the string at, or None [default] for no
+            limit.
+        :return: string read
+        :rtype: str
+        '''
+        s = StringIO.StringIO()
+        while True:
+            c = self.read_int(where, 8)
+            if c == 0:
+                break
+            if max_length is not None:
+                if max_length == 0:
+                    break
+                max_length = max_length - 1
+            s.write(Operators.CHR(c))
+            where += 1
+        return s.getvalue()
 
     #######################################
     # Decoder
