@@ -4579,7 +4579,7 @@ class X86Cpu(Cpu):
         arg1 = op1.read()
         mask = (1 << item_size)-1
         res = 0
-        for pos in reversed(xrange(0, op0.size, item_size)):
+        for pos in reversed(xrange(0, size, item_size*2)):
             item0 = Operators.ZEXTEND( ( arg0 >> pos )& mask, size)
             item1 = Operators.ZEXTEND( ( arg1 >> pos )& mask, size)
             res = res << item_size
@@ -4587,6 +4587,46 @@ class X86Cpu(Cpu):
             res = res << item_size
             res |= item0
         op0.write(res)
+
+    def _PUNPCKH(cpu, op0, op1, item_size):
+        '''
+        Generic PUNPCKH
+        '''
+        assert op0.size == op1.size
+        size = op0.size
+        arg0 = op0.read()
+        arg1 = op1.read()
+        print hex(arg0)
+        print hex(arg1)
+        print size, item_size
+        mask = (1 << item_size)-1
+        res = 0
+        for pos in xrange(0, size, item_size*2):
+            item0 = Operators.ZEXTEND( ( arg0 >> (pos+item_size) )& mask, size)
+            item1 = Operators.ZEXTEND( ( arg1 >> (pos+item_size) )& mask, size)
+            print hex(mask), pos, hex(item0), hex(item1)
+            res = res << item_size
+            res |= item0
+            res = res << item_size
+            res |= item1
+        print hex(res)
+        op0.write(res)
+
+    @instruction
+    def PUNPCKHBW(cpu, dest, src):
+        cpu._PUNPCKH(dest, src, 8)
+
+    @instruction
+    def PUNPCKHWD(cpu, dest, src):
+        cpu._PUNPCKH(dest, src, 16)
+
+    @instruction
+    def PUNPCKHDQ(cpu, dest, src):
+        cpu._PUNPCKH(dest, src, 32)
+
+    @instruction
+    def PUNPCKHQDQ(cpu, dest, src):
+        cpu._PUNPCKH(dest, src, 64)
 
     @instruction
     def PUNPCKLBW(cpu, dest, src):

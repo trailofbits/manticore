@@ -769,6 +769,11 @@ class Executor(object):
                     new_state = current_state = None
 
                 except MemoryException as e:
+                    import traceback
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    print "*** print_exc:"
+                    traceback.print_exc()
+
                     logger.error("MemoryException at PC: 0x{:016x}. Cause: {}\n".format(current_state.cpu.instruction.address, e.cause))
                     self.newerror(current_state.cpu.PC)
                     self.generate_testcase(current_state, "Memory Exception: " + str(e))
