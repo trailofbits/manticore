@@ -264,16 +264,35 @@ class Linux(Platform):
         :param list envp: The ENV variables.
         '''
         super(Linux, self).__init__(program)
-        argv = [] if argv is None else argv
-        envp = [] if envp is None else envp
 
         self.program = program
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []
-        self.syscall_arg_regs = []
-
         self.files = []
+
+        if program != None:
+            self.elf = ELFFile(file(program))
+            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
+
+            self._init_cpu(self.arch)
+            self._init_fds()
+            self._execve(program, argv, envp)
+
+    @classmethod
+    def empty_platform(cls, arch):
+        '''
+        Create a platform without an ELF loaded.
+
+        :param str arch: The architecture of the new platform
+        :rtype: Linux
+        '''
+        platform = cls(None)
+        platform._init_cpu(arch)
+        platform._init_fds()
+        return platform
+
+    def _init_fds(self):
         # open standard files stdin, stdout, stderr
         logger.debug("Opening file descriptors (0,1,2)")
         self.input = Socket()
@@ -295,16 +314,29 @@ class Linux(Platform):
         assert self._open(stdout) == 1
         assert self._open(stderr) == 2
 
-        #Load process and setup socketpairs
-        arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[ELFFile(file(program)).get_machine_arch()]
+    def _init_cpu(self, arch):
         cpu = self._mk_proc(arch)
         self.procs = [cpu]
+        self._current = 0
         self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
         self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
 
-        self._current = 0
+    def _execve(self, program, argv, envp):
+        '''
+        Load `program` and establish program state, such as stack and arguments.
+
+        :param program str: The ELF binary to load
+        :param argv list: argv array
+        :param envp list: envp array
+        '''
+        argv = [] if argv is None else argv
+        envp = [] if envp is None else envp
+
+        logger.debug("Loading {} as a {} elf".format(program,self.arch))
+
         self.load(program)
-        self._arch_specific_init(arch)
+        self._arch_specific_init()
+
         self._stack_top = self.current.STACK
         self.setup_stack([program]+argv, envp)
 
@@ -630,7 +662,8 @@ class Linux(Platform):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state. 
         Creates the stack and loads the environment variables and the arguments in it.
-        :param filename: pathname of the file to be executed.
+
+        :param filename: pathname of the file to be executed. (used for auxv)
         :raises error:
             - 'Not matching cpu': if the program is compiled for a different architecture
             - 'Not matching memory': if the program is compiled for a different address size
@@ -639,10 +672,9 @@ class Linux(Platform):
         #load elf See binfmt_elf.c
         #read the ELF object file
         cpu = self.current
-        elf = ELFFile(file(filename))
-        arch = {'x86':'i386','x64':'amd64', 'ARM': 'armv7'}[elf.get_machine_arch()]
+        elf = self.elf
+        arch = self.arch
         addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
-        logger.debug("Loading %s as a %s elf"%(filename,arch))
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
@@ -850,27 +882,26 @@ class Linux(Platform):
         self.end_data = end_data
         self.elf_brk = real_elf_brk
 
-
-
-        auxv = {}
-        auxv['AT_PHDR']     = load_addr+elf.header.e_phoff # Program headers for program 
-        auxv['AT_PHENT']    = elf.header.e_phentsize       # Size of program header entry
-        auxv['AT_PHNUM']    = elf.header.e_phnum           # Number of program headers 
-        auxv['AT_PAGESZ']   = cpu.memory.page_size         # System page size 
-        auxv['AT_BASE']     = interpreter_base             # Base address of interpreter 
-        auxv['AT_FLAGS']    = elf.header.e_flags           # Flags 
-        auxv['AT_ENTRY']    = elf_entry                    # Entry point of program 
-        auxv['AT_UID']      = 1000                         # Real uid 
-        auxv['AT_EUID']     = 1000                         # Effective uid 
-        auxv['AT_GID']      = 1000                         # Real gid 
-        auxv['AT_EGID']     = 1000                         # Effective gid 
-        auxv['AT_CLKTCK']   = 100                          # Frequency of times() 
-        auxv['AT_HWCAP']    = 0                            # Machine-dependent hints about processor capabilities.
-        auxv['AT_RANDOM']   = at_random                    # Address of 16 random bytes.
-        auxv['AT_EXECFN']   = at_execfn                    # Filename of executable.
-        self.auxv = auxv
         at_random = cpu.push_bytes('A'*16)
         at_execfn = cpu.push_bytes(filename+'\x00')
+
+        self.auxv = {
+            'AT_PHDR'   : load_addr+elf.header.e_phoff, # Program headers for program 
+            'AT_PHENT'  : elf.header.e_phentsize,       # Size of program header entry
+            'AT_PHNUM'  : elf.header.e_phnum,           # Number of program headers 
+            'AT_PAGESZ' : cpu.memory.page_size,         # System page size 
+            'AT_BASE'   : interpreter_base,             # Base address of interpreter 
+            'AT_FLAGS'  : elf.header.e_flags,           # Flags 
+            'AT_ENTRY'  : elf_entry,                    # Entry point of program 
+            'AT_UID'    : 1000,                         # Real uid 
+            'AT_EUID'   : 1000,                         # Effective uid 
+            'AT_GID'    : 1000,                         # Real gid 
+            'AT_EGID'   : 1000,                         # Effective gid 
+            'AT_CLKTCK' : 100,                          # Frequency of times() 
+            'AT_HWCAP'  : 0,                            # Machine-dependent hints about processor capabilities.
+            'AT_RANDOM' : at_random,                    # Address of 16 random bytes.
+            'AT_EXECFN' : at_execfn,                    # Filename of executable.
+        }
   
     def _open(self, f):
         '''
