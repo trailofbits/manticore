@@ -247,7 +247,7 @@ class Socket(object):
         return len(buf)
 
 
-class Linux(object):
+class Linux(Platform):
     '''
     A simple Linux Operating System Platform.
     This class emulates the most common Linux system calls
@@ -260,6 +260,7 @@ class Linux(object):
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         '''
+        super(Linux, self).__init__(program)
 
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
@@ -294,7 +295,11 @@ class Linux(object):
 
         #Load process and setup socketpairs
         arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[ELFFile(file(program)).get_machine_arch()]
-        self.procs = [self._mk_proc(arch)]
+        cpu = self._mk_proc(arch)
+        self.procs = [cpu]
+        self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
+        self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
+
 
         self._current = 0
         self.load(program)
@@ -353,6 +358,9 @@ class Linux(object):
         state['auxv'] = self.auxv
         state['program'] = self.program
         state['syscall_arg_regs'] = self.syscall_arg_regs
+        state['functionabi'] = self._function_abi
+        state['syscallabi'] = self._syscall_abi
+
         if hasattr(self, '_arm_tls_memory'):
             state['_arm_tls_memory'] = self._arm_tls_memory
         return state
@@ -401,6 +409,9 @@ class Linux(object):
         self.auxv = state['auxv']
         self.program = state['program']
         self.syscall_arg_regs = state['syscall_arg_regs']
+        self._function_abi = state['functionabi']
+        self._syscall_abi = state['syscallabi']
+
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
 
@@ -943,7 +954,6 @@ class Linux(object):
         with the file descriptor fd to the argument offset according to the directive whence
 
 
-        :param self: current CPU.
         :param fd: a valid file descriptor
         :param offset: the offset in bytes
         :param whence: SEEK_SET: The file offset is set to offset bytes. 
@@ -997,7 +1007,6 @@ class Linux(object):
           to by buf to the file descriptor fd. If count is zero, write returns 0
           and optionally sets *tx_bytes to zero.
 
-          :param cpu           current CPU
           :param fd            a valid file descriptor
           :param buf           a memory buffer
           :param count         number of bytes to send 

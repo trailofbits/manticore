@@ -22,6 +22,7 @@ from .core.smtlib import solver, Expression, Operators, SolverException, Array, 
 from core.smtlib import BitVec, Bool
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
+from .utils.nointerrupt import DelayedKeyboardInterrupt
 logger = logging.getLogger('MANTICORE')
 
 
@@ -479,16 +480,9 @@ class Manticore(object):
             p.start()
 
     def _join_workers(self):
-        while len(self._workers) > 0:
-            w = self._workers.pop()
-            try:
-                w.join()
-            except KeyboardInterrupt, e:
-                self._executor.shutdown()
-                # multiprocessing.dummy.Process does not support terminate
-                if hasattr(w, 'terminate'):
-                    w.terminate()
-                self._workers.append(w)
+        with DelayedKeyboardInterrupt(self._executor.shutdown):    
+            while len(self._workers) > 0:
+                w = self._workers.pop().join()
 
 
     ############################################################################
