@@ -1087,12 +1087,17 @@ class Linux(Platform):
         from datetime import datetime
         def pad(s):
             return s +'\x00'*(65-len(s))
-        uname = pad('Linux')
-        uname += pad('localhost')
-        uname += pad('8.1.6-gentoo')
-        uname += pad('#4 SMP '+  datetime.now().strftime("%a %b %d %H:%M:%S ART %Y") )
-        uname += pad('x86_64')
-        uname += pad('(none)')
+
+        now = datetime.now().strftime("%a %b %d %H:%M:%S ART %Y")
+
+        info =  (('sysname',    'Linux'),
+                 ('nodename',   'ubuntu'),
+                 ('release',    '4.4.0-77-generic'),
+                 ('version',    '#98 SMP '+now),
+                 ('machine',    'armv71'), # 'x86_64'
+                 ('domainname', ''))
+
+        uname = ''.join(pad(pair[1]) for pair in info)
         self.current.write_bytes(old_utsname, uname)
         logger.debug("sys_newuname(...) -> %s", uname)
         return 0
