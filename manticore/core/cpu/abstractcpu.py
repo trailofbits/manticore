@@ -492,8 +492,12 @@ class Cpu(object):
         s = StringIO.StringIO()
         while True:
             c = self.read_int(where, 8)
+
+            assert not issymbolic(c)
+
             if c == 0:
                 break
+
             if max_length is not None:
                 if max_length == 0:
                     break
