@@ -152,11 +152,6 @@ class Executor(object):
         '''
         with self._lock:
             yield self._shared_context
-        #FIXME What if we do a: 
-        # for name,value in self._shared_context.items():
-        #   self._shared_context[name]=value
-        # too expensive ?
-
 
     def _register_state_callbacks(self, state, state_id):
         '''
