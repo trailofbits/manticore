@@ -1676,36 +1676,33 @@ class Linux(Platform):
         '''
         stat = self.files[fd].stat()
 
-        def add(bytes, val):
-            if   bytes == 2: format = 'H'
-            elif bytes == 4: format = 'L'
-            elif bytes == 8: format = 'Q'
-            else: raise ValueError("bad width")
+        def add(width, val):
+            format = {2:'H',4:'L',8:'Q'}[width]
             return struct.pack('<'+format, val)
 
-        bufstat  = add(8, stat.st_dev)        #0    # unsigned long long      st_dev;
-        bufstat += add(4, 0)                  #8    # unsigned char   __pad0[4];
-        bufstat += add(4, stat.st_ino)        #12   # unsigned long   __st_ino;
-        bufstat += add(4, stat.st_mode)       #16   # unsigned int    st_mode;
-        bufstat += add(4, stat.st_nlink)      #20   # unsigned int    st_nlink;
-        bufstat += add(4, stat.st_uid)        #24   # unsigned long   st_uid;
-        bufstat += add(4, stat.st_gid)        #28   # unsigned long   st_gid;
-        bufstat += add(8, stat.st_rdev)       #32   # unsigned long long      st_rdev;
-        bufstat += add(4, 0)                  #40   # unsigned char   __pad3[4];
-        bufstat += add(4, stat.st_size)       #44   # long long       st_size;
-        bufstat += add(4, stat.st_blksize)    #48   # unsigned long   st_blksize;
-        bufstat += add(4, stat.st_blocks)     #52   # unsigned long long st_blocks;
-        bufstat += add(8, int(stat.st_atime)) #56     # unsigned long   st_atime;
-        #bufstat += add(4, 0)                         # unsigned long   st_atime_nsec;
-        bufstat += add(8, int(stat.st_mtime)) #64     # unsigned long   st_mtime;
-        #bufstat += add(4, 0)                         # unsigned long   st_mtime_nsec;
-        bufstat += add(8, int(stat.st_ctime)) #72     # unsigned long   st_ctime;
-        #bufstat += add(4, 0)                  # unsigned long   st_ctime_nsec;
+        def to_timespec(ts):
+            return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
+
+        logger.debug("sys_fstat64 {}".format(fd))
+
+        bufstat  = add(8, stat.st_dev)        # unsigned long long      st_dev;
+        bufstat += add(4, 0)                  # unsigned char   __pad0[4];
+        bufstat += add(4, stat.st_ino)        # unsigned long   __st_ino;
+        bufstat += add(4, stat.st_mode)       # unsigned int    st_mode;
+        bufstat += add(4, stat.st_nlink)      # unsigned int    st_nlink;
+        bufstat += add(4, stat.st_uid)        # unsigned long   st_uid;
+        bufstat += add(4, stat.st_gid)        # unsigned long   st_gid;
+        bufstat += add(8, stat.st_rdev)       # unsigned long long st_rdev;
+        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
+        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
+        bufstat += add(8, stat.st_size)       # long long       st_size;
+        bufstat += add(8, stat.st_blksize)    # unsigned long   st_blksize;
+        bufstat += add(8, stat.st_blocks)     # unsigned long long st_blocks;
+        bufstat += to_timespec(stat.st_atime) # unsigned long   st_atime;
+        bufstat += to_timespec(stat.st_mtime) # unsigned long   st_mtime;
+        bufstat += to_timespec(stat.st_ctime) # unsigned long   st_ctime;
         bufstat += add(8, stat.st_ino)        # unsigned long long      st_ino;
-
-        #bufstat = ''.join([chr(x) for x in range(1, len(bufstat)+1)])
-        print 'Writing ', len(bufstat), ' bytes'
-
+        
         self.current.write_bytes(buf, bufstat)
         return 0
 
