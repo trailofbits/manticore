@@ -1160,7 +1160,7 @@ class Linux(Platform):
         try :
             if os.path.abspath(filename).startswith('/proc/self'):
                 if filename == '/proc/self/exe':
-                    filename = self.program
+                    filename =  os.abspath(self.program)
                 else:
                     logger.info("FIXME!")
                     pass
@@ -1225,7 +1225,7 @@ class Linux(Platform):
             return -errno.EINVAL
         filename = self._read_string(path)
         if filename == '/proc/self/exe':
-            data = self.program
+            data = os.path.abspath(self.program)
         else:
             data = os.readlink(filename)[:bufsize]
         self.current.write_bytes(buf, data)
@@ -1449,10 +1449,10 @@ class Linux(Platform):
 
         try:
             table = getattr(linux_syscalls, self.current.machine)
-            name = table[index]
+            name = table.get(index,None)
             implementation = getattr(self, name)
         except (AttributeError, KeyError):
-            raise SyscallNotImplemented(self.current.address_bit_size, index)
+            raise SyscallNotImplemented(self.current.address_bit_size, index, name)
 
         return self._syscall_abi.invoke(implementation)
 
