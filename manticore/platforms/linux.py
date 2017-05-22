@@ -1085,21 +1085,29 @@ class Linux(Platform):
         :return: C{0} on success  
         '''
         from datetime import datetime
+
         def pad(s):
             return s +'\x00'*(65-len(s))
 
         now = datetime.now().strftime("%a %b %d %H:%M:%S ART %Y")
 
+        if self.current.machine == 'amd64':
+            machine = 'x86_64'
+        elif self.current.machine == 'i386':
+            machine = 'i386'
+        elif self.current.machine == 'armv7':
+            machine = 'armv71'
+
         info =  (('sysname',    'Linux'),
                  ('nodename',   'ubuntu'),
                  ('release',    '4.4.0-77-generic'),
-                 ('version',    '#98 SMP '+now),
-                 ('machine',    'armv71'), # 'x86_64'
+                 ('version',    '#98 SMP ' + now),
+                 ('machine',    machine),
                  ('domainname', ''))
 
-        uname = ''.join(pad(pair[1]) for pair in info)
-        self.current.write_bytes(old_utsname, uname)
-        logger.debug("sys_newuname(...) -> %s", uname)
+        uname_buf = ''.join(pad(pair[1]) for pair in info)
+        self.current.write_bytes(old_utsname, uname_buf)
+        logger.debug("sys_newuname(...) -> %s", uname_buf)
         return 0
 
     def sys_brk(self, brk):
