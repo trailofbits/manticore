@@ -4581,8 +4581,10 @@ class X86Cpu(Cpu):
         res = 0
         count =0 
         for pos in xrange(0, size/item_size):
-            item0 = Operators.ZEXTEND( ( arg0 >> pos*item_size )& mask, size)
-            item1 = Operators.ZEXTEND( ( arg1 >> pos*item_size )& mask, size)
+            if count >= size:
+                break
+            item0 = Operators.ZEXTEND( ( arg0 >> (pos * item_size) )& mask, size)
+            item1 = Operators.ZEXTEND( ( arg1 >> (pos * item_size) )& mask, size)
             res |= item0 << count
             count += item_size
             res |= item1 << count
@@ -4602,11 +4604,11 @@ class X86Cpu(Cpu):
         mask = (1 << item_size)-1
         res = 0
         count = 0
-        for pos in reversed(xrange(0, size, item_size)):
+        for pos in reversed(xrange(0, size/item_size)):
             if count >= size:
                 break
-            item0 = Operators.ZEXTEND( ( arg0 >> pos )& mask, size)
-            item1 = Operators.ZEXTEND( ( arg1 >> pos )& mask, size)
+            item0 = Operators.ZEXTEND( ( arg0 >> (pos * item_size) )& mask, size)
+            item1 = Operators.ZEXTEND( ( arg1 >> (pos * item_size) )& mask, size)
             res = res << item_size
             res |= item1
             res = res << item_size
