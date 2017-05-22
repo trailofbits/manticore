@@ -220,7 +220,7 @@ class State(object):
         '''
         return self._solver.get_value(self.constraints, expr)
 
-    def solve_n(self, expr, nsolves=1, policy='minmax'):
+    def solve_n(self, expr, nsolves, policy='minmax'):
         '''
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         `nsolves` solutions.
