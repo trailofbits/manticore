@@ -129,7 +129,6 @@ def initialize(state):
     logger.debug("Done")
     for reg in gdb_regs:
         state.cpu.write_register(reg.upper(), gdb_regs[reg])
-    m.context['initialized'] = True
 
 
 def verify(argv):
@@ -150,9 +149,8 @@ def verify(argv):
             initialize(state)
             initialized = True
 
-        if last_instruction != state.cpu.PC:
-            if last_instruction is not None:
-                on_after(state, last_instruction)
+        if last_instruction is not None and last_instruction.PC != state.cpu.PC:
+            on_after(state, last_instruction)
 
         last_instruction = state.cpu.instruction
 
