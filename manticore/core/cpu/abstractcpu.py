@@ -325,6 +325,10 @@ class Cpu(object):
         self._md.syntax = 0
         self.instruction = None
 
+        # Ensure that regfile created STACK/PC aliases
+        assert hasattr(self, 'STACK')
+        assert hasattr(self, 'PC')
+
     def __getstate__(self):
         state = {}
         state['regfile'] = self._regfile
