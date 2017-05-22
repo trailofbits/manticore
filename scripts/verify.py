@@ -51,7 +51,7 @@ def cmp_regs(cpu, should_print=False):
             differing = True
     return differing
 
-def on_after(m, state, last_instruction):
+def on_after(state, last_instruction):
     '''
     Handle syscalls (import memory) and bail if we diverge
     '''
@@ -93,7 +93,7 @@ def on_after(m, state, last_instruction):
     if cmp_regs(state.cpu, should_print=True):
         state.abandon()
 
-def sync_svc(m, state):
+def sync_svc(state):
     '''
     Mirror some service calls in manticore. 
     '''
@@ -116,7 +116,7 @@ def sync_svc(m, state):
 
     state.cpu.memory.push_record_writes()
 
-def initialize(m, state):
+def initialize(state):
     '''
     Synchronize the stack and register state
     '''
@@ -148,12 +148,12 @@ def verify(argv):
         global initialized, last_instruction, syscall
         # Initialize our state to QEMU's
         if not initialized:
-            initialize(m, state)
+            initialize(state)
             initialized = True
 
         if last_instruction != state.cpu.PC:
             if last_instruction is not None:
-                on_after(m, state, last_instruction)
+                on_after(state, last_instruction)
 
         last_instruction = state.cpu.instruction
 
@@ -167,7 +167,7 @@ def verify(argv):
             gdb.stepi()
 
         if mnemonic == 'svc':
-            sync_svc(m, state)
+            sync_svc(state)
 
     m.run(stack_top=stack_top)
 
