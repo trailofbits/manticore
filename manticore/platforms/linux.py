@@ -1624,9 +1624,46 @@ class Linux(Platform):
     
     def sys_newfstat(self, fd, buf):
         '''
-        Wrapper for fstat
+        Determines information about a file based on its file descriptor.
+        :rtype: int
+        :param fd: the file descriptor of the file that is being inquired.
+        :param buf: a buffer where data about the file will be stored. 
+        :return: C{0} on success.   
         '''
-        return self.sys_fstat(fd, buf)
+        stat = self.files[fd].stat()
+
+        def add(width, val):
+            format = {2:'H',4:'L',8:'Q'}[width]
+            return struct.pack('<'+format, val)
+
+        def to_timespec(width, ts):
+            'Note: this is a platform-dependent timespec (8 or 16 bytes)'
+            return add(width, int(ts)) + add(width, int(ts % 1 * 1e9))
+
+        # From linux/arch/x86/include/uapi/asm/stat.h
+        # Numerous fields are native width-wide
+        nw = self.current.address_bit_size / 8
+
+        bufstat  = add(nw, stat.st_dev)     # long st_dev
+        bufstat += add(nw, stat.st_ino)     # long st_ino
+        bufstat += add(nw, stat.st_nlink)   # long st_nlink
+        bufstat += add(4, stat.st_mode)     # 32 mode
+        bufstat += add(4, stat.st_uid)      # 32 uid
+        bufstat += add(4, stat.st_gid)      # 32 gid
+        bufstat += add(4, 0)                # 32 _pad
+        bufstat += add(nw, stat.st_rdev)    # long st_rdev
+        bufstat += add(nw, stat.st_size)    # long st_size 
+        bufstat += add(nw, stat.st_blksize) # long st_blksize
+        bufstat += add(nw, stat.st_blocks)  # long st_blocks
+        bufstat += to_timespec(nw, stat.st_atime) # long   st_atime, nsec;
+        bufstat += to_timespec(nw, stat.st_mtime) # long   st_mtime, nsec;
+        bufstat += to_timespec(nw, stat.st_ctime) # long   st_ctime, nsec;
+
+        logger.debug("sys_newfstat({}, ...) -> {} bytes".format(fd, len(bufstat)))
+
+        self.current.write_bytes(buf, bufstat)
+        return 0
+
 
     def sys_fstat64(self, fd, buf):
         '''
