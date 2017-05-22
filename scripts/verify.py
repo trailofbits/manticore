@@ -128,7 +128,10 @@ def initialize(state):
         state.cpu.write_int(address, b, 8)
     logger.debug("Done")
     for reg in gdb_regs:
-        state.cpu.write_register(reg.upper(), gdb_regs[reg])
+        value = gdb_regs[reg]
+        if reg.endswith('psr'):
+            reg = 'apsr'
+        state.cpu.write_register(reg.upper(), value)
 
 
 def verify(argv):
