@@ -1381,6 +1381,8 @@ class Linux(Platform):
         logger.debug("BSD account not implemented!")
         return -1
 
+    def sys_exit(self, error_code):
+        return self.sys_exit_group(error_code)
     def sys_exit_group(self, error_code):
         '''
         Exits all threads in a process

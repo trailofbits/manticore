@@ -2,7 +2,7 @@ from capstone import *
 from capstone.x86 import *
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
 from .abstractcpu import ConcretizeRegister, ConcretizeRegister, ConcretizeArgument
-from .abstractcpu import Interruption, Sysenter, Syscall
+from .abstractcpu import Interruption, Syscall
 from functools import wraps
 import collections
 from ..smtlib import *
@@ -5534,7 +5534,7 @@ class X86Cpu(Cpu):
         
         :param cpu: current CPU. 
         '''
-        raise Sysenter()
+        raise Syscall()
 
     @instruction
     def TZCNT(cpu, dest, src):

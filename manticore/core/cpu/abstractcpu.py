@@ -21,14 +21,14 @@ class CpuException(Exception):
     pass
 
 class DecodeException(CpuException):
-    ''' Raised when trying to decode an unknown or invalid instruction '''
-    def __init__(self, pc, bytes, extra):
+    ''' 
+    Raised when trying to decode an unknown or invalid instruction '''
+    def __init__(self, pc, bytes):
         super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
         self.pc=pc
         self.bytes=bytes
-        self.extra=extra
 
-class InstructionNotImplementedError(DecodeException):
+class InstructionNotImplementedError(CpuException):
     '''
     Exception raised when you try to execute an instruction that is not yet
     implemented in the emulator. Add it to the Cpu-specific implementation.
@@ -49,11 +49,6 @@ class Syscall(CpuException):
     ''' '''
     def __init__(self):
         super(Syscall, self).__init__("CPU Syscall")
-
-class Sysenter(CpuException):
-    ''' '''
-    def __init__(self):
-        super(Sysenter, self).__init__("CPU Sysenter")
 
 
 class ConcretizeRegister(CpuException):
@@ -224,7 +219,7 @@ class RegisterFile(object):
 
         :param register: a register name
         '''
-        return self._alias(register) in self.all_registers 
+        return self._alias(register) in self.all_registers
 
 class Abi(object):
     '''
@@ -355,12 +350,12 @@ class SyscallAbi(Abi):
 from ...utils.event import Signal
 
 ############################################################################
-# Abstract cpu encapsulating common cpu methods used by models and executor.
+# Abstract cpu encapsulating common cpu methods used by platforms and executor.
 class Cpu(object):
     '''
     Base class for all Cpu architectures. Functionality common to all
     architectures (and expected from users of a Cpu) should be here. Commonly
-    used by models and py:class:manticore.core.Executor
+    used by plaform and py:class:manticore.core.Executor
 
     The following attributes need to be defined in any derived class
 
@@ -409,7 +404,7 @@ class Cpu(object):
     def __setstate__(self, state):
         Cpu.__init__(self, state['regfile'], state['memory'])
         self._icount = state['icount']
-        return 
+        return
 
     @property
     def icount(self):
@@ -564,11 +559,11 @@ class Cpu(object):
         Private method to decorate a capstone Operand to our needs. See Operand
         class
         '''
-        raise NotImplemented
+        raise NotImplementedError
 
     def decode_instruction(self, pc):
         '''
-        This will decode an instruction from memory pointed by @pc
+        This will decode an instruction from memory pointed by `pc`
 
         :param int pc: address of the instruction
         '''
@@ -579,30 +574,43 @@ class Cpu(object):
             logger.debug("Intruction cache hit at %x", pc)
             return self._instruction_cache[pc]
 
+        def _read_concrete_byte(address):
+            #This reads a byte from memory ignoring permissions
+            #and concretize it if symbolic
+            c = self.memory[address]
+            if issymbolic(c):
+                assert isinstance(c, BitVec) and  c.size == 8
+                if isinstance(c, Constant):
+                    c = chr(c.value)
+                else:
+                    logger.error('Concretize executable memory %r %r', c, text )
+                    raise ConcretizeMemory(self.memory, address = pc,
+                                            size = 8 * self.max_instr_width, 
+                                            policy = 'INSTRUCTION' )
+            assert isinstance(c, str)
+            return c
+
         text = ''
         try:
-            # check access_ok
+            # Read Instruction from memory
             for i in xrange(0, self.max_instr_width):
-                c = self.memory[pc+i]
-                if issymbolic(c):
-                    assert isinstance(c, BitVec) and  c.size == 8
-                    if isinstance(c, Constant):
-                        c = chr(c.value)
-                    else:
-                        logger.info('Trying to execute instructions from invalid memory')
-                        logger.error('Concretize executable memory %r %r', c, text )
-                        raise ConcretizeMemory(self.memory, address = pc,
-                                                size = 8 * self.max_instr_width, 
-                                                policy = 'INSTRUCTION' )
-                        break
-                assert isinstance(c, str)
-                text += c
-        except MemoryException:
+                text += _read_concrete_byte(pc+i)
+        except MemoryException as mem_except:
+            #lets not raise this exception in case the instruction
+            #was fully read befor the page
             pass
-        
-        code = text.ljust(self.max_instr_width, '\x00')
-        instruction = next(self._md.disasm(code, pc))
 
+        #Pad potentially incomplete intruction with zeroes
+        code = text.ljust(self.max_instr_width, '\x00')
+
+        #decode the instructtion from code 
+        try:
+            instruction = next(self._md.disasm(code, pc))
+        except Exception as e:
+            #Fixme/Caveat  will raise
+            raise DecodeException(pc, code) 
+
+        #Check that the decoded intruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc+instruction.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
@@ -670,9 +678,6 @@ class Cpu(object):
         #broadcast event
         self.did_execute_instruction(instruction)
 
-
-    def get_syscall_description(self):
-        raise NotImplemented
 
     def emulate(self, instruction):
         '''

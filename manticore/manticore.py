@@ -79,7 +79,7 @@ def makeLinux(program, argv, env, concrete_start = ''):
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
     if any(issymbolic(x) for val in argv + env for x in val):
-        model.setup_stack([program] + argv, env)
+        platform.setup_stack([program] + argv, env)
 
     platform.input.transmit(concrete_start)
 
@@ -200,6 +200,7 @@ class Manticore(object):
             self._binary_obj = ELFFile(file(self._binary))
 
         self._init_logging()
+
 
     def _init_logging(self): 
 

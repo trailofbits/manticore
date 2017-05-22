@@ -4,7 +4,7 @@ import sys, os, struct
 from ..core.memory import Memory, MemoryException, SMemory32, Memory32
 from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
-from ..core.cpu.x86 import I386Cpu, Sysenter
+from ..core.cpu.x86 import I386Cpu, Syscall
 from ..core.cpu.abstractcpu import Interruption, Syscall
 from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
@@ -324,7 +324,7 @@ class Windows(object):
             self.clocks += 1
             if self.clocks % 10000 == 0:
                 self.sched()
-        except Sysenter as e:
+        except Syscall as e:
             try:
                 e = None
                 self.sysenter(self.current)
