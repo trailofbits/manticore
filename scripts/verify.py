@@ -36,7 +36,6 @@ def cmp_regs(cpu, should_print=False):
     :rtype: bool
     '''
     differing = False
-    regs = {}
     gdb_regs = gdb.getCanonicalRegisters()
     for name in sorted(gdb_regs):
         vg = gdb_regs[name]
@@ -160,7 +159,7 @@ def verify(argv):
         loc, instr = [x.strip() for x in gdb.getInstruction().split(':')]
         mnemonic = instr.split('\t')[0]
             
-        first_param, syscall = gdb.getR('R0'), gdb.getR('R7')
+        syscall = gdb.getR('R7')
 
         # Kernel helpers are inline in QEMU
         if (state.cpu.PC >> 16) != 0xffff:
@@ -178,5 +177,5 @@ if __name__ == "__main__":
         print "usage: python {} PROGRAM1 ...".format(argv[0])
         exit()
 
-    overall_results = verify(args)
+    verify(args)
 
