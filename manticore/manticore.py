@@ -270,10 +270,10 @@ class Manticore(object):
     def verbosity(self, setting):
         levels = [[],
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('PLATFORM', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('PLATFORM', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('PLATFORM', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('PLATFORM', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG), ('SMT', logging.DEBUG)]]
+                  [('PLATFORM', logging.DEBUG)],
+                  [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('REGISTERS', logging.DEBUG)],
+                  [('SMT', logging.DEBUG)]]
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]
@@ -281,9 +281,10 @@ class Manticore(object):
         clamped = clamp(setting, 0, len(levels) - 1)
         if clamped != setting:
             logger.debug("%s not between 0 and %d, forcing to %d", setting, len(levels) - 1, clamped)
-        for log_type, level in levels[clamped]:
-            logging.getLogger(log_type).setLevel(level)
-            self._verbosity = setting
+        for level in range(clamped + 1):
+            for log_type, log_level in levels[level]:
+                logging.getLogger(log_type).setLevel(log_level)
+        self._verbosity = clamped
 
     def hook(self, pc):
         '''
