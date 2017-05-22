@@ -1856,11 +1856,14 @@ class SLinux(Linux):
         '''
         stat = self.files[fd].stat()
 
-        def add(bytes, val):
-            if bytes == 2:   format = 'H'
-            elif bytes == 4: format = 'L'
-            elif bytes == 8: format = 'Q'
+        def add(width, val):
+            format = {2:'H',4:'L',8:'Q'}[width]
             return struct.pack('<'+format, val)
+
+        def to_timespec(ts):
+            return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
+
+        logger.debug("sys_fstat {}".format(fd))
 
         bufstat  = add(8, stat.st_dev)    # dev_t st_dev;
         bufstat += add(4, 0)              # __pad1
@@ -1873,12 +1876,9 @@ class SLinux(Linux):
         bufstat += add(4, stat.st_size)   # unsigned long  st_size;
         bufstat += add(4, stat.st_blksize)# unsigned long  st_blksize;
         bufstat += add(4, stat.st_blocks) # unsigned long  st_blocks;
-        bufstat += add(4, stat.st_atime)  # unsigned long  st_atime;
-        bufstat += add(4, 0)              # unsigned long  st_atime_nsec;
-        bufstat += add(4, stat.st_mtime)  # unsigned long  st_mtime;
-        bufstat += add(4, 0)              # unsigned long  st_mtime_nsec;
-        bufstat += add(4, stat.st_ctime)  # unsigned long  st_ctime;
-        bufstat += add(4, 0)              # unsigned long  st_ctime_nsec;
+        bufstat += to_timespec(stat.st_atime)  # unsigned long  st_atime;
+        bufstat += to_timespec(stat.st_mtime)  # unsigned long  st_mtime;
+        bufstat += to_timespec(stat.st_ctime)  # unsigned long  st_ctime;
         bufstat += add(4, 0)              # unsigned long  __unused4;
         bufstat += add(4, 0)              # unsigned long  __unused5;
 
