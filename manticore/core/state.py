@@ -231,6 +231,19 @@ class State(object):
         '''
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
 
+    def solve_buffer(self, addr, nbytes):
+        '''
+        Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
+        concretize it
+
+        :param int address: Address of buffer to conretize
+        :param int nbytes: Size of buffer to conretize
+        :return: Concrete contents of buffer
+        :rtype: list[int]
+        '''
+        buffer = self.cpu.read_bytes(addr, nbytes)
+        return ''.join(chr(self.solve_one(x)) for x in buffer)
+
     def record_branches(self, targets):
         _, branch = self.last_pc
         for target in targets:
