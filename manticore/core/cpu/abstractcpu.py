@@ -12,6 +12,7 @@ import inspect
 import sys
 import types
 import logging
+import StringIO
 
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
@@ -324,6 +325,10 @@ class Cpu(object):
         self._md.syntax = 0
         self.instruction = None
 
+        # Ensure that regfile created STACK/PC aliases
+        assert 'STACK' in self._regfile
+        assert 'PC' in self._regfile
+
     def __getstate__(self):
         state = {}
         state['regfile'] = self._regfile
@@ -476,6 +481,78 @@ class Cpu(object):
         for i in xrange(size):
             result.append(Operators.CHR(self.read_int( where+i, 8)))
         return result
+
+    def read_string(self, where, max_length=None):
+        '''
+        Read a NUL-terminated concrete buffer from memory.
+
+        :param int where: Address to read string from
+        :param int max_length:
+            The size in bytes to cap the string at, or None [default] for no
+            limit.
+        :return: string read
+        :rtype: str
+        '''
+        s = StringIO.StringIO()
+        while True:
+            c = self.read_int(where, 8)
+
+            assert not issymbolic(c)
+
+            if c == 0:
+                break
+
+            if max_length is not None:
+                if max_length == 0:
+                    break
+                max_length = max_length - 1
+            s.write(Operators.CHR(c))
+            where += 1
+        return s.getvalue()
+
+    def push_bytes(self, data):
+        '''
+        Write `data` to the stack and decrement the stack pointer accordingly.
+
+        :param str data: Data to write
+        '''
+        self.STACK -= len(data)
+        self.write_bytes(self.STACK, data)
+        return self.STACK
+
+    def pop_bytes(self, nbytes):
+        '''
+        Read `nbytes` from the stack, increment the stack pointer, and return
+        data.
+
+        :param int nbytes: How many bytes to read
+        :return: Data read from the stack
+        '''
+        data = self.read_bytes(self.STACK, nbytes)
+        self.STACK += nbytes
+        return data
+
+    def push_int(self, value):
+        '''
+        Decrement the stack pointer and write `value` to the stack.
+
+        :param int value: The value to write
+        :return: New stack pointer
+        '''
+        self.STACK -= self.address_bit_size / 8
+        self.write_int(self.STACK, value)
+        return self.STACK
+
+    def pop_int(self):
+        '''
+        Read a value from the stack and increment the stack pointer.
+
+        :return: Value read
+        '''
+        value = self.read_int(self.STACK)
+        self.STACK += self.address_bit_size / 8
+        return value
+
 
     #######################################
     # Decoder
