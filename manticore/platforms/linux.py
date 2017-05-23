@@ -594,7 +594,6 @@ class Linux(Platform):
 
         logger.debug("\tAuxv:")
         for name, val in auxv.items():
-            print name ,val
             logger.debug("\t\t%s: %s"%(name, hex(val)))
 
         #We save the argument and environment pointers
