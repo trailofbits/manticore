@@ -1094,20 +1094,13 @@ class Linux(Platform):
 
         def pad(s):
             return s +'\x00'*(65-len(s))
+
         now = datetime.now().strftime("%a %b %d %H:%M:%S ART %Y")
-
-        if self.current.machine == 'amd64':
-            machine = 'x86_64'
-        elif self.current.machine == 'i386':
-            machine = 'i386'
-        elif self.current.machine == 'armv7':
-            machine = 'armv71'
-
         info =  (('sysname',    'Linux'),
                  ('nodename',   'ubuntu'),
                  ('release',    '4.4.0-77-generic'),
                  ('version',    '#98 SMP ' + now),
-                 ('machine',    machine),
+                 ('machine',    self._uname_machine),
                  ('domainname', ''))
 
         uname_buf = ''.join(pad(pair[1]) for pair in info)
@@ -1748,10 +1741,13 @@ class Linux(Platform):
         self._arch_reg_init(arch)
 
         if arch == 'i386':
+            self._uname_machine = 'i386'
             self.syscall_arg_regs = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']
         elif arch == 'amd64':
+            self._uname_machine = 'x86_64'
             self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
         elif arch == 'armv7':
+            self._uname_machine = 'armv71'
             self.syscall_arg_regs = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6']
             self._init_arm_kernel_helpers()
 
