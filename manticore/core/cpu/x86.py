@@ -4567,55 +4567,52 @@ class X86Cpu(Cpu):
         '''
         res = dest.write(dest.read() ^ src.read())
 
-
-
-    def _PUNPCKL(cpu, op0, op1, item_size):
+    def _PUNPCKL(cpu, dest, src, item_size):
         '''
         Generic PUNPCKL
         '''
-        assert op0.size == op1.size
-        size = op0.size
-        arg0 = op0.read()
-        arg1 = op1.read()
+        assert dest.size == src.size
+        size = dest.size
+        dest_value = dest.read()
+        src_value = src.read()
         mask = (1 << item_size)-1
         res = 0
         count =0 
         for pos in xrange(0, size/item_size):
             if count >= size:
                 break
-            item0 = Operators.ZEXTEND( ( arg0 >> (pos * item_size) )& mask, size)
-            item1 = Operators.ZEXTEND( ( arg1 >> (pos * item_size) )& mask, size)
+            item0 = Operators.ZEXTEND( ( dest_value >> (pos * item_size) )& mask, size)
+            item1 = Operators.ZEXTEND( ( src_value >> (pos * item_size) )& mask, size)
             res |= item0 << count
             count += item_size
             res |= item1 << count
             count += item_size
 
-        op0.write(res)
+        dest.write(res)
 
-    #                 dest,src
-    def _PUNPCKH(cpu, op0, op1, item_size):
+    def _PUNPCKH(cpu, dest, src, item_size):
         '''
         Generic PUNPCKH
         '''
-        assert op0.size == op1.size
-        size = op0.size
-        arg0 = op0.read()
-        arg1 = op1.read()
+        assert dest.size == src.size
+        size = dest.size
+        dest_value = dest.read()
+        src_value = src.read()
         mask = (1 << item_size)-1
         res = 0
         count = 0
         for pos in reversed(xrange(0, size/item_size)):
             if count >= size:
                 break
-            item0 = Operators.ZEXTEND( ( arg0 >> (pos * item_size) )& mask, size)
-            item1 = Operators.ZEXTEND( ( arg1 >> (pos * item_size) )& mask, size)
+            item0 = Operators.ZEXTEND( ( dest_value >> (pos * item_size) )& mask, size)
+            item1 = Operators.ZEXTEND( ( src_value >> (pos * item_size) )& mask, size)
             res = res << item_size
             res |= item1
             res = res << item_size
             res |= item0
             count += item_size*2
 
-        op0.write(res)
+        dest.write(res)
 
     @instruction
     def PUNPCKHBW(cpu, dest, src):
