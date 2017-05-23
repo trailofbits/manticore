@@ -18,7 +18,7 @@ python:
 install:
 - travis_retry pip install -U pip
 - travis_retry pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
-- travis_retry pip install --no-binary capstone --no-binary keystone-engine -e .[dev]  # cs/ks can have pip install issues (cs issues #445)
+- travis_retry pip install --no-binary keystone-engine -e .[dev]  # ks can have pip install issues
 - scripts/travis_install_z3.sh
 script:
 - scripts/travis_test.sh

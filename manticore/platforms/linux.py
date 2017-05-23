@@ -582,10 +582,14 @@ class Linux(Platform):
         auxv = self.auxv
         logger.debug("Setting argv, envp and auxv.")
         logger.debug("\tArguments: %s"%repr(argv))
-        logger.debug("\tEnvironment:")
-        for e in envp:
-            logger.debug("\t\t%s"%repr(e))
+        if envp:
+            logger.debug("\tEnvironment:")
+            for e in envp:
+                logger.debug("\t\t%s"%repr(e))
 
+        logger.debug("\tAuxv:")
+        for name, val in auxv.items():
+            logger.debug("\t\t%s: %s"%(name, hex(val)))
 
         #We save the argument and environment pointers
         argvlst=[]
@@ -677,7 +681,7 @@ class Linux(Platform):
         elf = ELFFile(file(filename))
         arch = {'x86':'i386','x64':'amd64', 'ARM': 'armv7'}[elf.get_machine_arch()]
         addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
-        logger.debug("Loading %s as a %s elf"%(filename,arch))
+        logger.debug("Loading %s as a %s elf"%(filename, arch))
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
@@ -686,7 +690,9 @@ class Linux(Platform):
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != 'PT_INTERP':
                 continue
-            interpreter = ELFFile(file(elf_segment.data()[:-1]))
+            interpreter_filename = elf_segment.data()[:-1]
+            logger.info('Interpreter filename: %s', interpreter_filename)
+            interpreter = ELFFile(file(interpreter_filename))
             break
         if not interpreter is None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()
@@ -1088,7 +1094,6 @@ class Linux(Platform):
 
         def pad(s):
             return s +'\x00'*(65-len(s))
-
         now = datetime.now().strftime("%a %b %d %H:%M:%S ART %Y")
 
         if self.current.machine == 'amd64':
@@ -1167,7 +1172,7 @@ class Linux(Platform):
         try :
             if os.path.abspath(filename).startswith('/proc/self'):
                 if filename == '/proc/self/exe':
-                    filename = self.program
+                    filename =  os.abspath(self.program)
                 else:
                     logger.info("FIXME!")
                     pass
@@ -1239,7 +1244,10 @@ class Linux(Platform):
         if bufsize <= 0:
             return -errno.EINVAL
         filename = self._read_string(path)
-        data = os.readlink(filename)[:bufsize]
+        if filename == '/proc/self/exe':
+            data = os.path.abspath(self.program)
+        else:
+            data = os.readlink(filename)[:bufsize]
         self.current.write_bytes(buf, data)
         logger.debug("READLINK %d %x %d -> %s",path,buf,bufsize,data)
         return len(data)
@@ -1465,10 +1473,10 @@ class Linux(Platform):
 
         try:
             table = getattr(linux_syscalls, self.current.machine)
-            name = table[index]
+            name = table.get(index,None)
             implementation = getattr(self, name)
         except (AttributeError, KeyError):
-            raise SyscallNotImplemented(self.current.address_bit_size, index)
+            raise SyscallNotImplemented(self.current.address_bit_size, index, name)
 
         return self._syscall_abi.invoke(implementation)
 
