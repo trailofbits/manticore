@@ -5,7 +5,7 @@ import weakref
 import errno
 import os, struct
 from ..utils.helpers import issymbolic
-from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
+from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
@@ -30,14 +30,6 @@ def perms_from_elf(elf_flags):
 
 def perms_from_protflags(prot_flags):
     return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
-
-class SymbolicSyscallArgument(Exception):
-    def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
-        self.reg_num = reg_num
-        self.message = message
-        self.policy = policy
-        super(SymbolicSyscallArgument, self).__init__(message)
-
 
 class File(object):
     def __init__(self, *args, **kwargs):
@@ -272,16 +264,35 @@ class Linux(Platform):
         :param list envp: The ENV variables.
         '''
         super(Linux, self).__init__(program)
-        argv = [] if argv is None else argv
-        envp = [] if envp is None else envp
 
         self.program = program
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []
-        self.syscall_arg_regs = []
-
         self.files = []
+
+        if program != None:
+            self.elf = ELFFile(file(program))
+            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
+
+            self._init_cpu(self.arch)
+            self._init_fds()
+            self._execve(program, argv, envp)
+
+    @classmethod
+    def empty_platform(cls, arch):
+        '''
+        Create a platform without an ELF loaded.
+
+        :param str arch: The architecture of the new platform
+        :rtype: Linux
+        '''
+        platform = cls(None)
+        platform._init_cpu(arch)
+        platform._init_fds()
+        return platform
+
+    def _init_fds(self):
         # open standard files stdin, stdout, stderr
         logger.debug("Opening file descriptors (0,1,2)")
         self.input = Socket()
@@ -303,16 +314,29 @@ class Linux(Platform):
         assert self._open(stdout) == 1
         assert self._open(stderr) == 2
 
-        #Load process and setup socketpairs
-        arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[ELFFile(file(program)).get_machine_arch()]
+    def _init_cpu(self, arch):
         cpu = self._mk_proc(arch)
         self.procs = [cpu]
+        self._current = 0
         self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
         self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
 
-        self._current = 0
+    def _execve(self, program, argv, envp):
+        '''
+        Load `program` and establish program state, such as stack and arguments.
+
+        :param program str: The ELF binary to load
+        :param argv list: argv array
+        :param envp list: envp array
+        '''
+        argv = [] if argv is None else argv
+        envp = [] if envp is None else envp
+
+        logger.debug("Loading {} as a {} elf".format(program,self.arch))
+
         self.load(program)
-        self._arch_specific_init(arch)
+        self._arch_specific_init()
+
         self._stack_top = self.current.STACK
         self.setup_stack([program]+argv, envp)
 
@@ -366,9 +390,9 @@ class Linux(Platform):
         state['elf_brk'] = self.elf_brk
         state['auxv'] = self.auxv
         state['program'] = self.program
-        state['syscall_arg_regs'] = self.syscall_arg_regs
         state['functionabi'] = self._function_abi
         state['syscallabi'] = self._syscall_abi
+        state['uname_machine'] = self._uname_machine
         if hasattr(self, '_arm_tls_memory'):
             state['_arm_tls_memory'] = self._arm_tls_memory
         return state
@@ -416,24 +440,11 @@ class Linux(Platform):
         self.elf_brk = state['elf_brk']
         self.auxv = state['auxv']
         self.program = state['program']
-        self.syscall_arg_regs = state['syscall_arg_regs']
         self._function_abi = state['functionabi']
         self._syscall_abi = state['syscallabi']
+        self._uname_machine = state['uname_machine']
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
-
-    def _read_string(self, buf):
-        """
-        Reads a null terminated concrete buffer form memory
-        :todo: FIX. move to cpu or memory 
-        """
-        filename = ""
-        for i in xrange(0,1024):
-            c = Operators.CHR(self.current.read_int(buf + i, 8))
-            if c == '\x00':
-                break
-            filename += c
-        return filename
 
     def _init_arm_kernel_helpers(self):
         '''
@@ -567,18 +578,6 @@ class Linux(Platform):
         # stack from the original top
         cpu.STACK = self._stack_top
 
-        # TODO cpu.STACK_push_bytes() pls
-        def push_bytes(data):
-            cpu.STACK -= len(data)
-            cpu.write_bytes(cpu.STACK, data)
-            return cpu.STACK
-
-        def push_int(value):
-            cpu.STACK -= cpu.address_bit_size/8
-            cpu.write_int(cpu.STACK, value, cpu.address_bit_size)
-            return cpu.STACK
-
-
         auxv = self.auxv
         logger.debug("Setting argv, envp and auxv.")
         logger.debug("\tArguments: %s"%repr(argv))
@@ -597,12 +596,12 @@ class Linux(Platform):
 
         #end envp marker empty string
         for evar in envp:
-            push_bytes('\x00')
-            envplst.append(push_bytes(evar))
+            cpu.push_bytes('\x00')
+            envplst.append(cpu.push_bytes(evar))
 
-        for arg in argv:                
-            push_bytes('\x00')
-            argvlst.append(push_bytes(arg))
+        for arg in argv:
+            cpu.push_bytes('\x00')
+            argvlst.append(cpu.push_bytes(arg))
 
 
         #Put all auxv strings into the string stack area.
@@ -610,7 +609,7 @@ class Linux(Platform):
 
         for name, value in auxv.items():
             if hasattr(value, '__len__'):
-                push_bytes(value)
+                cpu.push_bytes(value)
                 auxv[name]=cpu.STACK
 
         #The "secure execution" mode of secure_getenv() is controlled by the
@@ -642,34 +641,35 @@ class Linux(Platform):
                     'AT_SYSINFO_EHDR': 33, #Pointer to the global system page used for system calls and other nice things.
         }
         #AT_NULL
-        push_int(0)       
-        push_int(0)       
+        cpu.push_int(0)       
+        cpu.push_int(0)       
         for name, val in auxv.items():
-            push_int(val)
-            push_int(auxvnames[name])
+            cpu.push_int(val)
+            cpu.push_int(auxvnames[name])
 
 
         # NULL ENVP
-        push_int(0)
+        cpu.push_int(0)
         for var in reversed(envplst):              # ENVP n
-            push_int(var)
+            cpu.push_int(var)
         envp = cpu.STACK
 
         # NULL ARGV
-        push_int(0)
+        cpu.push_int(0)
         for arg in reversed(argvlst):              # Argv n
-            push_int(arg)
+            cpu.push_int(arg)
         argv = cpu.STACK
 
         #ARGC
-        push_int(len(argvlst))
+        cpu.push_int(len(argvlst))
 
 
     def load(self, filename):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state. 
         Creates the stack and loads the environment variables and the arguments in it.
-        :param filename: pathname of the file to be executed.
+
+        :param filename: pathname of the file to be executed. (used for auxv)
         :raises error:
             - 'Not matching cpu': if the program is compiled for a different architecture
             - 'Not matching memory': if the program is compiled for a different address size
@@ -678,8 +678,8 @@ class Linux(Platform):
         #load elf See binfmt_elf.c
         #read the ELF object file
         cpu = self.current
-        elf = ELFFile(file(filename))
-        arch = {'x86':'i386','x64':'amd64', 'ARM': 'armv7'}[elf.get_machine_arch()]
+        elf = self.elf
+        arch = self.arch
         addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf"%(filename, arch))
 
@@ -891,35 +891,26 @@ class Linux(Platform):
         self.end_data = end_data
         self.elf_brk = real_elf_brk
 
+        at_random = cpu.push_bytes('A'*16)
+        at_execfn = cpu.push_bytes(filename+'\x00')
 
-        #put auxv strings in stack
-        # TODO move into cpu as cpu.stack_push(), possibly removing the need for stack_sub, stack_add?
-        def push_bytes( value ):
-            cpu.STACK -= len(value)
-            cpu.write_bytes(cpu.STACK, value)
-            return cpu.STACK
-
-        at_random = push_bytes('A'*16)
-        at_execfn = push_bytes(filename+'\x00')
-
-
-        auxv = {}
-        auxv['AT_PHDR']     = load_addr+elf.header.e_phoff # Program headers for program 
-        auxv['AT_PHENT']    = elf.header.e_phentsize       # Size of program header entry
-        auxv['AT_PHNUM']    = elf.header.e_phnum           # Number of program headers 
-        auxv['AT_PAGESZ']   = cpu.memory.page_size         # System page size 
-        auxv['AT_BASE']     = interpreter_base             # Base address of interpreter 
-        auxv['AT_FLAGS']    = elf.header.e_flags           # Flags 
-        auxv['AT_ENTRY']    = elf_entry                    # Entry point of program 
-        auxv['AT_UID']      = 1000                         # Real uid 
-        auxv['AT_EUID']     = 1000                         # Effective uid 
-        auxv['AT_GID']      = 1000                         # Real gid 
-        auxv['AT_EGID']     = 1000                         # Effective gid 
-        auxv['AT_CLKTCK']   = 100                          # Frequency of times() 
-        auxv['AT_HWCAP']    = 0                            # Machine-dependent hints about processor capabilities.
-        auxv['AT_RANDOM']   = at_random                    # Address of 16 random bytes.
-        auxv['AT_EXECFN']   = at_execfn                    # Filename of executable.
-        self.auxv = auxv
+        self.auxv = {
+            'AT_PHDR'   : load_addr+elf.header.e_phoff, # Program headers for program 
+            'AT_PHENT'  : elf.header.e_phentsize,       # Size of program header entry
+            'AT_PHNUM'  : elf.header.e_phnum,           # Number of program headers 
+            'AT_PAGESZ' : cpu.memory.page_size,         # System page size 
+            'AT_BASE'   : interpreter_base,             # Base address of interpreter 
+            'AT_FLAGS'  : elf.header.e_flags,           # Flags 
+            'AT_ENTRY'  : elf_entry,                    # Entry point of program 
+            'AT_UID'    : 1000,                         # Real uid 
+            'AT_EUID'   : 1000,                         # Effective uid 
+            'AT_GID'    : 1000,                         # Real gid 
+            'AT_EGID'   : 1000,                         # Effective gid 
+            'AT_CLKTCK' : 100,                          # Frequency of times() 
+            'AT_HWCAP'  : 0,                            # Machine-dependent hints about processor capabilities.
+            'AT_RANDOM' : at_random,                    # Address of 16 random bytes.
+            'AT_EXECFN' : at_execfn,                    # Filename of executable.
+        }
   
     def _open(self, f):
         '''
@@ -1161,7 +1152,7 @@ class Linux(Platform):
         # buf: address of zero-terminated pathname
         # flags/access: file access bits
         # perms: file permission mode
-        filename = self._read_string(buf)
+        filename = self.current.read_string(buf)
         try :
             if os.path.abspath(filename).startswith('/proc/self'):
                 if filename == '/proc/self/exe':
@@ -1236,7 +1227,7 @@ class Linux(Platform):
         '''
         if bufsize <= 0:
             return -errno.EINVAL
-        filename = self._read_string(path)
+        filename = self.current.read_string(path)
         if filename == '/proc/self/exe':
             data = os.path.abspath(self.program)
         else:
@@ -1436,7 +1427,7 @@ class Linux(Platform):
         logger.debug("sys_set_tid_address(%016x) -> 0", tidptr)
         return 1000 #tha pid
     def sys_faccessat(self, dirfd, pathname, mode, flags):
-        filename = self._read_string(pathname)
+        filename = self.current.read_string(pathname)
         logger.debug("sys_faccessat(%016x, %s, %x, %x) -> 0", dirfd, filename, mode, flags)
         return -1
 
@@ -1735,31 +1726,20 @@ class Linux(Platform):
         self.sys_close(fd)
         return ret
     
-    def _arch_specific_init(self, arch):
-        assert arch in {'i386', 'amd64', 'armv7'}
+    def _arch_specific_init(self):
+        assert self.arch in {'i386', 'amd64', 'armv7'}
 
-        self._arch_reg_init(arch)
-
-        if arch == 'i386':
+        if self.arch == 'i386':
             self._uname_machine = 'i386'
-            self.syscall_arg_regs = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP']
-        elif arch == 'amd64':
+        elif self.arch == 'amd64':
             self._uname_machine = 'x86_64'
-            self.syscall_arg_regs = ['RDI', 'RSI', 'RDX', 'R10', 'R8', 'R9']
-        elif arch == 'armv7':
+        elif self.arch == 'armv7':
             self._uname_machine = 'armv71'
-            self.syscall_arg_regs = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6']
             self._init_arm_kernel_helpers()
 
-
-    def _arch_reg_init(self, arch):
-        if arch in {'i386', 'amd64'}:
-            x86_defaults = {
-                'CS': 0x23,
-                'SS': 0x2b,
-                'DS': 0x2b,
-                'ES': 0x2b,
-            }
+        # Establish segment registers for x86 architectures
+        if self.arch in {'i386', 'amd64'}:
+            x86_defaults = { 'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b, }
             for reg, val in x86_defaults.iteritems():
                 self.current.regfile.write(reg, val)
 
@@ -1826,26 +1806,19 @@ class SLinux(Linux):
 
 
     #Dispatchers...
-    def syscall(self):
-        try:
-            return super(SLinux, self).syscall()
-        except SymbolicSyscallArgument, e:
-            self.current.PC = self.current.PC - self.current.instruction.size
-            reg_name = self.syscall_arg_regs[e.reg_num]
-            raise ConcretizeRegister(reg_name,e.message,e.policy)
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise SymbolicSyscallArgument(0)
+            raise ConcretizeArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise SymbolicSyscallArgument(1)
+            raise ConcretizeArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(2)
+            raise ConcretizeArgument(2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
@@ -1966,15 +1939,15 @@ class SLinux(Linux):
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise SymbolicSyscallArgument(0)
+            raise ConcretizeArgument(0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise SymbolicSyscallArgument(1)
+            raise ConcretizeArgument(1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise SymbolicSyscallArgument(2)
+            raise ConcretizeArgument(2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
 
