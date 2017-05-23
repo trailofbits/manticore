@@ -281,7 +281,7 @@ class Linux(Platform):
 
             self._init_cpu(self.arch)
             self._init_fds()
-            self._execve(program, argv, envp)
+            self._execve(program, argv, envp, stack_top, interpreter_base)
 
     @classmethod
     def empty_platform(cls, arch):
@@ -325,20 +325,22 @@ class Linux(Platform):
         self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
         self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
 
-    def _execve(self, program, argv, envp):
+    def _execve(self, program, argv, envp, stack_top, interpreter_base):
         '''
         Load `program` and establish program state, such as stack and arguments.
 
         :param program str: The ELF binary to load
         :param argv list: argv array
         :param envp list: envp array
+        :param int stack_top: Specify the top of stack 
+        :param int interpreter_base: The loading address of the interpreter (If
         '''
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
         logger.debug("Loading {} as a {} elf".format(program,self.arch))
 
-        self.load(program)
+        self.load(program, stack_top, interpreter_base)
         self._arch_specific_init()
 
         self._stack_top = self.current.STACK
@@ -592,6 +594,7 @@ class Linux(Platform):
 
         logger.debug("\tAuxv:")
         for name, val in auxv.items():
+            print name ,val
             logger.debug("\t\t%s: %s"%(name, hex(val)))
 
         #We save the argument and environment pointers
@@ -906,7 +909,7 @@ class Linux(Platform):
             'AT_PHENT'  : elf.header.e_phentsize,       # Size of program header entry
             'AT_PHNUM'  : elf.header.e_phnum,           # Number of program headers 
             'AT_PAGESZ' : cpu.memory.page_size,         # System page size 
-            'AT_BASE'   : interpreter_base,             # Base address of interpreter 
+            'AT_BASE'   : base,                         # Base address of interpreter 
             'AT_FLAGS'  : elf.header.e_flags,           # Flags 
             'AT_ENTRY'  : elf_entry,                    # Entry point of program 
             'AT_UID'    : 1000,                         # Real uid 
