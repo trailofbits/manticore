@@ -958,6 +958,18 @@ class Linux(Platform):
         logger.debug("umask({:o})".format(mask))
         return os.umask(mask)
 
+    def sys_chdir(self, path):
+        '''
+        chdir - Change current working directory
+        :param int path: Pointer to path
+        '''
+        path_str = self.current.read_string(path)
+        logger.debug("chdir({})".format(path_str))
+        try:
+            return os.chdir(path_str)
+        except OSError as e:
+            return e.errno
+
     def sys_lseek(self, fd, offset, whence):
         '''
         lseek - reposition read/write file offset
