@@ -949,6 +949,15 @@ class Linux(Platform):
     def _is_open(self, fd):
         return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
+    def sys_umask(self, mask):
+        '''
+        umask - Set file creation mode mask
+
+        :param int mask: New mask
+        '''
+        logger.debug("umask({:o})".format(mask))
+        return os.umask(mask)
+
     def sys_lseek(self, fd, offset, whence):
         '''
         lseek - reposition read/write file offset
