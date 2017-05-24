@@ -392,6 +392,7 @@ class Linux(Platform):
         state['program'] = self.program
         state['functionabi'] = self._function_abi
         state['syscallabi'] = self._syscall_abi
+        state['uname_machine'] = self._uname_machine
         if hasattr(self, '_arm_tls_memory'):
             state['_arm_tls_memory'] = self._arm_tls_memory
         return state
@@ -441,6 +442,7 @@ class Linux(Platform):
         self.program = state['program']
         self._function_abi = state['functionabi']
         self._syscall_abi = state['syscallabi']
+        self._uname_machine = state['uname_machine']
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
 
@@ -1080,16 +1082,21 @@ class Linux(Platform):
         :return: C{0} on success  
         '''
         from datetime import datetime
+
         def pad(s):
             return s +'\x00'*(65-len(s))
-        uname = pad('Linux')
-        uname += pad('localhost')
-        uname += pad('8.1.6-gentoo')
-        uname += pad('#4 SMP '+  datetime.now().strftime("%a %b %d %H:%M:%S ART %Y") )
-        uname += pad('x86_64')
-        uname += pad('(none)')
-        self.current.write_bytes(old_utsname, uname)
-        logger.debug("sys_newuname(...) -> %r", uname)
+
+        now = datetime.now().strftime("%a %b %d %H:%M:%S ART %Y")
+        info =  (('sysname',    'Linux'),
+                 ('nodename',   'ubuntu'),
+                 ('release',    '4.4.0-77-generic'),
+                 ('version',    '#98 SMP ' + now),
+                 ('machine',    self._uname_machine),
+                 ('domainname', ''))
+
+        uname_buf = ''.join(pad(pair[1]) for pair in info)
+        self.current.write_bytes(old_utsname, uname_buf)
+        logger.debug("sys_newuname(...) -> %s", uname_buf)
         return 0
 
     def sys_brk(self, brk):
@@ -1180,9 +1187,17 @@ class Linux(Platform):
         logger.debug("KILL, Ignoring Sending signal %d to pid %d", sig, pid )
         return 0
 
+    def sys_rt_sigaction(self, signum, act,oldact):
+        'Wrapper for sys_sigaction'
+        return self.sys_sigaction(signum, act, oldact)
+
     def sys_sigaction(self, signum, act, oldact):
         logger.debug("SIGACTION, Ignoring changing signal handler for signal %d", signum)
         return 0
+
+    def sys_rt_sigprocmask(self, cpu, how, newset, oldset):
+        'Wrapper for sys_sigprocmask'
+        return self.sys_sigprocmask(cpu, how, newset, oldset)
 
     def sys_sigprocmask(self, cpu, how, newset, oldset):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
@@ -1371,7 +1386,7 @@ class Linux(Platform):
         
         :return: C{0}
         '''
-        logger.debug("Ignoring sys_set_priority")
+        logger.debug("Ignoring sys_setpriority")
         return 0
 
     def sys_acct(self, path):
@@ -1383,6 +1398,10 @@ class Linux(Platform):
         '''
         logger.debug("BSD account not implemented!")
         return -1
+
+    def sys_exit(self, error_code):
+        'Wrapper for sys_exit_group'
+        return self.sys_exit_group(error_code)
 
     def sys_exit_group(self, error_code):
         '''
@@ -1597,9 +1616,46 @@ class Linux(Platform):
     
     def sys_newfstat(self, fd, buf):
         '''
-        Wrapper for fstat64()
+        Determines information about a file based on its file descriptor.
+        :rtype: int
+        :param fd: the file descriptor of the file that is being inquired.
+        :param buf: a buffer where data about the file will be stored. 
+        :return: C{0} on success.   
         '''
-        return self.sys_fstat64(fd, buf)
+        stat = self.files[fd].stat()
+
+        def add(width, val):
+            format = {2:'H',4:'L',8:'Q'}[width]
+            return struct.pack('<'+format, val)
+
+        def to_timespec(width, ts):
+            'Note: this is a platform-dependent timespec (8 or 16 bytes)'
+            return add(width, int(ts)) + add(width, int(ts % 1 * 1e9))
+
+        # From linux/arch/x86/include/uapi/asm/stat.h
+        # Numerous fields are native width-wide
+        nw = self.current.address_bit_size / 8
+
+        bufstat  = add(nw, stat.st_dev)     # long st_dev
+        bufstat += add(nw, stat.st_ino)     # long st_ino
+        bufstat += add(nw, stat.st_nlink)   # long st_nlink
+        bufstat += add(4, stat.st_mode)     # 32 mode
+        bufstat += add(4, stat.st_uid)      # 32 uid
+        bufstat += add(4, stat.st_gid)      # 32 gid
+        bufstat += add(4, 0)                # 32 _pad
+        bufstat += add(nw, stat.st_rdev)    # long st_rdev
+        bufstat += add(nw, stat.st_size)    # long st_size 
+        bufstat += add(nw, stat.st_blksize) # long st_blksize
+        bufstat += add(nw, stat.st_blocks)  # long st_blocks
+        bufstat += to_timespec(nw, stat.st_atime) # long   st_atime, nsec;
+        bufstat += to_timespec(nw, stat.st_mtime) # long   st_mtime, nsec;
+        bufstat += to_timespec(nw, stat.st_ctime) # long   st_ctime, nsec;
+
+        logger.debug("sys_newfstat({}, ...) -> {} bytes".format(fd, len(bufstat)))
+
+        self.current.write_bytes(buf, bufstat)
+        return 0
+
 
     def sys_fstat64(self, fd, buf):
         '''
@@ -1610,56 +1666,44 @@ class Linux(Platform):
         :return: C{0} on success.
         :todo: Fix device number.   
         '''
-        ''' unsigned long	st_dev;		/* Device.  */
-            unsigned long	st_ino;		/* File serial number.  */
-            unsigned int	st_mode;	/* File mode.  */
-            unsigned int	st_nlink;	/* Link count.  */
-            unsigned int	st_uid;		/* User ID of the file's owner.  */
-            unsigned int	st_gid;		/* Group ID of the file's group. */
-            unsigned long	st_rdev;	/* Device number, if device.  */
-            unsigned long	__pad1;
-            long		st_size;	/* Size of file, in bytes.  */
-            int		st_blksize;	/* Optimal block size for I/O.  */
-            int		__pad2;
-            long		st_blocks;	/* Number 512-byte blocks allocated. */
-            long		st_atime;	/* Time of last access.  */
-            unsigned long	st_atime_nsec;
-            long		st_mtime;	/* Time of last modification.  */
-            unsigned long	st_mtime_nsec;
-            long		st_ctime;	/* Time of last status change.  */
-            unsigned long	st_ctime_nsec;
-            unsigned int	__unused4;
-            unsigned int	__unused5;'''
         stat = self.files[fd].stat()
 
-        bufstat = ''
-        bufstat += struct.pack('<Q', stat.st_dev)
-        bufstat += struct.pack('<Q', stat.st_ino)
-        bufstat += struct.pack('<L', stat.st_mode)
-        bufstat += struct.pack('<L', stat.st_nlink)
-        bufstat += struct.pack('<L', stat.st_uid)
-        bufstat += struct.pack('<L', stat.st_gid)
+        def add(width, val):
+            format = {2:'H',4:'L',8:'Q'}[width]
+            return struct.pack('<'+format, val)
 
-        bufstat += struct.pack('<Q', 0)
-        bufstat += struct.pack('<Q', 0) #pad
+        def to_timespec(ts):
+            return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
 
-        bufstat += struct.pack('<Q', stat.st_size)
-        bufstat += struct.pack('<L', 1000 )
-        bufstat += struct.pack('<L', 0) #pad
+        logger.debug("sys_fstat64 {}".format(fd))
 
-        bufstat += struct.pack('<Q', stat.st_size/512)
-
-        bufstat += struct.pack('d', stat.st_atime)
-        bufstat += struct.pack('<Q', 0)
-        bufstat += struct.pack('d', stat.st_mtime)
-        bufstat += struct.pack('<Q', 0)
-        bufstat += struct.pack('d', stat.st_ctime)
-        bufstat += struct.pack('<Q', 0)
-        bufstat += struct.pack('<L', 0) #pad
-        bufstat += struct.pack('<L', 0) #pad
-
+        bufstat  = add(8, stat.st_dev)        # unsigned long long      st_dev;
+        bufstat += add(4, 0)                  # unsigned char   __pad0[4];
+        bufstat += add(4, stat.st_ino)        # unsigned long   __st_ino;
+        bufstat += add(4, stat.st_mode)       # unsigned int    st_mode;
+        bufstat += add(4, stat.st_nlink)      # unsigned int    st_nlink;
+        bufstat += add(4, stat.st_uid)        # unsigned long   st_uid;
+        bufstat += add(4, stat.st_gid)        # unsigned long   st_gid;
+        bufstat += add(8, stat.st_rdev)       # unsigned long long st_rdev;
+        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
+        bufstat += add(4, 0)                  # unsigned char   __pad3[4];
+        bufstat += add(8, stat.st_size)       # long long       st_size;
+        bufstat += add(8, stat.st_blksize)    # unsigned long   st_blksize;
+        bufstat += add(8, stat.st_blocks)     # unsigned long long st_blocks;
+        bufstat += to_timespec(stat.st_atime) # unsigned long   st_atime;
+        bufstat += to_timespec(stat.st_mtime) # unsigned long   st_mtime;
+        bufstat += to_timespec(stat.st_ctime) # unsigned long   st_ctime;
+        bufstat += add(8, stat.st_ino)        # unsigned long long      st_ino;
+        
         self.current.write_bytes(buf, bufstat)
         return 0
+
+    def sys_newstat(self, fd, buf):
+        '''
+        Wrapper for stat64()
+        '''
+        return self.sys_stat64(fd, buf)
+
     def sys_stat64(self, path, buf):
         '''
         Determines information about a file based on its filename (for Linux 64 bits).
@@ -1685,14 +1729,19 @@ class Linux(Platform):
     def _arch_specific_init(self):
         assert self.arch in {'i386', 'amd64', 'armv7'}
 
-        # Establish segment registers for x86 arches
+        if self.arch == 'i386':
+            self._uname_machine = 'i386'
+        elif self.arch == 'amd64':
+            self._uname_machine = 'x86_64'
+        elif self.arch == 'armv7':
+            self._uname_machine = 'armv71'
+            self._init_arm_kernel_helpers()
+
+        # Establish segment registers for x86 architectures
         if self.arch in {'i386', 'amd64'}:
             x86_defaults = { 'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b, }
             for reg, val in x86_defaults.iteritems():
                 self.current.regfile.write(reg, val)
-
-        if self.arch == 'armv7':
-            self._init_arm_kernel_helpers()
 
     @staticmethod
     def _interp_total_size(interp):
@@ -1782,41 +1831,40 @@ class SLinux(Linux):
         :param buf: a buffer where data about the file will be stored. 
         :return: C{0} on success.   
         '''
-        '''
-           dev_t     st_dev;     /* ID of device containing file */
-           ino_t     st_ino;     /* inode number */
-           mode_t    st_mode;    /* protection */
-           nlink_t   st_nlink;   /* number of hard links */
-           uid_t     st_uid;     /* user ID of owner */
-           gid_t     st_gid;     /* group ID of owner */
-           dev_t     st_rdev;    /* device ID (if special file) */
-           off_t     st_size;    /* total size, in bytes */
-           blksize_t st_blksize; /* blocksize for file system I/O */
-           blkcnt_t  st_blocks;  /* number of 512B blocks allocated */
-           time_t    st_atime;   /* time of last access */
-           time_t    st_mtime;   /* time of last modification */
-           time_t    st_ctime;   /* time of last status change */
-        '''
         stat = self.files[fd].stat()
-        bufstat = ''
-        bufstat += struct.pack('<Q', stat.st_dev)
-        bufstat += struct.pack('<L', 0)  # pad1
-        bufstat += struct.pack('<L', stat.st_ino)
-        bufstat += struct.pack('<L', stat.st_mode)
-        bufstat += struct.pack('<L', stat.st_nlink)
-        bufstat += struct.pack('<L', 0)  # uid
-        bufstat += struct.pack('<L', 0)  # gid
-        bufstat += struct.pack('<Q', 0)  # rdev
-        bufstat += struct.pack('<L', 0)  # pad2
-        bufstat += struct.pack('<L', stat.st_size)
-        bufstat += struct.pack('<L', stat.st_blksize)
-        bufstat += struct.pack('<L', stat.st_blocks)
 
-        bufstat += struct.pack('<Q', stat.st_atime)
-        bufstat += struct.pack('<Q', stat.st_ctime)
-        bufstat += struct.pack('<Q', stat.st_mtime)
+        def add(width, val):
+            format = {2:'H',4:'L',8:'Q'}[width]
+            return struct.pack('<'+format, val)
+
+        def to_timespec(ts):
+            return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
+
+        logger.debug("sys_fstat {}".format(fd))
+
+        bufstat  = add(8, stat.st_dev)    # dev_t st_dev;
+        bufstat += add(4, 0)              # __pad1
+        bufstat += add(4, stat.st_ino)    # unsigned long  st_ino;
+        bufstat += add(4, stat.st_mode)   # unsigned short st_mode;
+        bufstat += add(4, stat.st_nlink)  # unsigned short st_nlink;
+        bufstat += add(4, stat.st_uid)    # unsigned short st_uid;
+        bufstat += add(4, stat.st_gid)    # unsigned short st_gid;
+        bufstat += add(4, stat.st_rdev)   # unsigned long  st_rdev;
+        bufstat += add(4, stat.st_size)   # unsigned long  st_size;
+        bufstat += add(4, stat.st_blksize)# unsigned long  st_blksize;
+        bufstat += add(4, stat.st_blocks) # unsigned long  st_blocks;
+        bufstat += to_timespec(stat.st_atime)  # unsigned long  st_atime;
+        bufstat += to_timespec(stat.st_mtime)  # unsigned long  st_mtime;
+        bufstat += to_timespec(stat.st_ctime)  # unsigned long  st_ctime;
+        bufstat += add(4, 0)              # unsigned long  __unused4;
+        bufstat += add(4, 0)              # unsigned long  __unused5;
+
         self.current.write_bytes(buf, bufstat)
         return 0
+
+    def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
+        'Wrapper for mmap2'
+        return self.sys_mmap2(address, size, prot, flags, fd, offset)
 
     def sys_mmap2(self, address, size, prot, flags, fd, offset):
         ''' 
