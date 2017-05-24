@@ -16,6 +16,7 @@ Manticore is a prototyping tool for dynamic binary analysis, with support for sy
 
 Manticore supports binaries of the following formats, operating systems, and
 architectures. It has been primarily used on binaries compiled from C and C++.
+Examples of practical manticore usage are also [on github](https://github.com/trailofbits/manticore-examples).
 
 - OS/Formats: Linux ELF, Windows Minidump
 - Architectures: x86, x86_64, ARMv7 (partial)
@@ -133,5 +134,17 @@ def hook(state):
 m.run()
 ```
 
-See the [wiki](https://github.com/trailofbits/manticore/wiki), [examples](examples) directory, and [API reference](http://manticore.readthedocs.io/en/latest/) for further documentation.
+Further documentation is available in several places:
+
+  * The [wiki](https://github.com/trailofbits/manticore/wiki) contains some
+    basic information about getting started with manticore and contributing
+
+  * The [examples](examples) directory has some very minimal examples that
+    showcase API features
+
+  * The [manticore-examples](https://github.com/trailofbits/manticore-examples)
+    repository has some more involved examples, for instance solving real CTF problems
+
+  * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
+    thorough and in-depth documentation on our API
 
