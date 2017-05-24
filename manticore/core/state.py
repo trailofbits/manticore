@@ -142,7 +142,6 @@ class State(object):
         self._child = None
 
     def execute(self):
-        trace_item = (self.model._current, self.cpu.PC)
         try:
             result = self.model.execute()
 
