@@ -37,7 +37,7 @@ def makeDecree(args):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, argv, env, concrete_start = ''):
+def makeLinux(program, argv, env, concrete_start, options):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
@@ -333,11 +333,11 @@ class Manticore(object):
 
             return symbols[0].entry['st_value']
 
-    def _make_state(self, path):
+    def _make_state(self, path, options):
         if self._binary_type == 'ELF':
             # Linux
             env = ['%s=%s'%(k,v) for k,v in self._env.items()]
-            state = makeLinux(self._binary, self._argv, env, self._concrete_data)
+            state = makeLinux(self._binary, self._argv, env, self._concrete_data, options)
         elif self._binary_type == 'PE':
             # Windows
             state = makeWindows(self._args)
@@ -509,7 +509,7 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
 
-    def run(self, procs=1, timeout=0):
+    def run(self, procs=1, timeout=0, **options):
         '''
         Runs analysis.
 
@@ -524,7 +524,7 @@ class Manticore(object):
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
-        state = self._make_state(self._binary)
+        state = self._make_state(self._binary, options)
 
         self._executor = Executor(state,
                                   workspace=self.workspace, 
