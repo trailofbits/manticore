@@ -8,7 +8,7 @@ setup(
     version='0.1.1',
     packages=find_packages(),
     install_requires=[
-        'capstone',
+        'capstone>=3.0.5rc2',
         'pyelftools',
         'unicorn',
         'ply',

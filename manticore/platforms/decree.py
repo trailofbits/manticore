@@ -15,7 +15,7 @@ import StringIO
 import logging
 import random
 
-logger = logging.getLogger("MODEL")
+logger = logging.getLogger("PLATFORM")
 
 class RestartSyscall(Exception):
     pass
@@ -75,7 +75,7 @@ class Socket(object):
 
 class Decree(object):
     '''
-    A simple Decree Operating System Model.
+    A simple Decree Operating System.
     This class emulates the most common Decree system calls
     '''
     CGC_EBADF=1
@@ -90,10 +90,10 @@ class Decree(object):
 
     def __init__(self, programs):
         '''
-        Builds a Decree OS model
-        :param cpus: CPU for this model.
-        :param mem: memory for this model.
-        :todo: generalize for more CPUs.
+        Builds a Decree OS
+        :param cpus: CPU for this platform
+        :param mem: memory for this oplatform
+        :todo: generalize for more CPUs
         :todo: fix deps?
         '''
         programs = programs.split(",")
@@ -911,14 +911,14 @@ class Decree(object):
 
 class SDecree(Decree):
     '''
-    A symbolic extension of a Decree Operating System Model.
+    A symbolic extension of a Decree Operating System .
     '''
     def __init__(self, constraints, programs, symbolic_random=None):
         '''
         Builds a symbolic extension of a Decree OS
         :param constraints: a constraint set
-        :param cpus: CPU for this model
-        :param mem: memory for this model
+        :param cpus: CPU for this platform
+        :param mem: memory for this platform
         '''
         self._constraints = constraints
         self.random = 0
@@ -1061,12 +1061,12 @@ class DecreeEmu(object):
     RANDOM = 0
 
     @staticmethod
-    def cgc_initialize_secret_page(model):
+    def cgc_initialize_secret_page(platform):
         logger.info("Skipping: cgc_initialize_secret_page()")
         return 0
 
     @staticmethod
-    def cgc_random(model, buf, count, rnd_bytes):
+    def cgc_random(platform, buf, count, rnd_bytes):
         import cgcrandom
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
@@ -1086,7 +1086,7 @@ class DecreeEmu(object):
             data.append(value)
             DecreeEmu.random += 1
 
-        cpu = model.current
+        cpu = platform.current
         cpu.write(buf, data)
         if rnd_bytes:
             cpu.store(rnd_bytes, len(data), 32)
