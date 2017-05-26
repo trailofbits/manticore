@@ -60,7 +60,7 @@ def parse_mmu_debug_output(s):
     return d
 
 
-def start(arch, argv, port=1234):
+def start(arch, argv, port=1234, va_size=0xc0000000, stack_size=0x20000):
     global subproc, stats
     aslr_file = '/proc/sys/kernel/randomize_va_space'
     try:
@@ -71,7 +71,8 @@ def start(arch, argv, port=1234):
     finally:
         pass
                     
-    args = ['qemu-%s'%(arch,), '-g', str(port), '-d', 'mmu'] + argv
+    args = ['qemu-%s'%(arch,), '-g', port, '-d', 'mmu', '-R', va_size, '-s', stack_size] + argv
+    args = map(str, args)
     print("Running: %s"%(' '.join(args),))
     subproc = subprocess.Popen(args, stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE,

@@ -13,7 +13,8 @@ logger = logging.getLogger('TRACE')
 ## We need to keep some complex objects in between hook invocations so we keep them
 ## as globals. Tracing is inherently a single-threaded process, so using a 
 ## manticore context would be heavier than needed.
-stack_top = 0xf7000000
+stack_top = 0xc0000000
+stack_size = 0x20000
 icount = 0
 initialized = False
 last_instruction = None
@@ -137,12 +138,13 @@ def initialize(state):
 def verify(argv):
     logger.debug("Verifying program \"{}\"".format(argv))
 
-    qemu.start('arm', argv)
+    # Address and stack_size are from linux.py
+    # TODO(yan): Refactor these constants into a reachable value in platform
+    qemu.start('arm', argv, va_size=stack_top, stack_size=stack_size)
     gdb.start('arm', argv)
 
     m = Manticore(argv[0], argv[1:])
     m.verbosity = 3
-
 
     @m.hook(None)
     def on_instruction(state):
@@ -169,7 +171,7 @@ def verify(argv):
         if mnemonic == 'svc':
             sync_svc(state)
 
-    m.run(stack_top=stack_top)
+    m.run()
 
 if __name__ == "__main__":
     args = argv[1:]
