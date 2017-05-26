@@ -37,14 +37,12 @@ def makeDecree(args):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, argv, env, concrete_start, options):
+def makeLinux(program, argv, env, concrete_start = ''):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
-            symbolic_files=('symbolic.txt'),
-            stack_top=options.get('stack_top', None),
-            interpreter_base=options.get('interpreter_base', None))
+            symbolic_files=('symbolic.txt'))
     initial_state = State(constraints, platform)
 
     if concrete_start != '':
@@ -333,11 +331,11 @@ class Manticore(object):
 
             return symbols[0].entry['st_value']
 
-    def _make_state(self, path, options):
+    def _make_state(self, path):
         if self._binary_type == 'ELF':
             # Linux
             env = ['%s=%s'%(k,v) for k,v in self._env.items()]
-            state = makeLinux(self._binary, self._argv, env, self._concrete_data, options)
+            state = makeLinux(self._binary, self._argv, env, self._concrete_data)
         elif self._binary_type == 'PE':
             # Windows
             state = makeWindows(self._args)
@@ -509,7 +507,7 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
 
-    def run(self, procs=1, timeout=0, **options):
+    def run(self, procs=1, timeout=0):
         '''
         Runs analysis.
 
@@ -524,7 +522,7 @@ class Manticore(object):
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
-        state = self._make_state(self._binary, options)
+        state = self._make_state(self._binary)
 
         self._executor = Executor(state,
                                   workspace=self.workspace, 

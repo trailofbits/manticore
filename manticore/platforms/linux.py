@@ -256,16 +256,12 @@ class Linux(Platform):
     This class emulates the most common Linux system calls
     '''
 
-    def __init__(self, program, argv=None, envp=None, stack_top=None,
-            interpreter_base=None):
-        r'''
+    def __init__(self, program, argv=None, envp=None):
+        '''
         Builds a Linux OS platform
         :param string program: The path to ELF binary
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
-        :param int stack_top: Specify the top of stack 
-        :param int interpreter_base: The loading address of the interpreter (If
-            not specified by ELF)
         '''
         super(Linux, self).__init__(program)
 
@@ -281,7 +277,7 @@ class Linux(Platform):
 
             self._init_cpu(self.arch)
             self._init_fds()
-            self._execve(program, argv, envp, stack_top, interpreter_base)
+            self._execve(program, argv, envp)
 
     @classmethod
     def empty_platform(cls, arch):
@@ -325,22 +321,20 @@ class Linux(Platform):
         self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
         self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
 
-    def _execve(self, program, argv, envp, stack_top, interpreter_base):
+    def _execve(self, program, argv, envp):
         '''
         Load `program` and establish program state, such as stack and arguments.
 
         :param program str: The ELF binary to load
         :param argv list: argv array
         :param envp list: envp array
-        :param int stack_top: Specify the top of stack 
-        :param int interpreter_base: The loading address of the interpreter (If
         '''
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
         logger.debug("Loading {} as a {} elf".format(program,self.arch))
 
-        self.load(program, stack_top, interpreter_base)
+        self.load(program)
         self._arch_specific_init()
 
         self._stack_top = self.current.STACK
@@ -670,12 +664,12 @@ class Linux(Platform):
         cpu.push_int(len(argvlst))
 
 
-    def load(self, filename, stack_top, interpreter_base):
+    def load(self, filename):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state. 
         Creates the stack and loads the environment variables and the arguments in it.
-        :param filename: pathname of the file to be executed.
-        :param options: offsets and constants to adjust the loading process
+
+        :param filename: pathname of the file to be executed. (used for auxv)
         :raises error:
             - 'Not matching cpu': if the program is compiled for a different architecture
             - 'Not matching memory': if the program is compiled for a different address size
@@ -799,19 +793,18 @@ class Linux(Platform):
 
         stack_size = 0x21000
 
-        if stack_top is None:
-            if addressbitsize == 32:
-                stack_top = 0xc0000000
-            else:
-                stack_top = 0x800000000000
-
+        if addressbitsize == 32:
+            stack_top = 0xc0000000
+        else:
+            stack_top = 0x800000000000
         stack_base = stack_top - stack_size
         stack = cpu.memory.mmap(stack_base, stack_size, 'rwx', name='stack') + stack_size 
         assert stack_top == stack
 
         reserved = cpu.memory.mmap(base+vaddr+memsz,0x1000000,'   ')
-        base = 0
+        interpreter_base = 0
         if interpreter is not None:
+            base = 0
             elf_bss = 0
             end_code = 0
             end_data = 0
@@ -837,10 +830,7 @@ class Linux(Platform):
                 if base == 0 and interpreter.header.e_type == 'ET_DYN':
                     assert vaddr == 0
                     total_size = self._interp_total_size(interpreter)
-                    if interpreter_base is not None:
-                        base = interpreter_base
-                    else:
-                        base = stack_base - total_size
+                    base = stack_base - total_size 
 
                 if base == 0:
                     assert vaddr == 0
@@ -866,6 +856,7 @@ class Linux(Platform):
 
             if interpreter.header.e_type == 'ET_DYN':
                 entry += base
+            interpreter_base = base
 
             logger.debug("Zeroing interpreter elf fractional pages. From %x to %x.", elf_bss, elf_brk)
             logger.debug("Interpreter bss:%x"%elf_bss)
@@ -908,7 +899,7 @@ class Linux(Platform):
             'AT_PHENT'  : elf.header.e_phentsize,       # Size of program header entry
             'AT_PHNUM'  : elf.header.e_phnum,           # Number of program headers 
             'AT_PAGESZ' : cpu.memory.page_size,         # System page size 
-            'AT_BASE'   : base,                         # Base address of interpreter 
+            'AT_BASE'   : interpreter_base,             # Base address of interpreter 
             'AT_FLAGS'  : elf.header.e_flags,           # Flags 
             'AT_ENTRY'  : elf_entry,                    # Entry point of program 
             'AT_UID'    : 1000,                         # Real uid 
@@ -1800,15 +1791,14 @@ class SLinux(Linux):
     :param list envp: environment variables
     :param tuple[str] symbolic_files: files to consider symbolic
     """
-    def __init__(self, programs, argv=None, envp=None, stack_top=None,
-            interpreter_base=None, symbolic_files=()):
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=()):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files=symbolic_files
-        super(SLinux, self).__init__(programs, argv, envp, stack_top, interpreter_base)
+        super(SLinux, self).__init__(programs, argv, envp)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
