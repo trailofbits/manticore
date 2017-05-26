@@ -181,7 +181,7 @@ class PrettyPrinter(Visitor):
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = 'visit_%s' % sort
-            method = getattr(self, methodname)
+            method = getattr(self, methodname, None)
             if method is not None:
                 method(expression, *args)
                 return
@@ -311,7 +311,8 @@ class ArithmeticSimplifier(Visitor):
 
     def visit_Operation(self, expression, *operands):
         ''' constant folding, if all operands of an expression are a Constant do the math '''
-        expression = constant_folder(expression)
+        if all( isinstance(o, Constant) for o in operands) :
+            expression = constant_folder(expression)
         if self._changed(expression, operands):
             expression = self._rebuild(expression, operands)
         return expression
