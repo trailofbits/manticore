@@ -241,17 +241,17 @@ class State(object):
             except KeyError:
                 self.branches[key] = 1
 
-    def generate_inputs(self, workspace, generate_files = False):
+    def generate_inputs(self, workspace, generate_files=False):
         '''
         Save the inputs of the state
 
-        :param str workspace: the working directory 
+        :param str workspace: the working directory
         :param bool generate_files: true if symbolic files are also generated
         '''
 
         # Save constraints formula
         smtfile = 'state_{:08x}.smt'.format(self.co)
-        with open(os.path.join(workspace,smtfile), 'wb') as f:
+        with open(os.path.join(workspace, smtfile), 'wb') as f:
             f.write(str(self.constraints))
 
         # check that the state is sat
@@ -260,21 +260,23 @@ class State(object):
         # save the inputs
         for symbol in self.input_symbols:
             buf = solver.get_value(self.constraints, symbol)
-            filename = os.path.join(workspace,'state_%08x.txt'%self.co)
-            file(filename,'a').write("%s: %s\n"%(symbol.name, repr(buf)))
-       
+            filename = os.path.join(workspace, 'state_{:08x}.txt'.format(self.co))
+            open(filename, 'a').write("{:s}: {:s}\n".format(symbol.name, repr(buf)))
+
         # save the symbolic files
         if generate_files:
-            if hasattr(self.platform, 'files'):
-                for f in self.platform.files:
-                    if hasattr(f,'array'):
-                        buf = solver.get_value(self.constraints, f.array)
-                        filename = os.path.basename(f.array.name)
-                        filename = 'file_%s_state_%d.txt'%(filename, self.co)
+            files = getattr(self.platform, 'files', None)
+            if files is not None:
+                for f in files:
+                    array = getattr(f, 'array', None)
+                    if array is not None:
+                        buf = solver.get_value(self.constraints, array)
+                        filename = os.path.basename(array.name)
+                        filename = 'file_{:s}_state_{:08x}.txt'.format(filename, self.co)
                         filename = os.path.join(workspace, filename)
-                        file(filename,'a').write("%s"%(buf))
-    
-    
+                        file(filename, 'a').write("{:s}".format(buf))
+
+
     def invoke_model(self, model):
         '''
         Invoke a `model`. A `model` is a callable whose first argument is a

@@ -37,7 +37,9 @@ def makeDecree(args):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, argv, env, concrete_start = '', symbolic_files=[]):
+def makeLinux(program, argv, env, concrete_start = '', symbolic_files=None):
+    symbolic_files = [] if symbolic_files is None else symbolic_files
+
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
