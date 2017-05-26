@@ -966,7 +966,8 @@ class Linux(Platform):
         path_str = self.current.read_string(path)
         logger.debug("chdir({})".format(path_str))
         try:
-            return os.chdir(path_str)
+            os.chdir(path_str)
+            return 0
         except OSError as e:
             return e.errno
 
