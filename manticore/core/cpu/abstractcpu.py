@@ -378,7 +378,6 @@ class Cpu(object):
         self._md = Cs(self.arch, self.mode)
         self._md.detail = True
         self._md.syntax = 0
-        self.instruction = None
 
         #####################################################
         # Signals
@@ -606,8 +605,7 @@ class Cpu(object):
         #decode the instructtion from code 
         try:
             instruction = next(self._md.disasm(code, pc))
-        except Exception as e:
-            #Fixme/Caveat  will raise
+        except StopIteration as e:
             raise DecodeException(pc, code) 
 
         #Check that the decoded intruction is contained in executable memory
@@ -619,6 +617,10 @@ class Cpu(object):
 
         self._instruction_cache[pc] = instruction
         return instruction
+
+    @property
+    def instruction(self):
+        return self.decode_instruction(self.PC)
 
     #######################################
     # Execute
@@ -670,9 +672,7 @@ class Cpu(object):
                 register_logger.debug(l)
         
 
-        self.instruction = instruction
         implementation(*instruction.operands)
-        self.instruction = None
         self._icount+=1
 
         #broadcast event

@@ -38,9 +38,9 @@ class ProfilingResults(object):
         self.saving_time = 0
         self.solver_time = 0
         for (func_file, _, func_name), (_, _, _, func_time, _) in raw_stats.stats.iteritems():
-            if func_name == 'restore':
+            if func_name == 'load':
                 self.loading_time += func_time
-            elif func_name == 'backup':
+            elif func_name == 'store':
                 self.saving_time += func_time
             elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
                 self.solver_time += func_time
@@ -537,11 +537,11 @@ class Manticore(object):
                     logger.debug("Repeated PC in assertions file %s", path)
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
-    def _backup_state_callback(self, state, state_id):
-        logger.debug("Backup state %r", state_id)
+    def _store_state_callback(self, state, state_id):
+        logger.debug("store state %r", state_id)
 
-    def _restore_state_callback(self, state, state_id):
-        logger.debug("Restore state %r", state_id)
+    def _load_state_callback(self, state, state_id):
+        logger.debug("load state %r", state_id)
 
     def _terminate_state_callback(self, state, state_id, ex):
         print "Terminate state", state.context
@@ -560,7 +560,7 @@ class Manticore(object):
             context['instructions_count'] = executor_instructions_count + state_instructions_count 
 
     def _fork_state_callback(self, state, expression, values, policy):
-        logger.debug("About to backup state %r %r %r", state, expression, values, policy)
+        logger.debug("About to store state %r %r %r", state, expression, values, policy)
 
     def _read_register_callback(self, state, cpu, reg_name, value):
         logger.debug("Read Register %r %r", reg_name, value)
@@ -755,20 +755,20 @@ class Manticore(object):
         self._executor.will_write_memory += self._write_memory_callback
         self._executor.will_execute_instruction += self._execute_instruction_callback
         self._executor.will_decode_instruction += self._decode_instruction_callback
-        self._executor.will_backup_state += self._backup_state_callback
-        self._executor.will_restore_state += self._restore_state_callback
+        self._executor.will_store_state += self._store_state_callback
+        self._executor.will_load_state += self._load_state_callback
         self._executor.will_fork_state += self._fork_state_callback
         self._executor.will_terminate_state += self._terminate_state_callback
         self._executor.will_generate_testcase += self._generate_testcase_callback
 
         if self._hooks:
-            self._executor.will_execute_state += self._hook_callback
+            self._executor.will_execute_instruction += self._hook_callback
 
         if self._model_hooks:
-            self._executor.will_execute_state += self._model_hook_callback
+            self._executor.will_execute_instruction += self._model_hook_callback
 
         if self._assertions:
-            self._executor.will_execute_state += self._assertions_callback
+            self._executor.will_execute_instruction += self._assertions_callback
 
         self._time_started = time.time()
 

@@ -91,8 +91,8 @@ class Executor(object):
         self.will_start_run = Signal()
         self.will_finish_run = Signal()
         self.will_fork_state = Signal()
-        self.will_backup_state = Signal()
-        self.will_restore_state = Signal()
+        self.will_store_state = Signal()
+        self.will_load_state = Signal()
         self.will_terminate_state = Signal()
         self.will_generate_testcase = Signal()
 
@@ -110,7 +110,7 @@ class Executor(object):
 
 
         #Be sure every state will forward us their signals
-        self.will_restore_state += self._register_state_callbacks
+        self.will_load_state += self._register_state_callbacks
 
         #The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
@@ -137,7 +137,7 @@ class Executor(object):
         self.policy = Random()
 
         if not self._load_workspace():
-            state_id = self.backup(initial)
+            state_id = self.store(initial)
             self._states.append(state_id)
 
     @contextmanager
@@ -185,13 +185,13 @@ class Executor(object):
         #search finalized testcases
         saved_testcases = []
         for filename in os.listdir(self.workspace):
-            if filename.startsswith('test_') and filename.endswith('.pkl'):
+            if filename.startswith('test_') and filename.endswith('.pkl'):
                 saved_testcases.append(self._getFilename(filename)) 
 
         if saved_states or saved_testcases:
             #We are trying to continue a paused analysis
             if initial is not None:
-                raise Exception('Cant set initial state when continuing from previous workspace: {}'.format(workspace))
+                raise ArgumentError('Cant set initial state when continuing from previous workspace: {}'.format(workspace))
 
         #Load saved states into the queue
         for filename in saved_states:
@@ -305,7 +305,7 @@ class Executor(object):
 
     ###############################################################
     # File Storage 
-    def backup(self, state):
+    def store(self, state):
         ''' Put state in secondary storage and retuns an state_id for it'''
         state_id = self._new_state_id()
         state_filename = self._state_filename(state_id)
@@ -324,10 +324,10 @@ class Executor(object):
             f.flush()
 
         #broadcast event
-        self.will_backup_state(state, state_id)
+        self.will_store_state(state, state_id)
         return state_id
 
-    def restore(self, state_id):
+    def load(self, state_id):
         ''' Brings a state from storage selected by state_id'''
         if state_id is None:
             return None
@@ -341,7 +341,7 @@ class Executor(object):
         os.remove(filename)
 
         #Broadcast event
-        self.will_restore_state(loaded_state, state_id)
+        self.will_load_state(loaded_state, state_id)
         return loaded_state 
 
     def list(self):
@@ -418,7 +418,7 @@ class Executor(object):
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value) 
                 #save the state to secondary storage
-                state_id = self.backup(new_state)
+                state_id = self.store(new_state)
                 #add the state to the list of pending states
                 self.put(state_id)
                 #maintain a list of childres for logging purpose
@@ -456,8 +456,8 @@ class Executor(object):
                             self._stop_run()
                             #Select a single state_id
                             current_state_id = self.get()
-                            #Restore selected state from secondary storage
-                            current_state = self.restore(current_state_id)
+                            #load selected state from secondary storage
+                            current_state = self.load(current_state_id)
                             #notify siblings we have a state to play with
                             self._start_run()
 
