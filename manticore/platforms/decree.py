@@ -931,6 +931,12 @@ class SDecree(Decree):
     def constraints(self):
         return self._constraints
 
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.constraints = constraints
+
     #marshaling/pickle
     def __getstate__(self):
         state = super(SDecree, self).__getstate__()

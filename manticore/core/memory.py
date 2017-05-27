@@ -891,6 +891,10 @@ class SMemory(Memory):
     def constraints(self):
         return self._constraints
 
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+
     def _get_size(self, size):
         if isinstance(size, BitVec):
             size = arithmetic_simplifier(size)

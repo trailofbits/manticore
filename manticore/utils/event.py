@@ -8,6 +8,40 @@ from types import MethodType
 class SignalDisconnectedError(RuntimeError):
     pass
 
+
+def forward_signals(dest, source):
+    ''' 
+        Replicate and forward all the signals from source to dest
+    '''
+    #Import all signals from state
+    for signal_name in dir(source):
+        signal = getattr(source, signal_name)
+        if isinstance(signal, Signal):
+            proxy = getattr(dest, signal_name, Signal())
+            proxy.when(source, signal)
+            setattr(dest, signal_name, proxy)
+
+def _manage_signals(obj, enabled):
+    ''' 
+        Enable or disable all signals at obj
+    '''
+    #Import all signals from state
+    for signal_name in dir(obj):
+        signal = getattr(obj, signal_name)
+        if isinstance(signal, Signal):
+            if enabled:
+                signal.enable()
+            else:
+                signal.disable()
+
+
+def enable_signals(obj):
+    _manage_signals(obj, True)
+
+def disable_signals(obj):
+    _manage_signals(obj, False)
+
+
 class Signal(object):
     '''
     The Signal class is an approximation of Qt's signals+slot system. Each event
@@ -19,14 +53,22 @@ class Signal(object):
     callable). All registered receivers will receive it, synchronously.
     '''
 
-    def __init__(self):
+    def __init__(self, description=None):
         '''
         Create a Signal() object. Pass 'True' to constructor if locking around
         emit() is required.
         '''
+        self.description = description
         self._functions = WeakSet()
         self._methods = WeakKeyDictionary()
         self._forwards = WeakKeyDictionary()
+        self.disabled = False
+
+    def disable(self):
+        self.disabled = True
+    def enable(self):
+        self.disabled = False
+        
 
     def __len__(self):
         return len(self._functions) + len(self._methods)
@@ -37,6 +79,9 @@ class Signal(object):
     def emit(self, *args, **kwargs):
         'Invoke the signal with |args| and |kwargs|'
         results = []
+
+        if self.disabled:
+            return results
 
         for f in self._functions:
             if '__predicate__' in f.__dict__:

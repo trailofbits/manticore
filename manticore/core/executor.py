@@ -20,7 +20,7 @@ from ..utils.nointerrupt import DelayedKeyboardInterrupt
 from .cpu.abstractcpu import DecodeException, ConcretizeRegister
 from .memory import ConcretizeMemory
 from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
-from ..utils.event import Signal
+from ..utils.event import Signal, forward_signals
 from ..utils.helpers import issymbolic
 from .state import Concretize, TerminateState
 from multiprocessing.managers import SyncManager
@@ -84,10 +84,10 @@ class Executor(object):
         self.workspace = workspace
         logger.debug("Workspace set: %s", self.workspace)
 
-        # Signals / Callbacks handlers will be invoked potentially at differeent 
+        # Signals / Callbacks handlers will be invoked potentially at different 
         # worker processes. State provides a local context to save data.
 
-        #Executor
+        #Executor signals
         self.will_start_run = Signal()
         self.will_finish_run = Signal()
         self.will_fork_state = Signal()
@@ -95,18 +95,8 @@ class Executor(object):
         self.will_load_state = Signal()
         self.will_terminate_state = Signal()
         self.will_generate_testcase = Signal()
-
-        #Cpu
-        self.will_decode_instruction = Signal()
-        self.will_execute_instruction = Signal()
-        self.did_execute_instruction = Signal()
-        self.will_emulate_instruction = Signal()
-        self.did_emulate_instruction = Signal()
-
-        self.will_read_register = Signal()
-        self.will_write_register = Signal()
-        self.will_read_memory = Signal()
-        self.will_write_memory = Signal()
+        #forward signals from initial state so they are declared here
+        forward_signals(self, initial)
 
 
         #Be sure every state will forward us their signals
@@ -158,17 +148,8 @@ class Executor(object):
             Install forwarding callbacks in state so the events can go up. 
             Going up, we prepend state in the arguments.
         ''' 
-        self.will_decode_instruction.when(state, state.will_decode_instruction)
-        self.will_execute_instruction.when(state, state.will_execute_instruction)
-        self.did_execute_instruction.when(state, state.did_execute_instruction)
-        self.will_emulate_instruction.when(state, state.will_emulate_instruction)
-        self.did_emulate_instruction.when(state, state.did_emulate_instruction)
-
-        self.will_read_register.when(state, state.will_read_register)
-        self.will_write_register.when(state, state.will_write_register)
-        self.will_read_memory.when(state, state.will_read_memory)
-        self.will_write_memory.when(state, state.will_write_memory)
-
+        #Forward all state signals
+        forward_signals(self, state)
 
     def _load_workspace(self):
         #Browse and load states in a workspace in case we are trying to 
@@ -526,12 +507,10 @@ class Executor(object):
                     for trace_line in trace.splitlines():
                         logger.error(trace_line) 
                     #Notify this worker is done
-                    self.will_terminate_state(current_state, current_state_id, 'Shutdown')
+                    self.will_terminate_state(current_state, current_state_id, 'Exception')
                     current_state = None
                     logger.setState(None)
     
-            else:
-                print "Shutdown!"
 
             if current_state != None:
                 #Notify this worker is done

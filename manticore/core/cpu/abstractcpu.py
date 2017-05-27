@@ -389,9 +389,13 @@ class Cpu(object):
         self.will_emulate_instruction = Signal()
         self.did_emulate_instruction = Signal()
         self.will_read_register = Signal()
+        self.did_read_register = Signal()
         self.will_write_register = Signal()
+        self.did_write_register = Signal()
         self.will_read_memory = Signal()
         self.will_write_memory = Signal()
+        self.did_read_memory = Signal()
+        self.did_write_memory = Signal()
 
     def __getstate__(self):
         state = {}
@@ -447,7 +451,9 @@ class Cpu(object):
         :type value: int or long or Expression
         '''
         self.will_write_register(register, value)
-        return self._regfile.write(register, value)
+        value = self._regfile.write(register, value)
+        self.did_write_register(register, value)
+        return value
 
     def read_register(self, register):
         '''
@@ -457,8 +463,9 @@ class Cpu(object):
         :return: register value
         :rtype: int or long or Expression
         '''
+        self.will_read_register(register)
         value = self._regfile.read(register)
-        self.will_read_register(register, value)
+        self.did_read_register(register, value)
         return value
 
     # Pythonic access to registers and aliases
@@ -505,7 +512,11 @@ class Cpu(object):
             size = self.address_bit_size
         assert size in SANE_SIZES
         self.will_write_memory(where, expression, size)
+
         self.memory[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in xrange(0, size, 8)]
+
+        self.did_write_memory(where, expression, size)
+
 
     def read_int(self, where, size=None):
         '''
@@ -519,10 +530,13 @@ class Cpu(object):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
+        self.will_read_memory(where, size)
+
         data = self.memory[where:where+size/8]
         total_size = 8 * len(data)
         value = Operators.CONCAT(total_size, *map(Operators.ORD, reversed(data)))
-        self.will_read_memory(where, value, size)
+
+        self.did_read_memory(where, value, size)
         return value
 
 
@@ -705,7 +719,15 @@ class Cpu(object):
 
     def render_register(self, reg_name):
         result = ""
-        value = self.read_register(reg_name)
+
+        self.will_read_register.disable()
+        self.did_read_register.disable()
+        try: 
+            value = self.read_register(reg_name)
+        finally:
+            self.will_read_register.enable()
+            self.did_read_register.enable()
+
         if issymbolic(value):
             aux = "%3s: "%reg_name +"%16s"%value
             result += aux
@@ -720,12 +742,7 @@ class Cpu(object):
         # backup, null, use, then restore the list.
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
-        backup = self.will_read_register
-        self.will_read_register = lambda *args, **kwargs: None
-        try: 
-            return map(self.render_register, self._regfile.canonical_registers)
-        finally:
-            self.will_read_register = backup
+        return map(self.render_register, self._regfile.canonical_registers)
 
     #Generic string representation
     def __str__(self):

@@ -1,13 +1,13 @@
-
 import fcntl
 import errno
 import os, struct
+from ..utils.event import Signal, forward_signals
 from ..utils.helpers import issymbolic
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
-from ..platforms.platform import Platform
+from ..platforms.platform import *
 #Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 import logging
@@ -318,6 +318,10 @@ class Linux(Platform):
         self.rwait = [set() for _ in xrange(nfiles)]
         self.twait = [set() for _ in xrange(nfiles)]
 
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
+
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
             mem = Memory32()
@@ -340,7 +344,7 @@ class Linux(Platform):
             if isinstance(fd, Socket):
                 files.append(('Socket', fd.buffer))
             else:
-                files.append(('File',fd))
+                files.append(('File', fd))
         state['files'] = files
 
         state['procs'] = self.procs
@@ -414,6 +418,11 @@ class Linux(Platform):
 
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory'] 
+
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
+
 
     def _read_string(self, buf):
         """
@@ -1751,6 +1760,13 @@ class SLinux(Linux):
     @property
     def constraints(self):
         return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.memory.constraints = constraints
+
 
     #marshaling/pickle
     def __getstate__(self):

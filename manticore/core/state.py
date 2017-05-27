@@ -2,6 +2,8 @@ from collections import OrderedDict
 
 from .smtlib import solver
 from ..utils.helpers import issymbolic
+from ..utils.event import Signal, forward_signals
+
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
@@ -69,10 +71,7 @@ class State(object):
         self.forks = 0
         self.constraints = constraints
 
-        self.platform._constraints = constraints
-        for proc in self.platform.procs:
-            proc._constraints = constraints
-            proc.memory._constraints = constraints
+        self.platform.constraints = constraints
 
         self.input_symbols = list()
         self._child = None
@@ -80,36 +79,10 @@ class State(object):
         self.context = dict()
         ##################################################################33
         # Signals are lost in serialization and fork !!
-        self.will_decode_instruction = Signal()
-        self.will_execute_instruction = Signal()
-        self.did_execute_instruction = Signal()
-        self.will_emulate_instruction = Signal()
-        self.did_emulate_instruction = Signal()
-        self.will_read_register = Signal()
-        self.will_write_register = Signal()
-        self.will_read_memory = Signal()
-        self.will_write_memory = Signal()
         #self.will_add_constraint = Signal()
 
-        #Install event forwarders
-        for proc in self.platform.procs:
-            self._register_cpu_callbacks(proc)
-
-
-    def _register_cpu_callbacks(self, cpu):
-        '''
-            Install callbacks in cpu so the events are forwarded up. 
-            Going up, we prepend cpu in the arguments.
-        '''
-        self.will_decode_instruction.when(cpu, cpu.will_decode_instruction)
-        self.will_execute_instruction.when(cpu, cpu.will_execute_instruction)
-        self.did_execute_instruction.when(cpu, cpu.did_execute_instruction)
-        self.will_emulate_instruction.when(cpu, cpu.will_emulate_instruction)
-        self.did_emulate_instruction.when(cpu, cpu.did_emulate_instruction)
-        self.will_read_register.when(cpu, cpu.will_read_register)
-        self.will_write_register.when(cpu, cpu.will_write_register)
-        self.will_read_memory.when(cpu, cpu.will_read_memory)
-        self.will_write_memory.when(cpu, cpu.will_write_memory)
+        #Import all signals from platform
+        forward_signals(self, platform)
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.platform),

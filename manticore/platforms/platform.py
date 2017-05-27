@@ -1,4 +1,5 @@
 
+from manticore.utils.event import Signal
 from itertools import islice, imap
 import inspect
 
@@ -22,7 +23,6 @@ class ConcretizeSyscallArgument(OSException):
         self.message = message
         self.policy = policy
         super(ConcretizeSyscallArgument, self).__init__(message)
-
 
 
 class Platform(object):
