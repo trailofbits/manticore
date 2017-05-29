@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from copy import deepcopy
 
 from .executor import manager
 from .smtlib import solver
@@ -33,6 +34,7 @@ class State(object):
         self.forks = 0
         self.co = self.get_new_id()
         self.constraints = constraints
+        self._constraint_stack = []
         self.platform._constraints = constraints
         for proc in self.platform.procs:
             proc._constraints = constraints
@@ -204,6 +206,27 @@ class State(object):
 
         return list(set(vals))
 
+    def push_constraints(self):
+        '''
+        Save the current constraint set on the constraint stack
+        '''
+        assert self.platform.constraints is self.constraints
+        assert self.mem.constraints is self.constraints
+        self._constraint_stack.append(deepcopy(self.constraints))
+    
+    def pop_constraints(self):
+        '''
+        Pop the most recent set of constraints off the constraint stack and use it as the
+        current constraint set. If the constraint stack is empty, do nothing.
+        '''
+        if self._constraint_stack is not None:
+            constraints = self._constraint_stack.pop()
+            self.constraints = constraints
+            self.platform._constraints = constraints
+            self.mem._constraints = constraints
+        else:
+            logger.info("Constraint stack is empty, can't pop")
+
     @property
     def _solver(self):
         from .smtlib import solver
@@ -242,7 +265,13 @@ class State(object):
         :rtype: list[int]
         '''
         buffer = self.cpu.read_bytes(addr, nbytes)
-        return ''.join(chr(self.solve_one(x)) for x in buffer)
+        result = []
+        self.push_constraints()
+        for c in buffer:
+            result.append(self.solve_one(c))
+            self.constraints.add(c == result[-1])
+        self.pop_constraints()
+        return result
 
     def record_branches(self, targets):
         _, branch = self.last_pc

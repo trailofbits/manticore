@@ -51,7 +51,7 @@ def hook(state):
 def hook(state):
     print("Hit the final state.. solving")
 
-    res = state.solve_buffer(input_addr, num_bytes)
+    res = ''.join(map(chr, state.solve_buffer(input_addr, num_bytes)))
     print(res) # CTF{0The1Quick2Brown3Fox4Jumped5Over6The7Lazy8Fox9}
 
     # We found the flag, no need to continue execution
