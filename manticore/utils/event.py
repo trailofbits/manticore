@@ -15,7 +15,7 @@ def forward_signals(dest, source):
     '''
     #Import all signals from state
     for signal_name in dir(source):
-        signal = getattr(source, signal_name)
+        signal = getattr(source, signal_name, None)
         if isinstance(signal, Signal):
             proxy = getattr(dest, signal_name, Signal())
             proxy.when(source, signal)
