@@ -8,6 +8,7 @@ Helpers
 -------
 
 .. autofunction:: manticore.issymbolic
+.. autofunction:: manticore.variadic
 
 Manticore
 ---------
