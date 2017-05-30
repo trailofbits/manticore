@@ -374,6 +374,7 @@ class Cpu(object):
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
+        self._last_pc = None
 
         self._md = Cs(self.arch, self.mode)
         self._md.detail = True
@@ -585,7 +586,7 @@ class Cpu(object):
         '''
         #No dynamic code!!! #TODO! 
         #Check if instruction was already decoded 
-        self._instruction_cache = {}
+        self._last_pc=self.PC
         if pc in self._instruction_cache:
             logger.debug("Intruction cache hit at %x", pc)
             return self._instruction_cache[pc]
@@ -661,7 +662,6 @@ class Cpu(object):
         self.will_decode_instruction()
 
         instruction = self.decode_instruction(self.PC)
-        self._last_pc = self.PC
 
         #broadcast event
         self.will_execute_instruction(instruction)
