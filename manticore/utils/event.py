@@ -15,6 +15,10 @@ def forward_signals(dest, source):
     '''
     #Import all signals from state
     for signal_name in dir(source):
+        if not signal_name.startswith('will') and \
+            not signal_name.startswith('did') and \
+            not signal_name.startswith('on'):
+            continue 
         signal = getattr(source, signal_name, None)
         if isinstance(signal, Signal):
             proxy = getattr(dest, signal_name, Signal())

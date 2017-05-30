@@ -638,7 +638,8 @@ class Cpu(object):
 
     @property
     def instruction(self):
-        return self.decode_instruction(self._last_pc)
+        if self._last_pc is not None:
+            return self.decode_instruction(self._last_pc)
 
     #######################################
     # Execute
