@@ -65,7 +65,7 @@ def on_after(state, last_instruction):
         for addr, val in writes:
             gdb.setByte(addr, val[0])
             for reg in state.cpu.canonical_registers:
-                if reg.endswith('psr'):
+                if reg.endswith('PSR'):
                     continue
                 gdb.setR(reg, state.cpu.read_register(reg))
 
@@ -81,15 +81,15 @@ def on_after(state, last_instruction):
     # state to GDB as soon as we stop executing a helper.
     if in_helper:
         for reg in state.cpu.canonical_registers:
-            if reg.endswith('psr'):
+            if reg.endswith('PSR'):
                 continue
             # Don't sync pc
-            if reg == 'pc':
+            if reg == 'R15':
                 continue
             gdb.setR(reg, state.cpu.read_register(reg))
         in_helper = False
 
-    if cmp_regs(state.cpu, should_print=True):
+    if cmp_regs(state.cpu):
         state.abandon()
 
 def sync_svc(state, syscall):
