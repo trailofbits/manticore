@@ -15,7 +15,6 @@ logger = logging.getLogger('TRACE')
 ## manticore context would be heavier than needed.
 stack_top = 0xc0000000
 stack_size = 0x20000
-icount = 0
 initialized = False
 last_instruction = None
 in_helper = False
@@ -54,9 +53,7 @@ def on_after(state, last_instruction):
     '''
     Handle syscalls (import memory) and bail if we diverge
     '''
-    global icount, in_helper
-
-    icount += 1
+    global in_helper
 
     # Synchronize qemu state to manticore's after a system call
     if last_instruction.mnemonic == 'svc':
@@ -122,7 +119,6 @@ def initialize(state):
     gdb_regs = gdb.getCanonicalRegisters()
     logger.debug("Copying {} bytes in the stack..".format(stack_top - state.cpu.SP))
     state.cpu.SP = min(state.cpu.SP, gdb.getR('SP'))
-    #logger.debug("gdb val: %d", gdb.getR('SP')-state.cpu.SP)
     for address in range(state.cpu.SP, stack_top):
         b = gdb.getByte(address)
         state.cpu.write_int(address, b, 8)
@@ -143,11 +139,13 @@ def verify(argv):
     gdb.start('arm', argv)
 
     m = Manticore(argv[0], argv[1:])
-    m.verbosity = 3
+    m.verbosity = 2
+    logger.setLevel(logging.DEBUG)
 
     @m.hook(None)
     def on_instruction(state):
         global initialized, last_instruction
+
         # Initialize our state to QEMU's
         if not initialized:
             initialize(state)
@@ -161,6 +159,7 @@ def verify(argv):
         loc, instr = [x.strip() for x in gdb.getInstruction().split(':')]
         mnemonic = instr.split('\t')[0]
             
+        # Capture syscall number before we run the syscall
         syscall = gdb.getR('R7')
 
         # Kernel helpers are inline in QEMU
