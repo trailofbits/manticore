@@ -3,7 +3,7 @@ from collections import OrderedDict
 from .executor import manager
 from .smtlib import solver
 from ..utils.helpers import issymbolic
-from ..models import is_variadic
+from ..models import isvariadic
 
 class AbandonState(Exception):
     pass
@@ -249,4 +249,4 @@ class State(object):
 
         :param callable model: Model to invoke
         '''
-        self.platform.invoke_model(model, prefix_args=(self,), variadic=is_variadic(model))
+        self.platform.invoke_model(model, prefix_args=(self,), variadic=isvariadic(model))

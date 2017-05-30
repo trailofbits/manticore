@@ -5,7 +5,7 @@ from .core.smtlib.operators import ITEBV, ZEXTEND
 
 VARIADIC_FUNC_ATTR = '_variadic'
 
-def is_variadic(func):
+def isvariadic(func):
     return getattr(func, VARIADIC_FUNC_ATTR, False)
 
 def variadic(func):
