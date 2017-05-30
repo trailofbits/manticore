@@ -5,6 +5,9 @@ from .core.smtlib.operators import ITEBV, ZEXTEND
 
 VARIADIC_FUNC_ATTR = '_variadic'
 
+def is_variadic(func):
+    return getattr(func, VARIADIC_FUNC_ATTR, False)
+
 def variadic(func):
     """
     A decorator used to mark a function model as variadic, indicating that it
