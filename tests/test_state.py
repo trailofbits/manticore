@@ -13,6 +13,10 @@ class FakeMemory(object):
     def constraints(self):
         return self._constraints
 
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+
 class FakeCpu(object):
     def __init__(self):
         self.will_decode_instruction = Signal()
@@ -44,6 +48,13 @@ class FakePlatform(object):
     @property
     def constraints(self):
         return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.memory.constraints = constraints
+
 
 
 class StateTest(unittest.TestCase):

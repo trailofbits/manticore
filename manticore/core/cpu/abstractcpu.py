@@ -402,11 +402,14 @@ class Cpu(object):
         state['regfile'] = self._regfile
         state['memory'] = self._memory
         state['icount'] = self._icount
+        state['last_pc'] = self._last_pc
         return state
 
     def __setstate__(self, state):
         Cpu.__init__(self, state['regfile'], state['memory'])
         self._icount = state['icount']
+        self._last_pc = state['last_pc']
+
         return
 
     @property
@@ -634,7 +637,7 @@ class Cpu(object):
 
     @property
     def instruction(self):
-        return self.decode_instruction(self.PC)
+        return self.decode_instruction(self._last_pc)
 
     #######################################
     # Execute
@@ -648,7 +651,6 @@ class Cpu(object):
         '''
         Decode, and execute one instruction pointed by register PC
         '''
-
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
@@ -659,6 +661,7 @@ class Cpu(object):
         self.will_decode_instruction()
 
         instruction = self.decode_instruction(self.PC)
+        self._last_pc = self.PC
 
         #broadcast event
         self.will_execute_instruction(instruction)
@@ -685,7 +688,6 @@ class Cpu(object):
             for l in self.render_registers():
                 register_logger.debug(l)
         
-
         implementation(*instruction.operands)
         self._icount+=1
 

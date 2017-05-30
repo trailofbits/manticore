@@ -70,7 +70,6 @@ class State(object):
         self.platform = platform
         self.forks = 0
         self.constraints = constraints
-
         self.platform.constraints = constraints
 
         self.input_symbols = list()
