@@ -254,7 +254,7 @@ class ABITests(unittest.TestCase):
             for val, idx in zip(params, range(1, 4)):
                 self.assertEqual(val, idx)
 
-        cpu.func_abi.invoke(test, varargs=True)
+        cpu.func_abi.invoke(test, variadic=True)
         self.assertEquals(cpu.EIP, 0x1234)
 
 
@@ -337,7 +337,7 @@ class ABITests(unittest.TestCase):
             for val, idx in zip(params, range(3)):
                 self.assertEqual(val, idx)
 
-        cpu.func_abi.invoke(test, varargs=True)
+        cpu.func_abi.invoke(test, variadic=True)
 
         self.assertEquals(cpu.RIP, 0x1234)
 
