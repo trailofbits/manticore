@@ -18,7 +18,6 @@ stack_size = 0x20000
 icount = 0
 initialized = False
 last_instruction = None
-syscall = 0
 in_helper = False
 
 def dump_gdb(cpu, addr, count):
@@ -93,7 +92,7 @@ def on_after(state, last_instruction):
     if cmp_regs(state.cpu, should_print=True):
         state.abandon()
 
-def sync_svc(state):
+def sync_svc(state, syscall):
     '''
     Mirror some service calls in manticore. 
     '''
@@ -148,7 +147,7 @@ def verify(argv):
 
     @m.hook(None)
     def on_instruction(state):
-        global initialized, last_instruction, syscall
+        global initialized, last_instruction
         # Initialize our state to QEMU's
         if not initialized:
             initialize(state)
@@ -169,7 +168,7 @@ def verify(argv):
             gdb.stepi()
 
         if mnemonic == 'svc':
-            sync_svc(state)
+            sync_svc(state, syscall)
 
     m.run()
 
