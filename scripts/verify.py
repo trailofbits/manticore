@@ -153,7 +153,7 @@ def verify(argv):
             initialize(state)
             initialized = True
 
-        if last_instruction is not None and last_instruction.address != state.cpu.PC:
+        if last_instruction:
             on_after(state, last_instruction)
 
         last_instruction = state.cpu.instruction
