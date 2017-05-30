@@ -3,6 +3,13 @@ from .utils.helpers import issymbolic
 from .core.smtlib.solver import solver
 from .core.smtlib.operators import ITEBV, ZEXTEND
 
+def variadic(func):
+    """
+    A decorator used to mark a function model as variadic, indicating that it
+    should receive a single argument generator parameter.
+    """
+    func._variadic = True
+    return func
 
 def _find_zero(cpu, constrs, ptr):
     """
