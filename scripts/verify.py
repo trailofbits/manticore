@@ -61,10 +61,12 @@ def on_after(state, last_instruction):
         logger.debug("Got %d writes", len(writes))
         for addr, val in writes:
             gdb.setByte(addr, val[0])
-            for reg in state.cpu.canonical_registers:
-                if reg.endswith('PSR'):
-                    continue
-                gdb.setR(reg, state.cpu.read_register(reg))
+        for reg in state.cpu.canonical_registers:
+            if reg.endswith('PSR'):
+                continue
+            val = state.cpu.read_register(reg)
+            logger.debug("Writing: %s", repr(val))
+            gdb.setR(reg, val)
 
         # Write return val to gdb
         gdb.setR('R0', state.cpu.R0)
@@ -87,6 +89,7 @@ def on_after(state, last_instruction):
         in_helper = False
 
     if cmp_regs(state.cpu):
+        cmp_regs(state.cpu, should_print=True)
         state.abandon()
 
 def sync_svc(state, syscall):
@@ -114,20 +117,24 @@ def sync_svc(state, syscall):
 
 def initialize(state):
     '''
-    Synchronize the stack and register state
+    Synchronize the stack and register state (manticore->qemu)
     '''
     gdb_regs = gdb.getCanonicalRegisters()
     logger.debug("Copying {} bytes in the stack..".format(stack_top - state.cpu.SP))
-    state.cpu.SP = min(state.cpu.SP, gdb.getR('SP'))
-    for address in range(state.cpu.SP, stack_top):
-        b = gdb.getByte(address)
-        state.cpu.write_int(address, b, 8)
+    stack_bottom = min(state.cpu.SP, gdb.getR('SP'))
+    for address in range(stack_bottom, stack_top):
+        b = state.cpu.read_int(address, 8)
+        gdb.setByte(address, chr(b))
+
     logger.debug("Done")
-    for reg in gdb_regs:
-        value = gdb_regs[reg]
-        if reg.endswith('psr'):
-            reg = 'apsr'
-        state.cpu.write_register(reg.upper(), value)
+
+    for gdb_reg in gdb_regs:
+        if gdb_reg.endswith('psr'):
+            mcore_reg = 'APSR'
+        else:
+            mcore_reg = gdb_reg.upper()
+        value = state.cpu.read_register(mcore_reg)
+        gdb.setR(gdb_reg, value)
 
 
 def verify(argv):
