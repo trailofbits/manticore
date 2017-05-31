@@ -104,7 +104,7 @@ class SymbolicFile(object):
             else:
                 symbols_cnt+=1
 
-        self._constraints = constraints
+        #self._constraints = constraints
         self.pos = 0
         self.max_size=min(len(data), max_size)
         if symbols_cnt > max_size:
@@ -124,9 +124,9 @@ class SymbolicFile(object):
         self.max_size = state['max_size']
         self.array = state['array']
 
-    @property
-    def constraints(self):
-        return self._constraints
+    #@property
+    #def constraints(self):
+    #    return self._constraints
 
     @property
     def name(self):
