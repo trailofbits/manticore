@@ -544,8 +544,6 @@ class Manticore(object):
         logger.debug("load state %r", state_id)
 
     def _terminate_state_callback(self, state, state_id, ex):
-        print "Terminate state", state.context
-
         logger.info("Terminate_state_callback for %d", state_id)
         executor = self._executor
         #aggregates state statistics into exceutor statistics. FIXME split
