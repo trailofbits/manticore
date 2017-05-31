@@ -1,27 +1,24 @@
 import signal
 import logging
 
-class DelayedKeyboardInterrupt(object):
-    def __init__(self, callback= None):
+class WithKeyboardInterruptAs(object):
+    def __init__(self, callback):
         if callback is None:
             callback = lambda *args, **kwargs: None
         self.callback = callback
 
     def __enter__(self):
-        self.signal_received = False
+        self.signal_received = 0
         self.old_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, self.handler)
 
     def handler(self, sig, frame):
-        self.signal_received = (sig, frame)
-        self.callback()
-        logging.debug('SIGINT received. Delaying KeyboardInterrupt.')
+        self.signal_received += 1
+        if self.signal_received > 3:
+            self.old_handler(sig, frame)
+        else:
+            self.callback()
+            logging.debug('SIGINT received. Supressing KeyboardInterrupt.')
 
     def __exit__(self, type, value, traceback):
         signal.signal(signal.SIGINT, self.old_handler)
-        if self.signal_received:
-            self.old_handler(*self.signal_received)
-
-#with DelayedKeyboardInterrupt():
-#    # stuff here will not be interrupted by SIGINT
-#    critical_code()
