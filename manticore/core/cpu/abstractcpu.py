@@ -255,6 +255,7 @@ class Abi(object):
         descriptors = self.get_arguments()
         argument_iter = imap(resolve_argument, descriptors)
 
+        # TODO(mark) this is here as a hack to avoid circular import issues
         from ...models import isvariadic
 
         try:
