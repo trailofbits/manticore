@@ -16,7 +16,7 @@ except:
     import StringIO
 from math import ceil, log
 
-from ..utils.nointerrupt import DelayedKeyboardInterrupt
+from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .cpu.abstractcpu import DecodeException, ConcretizeRegister
 from .memory import ConcretizeMemory
 from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
@@ -420,7 +420,7 @@ class Executor(object):
         current_state = None
         current_state_id = None
 
-        with DelayedKeyboardInterrupt(self.shutdown):
+        with WithKeyboardInterruptAs(self.shutdown):
             #notify siblings we are about to start a run
             self._start_run()
 

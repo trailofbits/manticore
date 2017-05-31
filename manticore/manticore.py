@@ -22,7 +22,7 @@ from .core.smtlib import solver, Expression, Operators, SolverException, Array, 
 from core.smtlib import BitVec, Bool
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
-from .utils.nointerrupt import DelayedKeyboardInterrupt
+from .utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger('MANTICORE')
 
 
@@ -481,7 +481,7 @@ class Manticore(object):
             p.start()
 
     def _join_workers(self):
-        with DelayedKeyboardInterrupt(self._executor.shutdown):    
+        with WithKeyboardInterruptAs(self._executor.shutdown):    
             while len(self._workers) > 0:
                 w = self._workers.pop().join()
 
@@ -550,16 +550,22 @@ class Manticore(object):
         executor = self._executor
         #aggregates state statistics into exceutor statistics. FIXME split
         logger.debug("Terminate state %r %r ", state, state_id)
-        state_visited = state.context.get('visited', set())
+        state_visited = state.context.get('visited_since_last_fork', set())
         state_instructions_count = state.context.get('instructions_count', 0)
-        with self._executor.locked_context() as context:
-            executor_visited = context.get('visited', set())
-            context['visited'] = executor_visited.union(state_visited)
+        with self._executor.locked_context() as executor_context:
+            executor_visited = executor_context.get('visited', set())
+            executor_context['visited'] = executor_visited.union(state_visited)
 
-            executor_instructions_count = context.get('instructions_count', 0)
-            context['instructions_count'] = executor_instructions_count + state_instructions_count 
+            executor_instructions_count = executor_context.get('instructions_count', 0)
+            executor_context['instructions_count'] = executor_instructions_count + state_instructions_count 
 
     def _fork_state_callback(self, state, expression, values, policy):
+        state_visited = state.context.get('visited_since_last_fork', set())
+        with self._executor.locked_context() as executor_context:
+            executor_visited = executor_context.get('visited', set())
+            executor_context['visited'] = executor_visited.union(state_visited)
+        state.context['visited_since_last_fork'] = set()
+
         logger.debug("About to store state %r %r %r", state, expression, values, policy)
 
     def _read_register_callback(self, state, platform, cpu, reg_name, value):
@@ -588,7 +594,7 @@ class Manticore(object):
         logger.info("exe\n")
         address = state.cpu.PC
         if not issymbolic(address):
-            state.context.setdefault('visited', set()).add(address)
+            state.context.setdefault('visited_since_last_fork', set()).add(address)
             count = state.context.get('instructions_count', 0)
             state.context['instructions_count'] = count + 1
 

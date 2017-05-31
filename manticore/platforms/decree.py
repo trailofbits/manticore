@@ -205,6 +205,10 @@ class Decree(object):
 
         self.syscall_trace = state['syscall_trace']
 
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
+
     def _read_string(self, cpu, buf):
         """
         Reads a null terminated concrete buffer form memory
@@ -925,8 +929,8 @@ class SDecree(Decree):
         :param cpus: CPU for this platform
         :param mem: memory for this platform
         '''
-        self._constraints = constraints
         self.random = 0
+        self._constraints = constraints
         super(SDecree, self).__init__(programs)
 
     def _mk_proc(self):
@@ -940,7 +944,7 @@ class SDecree(Decree):
     def constraints(self, constraints):
         self._constraints = constraints
         for proc in self.procs:
-            proc.constraints = constraints
+            proc.memory.constraints = constraints
 
     #marshaling/pickle
     def __getstate__(self):
@@ -953,6 +957,7 @@ class SDecree(Decree):
         self._constraints = state['constraints']
         self.random = state['random']
         super(SDecree, self).__setstate__(state)
+
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
         ''' Symbolic version of Decree.sys_receive
