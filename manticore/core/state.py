@@ -274,7 +274,8 @@ class State(object):
                         filename = os.path.basename(array.name)
                         filename = 'file_{:s}_state_{:08x}.txt'.format(filename, self.co)
                         filename = os.path.join(workspace, filename)
-                        file(filename, 'a').write("{:s}".format(buf))
+                        with open(filename, 'a') as f:
+                            f.write("{:s}".format(buf))
 
 
     def invoke_model(self, model):
