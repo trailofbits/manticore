@@ -206,27 +206,6 @@ class State(object):
 
         return list(set(vals))
 
-    def push_constraints(self):
-        '''
-        Save the current constraint set on the constraint stack
-        '''
-        assert self.platform.constraints is self.constraints
-        assert self.mem.constraints is self.constraints
-        self._constraint_stack.append(deepcopy(self.constraints))
-    
-    def pop_constraints(self):
-        '''
-        Pop the most recent set of constraints off the constraint stack and use it as the
-        current constraint set. If the constraint stack is empty, do nothing.
-        '''
-        if self._constraint_stack is not None:
-            constraints = self._constraint_stack.pop()
-            self.constraints = constraints
-            self.platform._constraints = constraints
-            self.mem._constraints = constraints
-        else:
-            logger.info("Constraint stack is empty, can't pop")
-
     @property
     def _solver(self):
         from .smtlib import solver
@@ -266,11 +245,10 @@ class State(object):
         '''
         buffer = self.cpu.read_bytes(addr, nbytes)
         result = []
-        self.push_constraints()
-        for c in buffer:
-            result.append(self.solve_one(c))
-            self.constraints.add(c == result[-1])
-        self.pop_constraints()
+        with self.constraints as temp_cs:
+            for c in buffer:
+                result.append(self._solver.get_value(temp_cs, c))
+                temp_cs.add(c == result[-1])
         return result
 
     def record_branches(self, targets):
