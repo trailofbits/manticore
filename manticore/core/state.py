@@ -3,7 +3,6 @@ from collections import OrderedDict
 from .executor import manager
 from .smtlib import solver
 from ..utils.helpers import issymbolic
-from ..models import isvariadic
 
 class AbandonState(Exception):
     pass
