@@ -243,10 +243,11 @@ class State(object):
     def invoke_model(self, model):
         '''
         Invoke a `model`. A `model` is a callable whose first argument is a
-        :class:`~manticore.core.state.State`, and whose following arguments correspond to
-        the C function being modeled.
+        :class:`~manticore.core.state.State`. If the `model` models a normal (non-variadic)
+        function, the following arguments correspond to the arguments of the C function
+        being modeled. If the `model` models a variadic function, the following argument
+        is a generator object, which can be used to access function arguments dynamically.
 
         :param callable model: Model to invoke
         '''
-        # TODO(mark): this can't support varargs core models!
         self.platform.invoke_model(model, prefix_args=(self,))

@@ -3,6 +3,26 @@ from .utils.helpers import issymbolic
 from .core.smtlib.solver import solver
 from .core.smtlib.operators import ITEBV, ZEXTEND
 
+VARIADIC_FUNC_ATTR = '_variadic'
+
+def isvariadic(model):
+    """
+    :param callable model: Function model
+    :return: Whether `model` models a variadic function
+    :rtype: bool
+    """
+    return getattr(model, VARIADIC_FUNC_ATTR, False)
+
+def variadic(func):
+    """
+    A decorator used to mark a function model as variadic. This function should
+    take two parameters: a :class:`~manticore.core.state.State` object, and
+    a generator object for the arguments.
+
+    :param callable func: Function model
+    """
+    setattr(func, VARIADIC_FUNC_ATTR, True)
+    return func
 
 def _find_zero(cpu, constrs, ptr):
     """

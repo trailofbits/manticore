@@ -220,16 +220,16 @@ class Abi(object):
             yield base
             base += word_bytes
 
-    def invoke(self, model, prefix_args=None, varargs=False):
+    def invoke(self, model, prefix_args=None):
         '''
-        Invoke a callable `model` as if it was a native function. If `varargs`
-        is true, model receives a single argument that is a generator for
-        function arguments. Pass a tuple of arguments for `prefix_args` you'd
-        like to precede the actual arguments.
+        Invoke a callable `model` as if it was a native function. If
+        :func:`~manticore.models.isvariadic` returns true for `model`, `model` receives a single
+        argument that is a generator for function arguments. Pass a tuple of
+        arguments for `prefix_args` you'd like to precede the actual
+        arguments.
 
         :param callable model: Python model of the function
         :param tuple prefix_args: Parameters to pass to model before actual ones
-        :param bool varargs: Whether the function expects a variable number of arguments
         :return: The result of calling `model`
         '''
         prefix_args = prefix_args or ()
@@ -255,8 +255,11 @@ class Abi(object):
         descriptors = self.get_arguments()
         argument_iter = imap(resolve_argument, descriptors)
 
+        # TODO(mark) this is here as a hack to avoid circular import issues
+        from ...models import isvariadic
+
         try:
-            if varargs:
+            if isvariadic(model):
                 result = model(*(prefix_args + (argument_iter,)))
             else:
                 argument_tuple = prefix_args + tuple(islice(argument_iter, nargs))
@@ -265,7 +268,7 @@ class Abi(object):
             assert e.argnum >= len(prefix_args), "Can't concretize a constant arg"
             idx = e.argnum - len(prefix_args)
 
-            # Arguments were lazily computed in case of varargs, so recompute here
+            # Arguments were lazily computed in case of variadic, so recompute here
             descriptors = self.get_arguments()
             src = next(islice(descriptors, idx, idx+1))
 
