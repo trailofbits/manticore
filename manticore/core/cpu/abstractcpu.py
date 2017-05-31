@@ -220,7 +220,7 @@ class Abi(object):
             yield base
             base += word_bytes
 
-    def invoke(self, model, prefix_args=None, variadic=False):
+    def invoke(self, model, prefix_args=None):
         '''
         Invoke a callable `model` as if it was a native function. If `variadic`
         is true, model receives a single argument that is a generator for
@@ -255,8 +255,10 @@ class Abi(object):
         descriptors = self.get_arguments()
         argument_iter = imap(resolve_argument, descriptors)
 
+        from ...models import isvariadic
+
         try:
-            if variadic:
+            if isvariadic(model):
                 result = model(*(prefix_args + (argument_iter,)))
             else:
                 argument_tuple = prefix_args + tuple(islice(argument_iter, nargs))

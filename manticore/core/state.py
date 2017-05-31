@@ -249,4 +249,4 @@ class State(object):
 
         :param callable model: Model to invoke
         '''
-        self.platform.invoke_model(model, prefix_args=(self,), variadic=isvariadic(model))
+        self.platform.invoke_model(model, prefix_args=(self,))
