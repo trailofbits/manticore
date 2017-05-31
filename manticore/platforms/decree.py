@@ -1,6 +1,7 @@
 import cgcrandom    
 import weakref
 import sys, os, struct
+from ..utils.event import Signal, forward_signals
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
@@ -141,6 +142,10 @@ class Decree(object):
         #each fd has a waitlist
         self.rwait = [set() for _ in xrange(nfiles)]
         self.twait = [set() for _ in xrange(nfiles)]
+
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
 
 
     def _mk_proc(self):
