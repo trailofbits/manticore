@@ -37,9 +37,7 @@ def makeDecree(args):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, argv, env, concrete_start = '', symbolic_files=None):
-    symbolic_files = [] if symbolic_files is None else symbolic_files
-
+def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
@@ -348,8 +346,7 @@ class Manticore(object):
         if self._binary_type == 'ELF':
             # Linux
             env = ['%s=%s'%(k,v) for k,v in self._env.items()]
-            state = makeLinux(self._binary, self._argv, env, self._concrete_data,
-                              self._symbolic_files)
+            state = makeLinux(self._binary, self._argv, env, self._symbolic_files, self._concrete_data)
         elif self._binary_type == 'PE':
             # Windows
             state = makeWindows(self._args)
