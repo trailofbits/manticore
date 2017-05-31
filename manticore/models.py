@@ -18,6 +18,8 @@ def variadic(func):
     A decorator used to mark a function model as variadic. This function should
     take two parameters: a :class:`~manticore.core.state.State` object, and
     a generator object for the arguments.
+
+    :param callable func: Function model
     """
     setattr(func, VARIADIC_FUNC_ATTR, True)
     return func
