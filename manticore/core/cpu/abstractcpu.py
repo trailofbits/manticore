@@ -222,14 +222,14 @@ class Abi(object):
 
     def invoke(self, model, prefix_args=None):
         '''
-        Invoke a callable `model` as if it was a native function. If `variadic`
-        is true, model receives a single argument that is a generator for
-        function arguments. Pass a tuple of arguments for `prefix_args` you'd
-        like to precede the actual arguments.
+        Invoke a callable `model` as if it was a native function. If
+        :func:`~manticore.models.isvariadic` returns true for `model`, `model` receives a single
+        argument that is a generator for function arguments. Pass a tuple of
+        arguments for `prefix_args` you'd like to precede the actual
+        arguments.
 
         :param callable model: Python model of the function
         :param tuple prefix_args: Parameters to pass to model before actual ones
-        :param bool variadic: Whether the function expects a variable number of arguments
         :return: The result of calling `model`
         '''
         prefix_args = prefix_args or ()

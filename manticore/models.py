@@ -5,8 +5,13 @@ from .core.smtlib.operators import ITEBV, ZEXTEND
 
 VARIADIC_FUNC_ATTR = '_variadic'
 
-def isvariadic(func):
-    return getattr(func, VARIADIC_FUNC_ATTR, False)
+def isvariadic(model):
+    """
+    :param callable model: Function model
+    :return: Whether `model` models a variadic function
+    :rtype: bool
+    """
+    return getattr(model, VARIADIC_FUNC_ATTR, False)
 
 def variadic(func):
     """
