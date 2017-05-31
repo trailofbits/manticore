@@ -7,8 +7,8 @@ This API is under active development, and should be considered unstable.
 Helpers
 -------
 
-.. autofunction:: manticore.issymbolic
-.. autofunction:: manticore.variadic
+.. automodule:: manticore
+   :members: issymbolic, variadic
 
 Manticore
 ---------
