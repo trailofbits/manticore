@@ -586,7 +586,6 @@ class Cpu(object):
         '''
         #No dynamic code!!! #TODO! 
         #Check if instruction was already decoded 
-        self._last_pc=self.PC
         if pc in self._instruction_cache:
             logger.debug("Intruction cache hit at %x", pc)
             return self._instruction_cache[pc]
@@ -638,7 +637,9 @@ class Cpu(object):
 
     @property
     def instruction(self):
-        if self._last_pc is not None:
+        if self._last_pc is None:
+            return self.decode_instruction(self.PC)
+        else:
             return self.decode_instruction(self._last_pc)
 
     #######################################
@@ -663,6 +664,7 @@ class Cpu(object):
         self.will_decode_instruction()
 
         instruction = self.decode_instruction(self.PC)
+        self._last_pc=self.PC
 
         #broadcast event
         self.will_execute_instruction(instruction)
@@ -765,6 +767,7 @@ def instruction(old_method):
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         cpu.PC += cpu.instruction.size
-        return old_method(cpu,*args,**kw_args)
+        value = old_method(cpu,*args,**kw_args)
+        return value
     new_method.old_method=old_method
     return new_method
