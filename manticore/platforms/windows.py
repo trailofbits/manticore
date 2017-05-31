@@ -8,6 +8,7 @@ from ..core.cpu.x86 import I386Cpu, Syscall
 from ..core.cpu.abstractcpu import Interruption, Syscall
 from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
+from ..platforms.platform import *
 
 from ..binary.pe import minidump
 
@@ -32,11 +33,6 @@ class Deadlock(Exception):
 class SymbolicAPIArgument(Exception):
     pass
 
-class SymbolicSyscallArgument(object):
-    def __init__(self, number, message='Concretizing syscall argument', policy='SAMPLED'):
-        reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][number]
-        super(SymbolicSyscallArgument, self).__init__(reg_name, message, policy)
-
 #FIXME Consider moving this to executor.state?
 def toStr(state, value):
     if issymbolic(value):
@@ -47,7 +43,7 @@ def toStr(state, value):
             value = minmax[0]
     return '{:08x}'.format(value)
 
-class Windows(object):
+class Windows(Platform):
     '''
     A simple Windows Operating System platform.
     This class emulates some Windows system calls

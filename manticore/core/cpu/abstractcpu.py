@@ -35,7 +35,7 @@ class InstructionNotImplementedError(CpuException):
     '''
     pass
 
-class DivideError(CpuException):
+class DivideByZeroError(CpuException):
     ''' A division by zero '''
     pass
 
@@ -355,7 +355,7 @@ class Cpu(object):
     '''
     Base class for all Cpu architectures. Functionality common to all
     architectures (and expected from users of a Cpu) should be here. Commonly
-    used by plaform and py:class:manticore.core.Executor
+    used by plaforms and py:class:manticore.core.Executor
 
     The following attributes need to be defined in any derived class
 
