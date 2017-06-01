@@ -55,7 +55,9 @@ class Armv7Operand(Operand):
     def type(self):
         type_map = { ARM_OP_REG: 'register',
                      ARM_OP_MEM: 'memory',
-                     ARM_OP_IMM: 'immediate'}
+                     ARM_OP_IMM: 'immediate',
+                     ARM_OP_PIMM:'coprocessor',
+                     ARM_OP_CIMM:'opcode'}
 
         return type_map[self.op.type]
 
