@@ -22,7 +22,6 @@ def start(arch, argv, port=1234,  _prompt='(gdb) '):
     global prompt, subproc
     prompt = _prompt
     gdb = 'gdb-multiarch'
-    print 'starting ' + repr([gdb, argv[0]])
     try:
         subproc = subprocess.Popen([gdb, argv[0]],
                                  stdin=subprocess.PIPE,
@@ -53,9 +52,9 @@ def getR(reg):
         reg = reg+".uint128"
         val = correspond('p %s\n'%reg.lower()).split("=")[-1].split("\n")[0]
         if "0x" in val:
-            return int(val.split("0x")[-1],16)
+            return long(val.split("0x")[-1],16)
         else:
-            return int(val)
+            return long(val)
     if "FLAG" in reg:
         reg = "(unsigned) "+reg
     if reg in ['$R%dB'%i for i in range(16)] :
@@ -75,14 +74,14 @@ def getCanonicalRegisters():
             continue
         name, hex_val = line.split()[:2]
         if name != 'cpsr':
-            registers[name] = int(hex_val, 0)
+            registers[name] = long(hex_val, 0)
         else:
             # We just want the NZCV flags
             registers[name] = int(hex_val, 0) & 0xF0000000
     return registers
 
 def setR(reg, value):
-    correspond('set $%s = %s\n'%(reg.lower(), int(value)))
+    correspond('set $%s = %s\n'%(reg.lower(), long(value)))
 
 def stepi():
     #print subproc.correspond("x/i $pc\n")
@@ -110,7 +109,7 @@ def getByte(m):
     return int(correspond("x/1bx %d\n"%(m&mask)).split("\t")[-1].split("\n")[0][2:],16)
 def get_entry():
     a=correspond('info target\n')
-    return int(a[a.find("Entry point:"):].split('\n')[0].split(' ')[-1][2:],16)
+    return long(a[a.find("Entry point:"):].split('\n')[0].split(' ')[-1][2:],16)
 
 def get_arch():
     global _arch
