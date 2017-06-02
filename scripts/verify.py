@@ -42,55 +42,46 @@ def cmp_regs(cpu, should_print=False):
             name = 'apsr'
         v = cpu.read_register(name.upper())
         if should_print:
-            print '{} gdb:{:x} mcore:{:x}'.format(name, vg, v)
+            logger.debug('{} gdb:{:x} mcore:{:x}'.format(name, vg, v))
         if vg != v:
             if should_print:
-                print '^^ unequal'
+                logger.warning('^^ unequal')
             differing = True
     if differing:
-        print qemu.correspond(None)
+        logger.debug(qemu.correspond(None))
     return differing
 
-def perform_fixups(state):
-    syscall = state.cpu.read_register('R7')
-    name = linux_syscalls.armv7[syscall]
-    if 'mmap' in name:
-        print "About to exec mmap, syncing (gdb:{:x} -> mcore:{:x})".format(gdb.getR('R0'), state.cpu.R0)
-        state.cpu.write_register('R0', gdb.getR('R0'))
-        #print 'GDB: R0 {:x}'.format(gdb.getR('R0'))
-        #print 'GDB: R1 {:x}'.format(gdb.getR('R1'))
-        #print 'GDB: R2 {:x}'.format(gdb.getR('R2'))
-        #print 'GDB: R7 {:x}'.format(gdb.getR('R7'))
-        #print 'GDB: R15 {:x}'.format(gdb.getR('R15'))
-        #return exit()
+def pre_mcore(state):
+    # Start recording memory writes
+    if state.cpu.instruction.mnemonic.lower() == 'svc':
+        state.cpu.memory.push_record_writes()
 
-def on_after(state, last_instruction):
+def post_mcore(state, last_instruction):
     '''
     Handle syscalls (import memory) and bail if we diverge
     '''
     global in_helper
 
-
     # Synchronize qemu state to manticore's after a system call
-    if last_instruction.mnemonic == 'svc':
-        print 'Current: {}, last: {}'.format(state.cpu.instruction.mnemonic, last_instruction.mnemonic)
-
+    if last_instruction.mnemonic.lower() == 'svc':
+        # Syncronize all writes that have happened
         writes = state.cpu.memory.pop_record_writes()
-        logger.debug("Got %d writes", len(writes))
+        if writes:
+            logger.debug("Got %d writes", len(writes))
         for addr, val in writes:
             gdb.setByte(addr, val[0])
 
         # Write return val to gdb
-        print "Writing 0x{:x} to R0 (overwriting 0x{:x})".format(state.cpu.R0, gdb.getR('R0'))
+        gdb_r0 = gdb.getR('R0')
+        if gdb_r0 != state.cpu.R0:
+            logger.debug("Writing 0x{:x} to R0 (overwriting 0x{:x})".format(
+                state.cpu.R0, gdb.getR('R0')))
         for reg in state.cpu.canonical_registers:
-            if reg.endswith('PSR'):
+            if reg.endswith('PSR') or reg in ('R15', 'PC'):
                 continue
             val = state.cpu.read_register(reg)
-            if reg == 'R15' or reg == 'PC':
-                continue
             gdb.setR(reg, val)
 
-        #gdb.setR('R0', state.cpu.R0)
 
     # Ignore Linux kernel helpers
     if (state.cpu.PC >> 16) == 0xffff:
@@ -113,19 +104,29 @@ def on_after(state, last_instruction):
         cmp_regs(state.cpu, should_print=True)
         state.abandon()
 
+def pre_qemu(state):
+    # Nop for now, might need to do future sync state
+    pass
+
+def post_qemu(state, last_mnemonic):
+    if last_mnemonic.lower() == 'svc':
+        sync_svc(state)
+
 def sync_svc(state):
     '''
-    Mirror some service calls in manticore. 
+    Mirror some service calls in manticore. Happens after qemu executed a SVC
+    instruction, but before manticore did.
     '''
     syscall = gdb.getR('R7')
     name = linux_syscalls.armv7[syscall]
-    logger.debug("Syncing service: {}".format(name))
+
+    logger.debug("Syncing syscall: {}".format(name))
 
     try:
         # Make sure mmap returns the same address
         if 'mmap' in name:
             returned = gdb.getR('R0')
-            logger.debug("Writing %s, our state?: %s", repr(returned), repr(state.cpu.R0))
+            logger.debug("Syncing mmap ({:x})".format(returned))
             state.cpu.write_register('R0', returned)
         if 'exit' in name:
             return
@@ -134,18 +135,10 @@ def sync_svc(state):
             print '{}: {:x}'.format(reg, state.cpu.read_register(reg))
         raise
 
-    if 'mmap' in name:
-        logger.debug('Syscall: {} {}'.format(syscall, linux_syscalls.armv7[syscall]))
-        for i in range(4):
-            logger.debug("R{}: {:x} (mcore:{:x})".format(i, gdb.getR('R%d'%i), state.cpu.read_register('R%d'%i)))
-
-    state.cpu.memory.push_record_writes()
-
 def initialize(state):
     '''
     Synchronize the stack and register state (manticore->qemu)
     '''
-    gdb_regs = gdb.getCanonicalRegisters()
     logger.debug("Copying {} bytes in the stack..".format(stack_top - state.cpu.SP))
     stack_bottom = min(state.cpu.SP, gdb.getR('SP'))
     for address in range(stack_bottom, stack_top):
@@ -154,14 +147,19 @@ def initialize(state):
 
     logger.debug("Done")
 
-    for gdb_reg in gdb_regs:
+    # Qemu fd's start at 5, ours at 3. Add two filler fds
+    mcore_stdout = state.platform.files[1]
+    state.platform.files.append(mcore_stdout)
+    state.platform.files.append(mcore_stdout)
+
+    # Sync gdb's regs
+    for gdb_reg in gdb.getCanonicalRegisters():
         if gdb_reg.endswith('psr'):
             mcore_reg = 'APSR'
         else:
             mcore_reg = gdb_reg.upper()
         value = state.cpu.read_register(mcore_reg)
         gdb.setR(gdb_reg, value)
-
 
 def verify(argv):
     logger.debug("Verifying program \"{}\"".format(argv))
@@ -172,11 +170,26 @@ def verify(argv):
     gdb.start('arm', argv)
 
     m = Manticore(argv[0], argv[1:])
-    m.verbosity = 3
+    m.verbosity = 2
     logger.setLevel(logging.DEBUG)
 
     @m.hook(None)
     def on_instruction(state):
+        '''
+        Handle all the hooks for each instruction executed. Ordered as:
+
+        pre_qemu
+         * qemu exec *
+        post_qemu
+
+        // svc synchronization happens here (mmap specifically)
+
+        pre_mcore
+         * mcore exec *
+        post_mcore
+
+        // all memory written in a mcore syscall gets moved to qemu here
+        '''
         global initialized, last_instruction
 
         # Initialize our state to QEMU's
@@ -185,26 +198,19 @@ def verify(argv):
             initialized = True
 
         if last_instruction:
-            on_after(state, last_instruction)
+            post_mcore(state, last_instruction)
 
         # Kernel helpers are inline in QEMU; do nothing
         if (state.cpu.PC >> 16) == 0xffff:
             return
 
+        pre_qemu(state)
+        last_mnemonic = [x.strip() for x in gdb.getInstruction().split(':')][1].split('\t')[0]
         gdb.stepi()
-
-        #if state.cpu.instruction.mnemonic == 'svc':
-            #print 'fixup'
-            #perform_fixups(state)
-
-        loc, instr = [x.strip() for x in gdb.getInstruction().split(':')]
-        mnemonic = instr.split('\t')[0]
-
-        if mnemonic.lower() == 'svc':
-            print 'sync svc'
-            sync_svc(state)
+        post_qemu(state, last_mnemonic)
 
         last_instruction = state.cpu.instruction
+        pre_mcore(state)
 
     m.run()
 
