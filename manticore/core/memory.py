@@ -388,13 +388,29 @@ class Memory(object):
         self._page2map = WeakValueDictionary()   #{page -> ref{MAP}}
         self._callbacks = {}
         self._recording_stack = []
+        self._child = None
+        self._parend = None
         for m in self._maps:
             for i in range(self._page(m.start), self._page(m.end)):
                 assert i not in self._page2map
                 self._page2map[i] = m
 
     def __reduce__(self):
-        return (self.__class__, (self._maps, ), {'_callbacks': self._callbacks})
+        return (self.__class__, (self._maps, ), {'_callbacks': self._callbacks, '_parent': self._parent})
+
+    def check_child(self):
+        if self._child is not None:
+            raise Exception('Memory is frozen')
+
+    def __enter__(self):
+        assert self._child is None
+        self._child = self.__class__()
+        self._child._parent = self
+        return self._child
+
+    def __exit__(self, ty, value, traceback):
+        self._child._parent = None
+        self._child = None
 
     @abstractproperty
     def memory_bit_size(self):
@@ -588,6 +604,7 @@ class Memory(object):
         assert m not in self._maps
         assert m.start & self.page_mask ==0
         assert m.end & self.page_mask ==0
+        self.check_child() # Make sure we aren't frozen
         self._maps.add(m)
         #updating the page to map translation
         for i in range(self._page(m.start), self._page(m.end)):
@@ -596,6 +613,7 @@ class Memory(object):
     def _del(self, m):
         assert isinstance(m, Map)
         assert m in self._maps
+        self.check_child() # Make sure we aren't frozen
         #remove m pages from the page2maps..
         for p in xrange(self._page(m.start), self._page(m.end)):
             del self._page2map[p]
@@ -712,6 +730,7 @@ class Memory(object):
         :param name: Callback name
         :param callback: The Callable to register.
         '''
+        self.check_child() # Make sure we aren't frozen
         if callback is None:
             self._callbacks.pop(name,None)
             return
@@ -807,6 +826,7 @@ class Memory(object):
         return lst
 
     def write(self, addr, buf):
+        self.check_child() # Make sure we aren't frozen
         size = len(buf)
         if not self.access_ok(slice(addr, addr + size), 'w'):
             raise MemoryException('No access writing', addr)
@@ -863,13 +883,26 @@ class SMemory(Memory):
         super(SMemory, self).__init__(*args, **kwargs)
         assert isinstance(constraints, ConstraintSet)
         self._constraints = constraints
+        self._parent = None
+        self._child = None
         if symbols is None:
             self._symbols = {}
         else:
             self._symbols = dict(symbols)
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._symbols, self._maps, ) )
+        return (self.__class__, (self.constraints, self._symbols, self._maps, ), {'_parent': self._parent})
+
+    def __enter__(self):
+        assert self._child is None
+        self._child = self.__class__(self._constraints.__enter__(), None)
+        self._child._parent = self
+        return self._child
+
+    def __exit__(self, ty, value, traceback):
+        self._child._parent = None
+        self._constraints.__exit__(ty, value, traceback)
+        self._child = None
 
     @property
     def constraints(self):
@@ -893,6 +926,7 @@ class SMemory(Memory):
         :param start: the starting address to delete.
         :param size: the length of the unmapping.
         '''
+        self.check_child() # Make sure we aren't frozen
         for addr in xrange(start,start+size):
             if addr in self._symbols:
                 del self._symbols[addr]
@@ -988,6 +1022,7 @@ class SMemory(Memory):
         :param value: Bytes to write
         :type value: str or list
         '''
+        self.check_child() # Make sure we aren't frozen
         size = len(value)
         if issymbolic(address):
 
