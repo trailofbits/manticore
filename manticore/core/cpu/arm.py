@@ -57,7 +57,7 @@ class Armv7Operand(Operand):
                      ARM_OP_MEM: 'memory',
                      ARM_OP_IMM: 'immediate',
                      ARM_OP_PIMM:'coprocessor',
-                     ARM_OP_CIMM:'opcode'}
+                     ARM_OP_CIMM:'immediate'}
 
         return type_map[self.op.type]
 
@@ -92,7 +92,9 @@ class Armv7Operand(Operand):
             if withCarry:
                 return imm, self._getExpandImmCarry(carry)
             return imm
-
+        elif self.type == 'coprocessor':
+            imm = self.op.imm
+            return imm
         elif self.type == 'memory':
             val = self.cpu.read_int(self.address(), nbits)
             if withCarry:
@@ -192,6 +194,9 @@ class Armv7RegisterFile(RegisterFile):
         self._regs['APSR_C'] = Register(1)
         self._regs['APSR_V'] = Register(1) 
 
+        #MMU Coprocessor  -- to support MCR/MRC for TLS
+        self._regs['P15_C13'] = Register(32)
+
     def _read_APSR(self):
         def make_apsr_flag(flag_expr, offset):
             'Helper for constructing an expression for the APSR register'
@@ -248,7 +253,8 @@ class Armv7RegisterFile(RegisterFile):
         return super(Armv7RegisterFile, self).all_registers + \
                 ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','D0','D1','D2',
                 'D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14','D15','D16','D17','D18','D19','D20',
-                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V')
+                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V',
+                'P15_C13')
 
     @property
     def canonical_registers(self):
@@ -420,6 +426,9 @@ class Armv7Cpu(Cpu):
     def write(self, addr, data):
         return self.write_bytes(addr, data)
 
+    def set_arm_tls(self, data):
+        self.regfile.write('P15_C13', data)
+
     @staticmethod
     def canonicalize_instruction_name(instr):
         name = instr.insn_name().upper()
@@ -525,6 +534,35 @@ class Armv7Cpu(Cpu):
         low_halfword = dest.read() & Mask(16)
         dest.write((imm << 16) | low_halfword)
 
+    @instruction
+    def MRC(cpu, coprocessor, opcode1, dest, coprocessor_reg_n, coprocessor_reg_m, opcode2):
+        '''
+        MRC moves to ARM register from coprocessor.
+
+        :param Armv7Operand coprocessor: The name of the coprocessor; immediate
+        :param Armv7Operand opcode1: coprocessor specific opcode; 3-bit immediate
+        :param Armv7Operand dest: the destination operand: register
+        :param Armv7Operand coprocessor_reg_n: the coprocessor register; immediate
+        :param Armv7Operand coprocessor_reg_m: the coprocessor register; immediate
+        :param Armv7Operand opcode2: coprocessor specific opcode; 3-bit immediate
+        '''
+        assert coprocessor.type == 'coprocessor'
+        assert opcode1.type == 'immediate'
+        assert opcode2.type == 'immediate'
+        assert dest.type == 'register'
+        imm_coprocessor = coprocessor.read()
+        imm_opcode1 = opcode1.read()
+        imm_opcode2 = opcode2.read()
+        coprocessor_n_name = coprocessor_reg_n.read()
+        coprocessor_m_name = coprocessor_reg_m.read()
+
+        if 15 == imm_coprocessor: #MMU
+            if 0 == imm_opcode1:
+                if 13 == coprocessor_n_name:
+                    if 3 == imm_opcode2:
+                        dest.write(cpu.regfile.read('P15_C13'))
+                        return
+        raise NotImplementedError("MRC: unimplemented combination of coprocessor, opcode, and coprocessor register")
 
     def _compute_writeback(cpu, operand, offset):
         if offset:
