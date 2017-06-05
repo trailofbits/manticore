@@ -537,8 +537,8 @@ class Cpu(object):
         self.will_read_memory(where, size)
 
         data = self.memory[where:where+size/8]
-        total_size = 8 * len(data)
-        value = Operators.CONCAT(total_size, *map(Operators.ORD, reversed(data)))
+        assert (8 * len(data)) == size
+        value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
         self.did_read_memory(where, value, size)
         return value
