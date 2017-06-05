@@ -272,7 +272,7 @@ class State(object):
                     if array is not None:
                         buf = solver.get_value(self.constraints, array)
                         filename = os.path.basename(array.name)
-                        filename = 'file_{:s}_state_{:08x}.txt'.format(filename, self.co)
+                        filename = 'state_{:08x}.{:s}'.format(self.co, filename)
                         filename = os.path.join(workspace, filename)
                         with open(filename, 'a') as f:
                             f.write("{:s}".format(buf))
