@@ -19,6 +19,13 @@ initialized = False
 last_instruction = None
 in_helper = False
 
+def init_logging():
+    class ContextFilter(logging.Filter):
+        def filter(self, record):
+            record.stateid = ''
+            return True
+    logger.addFilter(ContextFilter())
+
 def dump_gdb(cpu, addr, count):
     for offset in range(addr, addr+count, 4):
         val = int(gdb.getM(offset)  & 0xffffffff)
@@ -171,6 +178,8 @@ def verify(argv):
 
     m = Manticore(argv[0], argv[1:])
     m.verbosity = 2
+
+    init_logging()
     logger.setLevel(logging.DEBUG)
 
     @m.hook(None)
