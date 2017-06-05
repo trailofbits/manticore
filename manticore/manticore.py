@@ -319,7 +319,7 @@ class Manticore(object):
         '''
         Add a symbolic file. Each '+' in the file will be considered
         as symbolic, other char are concretized.
-        Symbolic files must have be defined before the call to run().
+        Symbolic files must have been defined before the call to `run()`.
 
         :param str symbolic_file: the name of the symbolic file
         '''
