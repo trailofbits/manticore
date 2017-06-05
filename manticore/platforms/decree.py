@@ -93,7 +93,7 @@ class Decree(object):
         '''
         Builds a Decree OS
         :param cpus: CPU for this platform
-        :param mem: memory for this oplatform
+        :param mem: memory for this platform
         :todo: generalize for more CPUs
         :todo: fix deps?
         '''
