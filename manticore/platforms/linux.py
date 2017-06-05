@@ -1167,7 +1167,7 @@ class Linux(Platform):
         if fd > 2:
             return self.files[fd].ioctl(request, argp)
         else:
-            return 0
+            return -errno.EINVAL 
 
 
     def sys_open(self, buf, flags, mode):
@@ -1952,10 +1952,16 @@ class SLinux(Linux):
             #FIXME Check if file should be symbolic input and do as with fd0
             result = cpu.memory.mmapFile(address, size, perms, self.files[fd].name, offset)
 
+        actually_mapped = '0x{:016x}'.format(result)
+        if address is None or result != address:
+            address = address or 0
+            actually_mapped += ' [requested: 0x{:016x}]'.format(address)
+
         if (flags & 0x10 !=0) and result != address:
             cpu.memory.munmap(result, size)
             result = -1
-        logger.debug("sys_mmap(0x%016x, 0x%x, %s, %x, %d) - (%r)", result, size, perms, flags, fd,  prot)
+
+        logger.debug("sys_mmap(%s, 0x%x, %s, %x, %d) - (0x%x)", actually_mapped, size, perms, flags, fd, result)
         return result
 
 
