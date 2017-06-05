@@ -236,8 +236,8 @@ class State(object):
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
         concretize it
 
-        :param int address: Address of buffer to conretize
-        :param int nbytes: Size of buffer to conretize
+        :param int address: Address of buffer to concretize
+        :param int nbytes: Size of buffer to concretize
         :return: Concrete contents of buffer
         :rtype: list[int]
         '''
