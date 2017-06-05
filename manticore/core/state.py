@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from copy import deepcopy
 
 from .executor import manager
 from .smtlib import solver
@@ -34,7 +33,6 @@ class State(object):
         self.forks = 0
         self.co = self.get_new_id()
         self.constraints = constraints
-        self._constraint_stack = []
         self.platform._constraints = constraints
         for proc in self.platform.procs:
             proc._constraints = constraints
