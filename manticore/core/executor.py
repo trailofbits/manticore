@@ -454,23 +454,23 @@ class Executor(object):
 
         for cpu in filter(None, state.platform.procs):
             idx = state.platform.procs.index(cpu)
-            output.write("================ PROC: %02d ================\n"%idx)
+            output.write("================ PROC: {:02d} ================\n".format(idx))
 
             output.write("Memory:\n")
             if hash(cpu.memory) not in memories:
                 for m in str(cpu.memory).split('\n'):
-                    output.write("  %s\n"%m)
+                    output.write("  {:s}\n".format(m))
                 memories.add(hash(cpu.memory))
 
             output.write("CPU:\n{}".format(cpu))
 
             if hasattr(cpu, "instruction") and cpu.instruction is not None:
                 i = cpu.instruction
-                output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
+                output.write("  Instruction: 0x{:x}\t({:s} {:s})\n".format(i.address, i.mnemonic, i.op_str))
             else:
                 output.write("  Instruction: {symbolic}\n")
 
-        with open(self._getFilename('test_%08x.messages'%test_number),'a') as f:
+        with open(self._getFilename('test_{:08x}.messages'.format(test_number)),'a') as f:
             f.write(output.getvalue())
             output.close()
 
@@ -487,9 +487,20 @@ class Executor(object):
         assert solver.check(state.constraints)
         for symbol in state.input_symbols:
             buf = solver.get_value(state.constraints, symbol)
-            file(self._getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
+            open(self._getFilename('test_{:08x}.txt'.format(test_number)),'a').write("{:s}: {:s}\n".format(symbol.name, repr(buf)))
         
-        file(self._getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
+        open(self._getFilename('test_{:08x}.syscalls'.format(test_number)),'a').write(repr(state.platform.syscall_trace))
+
+        # save symbolic files
+        files = getattr(state.platform, 'files', None)
+        if files is not None:
+            for f in files:
+                array = getattr(f, 'array', None)
+                if array is not None:
+                    buf = solver.get_value(state.constraints, array)
+                    filename = os.path.basename(array.name)
+                    filename = 'test_{:08x}.{:s}'.format(test_number, filename)
+                    open(self._getFilename(filename),'a').write("{:s}".format(buf))
 
         stdout = ''
         stderr = ''
@@ -498,8 +509,8 @@ class Executor(object):
                 stdout += ''.join(map(str, data))
             if sysname in ('_transmit', '_write') and fd == 2:
                 stderr += ''.join(map(str, data))
-        file(self._getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
-        file(self._getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
+        open(self._getFilename('test_{:08x}.stdout'.format(test_number)),'a').write(stdout)
+        open(self._getFilename('test_{:08x}.stderr'.format(test_number)),'a').write(stderr)
 
         # Save STDIN solution
         stdin_file = 'test_{:08x}.stdin'.format(test_number)

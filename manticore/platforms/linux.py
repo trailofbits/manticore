@@ -1791,9 +1791,10 @@ class SLinux(Linux):
     :param list envp: environment variables
     :param tuple[str] symbolic_files: files to consider symbolic
     """
-    def __init__(self, programs, argv=None, envp=None, symbolic_files=()):
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=None):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
+        symbolic_files = [] if symbolic_files is None else symbolic_files
 
         self._constraints = ConstraintSet()
         self.random = 0
