@@ -1685,6 +1685,25 @@ class MemoryTest(unittest.TestCase):
         # Make sure erroring writes don't get recorded
         self.assertEqual(len(trace), 0)
 
+    def test_mem_forking(self):
+        mem = Memory32()
+        with mem as forked_mem:
+            forked_mem.mmap(None, 0x10, 'rw')
+            self.assertEqual(len(forked_mem.mappings()), 1)
+        self.assertEqual(len(mem.mappings()), 0)
+        addr = mem.mmap(None, 0x1000, 'rw')
+        with mem as forked_mem:
+            self.assertRaises(Exception, mem.write, addr, True)
+
+    def test_symbolic_mem_forking(self):
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        with mem as forked_mem:
+            forked_mem.constraints.add(True)
+            self.assertEqual(len(forked_mem.constraints), 1)
+        self.assertEqual(len(mem.constraints), 0)
+        with mem as forked_mem:
+            self.assertRaises(Exception, mem.constraints.add, True)
 
 if __name__ == '__main__':
     unittest.main()
