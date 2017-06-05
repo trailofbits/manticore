@@ -117,7 +117,7 @@ def sync_svc(state):
     Mirror some service calls in manticore. Happens after qemu executed a SVC
     instruction, but before manticore did.
     '''
-    syscall = gdb.getR('R7')
+    syscall = state.cpu.R7 # Grab from manticore since qemu could have exited
     name = linux_syscalls.armv7[syscall]
 
     logger.debug("Syncing syscall: {}".format(name))
