@@ -1167,7 +1167,7 @@ class Linux(Platform):
         if fd > 2:
             return self.files[fd].ioctl(request, argp)
         else:
-            return -22 # EINVAL
+            return -errno.EINVAL 
 
 
     def sys_open(self, buf, flags, mode):
