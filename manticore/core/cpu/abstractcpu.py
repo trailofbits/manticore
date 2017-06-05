@@ -8,6 +8,7 @@ from ...utils.emulate import UnicornEmulator
 import sys
 from functools import wraps
 from itertools import islice, imap
+from ...utils.event import Signal
 import inspect
 import types
 import logging
@@ -347,15 +348,13 @@ class SyscallAbi(Abi):
         '''
         raise NotImplementedError
 
-from ...utils.event import Signal
-
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
 class Cpu(object):
     '''
     Base class for all Cpu architectures. Functionality common to all
     architectures (and expected from users of a Cpu) should be here. Commonly
-    used by plaforms and py:class:manticore.core.Executor
+    used by platforms and py:class:manticore.core.Executor
 
     The following attributes need to be defined in any derived class
 
@@ -590,10 +589,16 @@ class Cpu(object):
             logger.debug("Intruction cache hit at %x", pc)
             return self._instruction_cache[pc]
 
-        def _read_concrete_byte(address):
+        text = ''
+        # Read Instruction from memory
+        for address in xrange(pc, pc+self.max_instr_width):
             #This reads a byte from memory ignoring permissions
             #and concretize it if symbolic
+            if not self.memory.access_ok(address, 'x'):
+                break
+
             c = self.memory[address]
+
             if issymbolic(c):
                 assert isinstance(c, BitVec) and  c.size == 8
                 if isinstance(c, Constant):
@@ -603,18 +608,8 @@ class Cpu(object):
                     raise ConcretizeMemory(self.memory, address = pc,
                                             size = 8 * self.max_instr_width, 
                                             policy = 'INSTRUCTION' )
-            assert isinstance(c, str)
-            return c
+            text += c
 
-        text = ''
-        try:
-            # Read Instruction from memory
-            for i in xrange(0, self.max_instr_width):
-                text += _read_concrete_byte(pc+i)
-        except MemoryException as mem_except:
-            #lets not raise this exception in case the instruction
-            #was fully read befor the page
-            pass
 
         #Pad potentially incomplete intruction with zeroes
         code = text.ljust(self.max_instr_width, '\x00')
@@ -660,13 +655,11 @@ class Cpu(object):
         if not self.memory.access_ok(self.PC,'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
-        #broadcast event
         self.will_decode_instruction()
 
         instruction = self.decode_instruction(self.PC)
         self._last_pc=self.PC
 
-        #broadcast event
         self.will_execute_instruction(instruction)
 
         name = self.canonicalize_instruction_name(instruction)
@@ -676,12 +669,11 @@ class Cpu(object):
             logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                     instruction.address, text_bytes, instruction.mnemonic,
                     instruction.op_str)
-            #broadcast event
+
             self.will_emulate_instruction(instruction)
 
             self.emulate(instruction)
 
-            #broadcast event
             self.did_emulate_instruction(instruction)
 
         implementation = getattr(self, name, fallback_to_emulate)
@@ -694,7 +686,6 @@ class Cpu(object):
         implementation(*instruction.operands)
         self._icount+=1
 
-        #broadcast event
         self.did_execute_instruction(instruction)
 
 
@@ -725,13 +716,7 @@ class Cpu(object):
     def render_register(self, reg_name):
         result = ""
 
-        self.will_read_register.disable()
-        self.did_read_register.disable()
-        try: 
-            value = self.read_register(reg_name)
-        finally:
-            self.will_read_register.enable()
-            self.did_read_register.enable()
+        value = self.read_register(reg_name)
 
         if issymbolic(value):
             aux = "%3s: "%reg_name +"%16s"%value
@@ -767,7 +752,6 @@ def instruction(old_method):
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         cpu.PC += cpu.instruction.size
-        value = old_method(cpu,*args,**kw_args)
-        return value
+        return old_method(cpu,*args,**kw_args)
     new_method.old_method=old_method
     return new_method

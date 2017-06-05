@@ -49,14 +49,14 @@ class ProfilingResults(object):
 
 def makeDecree(args):
     constraints = ConstraintSet()
-    model = decree.SDecree(constraints, ','.join(args.programs))
-    initial_state = State(constraints, model)
+    platform = decree.SDecree(constraints, ','.join(args.programs))
+    initial_state = State(constraints, platform)
     logger.info('Loading program %s', args.programs)
 
     #if args.data != '':
     #    logger.info('Starting with concrete input: {}'.format(args.data))
-    model.input.transmit(args.data)
-    model.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
+    platform.input.transmit(args.data)
+    platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
 def makeLinux(program, argv, env, concrete_start = ''):
@@ -100,14 +100,14 @@ def makeWindows(args):
             logger.debug('Additional context loaded with contents {}'.format(additional_context)) #DEBUG
 
     constraints = ConstraintSet()
-    model = windows.SWindows(constraints, args.programs[0], additional_context, snapshot_folder=args.workspace)
+    platform = windows.SWindows(constraints, args.programs[0], additional_context, snapshot_folder=args.workspace)
 
     #This will interpret the buffer specification written in INTEL ASM. (It may dereference pointers)
-    data_size = parse(args.size, model.current.read_bytes, model.current.read_register)
-    data_ptr  = parse(args.buffer, model.current.read_bytes, model.current.read_register)
+    data_size = parse(args.size, platform.current.read_bytes, platform.current.read_register)
+    data_ptr  = parse(args.buffer, platform.current.read_bytes, platform.current.read_register)
 
     logger.debug('Buffer at %x size %d bytes)', data_ptr, data_size)
-    buf_str = "".join(model.current.read_bytes(data_ptr, data_size))
+    buf_str = "".join(platform.current.read_bytes(data_ptr, data_size))
     logger.debug('Original buffer: %s', buf_str.encode('hex'))
 
     offset = args.offset 
@@ -116,20 +116,20 @@ def makeWindows(args):
     size = min(args.maxsymb, data_size - offset - len(concrete_data))
     symb = constraints.new_array(name='RAWMSG', index_max=size)
 
-    model.current.write_bytes(data_ptr + offset, concrete_data)
-    model.current.write_bytes(data_ptr + offset + len(concrete_data), [symb[i] for i in xrange(size)] )
+    platform.current.write_bytes(data_ptr + offset, concrete_data)
+    platform.current.write_bytes(data_ptr + offset + len(concrete_data), [symb[i] for i in xrange(size)] )
 
     logger.debug('First %d bytes are left concrete', offset)
     logger.debug('followed by %d bytes of concrete start', len(concrete_data))
-    hex_head = "".join(model.current.read_bytes(data_ptr, offset+len(concrete_data)))
+    hex_head = "".join(platform.current.read_bytes(data_ptr, offset+len(concrete_data)))
     logger.debug('Hexdump head: %s', hex_head.encode('hex'))
     logger.debug('Total symbolic characters inserted: %d', size)
     logger.debug('followed by %d bytes of unmodified concrete bytes at end.', (data_size-offset-len(concrete_data))-size )
-    hex_tail = "".join(map(chr, model.current.read_bytes(data_ptr+offset+len(concrete_data)+size, data_size-(offset+len(concrete_data)+size))))
+    hex_tail = "".join(map(chr, platform.current.read_bytes(data_ptr+offset+len(concrete_data)+size, data_size-(offset+len(concrete_data)+size))))
     logger.debug('Hexdump tail: %s', hex_tail.encode('hex'))
-    logger.info("Starting PC is: {:08x}".format(model.current.PC))
+    logger.info("Starting PC is: {:08x}".format(platform.current.PC))
 
-    return State(constraints, model)
+    return State(constraints, platform)
 
 def binary_type(path):
     '''
@@ -222,7 +222,7 @@ class Manticore(object):
 
         logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
 
-        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'MODEL']:
+        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
             logging.getLogger(loggername).addFilter(ctxfilter)
             logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
         
@@ -292,10 +292,11 @@ class Manticore(object):
     def verbosity(self, setting):
         levels = [[],
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG)],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG), ('MODEL', logging.DEBUG), ('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG), ('REGISTERS', logging.DEBUG), ('SMT', logging.DEBUG)]]
+                  [('PLATFORM', logging.DEBUG)],
+                  [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
+                  [('REGISTERS', logging.DEBUG)],
+                  [('SMT', logging.DEBUG)]]
+
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]
@@ -303,9 +304,10 @@ class Manticore(object):
         clamped = clamp(setting, 0, len(levels) - 1)
         if clamped != setting:
             logger.debug("%s not between 0 and %d, forcing to %d", setting, len(levels) - 1, clamped)
-        for log_type, level in levels[clamped]:
-            logging.getLogger(log_type).setLevel(level)
-            self._verbosity = setting
+        for level in range(clamped + 1):
+            for log_type, log_level in levels[level]:
+                logging.getLogger(log_type).setLevel(log_level)
+        self._verbosity = clamped
 
     def hook(self, pc):
         '''
@@ -497,24 +499,20 @@ class Manticore(object):
         # event code is in place.
         import core.cpu
         import importlib
-        import models
+        import platforms
 
         with open(path, 'r') as fnames:
             for line in fnames.readlines():
                 address, cc_name, name = line.strip().split(' ')
-                cc = getattr(core.cpu.x86.ABI, cc_name)
-                fmodel = models
+                fmodel = platforms
                 name_parts = name.split('.')
-                importlib.import_module(".models.{}".format(name_parts[0]), 'manticore')
+                importlib.import_module(".platforms.{}".format(name_parts[0]), 'manticore')
                 for n in name_parts:
                     fmodel = getattr(fmodel,n)
-                assert fmodel != models
-                logger.debug("[+] Hooking 0x%x %s %s", int(address,0), cc_name, name )
-                def cb_function(cc, fmodel, state):
-                    cc(fmodel)(state.model)
-                cb = functools.partial(cb_function, cc, fmodel)
-                # TODO(yan) this should be a dict
-                self._model_hooks.setdefault(int(address,0), set()).add(cb)
+                assert fmodel != platforms
+                def cb_function(state):
+                    state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
+                self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
 
     def _model_hook_callback(self, state):
         pc = state.cpu.PC
