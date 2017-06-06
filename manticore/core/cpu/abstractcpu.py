@@ -27,7 +27,7 @@ class Operand(object):
         '''
         Auxiliary class wraps capstone operand 'mem' attribute. This will
         return register names instead of Ids
-        ''' 
+        '''
         def __init__(self, parent):
             self.parent = parent
         segment = property( lambda self: self.parent._reg_name(self.parent.op.mem.segment) )
@@ -72,7 +72,7 @@ class Operand(object):
 
     @property
     def type(self):
-        ''' This property encapsulate the operand type. 
+        ''' This property encapsulate the operand type.
             It may be one of the following:
                 register
                 memory
@@ -80,25 +80,15 @@ class Operand(object):
         '''
         raise NotImplementedError
 
-    @property        
+    @property
     def size(self):
         ''' Return bit size of operand '''
         raise NotImplementedError
-        
+
     @property
     def reg(self):
         return self._reg_name(self.op.reg)
 
-    @property
-    def type(self):
-        ''' This property encapsulate the operand type. 
-            It may be one of the following:
-                register
-                memory
-                immediate
-        '''
-        raise NotImplementedError
-        
     @abstractmethod
     def address(self):
         ''' On a memory operand it returns the effective address '''
@@ -125,14 +115,14 @@ class RegisterFile(object):
     def _alias(self, register):
         '''
         Get register canonical alias. ex. PC->RIP or PC->R15
-        
+
         :param str register: The register name
         '''
-        return self._aliases.get(register, register) 
+        return self._aliases.get(register, register)
 
     def write(self, register, value):
         '''
-        Write value to the specified register 
+        Write value to the specified register
 
         :param str register: a register id. Must be listed on all_registers
         :param value: a value of the expected type
@@ -143,7 +133,7 @@ class RegisterFile(object):
 
     def read(self, register):
         '''
-        Read value from specified register 
+        Read value from specified register
 
         :param str register: a register name. Must be listed on all_registers
         :return: the register value
@@ -159,10 +149,10 @@ class RegisterFile(object):
     def canonical_registers(self):
         ''' List the minimal most beautiful set of registers needed '''
         pass
-        
+
     def __contains__(self, register):
         '''
-        Check for register validity 
+        Check for register validity
 
         :param register: a register name
         '''
@@ -172,7 +162,7 @@ class Abi(object):
     '''
     Represents the ability to extract arguments from the environment and write
     back a result.
-    
+
     Used for function call and system call models.
     '''
     def __init__(self, cpu):
@@ -205,7 +195,7 @@ class Abi(object):
         '''
         Handle the "ret" semantics of the ABI, i.e. reclaiming stack space,
         popping PC, etc.
-        
+
         A null operation by default.
         '''
         return
@@ -251,7 +241,7 @@ class Abi(object):
             else:
                 return self._cpu.read_int(arg)
 
-        # Create a stream of resolved arguments from argument descriptors 
+        # Create a stream of resolved arguments from argument descriptors
         descriptors = self.get_arguments()
         argument_iter = imap(resolve_argument, descriptors)
 
@@ -420,7 +410,7 @@ class Cpu(object):
         if hasattr(self, '_regfile') and name in self._regfile:
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
-    
+
 
     #############################
     # Memory access
@@ -604,11 +594,11 @@ class Cpu(object):
                 text += c
         except MemoryException:
             pass
-        
+
         code = text.ljust(self.max_instr_width, '\x00')
         instruction = next(self._md.disasm(code, pc))
 
-        #PC points to symbolic memory 
+        #PC points to symbolic memory
         if instruction.size > len(text):
             logger.info("Trying to execute instructions from invalid memory")
             raise InvalidPCException(pc)
@@ -628,7 +618,7 @@ class Cpu(object):
     @abstractmethod
     def canonicalize_instruction_name(self, instruction):
         '''
-        Get the semantic name of an instruction. 
+        Get the semantic name of an instruction.
         '''
         pass
 
@@ -702,9 +692,9 @@ class Cpu(object):
     def __str__(self):
         '''
         Returns a string representation of cpu state
-        
+
         :rtype: str
-        :return: name and current value for all the registers. 
+        :return: name and current value for all the registers.
         '''
         result =  self.render_instruction() + "\n"
         result += '\n'.join(self.render_registers())
