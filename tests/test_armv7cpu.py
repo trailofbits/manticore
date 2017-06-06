@@ -1390,3 +1390,21 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.cpu.D9, 21)
         self.assertEqual(self.cpu.D10, 20)
         self.assertEqual(self.cpu.R1, pre)
+
+    @itest_setregs("R1=3")
+    @itest("movt R3, #9")
+    def test_movt(self):
+        self.assertEqual(self.cpu.R3, 0x90003)
+
+    @itest_custom("mrc p15, #0, r2, c13, c0, #3")
+    def test_mrc(self):
+        self.cpu.set_arm_tls(0x55555)
+        self.cpu.rf.write('R2', 0)
+        self.cpu.execute()
+        self.assertEqual(self.cpu.R2, 0x55555)
+
+    @itest_setregs("R1=0x45", "R2=0x55555555")
+    @itest("utxb r1 r2")
+    def test_utxb(self):
+        self.assertEqual(self.cpu.R2, 0x55555555)
+        self.assertEqual(self.cpu.R1, 0x55)
