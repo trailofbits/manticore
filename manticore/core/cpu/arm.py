@@ -564,6 +564,46 @@ class Armv7Cpu(Cpu):
                         return
         raise NotImplementedError("MRC: unimplemented combination of coprocessor, opcode, and coprocessor register")
 
+    @instruction
+    def LDREX(cpu, dest, src, offset=None):
+        '''
+        LDREX loads data from memory.
+        * If the physical address has the shared TLB attribute, LDREX
+          tags the physical address as exclusive access for the current
+          processor, and clears any exclusive access tag for this
+          processor for any other physical address.
+        * Otherwise, it tags the fact that the executing processor has
+          an outstanding tagged physical address.
+
+        :param Armv7Operand dest: the destination register; register
+        :param Armv7Operand src: the source operand: register
+        '''
+        #TODO: add lock mechanism to underlying memory --GR, 2017-06-06
+        cpu._LDR(dest, src, 32, False, offset)
+
+    @instruction
+    def STREX(cpu, status, *args):
+        '''
+        STREX performs a conditional store to memory.
+        :param Armv7Operand status: the destination register for the returned status; register
+        '''
+        #TODO: implement conditional return with appropriate status --GR, 2017-06-06
+        status.write(0)
+        return cpu._STR(cpu.address_bit_size, *args)
+
+    @instruction
+    def UXTB(cpu, dest, src):
+        '''
+        UXTB extracts an 8-bit value from a register, zero-extends
+        it to the size of the register, and writes the result to the destination register.
+
+        :param ARMv7Operand dest: the destination register; register
+        :param ARMv7Operand dest: the source register; register
+        '''
+        val = GetNBits(src.read(), 8)
+        word = Operators.ZEXTEND(32, val)
+        dest.write(word)
+
     def _compute_writeback(cpu, operand, offset):
         if offset:
             off = offset.read()
