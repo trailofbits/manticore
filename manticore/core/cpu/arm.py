@@ -330,6 +330,11 @@ class Armv7Cpu(Cpu):
         self._last_flags = state['_last_flags']
         self._force_next = state['_force_next']
 
+    def _set_mode(self, new_mode):
+		assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
+		self.mode = new_mode
+		self._md.mode = new_mode
+
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
     #
@@ -604,6 +609,13 @@ class Armv7Cpu(Cpu):
         word = Operators.ZEXTEND(32, val)
         dest.write(word)
 
+    @instruction
+    def PLD(cpu, addr, offset=None):
+        '''
+        PLD instructs the cpu that the address at addr might be loaded soon.
+        '''
+        pass
+
     def _compute_writeback(cpu, operand, offset):
         if offset:
             off = offset.read()
@@ -757,10 +769,21 @@ class Armv7Cpu(Cpu):
         ## 2 and LSB of LR set, but we currently do not distinguish between
         ## THUMB and regular modes, so we use the addresses as is. TODO: Handle
         ## thumb correctly and fix this
+        address = cpu.PC
         target = dest.read()
         next_instr_addr = cpu.regfile.read('PC') #- 2
         cpu.regfile.write('LR', next_instr_addr) # | 1)
         cpu.regfile.write('PC', target & ~1)
+
+        ## The `blx <label>` form of this instruction forces a state swap
+        if dest.type=='immediate':
+            logger.debug("swapping ds mode due to BLX at inst 0x{:x}".format(address))
+            #swap from arm to thumb or back
+            assert cpu.mode in (CS_MODE_ARM, CS_MODE_THUMB)
+            if cpu.mode == CS_MODE_ARM:
+                cpu._set_mode(CS_MODE_THUMB)
+            else:
+                cpu._set_mode(CS_MODE_ARM)
 
     @instruction
     def CMP(cpu, reg, cmp):

@@ -41,7 +41,10 @@ class UnicornEmulator(object):
 
     def _unicorn(self):
         if self._cpu.arch == CS_ARCH_ARM:
-            return Uc(UC_ARCH_ARM, UC_MODE_ARM)
+            if self._cpu.mode == CS_MODE_ARM:
+                return Uc(UC_ARCH_ARM, UC_MODE_ARM)
+            elif self._cpu.mode == CS_MODE_THUMB:
+                return Uc(UC_ARCH_ARM, UC_MODE_THUMB)
         elif self._cpu.arch == CS_ARCH_X86:
             if self._cpu.mode == CS_MODE_32:
                 return Uc(UC_ARCH_X86, UC_MODE_32)
