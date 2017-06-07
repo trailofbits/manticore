@@ -1594,8 +1594,10 @@ class Linux(Platform):
         if connection is None or connection >= len(self.rwait):
             return
 
-        procid = random.sample(self.rwait[connection], 1)[0]
-        self.awake(procid)
+        procs = self.rwait[connection]
+        if procs:
+            procid = random.sample(procs, 1)[0]
+            self.awake(procid)
 
     def check_timers(self):
         ''' Awake process if timer has expired '''
