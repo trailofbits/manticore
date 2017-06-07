@@ -60,6 +60,9 @@ class File(object):
     def fileno(self, *args):
         return self.file.fileno(*args)
 
+    def is_full(self):
+        return False
+
     def __getstate__(self):
         state = {}
         state['name'] = self.name
