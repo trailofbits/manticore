@@ -1590,9 +1590,13 @@ class Linux(Platform):
 
     def signal_transmit(self, fd):
         ''' Awake one process waiting to transmit data on fd '''
-        connections = self.connections
-        if connections(fd) and self.rwait[connections(fd)]:
-            procid = random.sample(self.rwait[connections(fd)], 1)[0]
+        connection = self.connections(fd)
+        if connection is None or connection >= len(self.rwait):
+            return
+
+        procs = self.rwait[connection]
+        if procs:
+            procid = random.sample(procs, 1)[0]
             self.awake(procid)
 
     def check_timers(self):
