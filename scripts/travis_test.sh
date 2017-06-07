@@ -2,12 +2,12 @@
 RV=0
 cd examples/linux
 if make; then
-    echo "Successfully build Linux examples"
+    echo "Successfully built Linux examples"
 else
     echo "Failed to build Linux examples"
     RV=1
 fi
-cd ..
+cd ../..
 
 coverage erase
 coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
