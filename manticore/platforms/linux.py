@@ -1167,7 +1167,7 @@ class Linux(Platform):
         if fd > 2:
             return self.files[fd].ioctl(request, argp)
         else:
-            return 0
+            return -errno.EINVAL 
 
 
     def sys_open(self, buf, flags, mode):
@@ -1792,9 +1792,10 @@ class SLinux(Linux):
     :param list envp: environment variables
     :param tuple[str] symbolic_files: files to consider symbolic
     """
-    def __init__(self, programs, argv=None, envp=None, symbolic_files=()):
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=None):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
+        symbolic_files = [] if symbolic_files is None else symbolic_files
 
         self._constraints = ConstraintSet()
         self.random = 0
@@ -1952,10 +1953,16 @@ class SLinux(Linux):
             #FIXME Check if file should be symbolic input and do as with fd0
             result = cpu.memory.mmapFile(address, size, perms, self.files[fd].name, offset)
 
+        actually_mapped = '0x{:016x}'.format(result)
+        if address is None or result != address:
+            address = address or 0
+            actually_mapped += ' [requested: 0x{:016x}]'.format(address)
+
         if (flags & 0x10 !=0) and result != address:
             cpu.memory.munmap(result, size)
             result = -1
-        logger.debug("sys_mmap(0x%016x, 0x%x, %s, %x, %d) - (%r)", result, size, perms, flags, fd,  prot)
+
+        logger.debug("sys_mmap(%s, 0x%x, %s, %x, %d) - (0x%x)", actually_mapped, size, perms, flags, fd, result)
         return result
 
 

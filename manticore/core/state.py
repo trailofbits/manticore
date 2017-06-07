@@ -1,3 +1,4 @@
+import os
 from collections import OrderedDict
 
 from .executor import manager
@@ -231,6 +232,24 @@ class State(object):
         '''
         return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
 
+    def solve_buffer(self, addr, nbytes):
+        '''
+        Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
+        concretize it
+
+        :param int address: Address of buffer to concretize
+        :param int nbytes: Size of buffer to concretize
+        :return: Concrete contents of buffer
+        :rtype: list[int]
+        '''
+        buffer = self.cpu.read_bytes(addr, nbytes)
+        result = []
+        with self.constraints as temp_cs:
+            for c in buffer:
+                result.append(self._solver.get_value(temp_cs, c))
+                temp_cs.add(c == result[-1])
+        return result
+
     def record_branches(self, targets):
         _, branch = self.last_pc
         for target in targets:
@@ -239,6 +258,43 @@ class State(object):
                 self.branches[key] += 1
             except KeyError:
                 self.branches[key] = 1
+
+    def generate_inputs(self, workspace, generate_files=False):
+        '''
+        Save the inputs of the state
+
+        :param str workspace: the working directory
+        :param bool generate_files: true if symbolic files are also generated
+        '''
+
+        # Save constraints formula
+        smtfile = 'state_{:08x}.smt'.format(self.co)
+        with open(os.path.join(workspace, smtfile), 'wb') as f:
+            f.write(str(self.constraints))
+
+        # check that the state is sat
+        assert solver.check(self.constraints)
+
+        # save the inputs
+        for symbol in self.input_symbols:
+            buf = solver.get_value(self.constraints, symbol)
+            filename = os.path.join(workspace, 'state_{:08x}.txt'.format(self.co))
+            open(filename, 'a').write("{:s}: {:s}\n".format(symbol.name, repr(buf)))
+
+        # save the symbolic files
+        if generate_files:
+            files = getattr(self.platform, 'files', None)
+            if files is not None:
+                for f in files:
+                    array = getattr(f, 'array', None)
+                    if array is not None:
+                        buf = solver.get_value(self.constraints, array)
+                        filename = os.path.basename(array.name)
+                        filename = 'state_{:08x}.{:s}'.format(self.co, filename)
+                        filename = os.path.join(workspace, filename)
+                        with open(filename, 'a') as f:
+                            f.write("{:s}".format(buf))
+
 
     def invoke_model(self, model):
         '''

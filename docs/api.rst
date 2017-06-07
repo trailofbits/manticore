@@ -20,7 +20,7 @@ State
 -----
 
 .. autoclass:: manticore.core.state.State
-   :members: abandon, constrain, new_symbolic_buffer, new_symbolic_value, solve_n, solve_one, symbolicate_buffer, invoke_model
+   :members: abandon, constrain, new_symbolic_buffer, new_symbolic_value, solve_n, solve_one, solve_buffer, symbolicate_buffer, invoke_model
 
 Cpu
 ---

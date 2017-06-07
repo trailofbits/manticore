@@ -493,24 +493,6 @@ class Armv7Cpu(Cpu):
 
         return ret
 
-    def get_syscall_description(cpu):
-        # EABI standards:
-        #  syscall # is in R7
-        #  arguments are passed in R0-R6
-        #  retval is passed in R0
-        index = cpu.regfile.read('R7')
-
-        arg_indeces = ['R{}'.format(i) for i in range(0, 7)]
-        arguments = [cpu.regfile.read(idx) for idx in arg_indeces]
-
-        def writeResult(result, cpu = cpu):
-            cpu.regfile.write('R0', result)
-
-        return (index, arguments, writeResult)
-
-    def getSyscallResult(self):
-        return self.regfile.read('R0')
-
     @instruction
     def MOV(cpu, dest, src):
         '''
