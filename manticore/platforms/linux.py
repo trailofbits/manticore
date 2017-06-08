@@ -1053,12 +1053,12 @@ class Linux(Platform):
 
             if not self._is_open(fd):
                 logger.error("WRITE: Not valid file descriptor. Returning EBADFD %d", fd)
-                return errno.EBADF
+                return -errno.EBADF
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf+count not in cpu.memory:
                 logger.debug("WRITE: buf points to invalid address. Returning EFAULT")
-                return errno.EFAULT
+                return -errno.EFAULT
 
             if fd > 2 and self.files[fd].is_full():
                 cpu.PC -= cpu.instruction.size
