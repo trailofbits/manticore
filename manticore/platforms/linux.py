@@ -143,6 +143,12 @@ class SymbolicFile(object):
         #logger.debug("IOCTL on symbolic files not implemented! (req:%x)", request)
         return 0
 
+    def sync(self):
+        '''
+        Flush buffered data. Currently not implemented.
+        '''
+        return
+
     def stat(self):
         from collections import namedtuple
         stat_result = namedtuple('stat_result', ['st_mode','st_ino','st_dev','st_nlink','st_uid','st_gid','st_size','st_atime','st_mtime','st_ctime', 'st_blksize','st_blocks','st_rdev'])
@@ -1195,6 +1201,22 @@ class Linux(Platform):
             f = SymbolicFile(self.constraints, f, 'r')
 
         return self._open(f)
+
+    def sys_fsync(self, fd):
+        '''
+        Synchronize a file's in-core state with that on disk.
+        '''
+        logger.debug("sys_fsync({})".format(fd))
+
+        try:
+            f = self.files[fd]
+            if isinstance(f, Socket):
+                return -errno.EINVAL
+            f.sync()
+        except IndexError:
+            return -errno.EBADF
+
+        return 0
 
     def sys_getpid(self, v):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
