@@ -1202,6 +1202,26 @@ class Linux(Platform):
 
         return self._open(f)
 
+    def sys_rename(self, oldnamep, newnamep):
+        '''
+        Rename filename `oldnamep` to `newnamep`.
+
+        :param int oldnamep: pointer to oldname
+        :param int newnamep: pointer to newname
+        '''
+        oldname = self.current.read_string(oldnamep)
+        newname = self.current.read_string(newnamep)
+
+        ret = 0
+        try:
+            os.rename(oldname, newname)
+        except OSError as e:
+             ret = -e.errno
+
+        logger.debug("sys_rename('{}', '{}') -> {}".format(oldname, newname, ret))
+
+        return ret
+
     def sys_fsync(self, fd):
         '''
         Synchronize a file's in-core state with that on disk.
