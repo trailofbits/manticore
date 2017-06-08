@@ -1226,17 +1226,20 @@ class Linux(Platform):
         '''
         Synchronize a file's in-core state with that on disk.
         '''
-        logger.debug("sys_fsync({})".format(fd))
 
+        ret = 0
         try:
             f = self.files[fd]
             if isinstance(f, Socket):
-                return -errno.EINVAL
-            f.sync()
+                ret = -errno.EINVAL
+            else:
+                f.sync()
         except IndexError:
-            return -errno.EBADF
+            ret = -errno.EBADF
 
-        return 0
+        logger.debug("sys_fsync({}) -> {}".format(fd, ret))
+
+        return ret
 
     def sys_getpid(self, v):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
