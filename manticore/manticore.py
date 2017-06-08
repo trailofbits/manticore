@@ -564,29 +564,29 @@ class Manticore(object):
 
         logger.debug("About to store state %r %r %r", state, expression, values, policy)
 
-    def _read_register_callback(self, state, platform, cpu, reg_name, value):
+    def _read_register_callback(self, state, reg_name, value):
         logger.debug("Read Register %r %r", reg_name, value)
 
-    def _write_register_callback(self, state, platform, cpu, reg_name, value):
+    def _write_register_callback(self, state, reg_name, value):
         logger.debug("Write Register %r %r", reg_name, value)
 
-    def _read_memory_callback(self, state, platform, cpu, address, value, size):
+    def _read_memory_callback(self, state,  address, value, size):
         logger.debug("Read Memory %r %r %r", address, value, size)
 
-    def _write_memory_callback(self, state, platform, cpu, address, value, size):
+    def _write_memory_callback(self, state, address, value, size):
         logger.debug("Write Memory %r %r %r", address, value, size)
 
-    def _decode_instruction_callback(self, state, platform, cpu):
+    def _decode_instruction_callback(self, state):
         logger.debug("Decoding stuff instruction not available")
 
 
-    def _emulate_instruction_callback(self, state, platform, cpu, instruction):
+    def _emulate_instruction_callback(self, state, instruction):
         logger.debug("About to emulate instruction")
 
-    def _did_execute_instruction_callback(self, state, platform, cpu, instruction):
+    def _did_execute_instruction_callback(self, state, instruction):
         logger.debug("Did execute an instruction")
 
-    def _execute_instruction_callback(self, state, platform, cpu, instruction):
+    def _execute_instruction_callback(self, state, instruction):
         logger.info("exe\n")
         address = state.cpu.PC
         if not issymbolic(address):

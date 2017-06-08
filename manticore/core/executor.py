@@ -96,7 +96,7 @@ class Executor(object):
         self.will_terminate_state = Signal()
         self.will_generate_testcase = Signal()
         #forward signals from initial state so they are declared here
-        forward_signals(self, initial)
+        forward_signals(self, initial, True)
 
 
         #Be sure every state will forward us their signals
@@ -149,7 +149,7 @@ class Executor(object):
             Going up, we prepend state in the arguments.
         ''' 
         #Forward all state signals
-        forward_signals(self, state)
+        forward_signals(self, state, True)
 
     def _load_workspace(self):
         #Browse and load states in a workspace in case we are trying to 

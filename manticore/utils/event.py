@@ -9,20 +9,16 @@ class SignalDisconnectedError(RuntimeError):
     pass
 
 
-def forward_signals(dest, source):
+def forward_signals(dest, source, arg=False):
     ''' 
         Replicate and forward all the signals from source to dest
     '''
     #Import all signals from state
     for signal_name in dir(source):
-        if not signal_name.startswith('will') and \
-            not signal_name.startswith('did') and \
-            not signal_name.startswith('on'):
-            continue 
         signal = getattr(source, signal_name, None)
         if isinstance(signal, Signal):
             proxy = getattr(dest, signal_name, Signal())
-            proxy.when(source, signal)
+            proxy.when(source, signal, arg)
             setattr(dest, signal_name, proxy)
 
 def _manage_signals(obj, enabled):
@@ -135,10 +131,13 @@ class Signal(object):
                 signal.connect(method)
         self._forwards.clear()
 
-    def when(self, obj, signal):
+    def when(self, obj, signal, arg=False):
         ''' This forwards signal from obj '''
         #will reemit forwarded signal prepending obj to arguments 
-        method = MethodType(lambda *args, **kwargs: self.emit(*args, **kwargs), obj)
+        if arg:
+            method = MethodType(lambda *args, **kwargs: self.emit(*args, **kwargs), obj)
+        else:
+            method = self.emit
         if len(self):
             signal.connect(method)
         else:
