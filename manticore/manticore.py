@@ -60,10 +60,10 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     if any(issymbolic(x) for val in argv + env for x in val):
         platform.setup_stack([program] + argv, env)
 
-    platform.input.transmit(concrete_start)
+    platform.input.write(concrete_start)
 
     #set stdin input...
-    platform.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
+    platform.input.write(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
     return initial_state 
 

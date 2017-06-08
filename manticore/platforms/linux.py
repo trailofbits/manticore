@@ -51,14 +51,18 @@ class File(object):
         return self.file.tell(*args)
     def seek(self, *args):
         return self.file.seek(*args)
-    def write(self, *args):
-        return self.file.write(*args)
+    def write(self, buf):
+        for c in buf:
+            self.file.write(c)
     def read(self, *args):
         return self.file.read(*args)
     def close(self, *args):
         return self.file.close(*args)
     def fileno(self, *args):
         return self.file.fileno(*args)
+
+    def is_full(self):
+        return False
 
     def __getstate__(self):
         state = {}
@@ -238,9 +242,6 @@ class Socket(object):
         return ret
 
     def write(self, buf):
-        return self.transmit(buf)
-
-    def transmit(self, buf):
         assert self.is_connected()
         return self.peer._transmit(buf)
 
@@ -1059,7 +1060,7 @@ class Linux(Platform):
                 raise RestartSyscall()
 
             data = cpu.read_bytes(buf, count)
-            self.files[fd].transmit(data)
+            self.files[fd].write(data)
 
             for line in ''.join([str(x) for x in data]).split('\n'):
                 logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>"%(fd, buf, count, line))
