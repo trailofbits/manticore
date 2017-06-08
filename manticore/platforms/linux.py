@@ -51,8 +51,9 @@ class File(object):
         return self.file.tell(*args)
     def seek(self, *args):
         return self.file.seek(*args)
-    def write(self, *args):
-        return self.file.write(*args)
+    def write(self, buf):
+        for c in buf:
+            self.file.write(c)
     def read(self, *args):
         return self.file.read(*args)
     def close(self, *args):
