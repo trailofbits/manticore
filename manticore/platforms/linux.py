@@ -99,7 +99,6 @@ class SymbolicFile(object):
             path = File(path, mode)
         assert isinstance(path, File)
 
-        #self._constraints = weakref.ref(constraints)
         WILDCARD = '+'
 
         symbols_cnt = 0
