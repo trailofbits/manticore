@@ -33,8 +33,8 @@ def makeDecree(args):
 
     #if args.data != '':
     #    logger.info('Starting with concrete input: {}'.format(args.data))
-    platform.input.write(args.data)
-    platform.input.write(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
+    platform.input.transmit(args.data)
+    platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
 def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
