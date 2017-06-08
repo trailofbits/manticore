@@ -1,12 +1,11 @@
-import fcntl
-
-import logging
-import random
 import errno
+import fcntl
+import logging
 import os
+import random
 import struct
 
-import cgcrandom
+from elftools.elf.elffile import ELFFile
 
 from ..utils.helpers import issymbolic
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
@@ -14,10 +13,10 @@ from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
 from ..platforms.platform import Platform
-from elftools.elf.elffile import ELFFile
 from ..core.cpu.arm import *
 from ..core.executor import SyscallNotImplemented, ProcessExit
 from . import linux_syscalls
+
 logger = logging.getLogger("PLATFORM")
 
 
@@ -2044,7 +2043,7 @@ class DecreeEmu(object):
 
     @staticmethod
     def cgc_random(platform, buf, count, rnd_bytes):
-        import cgcrandom
+        from . import cgcrandom
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
             raise ConcretizeArgument(0)
