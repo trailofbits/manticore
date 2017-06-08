@@ -143,6 +143,12 @@ class SymbolicFile(object):
         #logger.debug("IOCTL on symbolic files not implemented! (req:%x)", request)
         return 0
 
+    def sync(self):
+        '''
+        Flush buffered data. Currently not implemented.
+        '''
+        return
+
     def stat(self):
         from collections import namedtuple
         stat_result = namedtuple('stat_result', ['st_mode','st_ino','st_dev','st_nlink','st_uid','st_gid','st_size','st_atime','st_mtime','st_ctime', 'st_blksize','st_blocks','st_rdev'])
@@ -1047,12 +1053,12 @@ class Linux(Platform):
 
             if not self._is_open(fd):
                 logger.error("WRITE: Not valid file descriptor. Returning EBADFD %d", fd)
-                return errno.EBADF
+                return -errno.EBADF
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf+count not in cpu.memory:
                 logger.debug("WRITE: buf points to invalid address. Returning EFAULT")
-                return errno.EFAULT
+                return -errno.EFAULT
 
             if fd > 2 and self.files[fd].is_full():
                 cpu.PC -= cpu.instruction.size
@@ -1195,6 +1201,45 @@ class Linux(Platform):
             f = SymbolicFile(self.constraints, f, 'r')
 
         return self._open(f)
+
+    def sys_rename(self, oldnamep, newnamep):
+        '''
+        Rename filename `oldnamep` to `newnamep`.
+
+        :param int oldnamep: pointer to oldname
+        :param int newnamep: pointer to newname
+        '''
+        oldname = self.current.read_string(oldnamep)
+        newname = self.current.read_string(newnamep)
+
+        ret = 0
+        try:
+            os.rename(oldname, newname)
+        except OSError as e:
+             ret = -e.errno
+
+        logger.debug("sys_rename('{}', '{}') -> {}".format(oldname, newname, ret))
+
+        return ret
+
+    def sys_fsync(self, fd):
+        '''
+        Synchronize a file's in-core state with that on disk.
+        '''
+
+        ret = 0
+        try:
+            f = self.files[fd]
+            if isinstance(f, Socket):
+                ret = -errno.EINVAL
+            else:
+                f.sync()
+        except IndexError:
+            ret = -errno.EBADF
+
+        logger.debug("sys_fsync({}) -> {}".format(fd, ret))
+
+        return ret
 
     def sys_getpid(self, v):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
