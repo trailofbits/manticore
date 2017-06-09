@@ -13,10 +13,6 @@ class SyscallNotImplemented(OSException):
     '''
     pass
 
-class ProcessExit(OSException):
-    def __init__(self, code):
-        super(ProcessExit, self).__init__("Process exited correctly. Code: %s"%code)
-
 class ConcretizeSyscallArgument(OSException):
     def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
         self.reg_num = reg_num

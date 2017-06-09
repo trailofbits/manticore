@@ -9,6 +9,7 @@ from ..core.cpu.abstractcpu import Interruption, Syscall
 from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
 from ..platforms.platform import *
+from ..utils.event import Signal, forward_signals
 
 from ..binary.pe import minidump
 
@@ -174,6 +175,10 @@ class Windows(Platform):
         assert nprocs > 0
         assert len(self.running) == 1, "For now lets consider only one thread running"
         self._current = self.running[0]
+
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
         
 
     @property
@@ -204,6 +209,10 @@ class Windows(Platform):
         self.syscall_trace = state['syscall_trace']
         self.files = state['files']
         self.flavor = state['flavor']
+
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
 
     def _read_string(self, cpu, buf):
         """
@@ -434,12 +443,19 @@ class SWindows(Windows):
         self._constraints =  constraints
         super(SWindows, self).__init__(path, additional_context, snapshot_folder)
 
-    def _mk_memory(self):
-        return SMemory32(self.constraints)
-
     @property
     def constraints(self):
         return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.memory.constraints = constraints
+
+
+    def _mk_memory(self):
+        return SMemory32(self.constraints)
 
     #marshaling/pickle
     def __getstate__(self):
@@ -450,7 +466,6 @@ class SWindows(Windows):
     def __setstate__(self, state):
         self._constraints = state['constraints']
         super(SWindows, self).__setstate__(state)
-
 
 def readStringFromPointer(state, cpu, ptr, utf16, max_symbols=8):
 

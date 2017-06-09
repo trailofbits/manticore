@@ -71,10 +71,7 @@ class State(object):
         self.platform = platform
         self.forks = 0
         self.constraints = constraints
-        self.platform._constraints = constraints
-        for proc in self.platform.procs:		
-            proc._constraints = constraints		
-            proc.memory._constraints = constraints
+        self.platform.constraints = constraints
 
         self.input_symbols = list()
         self._child = None

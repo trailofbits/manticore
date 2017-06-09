@@ -603,6 +603,7 @@ class Manticore(object):
         address = state.cpu.PC
         if not issymbolic(address):
             state.context.setdefault('visited_since_last_fork', set()).add(address)
+            state.context.setdefault('visited', set()).add(address)
             count = state.context.get('instructions_count', 0)
             state.context['instructions_count'] = count + 1
 
@@ -630,8 +631,8 @@ class Manticore(object):
         output.write('Status:\n  {}\n'.format(message))
         output.write('\n')
 
-        for cpu in filter(None, state.model.procs):
-            idx = state.model.procs.index(cpu)
+        for cpu in filter(None, state.platform.procs):
+            idx = state.platform.procs.index(cpu)
             output.write("================ PROC: %02d ================\n"%idx)
 
             output.write("Memory:\n")
@@ -667,11 +668,11 @@ class Manticore(object):
             buf = solver.get_value(state.constraints, symbol)
             file(_getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
         
-        file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.model.syscall_trace))
+        file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
 
         stdout = ''
         stderr = ''
-        for sysname, fd, data in state.model.syscall_trace:
+        for sysname, fd, data in state.platform.syscall_trace:
             if sysname in ('_transmit', '_write') and fd == 1:
                 stdout += ''.join(map(str, data))
             if sysname in ('_transmit', '_write') and fd == 2:
@@ -683,7 +684,7 @@ class Manticore(object):
         stdin_file = 'test_{:08x}.stdin'.format(test_number)
         with open(_getFilename(stdin_file), 'wb') as f:
             try:
-                for sysname, fd, data in state.model.syscall_trace:
+                for sysname, fd, data in state.platform.syscall_trace:
                     if sysname not in ('_receive', '_read') or fd != 0:
                         continue
                     for c in data:
@@ -875,7 +876,7 @@ class Manticore(object):
         #Everything is good add it.
         state.constraints.add(assertion)
 
-    def _hook_callback(self, state):
+    def _hook_callback(self, state, instruction):
         pc = state.cpu.PC
         'Invoke all registered generic hooks'
 
