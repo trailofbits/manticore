@@ -312,9 +312,9 @@ class Linux(Platform):
         self.input.peer = stdin
         #A receive on stdout or stderr will return no data (rx_bytes: 0)
 
-        assert self._open(stdin) == sys.__stdin__.fileno()
-        assert self._open(stdout) == sys.__stdout__.fileno()
-        assert self._open(stderr) == sys.__stderr__.fileno()
+        assert self._open(stdin) == 0
+        assert self._open(stdout) == 1
+        assert self._open(stderr) == 2
 
     def _init_cpu(self, arch):
         cpu = self._mk_proc(arch)
