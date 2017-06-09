@@ -88,7 +88,11 @@ class File(object):
 
     def is_full(self):
         return False
+
     def sync(self):
+        '''
+        Flush buffered data. Currently not implemented.
+        '''
         return
 
 class SymbolicFile(File):
@@ -109,8 +113,9 @@ class SymbolicFile(File):
         assert 'r' in mode
         assert isinstance(path, str)
         super(SymbolicFile, self).__init__(path, mode)
+
         # read the concrete data using the parent the read() form the File class
-        data = super(SymbolicFile, self).read()
+        data = self.file.read()
 
         self._constraints = constraints
         self.pos = 0
@@ -120,7 +125,6 @@ class SymbolicFile(File):
         size = len(data)
         self.array = constraints.new_array(name=self.name, index_max=size)
 
-        # XXX (yan): wildcard isn't used; check callers and remove.
         symbols_cnt = 0
         for i in range(size):
             if data[i] != wildcard:
@@ -1180,18 +1184,19 @@ class Linux(Platform):
                 else:
                     logger.info("FIXME!")
             mode = {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[flags&7]
-            f = File(filename, mode) #todo modes, flags
+            if filename in self.symbolic_files:
+                logger.debug("%s file is considered symbolic" % filename)
+                assert flags & 7 == os.O_RDWR or flags & 7 == os.O_RDONLY, (
+                    "Symbolic files should be readable?")
+                f = SymbolicFile(self.constraints, filename, mode)
+            else:
+                f = File(filename, mode) # todo modes, flags
             logger.debug("Opening file %s for %s real fd %d",
                          filename, mode, f.fileno())
-        # FIXME generic exception
+        # FIXME(theo) generic exception
         except Exception as e:
             logger.info("Could not open file %s. Reason %s" % (filename, str(e)))
             return -1
-        # FIXME
-        if filename in self.symbolic_files:
-            logger.debug("%s file is considered to have symbols." % filename)
-            assert flags&7 == os.O_RDWR or flags&7 == os.O_RDONLY, "Symbolic files should be readable?"
-            f = SymbolicFile(self.constraints, f, 'r')
 
         return self._open(f)
 
