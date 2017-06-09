@@ -375,11 +375,11 @@ class Manticore(object):
         else:
             os.mkdir(path)
 
-        self._workspace_path = path
+        self._workspace_path = os.path.abspath(path)
 
     def _make_workspace(self):
         ''' Make working directory '''
-        return tempfile.mkdtemp(prefix="mcore_", dir='./')
+        return os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
 
     @property
     def policy(self):
