@@ -12,6 +12,8 @@ from ...utils.event import Signal
 import inspect
 import types
 import logging
+import StringIO
+
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
 
@@ -82,7 +84,7 @@ class Operand(object):
         '''
         Auxiliary class wraps capstone operand 'mem' attribute. This will
         return register names instead of Ids
-        ''' 
+        '''
         def __init__(self, parent):
             self.parent = parent
         segment = property( lambda self: self.parent._reg_name(self.parent.op.mem.segment) )
@@ -127,7 +129,7 @@ class Operand(object):
 
     @property
     def type(self):
-        ''' This property encapsulate the operand type. 
+        ''' This property encapsulate the operand type.
             It may be one of the following:
                 register
                 memory
@@ -135,25 +137,16 @@ class Operand(object):
         '''
         raise NotImplementedError
 
-    @property        
+    @property
     def size(self):
         ''' Return bit size of operand '''
         raise NotImplementedError
-        
+
     @property
     def reg(self):
         return self._reg_name(self.op.reg)
 
-    @property
-    def type(self):
-        ''' This property encapsulate the operand type. 
-            It may be one of the following:
-                register
-                memory
-                immediate
-        '''
-        raise NotImplementedError
-        
+    @abstractmethod
     def address(self):
         ''' On a memory operand it returns the effective address '''
         raise NotImplementedError
@@ -179,14 +172,14 @@ class RegisterFile(object):
     def _alias(self, register):
         '''
         Get register canonical alias. ex. PC->RIP or PC->R15
-        
+
         :param str register: The register name
         '''
-        return self._aliases.get(register, register) 
+        return self._aliases.get(register, register)
 
     def write(self, register, value):
         '''
-        Write value to the specified register 
+        Write value to the specified register
 
         :param str register: a register id. Must be listed on all_registers
         :param value: a value of the expected type
@@ -197,7 +190,7 @@ class RegisterFile(object):
 
     def read(self, register):
         '''
-        Read value from specified register 
+        Read value from specified register
 
         :param str register: a register name. Must be listed on all_registers
         :return: the register value
@@ -213,10 +206,10 @@ class RegisterFile(object):
     def canonical_registers(self):
         ''' List the minimal most beautiful set of registers needed '''
         pass
-        
+
     def __contains__(self, register):
         '''
-        Check for register validity 
+        Check for register validity
 
         :param register: a register name
         '''
@@ -226,7 +219,7 @@ class Abi(object):
     '''
     Represents the ability to extract arguments from the environment and write
     back a result.
-    
+
     Used for function call and system call models.
     '''
     def __init__(self, cpu):
@@ -259,7 +252,7 @@ class Abi(object):
         '''
         Handle the "ret" semantics of the ABI, i.e. reclaiming stack space,
         popping PC, etc.
-        
+
         A null operation by default.
         '''
         return
@@ -274,16 +267,16 @@ class Abi(object):
             yield base
             base += word_bytes
 
-    def invoke(self, model, prefix_args=None, varargs=False):
+    def invoke(self, model, prefix_args=None):
         '''
-        Invoke a callable `model` as if it was a native function. If `varargs`
-        is true, model receives a single argument that is a generator for
-        function arguments. Pass a tuple of arguments for `prefix_args` you'd
-        like to precede the actual arguments.
+        Invoke a callable `model` as if it was a native function. If
+        :func:`~manticore.models.isvariadic` returns true for `model`, `model` receives a single
+        argument that is a generator for function arguments. Pass a tuple of
+        arguments for `prefix_args` you'd like to precede the actual
+        arguments.
 
         :param callable model: Python model of the function
         :param tuple prefix_args: Parameters to pass to model before actual ones
-        :param bool varargs: Whether the function expects a variable number of arguments
         :return: The result of calling `model`
         '''
         prefix_args = prefix_args or ()
@@ -305,12 +298,15 @@ class Abi(object):
             else:
                 return self._cpu.read_int(arg)
 
-        # Create a stream of resolved arguments from argument descriptors 
+        # Create a stream of resolved arguments from argument descriptors
         descriptors = self.get_arguments()
         argument_iter = imap(resolve_argument, descriptors)
 
+        # TODO(mark) this is here as a hack to avoid circular import issues
+        from ...models import isvariadic
+
         try:
-            if varargs:
+            if isvariadic(model):
                 result = model(*(prefix_args + (argument_iter,)))
             else:
                 argument_tuple = prefix_args + tuple(islice(argument_iter, nargs))
@@ -319,7 +315,7 @@ class Abi(object):
             assert e.argnum >= len(prefix_args), "Can't concretize a constant arg"
             idx = e.argnum - len(prefix_args)
 
-            # Arguments were lazily computed in case of varargs, so recompute here
+            # Arguments were lazily computed in case of variadic, so recompute here
             descriptors = self.get_arguments()
             src = next(islice(descriptors, idx, idx+1))
 
@@ -396,6 +392,10 @@ class Cpu(object):
         self.will_write_memory = Signal()
         self.did_read_memory = Signal()
         self.did_write_memory = Signal()
+
+        # Ensure that regfile created STACK/PC aliases
+        assert 'STACK' in self._regfile
+        assert 'PC' in self._regfile
 
     def __getstate__(self):
         state = {}
@@ -494,7 +494,7 @@ class Cpu(object):
         if hasattr(self, '_regfile') and name in self._regfile:
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
-    
+
 
     #############################
     # Memory access
@@ -568,6 +568,78 @@ class Cpu(object):
             result.append(Operators.CHR(self.read_int( where+i, 8)))
         return result
 
+    def read_string(self, where, max_length=None):
+        '''
+        Read a NUL-terminated concrete buffer from memory.
+
+        :param int where: Address to read string from
+        :param int max_length:
+            The size in bytes to cap the string at, or None [default] for no
+            limit.
+        :return: string read
+        :rtype: str
+        '''
+        s = StringIO.StringIO()
+        while True:
+            c = self.read_int(where, 8)
+
+            assert not issymbolic(c)
+
+            if c == 0:
+                break
+
+            if max_length is not None:
+                if max_length == 0:
+                    break
+                max_length = max_length - 1
+            s.write(Operators.CHR(c))
+            where += 1
+        return s.getvalue()
+
+    def push_bytes(self, data):
+        '''
+        Write `data` to the stack and decrement the stack pointer accordingly.
+
+        :param str data: Data to write
+        '''
+        self.STACK -= len(data)
+        self.write_bytes(self.STACK, data)
+        return self.STACK
+
+    def pop_bytes(self, nbytes):
+        '''
+        Read `nbytes` from the stack, increment the stack pointer, and return
+        data.
+
+        :param int nbytes: How many bytes to read
+        :return: Data read from the stack
+        '''
+        data = self.read_bytes(self.STACK, nbytes)
+        self.STACK += nbytes
+        return data
+
+    def push_int(self, value):
+        '''
+        Decrement the stack pointer and write `value` to the stack.
+
+        :param int value: The value to write
+        :return: New stack pointer
+        '''
+        self.STACK -= self.address_bit_size / 8
+        self.write_int(self.STACK, value)
+        return self.STACK
+
+    def pop_int(self):
+        '''
+        Read a value from the stack and increment the stack pointer.
+
+        :return: Value read
+        '''
+        value = self.read_int(self.STACK)
+        self.STACK += self.address_bit_size / 8
+        return value
+
+
     #######################################
     # Decoder
     def _wrap_operands(self, operands):
@@ -612,6 +684,7 @@ class Cpu(object):
 
 
         #Pad potentially incomplete intruction with zeroes
+
         code = text.ljust(self.max_instr_width, '\x00')
 
         #decode the instructtion from code 
@@ -619,6 +692,7 @@ class Cpu(object):
             instruction = next(self._md.disasm(code, pc))
         except StopIteration as e:
             raise DecodeException(pc, code) 
+
 
         #Check that the decoded intruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc+instruction.size), 'x'):
@@ -641,7 +715,7 @@ class Cpu(object):
     # Execute
     def canonicalize_instruction_name(self, instruction):
         '''
-        Get the semantic name of an instruction. 
+        Get the semantic name of an instruction.
         '''
         raise NotImplemented
 
@@ -738,9 +812,9 @@ class Cpu(object):
     def __str__(self):
         '''
         Returns a string representation of cpu state
-        
+
         :rtype: str
-        :return: name and current value for all the registers. 
+        :return: name and current value for all the registers.
         '''
         result =  self.render_instruction() + "\n"
         result += '\n'.join(self.render_registers())

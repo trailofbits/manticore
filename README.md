@@ -16,6 +16,7 @@ Manticore is a prototyping tool for dynamic binary analysis, with support for sy
 
 Manticore supports binaries of the following formats, operating systems, and
 architectures. It has been primarily used on binaries compiled from C and C++.
+Examples of practical manticore usage are also [on github](https://github.com/trailofbits/manticore-examples).
 
 - OS/Formats: Linux ELF, Windows Minidump
 - Architectures: x86, x86_64, ARMv7 (partial)
@@ -35,7 +36,7 @@ python -m pip install -U pip
 
 # Install manticore and its dependencies
 git clone https://github.com/trailofbits/manticore.git && cd manticore
-sudo pip install --no-binary capstone .
+sudo pip install .
 
 # Build the examples
 cd examples/linux
@@ -61,7 +62,7 @@ Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 echo "PATH=\$PATH:~/.local/bin" >> ~/.profile
 source ~/.profile
 git clone https://github.com/trailofbits/manticore.git && cd manticore
-pip install --user --no-binary capstone .
+pip install --user .
 ```
 
 Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) or [similar](https://virtualenv.pypa.io/en/stable/)).
@@ -72,14 +73,14 @@ echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
 source ~/.profile
 git clone https://github.com/trailofbits/manticore.git && cd manticore
 mkvirtualenv manticore
-pip install --no-binary capstone .
+pip install .
 ```
 
 Option 3: Perform a system install.
 
 ```
 git clone https://github.com/trailofbits/manticore.git && cd manticore
-sudo pip install --no-binary capstone .
+sudo pip install .
 ```
 
 Once installed, the `manticore` CLI tool and its Python API will be available.
@@ -89,7 +90,7 @@ Once installed, the `manticore` CLI tool and its Python API will be available.
 For a dev install that includes dependencies for tests, run:
 
 ```
-pip install --no-binary capstone --no-binary keystone-engine -e .[dev]
+pip install --no-binary keystone-engine -e .[dev]
 ```
 
 You can run the tests with the commands below:
@@ -133,5 +134,17 @@ def hook(state):
 m.run()
 ```
 
-See the [wiki](https://github.com/trailofbits/manticore/wiki), [examples](examples) directory, and [API reference](http://manticore.readthedocs.io/en/latest/) for further documentation.
+Further documentation is available in several places:
+
+  * The [wiki](https://github.com/trailofbits/manticore/wiki) contains some
+    basic information about getting started with manticore and contributing
+
+  * The [examples](examples) directory has some very minimal examples that
+    showcase API features
+
+  * The [manticore-examples](https://github.com/trailofbits/manticore-examples)
+    repository has some more involved examples, for instance solving real CTF problems
+
+  * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
+    thorough and in-depth documentation on our API
 

@@ -12,6 +12,7 @@ import collections
 import time
 
 from manticore import Manticore, issymbolic
+from manticore import variadic
 from manticore.core.smtlib import BitVecVariable
 from manticore.core.cpu.abstractcpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
 from manticore.core.cpu.arm import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
@@ -250,11 +251,12 @@ class ABITests(unittest.TestCase):
         # save return
         cpu.push(0x1234, cpu.address_bit_size)
 
+        @variadic
         def test(params):
             for val, idx in zip(params, range(1, 4)):
                 self.assertEqual(val, idx)
 
-        cpu.func_abi.invoke(test, varargs=True)
+        cpu.func_abi.invoke(test)
         self.assertEquals(cpu.EIP, 0x1234)
 
 
@@ -333,11 +335,12 @@ class ABITests(unittest.TestCase):
         # save return
         cpu.push(0x1234, cpu.address_bit_size)
 
+        @variadic
         def test(params):
             for val, idx in zip(params, range(3)):
                 self.assertEqual(val, idx)
 
-        cpu.func_abi.invoke(test, varargs=True)
+        cpu.func_abi.invoke(test)
 
         self.assertEquals(cpu.RIP, 0x1234)
 

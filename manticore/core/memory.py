@@ -402,7 +402,6 @@ class Memory(object):
         else:
             self._maps = set(maps)
         self._page2map = WeakValueDictionary()   #{page -> ref{MAP}}
-        self._callbacks = {}
         self._recording_stack = []
         for m in self._maps:
             for i in range(self._page(m.start), self._page(m.end)):
@@ -410,7 +409,7 @@ class Memory(object):
                 self._page2map[i] = m
 
     def __reduce__(self):
-        return (self.__class__, (self._maps, ), {'_callbacks': self._callbacks})
+        return (self.__class__, (self._maps, ))
 
     @abstractproperty
     def memory_bit_size(self):
@@ -720,21 +719,6 @@ class Memory(object):
     def __contains__(self, address):
         return self._page(address) in self._page2map
 
-    def set_callback(self, name, callback):
-        '''
-        Set or remove a callback for a named event.
-        Takes a callable that potentially receives parameter.
-
-        :param name: Callback name
-        :param callback: The Callable to register.
-        '''
-        if callback is None:
-            self._callbacks.pop(name,None)
-            return
-        if not hasattr(callback, '__call__'):
-            raise ValueError('Callback must be callable')
-        self.callback[name] = callback
-
     def perms(self, index):
         # not happy with this interface.
         if isinstance(index, slice):
@@ -782,9 +766,6 @@ class Memory(object):
             result += m[p:p+_size]
             p+=_size
         assert p == stop
-
-        if 'read' in self._callbacks:
-            self._callbacks['read'](addr, result)
 
         return result
 
@@ -839,9 +820,6 @@ class Memory(object):
             m[addr:addr+size] = buf[addr-start:addr-start+size]
             addr+=size
         assert addr == stop
-
-        if 'write' in self._callbacks:
-            self._callbacks['write'](addr, buf)
 
     def _get_size(self, size):
         return size

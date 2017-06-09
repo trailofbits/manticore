@@ -20,13 +20,23 @@ class ManticoreTest(unittest.TestCase):
             pass
         self.assertTrue(tmp in self.m._hooks[entry])
 
+    def test_hook(self):
+        self.m.context['x'] = 0
+
+        @self.m.hook(None)
+        def tmp(state):
+            self.m.context['x'] = 1
+            self.m.terminate()
+        self.m.run()
+
+        self.assertEqual(self.m.context['x'], 1)
+
     def test_hook_dec_err(self):
         with self.assertRaises(TypeError):
             @self.m.hook('0x00400e40')
             def tmp(state):
                 pass
 
-    @unittest.skip('TODO(mark): (#52) activating this test breaks something z3 related for following tests')
     def test_integration_basic_stdin(self):
         import os, struct
         self.m = Manticore('tests/binaries/basic_linux_amd64')

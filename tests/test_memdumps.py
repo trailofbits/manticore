@@ -99,7 +99,6 @@ class IntegrationTest(unittest.TestCase):
     #    self._runManticore("simple_fpu")
 
     # too slow processing REP SCASD
-    @unittest.skip('TODO(mark); skipping so we can move on with our lives and merge x86_new. ask felipe to fix later.')
     def testWin32API(self):
         self._runManticore("win32_api_test")
 

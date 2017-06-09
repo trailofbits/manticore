@@ -59,12 +59,13 @@ def makeDecree(args):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, argv, env, concrete_start = ''):
+def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
+
     platform = linux.SLinux(program, argv=argv, envp=env,
-            symbolic_files=('symbolic.txt'))
+                            symbolic_files=symbolic_files)
     initial_state = State(constraints, platform)
 
     if concrete_start != '':
@@ -81,10 +82,10 @@ def makeLinux(program, argv, env, concrete_start = ''):
     if any(issymbolic(x) for val in argv + env for x in val):
         platform.setup_stack([program] + argv, env)
 
-    platform.input.transmit(concrete_start)
+    platform.input.write(concrete_start)
 
     #set stdin input...
-    platform.input.transmit(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
+    platform.input.write(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
     return initial_state 
 
@@ -189,6 +190,7 @@ class Manticore(object):
         self._maxstates = 0
         self._maxstorage = 0
         self._verbosity = 0
+        self._symbolic_files = [] # list of string
 
         manager = Manager()
 
@@ -337,6 +339,16 @@ class Manticore(object):
         else:
             self._hooks.setdefault(pc, set()).add(callback)
 
+    def add_symbolic_file(self, symbolic_file):
+        '''
+        Add a symbolic file. Each '+' in the file will be considered
+        as symbolic, other char are concretized.
+        Symbolic files must have been defined before the call to `run()`.
+
+        :param str symbolic_file: the name of the symbolic file
+        '''
+        self._symbolic_files.append(symbolic_file)
+
     def _get_symbol_address(self, symbol):
         '''
         Return the address of |symbol| within the binary
@@ -358,7 +370,7 @@ class Manticore(object):
         if self._binary_type == 'ELF':
             # Linux
             env = ['%s=%s'%(k,v) for k,v in self._env.items()]
-            state = makeLinux(self._binary, self._argv, env, self._concrete_data)
+            state = makeLinux(self._binary, self._argv, env, self._symbolic_files, self._concrete_data)
         elif self._binary_type == 'PE':
             # Windows
             state = makeWindows(self._args)
@@ -386,11 +398,11 @@ class Manticore(object):
         else:
             os.mkdir(path)
 
-        self._workspace_path = path
+        self._workspace_path = os.path.abspath(path)
 
     def _make_workspace(self):
         ''' Make working directory '''
-        return tempfile.mkdtemp(prefix="mcore_", dir='./')
+        return os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
 
     @property
     def policy(self):
