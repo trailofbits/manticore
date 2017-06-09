@@ -91,7 +91,7 @@ class File(object):
     def sync(self):
         return
 
-class SymbolicFile(object):
+class SymbolicFile(File):
     '''
     Represents a symbolic file.
     '''
