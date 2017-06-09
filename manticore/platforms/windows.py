@@ -4,12 +4,11 @@ import sys, os, struct
 from ..core.memory import Memory, MemoryException, SMemory32, Memory32
 from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
-from ..core.cpu.x86 import I386Cpu, Sysenter, I386StdcallAbi
-from ..core.cpu.abstractcpu import Interruption, Syscall, \
-        ConcretizeRegister, ConcretizeArgument, IgnoreAPI
-from ..core.executor import ForkState, SyscallNotImplemented
+from ..core.cpu.x86 import I386Cpu, Syscall
+from ..core.cpu.abstractcpu import Interruption, Syscall
+from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
-from ..platforms.platform import Platform
+from ..platforms.platform import *
 
 from ..binary.pe import minidump
 
@@ -20,9 +19,10 @@ import random
 from windows_syscalls import syscalls_num
 logger = logging.getLogger("PLATFORM")
 
-class ProcessExit(Exception):
-    def __init__(self, code):
-        super(ProcessExit, self).__init__("Process exited correctly. Code: %s"%code)
+
+class SyscallNotImplemented(TerminateState):
+    def __ini__(self, message):
+        super(SyscallNotImplemented,self).__init__(message, testcase=True)
 
 class RestartSyscall(Exception):
     pass
@@ -32,11 +32,6 @@ class Deadlock(Exception):
 
 class SymbolicAPIArgument(Exception):
     pass
-
-class SymbolicSyscallArgument(ConcretizeRegister):
-    def __init__(self, number, message='Concretizing syscall argument', policy='SAMPLED'):
-        reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][number]
-        super(SymbolicSyscallArgument, self).__init__(reg_name, message, policy)
 
 #FIXME Consider moving this to executor.state?
 def toStr(state, value):
@@ -50,7 +45,7 @@ def toStr(state, value):
 
 class Windows(Platform):
     '''
-    A simple Windows Operating System Platform.
+    A simple Windows Operating System platform.
     This class emulates some Windows system calls
     '''
 
@@ -71,8 +66,6 @@ class Windows(Platform):
         '''
         Builds a Windows OS platform
         '''
-        super(Windows, self).__init__(path)
-
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []
@@ -174,7 +167,6 @@ class Windows(Platform):
                 self.running.append(self.procs.index(cpu))
         
 
-        self._function_abi = I386StdcallAbi(self.procs[0])
         # open standard files stdin, stdout, stderr
         logger.info("Not Opening any file")
 
@@ -197,7 +189,6 @@ class Windows(Platform):
         state['syscall_trace'] = self.syscall_trace
         state['files'] = self.files
         state['flavor'] = self.flavor
-        state['function_abi'] = self._function_abi
 
         return state
 
@@ -213,7 +204,6 @@ class Windows(Platform):
         self.syscall_trace = state['syscall_trace']
         self.files = state['files']
         self.flavor = state['flavor']
-        self._function_abi = state['function_abi']
 
     def _read_string(self, cpu, buf):
         """
@@ -330,7 +320,7 @@ class Windows(Platform):
             self.clocks += 1
             if self.clocks % 10000 == 0:
                 self.sched()
-        except Sysenter as e:
+        except Syscall as e:
             try:
                 e = None
                 self.sysenter(self.current)
@@ -432,7 +422,7 @@ class Windows(Platform):
 
 class SWindows(Windows):
     '''
-    A symbolic extension of a Decree Operating System Platform.
+    A symbolic extension of a Decree Operating System platform.
     '''
     def __init__(self, constraints, path, additional_context=None, snapshot_folder=None):
         '''
@@ -608,19 +598,19 @@ class kernel32(object):
                 str(phkResult)))
 
     @staticmethod
-    def RegCreateKeyExW(platform, hkey, lpSubKey, Reserved, lpClass, dwOptions,
+    def RegCreateKeyExW(platform, hkey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition):
-        return kernel32._RegCreateKeyEx(platform, True, hkey, lpSubKey, Reserved, lpClass, dwOptions,
+        return kernel32._RegCreateKeyEx(platform, True, hkey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition)
 
     @staticmethod
-    def RegCreateKeyExA(platform, hkey, lpSubKey, Reserved, lpClass, dwOptions,
+    def RegCreateKeyExA(platform, hkey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition):
-        return kernel32._RegCreateKeyEx(platform, False, hkey, lpSubKey, Reserved, lpClass, dwOptions,
+        return kernel32._RegCreateKeyEx(platform, False, hkey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition)
 
     @staticmethod
-    def _RegCreateKeyEx(platform, utf16, hKey, lpSubKey, Reserved, lpClass, dwOptions,
+    def _RegCreateKeyEx(platform, utf16, hKey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition):
         """ LONG WINAPI RegCreateKeyEx(
           _In_       HKEY                  hKey,
@@ -806,23 +796,23 @@ class kernel32(object):
         return 1
 
     @staticmethod
-    def CreateProcessW(platform, lpApplicationName, lpCommandLine, lpProcessAttributes,
+    def CreateProcessW(platform, lpApplicationName, lpCommandLine, lpProcessAttributes, 
             lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
             lpCurrentDirectory, lpStartupInfo, lpProcessInformation):
-        return kernel32._CreateProcess(platform, True, lpApplicationName, lpCommandLine, lpProcessAttributes,
+        return kernel32._CreateProcess(platform, True, lpApplicationName, lpCommandLine, lpProcessAttributes, 
                 lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
                 lpCurrentDirectory, lpStartupInfo, lpProcessInformation)
 
     @staticmethod
-    def CreateProcessA(platform, lpApplicationName, lpCommandLine, lpProcessAttributes,
+    def CreateProcessA(platform, lpApplicationName, lpCommandLine, lpProcessAttributes, 
             lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
             lpCurrentDirectory, lpStartupInfo, lpProcessInformation):
-        return kernel32._CreateProcess(platform, False, lpApplicationName, lpCommandLine, lpProcessAttributes,
+        return kernel32._CreateProcess(platform, False, lpApplicationName, lpCommandLine, lpProcessAttributes, 
                 lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
                 lpCurrentDirectory, lpStartupInfo, lpProcessInformation)
 
     @staticmethod
-    def _CreateProcess(platform, utf16, lpApplicationName, lpCommandLine, lpProcessAttributes,
+    def _CreateProcess(platform, utf16, lpApplicationName, lpCommandLine, lpProcessAttributes, 
             lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
             lpCurrentDirectory, lpStartupInfo, lpProcessInformation):
         """BOOL WINAPI CreateProcess(

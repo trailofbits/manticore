@@ -1,7 +1,7 @@
 import struct
 import sys
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
-from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
+from .abstractcpu import Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant
@@ -252,7 +252,6 @@ class Armv7RegisterFile(RegisterFile):
     def canonical_registers(self):
         return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
 
-
 class Armv7LinuxSyscallAbi(SyscallAbi):
     '''
     ARMv7 Linux system call ABI
@@ -315,7 +314,6 @@ class Armv7Cpu(Cpu):
         state['_last_flags'] = self._last_flags
         state['_force_next'] = self._force_next
         return state
-
 
     def __setstate__(self, state):
         super(Armv7Cpu, self).__setstate__(state)

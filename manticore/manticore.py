@@ -16,14 +16,36 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 from .core.executor import Executor
-from .core.state import State, AbandonState
+from .core.state import State, TerminateState
 from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
-
+from .utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger('MANTICORE')
+
+
+
+class ProfilingResults(object):
+    def __init__(self, raw_stats, instructions_executed):
+        self.raw_stats = raw_stats
+        self.instructions_executed = instructions_executed
+
+        self.time_elapsed = raw_stats.total_tt
+
+        self.loading_time = 0
+        self.saving_time = 0
+        self.solver_time = 0
+        for (func_file, _, func_name), (_, _, _, func_time, _) in raw_stats.stats.iteritems():
+            if func_name == 'load':
+                self.loading_time += func_time
+            elif func_name == 'store':
+                self.saving_time += func_time
+            elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
+                self.solver_time += func_time
+
+
 
 def makeDecree(args):
     constraints = ConstraintSet()
@@ -135,7 +157,6 @@ class Manticore(object):
     :param str binary_path: Path to binary to analyze
     :param args: Arguments to provide to binary
     :type args: list[str]
-    :ivar context: SyncManager managed `dict` shared between Manticore worker processes
     '''
 
 
@@ -181,6 +202,7 @@ class Manticore(object):
             self._binary_obj = ELFFile(file(self._binary))
 
         self._init_logging()
+
 
     def _init_logging(self): 
 
@@ -276,6 +298,7 @@ class Manticore(object):
                   [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
                   [('REGISTERS', logging.DEBUG)],
                   [('SMT', logging.DEBUG)]]
+
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
             return sorted((minimum, val, maximum))[1]
@@ -447,28 +470,34 @@ class Manticore(object):
         return self._arch
         
 
-    def _start_workers(self, num_processes):
+    def _start_workers(self, num_processes, profiling=False):
         assert num_processes > 0, "Must have more than 0 worker processes"
 
         logger.info("Starting %d processes.", num_processes)
 
+        if profiling:
+            profile = cProfile.Profile()
+            def profile_this(func, *args, **kwargs):
+                profile.enable()
+                result = func(*args, **kwargs)
+                profile.disable()
+                profile.create_stats()
+                self.profile_stats.append(_profile.stats.items())
+                return result
+            return func
+            target = profile_this(self._executor.run)
+        else:
+            target = self._executor.run
+
         for _ in range(num_processes):
-            p = Process(target=self._executor.run, args=())
+            p = Process(target=target, args=())
             self._workers.append(p)
             p.start()
 
     def _join_workers(self):
-        while len(self._workers) > 0:
-            w = self._workers.pop()
-            try:
-                w.join()
-            except KeyboardInterrupt, e:
-                self._executor.shutdown()
-                # multiprocessing.dummy.Process does not support terminate
-                if hasattr(w, 'terminate'):
-                    w.terminate()
-
-                self._workers.append(w)
+        with WithKeyboardInterruptAs(self._executor.shutdown):    
+            while len(self._workers) > 0:
+                w = self._workers.pop().join()
 
 
     ############################################################################
@@ -518,7 +547,193 @@ class Manticore(object):
                     logger.debug("Repeated PC in assertions file %s", path)
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
+    def _store_state_callback(self, state, state_id):
+        logger.debug("store state %r", state_id)
 
+    def _load_state_callback(self, state, state_id):
+        logger.debug("load state %r", state_id)
+
+    def _terminate_state_callback(self, state, state_id, ex):
+        logger.info("Terminate_state_callback for %d", state_id)
+        executor = self._executor
+        #aggregates state statistics into exceutor statistics. FIXME split
+        logger.debug("Terminate state %r %r ", state, state_id)
+        state_visited = state.context.get('visited_since_last_fork', set())
+        state_instructions_count = state.context.get('instructions_count', 0)
+        with self._executor.locked_context() as executor_context:
+            executor_visited = executor_context.get('visited', set())
+            executor_context['visited'] = executor_visited.union(state_visited)
+
+            executor_instructions_count = executor_context.get('instructions_count', 0)
+            executor_context['instructions_count'] = executor_instructions_count + state_instructions_count 
+
+    def _fork_state_callback(self, state, expression, values, policy):
+        state_visited = state.context.get('visited_since_last_fork', set())
+        with self._executor.locked_context() as executor_context:
+            executor_visited = executor_context.get('visited', set())
+            executor_context['visited'] = executor_visited.union(state_visited)
+        state.context['visited_since_last_fork'] = set()
+
+        logger.debug("About to store state %r %r %r", state, expression, values, policy)
+
+    def _read_register_callback(self, state, reg_name, value):
+        logger.debug("Read Register %r %r", reg_name, value)
+
+    def _write_register_callback(self, state, reg_name, value):
+        logger.debug("Write Register %r %r", reg_name, value)
+
+    def _read_memory_callback(self, state,  address, value, size):
+        logger.debug("Read Memory %r %r %r", address, value, size)
+
+    def _write_memory_callback(self, state, address, value, size):
+        logger.debug("Write Memory %r %r %r", address, value, size)
+
+    def _decode_instruction_callback(self, state):
+        logger.debug("Decoding stuff instruction not available")
+
+
+    def _emulate_instruction_callback(self, state, instruction):
+        logger.debug("About to emulate instruction")
+
+    def _did_execute_instruction_callback(self, state, instruction):
+        logger.debug("Did execute an instruction")
+
+    def _execute_instruction_callback(self, state, instruction):
+        logger.info("exe\n")
+        address = state.cpu.PC
+        if not issymbolic(address):
+            state.context.setdefault('visited_since_last_fork', set()).add(address)
+            count = state.context.get('instructions_count', 0)
+            state.context['instructions_count'] = count + 1
+
+
+    def _generate_testcase_callback(self, state, testcase_id, message = 'Testcase generated'):
+        #Fixme split this!
+        '''
+        Create a serialized description of a given state.
+        :param state: The state to generate information about
+        :param message: Accompanying message
+        '''
+        import StringIO
+        _getFilename = self._executor._workspace_filename
+        logger.debug("testcase",state, testcase_id, message)
+        test_number = testcase_id
+
+        logger.info("Generating testcase No. %d - %s",
+                test_number, message)
+
+        # Summarize state
+        output = StringIO.StringIO()
+        memories = set()
+
+        output.write("Command line:\n  " + ' '.join(sys.argv) + '\n')
+        output.write('Status:\n  {}\n'.format(message))
+        output.write('\n')
+
+        for cpu in filter(None, state.model.procs):
+            idx = state.model.procs.index(cpu)
+            output.write("================ PROC: %02d ================\n"%idx)
+
+            output.write("Memory:\n")
+            if hash(cpu.memory) not in memories:
+                for m in str(cpu.memory).split('\n'):
+                    output.write("  %s\n"%m)
+                memories.add(hash(cpu.memory))
+
+            output.write("CPU:\n{}".format(cpu))
+
+            if hasattr(cpu, "instruction") and cpu.instruction is not None:
+                i = cpu.instruction
+                output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
+            else:
+                output.write("  Instruction: {symbolic}\n")
+
+        with open(_getFilename('test_%08x.messages'%test_number),'a') as f:
+            f.write(output.getvalue())
+            output.close()
+
+        tracefile = 'test_{:08x}.trace'.format(test_number)
+        with open(_getFilename(tracefile), 'w') as f:
+            for pc in state.context['visited']:
+                f.write('0x{:08x}\n'.format(pc))
+
+        # Save constraints formula
+        smtfile = 'test_{:08x}.smt'.format(test_number)
+        with open(_getFilename(smtfile), 'wb') as f:
+            f.write(str(state.constraints))
+        
+        assert solver.check(state.constraints)
+        for symbol in state.input_symbols:
+            buf = solver.get_value(state.constraints, symbol)
+            file(_getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
+        
+        file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.model.syscall_trace))
+
+        stdout = ''
+        stderr = ''
+        for sysname, fd, data in state.model.syscall_trace:
+            if sysname in ('_transmit', '_write') and fd == 1:
+                stdout += ''.join(map(str, data))
+            if sysname in ('_transmit', '_write') and fd == 2:
+                stderr += ''.join(map(str, data))
+        file(_getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
+        file(_getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
+
+        # Save STDIN solution
+        stdin_file = 'test_{:08x}.stdin'.format(test_number)
+        with open(_getFilename(stdin_file), 'wb') as f:
+            try:
+                for sysname, fd, data in state.model.syscall_trace:
+                    if sysname not in ('_receive', '_read') or fd != 0:
+                        continue
+                    for c in data:
+                        f.write(chr(solver.get_value(state.constraints, c)))
+            except SolverException, e:
+                f.seek(0)
+                f.write("{SolverException}\n")
+                f.truncate()
+
+        return test_number
+
+
+    def _dump_stats_callback(self):
+        _shared_context = self._executor._shared_context
+        executor_visited = _shared_context.get('visited', set())
+
+        #Fixme this is duplicated?
+        if self.coverage_file is not None:
+
+            with open(self.coverage_file, "w") as f:
+                fmt = "0x{:016x}\n"
+                for m in executor_visited:
+                    f.write(fmt.format(m[1]))
+
+        visited = ['%d:%08x'%(0,site) for site in executor_visited]
+        with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
+            for entry in sorted(visited):
+                f.write(entry + '\n')
+
+                    
+        #if self.memory_errors_file is not None:
+        #    with open(self._args.errorfile, "w") as f:
+        #        fmt = "0x{:016x}\n"
+        #        for m in self._executor.errors:
+        #            f.write(fmt.format(m))
+
+
+        instructions_count = _shared_context.get('instructions_count',0)
+        elapsed = time.time()-self._time_started
+        logger.info('Results dumped in %s', self.workspace)
+        logger.info('Instructions executed: %d', instructions_count)
+        logger.info('Coverage: %d different instructions executed', len(executor_visited))
+        #logger.info('Number of paths covered %r', State.state_count())
+        logger.info('Total time: %s', elapsed)
+        logger.info('IPS: %d', instructions_count/elapsed)
+
+
+        with file(os.path.join(self.workspace,'command.sh'),'w') as f:
+            f.write(' '.join(sys.argv))
+        
     def run(self, procs=1, timeout=0):
         '''
         Runs analysis.
@@ -534,9 +749,9 @@ class Manticore(object):
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
-        state = self._make_state(self._binary)
+        initial_state = self._make_state(self._binary)
 
-        self._executor = Executor(state,
+        self._executor = Executor(initial_state,
                                   workspace=self.workspace, 
                                   policy=self._policy, 
                                   dumpafter=self.dumpafter, 
@@ -546,31 +761,91 @@ class Manticore(object):
                                   dumpstats=self.should_profile)
         
 
+
+        #Link Executor events to default callbacks in manticore object
+        self._executor.did_read_register += self._read_register_callback
+        self._executor.will_write_register += self._write_register_callback
+        self._executor.did_read_memory += self._read_memory_callback
+        self._executor.will_write_memory += self._write_memory_callback
+        self._executor.will_execute_instruction += self._execute_instruction_callback
+        self._executor.will_decode_instruction += self._decode_instruction_callback
+        self._executor.will_store_state += self._store_state_callback
+        self._executor.will_load_state += self._load_state_callback
+        self._executor.will_fork_state += self._fork_state_callback
+        self._executor.will_terminate_state += self._terminate_state_callback
+        self._executor.will_generate_testcase += self._generate_testcase_callback
+
         if self._hooks:
-            self._executor.will_execute_pc += self._hook_callback
+            self._executor.will_execute_instruction += self._hook_callback
 
         if self._model_hooks:
-            self._executor.will_execute_pc += self._model_hook_callback
+            self._executor.will_execute_instruction += self._model_hook_callback
 
         if self._assertions:
-            self._executor.will_execute_pc += self._assertions_callback
+            self._executor.will_execute_instruction += self._assertions_callback
 
         self._time_started = time.time()
 
         self._running = True
 
-
         if timeout > 0:
             t = Timer(timeout, self.terminate)
             t.start()
         try:
-            self._start_workers(procs)
+            self._start_workers(procs, profiling=False)
 
             self._join_workers()
         finally:
             self._running = False
             if timeout > 0:
                 t.cancel()
+
+        if self.should_profile:
+
+            class PstatsFormatted:
+                def __init__(self, d):
+                    self.stats = dict(d)
+                def create_stats(self):
+                    pass
+
+            ps = None
+            for item in self._stats:
+                try:
+                    stat = PstatsFormatted(item)
+                    if ps is None:
+                        ps = pstats.Stats(stat)
+                    else:
+                        ps.add(stat)
+                except TypeError:
+                    logger.debug("Incorrectly formatted profiling information in _stats, skipping")
+
+            if ps is None:
+                logger.info("Profiling failed")
+            else:
+                filename = self._getFilename('profiling.bin') 
+                logger.info("Dumping profiling info at %s", filename)
+                ps.dump_stats(filename)
+
+            results = ProfilingResults(ps, self.count)
+
+            logger.info("Total profiled time: %f", results.time_elapsed)
+            logger.info("Loading state time: %f", results.loading_time)
+            logger.info("Saving state time: %f", results.saving_time)
+            logger.info("Solver time: %f", results.solver_time)
+            logger.info("Other time: %f", results.time_elapsed - (results.loading_time + results.saving_time + results.solver_time))
+            return results
+
+
+
+
+        self._dump_stats_callback()
+
+        logger.info('Results dumped in %s', self.workspace)
+        #logger.info('Instructions executed: %d', self._executor.count)
+        #logger.info('Coverage: %d different instructions executed', len(self._executor.visited))
+        #logger.info('Number of paths covered %r', State.state_count())
+        logger.info('Total time: %s', time.time()-self._time_started)
+        #logger.info('IPS: %d', self._executor.count/(time.time()-self._time_started))
 
     def terminate(self):
         '''
@@ -594,8 +869,8 @@ class Manticore(object):
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                    state.cpu.PC, program)
-            raise AbandonState()
+                    state.cpu.pc, program)
+            raise TerminateState()
 
         #Everything is good add it.
         state.constraints.add(assertion)
@@ -618,32 +893,4 @@ class Manticore(object):
         for cb in self._hooks.get(None, []):
             cb(state)
 
-    def dump_stats(self):
-        if self.coverage_file is not None:
-            with open(self.coverage_file, "w") as f:
-                fmt = "0x{:016x}\n"
-                for m in self._executor.visited:
-                    f.write(fmt.format(m[1]))
-                    
-        if self.memory_errors_file is not None:
-            with open(self._args.errorfile, "w") as f:
-                fmt = "0x{:016x}\n"
-                for m in self._executor.errors:
-                    f.write(fmt.format(m))
 
-        self._executor.dump_stats()
-
-        logger.info('Results dumped in %s', self.workspace)
-        logger.info('Instructions executed: %d', self._executor.count)
-        logger.info('Coverage: %d different instructions executed', len(self._executor.visited))
-        logger.info('Number of paths covered %r', State.state_count())
-        logger.info('Total time: %s', time.time()-self._time_started)
-        logger.info('IPS: %d', self._executor.count/(time.time()-self._time_started))
-
-        visited = ['%d:%08x'%site for site in self._executor.visited]
-        with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
-            for entry in sorted(visited):
-                f.write(entry + '\n')
-
-        with file(os.path.join(self.workspace,'command.sh'),'w') as f:
-            f.write(' '.join(sys.argv))

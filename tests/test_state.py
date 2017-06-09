@@ -1,9 +1,9 @@
 import unittest
 
-from manticore.core.state import State
-from manticore.core.smtlib import BitVecVariable
-from manticore.core.smtlib import ConstraintSet
 from manticore.platforms import linux
+from manticore.utils.event import Signal
+from manticore.core.state import State
+from manticore.core.smtlib import BitVecVariable, ConstraintSet
 
 class FakeMemory(object):
     def __init__(self):
@@ -13,8 +13,23 @@ class FakeMemory(object):
     def constraints(self):
         return self._constraints
 
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+
 class FakeCpu(object):
     def __init__(self):
+        self.will_decode_instruction = Signal()
+        self.will_execute_instruction = Signal()
+        self.did_execute_instruction = Signal()
+        self.will_emulate_instruction = Signal()
+        self.did_emulate_instruction = Signal()
+
+        self.will_read_register = Signal()
+        self.will_write_register = Signal()
+        self.will_read_memory = Signal()
+        self.will_write_memory = Signal()
+
         self._memory = FakeMemory()
 
     @property
@@ -33,6 +48,13 @@ class FakePlatform(object):
     @property
     def constraints(self):
         return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.memory.constraints = constraints
+
 
 
 class StateTest(unittest.TestCase):
@@ -108,6 +130,7 @@ class StateTest(unittest.TestCase):
         with self.assertRaises(Exception):
             expr = self.state.new_symbolic_value(length)
 
+    @unittest.skip('Record branches not a part of state anymore')
     def test_record_branches(self):
         branch = 0x80488bb
         target = 0x8048997

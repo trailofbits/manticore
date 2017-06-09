@@ -117,7 +117,7 @@ class ABITests(unittest.TestCase):
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
 
         def test(one, two, three, four, five, six):
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgument(cpu, 0)
 
         with self.assertRaises(ConcretizeRegister) as cr:
             cpu.func_abi.invoke(test)
@@ -136,7 +136,7 @@ class ABITests(unittest.TestCase):
         self.assertEqual(cpu.read_int(cpu.SP), 0x80)
 
         def test(one, two, three, four, five):
-            raise ConcretizeArgument(4)
+            raise ConcretizeArgument(cpu, 4)
 
         with self.assertRaises(ConcretizeMemory) as cr:
             cpu.func_abi.invoke(test)
@@ -204,7 +204,7 @@ class ABITests(unittest.TestCase):
         base = cpu.ESP 
         cpu.EIP = eip
         def test(one, two, three, four, five):
-            raise ConcretizeArgument(2)
+            raise ConcretizeArgument(cpu, 2)
 
         abi = I386StdcallAbi(cpu)
         with self.assertRaises(ConcretizeMemory) as cr:
@@ -226,7 +226,7 @@ class ABITests(unittest.TestCase):
         cpu.push(0x1234, cpu.address_bit_size)
 
         def test(one, two, three, four, five):
-            raise ConcretizeArgument(0) # 0x1068
+            raise ConcretizeArgument(cpu, 0) # 0x1068
             return 3
 
         with self.assertRaises(ConcretizeMemory) as cr:
@@ -316,7 +316,7 @@ class ABITests(unittest.TestCase):
         cpu.push(0x1234, cpu.address_bit_size)
 
         def test(one, two, three, four, five, six):
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgument(cpu, 0)
 
         with self.assertRaises(ConcretizeRegister) as cr:
             cpu.func_abi.invoke(test)
@@ -406,7 +406,7 @@ class ABITests(unittest.TestCase):
         cpu = self._cpu_x86
 
         def test(prefix, extracted):
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgument(cpu, 0)
 
         with self.assertRaises(AssertionError) as cr:
             cpu.func_abi.invoke(test, prefix_args=(1,))

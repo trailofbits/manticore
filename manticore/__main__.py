@@ -110,7 +110,7 @@ def main():
 
     m.run(args.procs, args.timeout)
 
-    m.dump_stats()
+    #m.dump_stats()
 
 if __name__ == '__main__':
     main()
