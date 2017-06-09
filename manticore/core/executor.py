@@ -35,6 +35,29 @@ manager.start(mgr_init)
 #module wide logger
 logger = logging.getLogger("EXECUTOR")
 
+class SyscallNotImplemented(Exception):
+    ''' Exception raised when you try to call a not implemented
+        system call. Go to linux.py and add it!
+    '''
+    pass
+
+class ProcessExit(Exception):
+    def __init__(self, code):
+        super(ProcessExit, self).__init__("Process exited correctly. Code: %s"%code)
+
+class RestartSyscall(Exception):
+    pass
+
+class Deadlock(Exception):
+    pass
+
+class MaxConsecutiveIntructions(Exception):
+    pass
+
+class ForkState(Exception):
+    def __init__(self, condition):
+        self.condition=condition
+
 
 def sync(f):
     """ Synchronization decorator. """

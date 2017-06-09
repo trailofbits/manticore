@@ -1,6 +1,7 @@
 from capstone import *
 from capstone.arm import *
 from capstone.x86 import *
+from abc import ABCMeta, abstractmethod
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
