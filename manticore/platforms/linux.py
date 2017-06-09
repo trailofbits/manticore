@@ -65,6 +65,9 @@ class File(object):
     def is_full(self):
         return False
 
+    def sync(self):
+        return
+
     def __getstate__(self):
         state = {}
         state['name'] = self.name
