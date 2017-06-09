@@ -34,36 +34,9 @@ def perms_from_protflags(prot_flags):
 
 class File(object):
     def __init__(self, *args, **kwargs):
-        #Todo: assert file is seekable otherwise we should save what was
-        #read/write to the state
+        # TODO: assert file is seekable otherwise we should save what was
+        # read/write to the state
         self.file = file(*args,**kwargs)
-    def stat(self):
-        return os.fstat(self.fileno())
-    def ioctl(self, request, argp):
-        #argp ignored..
-        return fcntl.fcntl(self, request)
-    @property
-    def name(self):
-        return self.file.name
-    @property
-    def mode(self):
-        return self.file.mode
-    def tell(self, *args):
-        return self.file.tell(*args)
-    def seek(self, *args):
-        return self.file.seek(*args)
-    def write(self, buf):
-        for c in buf:
-            self.file.write(c)
-    def read(self, *args):
-        return self.file.read(*args)
-    def close(self, *args):
-        return self.file.close(*args)
-    def fileno(self, *args):
-        return self.file.fileno(*args)
-
-    def is_full(self):
-        return False
 
     def __getstate__(self):
         state = {}
@@ -79,11 +52,49 @@ class File(object):
         self.file = file(name, mode)
         self.seek(pos)
 
-class SymbolicFile(object):
+    @property
+    def name(self):
+        return self.file.name
+
+    @property
+    def mode(self):
+        return self.file.mode
+
+    def stat(self):
+        return os.fstat(self.fileno())
+
+    def ioctl(self, request, argp):
+        #argp ignored..
+        return fcntl.fcntl(self, request)
+
+    def tell(self, *args):
+        return self.file.tell(*args)
+
+    def seek(self, *args):
+        return self.file.seek(*args)
+
+    def write(self, buf):
+        for c in buf:
+            self.file.write(c)
+
+    def read(self, *args):
+        return self.file.read(*args)
+
+    def close(self, *args):
+        return self.file.close(*args)
+
+    def fileno(self, *args):
+        return self.file.fileno(*args)
+
+    def is_full(self):
+        return False
+
+class SymbolicFile(File):
     '''
     Represents a symbolic file.
     '''
-    def __init__(self, constraints, path="sfile", mode='rw', max_size=100, wildcard='+'):
+    def __init__(self, constraints, path="sfile", mode='rw', max_size=100,
+                 wildcard='+'):
         '''
         Builds a symbolic file
 
@@ -93,31 +104,37 @@ class SymbolicFile(object):
         :param str mode: the access permissions of the symbolic file
         :param max_size: Maximun amount of bytes of the symbolic file
         '''
-        # XXX(yan): wildcard isn't used; check callers and remove.
         assert 'r' in mode
-        if isinstance(path, str):
-            path = File(path, mode)
-        assert isinstance(path, File)
-
-        WILDCARD = '+'
-
-        symbols_cnt = 0
-        data = path.read()
-        size = len(data)
-        self.array = constraints.new_array(name=path.name, index_max=size)
-        for i in range(size):
-            if data[i] != WILDCARD:
-                self.array[i] = data[i]
-            else:
-                symbols_cnt+=1
+        assert isinstance(path, str)
+        super(SymbolicFile, self).__init__(path, mode)
+        # read the concrete data using the parent the read() form the File class
+        data = super(SymbolicFile, self).read()
 
         self._constraints = constraints
         self.pos = 0
-        self.max_size=min(len(data), max_size)
+        self.max_size = min(len(data), max_size)
+
+        # build the constraints array
+        size = len(data)
+        self.array = constraints.new_array(name=self.name, index_max=size)
+
+        # XXX (yan): wildcard isn't used; check callers and remove.
+        symbols_cnt = 0
+        for i in range(size):
+            if data[i] != wildcard:
+                self.array[i] = data[i]
+            else:
+                symbols_cnt += 1
+
         if symbols_cnt > max_size:
-            logger.warning("Found more wilcards in the file than free symbolic values allowed (%d > %d)",symbols_cnt, max_size)
+            logger.warning(("Found more wilcards in the file than free ",
+                            "symbolic values allowed (%d > %d)"),
+                           symbols_cnt,
+                           max_size)
         else:
-            logger.debug("Found %d free symbolic values on file %s",symbols_cnt, path.name)
+            logger.debug("Found %d free symbolic values on file %s",
+                         symbols_cnt,
+                         self.name)
 
     def __getstate__(self):
         state = {}
@@ -135,32 +152,6 @@ class SymbolicFile(object):
     def constraints(self):
         return self._constraints
 
-    @property
-    def name(self):
-        return self.array.name
-
-    def ioctl(self, request, argp):
-        #logger.debug("IOCTL on symbolic files not implemented! (req:%x)", request)
-        return 0
-
-    def sync(self):
-        '''
-        Flush buffered data. Currently not implemented.
-        '''
-        return
-
-    def stat(self):
-        from collections import namedtuple
-        stat_result = namedtuple('stat_result', ['st_mode','st_ino','st_dev','st_nlink','st_uid','st_gid','st_size','st_atime','st_mtime','st_ctime', 'st_blksize','st_blocks','st_rdev'])
-        return stat_result(8592,11,9,1,1000,5,0,1378673920,1378673920,1378653796,0x400,0x8808,0)
-
-    def fileno(self):
-        '''
-        Not implemented
-        '''
-        pass
-        #return self.f.fileno()
-
     def tell(self):
         '''
         Returns the read/write file offset
@@ -168,13 +159,14 @@ class SymbolicFile(object):
         :return: the read/write file offset.
         '''
         return self.pos
+
     def seek(self, pos):
         '''
         Returns the read/write file offset
         :rtype: int
         :return: the read/write file offset.
         '''
-        assert isinstance(pos, (int,long))
+        assert isinstance(pos, (int, long))
         self.pos = pos
 
     def read(self, count):
@@ -183,23 +175,21 @@ class SymbolicFile(object):
         :rtype: list
         :return: the list of symbolic bytes read
         '''
-        if self.pos > self.max_size :
+        if self.pos > self.max_size:
             return []
         else:
-            size = min(count,self.max_size-self.pos)
-            ret = [self.array[i] for i in xrange(self.pos,self.pos+size)]
-            self.pos+=size
+            size = min(count, self.max_size - self.pos)
+            ret = [self.array[i] for i in xrange(self.pos, self.pos + size)]
+            self.pos += size
             return ret
 
     def write(self, data):
         '''
         Writes the symbolic bytes in C{data} onto the file.
         '''
-        for c in data:
-            size = min(len(data),self.max_size-self.pos)
-            for i in xrange(self.pos,self.pos+size):
-                self.array[i] = data[i-self.pos]
-
+        size = min(len(data), self.max_size - self.pos)
+        for i in xrange(self.pos, self.pos + size):
+            self.array[i] = data[i - self.pos]
 
 class Socket(object):
     def stat(self):
@@ -225,10 +215,10 @@ class Socket(object):
         return self.peer is not None
 
     def is_empty(self):
-        return len(self.buffer)==0
+        return not self.buffer
 
     def is_full(self):
-        return len(self.buffer)>2*1024
+        return len(self.buffer) > 2 * 1024
 
     def connect(self, peer):
         assert not self.is_connected()
@@ -276,7 +266,6 @@ class Linux(Platform):
         self.clocks = 0
         self.files = []
         self.syscall_trace = []
-        self.files = []
 
         if program != None:
             self.elf = ELFFile(file(program))
@@ -301,7 +290,7 @@ class Linux(Platform):
 
     def _init_fds(self):
         # open standard files stdin, stdout, stderr
-        logger.debug("Opening file descriptors (0,1,2)")
+        logger.debug("Opening file descriptors (0,1,2) (STDIN, STDOUT, STDERR)")
         self.input = Socket()
         self.output = Socket()
         self.stderr = Socket()
@@ -317,9 +306,9 @@ class Linux(Platform):
         self.input.peer = stdin
         #A receive on stdout or stderr will return no data (rx_bytes: 0)
 
-        assert self._open(stdin) == 0
-        assert self._open(stdout) == 1
-        assert self._open(stderr) == 2
+        assert self._open(stdin) == sys.__stdin__.fileno()
+        assert self._open(stdout) == sys.__stdout__.fileno()
+        assert self._open(stderr) == sys.__stderr__.fileno()
 
     def _init_cpu(self, arch):
         cpu = self._mk_proc(arch)
@@ -422,9 +411,6 @@ class Linux(Platform):
                 self.files.append(f)
             else:
                 self.files.append(buf)
-        #for fd in range(len(self.files)):
-        #    if self.connections(fd) is not None:
-        #        self.files[fd].peer = self.files[self.connections(fd)]
 
         self.files[0].peer = self.output
         self.files[1].peer = self.output
@@ -1179,25 +1165,29 @@ class Linux(Platform):
 
 
     def sys_open(self, buf, flags, mode):
-        # buf: address of zero-terminated pathname
-        # flags/access: file access bits
-        # perms: file permission mode
+        '''
+        :param buf: address of zero-terminated pathname
+        :param flags: file access bits
+        :param mode: file permission mode
+        '''
         filename = self.current.read_string(buf)
-        try :
+        try:
             if os.path.abspath(filename).startswith('/proc/self'):
                 if filename == '/proc/self/exe':
-                    filename =  os.abspath(self.program)
+                    filename = os.abspath(self.program)
                 else:
                     logger.info("FIXME!")
-                    pass
-            mode = { os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w' }[flags&7]
+            mode = {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[flags&7]
             f = File(filename, mode) #todo modes, flags
-            logger.debug("Opening file %s for %s real fd %d",filename, mode, f.fileno())
-        except Exception,e:
-            logger.info("Could not open file %s. Reason %s"%(filename,str(e)))
+            logger.debug("Opening file %s for %s real fd %d",
+                         filename, mode, f.fileno())
+        # FIXME generic exception
+        except Exception as e:
+            logger.info("Could not open file %s. Reason %s" % (filename, str(e)))
             return -1
+        # FIXME
         if filename in self.symbolic_files:
-            logger.debug("%s file is considered to have symbols."%filename)
+            logger.debug("%s file is considered to have symbols." % filename)
             assert flags&7 == os.O_RDWR or flags&7 == os.O_RDONLY, "Symbolic files should be readable?"
             f = SymbolicFile(self.constraints, f, 'r')
 
@@ -1849,7 +1839,7 @@ class SLinux(Linux):
 
         self._constraints = ConstraintSet()
         self.random = 0
-        self.symbolic_files=symbolic_files
+        self.symbolic_files = symbolic_files
         super(SLinux, self).__init__(programs, argv, envp)
 
     def _mk_proc(self, arch):
