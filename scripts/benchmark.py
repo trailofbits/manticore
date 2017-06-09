@@ -1,10 +1,8 @@
 from manticore import Manticore
-from manticore.utils.helpers import pretty_print_results
 from sys import argv, exit
 
 def display(results):
-    pretty_printed = pretty_print_results(results)
-    for line in pretty_printed.split('\n'):
+    for line in str(results).split('\n'):
         print "  " + line
 
 def benchmark(program):

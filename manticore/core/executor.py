@@ -87,6 +87,15 @@ class ProfilingResults(object):
             elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
                 self.solver_time += func_time
 
+    def __str__(self):
+        return '\n'.join([ "Total time: {} seconds".format(self.time_elapsed),
+                           "Total instructions executed: {}".format(self.instructions_executed),
+                           "Average instructions per second: {}".format(self.instructions_executed / self.time_elapsed),
+                           "Time spent loading states: {} seconds".format(self.loading_time),
+                           "Time spent saving states: {} seconds".format(self.saving_time),
+                           "Time spent in solver: {} seconds".format(self.solver_time)])
+
+
 class Executor(object):
     '''
     The executor guides the execution of a single state, handles state forking 
