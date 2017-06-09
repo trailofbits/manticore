@@ -104,14 +104,12 @@ class SymbolicFile(File):
         '''
         Builds a symbolic file
 
-        :param constraints: the constraints
-        :param path: the pathname of the symbolic file
-        :type path: str or File
+        :param constraints: the SMT constraints
+        :param str path: the pathname of the symbolic file
         :param str mode: the access permissions of the symbolic file
         :param max_size: Maximun amount of bytes of the symbolic file
+        :param str wildcard: Wildcard to be used in symbolic file
         '''
-        assert 'r' in mode
-        assert isinstance(path, str)
         super(SymbolicFile, self).__init__(path, mode)
 
         # read the concrete data using the parent the read() form the File class
