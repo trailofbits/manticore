@@ -41,3 +41,18 @@ class memoized(object):
       '''Support instance methods.'''
       return functools.partial(self.__call__, obj)
 
+def pretty_print_results(results):
+    '''
+    Prettify the results of using manticore to profile some program
+
+    :param ProfilingResults results: The results of profiling, returned from `executor.dump_stats`
+    :rtype: string
+    '''
+
+    return '\n'.join([ "Total time: {} seconds".format(results.time_elapsed),
+                       "Total instructions executed: {}".format(results.instructions_executed),
+                       "Average instructions per second: {}".format(results.instructions_executed / results.time_elapsed),
+                       "Time spent loading states: {} seconds".format(results.loading_time),
+                       "Time spent saving states: {} seconds".format(results.saving_time),
+                       "Time spent in solver: {} seconds".format(results.solver_time)])
+

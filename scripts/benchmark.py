@@ -1,13 +1,11 @@
 from manticore import Manticore
+from manticore.utils.helpers import pretty_print_results
 from sys import argv, exit
 
 def display(results):
-    print "  Total time: {} seconds".format(results.time_elapsed)
-    print "  Total instructions executed: {}".format(results.instructions_executed)
-    print "  Average instructions per second: {}".format(results.instructions_executed / results.time_elapsed)
-    print "  Time spent loading states: {} seconds".format(results.loading_time)
-    print "  Time spent saving states: {} seconds".format(results.saving_time)
-    print "  Time spent in solver: {} seconds".format(results.solver_time)
+    pretty_printed = pretty_print_results(results)
+    for line in pretty_printed.split('\n'):
+        print "  " + line
 
 def benchmark(program):
     print "[*] Benchmarking program \"{}\"".format(program)
