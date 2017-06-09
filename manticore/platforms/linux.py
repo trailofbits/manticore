@@ -88,8 +88,10 @@ class File(object):
 
     def is_full(self):
         return False
+    def sync(self):
+        return
 
-class SymbolicFile(File):
+class SymbolicFile(object):
     '''
     Represents a symbolic file.
     '''
