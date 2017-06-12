@@ -769,7 +769,7 @@ class Executor(object):
                     del vals, symbolic, setstate
 
                 except SymbolicMemoryException as e:
-                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.PC, e.cause)
+                    logger.error('SymbolicMemoryException at PC: 0x%16x. Cause: %s', current_state.cpu.PC, e.cause)
                     logger.info('Constraint for crashing! %s', e.constraint)
 
                     children = []
