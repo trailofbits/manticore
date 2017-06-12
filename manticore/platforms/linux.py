@@ -241,7 +241,7 @@ class Socket(object):
     def receive(self, size):
         rx_bytes = min(size, len(self.buffer))
         ret = []
-        for _ in xrange(rx_bytes):
+        for i in xrange(rx_bytes):
             ret.append(self.buffer.pop())
         return ret
 
@@ -957,8 +957,9 @@ class Linux(Platform):
         '''
         return self._open(self.files[fd])
 
-    def _is_open(self, fd):
-        return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
+    def _assert_open(self, fd):
+        if fd < 0 or fd >= len(self.files) or self.files[fd] is None:
+            raise IndexError("Invalid index for open file descriptor list")
 
     def sys_umask(self, mask):
         '''
@@ -1002,10 +1003,9 @@ class Linux(Platform):
         '''
         try:
             # Read the data and put it in memory
-            if not self._is_open(fd):
-                raise BadFd()
+            self._assert_open(fd)
             self.files[fd].seek(offset)
-        except BadFd:
+        except (IndexError, BadFd):
             logger.info(("LSEEK: Not valid file descriptor on lseek."
                         "Fd not seekable. Returning EBADF"))
             return -errno.EBADF
@@ -1016,8 +1016,11 @@ class Linux(Platform):
     def sys_read(self, fd, buf, count):
         data = ''
         if count != 0:
-            if not self._is_open(fd):
-                logger.info("READ: Not valid file descriptor on read. Returning EBADF")
+            try:
+                self._assert_open(fd)
+            except IndexError:
+                logger.info(("READ: Not valid file descriptor on read."
+                             " Returning EBADF")
                 return -errno.EBADF
 
             # TODO check count bytes from buf
@@ -1055,7 +1058,9 @@ class Linux(Platform):
         data = []
         cpu = self.current
         if count != 0:
-            if not self._is_open(fd):
+            try:
+                self._assert_open(fd)
+            except IndexError:
                 logger.error("WRITE: Not valid file descriptor. Returning EBADFD %d", fd)
                 return -errno.EBADF
 
