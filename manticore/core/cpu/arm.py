@@ -588,7 +588,7 @@ class Armv7Cpu(Cpu):
         :param ARMv7Operand dest: the source register; register
         '''
         val = GetNBits(src.read(), 8)
-        word = Operators.ZEXTEND(32, val)
+        word = Operators.ZEXTEND(val, cpu.address_bit_size)
         dest.write(word)
 
     @instruction
