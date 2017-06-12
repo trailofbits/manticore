@@ -62,6 +62,7 @@ class Operand(object):
 
         :param int reg_id: Register ID
         '''
+        # FIXME (theo)
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
         if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
             return None
@@ -305,7 +306,7 @@ class Cpu(object):
     - stack_alias
     '''
 
-    def __init__(self, regfile, memory):
+    def __init__(self, regfile, memory, disasm):
         assert isinstance(regfile, RegisterFile)
         super(Cpu, self).__init__()
         self._regfile = regfile
@@ -313,9 +314,9 @@ class Cpu(object):
         self._instruction_cache = {}
         self._icount = 0
 
-        self._md = Cs(self.arch, self.mode)
-        self._md.detail = True
-        self._md.syntax = 0
+        self._disasm = Cs(self.arch, self.mode)
+        self._disasm.detail = True
+        self._disasm.syntax = 0
         self.instruction = None
 
         # Ensure that regfile created STACK/PC aliases
@@ -596,7 +597,7 @@ class Cpu(object):
             pass
 
         code = text.ljust(self.max_instr_width, '\x00')
-        instruction = next(self._md.disasm(code, pc))
+        instruction = next(self._disasm.disasm(code, pc))
 
         #PC points to symbolic memory
         if instruction.size > len(text):
@@ -659,6 +660,7 @@ class Cpu(object):
 
         :param capstone.CsInsn instruction: The instruction object to emulate
         '''
+        # FIXME (theo)
         emu = UnicornEmulator(self)
         emu.emulate(instruction)
         # We have been seeing occasional Unicorn issues with it not clearing
