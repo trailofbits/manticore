@@ -1,18 +1,23 @@
-from capstone import *
-from capstone.arm import *
-from capstone.x86 import *
-from abc import ABCMeta, abstractmethod
-from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
-from ..memory import MemoryException, FileMap, AnonMap
-from ...utils.helpers import issymbolic
-from ...utils.emulate import UnicornEmulator
-from functools import wraps
-from itertools import islice, imap
+#  from capstone import *
+#  from capstone.arm import *
+#  from capstone.x86 import *
+
+# FIXME (theo) remove capstone
 import inspect
-import sys
-import types
 import logging
 import StringIO
+
+from abc import abstractmethod
+from functools import wraps
+from itertools import islice, imap
+
+import capstone
+
+from .disasm import Capstone
+from ..smtlib import BitVec, Operators, Constant
+from ..memory import MemoryException
+from ...utils.helpers import issymbolic
+from ...utils.emulate import UnicornEmulator
 
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
@@ -30,11 +35,11 @@ class Operand(object):
         '''
         def __init__(self, parent):
             self.parent = parent
-        segment = property( lambda self: self.parent._reg_name(self.parent.op.mem.segment) )
-        base = property( lambda self: self.parent._reg_name(self.parent.op.mem.base) )
-        index = property( lambda self: self.parent._reg_name(self.parent.op.mem.index) )
-        scale = property( lambda self: self.parent.op.mem.scale )
-        disp = property( lambda self: self.parent.op.mem.disp )
+        segment = property(lambda self: self.parent._reg_name(self.parent.op.mem.segment))
+        base = property(lambda self: self.parent._reg_name(self.parent.op.mem.base))
+        index = property(lambda self: self.parent._reg_name(self.parent.op.mem.index))
+        scale = property(lambda self: self.parent.op.mem.scale)
+        disp = property(lambda self: self.parent.op.mem.disp)
 
     def __init__(self, cpu, op):
         '''
@@ -51,7 +56,7 @@ class Operand(object):
         :type op: X86Op or ArmOp
         '''
         assert isinstance(cpu, Cpu)
-        assert isinstance(op, (X86Op, ArmOp))
+        assert isinstance(op, (capstone.x86.X86Op, capstone.arm.ArmOp))
         self.cpu = cpu
         self.op = op
         self.mem = Operand.MemSpec(self)
@@ -306,7 +311,7 @@ class Cpu(object):
     - stack_alias
     '''
 
-    def __init__(self, regfile, memory, disasm):
+    def __init__(self, regfile, memory):
         assert isinstance(regfile, RegisterFile)
         super(Cpu, self).__init__()
         self._regfile = regfile
@@ -314,9 +319,7 @@ class Cpu(object):
         self._instruction_cache = {}
         self._icount = 0
 
-        self._disasm = Cs(self.arch, self.mode)
-        self._disasm.detail = True
-        self._disasm.syntax = 0
+        self._disasm = Capstone(self.arch, self.mode)
         self.instruction = None
 
         # Ensure that regfile created STACK/PC aliases
@@ -460,7 +463,7 @@ class Cpu(object):
         :type data: str or list
         '''
         for i in xrange(len(data)):
-            self.write_int( where+i, Operators.ORD(data[i]), 8)
+            self.write_int(where + i, Operators.ORD(data[i]), 8)
 
     def read_bytes(self, where, size):
         '''
@@ -473,7 +476,7 @@ class Cpu(object):
         '''
         result = []
         for i in xrange(size):
-            result.append(Operators.CHR(self.read_int( where+i, 8)))
+            result.append(Operators.CHR(self.read_int(where + i, 8)))
         return result
 
     def read_string(self, where, max_length=None):
@@ -597,21 +600,22 @@ class Cpu(object):
             pass
 
         code = text.ljust(self.max_instr_width, '\x00')
-        instruction = next(self._disasm.disasm(code, pc))
+        # FIXME(theo) abandon capstone instruction
+        insn = self._disasm.get_insn(code, pc)
 
         #PC points to symbolic memory
-        if instruction.size > len(text):
+        if insn.size > len(text):
             logger.info("Trying to execute instructions from invalid memory")
             raise InvalidPCException(pc)
 
-        if not self.memory.access_ok(slice(pc, pc+instruction.size), 'x'):
+        if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidPCException(pc)
 
-        instruction.operands = self._wrap_operands(instruction.operands)
+        insn.operands = self._wrap_operands(insn.operands)
 
-        self._instruction_cache[pc] = instruction
-        self.instruction = instruction
+        self._instruction_cache[pc] = insn
+        self.instruction = insn
 
 
     #######################################
