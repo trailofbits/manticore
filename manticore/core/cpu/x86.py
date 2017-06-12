@@ -1,5 +1,5 @@
-from capstone import *
-from capstone.x86 import *
+#  from capstone import *
+#  from capstone.x86 import *
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
 from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
 from functools import wraps
@@ -9,7 +9,7 @@ from ...utils.helpers import issymbolic
 import logging
 logger = logging.getLogger("CPU")
 
-
+import capstone
 
 OP_NAME_MAP = {
         'JNE':      'JNZ',
@@ -50,8 +50,8 @@ def rep(old_method):
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         prefix = cpu.instruction.prefix
-        if (X86_PREFIX_REP in prefix):
-            counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8] 
+        if (capstone.x86.X86_PREFIX_REP in prefix):
+            counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
                 raise ConcretizeRegister(counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
@@ -78,8 +78,8 @@ def repe(old_method):
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         prefix = cpu.instruction.prefix
-        if (X86_PREFIX_REP in prefix) or (X86_PREFIX_REPNE in prefix):
-            counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8] 
+        if (capstone.x86.X86_PREFIX_REP in prefix) or (capstone.x86.X86_PREFIX_REPNE in prefix):
+            counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
                 raise ConcretizeRegister(counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
@@ -92,10 +92,10 @@ def repe(old_method):
                 count = cpu.write_register(counter_name, count-1)
 
                 #REPE
-                if X86_PREFIX_REP in prefix:
+                if capstone.x86.X86_PREFIX_REP in prefix:
                     FLAG = Operators.AND(cpu.ZF == True, count != 0) #true FLAG means loop
                 #REPNE
-                elif X86_PREFIX_REPNE in prefix:
+                elif capstone.x86.X86_PREFIX_REPNE in prefix:
                     FLAG = Operators.AND(cpu.ZF == False, count != 0) #true FLAG means loop
 
             #if issymbolic(FLAG):
@@ -269,168 +269,168 @@ class AMD64RegFile(RegisterFile):
 
     #this should be calculated on __import__ using _table
     _affects = {
-                'RIP' : ('EIP', 'IP') ,
-                'EIP' : ('IP', 'RIP') ,
-                'IP' : ('EIP', 'RIP') ,
-                'RAX' : ('AH', 'AL', 'AX', 'EAX') ,
-                'EAX': ('AH', 'AL', 'AX', 'RAX') ,
-                'AX': ('AH', 'AL', 'EAX', 'RAX') ,
-                'AH': ('AX', 'EAX', 'RAX') ,
-                'AL': ('AX', 'EAX', 'RAX') ,
-                'RBX' : ('BH', 'BL', 'BX', 'EBX') ,
-                'EBX' : ('BH', 'BL', 'BX', 'RBX') ,
-                'BX' : ('BH', 'BL', 'EBX', 'RBX') ,
-                'BH' : ('BX', 'EBX', 'RBX') ,
-                'BL' : ('BX', 'EBX', 'RBX') ,
-                'RCX' : ('CH', 'CL', 'CX', 'ECX') ,
-                'ECX' : ('CH', 'CL', 'CX', 'RCX') ,
-                'CX' : ('CH', 'CL', 'ECX', 'RCX') ,
-                'CH' : ('CX', 'ECX', 'RCX') ,
-                'CL' : ('CX', 'ECX', 'RCX') ,
-                'RDX' : ('DH', 'DL', 'DX', 'EDX') ,
-                'EDX' : ('DH', 'DL', 'DX', 'RDX') ,
-                'DX' : ('DH', 'DL', 'EDX', 'RDX') ,
-                'DH' : ('DX', 'EDX', 'RDX') ,
-                'DL' : ('DX', 'EDX', 'RDX') ,
-                'RSI' : ('ESI', 'SI', 'SIH', 'SIL') ,
-                'ESI' : ('RSI', 'SI', 'SIH', 'SIL') ,
-                'SI' : ('ESI', 'RSI', 'SIH', 'SIL') ,
-                'SIH' : ('ESI', 'RSI', 'SI') ,
-                'SIL' : ('ESI', 'RSI', 'SI') ,
-                'RDI' : ('DI', 'DIH', 'DIL', 'EDI') ,
-                'EDI' : ('DI', 'DIH', 'DIL', 'RDI') ,
-                'DI' : ('DIH', 'DIL', 'EDI', 'RDI') ,
-                'DIH' : ('DI', 'EDI', 'RDI') ,
-                'DIL' : ('DI', 'EDI', 'RDI') ,
-                'RSP' : ('ESP', 'SP', 'SPH', 'SPL') ,
-                'ESP' : ('RSP', 'SP', 'SPH', 'SPL') ,
-                'SP' : ('ESP', 'RSP', 'SPH', 'SPL') ,
-                'SPH' : ('ESP', 'RSP', 'SP') ,
-                'SPL' : ('ESP', 'RSP', 'SP') ,
-                'RBP' : ('BP', 'BPH', 'BPL', 'EBP') ,
-                'EBP' : ('BP', 'BPH', 'BPL', 'RBP') ,
-                'BP' : ('BPH', 'BPL', 'EBP', 'RBP') ,
-                'BPH' : ('BP', 'EBP', 'RBP') ,
-                'BPL' : ('BP', 'EBP', 'RBP') ,
-                'CS' : () ,
-                'DS' : () ,
-                'ES' : () ,
-                'FS' : () ,
-                'GS' : () ,
-                'SS' : () ,
-                'RFLAGS' : ('EFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF') ,
-                'EFLAGS' : ('RFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF') ,
-                'AF' : ('RFLAGS', 'EFLAGS') ,
-                'CF' : ('RFLAGS', 'EFLAGS') ,
-                'DF' : ('RFLAGS', 'EFLAGS') ,
-                'IF' : ('RFLAGS', 'EFLAGS') ,
-                'OF' : ('RFLAGS', 'EFLAGS') ,
-                'PF' : ('RFLAGS', 'EFLAGS') ,
-                'SF' : ('RFLAGS', 'EFLAGS') ,
-                'ZF' : ('RFLAGS', 'EFLAGS') ,
-                'FPSW' : ('TOP',) ,
-                'TOP' : ('FPSW',) ,
-                'FPCW' : () ,
-                'FPTAG' : () ,
-                'FP0' : () ,
-                'FP1' : () ,
-                'FP2' : () ,
-                'FP3' : () ,
-                'FP4' : () ,
-                'FP5' : () ,
-                'FP6' : () ,
-                'FP7' : () ,
-                'R10' : ('R10B', 'R10D', 'R10H', 'R10W') ,
-                'R10B' : ('R10', 'R10D', 'R10W') ,
-                'R10D' : ('R10', 'R10B', 'R10H', 'R10W') ,
-                'R10H' : ('R10', 'R10D', 'R10W') ,
-                'R10W' : ('R10', 'R10B', 'R10D', 'R10H') ,
-                'R11' : ('R11B', 'R11D', 'R11H', 'R11W') ,
-                'R11B' : ('R11', 'R11D', 'R11W') ,
-                'R11D' : ('R11', 'R11B', 'R11H', 'R11W') ,
-                'R11H' : ('R11', 'R11D', 'R11W') ,
-                'R11W' : ('R11', 'R11B', 'R11D', 'R11H') ,
-                'R12' : ('R12B', 'R12D', 'R12H', 'R12W') ,
-                'R12B' : ('R12', 'R12D', 'R12W') ,
-                'R12D' : ('R12', 'R12B', 'R12H', 'R12W') ,
-                'R12H' : ('R12', 'R12D', 'R12W') ,
-                'R12W' : ('R12', 'R12B', 'R12D', 'R12H') ,
-                'R13' : ('R13B', 'R13D', 'R13H', 'R13W') ,
-                'R13B' : ('R13', 'R13D', 'R13W') ,
-                'R13D' : ('R13', 'R13B', 'R13H', 'R13W') ,
-                'R13H' : ('R13', 'R13D', 'R13W') ,
-                'R13W' : ('R13', 'R13B', 'R13D', 'R13H') ,
-                'R14' : ('R14B', 'R14D', 'R14H', 'R14W') ,
-                'R14B' : ('R14', 'R14D', 'R14W') ,
-                'R14D' : ('R14', 'R14B', 'R14H', 'R14W') ,
-                'R14H' : ('R14', 'R14D', 'R14W') ,
-                'R14W' : ('R14', 'R14B', 'R14D', 'R14H') ,
-                'R15' : ('R15B', 'R15D', 'R15H', 'R15W') ,
-                'R15B' : ('R15', 'R15D', 'R15W') ,
-                'R15D' : ('R15', 'R15B', 'R15H', 'R15W') ,
-                'R15H' : ('R15', 'R15D', 'R15W') ,
-                'R15W' : ('R15', 'R15B', 'R15D', 'R15H') ,
-                'R8' : ('R8B', 'R8D', 'R8H', 'R8W') ,
-                'R8B' : ('R8', 'R8D', 'R8W') ,
-                'R8D' : ('R8', 'R8B', 'R8H', 'R8W') ,
-                'R8H' : ('R8', 'R8D', 'R8W') ,
-                'R8W' : ('R8', 'R8B', 'R8D', 'R8H') ,
-                'R9' : ('R9B', 'R9D', 'R9H', 'R9W') ,
-                'R9B' : ('R9', 'R9D', 'R9W') ,
-                'R9D' : ('R9', 'R9B', 'R9H', 'R9W') ,
-                'R9H' : ('R9', 'R9D', 'R9W') ,
-                'R9W' : ('R9', 'R9B', 'R9D', 'R9H') ,
-                'XMM0' : ('YMM0',) ,
-                'XMM1' : ('YMM1',) ,
-                'XMM10' : ('YMM10',) ,
-                'XMM11' : ('YMM11',) ,
-                'XMM12' : ('YMM12',) ,
-                'XMM13' : ('YMM13',) ,
-                'XMM14' : ('YMM14',) ,
-                'XMM15' : ('YMM15',) ,
-                'XMM2' : ('YMM2',) ,
-                'XMM3' : ('YMM3',) ,
-                'XMM4' : ('YMM4',) ,
-                'XMM5' : ('YMM5',) ,
-                'XMM6' : ('YMM6',) ,
-                'XMM7' : ('YMM7',) ,
-                'XMM8' : ('YMM8',) ,
-                'XMM9' : ('YMM9',) ,
-                'YMM0' : ('XMM0',) ,
-                'YMM1' : ('XMM1',) ,
-                'YMM10' : ('XMM10',) ,
-                'YMM11' : ('XMM11',) ,
-                'YMM12' : ('XMM12',) ,
-                'YMM13' : ('XMM13',) ,
-                'YMM14' : ('XMM14',) ,
-                'YMM15' : ('XMM15',) ,
-                'YMM2' : ('XMM2',) ,
-                'YMM3' : ('XMM3',) ,
-                'YMM4' : ('XMM4',) ,
-                'YMM5' : ('XMM5',) ,
-                'YMM6' : ('XMM6',) ,
-                'YMM7' : ('XMM7',) ,
-                'YMM8' : ('XMM8',) ,
-                'YMM9' : ('XMM9',) ,
-                }
-    _canonical_registers = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 
-                     'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'RIP',
-                     'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 
-                     'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 
-                     'YMM13', 'YMM14', 'YMM15', 'CS','DS','ES','SS', 'FS', 'GS',
-                     'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF',
-                     'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7',
-                     'FPSW', 'FPCW', 'FPTAG')
+        'RIP' : ('EIP', 'IP'),
+        'EIP' : ('IP', 'RIP'),
+        'IP' : ('EIP', 'RIP'),
+        'RAX' : ('AH', 'AL', 'AX', 'EAX'),
+        'EAX': ('AH', 'AL', 'AX', 'RAX'),
+        'AX': ('AH', 'AL', 'EAX', 'RAX'),
+        'AH': ('AX', 'EAX', 'RAX'),
+        'AL': ('AX', 'EAX', 'RAX'),
+        'RBX' : ('BH', 'BL', 'BX', 'EBX'),
+        'EBX' : ('BH', 'BL', 'BX', 'RBX'),
+        'BX' : ('BH', 'BL', 'EBX', 'RBX'),
+        'BH' : ('BX', 'EBX', 'RBX'),
+        'BL' : ('BX', 'EBX', 'RBX'),
+        'RCX' : ('CH', 'CL', 'CX', 'ECX'),
+        'ECX' : ('CH', 'CL', 'CX', 'RCX'),
+        'CX' : ('CH', 'CL', 'ECX', 'RCX'),
+        'CH' : ('CX', 'ECX', 'RCX'),
+        'CL' : ('CX', 'ECX', 'RCX'),
+        'RDX' : ('DH', 'DL', 'DX', 'EDX'),
+        'EDX' : ('DH', 'DL', 'DX', 'RDX'),
+        'DX' : ('DH', 'DL', 'EDX', 'RDX'),
+        'DH' : ('DX', 'EDX', 'RDX'),
+        'DL' : ('DX', 'EDX', 'RDX'),
+        'RSI' : ('ESI', 'SI', 'SIH', 'SIL'),
+        'ESI' : ('RSI', 'SI', 'SIH', 'SIL'),
+        'SI' : ('ESI', 'RSI', 'SIH', 'SIL'),
+        'SIH' : ('ESI', 'RSI', 'SI'),
+        'SIL' : ('ESI', 'RSI', 'SI'),
+        'RDI' : ('DI', 'DIH', 'DIL', 'EDI'),
+        'EDI' : ('DI', 'DIH', 'DIL', 'RDI'),
+        'DI' : ('DIH', 'DIL', 'EDI', 'RDI'),
+        'DIH' : ('DI', 'EDI', 'RDI'),
+        'DIL' : ('DI', 'EDI', 'RDI'),
+        'RSP' : ('ESP', 'SP', 'SPH', 'SPL'),
+        'ESP' : ('RSP', 'SP', 'SPH', 'SPL'),
+        'SP' : ('ESP', 'RSP', 'SPH', 'SPL'),
+        'SPH' : ('ESP', 'RSP', 'SP'),
+        'SPL' : ('ESP', 'RSP', 'SP'),
+        'RBP' : ('BP', 'BPH', 'BPL', 'EBP'),
+        'EBP' : ('BP', 'BPH', 'BPL', 'RBP'),
+        'BP' : ('BPH', 'BPL', 'EBP', 'RBP'),
+        'BPH' : ('BP', 'EBP', 'RBP'),
+        'BPL' : ('BP', 'EBP', 'RBP'),
+        'CS' : (),
+        'DS' : (),
+        'ES' : (),
+        'FS' : (),
+        'GS' : (),
+        'SS' : (),
+        'RFLAGS' : ('EFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'),
+        'EFLAGS' : ('RFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'),
+        'AF' : ('RFLAGS', 'EFLAGS'),
+        'CF' : ('RFLAGS', 'EFLAGS'),
+        'DF' : ('RFLAGS', 'EFLAGS'),
+        'IF' : ('RFLAGS', 'EFLAGS'),
+        'OF' : ('RFLAGS', 'EFLAGS'),
+        'PF' : ('RFLAGS', 'EFLAGS'),
+        'SF' : ('RFLAGS', 'EFLAGS'),
+        'ZF' : ('RFLAGS', 'EFLAGS'),
+        'FPSW' : ('TOP',),
+        'TOP' : ('FPSW',),
+        'FPCW' : (),
+        'FPTAG' : (),
+        'FP0' : (),
+        'FP1' : (),
+        'FP2' : (),
+        'FP3' : (),
+        'FP4' : (),
+        'FP5' : (),
+        'FP6' : (),
+        'FP7' : (),
+        'R10' : ('R10B', 'R10D', 'R10H', 'R10W'),
+        'R10B' : ('R10', 'R10D', 'R10W'),
+        'R10D' : ('R10', 'R10B', 'R10H', 'R10W'),
+        'R10H' : ('R10', 'R10D', 'R10W'),
+        'R10W' : ('R10', 'R10B', 'R10D', 'R10H'),
+        'R11' : ('R11B', 'R11D', 'R11H', 'R11W'),
+        'R11B' : ('R11', 'R11D', 'R11W'),
+        'R11D' : ('R11', 'R11B', 'R11H', 'R11W'),
+        'R11H' : ('R11', 'R11D', 'R11W'),
+        'R11W' : ('R11', 'R11B', 'R11D', 'R11H'),
+        'R12' : ('R12B', 'R12D', 'R12H', 'R12W'),
+        'R12B' : ('R12', 'R12D', 'R12W'),
+        'R12D' : ('R12', 'R12B', 'R12H', 'R12W'),
+        'R12H' : ('R12', 'R12D', 'R12W'),
+        'R12W' : ('R12', 'R12B', 'R12D', 'R12H'),
+        'R13' : ('R13B', 'R13D', 'R13H', 'R13W'),
+        'R13B' : ('R13', 'R13D', 'R13W'),
+        'R13D' : ('R13', 'R13B', 'R13H', 'R13W'),
+        'R13H' : ('R13', 'R13D', 'R13W'),
+        'R13W' : ('R13', 'R13B', 'R13D', 'R13H'),
+        'R14' : ('R14B', 'R14D', 'R14H', 'R14W'),
+        'R14B' : ('R14', 'R14D', 'R14W'),
+        'R14D' : ('R14', 'R14B', 'R14H', 'R14W'),
+        'R14H' : ('R14', 'R14D', 'R14W'),
+        'R14W' : ('R14', 'R14B', 'R14D', 'R14H'),
+        'R15' : ('R15B', 'R15D', 'R15H', 'R15W'),
+        'R15B' : ('R15', 'R15D', 'R15W'),
+        'R15D' : ('R15', 'R15B', 'R15H', 'R15W'),
+        'R15H' : ('R15', 'R15D', 'R15W'),
+        'R15W' : ('R15', 'R15B', 'R15D', 'R15H'),
+        'R8' : ('R8B', 'R8D', 'R8H', 'R8W'),
+        'R8B' : ('R8', 'R8D', 'R8W'),
+        'R8D' : ('R8', 'R8B', 'R8H', 'R8W'),
+        'R8H' : ('R8', 'R8D', 'R8W'),
+        'R8W' : ('R8', 'R8B', 'R8D', 'R8H'),
+        'R9' : ('R9B', 'R9D', 'R9H', 'R9W'),
+        'R9B' : ('R9', 'R9D', 'R9W'),
+        'R9D' : ('R9', 'R9B', 'R9H', 'R9W'),
+        'R9H' : ('R9', 'R9D', 'R9W'),
+        'R9W' : ('R9', 'R9B', 'R9D', 'R9H'),
+        'XMM0' : ('YMM0',),
+        'XMM1' : ('YMM1',),
+        'XMM10' : ('YMM10',),
+        'XMM11' : ('YMM11',),
+        'XMM12' : ('YMM12',),
+        'XMM13' : ('YMM13',),
+        'XMM14' : ('YMM14',),
+        'XMM15' : ('YMM15',),
+        'XMM2' : ('YMM2',),
+        'XMM3' : ('YMM3',),
+        'XMM4' : ('YMM4',),
+        'XMM5' : ('YMM5',),
+        'XMM6' : ('YMM6',),
+        'XMM7' : ('YMM7',),
+        'XMM8' : ('YMM8',),
+        'XMM9' : ('YMM9',),
+        'YMM0' : ('XMM0',),
+        'YMM1' : ('XMM1',),
+        'YMM10' : ('XMM10',),
+        'YMM11' : ('XMM11',),
+        'YMM12' : ('XMM12',),
+        'YMM13' : ('XMM13',),
+        'YMM14' : ('XMM14',),
+        'YMM15' : ('XMM15',),
+        'YMM2' : ('XMM2',),
+        'YMM3' : ('XMM3',),
+        'YMM4' : ('XMM4',),
+        'YMM5' : ('XMM5',),
+        'YMM6' : ('XMM6',),
+        'YMM7' : ('XMM7',),
+        'YMM8' : ('XMM8',),
+        'YMM9' : ('XMM9',),
+    }
+    _canonical_registers = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI',
+                            'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'RIP',
+                            'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5',
+                            'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12',
+                            'YMM13', 'YMM14', 'YMM15', 'CS','DS','ES','SS', 'FS', 'GS',
+                            'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF',
+                            'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7',
+                            'FPSW', 'FPCW', 'FPTAG')
     def __init__(self, *args, **kwargs):
         super(AMD64RegFile, self).__init__(*args, **kwargs)
 
         self._registers = {}
-        for reg in ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 
-                     'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'RIP',
-                     'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 
-                     'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 
-                     'YMM13', 'YMM14', 'YMM15', 'CS','DS','ES','SS', 'FS', 'GS',
-                     'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'):
+        for reg in ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI',
+                    'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'RIP',
+                    'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5',
+                    'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12',
+                    'YMM13', 'YMM14', 'YMM15', 'CS','DS','ES','SS', 'FS', 'GS',
+                    'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'):
             self._registers[reg] = 0
 
         for reg in ('FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7'):
@@ -536,7 +536,7 @@ class AMD64RegFile(RegisterFile):
 
     def _set_flags(self, reg, res):
         ''' Set individual flags from a EFLAGS/RFLAGS value '''
-        #assert sizeof (res) == 32 if reg == 'EFLAGS' else 64   
+        #assert sizeof (res) == 32 if reg == 'EFLAGS' else 64
         for flag, offset in self._flags.iteritems():
             self.write(flag, Operators.EXTRACT(res, offset, 1))
 
@@ -599,9 +599,9 @@ class AMD64Operand(Operand):
 
     @property
     def type(self):
-        type_map = { X86_OP_REG: 'register',
-                     X86_OP_MEM: 'memory',
-                     X86_OP_IMM: 'immediate'}
+        type_map = { capstone.x86.X86_OP_REG: 'register',
+                     capstone.x86.X86_OP_MEM: 'memory',
+                     capstone.x86.X86_OP_IMM: 'immediate'}
 
         return type_map[self.op.type]
 
@@ -615,7 +615,7 @@ class AMD64Operand(Operand):
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
         else:
-            #FIXME inspect operand or cpu.instruction and decide 
+            #FIXME inspect operand or cpu.instruction and decide
             # the correct default segment for instruction
             seg = 'DS'
             if self.mem.base is not None and self.mem.base in ['SP', 'ESP', 'EBP']:
@@ -645,7 +645,7 @@ class AMD64Operand(Operand):
         elif self.type == 'memory':
             value = cpu.read_int(self.address(), self.size)
             #logger.info("read mem operand from %x value: %x",self.address(), value)
-            return value    
+            return value
         else:
             raise NotImplementedError("read_operand unknown type", o.type)
 
@@ -712,7 +712,7 @@ class X86Cpu(Cpu):
     def push(cpu, value, size):
         '''
         Writes a value in the stack.
-        
+
         :param value: the value to put in the stack.
         :param size: the size of the value.
         '''
@@ -725,7 +725,7 @@ class X86Cpu(Cpu):
     def pop(cpu, size):
         '''
         Gets a value from the stack.
-        
+
         :rtype: int
         :param size: the size of the value to consume from the stack.
         :return: the value from the stack.
@@ -740,8 +740,8 @@ class X86Cpu(Cpu):
 
     ################################################
     # This its unused but shouldn't be deleted!!!
-    # The instruction cache must be invalidated after an executable 
-    # page was changed or removed or added 
+    # The instruction cache must be invalidated after an executable
+    # page was changed or removed or added
     def invalidate_cache(cpu, address, size):
         ''' remove decoded instruction from instruction cache '''
         cache = cpu.instruction_cache
@@ -751,7 +751,7 @@ class X86Cpu(Cpu):
 
     def canonicalize_instruction_name(self, instruction):
         #MOVSD
-        if instruction.opcode[0] in (0xa4, 0xa5): 
+        if instruction.opcode[0] in (0xa4, 0xa5):
             name = 'MOVS'
         else:
             name = instruction.insn_name().upper()
@@ -771,7 +771,7 @@ class X86Cpu(Cpu):
         sign0 = (arg0 & SIGN_MASK) ==SIGN_MASK
         sign1 = (arg1 & SIGN_MASK) ==SIGN_MASK
         signr = (res & SIGN_MASK) ==SIGN_MASK
-        self.OF = Operators.AND(sign0 ^ sign1, sign0 ^ signr) 
+        self.OF = Operators.AND(sign0 ^ sign1, sign0 ^ signr)
         self.PF = self._calculate_parity_flag(res)
 
     def _calculate_parity_flag(self, res):
@@ -792,15 +792,15 @@ class X86Cpu(Cpu):
     def CPUID(cpu):
         '''
         CPUID instruction.
-        
-        The ID flag (bit 21) in the EFLAGS register indicates support for the CPUID instruction. 
+
+        The ID flag (bit 21) in the EFLAGS register indicates support for the CPUID instruction.
         If a software procedure can set and clear this flag, the processor executing the procedure
         supports the CPUID instruction. This instruction operates the same in non-64-bit modes and 64-bit mode.
         CPUID returns processor identification and feature information in the EAX, EBX, ECX, and EDX registers.
-        
+
         The instruction's output is dependent on the contents of the EAX register upon execution.
-        
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         '''
         #FIXME Choose conservative values and consider returning some default when eax not here
         conf = {   0x0:        (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
@@ -831,18 +831,18 @@ class X86Cpu(Cpu):
             logger.warning('CPUID with EAX=%x ECX=%x not implemented',cpu.EAX, cpu.ECX)
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0,0,0,0
             return
-    
+
         cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX][cpu.ECX]
 
     @instruction
     def XGETBV(cpu):
         '''
         XGETBV instruction.
-        
-        Reads the contents of the extended cont register (XCR) specified in the ECX register into registers EDX:EAX. 
+
+        Reads the contents of the extended cont register (XCR) specified in the ECX register into registers EDX:EAX.
         Implemented only for ECX = 0.
-        
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         '''
         #if cpu.ECX != 0:
         #logger.debug("XGETBV ECX=%x not implemented", cpu.ECX)
@@ -855,21 +855,21 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def AND(cpu, dest, src):
-        ''' 
-        Logical AND. 
-        
-        Performs a bitwise AND operation on the destination (first) and source 
-        (second) operands and stores the result in the destination operand location. 
-        Each bit of the result is set to 1 if both corresponding bits of the first and 
+        '''
+        Logical AND.
+
+        Performs a bitwise AND operation on the destination (first) and source
+        (second) operands and stores the result in the destination operand location.
+        Each bit of the result is set to 1 if both corresponding bits of the first and
         second operands are 1; otherwise, it is set to 0.
-        
+
         The OF and CF flags are cleared; the SF, ZF, and PF flags are set according to the result::
-        
+
             DEST  =  DEST AND SRC;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
-        :param src: source operand.  
+        :param src: source operand.
         '''
         res = dest.write(dest.read() & src.read())
         #Defined Flags: szp
@@ -878,10 +878,10 @@ class X86Cpu(Cpu):
     @instruction
     def TEST(cpu, src1, src2):
         '''
-        Logical compare. 
-        
-        Computes the bit-wise logical AND of first operand (source 1 operand) 
-        and the second operand (source 2 operand) and sets the SF, ZF, and PF 
+        Logical compare.
+
+        Computes the bit-wise logical AND of first operand (source 1 operand)
+        and the second operand (source 2 operand) and sets the SF, ZF, and PF
         status flags according to the result. The result is then discarded::
 
             TEMP  =  SRC1 AND SRC2;
@@ -894,8 +894,8 @@ class X86Cpu(Cpu):
             CF  =  0;
             OF  =  0;
             (*AF is Undefined*)
-        
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         :param src1: first operand.
         :param src2: second operand.
         '''
@@ -906,40 +906,40 @@ class X86Cpu(Cpu):
         cpu.PF = cpu._calculate_parity_flag(temp)
         cpu.CF = False
         cpu.OF = False
-    
+
     @instruction
     def NOT(cpu, dest):
         '''
-        One's complement negation. 
-        
-        Performs a bitwise NOT operation (each 1 is cleared to 0, and each 0 
-        is set to 1) on the destination operand and stores the result in the destination 
+        One's complement negation.
+
+        Performs a bitwise NOT operation (each 1 is cleared to 0, and each 0
+        is set to 1) on the destination operand and stores the result in the destination
         operand location::
-        
+
             DEST  =  NOT DEST;
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand. 
+        :param dest: destination operand.
         '''
         res = dest.write(~dest.read())
         #Flags Affected: None.
 
     @instruction
     def XOR(cpu, dest, src):
-        ''' 
-        Logical exclusive OR. 
-        
-        Performs a bitwise exclusive Operators.OR(XOR) operation on the destination (first) 
-        and source (second) operands and stores the result in the destination 
+        '''
+        Logical exclusive OR.
+
+        Performs a bitwise exclusive Operators.OR(XOR) operation on the destination (first)
+        and source (second) operands and stores the result in the destination
         operand location.
-              
-        Each bit of the result is 1 if the corresponding bits of the operands 
+
+        Each bit of the result is 1 if the corresponding bits of the operands
         are different; each bit is 0 if the corresponding bits are the same.
-            
-        The OF and CF flags are cleared; the SF, ZF, and PF flags are set according to the result::            
-            
+
+        The OF and CF flags are cleared; the SF, ZF, and PF flags are set according to the result::
+
             DEST  =  DEST XOR SRC;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -955,15 +955,15 @@ class X86Cpu(Cpu):
     @instruction
     def OR(cpu, dest, src):
         '''
-        Logical inclusive OR. 
-        
-        Performs a bitwise inclusive OR operation between the destination (first) 
+        Logical inclusive OR.
+
+        Performs a bitwise inclusive OR operation between the destination (first)
         and source (second) operands and stores the result in the destination operand location.
-         
-        Each bit of the result of the OR instruction is set to 0 if both corresponding 
-        bits of the first and second operands are 0; otherwise, each bit is set 
+
+        Each bit of the result of the OR instruction is set to 0 if both corresponding
+        bits of the first and second operands are 0; otherwise, each bit is set
         to 1.
-        
+
         The OF and CF flags are cleared; the SF, ZF, and PF flags are set according to the result::
 
             DEST  =  DEST OR SRC;
@@ -980,27 +980,27 @@ class X86Cpu(Cpu):
 # Generic Operations
 ########################################################################################
 # Arithmetic: AAA, AAD, AAM, AAS, ADC, ADD, CMP, CMPXCHG
-#             CMPXCHG8B,DAA, DAS, DEC, DIV, IDIV, IMUL, INC, MUL, 
+#             CMPXCHG8B,DAA, DAS, DEC, DIV, IDIV, IMUL, INC, MUL,
 #             NEG, SBB, SUB, XADD
 ########################################################################################
     @instruction
     def AAA(cpu):
-        ''' 
-        ASCII adjust after addition. 
-        
-        Adjusts the sum of two unpacked BCD values to create an unpacked BCD 
-        result. The AL register is the implied source and destination operand 
-        for this instruction. The AAA instruction is only useful when it follows 
-        an ADD instruction that adds (binary addition) two unpacked BCD values 
-        and stores a byte result in the AL register. The AAA instruction then 
-        adjusts the contents of the AL register to contain the correct 1-digit 
+        '''
+        ASCII adjust after addition.
+
+        Adjusts the sum of two unpacked BCD values to create an unpacked BCD
+        result. The AL register is the implied source and destination operand
+        for this instruction. The AAA instruction is only useful when it follows
+        an ADD instruction that adds (binary addition) two unpacked BCD values
+        and stores a byte result in the AL register. The AAA instruction then
+        adjusts the contents of the AL register to contain the correct 1-digit
         unpacked BCD result.
-        If the addition produces a decimal carry, the AH register is incremented 
-        by 1, and the CF and AF flags are set. If there was no decimal carry, 
-        the CF and AF flags are cleared and the AH register is unchanged. In either 
+        If the addition produces a decimal carry, the AH register is incremented
+        by 1, and the CF and AF flags are set. If there was no decimal carry,
+        the CF and AF flags are cleared and the AH register is unchanged. In either
         case, bits 4 through 7 of the AL register are cleared to 0.
-        
-        This instruction executes as described in compatibility mode and legacy mode. 
+
+        This instruction executes as described in compatibility mode and legacy mode.
         It is not valid in 64-bit mode.
         ::
                 IF ((AL AND 0FH) > 9) Operators.OR(AF  =  1)
@@ -1034,29 +1034,29 @@ class X86Cpu(Cpu):
 
     @instruction
     def AAD(cpu, imm=None):
-        ''' 
+        '''
         ASCII adjust AX before division.
-        
-        Adjusts two unpacked BCD digits (the least-significant digit in the 
-        AL register and the most-significant digit in the AH register) so that 
-        a division operation performed on the result will yield a correct unpacked 
-        BCD value. The AAD instruction is only useful when it precedes a DIV instruction 
-        that divides (binary division) the adjusted value in the AX register by 
+
+        Adjusts two unpacked BCD digits (the least-significant digit in the
+        AL register and the most-significant digit in the AH register) so that
+        a division operation performed on the result will yield a correct unpacked
+        BCD value. The AAD instruction is only useful when it precedes a DIV instruction
+        that divides (binary division) the adjusted value in the AX register by
         an unpacked BCD value.
-        The AAD instruction sets the value in the AL register to (AL + (10 * AH)), and then 
-        clears the AH register to 00H. The value in the AX register is then equal to the binary 
+        The AAD instruction sets the value in the AL register to (AL + (10 * AH)), and then
+        clears the AH register to 00H. The value in the AX register is then equal to the binary
         equivalent of the original unpacked two-digit (base 10) number in registers AH and AL.
-        
+
         The SF, ZF, and PF flags are set according to the resulting binary value in the AL register.
-        
-        This instruction executes as described in compatibility mode and legacy mode. 
+
+        This instruction executes as described in compatibility mode and legacy mode.
         It is not valid in 64-bit mode.::
 
                 tempAL  =  AL;
                 tempAH  =  AH;
                 AL  =  (tempAL + (tempAH * 10)) AND FFH;
                 AH  =  0
-        
+
         :param cpu: current CPU.
         '''
         if imm is None:
@@ -1072,26 +1072,26 @@ class X86Cpu(Cpu):
 
     @instruction
     def AAM(cpu, imm=None):
-        ''' 
+        '''
         ASCII adjust AX after multiply.
-        
-        Adjusts the result of the multiplication of two unpacked BCD values 
-        to create a pair of unpacked (base 10) BCD values. The AX register is 
-        the implied source and destination operand for this instruction. The AAM 
-        instruction is only useful when it follows a MUL instruction that multiplies 
-        (binary multiplication) two unpacked BCD values and stores a word result 
-        in the AX register. The AAM instruction then adjusts the contents of the 
+
+        Adjusts the result of the multiplication of two unpacked BCD values
+        to create a pair of unpacked (base 10) BCD values. The AX register is
+        the implied source and destination operand for this instruction. The AAM
+        instruction is only useful when it follows a MUL instruction that multiplies
+        (binary multiplication) two unpacked BCD values and stores a word result
+        in the AX register. The AAM instruction then adjusts the contents of the
         AX register to contain the correct 2-digit unpacked (base 10) BCD result.
-        
+
         The SF, ZF, and PF flags are set according to the resulting binary value in the AL register.
 
-        This instruction executes as described in compatibility mode and legacy mode. 
+        This instruction executes as described in compatibility mode and legacy mode.
         It is not valid in 64-bit mode.::
-        
+
                 tempAL  =  AL;
-                AH  =  tempAL / 10; 
+                AH  =  tempAL / 10;
                 AL  =  tempAL MOD 10;
-        
+
         :param cpu: current CPU.
         '''
         if imm is None:
@@ -1107,24 +1107,24 @@ class X86Cpu(Cpu):
 
     @instruction
     def AAS(cpu):
-        ''' 
+        '''
         ASCII Adjust AL after subtraction.
-        
+
         Adjusts the result of the subtraction of two unpacked BCD values to  create a unpacked
-        BCD result. The AL register is the implied source and destination operand for this instruction. 
-        The AAS instruction is only useful when it follows a SUB instruction that subtracts 
+        BCD result. The AL register is the implied source and destination operand for this instruction.
+        The AAS instruction is only useful when it follows a SUB instruction that subtracts
         (binary subtraction) one unpacked BCD value from another and stores a byte result in the AL
-        register. The AAA instruction then adjusts the contents of the AL register to contain the 
+        register. The AAA instruction then adjusts the contents of the AL register to contain the
         correct 1-digit unpacked BCD result. If the subtraction produced a decimal carry, the AH register
         is decremented by 1, and the CF and AF flags are set. If no decimal carry occurred, the CF and AF
         flags are cleared, and the AH register is unchanged. In either case, the AL register is left with
         its top nibble set to 0.
-        
+
         The AF and CF flags are set to 1 if there is a decimal borrow; otherwise, they are cleared to 0.
-        
-        This instruction executes as described in compatibility mode and legacy mode. 
+
+        This instruction executes as described in compatibility mode and legacy mode.
         It is not valid in 64-bit mode.::
-        
+
 
                 IF ((AL AND 0FH) > 9) Operators.OR(AF  =  1)
                 THEN
@@ -1137,7 +1137,7 @@ class X86Cpu(Cpu):
                     AF  =  0;
                 FI;
                 AL  =  AL AND 0FH;
-        
+
         :param cpu: current CPU.
         '''
         if (cpu.AL & 0x0F > 9) or cpu.AF == 1:
@@ -1152,24 +1152,24 @@ class X86Cpu(Cpu):
 
     @instruction
     def ADC(cpu, dest, src):
-        ''' 
+        '''
         Adds with carry.
-        
-        Adds the destination operand (first operand), the source operand (second operand), 
-        and the carry (CF) flag and stores the result in the destination operand. The state 
+
+        Adds the destination operand (first operand), the source operand (second operand),
+        and the carry (CF) flag and stores the result in the destination operand. The state
         of the CF flag represents a carry from a previous addition. When an immediate value
-        is used as an operand, it is sign-extended to the length of the destination operand 
-        format. The ADC instruction does not distinguish between signed or unsigned operands. 
-        Instead, the processor evaluates the result for both data types and sets the OF and CF 
-        flags to indicate a carry in the signed or unsigned result, respectively. The SF flag 
-        indicates the sign of the signed result. The ADC instruction is usually executed as 
-        part of a multibyte or multiword addition in which an ADD instruction is followed by an 
+        is used as an operand, it is sign-extended to the length of the destination operand
+        format. The ADC instruction does not distinguish between signed or unsigned operands.
+        Instead, the processor evaluates the result for both data types and sets the OF and CF
+        flags to indicate a carry in the signed or unsigned result, respectively. The SF flag
+        indicates the sign of the signed result. The ADC instruction is usually executed as
+        part of a multibyte or multiword addition in which an ADD instruction is followed by an
         ADC instruction::
 
                 DEST  =  DEST + SRC + CF;
-        
+
         The OF, SF, ZF, AF, CF, and PF flags are set according to the result.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -1178,19 +1178,19 @@ class X86Cpu(Cpu):
 
     @instruction
     def ADD(cpu, dest, src):
-        ''' 
+        '''
         Add.
-        
-        Adds the first operand (destination operand) and the second operand (source operand) 
-        and stores the result in the destination operand. When an immediate value is used as 
+
+        Adds the first operand (destination operand) and the second operand (source operand)
+        and stores the result in the destination operand. When an immediate value is used as
         an operand, it is sign-extended to the length of the destination operand format.
-        The ADD instruction does not distinguish between signed or unsigned operands. Instead, 
+        The ADD instruction does not distinguish between signed or unsigned operands. Instead,
         the processor evaluates the result for both data types and sets the OF and CF flags to
         indicate a carry in the signed or unsigned result, respectively. The SF flag indicates
         the sign of the signed result::
 
                 DEST  =  DEST + SRC;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -1228,23 +1228,23 @@ class X86Cpu(Cpu):
 
     @instruction
     def CMP(cpu, src1, src2):
-        ''' 
+        '''
         Compares two operands.
-        
-        Compares the first source operand with the second source operand and sets the status flags 
-        in the EFLAGS register according to the results. The comparison is performed by subtracting 
+
+        Compares the first source operand with the second source operand and sets the status flags
+        in the EFLAGS register according to the results. The comparison is performed by subtracting
         the second operand from the first operand and then setting the status flags in the same manner
         as the SUB instruction. When an immediate value is used as an operand, it is sign-extended to
         the length of the first operand::
-        
-                temp  =  SRC1 - SignExtend(SRC2); 
+
+                temp  =  SRC1 - SignExtend(SRC2);
                 ModifyStatusFlags; (* Modify status flags in the same manner as the SUB instruction*)
-        
+
         The CF, OF, SF, ZF, AF, and PF flags are set according to the result.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
-        :param src: source operand.        
+        :param src: source operand.
         '''
         arg0 = src1.read()
         arg1 = Operators.SEXTEND(src2.read(), src2.size, src1.size)
@@ -1255,18 +1255,18 @@ class X86Cpu(Cpu):
 
     @instruction
     def CMPXCHG(cpu, dest, src):
-        ''' 
+        '''
         Compares and exchanges.
-        
-        Compares the value in the AL, AX, EAX or RAX register (depending on the size of the 
-        operand) with the first operand (destination operand). If the two values are equal, 
-        the second operand (source operand) is loaded into the destination operand. Otherwise, 
+
+        Compares the value in the AL, AX, EAX or RAX register (depending on the size of the
+        operand) with the first operand (destination operand). If the two values are equal,
+        the second operand (source operand) is loaded into the destination operand. Otherwise,
         the destination operand is loaded into the AL, AX, EAX or RAX register.
-        
+
         The ZF flag is set if the values in the destination operand and register AL, AX, or EAX
         are equal; otherwise it is cleared. The CF, PF, AF, SF, and OF flags are set according to
         the results of the comparison operation::
-        
+
                 (* accumulator  =  AL, AX, EAX or RAX,  depending on whether *)
                 (* a byte, word, a doubleword or a 64bit comparison is being performed*)
                 IF accumulator  ==  DEST
@@ -1277,7 +1277,7 @@ class X86Cpu(Cpu):
                     ZF  =  0
                     accumulator  =  DEST
                 FI;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -1298,10 +1298,10 @@ class X86Cpu(Cpu):
     def CMPXCHG8B(cpu, dest):
         '''
         Compares and exchanges bytes.
-        
-        Compares the 64-bit value in EDX:EAX (or 128-bit value in RDX:RAX if operand size is 
-        128 bits) with the operand (destination operand). If the values are equal, the 64-bit 
-        value in ECX:EBX (or 128-bit value in RCX:RBX) is stored in the destination operand. 
+
+        Compares the 64-bit value in EDX:EAX (or 128-bit value in RDX:RAX if operand size is
+        128 bits) with the operand (destination operand). If the values are equal, the 64-bit
+        value in ECX:EBX (or 128-bit value in RCX:RBX) is stored in the destination operand.
         Otherwise, the value in the destination operand is loaded into EDX:EAX (or RDX:RAX)::
 
                 IF (64-Bit Mode and OperandSize = 64)
@@ -1324,9 +1324,9 @@ class X86Cpu(Cpu):
                         EDX:EAX = DEST;
                     FI;
                 FI;
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.    
+        :param dest: destination operand.
         '''
         size = dest.size
         cmp_reg_name_l = { 64:'EAX', 128:'RAX'}[size]
@@ -1362,13 +1362,13 @@ class X86Cpu(Cpu):
     def DAA(cpu):
         '''
         Decimal adjusts AL after addition.
-        
+
         Adjusts the sum of two packed BCD values to create a packed BCD result. The AL register
-        is the implied source and destination operand. If a decimal carry is detected, the CF 
+        is the implied source and destination operand. If a decimal carry is detected, the CF
         and AF flags are set accordingly.
         The CF and AF flags are set if the adjustment of the value results in a decimal carry in
         either digit of the result. The SF, ZF, and PF flags are set according to the result.
-        
+
         This instruction is not valid in 64-bit mode.::
 
                 IF (((AL AND 0FH) > 9) or AF  =  1)
@@ -1386,8 +1386,8 @@ class X86Cpu(Cpu):
                 ELSE
                     CF  =  0;
                 FI;
-        
-        :param cpu: current CPU.        
+
+        :param cpu: current CPU.
         '''
 
         cpu.AF = Operators.OR((cpu.AL & 0x0f) > 9, cpu.AF)
@@ -1413,36 +1413,36 @@ class X86Cpu(Cpu):
         else:
             cpu.CF  =  False
         '''
-        
+
         cpu.ZF = cpu.AL == 0
         cpu.SF = (cpu.AL & 0x80) != 0
         cpu.PF = cpu._calculate_parity_flag(cpu.AL)
-        
+
 
     @instruction
     def DAS(cpu):
-        ''' 
+        '''
         Decimal adjusts AL after subtraction.
-        
-        Adjusts the result of the subtraction of two packed BCD values to create a packed BCD result. 
-        The AL register is the implied source and destination operand. If a decimal borrow is detected, 
+
+        Adjusts the result of the subtraction of two packed BCD values to create a packed BCD result.
+        The AL register is the implied source and destination operand. If a decimal borrow is detected,
         the CF and AF flags are set accordingly. This instruction is not valid in 64-bit mode.
-        
+
         The SF, ZF, and PF flags are set according to the result.::
-        
+
                 IF (AL AND 0FH) > 9 OR AF  =  1
                 THEN
                     AL  =  AL - 6;
                     CF  =  CF OR BorrowFromLastSubtraction; (* CF OR borrow from AL  =  AL - 6 *)
                     AF  =  1;
-                ELSE 
+                ELSE
                     AF  =  0;
                 FI;
                 IF ((AL > 99H) or OLD_CF  =  1)
                 THEN
                     AL  =  AL - 60H;
                     CF  =  1;
-        
+
         :param cpu: current CPU.
         '''
         oldAL = cpu.AL
@@ -1474,19 +1474,19 @@ class X86Cpu(Cpu):
 
     @instruction
     def DEC(cpu, dest):
-        ''' 
+        '''
         Decrements by 1.
-        
+
         Subtracts 1 from the destination operand, while preserving the state of the CF flag. The destination
         operand can be a register or a memory location. This instruction allows a loop counter to be updated
-        without disturbing the CF flag. (To perform a decrement operation that updates the CF flag, use a SUB 
+        without disturbing the CF flag. (To perform a decrement operation that updates the CF flag, use a SUB
         instruction with an immediate operand of 1.)
         The instruction's 64-bit mode default operation size is 32 bits.
 
         The OF, SF, ZF, AF, and PF flags are set according to the result::
-        
+
                 DEST  =  DEST - 1;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
@@ -1503,9 +1503,9 @@ class X86Cpu(Cpu):
 
     @instruction
     def DIV(cpu, src):
-        ''' 
+        '''
         Unsigned divide.
-        
+
         Divides (unsigned) the value in the AX register, DX:AX register pair, or EDX:EAX or RDX:RAX register pair
         (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, EDX:EAX or RDX:RAX
         registers. The source operand can be a general-purpose register or a memory location. The action of this
@@ -1526,7 +1526,7 @@ class X86Cpu(Cpu):
                         FI;
                     ELSE IF OperandSize  =  16 (* doubleword/word operation *)
                         THEN
-                            temp  =  DX:AX / SRC;                    
+                            temp  =  DX:AX / SRC;
                             IF temp > FFFFH
                                 THEN #DE; (* divide error *) ;
                             ELSE
@@ -1557,7 +1557,7 @@ class X86Cpu(Cpu):
                 FI;
 
         :param cpu: current CPU.
-        :param src: source operand.         
+        :param src: source operand.
         '''
         size = src.size
         reg_name_h = { 8: 'DL', 16: 'DX', 32:'EDX', 64:'RDX'}[size]
@@ -1585,20 +1585,20 @@ class X86Cpu(Cpu):
 
     @instruction
     def IDIV(cpu, src):
-        ''' 
+        '''
         Signed divide.
-        
-        Divides (signed) the value in the AL, AX, or EAX register by the source operand and stores the result 
-        in the AX, DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory 
+
+        Divides (signed) the value in the AL, AX, or EAX register by the source operand and stores the result
+        in the AX, DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory
         location. The action of this instruction depends on the operand size.::
 
                 IF SRC  =  0
-                THEN #DE; (* divide error *) 
+                THEN #DE; (* divide error *)
                 FI;
                 IF OpernadSize  =  8 (* word/byte operation *)
                 THEN
                     temp  =  AX / SRC; (* signed division *)
-                    IF (temp > 7FH) Operators.OR(temp < 80H) 
+                    IF (temp > 7FH) Operators.OR(temp < 80H)
                     (* if a positive result is greater than 7FH or a negative result is less than 80H *)
                     THEN #DE; (* divide error *) ;
                     ELSE
@@ -1609,7 +1609,7 @@ class X86Cpu(Cpu):
                     IF OpernadSize  =  16 (* doubleword/word operation *)
                     THEN
                         temp  =  DX:AX / SRC; (* signed division *)
-                        IF (temp > 7FFFH) Operators.OR(temp < 8000H) 
+                        IF (temp > 7FFFH) Operators.OR(temp < 8000H)
                         (* if a positive result is greater than 7FFFH *)
                         (* or a negative result is less than 8000H *)
                         THEN #DE; (* divide error *) ;
@@ -1619,7 +1619,7 @@ class X86Cpu(Cpu):
                         FI;
                     ELSE (* quadword/doubleword operation *)
                         temp  =  EDX:EAX / SRC; (* signed division *)
-                        IF (temp > 7FFFFFFFH) Operators.OR(temp < 80000000H) 
+                        IF (temp > 7FFFFFFFH) Operators.OR(temp < 80000000H)
                         (* if a positive result is greater than 7FFFFFFFH *)
                         (* or a negative result is less than 80000000H *)
                         THEN #DE; (* divide error *) ;
@@ -1629,9 +1629,9 @@ class X86Cpu(Cpu):
                         FI;
                     FI;
                 FI;
-        
+
         :param cpu: current CPU.
-        :param src: source operand.        
+        :param src: source operand.
         '''
 
         reg_name_h = { 8: 'AH', 16: 'DX', 32:'EDX', 64:'RDX'}[src.size]
@@ -1657,7 +1657,7 @@ class X86Cpu(Cpu):
             if divisor_sign:
                 divisor = ( (~divisor)+1) & mask
                 divisor = -divisor
-            
+
         if isinstance(dividend, (int,long)):
             if dividend_sign:
                 dividend = ( (~dividend)+1) & mask
@@ -1678,84 +1678,84 @@ class X86Cpu(Cpu):
 
     @instruction
     def IMUL(cpu, *operands):
-        ''' 
+        '''
         Signed multiply.
-        
-        Performs a signed multiplication of two operands. This instruction has three forms, depending on 
-        the number of operands. 
-            - One-operand form. This form is identical to that used by the MUL instruction. Here, the source operand 
-            (in a general-purpose register or memory location) is multiplied by the value in the AL, AX, or EAX register 
-            (depending on the operand size) and the product is stored in the AX, DX:AX, or EDX:EAX registers, respectively. 
-            - Two-operand form. With this form the destination operand (the first operand) is multiplied by the source operand 
-            (second operand). The destination operand is a general-purpose register and the source operand is an immediate value, 
+
+        Performs a signed multiplication of two operands. This instruction has three forms, depending on
+        the number of operands.
+            - One-operand form. This form is identical to that used by the MUL instruction. Here, the source operand
+            (in a general-purpose register or memory location) is multiplied by the value in the AL, AX, or EAX register
+            (depending on the operand size) and the product is stored in the AX, DX:AX, or EDX:EAX registers, respectively.
+            - Two-operand form. With this form the destination operand (the first operand) is multiplied by the source operand
+            (second operand). The destination operand is a general-purpose register and the source operand is an immediate value,
             a general-purpose register, or a memory location. The product is then stored in the destination operand location.
-            - Three-operand form. This form requires a destination operand (the first operand) and two source operands (the second and 
-            the third operands). Here, the first source operand (which can be a general-purpose register or a memory location) is multiplied 
-            by the second source operand (an immediate value). The product is then stored in the destination operand (a general-purpose register). 
-        
-        When an immediate value is used as an 
-        operand, it is sign-extended to the length of the destination operand format. The CF and OF flags are set 
-        when significant bits are carried into the upper half of the result. The CF and OF flags are cleared when the 
+            - Three-operand form. This form requires a destination operand (the first operand) and two source operands (the second and
+            the third operands). Here, the first source operand (which can be a general-purpose register or a memory location) is multiplied
+            by the second source operand (an immediate value). The product is then stored in the destination operand (a general-purpose register).
+
+        When an immediate value is used as an
+        operand, it is sign-extended to the length of the destination operand format. The CF and OF flags are set
+        when significant bits are carried into the upper half of the result. The CF and OF flags are cleared when the
         result fits exactly in the lower half of the result.The three forms of the IMUL instruction are similar in that
         the length of the product is calculated to twice the length of the operands. With the one-operand form, the product
-        is stored exactly in the destination. With the two- and three- operand forms, however, result is truncated to 
+        is stored exactly in the destination. With the two- and three- operand forms, however, result is truncated to
         the length of the destination before it is stored in the destination register. Because of this truncation, the CF
-        or OF flag should be tested to ensure that no significant bits are lost. The two- and three-operand forms may 
-        also be used with unsigned operands because the lower half of the product is the same regardless if the operands 
-        are signed or unsigned. The CF and OF flags, however, cannot be used to determine if the upper half of the result 
+        or OF flag should be tested to ensure that no significant bits are lost. The two- and three-operand forms may
+        also be used with unsigned operands because the lower half of the product is the same regardless if the operands
+        are signed or unsigned. The CF and OF flags, however, cannot be used to determine if the upper half of the result
         is non-zero::
 
                 IF (NumberOfOperands == 1)
-                THEN 
+                THEN
                     IF (OperandSize == 8)
                     THEN
                         AX = AL * SRC (* Signed multiplication *)
                         IF AL == AX
-                        THEN 
+                        THEN
                             CF = 0; OF = 0;
-                        ELSE 
-                            CF = 1; OF = 1; 
+                        ELSE
+                            CF = 1; OF = 1;
                         FI;
-                    ELSE 
+                    ELSE
                         IF OperandSize == 16
                         THEN
                             DX:AX = AX * SRC (* Signed multiplication *)
                             IF sign_extend_to_32 (AX) == DX:AX
-                            THEN 
+                            THEN
                                 CF = 0; OF = 0;
-                            ELSE 
+                            ELSE
                                 CF = 1; OF = 1;
                             FI;
-                        ELSE 
+                        ELSE
                             IF OperandSize == 32
                             THEN
                                 EDX:EAX = EAX * SRC (* Signed multiplication *)
                                 IF EAX == EDX:EAX
                                 THEN
                                     CF = 0; OF = 0;
-                                ELSE 
-                                    CF = 1; OF = 1; 
+                                ELSE
+                                    CF = 1; OF = 1;
                                 FI;
                             ELSE (* OperandSize = 64 *)
                                 RDX:RAX = RAX * SRC (* Signed multiplication *)
                                 IF RAX == RDX:RAX
-                                THEN 
+                                THEN
                                     CF = 0; OF = 0;
-                                ELSE 
+                                ELSE
                                    CF = 1; OF = 1;
                                 FI;
                             FI;
                         FI;
-                ELSE 
+                ELSE
                     IF (NumberOfOperands = 2)
                     THEN
                         temp = DEST * SRC (* Signed multiplication; temp is double DEST size *)
                         DEST = DEST * SRC (* Signed multiplication *)
                         IF temp != DEST
-                        THEN 
+                        THEN
                             CF = 1; OF = 1;
                         ELSE
-                            CF = 0; OF = 0; 
+                            CF = 0; OF = 0;
                         FI;
                     ELSE (* NumberOfOperands = 3 *)
                         DEST = SRC1 * SRC2 (* Signed multiplication *)
@@ -1763,14 +1763,14 @@ class X86Cpu(Cpu):
                         IF temp != DEST
                         THEN
                             CF = 1; OF = 1;
-                        ELSE    
+                        ELSE
                             CF = 0; OF = 0;
                         FI;
                     FI;
                 FI;
-        
+
         :param cpu: current CPU.
-        :param operands: variable list of operands. 
+        :param operands: variable list of operands.
         '''
         dest = operands[0]
         OperandSize = dest.size
@@ -1800,25 +1800,25 @@ class X86Cpu(Cpu):
             temp = Operators.SEXTEND(arg1,OperandSize,OperandSize*2) * Operators.SEXTEND(arg2,operands[2].size,OperandSize*2)
             temp = temp & ((1 << (OperandSize*2)) - 1)
             res = dest.write(Operators.EXTRACT(temp,0,OperandSize))
-        
+
         cpu.CF = (Operators.SEXTEND(res, OperandSize, OperandSize*2) != temp)
         cpu.OF = cpu.CF
 
     @instruction
     def INC(cpu, dest):
-        ''' 
+        '''
         Increments by 1.
-        
-        Adds 1 to the destination operand, while preserving the state of the 
-        CF flag. The destination operand can be a register or a memory location. 
-        This instruction allows a loop counter to be updated without disturbing 
-        the CF flag. (Use a ADD instruction with an immediate operand of 1 to 
+
+        Adds 1 to the destination operand, while preserving the state of the
+        CF flag. The destination operand can be a register or a memory location.
+        This instruction allows a loop counter to be updated without disturbing
+        the CF flag. (Use a ADD instruction with an immediate operand of 1 to
         perform an increment operation that does updates the CF flag.)::
 
                 DEST  =  DEST +1;
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         arg0 = dest.read()
         res = dest.write(arg0+1)
@@ -1832,35 +1832,35 @@ class X86Cpu(Cpu):
 
     @instruction
     def MUL(cpu, src):
-        ''' 
+        '''
         Unsigned multiply.
-        
-        Performs an unsigned multiplication of the first operand (destination 
-        operand) and the second operand (source operand) and stores the result 
-        in the destination operand. The destination operand is an implied operand 
-        located in register AL, AX or EAX (depending on the size of the operand); 
-        the source operand is located in a general-purpose register or a memory location. 
-        
-        The result is stored in register AX, register pair DX:AX, or register 
-        pair EDX:EAX (depending on the operand size), with the high-order bits 
-        of the product contained in register AH, DX, or EDX, respectively. If 
-        the high-order bits of the product are 0, the CF and OF flags are cleared; 
+
+        Performs an unsigned multiplication of the first operand (destination
+        operand) and the second operand (source operand) and stores the result
+        in the destination operand. The destination operand is an implied operand
+        located in register AL, AX or EAX (depending on the size of the operand);
+        the source operand is located in a general-purpose register or a memory location.
+
+        The result is stored in register AX, register pair DX:AX, or register
+        pair EDX:EAX (depending on the operand size), with the high-order bits
+        of the product contained in register AH, DX, or EDX, respectively. If
+        the high-order bits of the product are 0, the CF and OF flags are cleared;
         otherwise, the flags are set::
 
                 IF byte operation
-                THEN 
+                THEN
                     AX  =  AL * SRC
                 ELSE (* word or doubleword operation *)
                     IF OperandSize  =  16
-                    THEN 
+                    THEN
                         DX:AX  =  AX * SRC
                     ELSE (* OperandSize  =  32 *)
                         EDX:EAX  =  EAX * SRC
                     FI;
                 FI;
-        
+
         :param cpu: current CPU.
-        :param src: source operand.        
+        :param src: source operand.
         '''
         size = src.size
         reg_name_low, reg_name_high = { 8: ('AL','AH'),
@@ -1875,21 +1875,21 @@ class X86Cpu(Cpu):
 
     @instruction
     def NEG(cpu, dest):
-        ''' 
+        '''
         Two's complement negation.
-        
-        Replaces the value of operand (the destination operand) with its two's complement. 
-        (This operation is equivalent to subtracting the operand from 0.) The destination operand is 
+
+        Replaces the value of operand (the destination operand) with its two's complement.
+        (This operation is equivalent to subtracting the operand from 0.) The destination operand is
         located in a general-purpose register or a memory location::
 
-                IF DEST  =  0 
-                THEN CF  =  0 
-                ELSE CF  =  1; 
+                IF DEST  =  0
+                THEN CF  =  0
+                ELSE CF  =  1;
                 FI;
                 DEST  =  - (DEST)
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         source = dest.read()
         res = dest.write(-source)
@@ -1899,56 +1899,56 @@ class X86Cpu(Cpu):
 
     @instruction
     def SBB(cpu, dest, src):
-        ''' 
+        '''
         Integer subtraction with borrow.
-        
-        Adds the source operand (second operand) and the carry (CF) flag, and 
-        subtracts the result from the destination operand (first operand). The 
-        result of the subtraction is stored in the destination operand. The destination 
-        operand can be a register or a memory location; the source operand can 
-        be an immediate, a register, or a memory location. (However, two memory 
-        operands cannot be used in one instruction.) The state of the CF flag 
+
+        Adds the source operand (second operand) and the carry (CF) flag, and
+        subtracts the result from the destination operand (first operand). The
+        result of the subtraction is stored in the destination operand. The destination
+        operand can be a register or a memory location; the source operand can
+        be an immediate, a register, or a memory location. (However, two memory
+        operands cannot be used in one instruction.) The state of the CF flag
         represents a borrow from a previous subtraction.
-        When an immediate value is used as an operand, it is sign-extended to 
+        When an immediate value is used as an operand, it is sign-extended to
         the length of the destination operand format.
-        The SBB instruction does not distinguish between signed or unsigned 
-        operands. Instead, the processor evaluates the result for both data types 
-        and sets the OF and CF flags to indicate a borrow in the signed or unsigned 
+        The SBB instruction does not distinguish between signed or unsigned
+        operands. Instead, the processor evaluates the result for both data types
+        and sets the OF and CF flags to indicate a borrow in the signed or unsigned
         result, respectively. The SF flag indicates the sign of the signed result.
-        The SBB instruction is usually executed as part of a multibyte 
-        or multiword 
+        The SBB instruction is usually executed as part of a multibyte
+        or multiword
         subtraction in which a SUB instruction is followed by a SBB instruction::
 
                 DEST  =  DEST - (SRC + CF);
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
-        :param src: source operand.        
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         cpu._SUB(dest, src, carry=True)
 
     @instruction
     def SUB(cpu, dest, src):
-        ''' 
+        '''
         Subtract.
-        
-        Subtracts the second operand (source operand) from the first operand 
-        (destination operand) and stores the result in the destination operand. 
-        The destination operand can be a register or a memory location; the source 
-        operand can be an immediate, register, or memory location. (However, two 
-        memory operands cannot be used in one instruction.) When an immediate 
-        value is used as an operand, it is sign-extended to the length of the 
+
+        Subtracts the second operand (source operand) from the first operand
+        (destination operand) and stores the result in the destination operand.
+        The destination operand can be a register or a memory location; the source
+        operand can be an immediate, register, or memory location. (However, two
+        memory operands cannot be used in one instruction.) When an immediate
+        value is used as an operand, it is sign-extended to the length of the
         destination operand format.
-        The SUB instruction does not distinguish between signed or unsigned 
-        operands. Instedef SUBad, the processor evaluates the result for both data types 
-        and sets the OF and CF flags to indicate a borrow in the signed or unsigned 
+        The SUB instruction does not distinguish between signed or unsigned
+        operands. Instedef SUBad, the processor evaluates the result for both data types
+        and sets the OF and CF flags to indicate a borrow in the signed or unsigned
         result, respectively. The SF flag indicates the sign of the signed result::
 
             DEST  =  DEST - SRC;
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
-        :param src: source operand.        
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         cpu._SUB(dest, src, carry=False)
 
@@ -1973,20 +1973,20 @@ class X86Cpu(Cpu):
     def XADD(cpu, dest, src):
         '''
         Exchanges and adds.
-        
-        Exchanges the first operand (destination operand) with the second operand 
-        (source operand), then loads the sum of the two values into the destination 
-        operand. The destination operand can be a register or a memory location; 
+
+        Exchanges the first operand (destination operand) with the second operand
+        (source operand), then loads the sum of the two values into the destination
+        operand. The destination operand can be a register or a memory location;
         the source operand is a register.
         This instruction can be used with a LOCK prefix::
 
                 TEMP  =  SRC + DEST
                 SRC  =  DEST
                 DEST  =  TEMP
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
-        :param src: source operand.        
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         MASK = (1<<dest.size)-1
         SIGN_MASK = 1<<(dest.size-1)
@@ -2014,20 +2014,20 @@ class X86Cpu(Cpu):
 # Move: BSWAP, CMOVB, CMOVBE, CMOVL, CMOVLE, CMOVNB, CMOVNBE, CMOVNL, CMOVNLE,
 #       CMOVNO, CMOVNP, CMOVNS, CMOVNZ, CMOVO, CMOVP, CMOVS, CMOVZ, LAHF, LDS,
 #       LEA, LES, LFS, LGS, LSS, MOV, MOVBE, SAHF, SETB, SETBE,
-#       SETL, SETLE, SETNB, SETNBE, SETNL, SETNLE, SETNO, SETNP, SETNS, SETNZ, 
+#       SETL, SETLE, SETNB, SETNBE, SETNL, SETNLE, SETNO, SETNP, SETNS, SETNZ,
 #       SETO, SETP, SETS, SETZ, XADD, XCHG, XLAT
 ########################################################################################
     @instruction
     def BSWAP(cpu, dest):
-        ''' 
+        '''
         Byte swap.
-        
-        Reverses the byte order of a 32-bit (destination) register: bits 0 through 
-        7 are swapped with bits 24 through 31, and bits 8 through 15 are swapped 
-        with bits 16 through 23. This instruction is provided for converting little-endian 
+
+        Reverses the byte order of a 32-bit (destination) register: bits 0 through
+        7 are swapped with bits 24 through 31, and bits 8 through 15 are swapped
+        with bits 16 through 23. This instruction is provided for converting little-endian
         values to big-endian format and vice versa.
-        To swap bytes in a word value (16-bit register), use the XCHG instruction. 
-        When the BSWAP instruction references a 16-bit register, the result is 
+        To swap bytes in a word value (16-bit register), use the XCHG instruction.
+        When the BSWAP instruction references a 16-bit register, the result is
         undefined::
 
             TEMP  =  DEST
@@ -2037,7 +2037,7 @@ class X86Cpu(Cpu):
             DEST[31..24]  =  TEMP[7..0]
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         parts = []
         arg0 = dest.read()
@@ -2054,50 +2054,50 @@ class X86Cpu(Cpu):
 #                              CMOVP CMOVPO CMOVNP
 ########################################################################################
     ##CMOVcc
-    #CMOVB CMOVNAE CMOVC 
+    #CMOVB CMOVNAE CMOVC
     @instruction
     def CMOVB(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Below/not above or equal.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
-        :param src: source operand. 
+        :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, src.read(), dest.read()))
 
     #CMOVNBE
     @instruction
     def CMOVA(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Above/not below or equal.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF==False, cpu.ZF==False), src.read(), dest.read()))
 
-    #CMOVNB CMOVNC 
+    #CMOVNB CMOVNC
     @instruction
     def CMOVAE(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Above or equal/not below.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF==False, src.read(), dest.read()))
@@ -2105,45 +2105,45 @@ class X86Cpu(Cpu):
     #CMOVNA
     @instruction
     def CMOVBE(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Below or equal/not above.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), src.read(), dest.read()))
 
     @instruction
     def CMOVZ(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Equal/zero.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, src.read(), dest.read()))
 
     @instruction
     def CMOVNZ(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Not equal/not zero.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, src.read(), dest.read()))
@@ -2151,30 +2151,30 @@ class X86Cpu(Cpu):
     #CMOVPE
     @instruction
     def CMOVP(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Parity/parity even.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF, src.read(), dest.read()))
     #CMOVPO
     @instruction
     def CMOVNP(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Not parity/parity odd.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF==False, src.read(), dest.read()))
@@ -2182,20 +2182,20 @@ class X86Cpu(Cpu):
 ########################################################################################
 # Generic Operations -- Moves -- Signed Conditional Moves
 ########################################################################################
-#  Unsigned Conditional Moves: CMOVGE CMOVNL CMOVL CMOVNGE CMOVLE CMOVNG CMOVO CMOVNO 
-#                              CMOVS CMOVNS 
+#  Unsigned Conditional Moves: CMOVGE CMOVNL CMOVL CMOVNGE CMOVLE CMOVNG CMOVO CMOVNO
+#                              CMOVS CMOVNS
 ########################################################################################
     @instruction
     def CMOVG(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Greater.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==0, cpu.SF==cpu.OF), src.read(), dest.read()))
@@ -2203,15 +2203,15 @@ class X86Cpu(Cpu):
     #CMOVNL
     @instruction
     def CMOVGE(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Greater or equal/not less.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, (cpu.SF ^ cpu.OF)==0, src.read(), dest.read()))
@@ -2220,15 +2220,15 @@ class X86Cpu(Cpu):
     #CMOVNGE
     @instruction
     def CMOVL(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Less/not greater or equal.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF ^ cpu.OF, src.read(), dest.read()))
@@ -2236,92 +2236,92 @@ class X86Cpu(Cpu):
     #CMOVNG
     @instruction
     def CMOVLE(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Less or equal/not greater.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.SF ^ cpu.OF, cpu.ZF), src.read(), dest.read()))
 
     @instruction
     def CMOVO(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Overflow.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.OF, src.read(), dest.read()))
 
     @instruction
     def CMOVNO(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Not overflow.
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.OF==False, src.read(), dest.read()))
 
     @instruction
     def CMOVS(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Sign (negative).
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF, src.read(), dest.read()))
 
     @instruction
     def CMOVNS(cpu, dest, src):
-        ''' 
+        '''
         Conditional move - Not sign (non-negative).
-        
-        Tests the status flags in the EFLAGS register and moves the source operand 
-        (second operand) to the destination operand (first operand) if the given 
+
+        Tests the status flags in the EFLAGS register and moves the source operand
+        (second operand) to the destination operand (first operand) if the given
         test condition is true.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF==False, src.read(), dest.read()))
 
     @instruction
     def LAHF(cpu):
-        ''' 
+        '''
         Loads status flags into AH register.
-        
-        Moves the low byte of the EFLAGS register (which includes status flags 
-        SF, ZF, AF, PF, and CF) to the AH register. Reserved bits 1, 3, and 5 
+
+        Moves the low byte of the EFLAGS register (which includes status flags
+        SF, ZF, AF, PF, and CF) to the AH register. Reserved bits 1, 3, and 5
         of the EFLAGS register are set in the AH register::
 
                 AH  =  EFLAGS(SF:ZF:0:AF:0:PF:1:CF);
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         used_regs = (cpu.SF, cpu.ZF, cpu.AF, cpu.PF, cpu.CF)
@@ -2348,62 +2348,62 @@ class X86Cpu(Cpu):
     def LDS(cpu, dest, src):
         """
         Not implemented.
-        
+
         """
         raise NotImplementedError("LDS") #TODO
     @instruction
     def LES(cpu, dest, src):
         """
         Not implemented.
-        
+
         """
         raise NotImplementedError("LES") #TODO
     @instruction
     def LFS(cpu, dest, src):
         """
         Not implemented.
-        
+
         """
         raise NotImplementedError("LFS") #TODO
     @instruction
     def LGS(cpu, dest, src):
         """
         Not implemented.
-        
+
         """
         raise NotImplementedError("LGS") #TODO
     @instruction
     def LSS(cpu, dest, src):
-        ''' 
+        '''
         Loads far pointer.
-        
-        Loads a far pointer (segment selector and offset) from the second operand 
-        (source operand) into a segment register and the first operand (destination 
-        operand). The source operand specifies a 48-bit or a 32-bit pointer in 
-        memory depending on the current setting of the operand-size attribute 
-        (32 bits or 16 bits, respectively). The instruction opcode and the destination 
-        operand specify a segment register/general-purpose register pair. The 
-        16-bit segment selector from the source operand is loaded into the segment 
-        register specified with the opcode (DS, SS, ES, FS, or GS). The 32-bit 
-        or 16-bit offset is loaded into the register specified with the destination 
+
+        Loads a far pointer (segment selector and offset) from the second operand
+        (source operand) into a segment register and the first operand (destination
+        operand). The source operand specifies a 48-bit or a 32-bit pointer in
+        memory depending on the current setting of the operand-size attribute
+        (32 bits or 16 bits, respectively). The instruction opcode and the destination
+        operand specify a segment register/general-purpose register pair. The
+        16-bit segment selector from the source operand is loaded into the segment
+        register specified with the opcode (DS, SS, ES, FS, or GS). The 32-bit
+        or 16-bit offset is loaded into the register specified with the destination
         operand.
-        In 64-bit mode, the instruction's default operation size is 32 bits. Using a 
+        In 64-bit mode, the instruction's default operation size is 32 bits. Using a
         REX prefix in the form of REX.W promotes operation to specify a source operand
         referencing an 80-bit pointer (16-bit selector, 64-bit offset) in memory.
-        If one of these instructions is executed in protected mode, additional 
-        information from the segment descriptor pointed to by the segment selector 
-        in the source operand is loaded in the hidden part of the selected segment 
+        If one of these instructions is executed in protected mode, additional
+        information from the segment descriptor pointed to by the segment selector
+        in the source operand is loaded in the hidden part of the selected segment
         register.
-        Also in protected mode, a null selector (values 0000 through 0003) can 
-        be loaded into DS, ES, FS, or GS registers without causing a protection 
-        exception. (Any subsequent reference to a segment whose corresponding 
-        segment register is loaded with a null selector, causes a general-protection 
+        Also in protected mode, a null selector (values 0000 through 0003) can
+        be loaded into DS, ES, FS, or GS registers without causing a protection
+        exception. (Any subsequent reference to a segment whose corresponding
+        segment register is loaded with a null selector, causes a general-protection
         exception (#GP) and no memory reference to the segment occurs.)::
 
                 IF ProtectedMode
-                THEN IF SS is loaded 
+                THEN IF SS is loaded
                     THEN IF SegementSelector  =  null
-                        THEN #GP(0); 
+                        THEN #GP(0);
                         FI;
                     ELSE IF Segment selector index is not within descriptor table limits
                         OR Segment selector RPL  CPL
@@ -2419,7 +2419,7 @@ class X86Cpu(Cpu):
                     ELSE IF DS, ES, FS, or GS is loaded with non-null segment selector
                         THEN IF Segment selector index is not within descriptor table limits
                             OR Access rights indicate segment neither data nor readable code segment
-                            OR Segment is data or nonconforming-code segment 
+                            OR Segment is data or nonconforming-code segment
                             AND both RPL and CPL > DPL)
                             THEN #GP(selector);
                             FI;
@@ -2440,21 +2440,21 @@ class X86Cpu(Cpu):
                     DEST  =  Offset(SRC);
         '''
         raise NotImplementedError("LSS") #TODO
- 
+
     @instruction
     def LEA(cpu, dest, src):
-        ''' 
+        '''
         Loads effective address.
-        
+
         Computes the effective address of the second operand (the source operand) and stores it in the first operand
         (destination operand). The source operand is a memory address (offset part) specified with one of the processors
         addressing modes; the destination operand is a general-purpose register. The address-size and operand-size
         attributes affect the action performed by this instruction. The operand-size
         attribute of the instruction is determined by the chosen register; the address-size attribute is determined by the
         attribute of the code segment.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(Operators.EXTRACT(src.address(),0,dest.size))
@@ -2462,27 +2462,27 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOV(cpu, dest, src):
-        ''' 
+        '''
         Move.
-        
-        Copies the second operand (source operand) to the first operand (destination 
-        operand). The source operand can be an immediate value, general-purpose 
-        register, segment register, or memory location; the destination register 
-        can be a general-purpose register, segment register, or memory location. 
-        Both operands must be the same size, which can be a byte, a word, or a 
+
+        Copies the second operand (source operand) to the first operand (destination
+        operand). The source operand can be an immediate value, general-purpose
+        register, segment register, or memory location; the destination register
+        can be a general-purpose register, segment register, or memory location.
+        Both operands must be the same size, which can be a byte, a word, or a
         doubleword.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         dest.write(src.read())
 
     @instruction
     def MOVBE(cpu, dest, src):
-        ''' 
+        '''
         Moves data after swapping bytes.
-        
+
         Performs a byte swap operation on the data copied from the second operand (source operand) and store the result
         in the first operand (destination operand). The source operand can be a general-purpose register, or memory location; the destination register can be a general-purpose register, or a memory location; however, both operands can
         not be registers, and only one operand can be a memory location. Both operands must be the same size, which can
@@ -2511,9 +2511,9 @@ class X86Cpu(Cpu):
                     DEST[55:48] = TEMP[15:8];
                     DEST[63:56] = TEMP[7:0];
                 FI;
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
         size = dest.size
@@ -2526,18 +2526,18 @@ class X86Cpu(Cpu):
 
     @instruction
     def SAHF(cpu):
-        ''' 
+        '''
         Stores AH into flags.
-        
-        Loads the SF, ZF, AF, PF, and CF flags of the EFLAGS register with values 
-        from the corresponding bits in the AH register (bits 7, 6, 4, 2, and 0, 
-        respectively). Bits 1, 3, and 5 of register AH are ignored; the corresponding 
+
+        Loads the SF, ZF, AF, PF, and CF flags of the EFLAGS register with values
+        from the corresponding bits in the AH register (bits 7, 6, 4, 2, and 0,
+        respectively). Bits 1, 3, and 5 of register AH are ignored; the corresponding
         reserved bits (1, 3, and 5) in the EFLAGS register remain as shown below::
 
                 EFLAGS(SF:ZF:0:AF:0:PF:1:CF)  =  AH;
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         :param src: source operand.
         '''
 
@@ -2549,40 +2549,40 @@ class X86Cpu(Cpu):
     @instruction
     def SETA(cpu, dest):
         '''
-        Sets byte if above. 
-        
+        Sets byte if above.
+
         Sets the destination operand to 0 or 1 depending on the settings of the status flags (CF, SF, OF, ZF, and PF, 1, 0) in the
         EFLAGS register. The destination operand points to a byte register or a byte in memory. The condition code suffix
         (cc, 1, 0) indicates the condition being tested for::
                 IF condition
-                THEN 
+                THEN
                     DEST = 1;
-                ELSE 
+                ELSE
                     DEST = 0;
                 FI;
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
          '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF,cpu.ZF) == False, 1, 0))
 
     @instruction
     def SETAE(cpu, dest):
         '''
-        Sets byte if above or equal. 
+        Sets byte if above or equal.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
 
     @instruction
     def SETB(cpu, dest):
         '''
-        Sets byte if below. 
-        
+        Sets byte if below.
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
@@ -2590,19 +2590,19 @@ class X86Cpu(Cpu):
     def SETBE(cpu, dest):
         '''
         Sets byte if below or equal.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), 1, 0))
 
     @instruction
     def SETC(cpu, dest):
         '''
-        Sets if carry. 
-        
+        Sets if carry.
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
@@ -2610,19 +2610,19 @@ class X86Cpu(Cpu):
     def SETE(cpu, dest):
         '''
         Sets byte if equal.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, 1, 0))
 
     @instruction
     def SETG(cpu, dest):
         '''
-        Sets byte if greater. 
-        
+        Sets byte if greater.
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==False, cpu.SF==cpu.OF), 1, 0))
 
@@ -2630,29 +2630,29 @@ class X86Cpu(Cpu):
     def SETGE(cpu, dest):
         '''
         Sets byte if greater or equal.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF==cpu.OF, 1, 0))
 
     @instruction
     def SETL(cpu, dest):
         '''
-        Sets byte if less. 
-        
+        Sets byte if less.
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF!=cpu.OF, 1, 0))
 
     @instruction
     def SETLE(cpu, dest):
         '''
-        Sets byte if less or equal. 
-        
+        Sets byte if less or equal.
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF!=cpu.OF), 1, 0))
 
@@ -2660,49 +2660,49 @@ class X86Cpu(Cpu):
     def SETNA(cpu, dest):
         '''
         Sets byte if not above.
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF), 1, 0))
 
     @instruction
     def SETNAE(cpu, dest):
         '''
-        Sets byte if not above or equal. 
-        
+        Sets byte if not above or equal.
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, 1, 0))
 
     @instruction
     def SETNB(cpu, dest):
         '''
-        Sets byte if not below.         
-        
+        Sets byte if not below.
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
 
     @instruction
     def SETNBE(cpu, dest):
         '''
-        Sets byte if not below or equal. 
-        
+        Sets byte if not below or equal.
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF==False, cpu.ZF==False), 1, 0))
 
     @instruction
     def SETNC(cpu, dest):
         '''
-        Sets byte if not carry. 
-       
+        Sets byte if not carry.
+
         :param cpu: current CPU.
-        :param dest: destination operand. 
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
 
@@ -2712,17 +2712,17 @@ class X86Cpu(Cpu):
         Sets byte if not equal.
 
         :param cpu: current CPU.
-        :param dest: destination operand. 
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, 1, 0))
 
     @instruction
     def SETNG(cpu, dest):
         '''
-        Sets byte if not greater. 
+        Sets byte if not greater.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF!=cpu.OF), 1, 0))
 
@@ -2732,87 +2732,87 @@ class X86Cpu(Cpu):
         Sets if not greater or equal.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF!=cpu.OF, 1, 0))
 
     @instruction
     def SETNL(cpu, dest):
         '''
-        Sets byte if not less. 
+        Sets byte if not less.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF==cpu.OF, 1, 0))
 
     @instruction
     def SETNLE(cpu, dest):
         '''
-        Sets byte if not less or equal. 
+        Sets byte if not less or equal.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==False, cpu.SF==cpu.OF), 1, 0))
 
     @instruction
     def SETNO(cpu, dest):
         '''
-        Sets byte if not overflow. 
+        Sets byte if not overflow.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.OF==False, 1, 0))
 
     @instruction
     def SETNP(cpu, dest):
         '''
-        Sets byte if not parity. 
+        Sets byte if not parity.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF==False, 1, 0))
 
     @instruction
     def SETNS(cpu, dest):
         '''
-        Sets byte if not sign. 
+        Sets byte if not sign.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF==False, 1, 0))
 
     @instruction
     def SETNZ(cpu, dest):
         '''
-        Sets byte if not zero. 
+        Sets byte if not zero.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, 1, 0))
 
     @instruction
     def SETO(cpu, dest):
         '''
-        Sets byte if overflow. 
+        Sets byte if overflow.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.OF, 1, 0))
 
     @instruction
     def SETP(cpu, dest):
         '''
-        Sets byte if parity. 
+        Sets byte if parity.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF, 1, 0))
 
@@ -2822,27 +2822,27 @@ class X86Cpu(Cpu):
         Sets byte if parity even.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF, 1, 0))
 
     @instruction
     def SETPO(cpu, dest):
         '''
-        Sets byte if parity odd. 
+        Sets byte if parity odd.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF==False, 1, 0))
 
     @instruction
     def SETS(cpu, dest):
         '''
-        Sets byte if sign. 
+        Sets byte if sign.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF, 1, 0))
 
@@ -2852,33 +2852,33 @@ class X86Cpu(Cpu):
         Sets byte if zero.
 
         :param cpu: current CPU.
-        :param dest: destination operand.        
+        :param dest: destination operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, 1, 0))
 
     @instruction
     def XCHG(cpu, dest, src):
-        ''' 
+        '''
         Exchanges register/memory with register.
-        
-        Exchanges the contents of the destination (first) and source (second) 
-        operands. The operands can be two general-purpose registers or a register 
-        and a memory location. If a memory operand is referenced, the processor's 
-        locking protocol is automatically implemented for the duration of the 
-        exchange operation, regardless of the presence or absence of the LOCK 
-        prefix or of the value of the IOPL. 
-        This instruction is useful for implementing semaphores or similar data 
-        structures for process synchronization. 
-        The XCHG instruction can also be used instead of the BSWAP instruction 
+
+        Exchanges the contents of the destination (first) and source (second)
+        operands. The operands can be two general-purpose registers or a register
+        and a memory location. If a memory operand is referenced, the processor's
+        locking protocol is automatically implemented for the duration of the
+        exchange operation, regardless of the presence or absence of the LOCK
+        prefix or of the value of the IOPL.
+        This instruction is useful for implementing semaphores or similar data
+        structures for process synchronization.
+        The XCHG instruction can also be used instead of the BSWAP instruction
         for 16-bit operands::
 
                 TEMP  =  DEST
                 DEST  =  SRC
                 SRC  =  TEMP
-        
+
         :param cpu: current CPU.
-        :param dest: destination operand.        
-        :param src: source operand. 
+        :param dest: destination operand.
+        :param src: source operand.
         '''
         temp = dest.read()
         dest.write(src.read())
@@ -2894,19 +2894,19 @@ class X86Cpu(Cpu):
 ########################################################################################
     @instruction
     def LEAVE(cpu):
-        ''' 
+        '''
         High level procedure exit.
-        
-        Releases the stack frame set up by an earlier ENTER instruction. The 
-        LEAVE instruction copies the frame pointer (in the EBP register) into 
-        the stack pointer register (ESP), which releases the stack space allocated 
-        to the stack frame. The old frame pointer (the frame pointer for the calling 
-        procedure that was saved by the ENTER instruction) is then popped from 
-        the stack into the EBP register, restoring the calling procedure's stack 
+
+        Releases the stack frame set up by an earlier ENTER instruction. The
+        LEAVE instruction copies the frame pointer (in the EBP register) into
+        the stack pointer register (ESP), which releases the stack space allocated
+        to the stack frame. The old frame pointer (the frame pointer for the calling
+        procedure that was saved by the ENTER instruction) is then popped from
+        the stack into the EBP register, restoring the calling procedure's stack
         frame.
-        A RET instruction is commonly executed following a LEAVE instruction 
+        A RET instruction is commonly executed following a LEAVE instruction
         to return program control to the calling procedure::
-        
+
                 IF Stackaddress_bit_size  =  32
                 THEN
                     ESP  =  EBP;
@@ -2919,7 +2919,7 @@ class X86Cpu(Cpu):
                 ELSE (* OperandSize  =  16*)
                     BP  =  Pop();
                 FI;
-        
+
         :param cpu: current CPU.
         '''
         cpu.STACK = cpu.FRAME
@@ -2927,12 +2927,12 @@ class X86Cpu(Cpu):
 
     @instruction
     def POP(cpu, dest):
-        ''' 
+        '''
         Pops a value from the stack.
-        
-        Loads the value from the top of the stack to the location specified 
-        with the destination operand and then increments the stack pointer. 
-        
+
+        Loads the value from the top of the stack to the location specified
+        with the destination operand and then increments the stack pointer.
+
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
@@ -2942,9 +2942,9 @@ class X86Cpu(Cpu):
     def PUSH(cpu, src):
         '''
         Pushes a value onto the stack.
-        
+
         Decrements the stack pointer and then stores the source operand on the top of the stack.
-        
+
         :param cpu: current CPU.
         :param src: source operand.
         '''
@@ -2958,9 +2958,9 @@ class X86Cpu(Cpu):
 
     @instruction
     def POPF(cpu):
-        ''' 
-        Pops stack into EFLAGS register. 
-        
+        '''
+        Pops stack into EFLAGS register.
+
         :param cpu: current CPU.
         '''
         mask = (0x00000001 |
@@ -2976,9 +2976,9 @@ class X86Cpu(Cpu):
 
     @instruction
     def POPFD(cpu):
-        ''' 
+        '''
         Pops stack into EFLAGS register.
-        
+
         :param cpu: current CPU.
         '''
         mask = 0x00000001 | 0x00000004 | 0x00000010 | 0x00000040 | 0x00000080 | 0x00000400 | 0x00000800
@@ -2986,9 +2986,9 @@ class X86Cpu(Cpu):
 
     @instruction
     def POPFQ(cpu):
-        ''' 
+        '''
         Pops stack into EFLAGS register.
-        
+
         :param cpu: current CPU.
         '''
         mask = 0x00000001 | 0x00000004 | 0x00000010 | 0x00000040 | 0x00000080 | 0x00000400 | 0x00000800
@@ -2996,45 +2996,45 @@ class X86Cpu(Cpu):
 
     @instruction
     def PUSHF(cpu):
-        ''' 
+        '''
         Pushes FLAGS register onto the stack.
-        
+
         :param cpu: current CPU.
         '''
         cpu.push(cpu.EFLAGS, 16)
 
     @instruction
     def PUSHFD(cpu):
-        ''' 
+        '''
         Pushes EFLAGS register onto the stack.
-        
+
         :param cpu: current CPU.
         '''
         cpu.push(cpu.EFLAGS, 32)
 
     @instruction
     def PUSHFQ(cpu):
-        ''' 
+        '''
         Pushes RFLAGS register onto the stack.
-        
+
         :param cpu: current CPU.
         '''
         cpu.push(cpu.RFLAGS, 64)
 
     @instruction
     def INT(cpu, op0):
-        ''' 
+        '''
         Calls to interrupt procedure.
-        
-        The INT n instruction generates a call to the interrupt or exception handler specified 
+
+        The INT n instruction generates a call to the interrupt or exception handler specified
         with the destination operand. The INT n instruction is the  general mnemonic for executing
-        a software-generated call to an interrupt handler. The INTO instruction is a special 
+        a software-generated call to an interrupt handler. The INTO instruction is a special
         mnemonic for calling overflow exception (#OF), interrupt vector number 4. The overflow
-        interrupt checks the OF flag in the EFLAGS register and calls the overflow interrupt handler 
+        interrupt checks the OF flag in the EFLAGS register and calls the overflow interrupt handler
         if the OF flag is set to 1.
 
         :param cpu: current CPU.
-        :param op0: destination operand. 
+        :param op0: destination operand.
         '''
         if op0.read() != 0x80:
             logger.warning("Unsupported interrupt")
@@ -3042,7 +3042,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def INT3(cpu):
-        ''' 
+        '''
         Breakpoint
 
         :param cpu: current CPU.
@@ -3061,13 +3061,13 @@ class X86Cpu(Cpu):
     def CALL(cpu, op0):
         '''
         Procedure call.
-        
+
         Saves procedure linking information on the stack and branches to the called procedure specified using the target
         operand. The target operand specifies the address of the first instruction in the called procedure. The operand can
         be an immediate value, a general-purpose register, or a memory location.
-        
+
         :param cpu: current CPU.
-        :param op0: target operand.         
+        :param op0: target operand.
         '''
         #TODO FIX 64Bit FIX segment
         proc = op0.read()
@@ -3076,17 +3076,17 @@ class X86Cpu(Cpu):
 
     @instruction
     def RET(cpu,*operands):
-        ''' 
+        '''
         Returns from procedure.
-        
-        Transfers program control to a return address located on the top of 
-        the stack. The address is usually placed on the stack by a CALL instruction, 
+
+        Transfers program control to a return address located on the top of
+        the stack. The address is usually placed on the stack by a CALL instruction,
         and the return is made to the instruction that follows the CALL instruction.
-        The optional source operand specifies the number of stack bytes to be 
+        The optional source operand specifies the number of stack bytes to be
         released after the return address is popped; the default is none.
-        
+
         :param cpu: current CPU.
-        :param operands: variable operands list. 
+        :param operands: variable operands list.
         '''
         #TODO FIX 64Bit FIX segment
         N = 0
@@ -3099,9 +3099,9 @@ class X86Cpu(Cpu):
     def JA(cpu, target):
         '''
         Jumps short if above.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.CF == False, cpu.ZF == False), target.read(), cpu.PC)
 
@@ -3109,9 +3109,9 @@ class X86Cpu(Cpu):
     def JAE(cpu, target):
         '''
         Jumps short if above or equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == False, target.read(), cpu.PC)
 
@@ -3119,9 +3119,9 @@ class X86Cpu(Cpu):
     def JB(cpu, target):
         '''
         Jumps short if below.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == True, target.read(), cpu.PC)
 
@@ -3129,19 +3129,19 @@ class X86Cpu(Cpu):
     def JBE(cpu, target):
         '''
         Jumps short if below or equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.CF, cpu.ZF) , target.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.CF, cpu.ZF), target.read(), cpu.PC)
 
     @instruction
     def JC(cpu, target):
         '''
         Jumps short if carry.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF , target.read(), cpu.PC)
 
@@ -3149,9 +3149,9 @@ class X86Cpu(Cpu):
     def JCXZ(cpu, target):
         '''
         Jumps short if CX register is 0.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CX == 0, target.read(), cpu.PC)
 
@@ -3159,9 +3159,9 @@ class X86Cpu(Cpu):
     def JECXZ(cpu, target):
         '''
         Jumps short if ECX register is 0.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ECX == 0, target.read(), cpu.PC)
 
@@ -3169,9 +3169,9 @@ class X86Cpu(Cpu):
     def JRCXZ(cpu, target):
         '''
         Jumps short if RCX register is 0.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.RCX == 0, target.read(), cpu.PC)
 
@@ -3179,9 +3179,9 @@ class X86Cpu(Cpu):
     def JE(cpu, target):
         '''
         Jumps short if equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ZF, target.read(), cpu.PC)
 
@@ -3189,9 +3189,9 @@ class X86Cpu(Cpu):
     def JG(cpu, target):
         '''
         Jumps short if greater.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.ZF == False, cpu.SF == cpu.OF), target.read(), cpu.PC)
 
@@ -3199,9 +3199,9 @@ class X86Cpu(Cpu):
     def JGE(cpu, target):
         '''
         Jumps short if greater or equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF == cpu.OF), target.read(), cpu.PC)
 
@@ -3209,9 +3209,9 @@ class X86Cpu(Cpu):
     def JL(cpu, target):
         '''
         Jumps short if less.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF != cpu.OF), target.read(), cpu.PC)
 
@@ -3219,9 +3219,9 @@ class X86Cpu(Cpu):
     def JLE(cpu, target):
         '''
         Jumps short if less or equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), target.read(), cpu.PC)
 
@@ -3229,19 +3229,19 @@ class X86Cpu(Cpu):
     def JNA(cpu, target):
         '''
         Jumps short if not above.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.CF, cpu.ZF) , target.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.CF, cpu.ZF), target.read(), cpu.PC)
 
     @instruction
     def JNAE(cpu, target):
         '''
         Jumps short if not above or equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF , target.read(), cpu.PC)
 
@@ -3249,9 +3249,9 @@ class X86Cpu(Cpu):
     def JNB(cpu, target):
         '''
         Jumps short if not below.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == False, target.read(), cpu.PC)
 
@@ -3259,9 +3259,9 @@ class X86Cpu(Cpu):
     def JNBE(cpu, target):
         '''
         Jumps short if not below or equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(cpu.CF == False, cpu.ZF == False), target.read(), cpu.PC)
 
@@ -3269,9 +3269,9 @@ class X86Cpu(Cpu):
     def JNC(cpu, target):
         '''
         Jumps short if not carry.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.CF, target.read(), cpu.PC)
 
@@ -3279,9 +3279,9 @@ class X86Cpu(Cpu):
     def JNE(cpu, target):
         '''
         Jumps short if not equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.ZF , target.read(), cpu.PC)
 
@@ -3289,9 +3289,9 @@ class X86Cpu(Cpu):
     def JNG(cpu, target):
         '''
         Jumps short if not greater.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), target.read(), cpu.PC)
 
@@ -3299,9 +3299,9 @@ class X86Cpu(Cpu):
     def JNGE(cpu, target):
         '''
         Jumps short if not greater or equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF != cpu.OF), target.read(), cpu.PC)
 
@@ -3309,9 +3309,9 @@ class X86Cpu(Cpu):
     def JNL(cpu, target):
         '''
         Jumps short if not less.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, (cpu.SF == cpu.OF), target.read(), cpu.PC)
 
@@ -3319,9 +3319,9 @@ class X86Cpu(Cpu):
     def JNLE(cpu, target):
         '''
         Jumps short if not less or equal.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, Operators.AND(False == cpu.ZF, cpu.SF == cpu.OF), target.read(), cpu.PC)
 
@@ -3329,9 +3329,9 @@ class X86Cpu(Cpu):
     def JNO(cpu, target):
         '''
         Jumps short if not overflow.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.OF , target.read(), cpu.PC)
 
@@ -3339,9 +3339,9 @@ class X86Cpu(Cpu):
     def JNP(cpu, target):
         '''
         Jumps short if not parity.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.PF , target.read(), cpu.PC)
 
@@ -3349,18 +3349,18 @@ class X86Cpu(Cpu):
     def JNS(cpu, target):
         '''
         Jumps short if not sign.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.SF, target.read(), cpu.PC)
 
     def JNZ(cpu, target):
         '''
         Jumps short if not zero.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.JNE(target)
 
@@ -3368,9 +3368,9 @@ class X86Cpu(Cpu):
     def JO(cpu, target):
         '''
         Jumps short if overflow.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.OF, target.read(), cpu.PC)
 
@@ -3378,9 +3378,9 @@ class X86Cpu(Cpu):
     def JP(cpu, target):
         '''
         Jumps short if parity.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.PF, target.read(), cpu.PC)
 
@@ -3388,9 +3388,9 @@ class X86Cpu(Cpu):
     def JPE(cpu, target):
         '''
         Jumps short if parity even.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.PF, target.read(), cpu.PC)
 
@@ -3398,9 +3398,9 @@ class X86Cpu(Cpu):
     def JPO(cpu, target):
         '''
         Jumps short if parity odd.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.PF, target.read(), cpu.PC)
 
@@ -3408,9 +3408,9 @@ class X86Cpu(Cpu):
     def JS(cpu, target):
         '''
         Jumps short if sign.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.SF, target.read(), cpu.PC)
 
@@ -3418,9 +3418,9 @@ class X86Cpu(Cpu):
     def JZ(cpu, target):
         '''
         Jumps short if zero.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.ZF, target.read(), cpu.PC)
 
@@ -3428,13 +3428,13 @@ class X86Cpu(Cpu):
     def JMP(cpu, target):
         '''
         Jump.
-        
+
         Transfers program control to a different point in the instruction stream without
         recording return information. The destination (target) operand specifies the address
         of the instruction being jumped to. This operand can be an immediate value, a general-purpose register, or a memory location.
-        
+
         :param cpu: current CPU.
-        :param target: destination operand.         
+        :param target: destination operand.
         '''
         cpu.PC=target.read()
 
@@ -3448,37 +3448,37 @@ class X86Cpu(Cpu):
 
     #LOOPZ
     def LOOP(cpu, dest):
-        ''' 
+        '''
         Loops according to ECX counter.
-        
-        Performs a loop operation using the ECX or CX register as a counter. 
-        Each time the LOOP instruction is executed, the count register is decremented, 
-        then checked for 0. If the count is 0, the loop is terminated and program 
-        execution continues with the instruction following the LOOP instruction. 
-        If the count is not zero, a near jump is performed to the destination 
-        (target) operand, which is presumably the instruction at the beginning 
-        of the loop. If the address-size attribute is 32 bits, the ECX register 
+
+        Performs a loop operation using the ECX or CX register as a counter.
+        Each time the LOOP instruction is executed, the count register is decremented,
+        then checked for 0. If the count is 0, the loop is terminated and program
+        execution continues with the instruction following the LOOP instruction.
+        If the count is not zero, a near jump is performed to the destination
+        (target) operand, which is presumably the instruction at the beginning
+        of the loop. If the address-size attribute is 32 bits, the ECX register
         is used as the count register; otherwise the CX register is used::
 
                 IF address_bit_size  =  32
-                THEN 
-                    Count is ECX; 
-                ELSE (* address_bit_size  =  16 *) 
+                THEN
+                    Count is ECX;
+                ELSE (* address_bit_size  =  16 *)
                     Count is CX;
                 FI;
                 Count  =  Count - 1;
-            
+
                 IF (Count  0)  =  1
                 THEN
                     EIP  =  EIP + SignExtend(DEST);
                     IF OperandSize  =  16
-                    THEN 
+                    THEN
                         EIP  =  EIP AND 0000FFFFH;
                     FI;
                 ELSE
                     Terminate loop and continue program execution at EIP;
                 FI;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
@@ -3490,7 +3490,7 @@ class X86Cpu(Cpu):
     def LOOPNZ(cpu, target):
         '''
         Loops if ECX counter is nonzero.
-        
+
         :param cpu: current CPU.
         :param target: destination operand.
         '''
@@ -3509,8 +3509,8 @@ class X86Cpu(Cpu):
     @instruction
     def RCL(cpu, dest, src):
         '''
-        Rotates through carry left. 
-        
+        Rotates through carry left.
+
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
         second operand (count operand) and stores the result in the destination operand. The destination operand can be
         a register or a memory location; the count operand is an unsigned integer that can be an immediate or a value in
@@ -3518,7 +3518,7 @@ class X86Cpu(Cpu):
         by masking all the bits in the count operand except the 5 least-significant bits.
 
         The RCL instruction shifts the CF flag into the least-significant bit and shifts the most-significant bit into the CF flag.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
@@ -3546,7 +3546,7 @@ class X86Cpu(Cpu):
             def sf(v, size):
                 return (v & (1 << (size-1))) != 0
             cpu.CF = sf(value << (tempCount - 1), OperandSize)
-            cpu.OF = Operators.ITE(tempCount == 1, 
+            cpu.OF = Operators.ITE(tempCount == 1,
                     sf(new_val, OperandSize) != cpu.CF,
                     cpu.OF)
 
@@ -3554,7 +3554,7 @@ class X86Cpu(Cpu):
     def RCR(cpu, dest, src):
         '''
         Rotates through carry right (RCR).
-        
+
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
         second operand (count operand) and stores the result in the destination operand. The destination operand can be
         a register or a memory location; the count operand is an unsigned integer that can be an immediate or a value in
@@ -3562,12 +3562,12 @@ class X86Cpu(Cpu):
         by masking all the bits in the count operand except the 5 least-significant bits.
 
         Rotate through carry right (RCR) instructions shift all the bits toward less significant bit positions, except
-        for the least-significant bit, which is rotated to the most-significant bit location. The RCR instruction shifts the 
-        CF flag into the most-significant bit and shifts the least-significant bit into the CF flag. 
-        
+        for the least-significant bit, which is rotated to the most-significant bit location. The RCR instruction shifts the
+        CF flag into the most-significant bit and shifts the least-significant bit into the CF flag.
+
         :param cpu: current CPU.
         :param dest: destination operand.
-        :param src: count operand.        
+        :param src: count operand.
         '''
         OperandSize = dest.size
         count = src.read()
@@ -3597,14 +3597,14 @@ class X86Cpu(Cpu):
             #for RCR these are calculated before rotation starts
             s_MSB = ((new_val >> (OperandSize-1)) & 0x1) == 1
             s_MSB2 = ((new_val >> (OperandSize-2)) & 0x1) == 1
-            cpu.OF = Operators.ITE(tempCount==1, 
+            cpu.OF = Operators.ITE(tempCount==1,
                     s_MSB ^ s_MSB2, cpu.OF)
 
     @instruction
     def ROL(cpu, dest, src):
         '''
         Rotates left (ROL).
-        
+
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
         second operand (count operand) and stores the result in the destination operand. The destination operand can be
         a register or a memory location; the count operand is an unsigned integer that can be an immediate or a value in
@@ -3613,7 +3613,7 @@ class X86Cpu(Cpu):
 
         The rotate left shift all the bits toward more-significant bit positions, except for the most-significant bit, which
         is rotated to the least-significant bit location.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
@@ -3639,7 +3639,7 @@ class X86Cpu(Cpu):
     def ROR(cpu, dest, src):
         '''
         Rotates rigth (ROR).
-        
+
         Shifts (rotates) the bits of the first operand (destination operand) the number of bit positions specified in the
         second operand (count operand) and stores the result in the destination operand. The destination operand can be
         a register or a memory location; the count operand is an unsigned integer that can be an immediate or a value in
@@ -3648,7 +3648,7 @@ class X86Cpu(Cpu):
 
         The rotate right (ROR) instruction shift all the bits toward less significant bit positions, except
         for the least-significant bit, which is rotated to the most-significant bit location.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
@@ -3675,12 +3675,12 @@ class X86Cpu(Cpu):
     def SAL(cpu, dest, src):
         '''
         The shift arithmetic left.
-        
+
         Shifts the bits in the first operand (destination operand) to the left or right by the number of bits specified in the
         second operand (count operand). Bits shifted beyond the destination operand boundary are first shifted into the CF
         flag, then discarded. At the end of the shift operation, the CF flag contains the last bit shifted out of the destination
         operand.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
@@ -3711,9 +3711,9 @@ class X86Cpu(Cpu):
     def SHL(cpu, dest, src):
         '''
         The shift logical left.
-            
+
         The shift arithmetic left (SAL) and shift logical left (SHL) instructions perform the same operation.
-        
+
         :param cpu: current cpu.
         :param dest: destination operand.
         :param src: source operand.
@@ -3722,16 +3722,16 @@ class X86Cpu(Cpu):
 
     @instruction
     def SAR(cpu, dest, src):
-        ''' 
+        '''
         Shift arithmetic right.
-        
+
         The shift arithmetic right (SAR) and shift logical right (SHR) instructions shift the bits of the destination operand to
         the right (toward less significant bit locations). For each shift count, the least significant bit of the destination
         operand is shifted into the CF flag, and the most significant bit is either set or cleared depending on the instruction
-        type. The SHR instruction clears the most significant bit. the SAR instruction sets or clears the most significant bit 
-        to correspond to the sign (most significant bit) of the original value in the destination operand. In effect, the SAR 
+        type. The SHR instruction clears the most significant bit. the SAR instruction sets or clears the most significant bit
+        to correspond to the sign (most significant bit) of the original value in the destination operand. In effect, the SAR
         instruction fills the empty bit position's shifted value with the sign of the unshifted value
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -3773,19 +3773,19 @@ class X86Cpu(Cpu):
     @instruction
     def SHR(cpu, dest, src):
         '''
-        Shift logical right. 
-        
+        Shift logical right.
+
         The shift arithmetic right (SAR) and shift logical right (SHR) instructions shift the bits of the destination operand to
         the right (toward less significant bit locations). For each shift count, the least significant bit of the destination
         operand is shifted into the CF flag, and the most significant bit is either set or cleared depending on the instruction
-        type. The SHR instruction clears the most significant bit. 
-        
+        type. The SHR instruction clears the most significant bit.
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
         '''
         OperandSize = dest.size
-        count = Operators.ZEXTEND(src.read() & (OperandSize-1) , OperandSize)
+        count = Operators.ZEXTEND(src.read() & (OperandSize-1), OperandSize)
         value = dest.read()
 
         res = dest.write(value >> count) #UNSIGNED Operators.UDIV2 !! TODO Check
@@ -3818,7 +3818,7 @@ class X86Cpu(Cpu):
         # on one bit shifts, OF is set if a sign change occurred, otherwise cleared
         # undefined for > 1 bit shifts
         signchange = (result & SIGN_MASK) != (original & SIGN_MASK)
-        cpu.OF = Operators.ITE(count == 1, 
+        cpu.OF = Operators.ITE(count == 1,
                 signchange,
                 cpu.OF)
 
@@ -3828,17 +3828,17 @@ class X86Cpu(Cpu):
 
     @instruction
     def SHRD(cpu, dest, src, count):
-        ''' 
+        '''
         Double precision shift right.
-        
-        Shifts the first operand (destination operand) to the right the number of bits specified by the third operand 
-        (count operand). The second operand (source operand) provides bits to shift in from the left (starting with 
-        the most significant bit of the destination operand). 
-        
+
+        Shifts the first operand (destination operand) to the right the number of bits specified by the third operand
+        (count operand). The second operand (source operand) provides bits to shift in from the left (starting with
+        the most significant bit of the destination operand).
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        :param count: count operand 
+        :param count: count operand
         '''
         OperandSize = dest.size
         MASK = ((1 << OperandSize) -1)
@@ -3860,17 +3860,17 @@ class X86Cpu(Cpu):
 
     @instruction
     def SHLD(cpu, dest, src, count):
-        ''' 
+        '''
         Double precision shift right.
-        
-        Shifts the first operand (destination operand) to the left the number of bits specified by the third operand 
-        (count operand). The second operand (source operand) provides bits to shift in from the right (starting with 
-        the least significant bit of the destination operand). 
-        
+
+        Shifts the first operand (destination operand) to the left the number of bits specified by the third operand
+        (count operand). The second operand (source operand) provides bits to shift in from the right (starting with
+        the least significant bit of the destination operand).
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
-        :param count: count operand 
+        :param count: count operand
         '''
         OperandSize = dest.size
         tempCount =  Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
@@ -3899,14 +3899,14 @@ class X86Cpu(Cpu):
 #
 ########################################################################################
     def _getMemoryBit(cpu, bitbase, bitoffset):
-        ''' Calculate address and bit offset given a base address and a bit offset 
+        ''' Calculate address and bit offset given a base address and a bit offset
             relative to that address (in the form of asm operands) '''
         assert bitbase.type == 'memory'
         assert bitbase.size >= bitoffset.size
         addr = bitbase.address()
         offt = Operators.SEXTEND(bitoffset.read(), bitoffset.size, bitbase.size)
         offt_is_neg = offt >= (1<<(bitbase.size-1))
-        offt_in_bytes = offt / 8 
+        offt_in_bytes = offt / 8
         bitpos = offt % 8
 
         new_addr = addr + Operators.ITEBV(bitbase.size, offt_is_neg, -offt_in_bytes, offt_in_bytes)
@@ -3914,15 +3914,15 @@ class X86Cpu(Cpu):
 
     @instruction
     def BSF(cpu, dest, src):
-        ''' 
+        '''
         Bit scan forward.
-        
-        Searches the source operand (second operand) for the least significant 
-        set bit (1 bit). If a least significant 1 bit is found, its bit index 
-        is stored in the destination operand (first operand). The source operand 
-        can be a register or a memory location; the destination operand is a register. 
-        The bit index is an unsigned offset from bit 0 of the source operand. 
-        If the contents source operand are 0, the contents of the destination 
+
+        Searches the source operand (second operand) for the least significant
+        set bit (1 bit). If a least significant 1 bit is found, its bit index
+        is stored in the destination operand (first operand). The source operand
+        can be a register or a memory location; the destination operand is a register.
+        The bit index is an unsigned offset from bit 0 of the source operand.
+        If the contents source operand are 0, the contents of the destination
         operand is undefined::
 
                     IF SRC  =  0
@@ -3938,10 +3938,10 @@ class X86Cpu(Cpu):
                             DEST  =  temp;
                         OD;
                     FI;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
-        :param src: source operand.  
+        :param src: source operand.
         '''
         value = src.read()
         flag = Operators.EXTRACT(value, 0, 1) == 1
@@ -3955,15 +3955,15 @@ class X86Cpu(Cpu):
 
     @instruction
     def BSR(cpu, dest, src):
-        ''' 
+        '''
         Bit scan reverse.
-        
-        Searches the source operand (second operand) for the most significant 
-        set bit (1 bit). If a most significant 1 bit is found, its bit index is 
-        stored in the destination operand (first operand). The source operand 
-        can be a register or a memory location; the destination operand is a register. 
-        The bit index is an unsigned offset from bit 0 of the source operand. 
-        If the contents source operand are 0, the contents of the destination 
+
+        Searches the source operand (second operand) for the most significant
+        set bit (1 bit). If a most significant 1 bit is found, its bit index is
+        stored in the destination operand (first operand). The source operand
+        can be a register or a memory location; the destination operand is a register.
+        The bit index is an unsigned offset from bit 0 of the source operand.
+        If the contents source operand are 0, the contents of the destination
         operand is undefined::
 
                 IF SRC  =  0
@@ -3979,7 +3979,7 @@ class X86Cpu(Cpu):
                         DEST  =  temp;
                     OD;
                 FI;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -3998,20 +3998,20 @@ class X86Cpu(Cpu):
 
     @instruction
     def BT(cpu, dest, src):
-        ''' 
+        '''
         Bit Test.
-        
-        Selects the bit in a bit string (specified with the first operand, called the bit base) at the 
-        bit-position designated by the bit offset (specified by the second operand) and stores the value 
-        of the bit in the CF flag. The bit base operand can be a register or a memory location; the bit 
+
+        Selects the bit in a bit string (specified with the first operand, called the bit base) at the
+        bit-position designated by the bit offset (specified by the second operand) and stores the value
+        of the bit in the CF flag. The bit base operand can be a register or a memory location; the bit
         offset operand can be a register or an immediate value:
-            - If the bit base operand specifies a register, the instruction takes the modulo 16, 32, or 64 
-              of the bit offset operand (modulo size depends on the mode and register size; 64-bit operands 
+            - If the bit base operand specifies a register, the instruction takes the modulo 16, 32, or 64
+              of the bit offset operand (modulo size depends on the mode and register size; 64-bit operands
               are available only in 64-bit mode).
-            - If the bit base operand specifies a memory location, the operand represents the address of the 
-              byte in memory that contains the bit base (bit 0 of the specified byte) of the bit string. The 
+            - If the bit base operand specifies a memory location, the operand represents the address of the
+              byte in memory that contains the bit base (bit 0 of the specified byte) of the bit string. The
               range of the bit position that can be referenced by the offset operand depends on the operand size.
-        
+
         :param cpu: current CPU.
         :param dest: bit base.
         :param src: bit offset.
@@ -4022,20 +4022,20 @@ class X86Cpu(Cpu):
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
             value = cpu.read_int(addr+base, 8)
-            cpu.CF = Operators.EXTRACT(value, pos, 1) == 1 
+            cpu.CF = Operators.EXTRACT(value, pos, 1) == 1
         else:
             raise NotImplementedError("Unknown operand for BT: {}".format(dest.type))
 
     @instruction
     def BTC(cpu, dest, src):
-        ''' 
+        '''
         Bit test and complement.
-        
-        Selects the bit in a bit string (specified with the first operand, called 
-        the bit base) at the bit-position designated by the bit offset operand 
-        (second operand), stores the value of the bit in the CF flag, and complements 
+
+        Selects the bit in a bit string (specified with the first operand, called
+        the bit base) at the bit-position designated by the bit offset operand
+        (second operand), stores the value of the bit in the CF flag, and complements
         the selected bit in the bit string.
-        
+
         :param cpu: current CPU.
         :param dest: bit base operand.
         :param src: bit offset operand.
@@ -4058,14 +4058,14 @@ class X86Cpu(Cpu):
 
     @instruction
     def BTR(cpu, dest, src):
-        ''' 
+        '''
         Bit test and reset.
-        
-        Selects the bit in a bit string (specified with the first operand, called 
-        the bit base) at the bit-position designated by the bit offset operand 
-        (second operand), stores the value of the bit in the CF flag, and clears 
-        the selected bit in the bit string to 0. 
-        
+
+        Selects the bit in a bit string (specified with the first operand, called
+        the bit base) at the bit-position designated by the bit offset operand
+        (second operand), stores the value of the bit in the CF flag, and clears
+        the selected bit in the bit string to 0.
+
         :param cpu: current CPU.
         :param dest: bit base operand.
         :param src: bit offset operand.
@@ -4088,14 +4088,14 @@ class X86Cpu(Cpu):
 
     @instruction
     def BTS(cpu, dest, src):
-        ''' 
+        '''
         Bit test and set.
-        
-        Selects the bit in a bit string (specified with the first operand, called 
-        the bit base) at the bit-position designated by the bit offset operand 
-        (second operand), stores the value of the bit in the CF flag, and sets 
+
+        Selects the bit in a bit string (specified with the first operand, called
+        the bit base) at the bit-position designated by the bit offset operand
+        (second operand), stores the value of the bit in the CF flag, and sets
         the selected bit in the bit string to 1.
-        
+
         :param cpu: current CPU.
         :param dest: bit base operand.
         :param src: bit offset operand.
@@ -4121,18 +4121,18 @@ class X86Cpu(Cpu):
     @instruction
     def POPCNT(cpu, dest, src):
         '''
-        This instruction calculates of number of bits set to 1 in the second 
+        This instruction calculates of number of bits set to 1 in the second
         operand (source) and returns the count in the first operand (a destination
         register).
         Count = 0;
         For (i=0; i < OperandSize; i++) {
             IF (SRC[ i] = 1) // i'th bit
-                THEN Count++; 
+                THEN Count++;
             FI;
         }
         DEST = Count;
         Flags Affected
-        OF, SF, ZF, AF, CF, PF are all cleared. 
+        OF, SF, ZF, AF, CF, PF are all cleared.
         ZF is set if SRC = 0, otherwise ZF is cleared
         '''
         count = 0;
@@ -4157,44 +4157,44 @@ class X86Cpu(Cpu):
 
     @instruction
     def CLD(cpu):
-        ''' 
+        '''
         Clears direction flag.
-        Clears the DF flag in the EFLAGS register. When the DF flag is set to 0, string operations 
+        Clears the DF flag in the EFLAGS register. When the DF flag is set to 0, string operations
         increment the index registers (ESI and/or EDI)::
 
             DF  =  0;
-        
+
         :param cpu: current CPU.
         '''
         cpu.DF = False
 
     @instruction
     def STD(cpu):
-        ''' 
+        '''
         Sets direction flag.
-        
-        Sets the DF flag in the EFLAGS register. When the DF flag is set to 1, string operations decrement 
+
+        Sets the DF flag in the EFLAGS register. When the DF flag is set to 1, string operations decrement
         the index registers (ESI and/or EDI)::
 
             DF  =  1;
-        
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         '''
         cpu.DF = True
 
     @instruction
     def CLC(cpu):
-        ''' 
+        '''
         Clears CF
-        :param cpu: current CPU. 
+        :param cpu: current CPU.
         '''
         cpu.CF = False
 
     @instruction
     def STC(cpu):
-        ''' 
+        '''
         Sets CF
-        :param cpu: current CPU. 
+        :param cpu: current CPU.
         '''
         cpu.CF = True
 
@@ -4208,48 +4208,48 @@ class X86Cpu(Cpu):
     def CMPS(cpu, dest, src):
         '''
         Compares string operands.
-        
-        Compares the byte, word, double word or quad specified with the first source 
-        operand with the byte, word, double or quad word specified with the second 
-        source operand and sets the status flags in the EFLAGS register according 
-        to the results. Both the source operands are located in memory:: 
+
+        Compares the byte, word, double word or quad specified with the first source
+        operand with the byte, word, double or quad word specified with the second
+        source operand and sets the status flags in the EFLAGS register according
+        to the results. Both the source operands are located in memory::
 
                 temp  = SRC1 - SRC2;
                 SetStatusFlags(temp);
                 IF (byte comparison)
                 THEN IF DF  =  0
-                    THEN 
-                        (E)SI  =  (E)SI + 1; 
-                        (E)DI  =  (E)DI + 1; 
-                    ELSE 
-                        (E)SI  =  (E)SI - 1; 
-                        (E)DI  =  (E)DI - 1; 
+                    THEN
+                        (E)SI  =  (E)SI + 1;
+                        (E)DI  =  (E)DI + 1;
+                    ELSE
+                        (E)SI  =  (E)SI - 1;
+                        (E)DI  =  (E)DI - 1;
                     FI;
                 ELSE IF (word comparison)
                     THEN IF DF  =  0
-                        (E)SI  =  (E)SI + 2; 
-                        (E)DI  =  (E)DI + 2; 
-                    ELSE 
-                        (E)SI  =  (E)SI - 2; 
-                        (E)DI  =  (E)DI - 2; 
+                        (E)SI  =  (E)SI + 2;
+                        (E)DI  =  (E)DI + 2;
+                    ELSE
+                        (E)SI  =  (E)SI - 2;
+                        (E)DI  =  (E)DI - 2;
                     FI;
                 ELSE (* doubleword comparison*)
                     THEN IF DF  =  0
-                        (E)SI  =  (E)SI + 4; 
-                        (E)DI  =  (E)DI + 4; 
-                    ELSE 
-                        (E)SI  =  (E)SI - 4; 
-                        (E)DI  =  (E)DI - 4; 
+                        (E)SI  =  (E)SI + 4;
+                        (E)DI  =  (E)DI + 4;
+                    ELSE
+                        (E)SI  =  (E)SI - 4;
+                        (E)DI  =  (E)DI - 4;
                     FI;
                 FI;
-        
+
         :param cpu: current CPU.
         :param dest: first source operand.
         :param src: second source operand.
         '''
         src_reg = {8: 'SI', 32: 'ESI', 64: 'RSI'}[cpu.address_bit_size]
         dest_reg = {8: 'DI', 32: 'EDI', 64: 'RDI'}[cpu.address_bit_size]
-        
+
         base, _, ty = cpu.get_descriptor(cpu.DS)
 
         src_addr = cpu.read_register(src_reg) + base
@@ -4270,9 +4270,9 @@ class X86Cpu(Cpu):
 
     @rep
     def LODS(cpu, dest, src):
-        ''' 
+        '''
         Loads string.
-        
+
         Loads a byte, word, or doubleword from the source operand into the AL, AX, or EAX register, respectively. The
         source operand is a memory location, the address of which is read from the DS:ESI or the DS:SI registers
         (depending on the address-size attribute of the instruction, 32 or 16, respectively). The DS segment may be over-
@@ -4282,9 +4282,9 @@ class X86Cpu(Cpu):
         register. (If the DF flag is 0, the (E)SI register is incremented; if the DF flag is 1, the ESI register is decremented.)
         The (E)SI register is incremented or decremented by 1 for byte operations, by 2 for word operations, or by 4 for
         doubleword operations.
-        
+
         :param cpu: current CPU.
-        :param dest: source operand.    
+        :param dest: source operand.
         '''
         src_reg = {8: 'SI', 32: 'ESI', 64: 'RSI'}[cpu.address_bit_size]
         base, _, ty = cpu.get_descriptor(cpu.DS)
@@ -4300,16 +4300,16 @@ class X86Cpu(Cpu):
 
     @rep
     def MOVS(cpu, dest, src):
-        ''' 
+        '''
         Moves data from string to string.
-        
+
         Moves the byte, word, or doubleword specified with the second operand (source operand) to the location specified
         with the first operand (destination operand). Both the source and destination operands are located in memory. The
         address of the source operand is read from the DS:ESI or the DS:SI registers (depending on the address-size
         attribute of the instruction, 32 or 16, respectively). The address of the destination operand is read from the ES:EDI
         or the ES:DI registers (again depending on the address-size attribute of the instruction). The DS segment may be
         overridden with a segment override prefix, but the ES segment cannot be overridden.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -4332,13 +4332,13 @@ class X86Cpu(Cpu):
 
     @repe
     def SCAS(cpu, dest, src):
-        ''' 
+        '''
         Scans String.
-        
-        Compares the byte, word, or double word specified with the memory operand 
-        with the value in the AL, AX, EAX, or RAX register, and sets the status flags 
+
+        Compares the byte, word, or double word specified with the memory operand
+        with the value in the AL, AX, EAX, or RAX register, and sets the status flags
         according to the results. The memory operand address is read from either
-        the ES:RDI, ES:EDI or the ES:DI registers (depending on the address-size 
+        the ES:RDI, ES:EDI or the ES:DI registers (depending on the address-size
         attribute of the instruction, 32 or 16, respectively)::
 
                 IF (byte comparison)
@@ -4346,29 +4346,29 @@ class X86Cpu(Cpu):
                     temp  =  AL - SRC;
                     SetStatusFlags(temp);
                     THEN IF DF  =  0
-                        THEN (E)DI  =  (E)DI + 1; 
-                        ELSE (E)DI  =  (E)DI - 1; 
+                        THEN (E)DI  =  (E)DI + 1;
+                        ELSE (E)DI  =  (E)DI - 1;
                         FI;
                     ELSE IF (word comparison)
                         THEN
                             temp  =  AX - SRC;
                             SetStatusFlags(temp)
                             THEN IF DF  =  0
-                                THEN (E)DI  =  (E)DI + 2; 
-                                ELSE (E)DI  =  (E)DI - 2; 
+                                THEN (E)DI  =  (E)DI + 2;
+                                ELSE (E)DI  =  (E)DI - 2;
                                 FI;
                      ELSE (* doubleword comparison *)
                            temp  =  EAX - SRC;
                            SetStatusFlags(temp)
                            THEN IF DF  =  0
-                                THEN 
-                                    (E)DI  =  (E)DI + 4; 
-                                ELSE 
-                                    (E)DI  =  (E)DI - 4; 
+                                THEN
+                                    (E)DI  =  (E)DI + 4;
+                                ELSE
+                                    (E)DI  =  (E)DI - 4;
                                 FI;
                            FI;
                      FI;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -4386,21 +4386,21 @@ class X86Cpu(Cpu):
 
     @rep
     def STOS(cpu, dest, src):
-        ''' 
+        '''
         Stores String.
-            
-        Stores a byte, word, or doubleword from the AL, AX, or EAX register, 
-        respectively, into the destination operand. The destination operand is 
-        a memory location, the address of which is read from either the ES:EDI 
-        or the ES:DI registers (depending on the address-size attribute of the 
-        instruction, 32 or 16, respectively). The ES segment cannot be overridden 
+
+        Stores a byte, word, or doubleword from the AL, AX, or EAX register,
+        respectively, into the destination operand. The destination operand is
+        a memory location, the address of which is read from either the ES:EDI
+        or the ES:DI registers (depending on the address-size attribute of the
+        instruction, 32 or 16, respectively). The ES segment cannot be overridden
         with a segment override prefix.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
         '''
-        size = src.size 
+        size = src.size
         dest.write(src.read())
         dest_reg = dest.mem.base
         increment = Operators.ITEBV({'RDI':64, 'EDI':32, 'DI':16}[dest_reg], cpu.DF, -size/8, size/8)
@@ -4418,9 +4418,9 @@ class X86Cpu(Cpu):
         '''
         Empty MMX Technology State
 
-        Sets the values of all the tags in the x87 FPU tag word to empty (all 
-        1s). This operation marks the x87 FPU data registers (which are aliased 
-        to the MMX technology registers) as available for use by x87 FPU 
+        Sets the values of all the tags in the x87 FPU tag word to empty (all
+        1s). This operation marks the x87 FPU data registers (which are aliased
+        to the MMX technology registers) as available for use by x87 FPU
         floating-point instructions.
 
             x87FPUTagWord <- FFFFH;
@@ -4431,15 +4431,15 @@ class X86Cpu(Cpu):
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #@@@@@@@@@@@@@@@@@ compulsive coding after this @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    @instruction 
+    @instruction
     def STMXCSR(cpu, dest):
         '''Store MXCSR Register State
-        Stores the contents of the MXCSR control and status register to the destination operand. 
+        Stores the contents of the MXCSR control and status register to the destination operand.
         The destination operand is a 32-bit memory location. The reserved bits in the MXCSR register
         are stored as 0s.'''
         dest.write(0x1F80)
 
-    @instruction 
+    @instruction
     def PAUSE(cpu):
         pass
 
@@ -4466,12 +4466,12 @@ class X86Cpu(Cpu):
     def SHLX(cpu, dest, src, count):
         '''
         The shift arithmetic left.
-        
+
         Shifts the bits in the first operand (destination operand) to the left or right by the number of bits specified in the
         second operand (count operand). Bits shifted beyond the destination operand boundary are first shifted into the CF
         flag, then discarded. At the end of the shift operation, the CF flag contains the last bit shifted out of the destination
         operand.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
@@ -4491,7 +4491,7 @@ class X86Cpu(Cpu):
     def SHRX(cpu, dest, src, count):
         '''
         The shift arithmetic right.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
@@ -4510,7 +4510,7 @@ class X86Cpu(Cpu):
     def SARX(cpu, dest, src, count):
         '''
         The shift arithmetic right.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: count operand.
@@ -4521,7 +4521,7 @@ class X86Cpu(Cpu):
                       16: 0x1f,
                       32: 0x1f,
                       64: 0x3f }[OperandSize]
-        tempCount =  count & countMask 
+        tempCount =  count & countMask
         tempDest = value = src.read()
 
         sign = value & (1<<(OperandSize-1))
@@ -4548,19 +4548,19 @@ class X86Cpu(Cpu):
 
     @instruction
     def PXOR(cpu, dest, src):
-        ''' 
+        '''
         Logical exclusive OR.
-        
-        Performs a bitwise logical exclusive-OR (XOR) operation on the quadword 
-        source (second) and destination (first) operands and stores the result 
+
+        Performs a bitwise logical exclusive-OR (XOR) operation on the quadword
+        source (second) and destination (first) operands and stores the result
         in the destination operand location. The source operand can be an MMX(TM)
         technology register or a quadword memory location; the destination operand
-        must be an MMX register. Each bit of the result is 1 if the corresponding 
-        bits of the two operands are different; each bit is 0 if the corresponding 
+        must be an MMX register. Each bit of the result is 1 if the corresponding
+        bits of the two operands are different; each bit is 0 if the corresponding
         bits of the operands are the same::
-        
+
             DEST  =  DEST XOR SRC;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: quadword source operand.
@@ -4577,7 +4577,7 @@ class X86Cpu(Cpu):
         src_value = src.read()
         mask = (1 << item_size)-1
         res = 0
-        count =0 
+        count =0
         for pos in xrange(0, size/item_size):
             if count >= size:
                 break
@@ -4634,9 +4634,9 @@ class X86Cpu(Cpu):
     def PUNPCKLBW(cpu, dest, src):
         '''
         Interleaves the low-order bytes of the source and destination operands.
-        
+
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
-        of the destination operand (first operand) and source operand (second operand) into the 
+        of the destination operand (first operand) and source operand (second operand) into the
         destination operand.
 
         :param cpu: current CPU.
@@ -4649,9 +4649,9 @@ class X86Cpu(Cpu):
     def PUNPCKLWD(cpu, dest, src):
         '''
         Interleaves the low-order bytes of the source and destination operands.
-        
+
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
-        of the destination operand (first operand) and source operand (second operand) into the 
+        of the destination operand (first operand) and source operand (second operand) into the
         destination operand.
 
         :param cpu: current CPU.
@@ -4664,9 +4664,9 @@ class X86Cpu(Cpu):
     def PUNPCKLQDQ(cpu, dest, src):
         '''
         Interleaves the low-order quad-words of the source and destination operands.
-        
+
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
-        of the destination operand (first operand) and source operand (second operand) into the 
+        of the destination operand (first operand) and source operand (second operand) into the
         destination operand.
 
         :param cpu: current CPU.
@@ -4679,9 +4679,9 @@ class X86Cpu(Cpu):
     def PUNPCKLDQ(cpu, dest, src):
         '''
         Interleaves the low-order double-words of the source and destination operands.
-        
+
         Unpacks and interleaves the low-order data elements (bytes, words, doublewords, and quadwords)
-        of the destination operand (first operand) and source operand (second operand) into the 
+        of the destination operand (first operand) and source operand (second operand) into the
         destination operand.
 
         :param cpu: current CPU.
@@ -4695,11 +4695,11 @@ class X86Cpu(Cpu):
     def PSHUFW(cpu, op0, op1, op3):
         '''
         Packed shuffle words.
-        
-        Copies doublewords from source operand (second operand) and inserts them in the destination operand 
-        (first operand) at locations selected with the order operand (third operand). 
-        
-        :param cpu: current CPU. 
+
+        Copies doublewords from source operand (second operand) and inserts them in the destination operand
+        (first operand) at locations selected with the order operand (third operand).
+
+        :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
@@ -4720,10 +4720,10 @@ class X86Cpu(Cpu):
         '''
         Shuffle Packed Low Words
 
-        Copies words from the low quadword of the source operand (second operand) 
+        Copies words from the low quadword of the source operand (second operand)
         and inserts them in the low quadword of the destination operand (first operand)
-        at word locations selected with the order operand (third operand). 
-        
+        at word locations selected with the order operand (third operand).
+
         This operation is similar to the operation used by the PSHUFD instruction.
 
             Operation
@@ -4749,11 +4749,11 @@ class X86Cpu(Cpu):
     def PSHUFD(cpu, op0, op1, op3):
         '''
         Packed shuffle doublewords.
-        
-        Copies doublewords from source operand (second operand) and inserts them in the destination operand 
-        (first operand) at locations selected with the order operand (third operand). 
-        
-        :param cpu: current CPU. 
+
+        Copies doublewords from source operand (second operand) and inserts them in the destination operand
+        (first operand) at locations selected with the order operand (third operand).
+
+        :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
@@ -4773,30 +4773,30 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVDQU(cpu, op0, op1):
-        ''' 
+        '''
         Moves unaligned double quadword.
-        
-        Moves a double quadword from the source operand (second operand) to the destination operand 
+
+        Moves a double quadword from the source operand (second operand) to the destination operand
         (first operand)::
 
             OP0  =  OP1;
-    
+
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
         '''
-        
+
         op0.write(op1.read())
 
     @instruction
     def MOVDQA(cpu, op0, op1):
-        ''' 
+        '''
         Moves aligned double quadword.
-        
-        Moves a double quadword from the source operand (second operand) to the destination operand 
+
+        Moves a double quadword from the source operand (second operand) to the destination operand
         (first operand)::
             OP0  =  OP1;
-        
+
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
@@ -4808,19 +4808,19 @@ class X86Cpu(Cpu):
     def PCMPEQB(cpu, op0, op1):
         '''
         Packed compare for equal.
-        
-        Performs a SIMD compare for equality of the packed bytes, words, or doublewords in the 
-        destination operand (first operand) and the source operand (second operand). If a pair of 
-        data elements are equal, the corresponding data element in the destination operand is set 
-        to all 1s; otherwise, it is set to all 0s. The source operand can be an MMX(TM) technology 
-        register or a 64-bit memory location, or it can be an XMM register or a 128-bit memory location. 
+
+        Performs a SIMD compare for equality of the packed bytes, words, or doublewords in the
+        destination operand (first operand) and the source operand (second operand). If a pair of
+        data elements are equal, the corresponding data element in the destination operand is set
+        to all 1s; otherwise, it is set to all 0s. The source operand can be an MMX(TM) technology
+        register or a 64-bit memory location, or it can be an XMM register or a 128-bit memory location.
         The destination operand can be an MMX or an XMM register.
-        The PCMPEQB instruction compares the bytes in the destination operand to the corresponding bytes 
+        The PCMPEQB instruction compares the bytes in the destination operand to the corresponding bytes
         in the source operand.
- 
+
         :param cpu: current CPU.
         :param op0: destination operand.
-        :param op1: source operand.   
+        :param op1: source operand.
         '''
         arg0 = op0.read()
         arg1 = op1.read()
@@ -4836,12 +4836,12 @@ class X86Cpu(Cpu):
     def PMOVMSKB(cpu, op0, op1):
         '''
         Moves byte mask to general-purpose register.
-        
-        Creates an 8-bit mask made up of the most significant bit of each byte of the source operand 
-        (second operand) and stores the result in the low byte or word of the destination operand 
-        (first operand). The source operand is an MMX(TM) technology or an XXM register; the destination 
+
+        Creates an 8-bit mask made up of the most significant bit of each byte of the source operand
+        (second operand) and stores the result in the low byte or word of the destination operand
+        (first operand). The source operand is an MMX(TM) technology or an XXM register; the destination
         operand is a general-purpose register.
-        
+
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
@@ -4858,12 +4858,12 @@ class X86Cpu(Cpu):
     def PSRLDQ(cpu, dest, src):
         '''
         Packed shift right logical double quadword.
-        
-        Shifts the destination operand (first operand) to the right by the number 
-        of bytes specified in the count operand (second operand). The empty high-order 
-        bytes are cleared (set to all 0s). If the value specified by the count 
-        operand is greater than 15, the destination operand is set to all 0s. 
-        The destination operand is an XMM register. The count operand is an 8-bit 
+
+        Shifts the destination operand (first operand) to the right by the number
+        of bytes specified in the count operand (second operand). The empty high-order
+        bytes are cleared (set to all 0s). If the value specified by the count
+        operand is greater than 15, the destination operand is set to all 0s.
+        The destination operand is an XMM register. The count operand is an 8-bit
         immediate::
 
             TEMP  =  SRC;
@@ -4884,13 +4884,13 @@ class X86Cpu(Cpu):
     def NOP(cpu, arg0=None):
         '''
         No Operation.
-        
-        Performs no operation. This instruction is a one-byte instruction that  takes up space in the 
+
+        Performs no operation. This instruction is a one-byte instruction that  takes up space in the
         instruction stream but does not affect the machine.
         The NOP instruction is an alias mnemonic for the XCHG (E)AX, (E)AX instruction.
-        
-        :param cpu: current CPU. 
-        :param arg0: this argument is ignored. 
+
+        :param cpu: current CPU.
+        :param arg0: this argument is ignored.
         '''
         pass
 
@@ -4903,13 +4903,13 @@ class X86Cpu(Cpu):
     def MOVZX(cpu, op0, op1):
         '''
         Moves with zero-extend.
-        
-        Copies the contents of the source operand (register or memory location) to the destination 
-        operand (register) and zero extends the value to 16 or 32 bits. The size of the converted value 
+
+        Copies the contents of the source operand (register or memory location) to the destination
+        operand (register) and zero extends the value to 16 or 32 bits. The size of the converted value
         depends on the operand-size attribute::
 
                 OP0  =  ZeroExtend(OP1);
-        
+
         :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
@@ -4920,15 +4920,15 @@ class X86Cpu(Cpu):
     def MOVSX(cpu, op0, op1):
         '''
         Moves with sign-extension.
-        
-        Copies the contents of the source operand (register or memory location) to the destination 
-        operand (register) and sign extends the value to 16:: 
+
+        Copies the contents of the source operand (register or memory location) to the destination
+        operand (register) and sign extends the value to 16::
 
                 OP0  =  SignExtend(OP1);
-    
+
         :param cpu: current CPU.
         :param op0: destination operand.
-        :param op1: source operand. 
+        :param op1: source operand.
         '''
         op0.write(Operators.SEXTEND(op1.read(), op1.size, op0.size))
 
@@ -4939,7 +4939,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def CQO(cpu):
-        ''' 
+        '''
         RDX:RAX = sign-extend of RAX.
         '''
         res = Operators.SEXTEND(cpu.RAX,64,128)
@@ -4948,7 +4948,7 @@ class X86Cpu(Cpu):
 
     @instruction
     def CDQE(cpu):
-        ''' 
+        '''
         RAX = sign-extend of EAX.
         '''
         cpu.RAX = Operators.SEXTEND(cpu.EAX,32,64)
@@ -4963,13 +4963,13 @@ class X86Cpu(Cpu):
 
     @instruction
     def CWDE(cpu):
-        ''' 
+        '''
         Converts word to doubleword.
-        
+
         ::
             DX = sign-extend of AX.
-            
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         '''
         bit = Operators.EXTRACT(cpu.AX, 15, 1)
         cpu.EAX = Operators.SEXTEND(cpu.AX, 16, 32)
@@ -4977,29 +4977,29 @@ class X86Cpu(Cpu):
 
     @instruction
     def CBW(cpu):
-        ''' 
+        '''
         Converts byte to word.
-        
-        Double the size of the source operand by means of sign extension:: 
-        
+
+        Double the size of the source operand by means of sign extension::
+
                 AX = sign-extend of AL.
-        
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         '''
         cpu.AX = Operators.SEXTEND(cpu.AL,8,16)
 
     @instruction
     def RDTSC(cpu):
-        ''' 
+        '''
         Reads time-stamp counter.
-        
-        Loads the current value of the processor's time-stamp counter into the EDX:EAX registers. 
-        The time-stamp counter is contained in a 64-bit MSR. The high-order 32 bits of the MSR are 
-        loaded into the EDX register, and the low-order 32 bits are loaded into the EAX register. 
-        The processor increments the time-stamp counter MSR every clock cycle and resets it to 0 whenever 
+
+        Loads the current value of the processor's time-stamp counter into the EDX:EAX registers.
+        The time-stamp counter is contained in a 64-bit MSR. The high-order 32 bits of the MSR are
+        loaded into the EDX register, and the low-order 32 bits are loaded into the EAX register.
+        The processor increments the time-stamp counter MSR every clock cycle and resets it to 0 whenever
         the processor is reset.
-        
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         '''
         val = cpu.icount
         cpu.RAX = val&0xffffffff
@@ -5037,15 +5037,15 @@ class X86Cpu(Cpu):
     #FPU:
     @instruction
     def FNSTCW(cpu, dest):
-        ''' 
+        '''
         Stores x87 FPU Control Word.
-        
-        Stores the current value of the FPU control word at the specified destination in memory. 
-        The FSTCW instruction checks for and handles pending unmasked floating-point exceptions 
+
+        Stores the current value of the FPU control word at the specified destination in memory.
+        The FSTCW instruction checks for and handles pending unmasked floating-point exceptions
         before storing the control word; the FNSTCW instruction does not::
 
             DEST  =  FPUControlWord;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
@@ -5054,17 +5054,17 @@ class X86Cpu(Cpu):
 
     @instruction
     def SYSCALL(cpu):
-        ''' 
+        '''
         Calls to interrupt procedure.
-        
-        The INT n instruction generates a call to the interrupt or exception handler specified 
+
+        The INT n instruction generates a call to the interrupt or exception handler specified
         with the destination operand. The INT n instruction is the  general mnemonic for executing
-        a software-generated call to an interrupt handler. The INTO instruction is a special 
+        a software-generated call to an interrupt handler. The INTO instruction is a special
         mnemonic for calling overflow exception (#OF), interrupt vector number 4. The overflow
-        interrupt checks the OF flag in the EFLAGS register and calls the overflow interrupt handler 
+        interrupt checks the OF flag in the EFLAGS register and calls the overflow interrupt handler
         if the OF flag is set to 1.
-        
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         '''
         cpu.RCX = cpu.RIP
         cpu.R11 = cpu.RFLAGS
@@ -5072,16 +5072,16 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVLPD(cpu, dest, src):
-        ''' 
+        '''
         Moves low packed double-precision floating-point value.
-        
-        Moves a double-precision floating-point value from the source operand (second operand) and the 
-        destination operand (first operand). The source and destination operands can be an XMM register 
-        or a 64-bit memory location. This instruction allows double-precision floating-point values to be moved 
-        to and from the low quadword of an XMM register and memory. It cannot be used for register to register 
-        or memory to memory moves. When the destination operand is an XMM register, the high quadword of the 
+
+        Moves a double-precision floating-point value from the source operand (second operand) and the
+        destination operand (first operand). The source and destination operands can be an XMM register
+        or a 64-bit memory location. This instruction allows double-precision floating-point values to be moved
+        to and from the low quadword of an XMM register and memory. It cannot be used for register to register
+        or memory to memory moves. When the destination operand is an XMM register, the high quadword of the
         register remains unchanged.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -5095,14 +5095,14 @@ class X86Cpu(Cpu):
     def MOVHPD(cpu, dest, src):
         '''
         Moves high packed double-precision floating-point value.
-        
-        Moves a double-precision floating-point value from the source operand (second operand) and the 
-        destination operand (first operand). The source and destination operands can be an XMM register 
-        or a 64-bit memory location. This instruction allows double-precision floating-point values to be moved 
-        to and from the high quadword of an XMM register and memory. It cannot be used for register to 
-        register or memory to memory moves. When the destination operand is an XMM register, the low quadword 
+
+        Moves a double-precision floating-point value from the source operand (second operand) and the
+        destination operand (first operand). The source and destination operands can be an XMM register
+        or a 64-bit memory location. This instruction allows double-precision floating-point values to be moved
+        to and from the high quadword of an XMM register and memory. It cannot be used for register to
+        register or memory to memory moves. When the destination operand is an XMM register, the low quadword
         of the register remains unchanged.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -5117,18 +5117,18 @@ class X86Cpu(Cpu):
 
     @instruction
     def PSUBB(cpu, dest, src):
-        ''' 
+        '''
         Packed subtract.
-        
-        Performs a SIMD subtract of the packed integers of the source operand (second operand) from the packed 
-        integers of the destination operand (first operand), and stores the packed integer results in the 
-        destination operand. The source operand can be an MMX(TM) technology register or a 64-bit memory location, 
-        or it can be an XMM register or a 128-bit memory location. The destination operand can be an MMX or an XMM 
+
+        Performs a SIMD subtract of the packed integers of the source operand (second operand) from the packed
+        integers of the destination operand (first operand), and stores the packed integer results in the
+        destination operand. The source operand can be an MMX(TM) technology register or a 64-bit memory location,
+        or it can be an XMM register or a 128-bit memory location. The destination operand can be an MMX or an XMM
         register.
-        The PSUBB instruction subtracts packed byte integers. When an individual result is too large or too small 
-        to be represented in a byte, the result is wrapped around and the low 8 bits are written to the 
+        The PSUBB instruction subtracts packed byte integers. When an individual result is too large or too small
+        to be represented in a byte, the result is wrapped around and the low 8 bits are written to the
         destination element.
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -5145,20 +5145,20 @@ class X86Cpu(Cpu):
     @instruction
     def POR(cpu, dest, src):
         '''
-        Performs a bitwise logical OR operation on the source operand (second operand) and the destination operand 
-        (first operand) and stores the result in the destination operand. The source operand can be an MMX technology 
-        register or a 64-bit memory location or it can be an XMM register or a 128-bit memory location. The destination 
-        operand can be an MMX technology register or an XMM register. Each bit of the result is set to 1 if either 
+        Performs a bitwise logical OR operation on the source operand (second operand) and the destination operand
+        (first operand) and stores the result in the destination operand. The source operand can be an MMX technology
+        register or a 64-bit memory location or it can be an XMM register or a 128-bit memory location. The destination
+        operand can be an MMX technology register or an XMM register. Each bit of the result is set to 1 if either
         or both of the corresponding bits of the first and second operands are 1; otherwise, it is set to 0.
         '''
         res = dest.write(dest.read()|src.read())
     @instruction
     def XORPS(cpu, dest, src):
         '''
-        Performs a bitwise logical OR operation on the source operand (second operand) and the destination operand 
-        (first operand) and stores the result in the destination operand. The source operand can be an MMX technology 
-        register or a 64-bit memory location or it can be an XMM register or a 128-bit memory location. The destination 
-        operand can be an MMX technology register or an XMM register. Each bit of the result is set to 1 if either 
+        Performs a bitwise logical OR operation on the source operand (second operand) and the destination operand
+        (first operand) and stores the result in the destination operand. The source operand can be an MMX technology
+        register or a 64-bit memory location or it can be an XMM register or a 128-bit memory location. The destination
+        operand can be an MMX technology register or an XMM register. Each bit of the result is set to 1 if either
         or both of the corresponding bits of the first and second operands are 1; otherwise, it is set to 0.
         '''
         res = dest.write(dest.read()^src.read())
@@ -5167,7 +5167,7 @@ class X86Cpu(Cpu):
     def VORPD(cpu, dest, src, src2):
         '''
         Performs a bitwise logical OR operation on the source operand (second operand) and second source operand (third operand)
-         and stores the result in the destination operand (first operand). 
+         and stores the result in the destination operand (first operand).
         '''
         res = dest.write(src.read() | src2.read())
 
@@ -5175,18 +5175,18 @@ class X86Cpu(Cpu):
     def VORPS(cpu, dest, src, src2):
         '''
         Performs a bitwise logical OR operation on the source operand (second operand) and second source operand (third operand)
-         and stores the result in the destination operand (first operand). 
+         and stores the result in the destination operand (first operand).
         '''
         res = dest.write(src.read() | src2.read())
 
- 
+
     @instruction
     def PTEST(cpu, dest, src):
         ''' PTEST
          PTEST set the ZF flag if all bits in the result are 0 of the bitwise AND
-         of the first source operand (first operand) and the second source operand 
-         (second operand). Also this sets the CF flag if all bits in the result 
-         are 0 of the bitwise AND of the second source operand (second operand) 
+         of the first source operand (first operand) and the second source operand
+         (second operand). Also this sets the CF flag if all bits in the result
+         are 0 of the bitwise AND of the second source operand (second operand)
          and the logical NOT of the destination operand.
         '''
         cpu.OF = False
@@ -5208,14 +5208,14 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVAPS(cpu, dest, src):
-        ''' 
+        '''
         Moves aligned packed single-precision floating-point values.
-        
-        Moves a double quadword containing four packed single-precision floating-point numbers from the 
-        source operand (second operand) to the destination operand (first operand). This instruction can be 
-        used to load an XMM register from a 128-bit memory location, to store the contents of an XMM register 
-        into a 128-bit memory location, or move data between two XMM registers. 
-        When the source or destination operand is a memory operand, the operand must be aligned on a 16-byte 
+
+        Moves a double quadword containing four packed single-precision floating-point numbers from the
+        source operand (second operand) to the destination operand (first operand). This instruction can be
+        used to load an XMM register from a 128-bit memory location, to store the contents of an XMM register
+        into a 128-bit memory location, or move data between two XMM registers.
+        When the source or destination operand is a memory operand, the operand must be aligned on a 16-byte
         boundary or a general-protection exception (#GP) will be generated::
 
                 DEST  =  SRC;
@@ -5228,35 +5228,35 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVQ(cpu, dest, src):
-        ''' 
+        '''
         Move quadword.
-        
-        Copies a quadword from the source operand (second operand) to the destination operand (first operand). 
-        The source and destination operands can be MMX(TM) technology registers, XMM registers, or 64-bit memory 
-        locations. This instruction can be used to move a between two MMX registers or between an MMX register 
-        and a 64-bit memory location, or to move data between two XMM registers or between an XMM register and 
+
+        Copies a quadword from the source operand (second operand) to the destination operand (first operand).
+        The source and destination operands can be MMX(TM) technology registers, XMM registers, or 64-bit memory
+        locations. This instruction can be used to move a between two MMX registers or between an MMX register
+        and a 64-bit memory location, or to move data between two XMM registers or between an XMM register and
         a 64-bit memory location. The instruction cannot be used to transfer data between memory locations.
-        When the source operand is an XMM register, the low quadword is moved; when the destination operand is 
-        an XMM register, the quadword is stored to the low quadword of the register, and the high quadword is 
+        When the source operand is an XMM register, the low quadword is moved; when the destination operand is
+        an XMM register, the quadword is stored to the low quadword of the register, and the high quadword is
         cleared to all 0s::
 
             MOVQ instruction when operating on MMX registers and memory locations:
-            
+
             DEST  =  SRC;
-            
+
             MOVQ instruction when source and destination operands are XMM registers:
-            
+
             DEST[63-0]  =  SRC[63-0];
-            
+
             MOVQ instruction when source operand is XMM register and destination operand is memory location:
-            
+
             DEST  =  SRC[63-0];
-            
+
             MOVQ instruction when source operand is memory location and destination operand is XMM register:
-            
+
             DEST[63-0]  =  SRC;
             DEST[127-64]  =  0000000000000000H;
-        
+
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
@@ -5281,19 +5281,19 @@ class X86Cpu(Cpu):
 
     @instruction
     def MOVSD(cpu, dest, src):
-        ''' 
+        '''
         Move Scalar Double-Precision Floating-Point Value
-        
-        Moves a scalar double-precision floating-point value from the source 
-        operand (second operand) to the destination operand (first operand). 
+
+        Moves a scalar double-precision floating-point value from the source
+        operand (second operand) to the destination operand (first operand).
         The source and destination operands can be XMM registers or 64-bit memory
-        locations. This instruction can be used to move a double-precision 
+        locations. This instruction can be used to move a double-precision
         floating-point value to and from the low quadword of an XMM register and
         a 64-bit memory location, or to move a double-precision floating-point
-        value between the low quadwords of two XMM registers. The instruction 
+        value between the low quadwords of two XMM registers. The instruction
         cannot be used to transfer data between memory locations.
-        When the source and destination operands are XMM registers, the high 
-        quadword of the destination operand remains unchanged. When the source 
+        When the source and destination operands are XMM registers, the high
+        quadword of the destination operand remains unchanged. When the source
         operand is a memory location and destination operand is an XMM registers,
         the high quadword of the destination operand is cleared to all 0s.
 
@@ -5301,7 +5301,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        assert dest.type != 'memory' or src.type != 'memory' 
+        assert dest.type != 'memory' or src.type != 'memory'
         value = Operators.EXTRACT(src.read(), 0, 64)
         if dest.size > src.size:
             value = Operators.ZEXTEND(value, dest.size)
@@ -5314,21 +5314,21 @@ class X86Cpu(Cpu):
         Moves a scalar single-precision floating-point value
 
         Moves a scalar single-precision floating-point value from the source operand (second operand)
-        to the destination operand (first operand). The source and destination operands can be XMM 
+        to the destination operand (first operand). The source and destination operands can be XMM
         registers or 32-bit memory locations. This instruction can be used to move a single-precision
-        floating-point value to and from the low doubleword of an XMM register and a 32-bit memory 
-        location, or to move a single-precision floating-point value between the low doublewords of 
-        two XMM registers. The instruction cannot be used to transfer data between memory locations. 
-        When the source and destination operands are XMM registers, the three high-order doublewords of the 
+        floating-point value to and from the low doubleword of an XMM register and a 32-bit memory
+        location, or to move a single-precision floating-point value between the low doublewords of
+        two XMM registers. The instruction cannot be used to transfer data between memory locations.
+        When the source and destination operands are XMM registers, the three high-order doublewords of the
         destination operand remain unchanged. When the source operand is a memory location and destination
         operand is an XMM registers, the three high-order doublewords of the destination operand are cleared to all 0s.
 
         //MOVSS instruction when source and destination operands are XMM registers:
-        if(IsXMM(Source) && IsXMM(Destination)) 
+        if(IsXMM(Source) && IsXMM(Destination))
             Destination[0..31] = Source[0..31];
             //Destination[32..127] remains unchanged
             //MOVSS instruction when source operand is XMM register and destination operand is memory location:
-        else if(IsXMM(Source) && IsMemory(Destination)) 
+        else if(IsXMM(Source) && IsMemory(Destination))
             Destination = Source[0..31];
         //MOVSS instruction when source operand is memory location and destination operand is XMM register:
         else {
@@ -5352,15 +5352,15 @@ class X86Cpu(Cpu):
         '''
         Move Aligned Double Quadword
 
-        Moves 128 bits of packed integer values from the source operand (second 
-        operand) to the destination operand (first operand). This instruction 
-        can be used to load an XMM register from a 128-bit memory location, to 
+        Moves 128 bits of packed integer values from the source operand (second
+        operand) to the destination operand (first operand). This instruction
+        can be used to load an XMM register from a 128-bit memory location, to
         store the contents of an XMM register into a 128-bit memory location, or
-        to move data between two XMM registers. 
+        to move data between two XMM registers.
 
-        When the source or destination operand is a memory operand, the operand 
-        must be aligned on a 16-byte boundary or a general-protection exception 
-        (#GP) will be generated. To move integer data to and from unaligned 
+        When the source or destination operand is a memory operand, the operand
+        must be aligned on a 16-byte boundary or a general-protection exception
+        (#GP) will be generated. To move integer data to and from unaligned
         memory locations, use the VMOVDQU instruction.'''
         #TODO raise exception when unaligned!
         dest.write(src.read())
@@ -5374,10 +5374,10 @@ class X86Cpu(Cpu):
         to the destination operand (first operand). This instruction can be used to load
         an XMM register from a 128-bit memory location, to store the contents of an XMM
         register into a 128-bit memory location, or to move data between two XMM registers.
-        When the source or destination operand is a memory operand, the operand may be 
-        unaligned on a 16-byte boundary without causing a general-protection exception 
+        When the source or destination operand is a memory operand, the operand may be
+        unaligned on a 16-byte boundary without causing a general-protection exception
         (#GP) to be generated.
-    
+
             VMOVDQU (VEX.128 encoded version)
             DEST[127:0] <- SRC[127:0]
             DEST[VLMAX-1:128] <- 0
@@ -5391,10 +5391,10 @@ class X86Cpu(Cpu):
     def VEXTRACTF128(cpu, dest, src, offset):
         '''Extract Packed Floating-Point Values
 
-        Extracts 128-bits of packed floating-point values from the source 
-        operand (second operand) at an 128-bit offset from imm8[0] into the 
-        destination operand (first operand). The destination may be either an 
-        XMM register or an 128-bit memory location. 
+        Extracts 128-bits of packed floating-point values from the source
+        operand (second operand) at an 128-bit offset from imm8[0] into the
+        destination operand (first operand). The destination may be either an
+        XMM register or an 128-bit memory location.
         '''
         offset=offset.read()
         dest.write(Operators.EXTRACT(src.read(), offset*128 , (offset+1)*128))
@@ -5403,7 +5403,7 @@ class X86Cpu(Cpu):
     def PREFETCHT0(cpu, arg):
         '''
         Not implemented.
-        
+
         Performs no operation.
         '''
         pass
@@ -5411,7 +5411,7 @@ class X86Cpu(Cpu):
     def PREFETCHT1(cpu, arg):
         '''
         Not implemented.
-        
+
         Performs no operation.
         '''
         pass
@@ -5419,17 +5419,17 @@ class X86Cpu(Cpu):
     def PREFETCHT2(cpu, arg):
         '''
         Not implemented.
-        
+
         Performs no operation.
-        '''        
+        '''
         pass
     @instruction
     def PREFETCHTNTA(cpu, arg):
         '''
         Not implemented.
-        
+
         Performs no operation.
-        '''        
+        '''
         pass
 
     @instruction
@@ -5469,11 +5469,11 @@ class X86Cpu(Cpu):
     @instruction
     def PSLLDQ(cpu, dest, src):
         ''' Packed Shift Left Logical Double Quadword
-        Shifts the destination operand (first operand) to the left by the number 
-         of bytes specified in the count operand (second operand). The empty low-order 
-         bytes are cleared (set to all 0s). If the value specified by the count 
-         operand is greater than 15, the destination operand is set to all 0s. 
-         The destination operand is an XMM register. The count operand is an 8-bit 
+        Shifts the destination operand (first operand) to the left by the number
+         of bytes specified in the count operand (second operand). The empty low-order
+         bytes are cleared (set to all 0s). If the value specified by the count
+         operand is greater than 15, the destination operand is set to all 0s.
+         The destination operand is an XMM register. The count operand is an 8-bit
          immediate.
 
             TEMP  =  COUNT;
@@ -5493,10 +5493,10 @@ class X86Cpu(Cpu):
         '''Shift Packed Data Right Logical
 
         Shifts the bits in the individual quadword in the destination operand to the right by
-        the number of bits specified in the count operand . As the bits in the data elements 
-        are shifted right, the empty high-order bits are cleared (set to 0). If the value 
+        the number of bits specified in the count operand . As the bits in the data elements
+        are shifted right, the empty high-order bits are cleared (set to 0). If the value
         specified by the count operand is greater than  63, then the destination operand is set
-        to all 0s. 
+        to all 0s.
 
     	if(OperandSize == 64) {
 			//PSRLQ instruction with 64-bit operand:
@@ -5513,7 +5513,7 @@ class X86Cpu(Cpu):
 		}
         '''
 
-        count = src.read() 
+        count = src.read()
         count = Operators.ITEBV(src.size, Operators.UGT(count, 63), 64, count)
         count = Operators.EXTRACT(count, 0, 64)
         if dest.size == 64:
@@ -5523,7 +5523,7 @@ class X86Cpu(Cpu):
             low = Operators.EXTRACT(dest.read(), 0, 64) >> count
             dest.write(Operators.CONCAT(128, hi, low))
 
-        
+
     @instruction
     def PAND(cpu, dest, src):
         dest.write(dest.read() & src.read())
@@ -5544,7 +5544,7 @@ class X86Cpu(Cpu):
             return
 
         base, limit, ty = cpu.get_descriptor(selector)
-        
+
         #Check CPL and type
         #TODO http://x86.renejeschke.de/html/file_module_x86_id_162.html
         logger.debug("LSL instruction not fully implemented")
@@ -5554,12 +5554,12 @@ class X86Cpu(Cpu):
 
     @instruction
     def SYSENTER(cpu):
-        ''' 
+        '''
         Calls to system
 
         Executes a fast call to a level 0 system procedure or routine
-        
-        :param cpu: current CPU. 
+
+        :param cpu: current CPU.
         '''
         raise Sysenter()
 
@@ -5567,13 +5567,13 @@ class X86Cpu(Cpu):
     def TZCNT(cpu, dest, src):
         '''
         Count the number of trailing least significant zero bits in source
-        operand (second operand) and returns the result in destination 
+        operand (second operand) and returns the result in destination
         operand (first operand). TZCNT is an extension of the BSF instruction.
 
-        The key difference between TZCNT and BSF instruction is that TZCNT 
-        provides operand size as output when source operand is zero while in 
+        The key difference between TZCNT and BSF instruction is that TZCNT
+        provides operand size as output when source operand is zero while in
         the case of BSF instruction, if source operand is zero, the content of
-        destination operand are undefined. On processors that do not support 
+        destination operand are undefined. On processors that do not support
         TZCNT, the instruction byte encoding is executed as BSF
         '''
 
@@ -5593,11 +5593,11 @@ class X86Cpu(Cpu):
     def VPSHUFB(cpu, op0, op1, op3):
         '''
         Packed shuffle bytes.
-        
-        Copies bytes from source operand (second operand) and inserts them in the destination operand 
-        (first operand) at locations selected with the order operand (third operand). 
-        
-        :param cpu: current CPU. 
+
+        Copies bytes from source operand (second operand) and inserts them in the destination operand
+        (first operand) at locations selected with the order operand (third operand).
+
+        :param cpu: current CPU.
         :param op0: destination operand.
         :param op1: source operand.
         :param op3: order operand.
@@ -5607,7 +5607,7 @@ class X86Cpu(Cpu):
         arg1 = op1.read()
         arg3 = Operators.ZEXTEND(op3.read(),size)
 
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,7,1) == 1, 0, (arg1 >> ((arg3>>0)&7 * 8))&0xff) 
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,7,1) == 1, 0, (arg1 >> ((arg3>>0)&7 * 8))&0xff)
         arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,15,1) == 1, 0, ((arg1 >> ((arg3>>8)&7 * 8))&0xff)<<8 )
         arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,23,1) == 1, 0, ((arg1 >> ((arg3>>16)&7 * 8))&0xff)<<16)
         arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,31,1) == 1, 0, ((arg1 >> ((arg3>>24)&7 * 8))&0xff)<<24)
@@ -5636,7 +5636,7 @@ class X86Cpu(Cpu):
         cpu.YMM6 = cpu.YMM6 & 0xffffffffffffffffffffffffffffffff
         cpu.YMM7 = cpu.YMM7 & 0xffffffffffffffffffffffffffffffff
 
-        if cpu.mode == CS_MODE_64:
+        if cpu.mode == capstone.CS_MODE_64:
             cpu.YMM8 = cpu.YMM8 & 0xffffffffffffffffffffffffffffffff
             cpu.YMM9 = cpu.YMM9 & 0xffffffffffffffffffffffffffffffff
             cpu.YMM10 = cpu.YMM10 & 0xffffffffffffffffffffffffffffffff
@@ -5680,7 +5680,7 @@ class AMD64LinuxSyscallAbi(SyscallAbi):
 
     def write_result(self, result):
         self._cpu.RAX = result
-    
+
 
 class I386CdeclAbi(Abi):
     '''
@@ -5696,7 +5696,7 @@ class I386CdeclAbi(Abi):
 
     def ret(self):
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
-        
+
 class I386StdcallAbi(Abi):
     '''
     x86 Stdcall function call convention. Callee cleans up the stack.
@@ -5753,8 +5753,8 @@ class AMD64Cpu(X86Cpu):
     max_instr_width = 15
     address_bit_size = 64
     machine = 'amd64'
-    arch = CS_ARCH_X86
-    mode = CS_MODE_64
+    arch = capstone.CS_ARCH_X86
+    mode = capstone.CS_MODE_64
 
     def __init__(self, memory, *args, **kwargs):
         '''
@@ -5767,9 +5767,9 @@ class AMD64Cpu(X86Cpu):
     def __str__(self):
         '''
         Returns a string representation of cpu state
-        
+
         :rtype: str
-        :return: a string containing the name and current value for all the registers. 
+        :return: a string containing the name and current value for all the registers.
         '''
         CHEADER = '\033[95m'
         CBLUE = '\033[94m'
@@ -5791,13 +5791,13 @@ class AMD64Cpu(X86Cpu):
             value = self.read_register(reg_name)
             if issymbolic(value):
                 result += "%3s: "%reg_name + CFAIL
-                result += visitors.pretty_print (value, depth=10) 
+                result += visitors.pretty_print (value, depth=10)
                 result += CEND
             else:
                 result += "%3s: 0x%016x"%(reg_name, value)
             pos = 0
             result += '\n'
-        
+
         pos = 0
         for reg_name in ('CF','SF','ZF','OF','AF', 'PF', 'IF', 'DF'):
             value = self.read_register(reg_name)
@@ -5820,27 +5820,27 @@ class AMD64Cpu(X86Cpu):
             result += "%3s: %r"%(reg_name, value)
             pos = 0
             result += '\n'
-        
+
         return result
- 
+
     @property
     def canonical_registers(self):
         return self.regfile.canonical_registers
 
     @instruction
     def XLATB(cpu):
-        ''' 
+        '''
         Table look-up translation.
-        
-        Locates a byte entry in a table in memory, using the contents of the 
-        AL register as a table index, then copies the contents of the table entry 
-        back into the AL register. The index in the AL register is treated as 
-        an unsigned integer. The XLAT and XLATB instructions get the base address 
-        of the table in memory from either the DS:EBX or the DS:BX registers. 
+
+        Locates a byte entry in a table in memory, using the contents of the
+        AL register as a table index, then copies the contents of the table entry
+        back into the AL register. The index in the AL register is treated as
+        an unsigned integer. The XLAT and XLATB instructions get the base address
+        of the table in memory from either the DS:EBX or the DS:BX registers.
         In 64-bit mode, operation is similar to that in legacy or compatibility mode.
-        AL is used to specify the table index (the operand size is fixed at 8 bits). 
+        AL is used to specify the table index (the operand size is fixed at 8 bits).
         RBX, however, is used to specify the table's base address::
-        
+
                 IF address_bit_size = 16
                 THEN
                     AL = (DS:BX + ZeroExtend(AL));
@@ -5851,7 +5851,7 @@ class AMD64Cpu(X86Cpu):
                 FI;
 
         :param cpu: current CPU.
-        :param dest: destination operand.  
+        :param dest: destination operand.
         '''
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
@@ -5861,8 +5861,8 @@ class I386Cpu(X86Cpu):
     max_instr_width = 15
     address_bit_size = 32
     machine = 'i386'
-    arch = CS_ARCH_X86
-    mode = CS_MODE_32
+    arch = capstone.CS_ARCH_X86
+    mode = capstone.CS_MODE_32
 
     def __init__(self, memory, *args, **kwargs):
         '''
@@ -5875,9 +5875,9 @@ class I386Cpu(X86Cpu):
     def __str__(self):
         '''
         Returns a string representation of cpu state
-        
+
         :rtype: str
-        :return: a string containing the name and current value for all the registers. 
+        :return: a string containing the name and current value for all the registers.
         '''
         CHEADER = '\033[95m'
         CBLUE = '\033[94m'
@@ -5904,7 +5904,7 @@ class I386Cpu(X86Cpu):
                result += "%3s: 0x%016x"%(reg_name, value)
             pos = 0
             result += '\n'
-        
+
         pos = 0
         for reg_name in ['CF','SF','ZF','OF','AF', 'PF', 'IF', 'DF']:
             value = self.read_register(reg_name)
@@ -5927,7 +5927,7 @@ class I386Cpu(X86Cpu):
             result += "%3s: %r"%(reg_name, value)
             pos = 0
             result += '\n'
-        
+
         return result
 
     @property
@@ -5937,23 +5937,23 @@ class I386Cpu(X86Cpu):
         regs.extend(['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'FPCW', 'FPSW', 'FPTAG'])
         regs.extend(['XMM0', 'XMM1', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9'])
         regs.extend(['CF','PF','AF','ZF','SF','IF','DF','OF'])
-        return tuple(regs)  
+        return tuple(regs)
 
 
     @instruction
     def XLATB(cpu):
-        ''' 
+        '''
         Table look-up translation.
-        
-        Locates a byte entry in a table in memory, using the contents of the 
-        AL register as a table index, then copies the contents of the table entry 
-        back into the AL register. The index in the AL register is treated as 
-        an unsigned integer. The XLAT and XLATB instructions get the base address 
-        of the table in memory from either the DS:EBX or the DS:BX registers. 
+
+        Locates a byte entry in a table in memory, using the contents of the
+        AL register as a table index, then copies the contents of the table entry
+        back into the AL register. The index in the AL register is treated as
+        an unsigned integer. The XLAT and XLATB instructions get the base address
+        of the table in memory from either the DS:EBX or the DS:BX registers.
         In 64-bit mode, operation is similar to that in legacy or compatibility mode.
-        AL is used to specify the table index (the operand size is fixed at 8 bits). 
+        AL is used to specify the table index (the operand size is fixed at 8 bits).
         RBX, however, is used to specify the table's base address::
-        
+
                 IF address_bit_size = 16
                 THEN
                     AL = (DS:BX + ZeroExtend(AL));
@@ -5964,7 +5964,7 @@ class I386Cpu(X86Cpu):
                 FI;
 
         :param cpu: current CPU.
-        :param dest: destination operand.  
+        :param dest: destination operand.
         '''
         cpu.AL = cpu.read_int(cpu.EBX + Operators.ZEXTEND(cpu.AL, 32), 8)
 

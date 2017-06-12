@@ -1,6 +1,6 @@
-#  from capstone import *
-#  from capstone.arm import *
-#  from capstone.x86 import *
+from capstone import *
+from capstone.arm import *
+from capstone.x86 import *
 
 # FIXME (theo) remove capstone
 import inspect
@@ -25,9 +25,10 @@ register_logger = logging.getLogger("REGISTERS")
 
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
-# This encapsulates how to access operands (regs/mem/immediates) for different CPUs
 class Operand(object):
-
+    """This class encapsulates how to access operands (regs/mem/immediates) for
+    different CPUs
+    """
     class MemSpec(object):
         '''
         Auxiliary class wraps capstone operand 'mem' attribute. This will
@@ -78,7 +79,7 @@ class Operand(object):
 
     @property
     def type(self):
-        ''' This property encapsulate the operand type.
+        ''' This property encapsulates the operand type.
             It may be one of the following:
                 register
                 memory
@@ -108,9 +109,11 @@ class Operand(object):
         ''' It writes the value of specific type to the registers or memory '''
         raise NotImplementedError
 
-# Basic register file structure not actually need to abstract as it's used only from the cpu implementation
 class RegisterFile(object):
-
+    """
+    Basic register file structure not actually need to abstract as it's used
+    only from the cpu implementation
+    """
     def __init__(self, aliases=None):
         if aliases is None:
             aliases = {}
@@ -556,8 +559,8 @@ class Cpu(object):
     @abstractmethod
     def _wrap_operands(self, operands):
         '''
-        Private method to decorate a capstone Operand to our needs. See Operand
-        class
+        Private method to decorate an Operand to our needs based on the
+        underlying architecture. See Operand class
         '''
         pass
 
@@ -662,9 +665,8 @@ class Cpu(object):
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
 
-        :param capstone.CsInsn instruction: The instruction object to emulate
+        :param instruction: The instruction object to emulate
         '''
-        # FIXME (theo)
         emu = UnicornEmulator(self)
         emu.emulate(instruction)
         # We have been seeing occasional Unicorn issues with it not clearing
