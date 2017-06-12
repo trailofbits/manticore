@@ -13,7 +13,6 @@ from itertools import islice, imap
 
 import capstone
 
-from .disasm import Capstone
 from ..smtlib import BitVec, Operators, Constant
 from ..memory import MemoryException
 from ...utils.helpers import issymbolic
@@ -57,6 +56,7 @@ class Operand(object):
         :type op: X86Op or ArmOp
         '''
         assert isinstance(cpu, Cpu)
+        # FIXME remove this
         assert isinstance(op, (capstone.x86.X86Op, capstone.arm.ArmOp))
         self.cpu = cpu
         self.op = op
@@ -314,15 +314,16 @@ class Cpu(object):
     - stack_alias
     '''
 
-    def __init__(self, regfile, memory):
+    def __init__(self, regfile, memory, disasm):
         assert isinstance(regfile, RegisterFile)
+        # FIXME (theo) why the call to super here?
         super(Cpu, self).__init__()
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
 
-        self._disasm = Capstone(self.arch, self.mode)
+        self._disasm = disasm
         self.instruction = None
 
         # Ensure that regfile created STACK/PC aliases

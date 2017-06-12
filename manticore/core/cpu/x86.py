@@ -1,46 +1,49 @@
-#  from capstone import *
-#  from capstone.x86 import *
-from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
-from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
-from functools import wraps
 import collections
-from ..smtlib import *
-from ...utils.helpers import issymbolic
 import logging
-logger = logging.getLogger("CPU")
+
+from functools import wraps
 
 import capstone
 
+from .disasm import Capstone
+from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
+from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
+from ..smtlib import *
+from ...utils.helpers import issymbolic
+
+logger = logging.getLogger("CPU")
+
+
 OP_NAME_MAP = {
-        'JNE':      'JNZ',
-        'JE':       'JZ',
-        'CMOVE':    'CMOVZ',
-        'CMOVNE':   'CMOVNZ',
-        'MOVUPS':   'MOV',
-        'MOVABS':   'MOV',
-        'MOVSB':    'MOVS',
-        'MOVSW':    'MOVS',
-        'MOVSQ':    'MOVS',
-        'SETNE':    'SETNZ',
-        'SETE':     'SETZ',
-        'LODSB':    'LODS',
-        'LODSW':    'LODS',
-        'LODSD':    'LODS',
-        'LODSQ':    'LODS',
-        'STOSB':    'STOS',
-        'STOSW':    'STOS',
-        'STOSD':    'STOS',
-        'STOSQ':    'STOS',
-        'SCASB':    'SCAS',
-        'SCASW':    'SCAS',
-        'SCASD':    'SCAS',
-        'SCASQ':    'SCAS',
-        'CMPSB':    'CMPS',
-        'CMPSW':    'CMPS',
-        'CMPSD':    'CMPS',
-        'VMOVSD':   'MOVSD',
-        'FUCOMPI':  'FUCOMIP',
-        }
+    'JNE':      'JNZ',
+    'JE':       'JZ',
+    'CMOVE':    'CMOVZ',
+    'CMOVNE':   'CMOVNZ',
+    'MOVUPS':   'MOV',
+    'MOVABS':   'MOV',
+    'MOVSB':    'MOVS',
+    'MOVSW':    'MOVS',
+    'MOVSQ':    'MOVS',
+    'SETNE':    'SETNZ',
+    'SETE':     'SETZ',
+    'LODSB':    'LODS',
+    'LODSW':    'LODS',
+    'LODSD':    'LODS',
+    'LODSQ':    'LODS',
+    'STOSB':    'STOS',
+    'STOSW':    'STOS',
+    'STOSD':    'STOS',
+    'STOSQ':    'STOS',
+    'SCASB':    'SCAS',
+    'SCASW':    'SCAS',
+    'SCASD':    'SCAS',
+    'SCASQ':    'SCAS',
+    'CMPSB':    'CMPS',
+    'CMPSW':    'CMPS',
+    'CMPSD':    'CMPS',
+    'VMOVSD':   'MOVSD',
+    'FUCOMPI':  'FUCOMIP',
+}
 
 
 ###############################################################################
@@ -672,13 +675,14 @@ class X86Cpu(Cpu):
     '''
     A CPU model.
     '''
-    def __init__(self, regfile, memory, *args, **kwargs):
+    def __init__(self, regfile, memory, disasm, *args, **kwargs):
         '''
         Builds a CPU model.
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
+        :param disasm: disassembler to be used for this CPU.
         '''
-        super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
+        super(X86Cpu, self).__init__(regfile, memory, disasm, *args, **kwargs)
         #Segments              ('base', 'limit', 'perms', 'gatetype')
         self._segments       = { }
 
@@ -5749,20 +5753,24 @@ class SystemVAbi(Abi):
 
 
 class AMD64Cpu(X86Cpu):
-    #Config
-    max_instr_width = 15
-    address_bit_size = 64
-    machine = 'amd64'
-    arch = capstone.CS_ARCH_X86
-    mode = capstone.CS_MODE_64
 
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param memory: memory object for this CPU.
-        :param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
         '''
-        super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},  ), memory, *args, **kwargs)
+        #Config
+        self.max_instr_width = 15
+        self.address_bit_size = 64
+        self.machine = 'amd64'
+        self.arch = capstone.CS_ARCH_X86
+        self.mode = capstone.CS_MODE_64
+        disasm = Capstone(self.arch, self.mode)
+        super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
+                                       memory,
+                                       disasm,
+                                       *args,
+                                       **kwargs)
 
     def __str__(self):
         '''
@@ -5858,19 +5866,23 @@ class AMD64Cpu(X86Cpu):
 
 class I386Cpu(X86Cpu):
     #Config
-    max_instr_width = 15
-    address_bit_size = 32
-    machine = 'i386'
-    arch = capstone.CS_ARCH_X86
-    mode = capstone.CS_MODE_32
-
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param memory: memory object for this CPU.
-        :param machine:  machine code name. Supported machines: C{'i386'} and C{'amd64'}.
         '''
-        super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}), memory, *args, **kwargs)
+        self.max_instr_width = 15
+        self.address_bit_size = 32
+        self.machine = 'i386'
+        self.arch = capstone.CS_ARCH_X86
+        self.mode = capstone.CS_MODE_32
+        disasm = Capstone(self.arch, self.mode)
+
+        super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
+                                      memory,
+                                      disasm,
+                                      *args,
+                                      **kwargs)
 
     def __str__(self):
         '''

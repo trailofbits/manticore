@@ -1,20 +1,20 @@
+import logging
 import struct
 import sys
+
+from functools import wraps
+from bitwise import *
+
+import capstone
+
+from .disasm import Capstone
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
 from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant
 from ...utils.helpers import issymbolic
-# from ..smtlib import *
-from functools import wraps
-from bitwise import *
 
-#  from capstone import *
-#  from capstone.arm import *
-import capstone
-
-import logging
 logger = logging.getLogger("CPU")
 
 # map different instructions to a single impl here
@@ -304,15 +304,15 @@ class Armv7Cpu(Cpu):
     current instruction + 8 (section A2.3).
     '''
 
-    address_bit_size = 32
-    max_instr_width = 4
-    machine = 'armv7'
-    arch = capstone.CS_ARCH_ARM
-    mode = capstone.CS_MODE_ARM
-
 
     def __init__(self, memory):
-        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
+        self.address_bit_size = 32
+        self.max_instr_width = 4
+        self.machine = 'armv7'
+        self.arch = capstone.CS_ARCH_ARM
+        self.mode = capstone.CS_MODE_ARM
+        disasm = Capstone(self.arch, self.mode)
+        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory, disasm)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
         self._force_next = False
 
