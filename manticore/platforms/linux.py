@@ -236,13 +236,12 @@ class Socket(object):
             peer.peer = self
 
     def read(self, size):
-        assert not self.is_empty(), "Attempting read() from empty Socket buf"
         return self.receive(size)
 
     def receive(self, size):
         rx_bytes = min(size, len(self.buffer))
         ret = []
-        for i in xrange(rx_bytes):
+        for _ in xrange(rx_bytes):
             ret.append(self.buffer.pop())
         return ret
 
@@ -252,7 +251,7 @@ class Socket(object):
 
     def _transmit(self, buf):
         for c in buf:
-            self.buffer.insert(0,c)
+            self.buffer.insert(0, c)
         return len(buf)
 
     def sync(self):
