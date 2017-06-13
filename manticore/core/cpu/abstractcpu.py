@@ -7,6 +7,7 @@ import inspect
 import logging
 import StringIO
 
+from .disasm import Capstone
 from abc import abstractmethod
 from functools import wraps
 from itertools import islice, imap
@@ -313,19 +314,14 @@ class Cpu(object):
     - stack_alias
     '''
 
-    def __init__(self, regfile, memory, disasm):
+    def __init__(self, regfile, memory):
         assert isinstance(regfile, RegisterFile)
-
-        self.instruction = None
-
-        # FIXME (theo) why the call to super here?
         super(Cpu, self).__init__()
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
-
-        self._disasm = disasm
+        self.instruction = None
 
         # Ensure that regfile created STACK/PC aliases
         assert 'STACK' in self._regfile
@@ -607,8 +603,7 @@ class Cpu(object):
             pass
 
         code = text.ljust(self.max_instr_width, '\x00')
-        # FIXME(theo) abandon capstone instruction
-        insn = self._disasm.get_insn(code, pc)
+        insn = self.disasm.get_insn(code, pc)
 
         #PC points to symbolic memory
         if insn.size > len(text):

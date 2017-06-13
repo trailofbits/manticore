@@ -3,6 +3,8 @@ import logging
 
 from functools import wraps
 
+from capstone import *
+from capstone.x86 import *
 import capstone
 
 from .disasm import Capstone
@@ -675,16 +677,16 @@ class X86Cpu(Cpu):
     '''
     A CPU model.
     '''
-    def __init__(self, regfile, memory, disasm, *args, **kwargs):
+    def __init__(self, regfile, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
         :param disasm: disassembler to be used for this CPU.
         '''
-        super(X86Cpu, self).__init__(regfile, memory, disasm, *args, **kwargs)
+        super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
         #Segments              ('base', 'limit', 'perms', 'gatetype')
-        self._segments       = { }
+        self._segments = {}
 
     def __getstate__(self):
         state = super(X86Cpu, self).__getstate__()
@@ -5759,16 +5761,15 @@ class AMD64Cpu(X86Cpu):
     machine = 'amd64'
     arch = capstone.CS_ARCH_X86
     mode = capstone.CS_MODE_64
+    disasm = Capstone(arch, mode)
 
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        disasm = Capstone(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
         super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
                                        memory,
-                                       disasm,
                                        *args,
                                        **kwargs)
 
@@ -5865,22 +5866,21 @@ class AMD64Cpu(X86Cpu):
 
 
 class I386Cpu(X86Cpu):
-    #Config
+    # FIXME (theo) should we wrap these in a cpuinfo dictionary?
+    # Config
     max_instr_width = 15
     address_bit_size = 32
     machine = 'i386'
     arch = capstone.CS_ARCH_X86
     mode = capstone.CS_MODE_32
-
+    disasm = Capstone(arch, mode)
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        disasm = Capstone(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
         super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
                                       memory,
-                                      disasm,
                                       *args,
                                       **kwargs)
 

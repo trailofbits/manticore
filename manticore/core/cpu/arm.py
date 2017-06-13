@@ -303,7 +303,6 @@ class Armv7Cpu(Cpu):
     instruction + 4. However, official spec defines PC to be address of
     current instruction + 8 (section A2.3).
     '''
-
     address_bit_size = 32
     max_instr_width = 4
     machine = 'armv7'
@@ -311,8 +310,7 @@ class Armv7Cpu(Cpu):
     mode = capstone.CS_MODE_ARM
 
     def __init__(self, memory):
-        disasm = Capstone(capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
-        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory, disasm)
+        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
         self._force_next = False
 
