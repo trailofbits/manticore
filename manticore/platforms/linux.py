@@ -1244,6 +1244,7 @@ class Linux(Platform):
     def sys_ARM_NR_set_tls(self, val):
         if hasattr(self, '_arm_tls_memory'):
             self.current.write_int(self._arm_tls_memory, val)
+            self.current.set_arm_tls(val)
         return 0
 
     #Signals..
