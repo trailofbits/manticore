@@ -2,6 +2,8 @@ from abc import abstractmethod
 
 from capstone import Cs
 
+CAPSTONE = 1
+
 class Disasm(object):
     """Abstact class for different disassembler interfaces"""
 
