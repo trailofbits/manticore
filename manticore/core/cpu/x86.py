@@ -5753,19 +5753,19 @@ class SystemVAbi(Abi):
 
 
 class AMD64Cpu(X86Cpu):
+    #Config
+    max_instr_width = 15
+    address_bit_size = 64
+    machine = 'amd64'
+    arch = capstone.CS_ARCH_X86
+    mode = capstone.CS_MODE_64
 
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        #Config
-        self.max_instr_width = 15
-        self.address_bit_size = 64
-        self.machine = 'amd64'
-        self.arch = capstone.CS_ARCH_X86
-        self.mode = capstone.CS_MODE_64
-        disasm = Capstone(self.arch, self.mode)
+        disasm = Capstone(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
         super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
                                        memory,
                                        disasm,
@@ -5866,18 +5866,18 @@ class AMD64Cpu(X86Cpu):
 
 class I386Cpu(X86Cpu):
     #Config
+    max_instr_width = 15
+    address_bit_size = 32
+    machine = 'i386'
+    arch = capstone.CS_ARCH_X86
+    mode = capstone.CS_MODE_32
+
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        self.max_instr_width = 15
-        self.address_bit_size = 32
-        self.machine = 'i386'
-        self.arch = capstone.CS_ARCH_X86
-        self.mode = capstone.CS_MODE_32
-        disasm = Capstone(self.arch, self.mode)
-
+        disasm = Capstone(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
         super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
                                       memory,
                                       disasm,
