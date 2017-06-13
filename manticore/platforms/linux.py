@@ -272,13 +272,14 @@ class Linux(Platform):
         :param string program: The path to ELF binary
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
+        :ivar files: List of active file descriptors
+        :type files: list[Socket] or list[File]
         '''
         super(Linux, self).__init__(program)
 
         self.program = program
         self.clocks = 0
         # List of active file descriptors.
-        # This can contain Socket() or File() instances
         self.files = []
         self.syscall_trace = []
 
@@ -958,9 +959,11 @@ class Linux(Platform):
         '''
         return self._open(self.files[fd])
 
-    def _assert_open(self, fd):
+    def _get_fd(self, fd):
         if fd < 0 or fd >= len(self.files) or self.files[fd] is None:
-            raise IndexError("Invalid index for open file descriptor list")
+            raise BadFd()
+        else:
+            return self.files[fd]
 
     def sys_umask(self, mask):
         '''
@@ -1004,9 +1007,8 @@ class Linux(Platform):
         '''
         try:
             # Read the data and put it in memory
-            self._assert_open(fd)
-            self.files[fd].seek(offset)
-        except (IndexError, BadFd):
+            self._get_fd(fd).seek(offset)
+        except BadFd:
             logger.info(("LSEEK: Not valid file descriptor on lseek."
                         "Fd not seekable. Returning EBADF"))
             return -errno.EBADF
@@ -1017,20 +1019,18 @@ class Linux(Platform):
     def sys_read(self, fd, buf, count):
         data = ''
         if count != 0:
-            try:
-                self._assert_open(fd)
-            except IndexError:
-                logger.info(("READ: Not valid file descriptor on read."
-                             " Returning EBADF"))
-                return -errno.EBADF
-
             # TODO check count bytes from buf
             if not buf in self.current.memory: # or not  self.current.memory.isValid(buf+count):
                 logger.info("READ: buf points to invalid address. Returning EFAULT")
                 return -errno.EFAULT
 
-            # Read the data and put in tin memory
-            data = self.files[fd].read(count)
+            try:
+                # Read the data and put in tin memory
+                data = self._get_fd(fd).read(count)
+            except BadFd:
+                logger.info(("READ: Not valid file descriptor on read."
+                             " Returning EBADF"))
+                return -errno.EBADF
             self.syscall_trace.append(("_read", fd, data))
             self.current.write_bytes(buf, data)
 
@@ -1060,8 +1060,8 @@ class Linux(Platform):
         cpu = self.current
         if count != 0:
             try:
-                self._assert_open(fd)
-            except IndexError:
+                write_fd = self._get_fd(fd)
+            except BadFd:
                 logger.error("WRITE: Not valid file descriptor. Returning EBADFD %d", fd)
                 return -errno.EBADF
 
@@ -1076,7 +1076,7 @@ class Linux(Platform):
                 raise RestartSyscall()
 
             data = cpu.read_bytes(buf, count)
-            self.files[fd].write(data)
+            write_fd.write(data)
 
             for line in ''.join([str(x) for x in data]).split('\n'):
                 logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>",
@@ -1234,9 +1234,9 @@ class Linux(Platform):
         try:
             os.rename(oldname, newname)
         except OSError as e:
-             ret = -e.errno
+            ret = -e.errno
 
-        logger.debug("sys_rename('{}', '{}') -> {}".format(oldname, newname, ret))
+        logger.debug("sys_rename('%s', '%s') -> %s", oldname, newname, ret)
 
         return ret
 
@@ -1268,7 +1268,7 @@ class Linux(Platform):
 
     #Signals..
     def sys_kill(self, pid, sig):
-        logger.debug("KILL, Ignoring Sending signal %d to pid %d", sig, pid )
+        logger.debug("KILL, Ignoring Sending signal %d to pid %d", sig, pid)
         return 0
 
     def sys_rt_sigaction(self, signum, act, oldact):
@@ -1276,7 +1276,8 @@ class Linux(Platform):
         return self.sys_sigaction(signum, act, oldact)
 
     def sys_sigaction(self, signum, act, oldact):
-        logger.debug("SIGACTION, Ignoring changing signal handler for signal %d", signum)
+        logger.debug("SIGACTION, Ignoring changing signal handler for signal %d",
+                     signum)
         return 0
 
     def sys_rt_sigprocmask(self, cpu, how, newset, oldset):
@@ -1398,13 +1399,19 @@ class Linux(Platform):
         total = 0
         for i in xrange(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
-            size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
+            size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2),
+                                ptrsize)
 
             data = self.files[fd].read(size)
             total += len(data)
             cpu.write_bytes(buf, data)
             self.syscall_trace.append(("_read", fd, data))
-            logger.debug("READV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
+            logger.debug("READV(%r, %r, %r) -> <%r> (size:%r)",
+                         fd,
+                         buf,
+                         size,
+                         data,
+                         len(data))
         return total
 
     def sys_writev(self, fd, iov, count):
@@ -1701,10 +1708,9 @@ class Linux(Platform):
                 self.sched()
         except (Interruption, Syscall):
             try:
-                syscallret = self.syscall()
+                self.syscall()
             except RestartSyscall:
                 pass
-
 
         return True
 
@@ -1753,6 +1759,44 @@ class Linux(Platform):
         self.current.write_bytes(buf, bufstat)
         return 0
 
+    def sys_fstat(self, fd, buf):
+        '''
+        Determines information about a file based on its file descriptor.
+        :rtype: int
+        :param fd: the file descriptor of the file that is being inquired.
+        :param buf: a buffer where data about the file will be stored.
+        :return: C{0} on success.
+        '''
+        stat = self.files[fd].stat()
+
+        def add(width, val):
+            fformat = {2:'H', 4:'L', 8:'Q'}[width]
+            return struct.pack('<'+fformat, val)
+
+        def to_timespec(ts):
+            return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
+
+        logger.debug("sys_fstat %d", fd)
+
+        bufstat = add(8, stat.st_dev)    # dev_t st_dev;
+        bufstat += add(4, 0)              # __pad1
+        bufstat += add(4, stat.st_ino)    # unsigned long  st_ino;
+        bufstat += add(4, stat.st_mode)   # unsigned short st_mode;
+        bufstat += add(4, stat.st_nlink)  # unsigned short st_nlink;
+        bufstat += add(4, stat.st_uid)    # unsigned short st_uid;
+        bufstat += add(4, stat.st_gid)    # unsigned short st_gid;
+        bufstat += add(4, stat.st_rdev)   # unsigned long  st_rdev;
+        bufstat += add(4, stat.st_size)   # unsigned long  st_size;
+        bufstat += add(4, stat.st_blksize)# unsigned long  st_blksize;
+        bufstat += add(4, stat.st_blocks) # unsigned long  st_blocks;
+        bufstat += to_timespec(stat.st_atime)  # unsigned long  st_atime;
+        bufstat += to_timespec(stat.st_mtime)  # unsigned long  st_mtime;
+        bufstat += to_timespec(stat.st_ctime)  # unsigned long  st_ctime;
+        bufstat += add(4, 0)              # unsigned long  __unused4;
+        bufstat += add(4, 0)              # unsigned long  __unused5;
+
+        self.current.write_bytes(buf, bufstat)
+        return 0
 
     def sys_fstat64(self, fd, buf):
         '''
@@ -1819,8 +1863,7 @@ class Linux(Platform):
         if is64bit:
             ret = self.sys_fstat64(fd, buf)
         else:
-            # FIXME (theo) is that self.sys_fstat for SLinux?
-            ret = self.sys_newfstat(fd, buf)
+            ret = self.sys_fstat(fd, buf)
         self.sys_close(fd)
         return ret
 
@@ -1920,46 +1963,6 @@ class SLinux(Linux):
             raise ConcretizeArgument(2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
-
-
-    def sys_fstat(self, fd, buf):
-        '''
-        Determines information about a file based on its file descriptor.
-        :rtype: int
-        :param fd: the file descriptor of the file that is being inquired.
-        :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
-        '''
-        stat = self.files[fd].stat()
-
-        def add(width, val):
-            fformat = {2:'H', 4:'L', 8:'Q'}[width]
-            return struct.pack('<'+fformat, val)
-
-        def to_timespec(ts):
-            return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
-
-        logger.debug("sys_fstat %d", fd)
-
-        bufstat = add(8, stat.st_dev)    # dev_t st_dev;
-        bufstat += add(4, 0)              # __pad1
-        bufstat += add(4, stat.st_ino)    # unsigned long  st_ino;
-        bufstat += add(4, stat.st_mode)   # unsigned short st_mode;
-        bufstat += add(4, stat.st_nlink)  # unsigned short st_nlink;
-        bufstat += add(4, stat.st_uid)    # unsigned short st_uid;
-        bufstat += add(4, stat.st_gid)    # unsigned short st_gid;
-        bufstat += add(4, stat.st_rdev)   # unsigned long  st_rdev;
-        bufstat += add(4, stat.st_size)   # unsigned long  st_size;
-        bufstat += add(4, stat.st_blksize)# unsigned long  st_blksize;
-        bufstat += add(4, stat.st_blocks) # unsigned long  st_blocks;
-        bufstat += to_timespec(stat.st_atime)  # unsigned long  st_atime;
-        bufstat += to_timespec(stat.st_mtime)  # unsigned long  st_mtime;
-        bufstat += to_timespec(stat.st_ctime)  # unsigned long  st_ctime;
-        bufstat += add(4, 0)              # unsigned long  __unused4;
-        bufstat += add(4, 0)              # unsigned long  __unused5;
-
-        self.current.write_bytes(buf, bufstat)
-        return 0
 
     def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
         '''Wrapper for mmap2'''
