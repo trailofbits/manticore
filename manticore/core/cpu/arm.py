@@ -308,6 +308,7 @@ class Armv7Cpu(Cpu):
     machine = 'armv7'
     arch = capstone.CS_ARCH_ARM
     mode = capstone.CS_MODE_ARM
+    disasm = Capstone(arch, mode)
 
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)

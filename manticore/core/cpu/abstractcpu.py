@@ -36,7 +36,6 @@ class Operand(object):
         '''
         def __init__(self, parent):
             self.parent = parent
-        # FIXME (theo) remove this
         segment = property(lambda self: self.parent._reg_name(self.parent.op.mem.segment))
         base = property(lambda self: self.parent._reg_name(self.parent.op.mem.base))
         index = property(lambda self: self.parent._reg_name(self.parent.op.mem.index))
@@ -70,7 +69,6 @@ class Operand(object):
 
         :param int reg_id: Register ID
         '''
-        # FIXME (theo)
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
         if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
             return None

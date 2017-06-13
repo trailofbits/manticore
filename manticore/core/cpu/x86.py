@@ -682,7 +682,6 @@ class X86Cpu(Cpu):
         Builds a CPU model.
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
-        :param disasm: disassembler to be used for this CPU.
         '''
         super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
         #Segments              ('base', 'limit', 'perms', 'gatetype')
@@ -5874,6 +5873,7 @@ class I386Cpu(X86Cpu):
     arch = capstone.CS_ARCH_X86
     mode = capstone.CS_MODE_32
     disasm = Capstone(arch, mode)
+
     def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
