@@ -2,25 +2,22 @@ from abc import abstractmethod
 
 from capstone import Cs
 
-class Insn(object):
+class Instruction(object):
     """Capstone-like instruction to be used internally
     """
+    # Return instruction's ID.
     @abstractmethod
     def id(self):
-        """Return instruction's ID.
-        """
         pass
 
+    # Return instruction's address.
     @abstractmethod
     def address(self):
-        """Return instruction's address.
-        """
         pass
 
+    # Return instruction's size.
     @abstractmethod
     def size(self):
-        """Return instruction's size.
-        """
         pass
 
     # return instruction's machine bytes (which should have @size bytes).
@@ -101,7 +98,7 @@ class Disasm(object):
         self.disasm = disasm
 
     @abstractmethod
-    def get_insn(self, code, pc):
+    def disassemble_instruction(self, code, pc):
         """Get next instruction based on the disassembler in use
 
         :param code: disassembled code
@@ -117,7 +114,7 @@ class Capstone(Disasm):
         cs.syntax = 0
         super(Capstone, self).__init__(cs)
 
-    def get_insn(self, code, pc):
+    def disassemble_instruction(self, code, pc):
         """Get next instruction based on Capstone disassembler
 
         :param code: disassembled code

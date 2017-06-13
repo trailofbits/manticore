@@ -52,7 +52,7 @@ class Operand(object):
         from memory and registers.
 
         :param Cpu cpu: A Cpu instance
-        :param op: An operand instance
+        :param Operand op: An wrapped Instruction Operand
         :type op: X86Op or ArmOp
         '''
         assert isinstance(cpu, Cpu)
@@ -109,11 +109,9 @@ class Operand(object):
         ''' It writes the value of specific type to the registers or memory '''
         raise NotImplementedError
 
+#  Basic register file structure not actually need to abstract as it's used
+#  only from the cpu implementation
 class RegisterFile(object):
-    """
-    Basic register file structure not actually need to abstract as it's used
-    only from the cpu implementation
-    """
     def __init__(self, aliases=None):
         # dict mapping from alias register name ('PC') to actual register
         # name ('RIP')
@@ -556,7 +554,8 @@ class Cpu(object):
     def _wrap_operands(self, operands):
         '''
         Private method to decorate an Operand to our needs based on the
-        underlying architecture. See Operand class
+        underlying architecture.
+        See :class:`~manticore.core.cpu.abstractcpu.Operand` class
         '''
         pass
 
@@ -591,9 +590,7 @@ class Cpu(object):
                     if isinstance(c, Constant):
                         c = chr(c.value)
                     else:
-                        logger.error('Concretize executable memory %r %r',
-                                     c,
-                                     text)
+                        logger.error('Concretize executable memory %r %r', c, text)
                         break
                 assert isinstance(c, str)
                 text += c
@@ -601,7 +598,7 @@ class Cpu(object):
             pass
 
         code = text.ljust(self.max_instr_width, '\x00')
-        insn = self.disasm.get_insn(code, pc)
+        insn = self.disasm.disassemble_instruction(code, pc)
 
         #PC points to symbolic memory
         if insn.size > len(text):

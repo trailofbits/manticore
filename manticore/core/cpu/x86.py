@@ -3,9 +3,9 @@ import logging
 
 from functools import wraps
 
-from capstone import *
-from capstone.x86 import *
-import capstone
+#  from capstone import *
+#  from capstone.x86 import *
+import capstone as cs
 
 from .disasm import Capstone
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
@@ -55,7 +55,7 @@ def rep(old_method):
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         prefix = cpu.instruction.prefix
-        if (capstone.x86.X86_PREFIX_REP in prefix):
+        if (cs.x86.X86_PREFIX_REP in prefix):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
@@ -83,7 +83,7 @@ def repe(old_method):
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         prefix = cpu.instruction.prefix
-        if (capstone.x86.X86_PREFIX_REP in prefix) or (capstone.x86.X86_PREFIX_REPNE in prefix):
+        if (cs.x86.X86_PREFIX_REP in prefix) or (cs.x86.X86_PREFIX_REPNE in prefix):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
@@ -97,10 +97,10 @@ def repe(old_method):
                 count = cpu.write_register(counter_name, count-1)
 
                 #REPE
-                if capstone.x86.X86_PREFIX_REP in prefix:
+                if cs.x86.X86_PREFIX_REP in prefix:
                     FLAG = Operators.AND(cpu.ZF == True, count != 0) #true FLAG means loop
                 #REPNE
-                elif capstone.x86.X86_PREFIX_REPNE in prefix:
+                elif cs.x86.X86_PREFIX_REPNE in prefix:
                     FLAG = Operators.AND(cpu.ZF == False, count != 0) #true FLAG means loop
 
             #if issymbolic(FLAG):
@@ -604,9 +604,9 @@ class AMD64Operand(Operand):
 
     @property
     def type(self):
-        type_map = { capstone.x86.X86_OP_REG: 'register',
-                     capstone.x86.X86_OP_MEM: 'memory',
-                     capstone.x86.X86_OP_IMM: 'immediate'}
+        type_map = { cs.x86.X86_OP_REG: 'register',
+                     cs.x86.X86_OP_MEM: 'memory',
+                     cs.x86.X86_OP_IMM: 'immediate'}
 
         return type_map[self.op.type]
 
@@ -5641,7 +5641,7 @@ class X86Cpu(Cpu):
         cpu.YMM6 = cpu.YMM6 & 0xffffffffffffffffffffffffffffffff
         cpu.YMM7 = cpu.YMM7 & 0xffffffffffffffffffffffffffffffff
 
-        if cpu.mode == capstone.CS_MODE_64:
+        if cpu.mode == cs.CS_MODE_64:
             cpu.YMM8 = cpu.YMM8 & 0xffffffffffffffffffffffffffffffff
             cpu.YMM9 = cpu.YMM9 & 0xffffffffffffffffffffffffffffffff
             cpu.YMM10 = cpu.YMM10 & 0xffffffffffffffffffffffffffffffff
@@ -5758,8 +5758,8 @@ class AMD64Cpu(X86Cpu):
     max_instr_width = 15
     address_bit_size = 64
     machine = 'amd64'
-    arch = capstone.CS_ARCH_X86
-    mode = capstone.CS_MODE_64
+    arch = cs.CS_ARCH_X86
+    mode = cs.CS_MODE_64
     disasm = Capstone(arch, mode)
 
     def __init__(self, memory, *args, **kwargs):
@@ -5870,8 +5870,8 @@ class I386Cpu(X86Cpu):
     max_instr_width = 15
     address_bit_size = 32
     machine = 'i386'
-    arch = capstone.CS_ARCH_X86
-    mode = capstone.CS_MODE_32
+    arch = cs.CS_ARCH_X86
+    mode = cs.CS_MODE_32
     disasm = Capstone(arch, mode)
 
     def __init__(self, memory, *args, **kwargs):
