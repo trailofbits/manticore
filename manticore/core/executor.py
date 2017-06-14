@@ -332,6 +332,8 @@ class Executor(object):
         return self._getState(policy, order, fudge)
 
     def _getState(self, policy='random', order='max', fudge=1):
+        if not self._states.items():
+            return None
         assert order in ['max','min']
         assert abs(fudge)>0
         assert policy in ['random','adhoc','uncovered','dicount','icount','syscount','depth','bucket']
