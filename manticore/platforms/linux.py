@@ -1070,7 +1070,7 @@ class Linux(Platform):
                 logger.debug("WRITE: buf points to invalid address. Returning EFAULT")
                 return -errno.EFAULT
 
-            if fd > 2 and self.files[fd].is_full():
+            if fd > 2 and write_fd.is_full():
                 cpu.PC -= cpu.instruction.size
                 self.wait([], [fd], None)
                 raise RestartSyscall()
