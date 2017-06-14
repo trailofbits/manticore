@@ -1,14 +1,23 @@
 #!/bin/bash
+RV=0
+cd examples/linux
+if make; then
+    echo "Successfully built Linux examples"
+else
+    echo "Failed to build Linux examples"
+    RV=1
+fi
+cd ../..
+
 coverage erase
 coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
 DID_OK=$(tail -n1 travis_tests.log)
-RV=1
 if [[ "${DID_OK}" == OK* ]]
 then
     echo "All functionality tests passed :)"
-    RV=0
 else
     echo "Some functionality tests failed :("
+    RV=1
 fi
 
 measure_cov() {
