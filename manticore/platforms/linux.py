@@ -279,7 +279,6 @@ class Linux(Platform):
 
         self.program = program
         self.clocks = 0
-        # List of active file descriptors.
         self.files = []
         self.syscall_trace = []
 
@@ -1006,7 +1005,6 @@ class Linux(Platform):
 
         '''
         try:
-            # Read the data and put it in memory
             self._get_fd(fd).seek(offset)
         except BadFd:
             logger.info(("LSEEK: Not valid file descriptor on lseek."
