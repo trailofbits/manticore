@@ -257,7 +257,7 @@ class Socket(object):
     def sync(self):
         raise BadFd("Invalid sync() operation on Socket")
 
-    def seek(self):
+    def seek(self, *args):
         raise BadFd("Invalid lseek() operation on Socket")
 
 class Linux(Platform):
