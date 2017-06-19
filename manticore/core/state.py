@@ -73,7 +73,6 @@ class State(object):
         new_state = State(self.constraints.__enter__(), self.platform)
         new_state.visited = set(self.visited)
         new_state.forks = self.forks + 1
-        new_state.co = State.get_new_id()
         new_state.input_symbols = self.input_symbols
         new_state.branches = self.branches
         self._child = new_state
