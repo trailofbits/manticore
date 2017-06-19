@@ -7,7 +7,6 @@ import binascii
 import tempfile
 import functools
 
-from multiprocessing import Manager, Pool
 from multiprocessing import Process
 
 from threading import Timer
@@ -191,10 +190,6 @@ class Manticore(object):
         self._maxstorage = 0
         self._verbosity = 0
         self._symbolic_files = [] # list of string
-
-        manager = Manager()
-
-        self.context = manager.dict()
 
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
