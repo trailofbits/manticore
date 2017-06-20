@@ -215,10 +215,10 @@ class Manticore(object):
 
     @contextmanager
     def locked_context(self):
-        ''' Executor context is a shared memory object. All workers share this. 
+        ''' It refers to the manticore shared context 
             It needs a lock. Its used like this:
 
-            with executor.context() as context:
+            with m.context() as context:
                 vsited = context['visited']
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
