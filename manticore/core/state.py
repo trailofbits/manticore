@@ -45,12 +45,13 @@ class State(object):
         self.visited = set()
         self.branches = OrderedDict()
         self._child = None
+        self.context = dict()
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.platform),
                 {'visited': self.visited, 'last_pc': self.last_pc, 'forks': self.forks,
                  'co': self.co, 'input_symbols': self.input_symbols,
-                 'branches': self.branches})
+                 'branches': self.branches, 'context': self.context})
 
     @staticmethod
     def state_count():
@@ -76,6 +77,7 @@ class State(object):
         new_state.co = State.get_new_id()
         new_state.input_symbols = self.input_symbols
         new_state.branches = self.branches
+        new_state.context = self.context
         self._child = new_state
         return new_state
 
