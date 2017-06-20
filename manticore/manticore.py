@@ -20,10 +20,18 @@ from .core.state import State, AbandonState
 from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
-from .platforms import linux, decree, windows
+from .platforms import linux, decree, windows, binja
 from .utils.helpers import issymbolic
 
 logger = logging.getLogger('MANTICORE')
+
+def makeBinja(llil_file):
+    constraints = ConstraintSet()
+    logger.info('Loading binary ninja IL from %s', llil_file)
+    platform = binja.Binja(llil_file)
+    initial_state = State(constraints, platform)
+
+    return initial_state
 
 def makeDecree(args):
     constraints = ConstraintSet()
@@ -65,7 +73,7 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     #set stdin input...
     platform.input.write(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
-    return initial_state 
+    return initial_state
 
 
 def makeWindows(args):
@@ -89,7 +97,7 @@ def makeWindows(args):
     buf_str = "".join(platform.current.read_bytes(data_ptr, data_size))
     logger.debug('Original buffer: %s', buf_str.encode('hex'))
 
-    offset = args.offset 
+    offset = args.offset
     concrete_data = args.data.decode('hex')
     assert data_size >= offset + len(concrete_data)
     size = min(args.maxsymb, data_size - offset - len(concrete_data))
@@ -119,12 +127,15 @@ def binary_type(path):
     with open(path) as f:
         magic = f.read(4)
 
+    return 'BinaryNinja'
     if magic == '\x7fELF':
         return 'ELF'
     elif magic == 'MDMP':
         return 'PE'
     elif magic == '\x7fCGC':
         return 'DECREE'
+    elif magic == 'BNJA':
+        return 'BinaryNinja'
     else:
         raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
 
@@ -182,7 +193,7 @@ class Manticore(object):
 
         self._init_logging()
 
-    def _init_logging(self): 
+    def _init_logging(self):
 
         def loggerSetState(logger, stateid):
             logger.filters[0].stateid = stateid
@@ -205,7 +216,7 @@ class Manticore(object):
         for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
             logging.getLogger(loggername).addFilter(ctxfilter)
             logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
-        
+
         logging.getLogger('SMT').setLevel(logging.INFO)
         logging.getLogger('MEMORY').setLevel(logging.INFO)
         logging.getLogger('LIBC').setLevel(logging.INFO)
@@ -354,11 +365,14 @@ class Manticore(object):
         elif self._binary_type == 'DECREE':
             # Decree
             state = makeDecree(self._args)
+        elif self._binary_type == 'BinaryNinja':
+            # Binary Ninja
+            state = makeBinja(self._binary)
         else:
             raise NotImplementedError("Binary {} not supported.".format(path))
 
         return state
-        
+
     @property
     def workspace(self):
         if self._workspace_path is None:
@@ -445,7 +459,7 @@ class Manticore(object):
         else: raise "Unsupported architecture: %s"%(arch, )
 
         return self._arch
-        
+
 
     def _start_workers(self, num_processes):
         assert num_processes > 0, "Must have more than 0 worker processes"
@@ -537,14 +551,14 @@ class Manticore(object):
         state = self._make_state(self._binary)
 
         self._executor = Executor(state,
-                                  workspace=self.workspace, 
-                                  policy=self._policy, 
-                                  dumpafter=self.dumpafter, 
+                                  workspace=self.workspace,
+                                  policy=self._policy,
+                                  dumpafter=self.dumpafter,
                                   maxstates=self.maxstates,
                                   maxstorage=self.maxstorage,
                                   replay=replay,
                                   dumpstats=self.should_profile)
-        
+
 
         if self._hooks:
             self._executor.will_execute_pc += self._hook_callback
@@ -624,7 +638,7 @@ class Manticore(object):
                 fmt = "0x{:016x}\n"
                 for m in self._executor.visited:
                     f.write(fmt.format(m[1]))
-                    
+
         if self.memory_errors_file is not None:
             with open(self._args.errorfile, "w") as f:
                 fmt = "0x{:016x}\n"

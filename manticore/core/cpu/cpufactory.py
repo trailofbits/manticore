@@ -1,11 +1,13 @@
 from .x86 import AMD64Cpu, I386Cpu, AMD64LinuxSyscallAbi, I386LinuxSyscallAbi, I386CdeclAbi, SystemVAbi
 from .arm import Armv7Cpu, Armv7CdeclAbi, Armv7LinuxSyscallAbi
+from .binja import BinjaCpu, Armv7CdeclAbi
 
 class CpuFactory(object):
     _cpus = {
         'i386': I386Cpu,
         'amd64': AMD64Cpu,
-        'armv7': Armv7Cpu
+        'armv7': Armv7Cpu,
+        'binja_il': BinjaCpu,
     }
 
     @staticmethod

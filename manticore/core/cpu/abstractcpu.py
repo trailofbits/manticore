@@ -12,7 +12,7 @@ from abc import abstractmethod
 from functools import wraps
 from itertools import islice, imap
 
-import capstone
+import capstone as cs
 
 from ..smtlib import BitVec, Operators, Constant
 from ..memory import MemoryException
@@ -57,7 +57,7 @@ class Operand(object):
         '''
         assert isinstance(cpu, Cpu)
         # Check against the list of supported operands
-        assert isinstance(op, (capstone.x86.X86Op, capstone.arm.ArmOp))
+        assert isinstance(op, (cs.x86.X86Op, cs.arm.ArmOp))
         self.cpu = cpu
         self.op = op
         self.mem = Operand.MemSpec(self)

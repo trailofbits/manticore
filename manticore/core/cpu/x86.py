@@ -684,7 +684,7 @@ class X86Cpu(Cpu):
         :param memory: memory object for this CPU.
         '''
         super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
-        #Segments              ('base', 'limit', 'perms', 'gatetype')
+        #Segments ('base', 'limit', 'perms', 'gatetype')
         self._segments = {}
 
     def __getstate__(self):
