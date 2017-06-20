@@ -11,6 +11,7 @@ cache:
   - $HOME/unicorn
 dist: trusty
 sudo: required
+group: edge
 os:
 - linux
 python:
