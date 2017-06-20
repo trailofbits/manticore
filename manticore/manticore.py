@@ -6,8 +6,8 @@ import logging
 import binascii
 import tempfile
 import functools
-
 from multiprocessing import Process
+from contextlib import contextmanager
 
 from threading import Timer
 
@@ -190,6 +190,11 @@ class Manticore(object):
         self._maxstorage = 0
         self._verbosity = 0
         self._symbolic_files = [] # list of string
+        self._executor = None
+        #Executor wide shared context
+        self._context = {}
+
+
 
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
@@ -198,6 +203,31 @@ class Manticore(object):
 
         self._init_logging()
 
+    @property
+    def context(self):
+        ''' Convenient access to shared context '''
+        if self._executor is None:
+            return self._context
+        else:
+            logger.warning("Using shared context without a lock")
+            return self._executor._shared_context
+        
+
+    @contextmanager
+    def locked_context(self):
+        ''' Executor context is a shared memory object. All workers share this. 
+            It needs a lock. Its used like this:
+
+            with executor.context() as context:
+                vsited = context['visited']
+                visited.append(state.cpu.PC)
+                context['visited'] = visited
+        '''
+        if self._executor is None:
+            yield self._context
+        else:
+            with self._executor.locked_context() as context:
+                yield context
 
     def _init_logging(self): 
 
@@ -555,7 +585,7 @@ class Manticore(object):
         logger.debug("Terminate state %r %r ", state, state_id)
         state_visited = state.context.get('visited_since_last_fork', set())
         state_instructions_count = state.context.get('instructions_count', 0)
-        with self._executor.locked_context() as executor_context:
+        with self.locked_context() as executor_context:
             executor_visited = executor_context.get('visited', set())
             executor_context['visited'] = executor_visited.union(state_visited)
 
@@ -564,7 +594,7 @@ class Manticore(object):
 
     def _fork_state_callback(self, state, expression, values, policy):
         state_visited = state.context.get('visited_since_last_fork', set())
-        with self._executor.locked_context() as executor_context:
+        with self.locked_context() as executor_context:
             executor_visited = executor_context.get('visited', set())
             executor_context['visited'] = executor_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
@@ -754,7 +784,8 @@ class Manticore(object):
                                   maxstates=self.maxstates,
                                   maxstorage=self.maxstorage,
                                   replay=replay,
-                                  dumpstats=self.should_profile)
+                                  dumpstats=self.should_profile,
+                                  context=self.context)
         
 
 
@@ -832,16 +863,14 @@ class Manticore(object):
             return results
 
 
-
+        #Copy back the shared conext
+        self._context = dict(self._executor._shared_context)
+        self._executor = None
 
         self._dump_stats_callback()
 
         logger.info('Results dumped in %s', self.workspace)
-        #logger.info('Instructions executed: %d', self._executor.count)
-        #logger.info('Coverage: %d different instructions executed', len(self._executor.visited))
-        #logger.info('Number of paths covered %r', State.state_count())
         logger.info('Total time: %s', time.time()-self._time_started)
-        #logger.info('IPS: %d', self._executor.count/(time.time()-self._time_started))
 
     def terminate(self):
         '''

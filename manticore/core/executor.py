@@ -79,7 +79,7 @@ class Executor(object):
     It handles all exceptional conditions (system calls, memory faults, concretization, etc.)
     '''
 
-    def __init__(self, initial=None, workspace=None, policy='random', **options):
+    def __init__(self, initial=None, workspace=None, policy='random', context=None, **options):
         assert os.path.isdir(workspace), 'Workspace must be a directory'
         self.workspace = workspace
         logger.debug("Workspace set: %s", self.workspace)
@@ -95,8 +95,6 @@ class Executor(object):
         self.will_load_state = Signal()
         self.will_terminate_state = Signal()
         self.will_generate_testcase = Signal()
-        #forward signals from initial state so they are declared here
-        forward_signals(self, initial, True)
 
 
         #Be sure every state will forward us their signals
@@ -121,14 +119,22 @@ class Executor(object):
         self._state_count = manager.Value('i', 0 )
 
         #Executor wide shared context
-        self._shared_context = manager.dict()
+        if context is None:
+            context = {}
+        self._shared_context = manager.dict(context)
     
         #scheduling priority policy (wip)
         self.policy = Random()
 
-        if not self._load_workspace():
-            state_id = self.store(initial)
-            self._states.append(state_id)
+        if self.load_workspace():
+            if initial is not None:
+                logger.error("Ignoring initial state")
+        else:
+            if initial is not None:
+                self.add(initial)
+                ##FIXME PUBSUB  We need to forward signals here so they get declared
+                ##forward signals from initial state so they are declared here
+                forward_signals(self, initial, True)
 
     @contextmanager
     def locked_context(self):
@@ -143,6 +149,8 @@ class Executor(object):
         with self._lock:
             yield self._shared_context
 
+
+
     def _register_state_callbacks(self, state, state_id):
         '''
             Install forwarding callbacks in state so the events can go up. 
@@ -151,7 +159,19 @@ class Executor(object):
         #Forward all state signals
         forward_signals(self, state, True)
 
-    def _load_workspace(self):
+    def add(self, state):
+        '''
+            Enqueue state.
+            Save state on storage, assigns an id to it, then add it to the 
+            priority queue
+        '''
+        #save the state to secondary storage
+        state_id = self.store(state)
+        #add the state to the list of pending states
+        self.put(state_id)
+        return state_id
+
+    def load_workspace(self):
         #Browse and load states in a workspace in case we are trying to 
         # continue from paused run
         saved_states = []
@@ -397,11 +417,9 @@ class Executor(object):
                 new_state.constrain(expression == new_value) #We already know it's sat
                 #and set the PC of the new state to the concrete pc-dest
                 #(or other register or memory address to concrete)
-                setstate(new_state, new_value) 
-                #save the state to secondary storage
-                state_id = self.store(new_state)
-                #add the state to the list of pending states
-                self.put(state_id)
+                setstate(new_state, new_value)
+                #enqueue new_state 
+                state_id = self.add(new_state)
                 #maintain a list of childres for logging purpose
                 children.append(state_id)
         
