@@ -80,7 +80,7 @@ class ProfilingResults(object):
         self.saving_time = 0
         self.solver_time = 0
         for (func_file, _, func_name), (_, _, _, func_time, _) in raw_stats.stats.iteritems():
-            if func_name == '_getState':
+            if func_name == '_get_state':
                 self.loading_time += func_time
             elif func_name == '_putState':
                 self.saving_time += func_time
@@ -320,7 +320,7 @@ class Executor(object):
         return len(self._states)
 
     @sync
-    def getState(self, policy='random', order='max', fudge=1):
+    def get_state(self, policy='random', order='max', fudge=1):
         '''
         Load a stored state according to policy and order.
 
@@ -329,9 +329,9 @@ class Executor(object):
         :param fudge: Whether to skip any
         :return: a State instance
         '''
-        return self._getState(policy, order, fudge)
+        return self._get_state(policy, order, fudge)
 
-    def _getState(self, policy='random', order='max', fudge=1):
+    def _get_state(self, policy='random', order='max', fudge=1):
         if not self._states.items():
             return None
         assert order in ['max','min']
@@ -661,7 +661,7 @@ class Executor(object):
                     self._stopRun()
 
                     with self._lock:
-                        current_state = self._getState(policy=policy, order=policy_order)
+                        current_state = self._get_state(policy=policy, order=policy_order)
                         assert current_state is None or current_state.constraints._child is None
                         self._running.value+=1
 
