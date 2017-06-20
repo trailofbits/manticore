@@ -580,23 +580,22 @@ class Manticore(object):
 
     def _terminate_state_callback(self, state, state_id, ex):
         logger.info("Terminate_state_callback for %d", state_id)
-        executor = self._executor
         #aggregates state statistics into exceutor statistics. FIXME split
         logger.debug("Terminate state %r %r ", state, state_id)
         state_visited = state.context.get('visited_since_last_fork', set())
         state_instructions_count = state.context.get('instructions_count', 0)
-        with self.locked_context() as executor_context:
-            executor_visited = executor_context.get('visited', set())
-            executor_context['visited'] = executor_visited.union(state_visited)
+        with self.locked_context() as manticore_context:
+            manticore_visited = manticore_context.get('visited', set())
+            manticore_context['visited'] = manticore_visited.union(state_visited)
 
-            executor_instructions_count = executor_context.get('instructions_count', 0)
-            executor_context['instructions_count'] = executor_instructions_count + state_instructions_count 
+            manticore_instructions_count = manticore_context.get('instructions_count', 0)
+            manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count 
 
     def _fork_state_callback(self, state, expression, values, policy):
         state_visited = state.context.get('visited_since_last_fork', set())
-        with self.locked_context() as executor_context:
-            executor_visited = executor_context.get('visited', set())
-            executor_context['visited'] = executor_visited.union(state_visited)
+        with self.locked_context() as manticore_context:
+            manticore_visited = manticore_context.get('visited', set())
+            manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
         logger.debug("About to store state %r %r %r", state, expression, values, policy)
@@ -723,7 +722,7 @@ class Manticore(object):
 
 
     def _dump_stats_callback(self):
-        _shared_context = self._executor._shared_context
+        _shared_context = self.context
         executor_visited = _shared_context.get('visited', set())
 
         #Fixme this is duplicated?
