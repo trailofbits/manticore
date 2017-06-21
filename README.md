@@ -35,11 +35,10 @@ sudo apt-get update && sudo apt-get install z3 python-pip -y
 python -m pip install -U pip
 
 # Install manticore and its dependencies
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-sudo pip install .
+sudo pip install manticore
 
-# Build the examples
-cd examples/linux
+# Download and build the examples
+git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
 make
 
 # Use the Manticore CLI
