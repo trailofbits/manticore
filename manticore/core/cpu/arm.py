@@ -31,11 +31,17 @@ def instruction(body):
 
         should_execute = cpu.shouldExecuteConditional()
 
-        if issymbolic(should_execute):
-            i_size = cpu.address_bit_size / 8
-            cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC-i_size,
-                    cpu.PC)
-            return
+        if cpu._at_symbolic_conditional:
+            cpu._at_symbolic_conditional = False
+            should_execute = True
+        else:
+            if issymbolic(should_execute):
+                # Let's remember next time we get here we should not do this again
+                cpu._at_symbolic_conditional = True
+                i_size = cpu.address_bit_size / 8
+                cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC-i_size,
+                        cpu.PC)
+                return
 
         if should_execute:
             ret = body(cpu, *args, **kwargs)
@@ -307,18 +313,18 @@ class Armv7Cpu(Cpu):
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
-        self._force_next = False
+        self._at_symbolic_conditional = True
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()
         state['_last_flags'] = self._last_flags
-        state['_force_next'] = self._force_next
+        state['at_symbolic_conditional'] = self._at_symbolic_conditional
         return state
 
     def __setstate__(self, state):
         super(Armv7Cpu, self).__setstate__(state)
         self._last_flags = state['_last_flags']
-        self._force_next = state['_force_next']
+        self._at_symbolic_conditional = state['at_symbolic_conditional'] 
 
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
@@ -435,16 +441,9 @@ class Armv7Cpu(Cpu):
     def shouldCommitFlags(cpu):
         return cpu.instruction.update_flags
 
-    def forceNextInstruction(cpu):
-        cpu._force_next = True
-
     def shouldExecuteConditional(cpu):
         cc = cpu.instruction.cc
         ret = False
-
-        if cpu._force_next:
-            cpu._force_next = False
-            return True
 
         C = cpu.regfile.read('APSR_C')
         N = cpu.regfile.read('APSR_N')
