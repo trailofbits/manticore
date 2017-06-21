@@ -1,3 +1,9 @@
+from .abstractcpu import (
+    Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
+    Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
+)
+
+from binaryninja import LowLevelILOperation as Op
 
 class BinjaRegisterFile(RegisterFile):
     def __init__(self):
@@ -7,6 +13,32 @@ class BinjaRegisterFile(RegisterFile):
         '''
         super(BinjaRegisterFile, self).__init__({})
         self._regs = {}
+
+class BinjaOperand(Operand):
+    def __init__(self, cpu, op, **kwargs):
+        super(BinjaOperand, self).__init__(cpu, op, **kwargs)
+
+    @property
+    def type(self):
+        type_map = {
+            Op.LLIL_REG: 'register',
+            Op.LLIL_CONST_PTR: 'memory',
+            Op.LLIL_CONST: 'immediate'
+        }
+
+        return type_map[self.op.type]
+
+    @property
+    def size(self):
+        assert self.type == 'register'
+        # FIXME (theo)
+        return 64
+
+    def read(self, nbits=None, withCarry=False):
+        pass
+
+    def write(self, value, nbits=None):
+        pass
 
 class BinjaCpu(Cpu):
     '''
@@ -37,6 +69,9 @@ class BinjaCpu(Cpu):
         self._segments = state['segments']
         super(BinjaCpu, self).__setstate__(state)
 
+    def canonicalize_instruction_name(self, instruction):
+        print("Canonicalizing instruction " + str(instruction))
+        return "ADD"
 
     @instruction
     def ADC(cpu):
@@ -61,18 +96,6 @@ class BinjaCpu(Cpu):
         pass
     @instruction
     def CALL(cpu):
-        pass
-    @instruction
-    def CALL_OUTPUT_SSA(cpu):
-        pass
-    @instruction
-    def CALL_PARAM_SSA(cpu):
-        pass
-    @instruction
-    def CALL_SSA(cpu):
-        pass
-    @instruction
-    def CALL_STACK_SSA(cpu):
         pass
     @instruction
     def CMP_E(cpu):
@@ -129,16 +152,7 @@ class BinjaCpu(Cpu):
     def FLAG_BIT(cpu):
         pass
     @instruction
-    def FLAG_BIT_SSA(cpu):
-        pass
-    @instruction
     def FLAG_COND(cpu):
-        pass
-    @instruction
-    def FLAG_PHI(cpu):
-        pass
-    @instruction
-    def FLAG_SSA(cpu):
         pass
     @instruction
     def GOTO(cpu):
@@ -156,9 +170,6 @@ class BinjaCpu(Cpu):
     def LOAD(cpu):
         pass
     @instruction
-    def LOAD_SSA(cpu):
-        pass
-    @instruction
     def LOW_PART(cpu):
         pass
     @instruction
@@ -166,9 +177,6 @@ class BinjaCpu(Cpu):
         pass
     @instruction
     def LSR(cpu):
-        pass
-    @instruction
-    def MEM_PHI(cpu):
         pass
     @instruction
     def MODS(cpu):
@@ -216,18 +224,6 @@ class BinjaCpu(Cpu):
     def REG(cpu):
         pass
     @instruction
-    def REG_PHI(cpu):
-        pass
-    @instruction
-    def REG_SPLIT_DEST_SSA(cpu):
-        pass
-    @instruction
-    def REG_SSA(cpu):
-        pass
-    @instruction
-    def REG_SSA_PARTIAL(cpu):
-        pass
-    @instruction
     def RET(cpu):
         pass
     @instruction
@@ -249,28 +245,13 @@ class BinjaCpu(Cpu):
     def SET_FLAG(cpu):
         pass
     @instruction
-    def SET_FLAG_SSA(cpu):
-        pass
-    @instruction
     def SET_REG(cpu):
         pass
     @instruction
     def SET_REG_SPLIT(cpu):
         pass
     @instruction
-    def SET_REG_SPLIT_SSA(cpu):
-        pass
-    @instruction
-    def SET_REG_SSA(cpu):
-        pass
-    @instruction
-    def SET_REG_SSA_PARTIAL(cpu):
-        pass
-    @instruction
     def STORE(cpu):
-        pass
-    @instruction
-    def STORE_SSA(cpu):
         pass
     @instruction
     def SUB(cpu):
@@ -280,9 +261,6 @@ class BinjaCpu(Cpu):
         pass
     @instruction
     def SYSCALL(cpu):
-        pass
-    @instruction
-    def SYSCALL_SSA(cpu):
         pass
     @instruction
     def TEST_BIT(cpu):
