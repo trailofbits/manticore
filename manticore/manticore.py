@@ -271,8 +271,8 @@ class Manticore(object):
     @verbosity.setter
     def verbosity(self, setting):
         levels = [[],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG)],
-                  [('PLATFORM', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
+                  [('PLATFORM', logging.DEBUG), ('EXECUTOR', logging.DEBUG)],
                   [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
                   [('REGISTERS', logging.DEBUG)],
                   [('SMT', logging.DEBUG)]]
