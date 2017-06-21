@@ -142,6 +142,7 @@ class State(object):
         #Remove when code gets stable?
         assert self.platform.constraints is self.constraints
         assert self.mem.constraints is self.constraints
+        return result
 
     def constrain(self, constraint):
         '''Constrain state.
