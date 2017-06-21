@@ -35,8 +35,7 @@ sudo apt-get update && sudo apt-get install z3 python-pip -y
 python -m pip install -U pip
 
 # Install manticore and its dependencies
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-sudo pip install .
+sudo pip install manticore
 
 # Build the examples
 cd examples/linux
@@ -61,8 +60,7 @@ Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 ```
 echo "PATH=\$PATH:~/.local/bin" >> ~/.profile
 source ~/.profile
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-pip install --user .
+pip install --user manticore
 ```
 
 Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) or [similar](https://virtualenv.pypa.io/en/stable/)).
@@ -71,16 +69,14 @@ Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtua
 pip install virtualenvwrapper
 echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
 source ~/.profile
-git clone https://github.com/trailofbits/manticore.git && cd manticore
 mkvirtualenv manticore
-pip install .
+pip install manticore
 ```
 
 Option 3: Perform a system install.
 
 ```
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-sudo pip install .
+sudo pip install manticore
 ```
 
 Once installed, the `manticore` CLI tool and its Python API will be available.
@@ -90,6 +86,7 @@ Once installed, the `manticore` CLI tool and its Python API will be available.
 For a dev install that includes dependencies for tests, run:
 
 ```
+git clone https://github.com/trailofbits/manticore.git && cd manticore
 pip install --no-binary keystone-engine -e .[dev]
 ```
 
