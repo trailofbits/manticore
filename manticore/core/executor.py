@@ -98,7 +98,7 @@ class ProfilingResults(object):
 
 class Executor(object):
     '''
-    The executor guides the execution of a single state, handles state forking 
+    The executor guides the execution of a single state, handles state forking
     and selection, maintains run statistics and handles all exceptional
     conditions (system calls, memory faults, concretization, etc.)
     '''
@@ -159,7 +159,7 @@ class Executor(object):
             except:
                 logger.info("Failed to load saved state %s", filename)
         self._test_number.value = len(saved_states) #conservative estimate
-        
+
         #Normally...
         if len(saved_states) == 0 :
             self.putState( initial )
@@ -189,16 +189,16 @@ class Executor(object):
         if ps is None:
             logger.info("Profiling failed")
         else:
-            filename = self._getFilename('profiling.bin') 
+            filename = self._getFilename('profiling.bin')
             logger.info("Dumping profiling info at %s", filename)
             ps.dump_stats(filename)
-            
-            '''(For each function called in the python program) - 
-                How long each call took (percall, inclusive and exclusive) - 
-                How many times it was called (ncalls) - 
-                How long it took (cumtime: includes the times of other functions it calls) - 
-                How long it actually took (tottime: excludes the times of other functions) - 
-                What functions it called (callers) - 
+
+            '''(For each function called in the python program) -
+                How long each call took (percall, inclusive and exclusive) -
+                How many times it was called (ncalls) -
+                How long it took (cumtime: includes the times of other functions it calls) -
+                How long it actually took (tottime: excludes the times of other functions) -
+                What functions it called (callers) -
                 What functions called it (callees)'''
             results = ProfilingResults(ps, self.count)
 
@@ -218,11 +218,11 @@ class Executor(object):
 
     @property
     def visited(self):
-        return self._visited 
+        return self._visited
 
     @property
     def errors(self):
-        return self._errors 
+        return self._errors
 
     @property
     def dump_every(self):
@@ -259,7 +259,7 @@ class Executor(object):
             try:
                 f.write(cPickle.dumps(state, 2))
             except RuntimeError:
-                # there recursion limit exceeded problem, 
+                # there recursion limit exceeded problem,
                 # try a slower, iterative solution
                 from ..utils import iterpickle
                 logger.warning("Using iterpickle to dump state")
@@ -268,7 +268,7 @@ class Executor(object):
             filesize = f.tell()
             f.flush()
 
-        #Calculate some statistics so we can choose which state to analyze 
+        #Calculate some statistics so we can choose which state to analyze
         # without loading the file later.
         receive_size = 0
         transmit_size = 0
@@ -370,8 +370,8 @@ class Executor(object):
             return stat['forks']
 
         def _adhoc(stat):
-            return  ( (stat['proc'], stat['pc']) not in self._visited, 
-                      stat['received']   < 25, 
+            return  ( (stat['proc'], stat['pc']) not in self._visited,
+                      stat['received']   < 25,
                       stat['transmited'] < 25,
                       float(stat['received'])/(stat['transmited']+1),
                       float(stat['dicount'])/(stat['icount']+1)
@@ -421,7 +421,7 @@ class Executor(object):
         self._delState(new_state)
         logger.debug("Selected state: %s (%r)", new_state.co, metric(st_x))
 
-        return new_state 
+        return new_state
 
     def generate_testcase(self, state, message = 'Testcase generated'):
         '''
@@ -445,7 +445,7 @@ class Executor(object):
             try:
                 f.write(cPickle.dumps(state, 2))
             except RuntimeError:
-                # there recursion limit exceeded problem, 
+                # there recursion limit exceeded problem,
                 # try a slower, iterative solution
                 from ..utils import iterpickle
                 logger.info("WARNING: using iterpickle to dump state")
@@ -492,12 +492,12 @@ class Executor(object):
         smtfile = 'test_{:08x}.smt'.format(test_number)
         with open(self._getFilename(smtfile), 'wb') as f:
             f.write(str(state.constraints))
-        
+
         assert solver.check(state.constraints)
         for symbol in state.input_symbols:
             buf = solver.get_value(state.constraints, symbol)
             open(self._getFilename('test_{:08x}.txt'.format(test_number)),'a').write("{:s}: {:s}\n".format(symbol.name, repr(buf)))
-        
+
         open(self._getFilename('test_{:08x}.syscalls'.format(test_number)),'a').write(repr(state.platform.syscall_trace))
 
         # save symbolic files
@@ -546,7 +546,7 @@ class Executor(object):
     def fork(self, current_state, symbolic, vals, setstate=None):
         '''
         Fork current_state into len(vals) states.
-        Assert in each fork that symbolic == val[x] and set the state   
+        Assert in each fork that symbolic == val[x] and set the state
         Yeah I know.
         '''
         self.will_fork(current_state, symbolic, vals)
@@ -564,18 +564,18 @@ class Executor(object):
                         #There is still some room keep a few of the values
                         remaining = self.max_states - N
                         assert remaining > 0
-                        vals = random.sample(vals, min(remaining, len(vals)) ) 
+                        vals = random.sample(vals, min(remaining, len(vals)) )
                     else:
                         #No room really so keep only one (Which will replace the current state)
-                        vals = random.sample(vals, 1) 
-                    logger.debug("Sampled possible values are: %s", ["0x%016x"%x for x in vals])                        
+                        vals = random.sample(vals, 1)
+                    logger.debug("Sampled possible values are: %s", ["0x%016x"%x for x in vals])
 
             #Check if we are using too much storage
             if self.max_storage != 0:
                 total_used_storage = self.getTotalUsedStorage()
                 if total_used_storage > self.max_storage:
                     #inhibit forking
-                    vals = random.sample(vals, 1) 
+                    vals = random.sample(vals, 1)
                     logger.info("Too much storage used(%d). Inhibiting fork", total_used_storage)
 
         children = []
@@ -584,7 +584,7 @@ class Executor(object):
             setstate(current_state, vals[0])
             #current_state._try_simplify()
         else:
-            #Shuffle the possibilities, 
+            #Shuffle the possibilities,
             random.shuffle(vals)
             #this will save all the states to files
             parent = current_state.co
@@ -594,7 +594,7 @@ class Executor(object):
                     new_state.constrain(symbolic == new_value)
                     #and set the PC of the new state to the concrete pc-dest
                     #(or other register or memory address to concrete)
-                    setstate(new_state, new_value) 
+                    setstate(new_state, new_value)
                     #add the state to the list of pending states
                     self.putState(new_state)
                     children.append(new_state.co)
@@ -635,8 +635,8 @@ class Executor(object):
         if self.profiling:
             self._profile.enable()
 
-        policy_order=self.policy_order
-        policy=self.policy
+        policy_order = self.policy_order
+        policy = self.policy
 
         count = 0
         current_state = None
@@ -678,7 +678,7 @@ class Executor(object):
                     if current_state:
                         assert solver.check(current_state.constraints)
 
-                    #execute until exception or finish or max consecutive instructions without exception 
+                    #execute until exception or finish or max consecutive instructions without exception
                     max_iters = self.dump_every + count
 
                     # allow us to terminate manticore processes
@@ -739,7 +739,7 @@ class Executor(object):
                         msg = "SolverException: {}\n".format(se.message)
                         if e.reg_name.upper() in ['EIP', 'RIP', 'PC']:
                             #Detect dangling EIP
-                            msg += "Solver Exception: Dangling PC: {}".format(e.reg_name) 
+                            msg += "Solver Exception: Dangling PC: {}".format(e.reg_name)
                         else:
                             msg += "Solver Exception: highly symbolic register {}. Try policy=SAMPLED instead of ALL?".format(e.reg_name)
 
@@ -795,7 +795,7 @@ class Executor(object):
                     current_state = None
 
                 except InvalidPCException as e:
-                    self.generate_testcase(current_state, "Invalid PC Exception" + str(e))
+                    self.generate_testcase(current_state, "Invalid PC Exception " + str(e))
                     current_state = None
 
                 except ProcessExit:
@@ -847,7 +847,7 @@ class Executor(object):
                 trace = traceback.format_exc()
                 logger.error("Exception: %s\n%s", str(e), trace)
                 for log in trace.splitlines():
-                    logger.error(log) 
+                    logger.error(log)
                 current_state = None
 
         with DelayedKeyboardInterrupt():

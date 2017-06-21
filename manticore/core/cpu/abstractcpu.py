@@ -571,7 +571,7 @@ class Cpu(object):
         if issymbolic(pc):
             raise SymbolicPCException()
 
-        if not self.memory.access_ok(pc,'x'):
+        if not self.memory.access_ok(pc, 'x'):
             raise InvalidPCException(pc)
 
         #Check if instruction was already decoded

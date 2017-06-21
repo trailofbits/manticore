@@ -548,7 +548,8 @@ class Manticore(object):
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
-        state = self._make_state(self._binary)
+        #  state = self._make_state(self._binary)
+        state = makeBinja(self._binary)
 
         self._executor = Executor(state,
                                   workspace=self.workspace,

@@ -3,6 +3,7 @@ from .abstractcpu import (
     Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
 )
 
+from .x86 import AMD64RegFile
 from binaryninja import LowLevelILOperation as Op
 
 class BinjaRegisterFile(RegisterFile):
@@ -44,21 +45,32 @@ class BinjaCpu(Cpu):
     '''
     A Virtual CPU model for Binary Ninja's IL
     '''
+    # FIXME (theo) copying settings from AMD64
+    # We want this to be dynamic so we should be loading this info directly
+    # from binary ninja's view (probably setting them to None then setting
+    # them inside the Platform?)
+    max_instr_width = 15
+    address_bit_size = 64
+    machine = 'binja_il'
+
+    arch = None
+    mode = None
+    disasm = None
+
     def __init__(self, memory):
         '''
         Builds a CPU model.
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
         '''
-        super(BinjaCpu, self).__init__(memory)
+        # FIXME (theo) automatically fetch appropriate AMD64RegFile from binary
+        # ninja (through a thin translation layer?)
+        super(BinjaCpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP',
+                                                             'STACK': 'RSP',
+                                                             'FRAME': 'RBP'}),
+                                       memory)
         # Binja segments
         self._segments = {}
-        for segment in self.cpu.bv.segments:
-            self.mem.map(segment.start,
-                         segment.length,
-                         segment.flags,
-                         self.cpu.bv.read(segment.start, segment.length))
-
 
     def __getstate__(self):
         state = super(BinjaCpu, self).__getstate__()
@@ -69,16 +81,19 @@ class BinjaCpu(Cpu):
         self._segments = state['segments']
         super(BinjaCpu, self).__setstate__(state)
 
-    def canonicalize_instruction_name(self, instruction):
-        print("Canonicalizing instruction " + str(instruction))
+    def canonicalize_instruction_name(self, insn):
+        print("Canonicalizing instruction " + str(insn))
         return "ADD"
 
     @instruction
     def ADC(cpu):
         pass
+
     @instruction
     def ADD(cpu):
-        pass
+        print("ADD was called!")
+        raise SystemExit("That's all folks!")
+
     @instruction
     def ADD_OVERFLOW(cpu):
         pass

@@ -121,3 +121,17 @@ class Capstone(Disasm):
         :param pc: program counter
         """
         return next(self.disasm.disasm(code, pc))
+
+class Binja(Disasm):
+
+    def __init__(self, view):
+        self.bv = view
+        super(Binja, self).__init__(view)
+
+    def disassemble_instruction(self, code, pc):
+        """Get next instruction based on Capstone disassembler
+
+        :param code: disassembled code
+        :param pc: program counter
+        """
+        self.bv.get_disassembly(pc)
