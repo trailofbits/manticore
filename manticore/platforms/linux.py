@@ -277,7 +277,7 @@ class Linux(Platform):
         :type files: list[Socket] or list[File]
         '''
         super(Linux, self).__init__(program)
-        
+
         self.program = program
         self.clocks = 0
         self.files = []
@@ -1005,8 +1005,7 @@ class Linux(Platform):
         :return: 0 (Success), or EBADF (fd is not a valid file descriptor or is not open)
 
         '''
-        addressbitsize = {'i386':32, 'x86_64':64, 'armv71': 32}[self._uname_machine]
-        if addressbitsize == 32:
+        if self.current.address_bit_size == 32:
             signed_offset = ctypes.c_int32(offset).value
         else:
             signed_offset = ctypes.c_int64(offset).value
@@ -2042,7 +2041,7 @@ class SLinux(Linux):
                 "Symbolic files should be readable?")
             f = SymbolicFile(self.constraints, filename, mode)
         else:
-            f = File(filename, mode) # TODO (theo) modes, flags
+            f = super(SLinux, self)._sys_open_get_file(filename, flags, mode)
 
         return f
 
