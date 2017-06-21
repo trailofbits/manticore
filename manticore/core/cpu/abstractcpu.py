@@ -7,7 +7,6 @@ import inspect
 import logging
 import StringIO
 
-from .disasm import Capstone
 from abc import abstractmethod
 from functools import wraps
 from itertools import islice, imap
@@ -600,7 +599,7 @@ class Cpu(object):
         code = text.ljust(self.max_instr_width, '\x00')
         insn = self.disasm.disassemble_instruction(code, pc)
 
-        #PC points to symbolic memory
+        # PC points to symbolic memory
         if insn.size > len(text):
             logger.info("Trying to execute instructions from invalid memory")
             raise InvalidPCException(pc)

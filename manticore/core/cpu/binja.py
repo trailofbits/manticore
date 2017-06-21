@@ -81,9 +81,10 @@ class BinjaCpu(Cpu):
         self._segments = state['segments']
         super(BinjaCpu, self).__setstate__(state)
 
+    # FIXME (theo) that should no longer be necessary once we move everything
+    # to using manticore Instruction()
     def canonicalize_instruction_name(self, insn):
-        print("Canonicalizing instruction " + str(insn))
-        return "ADD"
+        return insn.name
 
     @instruction
     def ADC(cpu):
@@ -91,8 +92,7 @@ class BinjaCpu(Cpu):
 
     @instruction
     def ADD(cpu):
-        print("ADD was called!")
-        raise SystemExit("That's all folks!")
+        pass
 
     @instruction
     def ADD_OVERFLOW(cpu):
@@ -259,9 +259,11 @@ class BinjaCpu(Cpu):
     @instruction
     def SET_FLAG(cpu):
         pass
+
     @instruction
-    def SET_REG(cpu):
-        pass
+    def SET_REG(cpu, dest, src):
+        raise SystemExit("That's all folks!")
+
     @instruction
     def SET_REG_SPLIT(cpu):
         pass

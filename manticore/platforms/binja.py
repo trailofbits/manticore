@@ -1,11 +1,23 @@
+import logging
 import binaryninja as bn
 
 from ..core.cpu.binja import BinjaCpu
 from ..core.cpu.cpufactory import CpuFactory
-from ..core.cpu.disasm import Binja as BinjaDisasm
+from ..core.cpu.disasm import BinjaILDisasm
 from ..core.memory import SMemory64
 from ..core.smtlib import ConstraintSet
 from .platform import Platform
+
+# FIXME (theo) implement this in an agnostic manner
+from ..core.cpu.x86 import Sysenter
+
+logger = logging.getLogger("PLATFORM")
+
+class RestartSyscall(Exception):
+    pass
+
+class Deadlock(Exception):
+    pass
 
 class Binja(Platform):
     def __init__(self, ifile):
@@ -56,7 +68,7 @@ class Binja(Platform):
         # FIXME (theo) this should be generic
         BinjaCpu.arch = 'linux'
         BinjaCpu.mode = 'amd64'
-        BinjaCpu.disasm = BinjaDisasm(self._bv)
+        BinjaCpu.disasm = BinjaILDisasm(self._bv)
         super(Binja, self).__init__(ifile)
 
     # XXX needed
@@ -64,14 +76,22 @@ class Binja(Platform):
     def constraints(self):
         return self._constraints
 
-    # XXX needed -> move to Platform
+    # XXX needed -> move to Platform as abstractproperty
     @property
     def current(self):
         return self.procs[self._current]
 
-    # XXX needed?
+    # XXX refactor Linux, Windows etc
     def execute(self):
-        raise SystemExit("not implemented!")
+        """
+        Execute one cpu instruction in the current thread (only one supported).
+        :rtype: bool
+        :return: C{True}
+
+        :todo: This is where we could implement a simple schedule.
+        """
+        self.current.execute()
+        return True
 
     @property
     def bv(self):

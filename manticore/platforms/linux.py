@@ -1566,10 +1566,10 @@ class Linux(Platform):
             self._current = self.running[0]
             return
         next_index = (self.running.index(self._current) + 1) % len(self.running)
-        next = self.running[ next_index ]
+        nextidx = self.running[ next_index ]
         if len(self.procs)>1:
-            logger.debug("\tTransfer control from process %d to %d", self._current, next)
-        self._current = next
+            logger.debug("\tTransfer control from process %d to %d", self._current, nextidx)
+        self._current = nextidx
 
     def wait(self, readfds, writefds, timeout):
         ''' Wait for file descriptors or timeout.

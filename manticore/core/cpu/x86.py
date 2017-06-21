@@ -7,7 +7,7 @@ from functools import wraps
 #  from capstone.x86 import *
 import capstone as cs
 
-from .disasm import Capstone
+from .disasm import CapstoneDisasm
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
 from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
 from ..smtlib import *
@@ -5760,7 +5760,7 @@ class AMD64Cpu(X86Cpu):
     machine = 'amd64'
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_64
-    disasm = Capstone(arch, mode)
+    disasm = CapstoneDisasm(arch, mode)
 
     def __init__(self, memory, *args, **kwargs):
         '''
@@ -5872,7 +5872,7 @@ class I386Cpu(X86Cpu):
     machine = 'i386'
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_32
-    disasm = Capstone(arch, mode)
+    disasm = CapstoneDisasm(arch, mode)
 
     def __init__(self, memory, *args, **kwargs):
         '''

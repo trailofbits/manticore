@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractproperty, abstractmethod
 
 from capstone import Cs
 
@@ -6,88 +6,88 @@ class Instruction(object):
     """Capstone-like instruction to be used internally
     """
     # Return instruction's ID.
-    @abstractmethod
+    @abstractproperty
     def id(self):
         pass
 
     # Return instruction's address.
-    @abstractmethod
+    @abstractproperty
     def address(self):
         pass
 
     # Return instruction's size.
-    @abstractmethod
+    @abstractproperty
     def size(self):
         pass
 
     # return instruction's machine bytes (which should have @size bytes).
-    @abstractmethod
+    @abstractproperty
     def bytes(self):
         pass
 
     # return instruction's mnemonic.
-    @abstractmethod
+    @abstractproperty
     def mnemonic(self):
         pass
 
     # return instruction's operands (in string).
-    @abstractmethod
+    @abstractproperty
     def op_str(self):
         pass
 
     # return list of all implicit registers being read.
-    @abstractmethod
+    @abstractproperty
     def regs_read(self):
         pass
 
     # return list of all implicit registers being modified
-    @abstractmethod
+    @abstractproperty
     def regs_write(self):
         pass
 
     # return list of semantic groups this instruction belongs to.
-    @abstractmethod
+    @abstractproperty
     def groups(self):
         pass
 
     # get the register name, given the register id
-    @abstractmethod
+    @abstractproperty
     def reg_name(self, reg_id):
         pass
 
     # get the instruction name
-    @abstractmethod
+    @abstractproperty
     def insn_name(self):
         pass
 
     # get the group name
-    @abstractmethod
+    @abstractproperty
     def group_name(self, group_id):
         pass
 
     # verify if this insn belong to group with id as @group_id
-    @abstractmethod
+    @abstractproperty
     def group(self, group_id):
         pass
 
     # verify if this instruction implicitly read register @reg_id
-    @abstractmethod
+    @abstractproperty
     def reg_read(self, reg_id):
         pass
 
     # verify if this instruction implicitly modified register @reg_id
-    @abstractmethod
+    @abstractproperty
     def reg_write(self, reg_id):
         pass
 
     # return number of operands having same operand type @op_type
-    @abstractmethod
+    @abstractproperty
     def op_count(self, op_type):
         pass
 
     # get the operand at position @position of all operands having the same
     # type @op_type
-    @abstractmethod
+    @abstractproperty
     def op_find(self, op_type, position):
         pass
 
@@ -106,13 +106,13 @@ class Disasm(object):
         """
         pass
 
-class Capstone(Disasm):
+class CapstoneDisasm(Disasm):
 
     def __init__(self, arch, mode):
         cs = Cs(arch, mode)
         cs.detail = True
         cs.syntax = 0
-        super(Capstone, self).__init__(cs)
+        super(CapstoneDisasm, self).__init__(cs)
 
     def disassemble_instruction(self, code, pc):
         """Get next instruction based on Capstone disassembler
@@ -122,11 +122,15 @@ class Capstone(Disasm):
         """
         return next(self.disasm.disasm(code, pc))
 
-class Binja(Disasm):
+class BinjaILDisasm(Disasm):
 
     def __init__(self, view):
         self.bv = view
-        super(Binja, self).__init__(view)
+        # dictionary with llil for each function. This will be consumed
+        # using an iterator, so that we don't repeat ourselves whenever
+        # we ask for the next IL
+        self.func_llil = {}
+        super(BinjaILDisasm, self).__init__(view)
 
     def disassemble_instruction(self, code, pc):
         """Get next instruction based on Capstone disassembler
@@ -134,4 +138,41 @@ class Binja(Disasm):
         :param code: disassembled code
         :param pc: program counter
         """
-        self.bv.get_disassembly(pc)
+        #  print(self.bv.get_disassembly(pc))
+        blocks = self.bv.get_basic_blocks_at(pc)
+        func = blocks[0].function
+        fllil = self.func_llil.get(func,
+                                   iter([il for block in func.low_level_il
+                                         for il in block]))
+
+        il = next(fllil)
+        print(il)
+        print ("%s %x %x\n") % (il.operation.name, il.instr_index, il.address)
+        self.func_llil[func] = fllil
+        return self.BinjaILInstruction(il)
+
+
+    class BinjaILInstruction(Instruction):
+        def __init__(self, llil):
+            self.llil = llil
+            super(BinjaILDisasm.BinjaILInstruction, self).__init__()
+
+        @property
+        def size(self):
+            return 1
+
+        @property
+        def operands(self):
+            return self.llil.operands
+
+        @operands.setter
+        def operands(self, value):
+            self._operands = value
+
+        @property
+        def insn_name(self):
+            return self.llil.operaation.name
+
+        @property
+        def name(self):
+            return self.llil.operation.name[len("LLIL_"):]
