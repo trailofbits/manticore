@@ -1198,7 +1198,7 @@ class Linux(Platform):
         try:
             if os.path.abspath(filename).startswith('/proc/self'):
                 if filename == '/proc/self/exe':
-                    filename = os.abspath(self.program)
+                    filename = os.path.abspath(self.program)
                 else:
                     logger.info("FIXME!")
             mode = {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[flags&7]
