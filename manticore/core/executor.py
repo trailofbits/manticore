@@ -73,6 +73,15 @@ class Random(Policy):
         return 1.0
 
 
+    def __str__(self):
+        return '\n'.join([ "Total time: {} seconds".format(self.time_elapsed),
+                           "Total instructions executed: {}".format(self.instructions_executed),
+                           "Average instructions per second: {}".format(self.instructions_executed / self.time_elapsed),
+                           "Time spent loading states: {} seconds".format(self.loading_time),
+                           "Time spent saving states: {} seconds".format(self.saving_time),
+                           "Time spent in solver: {} seconds".format(self.solver_time)])
+
+
 class Executor(object):
     '''
     The executor guides the execution of an initial state or a paused previous run. 
@@ -503,7 +512,6 @@ class Executor(object):
                         if e.testcase:
                             self.generate_testcase(current_state, str(e))
                         current_state = None
-
 
                     except SolverException as e:
                         import traceback
