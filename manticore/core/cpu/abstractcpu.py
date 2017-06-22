@@ -735,6 +735,9 @@ class Cpu(object):
 
         self.will_execute_instruction(instruction)
 
+        if instruction.address != self.PC:
+            return 
+
         name = self.canonicalize_instruction_name(instruction)
 
         def fallback_to_emulate(*operands):

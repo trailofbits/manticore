@@ -300,7 +300,7 @@ class Armv7CdeclAbi(Abi):
         self._cpu.R0 = result
 
     def ret(self):
-        self._cpu.PC = self._cpu.LR 
+        self._cpu.PC = self._cpu.LR
 
 class Armv7Cpu(Cpu):
     '''
@@ -321,7 +321,7 @@ class Armv7Cpu(Cpu):
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
-        self._at_symbolic_conditional = True
+        self._at_symbolic_conditional = False
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()

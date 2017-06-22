@@ -228,6 +228,10 @@ class Manticore(object):
         else:
             with self._executor.locked_context() as context:
                 yield context
+                #Here we could re-commit all the dict entries just in case
+                #like this
+                for key,value in context.items():
+                    context[key] = value  
 
     def _init_logging(self): 
 
@@ -825,8 +829,12 @@ class Manticore(object):
             self._running = False
             if timeout > 0:
                 t.cancel()
+        #Copy back the shared conext
+        self._context = dict(self._executor._shared_context)
+        self._executor = None
 
         if self.should_profile:
+
 
             class PstatsFormatted:
                 def __init__(self, d):
@@ -862,9 +870,6 @@ class Manticore(object):
             return results
 
 
-        #Copy back the shared conext
-        self._context = dict(self._executor._shared_context)
-        self._executor = None
 
         self._dump_stats_callback()
 
