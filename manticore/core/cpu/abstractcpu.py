@@ -13,6 +13,7 @@ from itertools import islice, imap
 
 import capstone as cs
 
+from .disasm import init_disassembler
 from ..smtlib import BitVec, Operators, Constant
 from ..memory import MemoryException
 from ...utils.helpers import issymbolic
@@ -597,6 +598,12 @@ class Cpu(object):
             pass
 
         code = text.ljust(self.max_instr_width, '\x00')
+
+        # XXX this should never be the case, unless the CPU gets created
+        # directly and without going through a platform. This only happens
+        # in testcases
+        if not self.disasm:
+            self.__class__.disasm = init_disassembler('capstone', self.arch, self.mode, None)
         insn = self.disasm.disassemble_instruction(code, pc)
 
         # PC points to symbolic memory

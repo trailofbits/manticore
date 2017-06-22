@@ -635,8 +635,8 @@ class Executor(object):
         if self.profiling:
             self._profile.enable()
 
-        policy_order = self.policy_order
-        policy = self.policy
+        policy_order=self.policy_order
+        policy=self.policy
 
         count = 0
         current_state = None
@@ -795,7 +795,7 @@ class Executor(object):
                     current_state = None
 
                 except InvalidPCException as e:
-                    self.generate_testcase(current_state, "Invalid PC Exception " + str(e))
+                    self.generate_testcase(current_state, "Invalid PC Exception" + str(e))
                     current_state = None
 
                 except ProcessExit:

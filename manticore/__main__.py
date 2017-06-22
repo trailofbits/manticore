@@ -93,6 +93,7 @@ def main():
     check_disassembler_present(args.disasm)
     m = Manticore(args.programs[0], args.programs[1:])
 
+    m.disasm = args.disasm
     m.policy = args.policy
     m.args = args
 

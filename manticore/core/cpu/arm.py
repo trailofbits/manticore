@@ -307,6 +307,7 @@ class Armv7Cpu(Cpu):
     machine = 'armv7'
     arch = cs.CS_ARCH_ARM
     mode = cs.CS_MODE_ARM
+    disasm = None
 
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)

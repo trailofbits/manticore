@@ -48,8 +48,9 @@ def makeLinux(program, disasm, argv, env, symbolic_files, concrete_start=''):
 
     constraints = ConstraintSet()
 
-    platform = linux.SLinux(program, disasm, argv=argv, envp=env,
-                            symbolic_files=symbolic_files)
+    platform = linux.SLinux(program, argv=argv, envp=env,
+                            symbolic_files=symbolic_files,
+                            disasm=disasm)
     initial_state = State(constraints, platform)
 
     if concrete_start != '':
@@ -157,6 +158,8 @@ class Manticore(object):
 
         args = [] if args is None else args
 
+        # FIXME (theo)
+        self._disasm = None
         self._binary = binary_path
         self._binary_type = binary_type(binary_path)
         # FIXME (theo) both argv and args in makeXXX. Fix that when addressing
@@ -362,7 +365,7 @@ class Manticore(object):
         if self._binary_type == 'ELF':
             # Linux
             env = ['%s=%s' % (k, v) for k, v in self._env.items()]
-            state = makeLinux(self._binary, self._args.disasm, self._argv, env,
+            state = makeLinux(self._binary, self._disasm, self._argv, env,
                               self._symbolic_files, self._concrete_data)
         elif self._binary_type == 'PE':
             # Windows
@@ -408,6 +411,15 @@ class Manticore(object):
     def policy(self, policy):
         assert not self._running, "Can't set policy if Manticore is running."
         self._policy = policy
+
+    @property
+    def disasm(self):
+        return self._disasm
+
+    @disasm.setter
+    def disasm(self, disassembler):
+        assert not self._running, "Can't set disassembler if Manticore is running."
+        self._disasm = disassembler
 
     @property
     def coverage_file(self):

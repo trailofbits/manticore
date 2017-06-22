@@ -43,14 +43,7 @@ class Disasm(object):
         pass
 
 class CapstoneDisasm(Disasm):
-    def __init__(self, arch):
-        arch_map = {
-            'i386': (cs.CS_ARCH_X86, cs.CS_MODE_32),
-            'amd64': (cs.CS_ARCH_X86, cs.CS_MODE_64),
-            'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
-        }
-
-        arch, mode = arch_map[arch]
+    def __init__(self, arch, mode):
         cap = cs.Cs(arch, mode)
         cap.detail = True
         cap.syntax = 0
@@ -158,8 +151,8 @@ class BinjaDisasm(Disasm):
         def name(self):
             pass
 
-def init_disassembler(disassembler, arch, program):
+def init_disassembler(disassembler, arch, mode, programs):
     if disassembler == "capstone":
-        return CapstoneDisasm(arch)
+        return CapstoneDisasm(arch, mode)
     elif disassembler == "binja":
-        return BinjaDisasm(program)
+        return BinjaDisasm(programs)

@@ -57,7 +57,7 @@ class BinjaCpu(Cpu):
     mode = None
     disasm = None
 
-    def __init__(self, memory, disassembler):
+    def __init__(self, memory):
         '''
         Builds a CPU model.
         :param regfile: regfile object for this CPU.

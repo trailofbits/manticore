@@ -5762,12 +5762,11 @@ class AMD64Cpu(X86Cpu):
     mode = cs.CS_MODE_64
     disasm = None
 
-    def __init__(self, memory, disassembler, *args, **kwargs):
+    def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        AMD64Cpu.disasm = disassembler
         _reg_aliases = {'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'}
         super(AMD64Cpu, self).__init__(AMD64RegFile(aliases=_reg_aliases),
                                        memory,
@@ -5880,12 +5879,11 @@ class I386Cpu(X86Cpu):
     mode = cs.CS_MODE_32
     disasm = None
 
-    def __init__(self, memory, disassembler, *args, **kwargs):
+    def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        I386Cpu.disasm = disassembler
         super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
                                       memory,
                                       *args,

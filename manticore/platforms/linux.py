@@ -258,7 +258,7 @@ class Linux(Platform):
     This class emulates the most common Linux system calls
     '''
 
-    def __init__(self, program, disasm, argv=None, envp=None):
+    def __init__(self, program, argv=None, envp=None, disasm='capstone'):
         '''
         Builds a Linux OS platform
         :param string program: The path to ELF binary
@@ -362,8 +362,16 @@ class Linux(Platform):
     # FIXME (theo) this one is here because of SLinux, only mem should be here
     def _mk_proc(self, arch):
         mem = Memory32() if arch in {'i386', 'armv7'} else Memory64()
-        disassembler = init_disassembler(self.disasm, arch, self.programs)
-        return CpuFactory.get_cpu(mem, arch)
+        cpu = CpuFactory.get_cpu(mem, arch)
+        # FIXME
+        arch_map = {
+            'i386': (cs.CS_ARCH_X86, cs.CS_MODE_32),
+            'amd64': (cs.CS_ARCH_X86, cs.CS_MODE_64),
+            'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
+        }
+        arch, mode = arch_map[arch]
+        cpu.__class__.disasm = init_disassembler(self.disasm, arch, mode, self.programs)
+        return cpu
 
 
     @property
@@ -1846,7 +1854,7 @@ class SLinux(Linux):
     :param list envp: environment variables
     :param tuple[str] symbolic_files: files to consider symbolic
     """
-    def __init__(self, programs, disasm, argv=None, envp=None, symbolic_files=None):
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=None, disasm='capstone'):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
         symbolic_files = [] if symbolic_files is None else symbolic_files
@@ -1854,12 +1862,20 @@ class SLinux(Linux):
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files = symbolic_files
-        super(SLinux, self).__init__(programs, disasm, argv, envp)
+        super(SLinux, self).__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
     def _mk_proc(self, arch):
         mem = SMemory32(self.constraints) if arch in {'i386', 'armv7'} else SMemory64(self.constraints)
-        disassembler = init_disassembler(self.disasm, arch, self.programs)
-        return CpuFactory.get_cpu(mem, arch, disassembler)
+        cpu = CpuFactory.get_cpu(mem, arch)
+        # FIXME
+        arch_map = {
+            'i386': (cs.CS_ARCH_X86, cs.CS_MODE_32),
+            'amd64': (cs.CS_ARCH_X86, cs.CS_MODE_64),
+            'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
+        }
+        arch, mode = arch_map[arch]
+        cpu.__class__.disasm = init_disassembler(self.disasm, arch, mode, self.programs)
+        return cpu
 
     @property
     def constraints(self):
