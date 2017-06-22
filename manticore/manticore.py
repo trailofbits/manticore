@@ -214,7 +214,7 @@ class Manticore(object):
         
 
     @contextmanager
-    def locked_context(self):
+    def locked_context(self, key=None):
         ''' It refers to the manticore shared context 
             It needs a lock. Its used like this:
 
@@ -223,15 +223,21 @@ class Manticore(object):
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
         '''
-        if self._executor is None:
-            yield self._context
-        else:
-            with self._executor.locked_context() as context:
+        @contextmanager
+        def _real_context():
+            if self._executor is None:
+                yield self._context
+            else:
+                with self._executor.locked_context() as context:
+                    yield context
+
+        with _real_context() as context:
+            if key is None:
                 yield context
-                #Here we could re-commit all the dict entries just in case
-                #like this
-                for key,value in context.items():
-                    context[key] = value  
+            else:
+                ctx = context[key]
+                yield ctx
+                context[key] = ctx
 
     def _init_logging(self): 
 
@@ -506,15 +512,18 @@ class Manticore(object):
         logger.info("Starting %d processes.", num_processes)
 
         if profiling:
-            profile = cProfile.Profile()
-            def profile_this(func, *args, **kwargs):
-                profile.enable()
-                result = func(*args, **kwargs)
-                profile.disable()
-                profile.create_stats()
-                self.profile_stats.append(_profile.stats.items())
-                return result
-            return func
+            def profile_this(func):
+                @wraps(f)
+                def wrapper(*args, **kwargs):
+                    profile = cProfile.Profile()
+                    profile.enable()
+                    result = func(*args, **kwargs)
+                    profile.disable()
+                    profile.create_stats()
+                    self.profile_stats.append(_profile.stats.items())
+                    return result
+            return wrapper
+
             target = profile_this(self._executor.run)
         else:
             target = self._executor.run
@@ -834,7 +843,6 @@ class Manticore(object):
         self._executor = None
 
         if self.should_profile:
-
 
             class PstatsFormatted:
                 def __init__(self, d):
