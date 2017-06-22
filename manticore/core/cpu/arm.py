@@ -335,6 +335,15 @@ class Armv7Cpu(Cpu):
 		self.mode = new_mode
 		self._md.mode = new_mode
 
+    def _swap_mode(self):
+        #swap from arm to thumb or back
+        assert self.mode in (CS_MODE_ARM, CS_MODE_THUMB)
+        if self.mode == CS_MODE_ARM:
+            self._set_mode(CS_MODE_THUMB)
+        else:
+            self._set_mode(CS_MODE_ARM)
+
+
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
     #
@@ -731,6 +740,10 @@ class Armv7Cpu(Cpu):
     # XXX How should we deal with switching Thumb modes?
     @instruction
     def BX(cpu, dest):
+        if dest.read() & 0x1:
+            cpu._set_mode(CS_MODE_THUMB)
+        else:
+            cpu._set_mode(CS_MODE_ARM)
         cpu.PC = dest.read() & ~1
 
     @instruction
@@ -760,13 +773,7 @@ class Armv7Cpu(Cpu):
         ## The `blx <label>` form of this instruction forces a state swap
         if dest.type=='immediate':
             logger.debug("swapping ds mode due to BLX at inst 0x{:x}".format(address))
-            #swap from arm to thumb or back
-            assert cpu.mode in (CS_MODE_ARM, CS_MODE_THUMB)
-            if cpu.mode == CS_MODE_ARM:
-                cpu._set_mode(CS_MODE_THUMB)
-            else:
-                cpu._set_mode(CS_MODE_ARM)
-
+            cpu._swap_mode()
     @instruction
     def CMP(cpu, reg, cmp):
         notcmp = ~cmp.read() & Mask(cpu.address_bit_size)
@@ -907,14 +914,20 @@ class Armv7Cpu(Cpu):
         if insn_id == ARM_INS_ASR:
             srtype = ARM_SFT_ASR_REG
         elif insn_id == ARM_INS_LSL:
-            srtype = ARM_SFT_LSL_REG
+            if rest and rest[0].type == 'immediate':
+                srtype = ARM_SFT_LSL
+            else:
+                srtype = ARM_SFT_LSL_REG
         elif insn_id == ARM_INS_LSR:
             srtype = ARM_SFT_LSR_REG
 
         carry = cpu.regfile.read('APSR_C')
-        if rest:
+        if rest and rest[0].type=='register':
             #FIXME we should make Operand.op private (and not accessible)
             result, carry = cpu._Shift(op.read(), srtype, rest[0].op.reg, carry)
+        elif rest and rest[0].type=='immediate':
+            amount = rest[0].read()
+            result, carry = cpu._Shift(op.read(), srtype, amount, carry)
         else:
             result, carry = op.read(withCarry=True)
         dest.write(result)

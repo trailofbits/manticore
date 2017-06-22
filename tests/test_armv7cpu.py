@@ -6,7 +6,8 @@ from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.memory import Memory32
 
 from capstone.arm import *
-from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM
+from capstone import CS_MODE_THUMB
+from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 
@@ -1242,6 +1243,24 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_lsl_imm_carry(self):
         self.assertEqual(self.cpu.R2, 0x1 << 31)
         self._checkFlagsNZCV(1, 0, 1, 0)
+
+    def test_lslw(self):
+        ''' custom test for degenerate case'''
+        tmp_ks = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
+        ords = tmp_ks.asm("lsl.w r5, r6, #3")[0]
+        asm = ''.join(map(chr, ords))
+        self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
+        self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
+        self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
+        start = self.code + 4
+        self.mem.write(start, asm)
+        self.rf.write('PC', start)
+        self.rf.write('SP', self.stack + 0x1000)
+        self.rf.write('R5', 0x1)
+        self.rf.write('R6', 0x2)
+        self.cpu._set_mode(CS_MODE_THUMB)
+        self.cpu.execute()
+        self.assertEqual(self.cpu.R5, 0x2 << 3)
 
     # lsr
     @itest_setregs("R0=0x1000", "R2=3")
