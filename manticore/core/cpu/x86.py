@@ -3,6 +3,8 @@ import logging
 
 from functools import wraps
 
+#  from capstone import *
+#  from capstone.x86 import *
 import capstone as cs
 
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
@@ -5059,13 +5061,12 @@ class X86Cpu(Cpu):
         '''
         Calls to interrupt procedure.
 
-        The INT n instruction generates a call to the interrupt or exception
-        handler specified with the destination operand. The INT n instruction
-        is the  general mnemonic for executing a software-generated call to an
-        interrupt handler. The INTO instruction is a special mnemonic for
-        calling overflow exception (#OF), interrupt vector number 4. The
-        overflow interrupt checks the OF flag in the EFLAGS register and calls
-        the overflow interrupt handler if the OF flag is set to 1.
+        The INT n instruction generates a call to the interrupt or exception handler specified
+        with the destination operand. The INT n instruction is the  general mnemonic for executing
+        a software-generated call to an interrupt handler. The INTO instruction is a special
+        mnemonic for calling overflow exception (#OF), interrupt vector number 4. The overflow
+        interrupt checks the OF flag in the EFLAGS register and calls the overflow interrupt handler
+        if the OF flag is set to 1.
 
         :param cpu: current CPU.
         '''
@@ -5078,14 +5079,12 @@ class X86Cpu(Cpu):
         '''
         Moves low packed double-precision floating-point value.
 
-        Moves a double-precision floating-point value from the source operand
-        (second operand) and the destination operand (first operand). The
-        source and destination operands can be an XMM register or a 64-bit
-        memory location. This instruction allows double-precision
-        floating-point values to be moved to and from the low quadword of an
-        XMM register and memory. It cannot be used for register to register or
-        memory to memory moves. When the destination operand is an XMM
-        register, the high quadword of the register remains unchanged.
+        Moves a double-precision floating-point value from the source operand (second operand) and the
+        destination operand (first operand). The source and destination operands can be an XMM register
+        or a 64-bit memory location. This instruction allows double-precision floating-point values to be moved
+        to and from the low quadword of an XMM register and memory. It cannot be used for register to register
+        or memory to memory moves. When the destination operand is an XMM register, the high quadword of the
+        register remains unchanged.
 
         :param cpu: current CPU.
         :param dest: destination operand.
@@ -5767,8 +5766,7 @@ class AMD64Cpu(X86Cpu):
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        _reg_aliases = {'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'}
-        super(AMD64Cpu, self).__init__(AMD64RegFile(aliases=_reg_aliases),
+        super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
                                        memory,
                                        *args,
                                        **kwargs)
@@ -5780,7 +5778,6 @@ class AMD64Cpu(X86Cpu):
         :rtype: str
         :return: a string containing the name and current value for all the registers.
         '''
-        # FIXME (theo) move to a generic class (utils/helpers? under 'COLORS')
         CHEADER = '\033[95m'
         CBLUE = '\033[94m'
         CGREEN = '\033[92m'
@@ -5796,13 +5793,12 @@ class AMD64Cpu(X86Cpu):
         except:
             result += "{can't decode instruction }\n"
 
-        regs = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8',
-                'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',  'RIP', 'EFLAGS')
+        regs = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',  'RIP', 'EFLAGS')
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
                 result += "%3s: "%reg_name + CFAIL
-                result += visitors.pretty_print(value, depth=10)
+                result += visitors.pretty_print (value, depth=10)
                 result += CEND
             else:
                 result += "%3s: 0x%016x"%(reg_name, value)
@@ -5810,12 +5806,12 @@ class AMD64Cpu(X86Cpu):
             result += '\n'
 
         pos = 0
-        for reg_name in ('CF', 'SF', 'ZF', 'OF',' AF', 'PF', 'IF', 'DF'):
+        for reg_name in ('CF','SF','ZF','OF','AF', 'PF', 'IF', 'DF'):
             value = self.read_register(reg_name)
             if issymbolic(value):
                 result += "%s:"%reg_name + CFAIL
                 #"%16s"%value+CEND
-                result += visitors.pretty_print(value, depth=10) + CEND
+                result += visitors.pretty_print (value, depth=10) + CEND
             else:
                 result += "%s: %1x"%(reg_name, value)
 
@@ -5868,9 +5864,7 @@ class AMD64Cpu(X86Cpu):
 
 
 class I386Cpu(X86Cpu):
-    # FIXME (theo) should we move this on the CPU factory instead of having it
-    # here? These feel like they should fit in the Cpu class rather than
-    # at each different sub-class
+    # FIXME (theo) should we wrap these in a cpuinfo dictionary?
     # Config
     max_instr_width = 15
     address_bit_size = 32
@@ -5949,7 +5943,7 @@ class I386Cpu(X86Cpu):
 
     @property
     def canonical_registers(self):
-        regs = ['EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP']
+        regs = ['EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP' ]
         regs.extend(['CS','DS','ES','SS', 'FS', 'GS'])
         regs.extend(['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'FPCW', 'FPSW', 'FPTAG'])
         regs.extend(['XMM0', 'XMM1', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9'])
