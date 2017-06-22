@@ -124,6 +124,7 @@ class BinjaDisasm(Disasm):
         :param code: disassembled code
         :param pc: program counter
         """
+        raise SystemExit("BinaryNinja disassembler not supported yet")
         return self.bv.get_disassembly(pc)
 
     class BinjaInstruction(Instruction):
@@ -156,3 +157,5 @@ def init_disassembler(disassembler, arch, mode, programs):
         return CapstoneDisasm(arch, mode)
     elif disassembler == "binja":
         return BinjaDisasm(programs)
+    elif disassembler == "binja-il":
+        return BinjaILDisasm(programs)

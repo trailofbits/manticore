@@ -79,7 +79,7 @@ def parse_arguments():
 def check_disassembler_present(disasm):
     if disasm == "binja" or disasm == "binja-il":
         try:
-            __import__(binaryninja)
+            import binaryninja
         except ImportError:
             err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
                    " that supports GUI-less processing for this option"
@@ -91,9 +91,8 @@ def main():
     args = parse_arguments()
 
     check_disassembler_present(args.disasm)
-    m = Manticore(args.programs[0], args.programs[1:])
+    m = Manticore(args.programs[0], args.programs[1:], disasm=args.disasm)
 
-    m.disasm = args.disasm
     m.policy = args.policy
     m.args = args
 

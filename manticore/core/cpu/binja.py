@@ -4,7 +4,6 @@ from .abstractcpu import (
 )
 
 from .x86 import AMD64RegFile
-from binaryninja import LowLevelILOperation as Op
 
 class BinjaRegisterFile(RegisterFile):
     def __init__(self):
@@ -21,6 +20,7 @@ class BinjaOperand(Operand):
 
     @property
     def type(self):
+        from binaryninja import LowLevelILOperation as Op
         type_map = {
             Op.LLIL_REG: 'register',
             Op.LLIL_CONST_PTR: 'memory',

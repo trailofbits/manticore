@@ -1,5 +1,4 @@
 import logging
-import binaryninja as bn
 
 from ..core.cpu.binja import BinjaCpu
 from ..core.cpu.cpufactory import CpuFactory
@@ -121,6 +120,9 @@ class Binja(Platform):
         FIXME (theo) this will be replaced by a function that simply loadss
         the IL from a file, but right now this is not serializable
         """
+        # XXX do the import here so as to not affect users who don't have
+        # BinaryNinja installed
+        import binaryninja as bn
         bv = bn.binaryview.BinaryViewType.get_view_of_file(program_file)
         bv.update_analysis_and_wait()
         return bv

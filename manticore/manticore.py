@@ -118,8 +118,6 @@ def makeWindows(args):
 
     return State(constraints, platform)
 
-# FIXME (theo) do we want this? Why not just outsource this task to the
-# disassembler in use and only detect special cases like DECREE?
 def binary_type(path):
     '''
     Given a path to a binary, return a string representation of its type.
@@ -129,18 +127,16 @@ def binary_type(path):
     with open(path) as f:
         magic = f.read(4)
 
-    #  # FIXME (theo) temporary hack for Binja dev
-    #  return 'BinaryNinja'
-
     if magic == '\x7fELF':
         return 'ELF'
     elif magic == 'MDMP':
         return 'PE'
     elif magic == '\x7fCGC':
         return 'DECREE'
-    # FIXME (theo) file containing Binja IL? for now we just load the binary
+    # FIXME (theo) magic for file containing Binja IL.
+    # For now we just load the binary, this is to be implemented
     elif magic == 'BNJA':
-        return 'BinaryNinja'
+        return 'BinaryNinjaIL'
     else:
         raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
 
@@ -153,16 +149,14 @@ class Manticore(object):
     :type args: list[str]
     :ivar context: SyncManager managed `dict` shared between Manticore worker processes
     '''
-    def __init__(self, binary_path, args=None):
+    def __init__(self, binary_path, args=None, disasm='capstone'):
         assert os.path.isfile(binary_path)
 
         args = [] if args is None else args
 
-        # FIXME (theo)
-        self._disasm = None
+        self._disasm = disasm
         self._binary = binary_path
         self._binary_type = binary_type(binary_path)
-        # FIXME (theo) both argv and args in makeXXX. Fix that when addressing
         # yan's comment
         self._argv = args # args.programs[1:]
         self._env = {}
@@ -362,7 +356,10 @@ class Manticore(object):
             return symbols[0].entry['st_value']
 
     def _make_state(self, path):
-        if self._binary_type == 'ELF':
+        if self._binary_type == 'BinaryNinjaIL' or self._disasm == "binja-il":
+            # Binary Ninja
+            state = makeBinja(self._binary)
+        elif self._binary_type == 'ELF':
             # Linux
             env = ['%s=%s' % (k, v) for k, v in self._env.items()]
             state = makeLinux(self._binary, self._disasm, self._argv, env,
@@ -373,9 +370,6 @@ class Manticore(object):
         elif self._binary_type == 'DECREE':
             # Decree
             state = makeDecree(self._args)
-        elif self._binary_type == 'BinaryNinja':
-            # Binary Ninja
-            state = makeBinja(self._binary)
         else:
             raise NotImplementedError("Binary {} not supported.".format(path))
 
@@ -412,14 +406,14 @@ class Manticore(object):
         assert not self._running, "Can't set policy if Manticore is running."
         self._policy = policy
 
-    @property
-    def disasm(self):
-        return self._disasm
+    #  @property
+    #  def disasm(self):
+        #  return self._disasm
 
-    @disasm.setter
-    def disasm(self, disassembler):
-        assert not self._running, "Can't set disassembler if Manticore is running."
-        self._disasm = disassembler
+    #  @disasm.setter
+    #  def disasm(self, disassembler):
+        #  assert not self._running, "Can't set disassembler if Manticore is running."
+        #  self._disasm = disassembler
 
     @property
     def coverage_file(self):
