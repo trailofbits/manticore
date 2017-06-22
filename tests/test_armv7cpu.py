@@ -762,6 +762,16 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R1'), 42)
         self.assertEqual(self.rf.read('SP'), pre_stack - 8)
 
+    @itest_custom("ldrd r2, [sp]")
+    def test_ldrd(self):
+        r2 = 0x41
+        r3 = 0x42
+        self.cpu.stack_push(r3)
+        self.cpu.stack_push(r2)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R2'), r2)
+        self.assertEqual(self.rf.read('R3'), r3)
+
     @itest_custom("pop {r1}")
     def test_pop_one_reg(self):
         self.cpu.stack_push(0x55)
@@ -852,6 +862,27 @@ class Armv7CpuInstructions(unittest.TestCase):
         # check writeback results
         new_r2 = self.rf.read('R2')
         self.assertEqual(new_r2, r2 + 3)
+
+    @itest_custom("strd R2, [R1]")
+    @itest_setregs("R1=0xD000", "R2=34", "R3=35")
+    def test_strd(self):
+        r1 = self.rf.read('R1')
+        r2 = self.rf.read('R2')
+        r3 = self.rf.read('R3')
+        self.cpu.execute()
+        dr2 = self.cpu.read_int(r1, self.cpu.address_bit_size)
+        dr3 = self.cpu.read_int(r1+4, self.cpu.address_bit_size)
+        self.assertEqual(dr2, r2)
+        self.assertEqual(dr3, r3)
+
+    @itest_custom("str R2, [R1]")
+    @itest_setregs("R1=0xD000", "R2=34")
+    def test_str(self):
+        r1 = self.rf.read('R1')
+        r2 = self.rf.read('R2')
+        self.cpu.execute()
+        dr2 = self.cpu.read_int(r1, self.cpu.address_bit_size)
+        self.assertEqual(dr2, r2)
 
     # BL
 
