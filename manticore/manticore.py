@@ -25,10 +25,10 @@ from .utils.helpers import issymbolic
 
 logger = logging.getLogger('MANTICORE')
 
-def makeBinja(llil_file):
+def makeBinja(program):
     constraints = ConstraintSet()
-    logger.info('Loading binary ninja IL from %s', llil_file)
-    platform = binja.Binja(llil_file)
+    logger.info('Loading binary ninja IL from %s', program)
+    platform = binja.Binja(program)
     initial_state = State(constraints, platform)
 
     return initial_state
@@ -37,25 +37,23 @@ def makeDecree(args):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, ','.join(args.programs))
     initial_state = State(constraints, platform)
-    logger.info('Loading program %s', args.programs)
+    logger.info('Loading program %s (platform: Decree)', args.programs)
 
-    #if args.data != '':
-    #    logger.info('Starting with concrete input: {}'.format(args.data))
     platform.input.transmit(args.data)
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
-    logger.info('Loading program %s', program)
+def makeLinux(program, disasm, argv, env, symbolic_files, concrete_start=''):
+    logger.info('Loading program %s (platform: Linux)', program)
 
     constraints = ConstraintSet()
 
-    platform = linux.SLinux(program, argv=argv, envp=env,
+    platform = linux.SLinux(program, disasm, argv=argv, envp=env,
                             symbolic_files=symbolic_files)
     initial_state = State(constraints, platform)
 
     if concrete_start != '':
-        logger.info('Starting with concrete input: {}'.format(concrete_start))
+        logger.info('Starting with concrete input: %s', concrete_start)
 
     for i, arg in enumerate(argv):
         argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1))
@@ -71,7 +69,8 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     platform.input.write(concrete_start)
 
     #set stdin input...
-    platform.input.write(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
+    platform.input.write(initial_state.symbolicate_buffer('+' * 256,
+                                                          label='STDIN'))
 
     return initial_state
 
@@ -79,7 +78,7 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
 def makeWindows(args):
     assert args.size is not None, "Need to specify buffer size"
     assert args.buffer is not None, "Need to specify buffer base address"
-    logger.debug('Loading program %s', args.programs)
+    logger.debug('Loading program %s (platform: Windows)', args.programs)
     additional_context = None
     if args.context:
         with open(args.context, "r") as addl_context_file:
@@ -118,6 +117,8 @@ def makeWindows(args):
 
     return State(constraints, platform)
 
+# FIXME (theo) do we want this? Why not just outsource this task to the
+# disassembler in use and only detect special cases like DECREE?
 def binary_type(path):
     '''
     Given a path to a binary, return a string representation of its type.
@@ -127,13 +128,16 @@ def binary_type(path):
     with open(path) as f:
         magic = f.read(4)
 
-    return 'BinaryNinja'
+    #  # FIXME (theo) temporary hack for Binja dev
+    #  return 'BinaryNinja'
+
     if magic == '\x7fELF':
         return 'ELF'
     elif magic == 'MDMP':
         return 'PE'
     elif magic == '\x7fCGC':
         return 'DECREE'
+    # FIXME (theo) file containing Binja IL? for now we just load the binary
     elif magic == 'BNJA':
         return 'BinaryNinja'
     else:
@@ -148,8 +152,6 @@ class Manticore(object):
     :type args: list[str]
     :ivar context: SyncManager managed `dict` shared between Manticore worker processes
     '''
-
-
     def __init__(self, binary_path, args=None):
         assert os.path.isfile(binary_path)
 
@@ -157,6 +159,8 @@ class Manticore(object):
 
         self._binary = binary_path
         self._binary_type = binary_type(binary_path)
+        # FIXME (theo) both argv and args in makeXXX. Fix that when addressing
+        # yan's comment
         self._argv = args # args.programs[1:]
         self._env = {}
         # Will be set to a temporary directory if not set before running start()
@@ -357,8 +361,9 @@ class Manticore(object):
     def _make_state(self, path):
         if self._binary_type == 'ELF':
             # Linux
-            env = ['%s=%s'%(k,v) for k,v in self._env.items()]
-            state = makeLinux(self._binary, self._argv, env, self._symbolic_files, self._concrete_data)
+            env = ['%s=%s' % (k, v) for k, v in self._env.items()]
+            state = makeLinux(self._binary, self._args.disasm, self._argv, env,
+                              self._symbolic_files, self._concrete_data)
         elif self._binary_type == 'PE':
             # Windows
             state = makeWindows(self._args)
@@ -543,13 +548,12 @@ class Manticore(object):
         assert not self._running, "Manticore is already running."
         args = self._args
 
-        replay=None
+        replay = None
         if hasattr(args, 'replay') and args.replay is not None:
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
-        #  state = self._make_state(self._binary)
-        state = makeBinja(self._binary)
+        state = self._make_state(self._binary)
 
         self._executor = Executor(state,
                                   workspace=self.workspace,

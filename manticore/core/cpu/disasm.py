@@ -1,94 +1,30 @@
 from abc import abstractproperty, abstractmethod
 
-from capstone import Cs
+import capstone as cs
+
 
 class Instruction(object):
     """Capstone-like instruction to be used internally
     """
-    # Return instruction's ID.
-    @abstractproperty
-    def id(self):
-        pass
-
-    # Return instruction's address.
     @abstractproperty
     def address(self):
         pass
 
-    # Return instruction's size.
     @abstractproperty
     def size(self):
         pass
 
-    # return instruction's machine bytes (which should have @size bytes).
     @abstractproperty
-    def bytes(self):
+    def operands(self):
         pass
 
-    # return instruction's mnemonic.
-    @abstractproperty
-    def mnemonic(self):
-        pass
-
-    # return instruction's operands (in string).
-    @abstractproperty
-    def op_str(self):
-        pass
-
-    # return list of all implicit registers being read.
-    @abstractproperty
-    def regs_read(self):
-        pass
-
-    # return list of all implicit registers being modified
-    @abstractproperty
-    def regs_write(self):
-        pass
-
-    # return list of semantic groups this instruction belongs to.
-    @abstractproperty
-    def groups(self):
-        pass
-
-    # get the register name, given the register id
-    @abstractproperty
-    def reg_name(self, reg_id):
-        pass
-
-    # get the instruction name
+    # FIXME (theo) eliminate one of the two of insn_name, name
     @abstractproperty
     def insn_name(self):
         pass
 
-    # get the group name
     @abstractproperty
-    def group_name(self, group_id):
-        pass
-
-    # verify if this insn belong to group with id as @group_id
-    @abstractproperty
-    def group(self, group_id):
-        pass
-
-    # verify if this instruction implicitly read register @reg_id
-    @abstractproperty
-    def reg_read(self, reg_id):
-        pass
-
-    # verify if this instruction implicitly modified register @reg_id
-    @abstractproperty
-    def reg_write(self, reg_id):
-        pass
-
-    # return number of operands having same operand type @op_type
-    @abstractproperty
-    def op_count(self, op_type):
-        pass
-
-    # get the operand at position @position of all operands having the same
-    # type @op_type
-    @abstractproperty
-    def op_find(self, op_type, position):
+    def name(self):
         pass
 
 class Disasm(object):
@@ -107,12 +43,18 @@ class Disasm(object):
         pass
 
 class CapstoneDisasm(Disasm):
+    def __init__(self, arch):
+        arch_map = {
+            'i386': (cs.CS_ARCH_X86, cs.CS_MODE_32),
+            'amd64': (cs.CS_ARCH_X86, cs.CS_MODE_64),
+            'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
+        }
 
-    def __init__(self, arch, mode):
-        cs = Cs(arch, mode)
-        cs.detail = True
-        cs.syntax = 0
-        super(CapstoneDisasm, self).__init__(cs)
+        arch, mode = arch_map[arch]
+        cap = cs.Cs(arch, mode)
+        cap.detail = True
+        cap.syntax = 0
+        super(CapstoneDisasm, self).__init__(cap)
 
     def disassemble_instruction(self, code, pc):
         """Get next instruction based on Capstone disassembler
@@ -132,7 +74,7 @@ class BinjaILDisasm(Disasm):
         self.func_llil = {}
         super(BinjaILDisasm, self).__init__(view)
 
-    def disassemble_instruction(self, code, pc):
+    def disassemble_instruction(self, _, pc):
         """Get next instruction based on Capstone disassembler
 
         :param code: disassembled code
@@ -171,8 +113,53 @@ class BinjaILDisasm(Disasm):
 
         @property
         def insn_name(self):
-            return self.llil.operaation.name
+            return self.llil.operation.name
 
         @property
         def name(self):
             return self.llil.operation.name[len("LLIL_"):]
+
+class BinjaDisasm(Disasm):
+
+    def __init__(self, view):
+        self.bv = view
+        super(BinjaDisasm, self).__init__(view)
+
+    def disassemble_instruction(self, _, pc):
+        """Get next instruction based on Capstone disassembler
+
+        :param code: disassembled code
+        :param pc: program counter
+        """
+        return self.bv.get_disassembly(pc)
+
+    class BinjaInstruction(Instruction):
+        def __init__(self, insn):
+            self.insn = insn
+            super(BinjaDisasm.BinjaInstruction, self).__init__()
+
+        @property
+        def size(self):
+            pass
+
+        @property
+        def operands(self):
+            pass
+
+        @operands.setter
+        def operands(self, value):
+            self._operands = value
+
+        @property
+        def insn_name(self):
+            pass
+
+        @property
+        def name(self):
+            pass
+
+def init_disassembler(disassembler, arch, program):
+    if disassembler == "capstone":
+        return CapstoneDisasm(arch)
+    elif disassembler == "binja":
+        return BinjaDisasm(program)
