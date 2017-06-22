@@ -22,7 +22,7 @@ logger = logging.getLogger("PLATFORM")
 
 
 class SyscallNotImplemented(TerminateState):
-    def __ini__(self, message):
+    def __init__(self, message):
         super(SyscallNotImplemented,self).__init__(message, testcase=True)
 
 class RestartSyscall(Exception):
