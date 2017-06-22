@@ -249,13 +249,14 @@ class Manticore(object):
 
         logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
 
-        for loggername in ['VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
+        for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
             logging.getLogger(loggername).addFilter(ctxfilter)
             logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
         
         logging.getLogger('SMT').setLevel(logging.INFO)
         logging.getLogger('MEMORY').setLevel(logging.INFO)
         logging.getLogger('LIBC').setLevel(logging.INFO)
+        logging.getLogger('MANTICORE').setLevel(logging.INFO)
 
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
@@ -623,7 +624,6 @@ class Manticore(object):
         logger.debug("Did execute an instruction")
 
     def _execute_instruction_callback(self, state, instruction):
-        logger.info("exe\n")
         address = state.cpu.PC
         if not issymbolic(address):
             state.context.setdefault('visited_since_last_fork', set()).add(address)

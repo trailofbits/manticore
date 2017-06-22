@@ -81,6 +81,7 @@ def LSL_C(value, amount, width):
     :rtype tuple
     '''
     assert amount > 0
+    value = Operators.ZEXTEND(value, width*2)
     shifted = value << amount
     result = GetNBits(shifted, width)
     carry = Bit(shifted, width)
