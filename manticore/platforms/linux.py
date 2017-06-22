@@ -10,6 +10,7 @@ from elftools.elf.elffile import ELFFile
 from ..utils.helpers import issymbolic
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
+from ..core.cpu.disasm import init_disassembler
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
 from ..platforms.platform import Platform
@@ -257,10 +258,11 @@ class Linux(Platform):
     This class emulates the most common Linux system calls
     '''
 
-    def __init__(self, program, argv=None, envp=None):
+    def __init__(self, program, disasm, argv=None, envp=None):
         '''
         Builds a Linux OS platform
         :param string program: The path to ELF binary
+        :param string disasm: Disassembler to be used
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         '''
@@ -270,9 +272,14 @@ class Linux(Platform):
         self.clocks = 0
         self.files = []
         self.syscall_trace = []
+        # Many programs to support SLinux
+        self.programs = program
+        self.disasm = disasm
 
         if program != None:
             self.elf = ELFFile(file(program))
+            # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
+            # make things consistent and perhaps utilize a global mapping for this
             self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
 
             self._init_cpu(self.arch)
@@ -315,6 +322,7 @@ class Linux(Platform):
         assert self._open(stderr) == 2
 
     def _init_cpu(self, arch):
+        # create memory and CPU
         cpu = self._mk_proc(arch)
         self.procs = [cpu]
         self._current = 0
@@ -332,7 +340,7 @@ class Linux(Platform):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
-        logger.debug("Loading {} as a {} elf".format(program,self.arch))
+        logger.debug("Loading %s as a %s elf", program, self.arch)
 
         self.load(program)
         self._arch_specific_init()
@@ -346,17 +354,17 @@ class Linux(Platform):
         self.running = range(nprocs)
 
         #Each process can wait for one timeout
-        self.timers = [ None ] * nprocs
+        self.timers = [None] * nprocs
         #each fd has a waitlist
         self.rwait = [set() for _ in xrange(nfiles)]
         self.twait = [set() for _ in xrange(nfiles)]
 
+    # FIXME (theo) this one is here because of SLinux, only mem should be here
     def _mk_proc(self, arch):
-        if arch in {'i386', 'armv7'}:
-            mem = Memory32()
-        else:
-            mem = Memory64()
+        mem = Memory32() if arch in {'i386', 'armv7'} else Memory64()
+        disassembler = init_disassembler(self.disasm, arch, self.programs)
         return CpuFactory.get_cpu(mem, arch)
+
 
     @property
     def current(self):
@@ -1833,11 +1841,12 @@ class SLinux(Linux):
     Builds a symbolic extension of a Linux OS
 
     :param str programs: path to ELF binary
+    :param str disasm: disassembler to be used
     :param list argv: argv not including binary
     :param list envp: environment variables
     :param tuple[str] symbolic_files: files to consider symbolic
     """
-    def __init__(self, programs, argv=None, envp=None, symbolic_files=None):
+    def __init__(self, programs, disasm, argv=None, envp=None, symbolic_files=None):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
         symbolic_files = [] if symbolic_files is None else symbolic_files
@@ -1845,15 +1854,12 @@ class SLinux(Linux):
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files = symbolic_files
-        super(SLinux, self).__init__(programs, argv, envp)
+        super(SLinux, self).__init__(programs, disasm, argv, envp)
 
     def _mk_proc(self, arch):
-        if arch in {'i386', 'armv7'}:
-            mem = SMemory32(self.constraints)
-        else:
-            mem = SMemory64(self.constraints)
-
-        return CpuFactory.get_cpu(mem, arch)
+        mem = SMemory32(self.constraints) if arch in {'i386', 'armv7'} else SMemory64(self.constraints)
+        disassembler = init_disassembler(self.disasm, arch, self.programs)
+        return CpuFactory.get_cpu(mem, arch, disassembler)
 
     @property
     def constraints(self):

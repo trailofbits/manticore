@@ -121,9 +121,6 @@ class Binja(Platform):
         FIXME (theo) this will be replaced by a function that simply loadss
         the IL from a file, but right now this is not serializable
         """
-        #  vtypes = filter(lambda x: x.name != "Raw",
-                        #  bn.BinaryView.open(program_file).available_view_types)
-        #  bv = bn.BinaryViewType[vtypes[0].name].open(program_file)
         bv = bn.binaryview.BinaryViewType.get_view_of_file(program_file)
         bv.update_analysis_and_wait()
         return bv

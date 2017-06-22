@@ -7,7 +7,6 @@ from bitwise import *
 
 import capstone as cs
 
-from .disasm import CapstoneDisasm
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
 from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
 from .abstractcpu import instruction as abstract_instruction
@@ -308,7 +307,6 @@ class Armv7Cpu(Cpu):
     machine = 'armv7'
     arch = cs.CS_ARCH_ARM
     mode = cs.CS_MODE_ARM
-    disasm = CapstoneDisasm(arch, mode)
 
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
