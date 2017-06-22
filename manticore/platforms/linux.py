@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import struct
+import ctypes
 
 from elftools.elf.elffile import ELFFile
 
@@ -1004,14 +1005,19 @@ class Linux(Platform):
         :return: 0 (Success), or EBADF (fd is not a valid file descriptor or is not open)
 
         '''
+        if self.current.address_bit_size == 32:
+            signed_offset = ctypes.c_int32(offset).value
+        else:
+            signed_offset = ctypes.c_int64(offset).value
+
         try:
-            self._get_fd(fd).seek(offset)
+            self._get_fd(fd).seek(signed_offset, whence)
         except BadFd:
             logger.info(("LSEEK: Not valid file descriptor on lseek."
                         "Fd not seekable. Returning EBADF"))
             return -errno.EBADF
 
-        logger.debug("LSEEK(%d, 0x%08x, %d)", fd, offset, whence)
+        logger.debug("LSEEK(%d, 0x%08x (%d), %d)", fd, offset, signed_offset, whence)
         return 0
 
     def sys_read(self, fd, buf, count):
@@ -1187,6 +1193,9 @@ class Linux(Platform):
         else:
             return -errno.EINVAL
 
+    def _sys_open_get_file(self, filename, flags, mode):
+        f = File(filename, mode) # TODO (theo) modes, flags
+        return f
 
     def sys_open(self, buf, flags, mode):
         '''
@@ -1202,13 +1211,8 @@ class Linux(Platform):
                 else:
                     logger.info("FIXME!")
             mode = {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[flags&7]
-            if filename in self.symbolic_files:
-                logger.debug("%s file is considered symbolic", filename)
-                assert flags & 7 == os.O_RDWR or flags & 7 == os.O_RDONLY, (
-                    "Symbolic files should be readable?")
-                f = SymbolicFile(self.constraints, filename, mode)
-            else:
-                f = File(filename, mode) # TODO (theo) modes, flags
+            
+            f = self._sys_open_get_file(filename, flags, mode)
             logger.debug("Opening file %s for %s real fd %d",
                          filename, mode, f.fileno())
         # FIXME(theo) generic exception
@@ -1319,6 +1323,91 @@ class Linux(Platform):
         self.current.write_bytes(buf, data)
         logger.debug("READLINK %d %x %d -> %s",path,buf,bufsize,data)
         return len(data)
+
+    def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
+        '''Wrapper for mmap2'''
+        return self.sys_mmap2(address, size, prot, flags, fd, offset)
+
+    def sys_mmap2(self, address, size, prot, flags, fd, offset):
+        '''
+        Creates a new mapping in the virtual address space of the calling process.
+        :rtype: int
+        :param address: the starting address for the new mapping. This address is used as hint unless the
+                        flag contains C{MAP_FIXED}.
+        :param size: the length of the mapping.
+        :param prot: the desired memory protection of the mapping.
+        :param flags: determines whether updates to the mapping are visible to other
+                      processes mapping the same region, and whether updates are carried
+                      through to the underlying file.
+        :param fd: the contents of a file mapping are initialized using C{size} bytes starting at
+                   offset C{offset} in the file referred to by the file descriptor C{fd}.
+        :param offset: the contents of a file mapping are initialized using C{size} bytes starting at
+                       offset C{offset}*0x1000 in the file referred to by the file descriptor C{fd}.
+        :return:
+            - C{-1} In case you use C{MAP_FIXED} in the flags and the mapping can not be place at the desired address.
+            - the address of the new mapping.
+        '''
+        return self.sys_mmap(address, size, prot, flags, fd, offset*0x1000)
+
+    def sys_mmap(self, address, size, prot, flags, fd, offset):
+        '''
+        Creates a new mapping in the virtual address space of the calling process.
+        :rtype: int
+
+        :param address: the starting address for the new mapping. This address is used as hint unless the
+                        flag contains C{MAP_FIXED}.
+        :param size: the length of the mapping.
+        :param prot: the desired memory protection of the mapping.
+        :param flags: determines whether updates to the mapping are visible to other
+                      processes mapping the same region, and whether updates are carried
+                      through to the underlying file.
+        :param fd: the contents of a file mapping are initialized using C{size} bytes starting at
+                   offset C{offset} in the file referred to by the file descriptor C{fd}.
+        :param offset: the contents of a file mapping are initialized using C{size} bytes starting at
+                       offset C{offset} in the file referred to by the file descriptor C{fd}.
+        :return:
+                - C{-1} in case you use C{MAP_FIXED} in the flags and the mapping can not be place at the desired address.
+                - the address of the new mapping (that must be the same as address in case you included C{MAP_FIXED} in flags).
+        :todo: handle exception.
+        '''
+
+        if address == 0:
+            address = None
+
+        cpu = self.current
+        if flags & 0x10 != 0:
+            cpu.memory.munmap(address,size)
+
+        perms = perms_from_protflags(prot)
+
+        if flags & 0x20 != 0:
+            result = cpu.memory.mmap(address, size, perms)
+        elif fd == 0:
+            assert offset == 0
+            result = cpu.memory.mmap(address, size, perms)
+            data = self.files[fd].read(size)
+            cpu.write_bytes(result, data)
+        else:
+            #FIXME Check if file should be symbolic input and do as with fd0
+            result = cpu.memory.mmapFile(address, size, perms, self.files[fd].name, offset)
+
+        actually_mapped = '0x{:016x}'.format(result)
+        if address is None or result != address:
+            address = address or 0
+            actually_mapped += ' [requested: 0x{:016x}]'.format(address)
+
+        if flags & 0x10 != 0 and result != address:
+            cpu.memory.munmap(result, size)
+            result = -1
+
+        logger.debug("sys_mmap(%s, 0x%x, %s, %x, %d) - (0x%x)",
+                     actually_mapped,
+                     size,
+                     perms,
+                     flags,
+                     fd,
+                     result)
+        return result
 
     def sys_mprotect(self, start, size, prot):
         '''
@@ -1945,6 +2034,16 @@ class SLinux(Linux):
         self.symbolic_files = state['symbolic_files']
         super(SLinux, self).__setstate__(state)
 
+    def _sys_open_get_file(self, filename, flags, mode):
+        if filename in self.symbolic_files:
+            logger.debug("%s file is considered symbolic", filename)
+            assert flags & 7 == os.O_RDWR or flags & 7 == os.O_RDONLY, (
+                "Symbolic files should be readable?")
+            f = SymbolicFile(self.constraints, filename, mode)
+        else:
+            f = super(SLinux, self)._sys_open_get_file(filename, flags, mode)
+
+        return f
 
     #Dispatchers...
 
@@ -1962,92 +2061,6 @@ class SLinux(Linux):
             raise ConcretizeArgument(2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
-
-    def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
-        '''Wrapper for mmap2'''
-        return self.sys_mmap2(address, size, prot, flags, fd, offset)
-
-    def sys_mmap2(self, address, size, prot, flags, fd, offset):
-        '''
-        Creates a new mapping in the virtual address space of the calling process.
-        :rtype: int
-        :param address: the starting address for the new mapping. This address is used as hint unless the
-                        flag contains C{MAP_FIXED}.
-        :param size: the length of the mapping.
-        :param prot: the desired memory protection of the mapping.
-        :param flags: determines whether updates to the mapping are visible to other
-                      processes mapping the same region, and whether updates are carried
-                      through to the underlying file.
-        :param fd: the contents of a file mapping are initialized using C{size} bytes starting at
-                   offset C{offset} in the file referred to by the file descriptor C{fd}.
-        :param offset: the contents of a file mapping are initialized using C{size} bytes starting at
-                       offset C{offset}*0x1000 in the file referred to by the file descriptor C{fd}.
-        :return:
-            - C{-1} In case you use C{MAP_FIXED} in the flags and the mapping can not be place at the desired address.
-            - the address of the new mapping.
-        '''
-        return self.sys_mmap(address, size, prot, flags, fd, offset*0x1000)
-
-    def sys_mmap(self, address, size, prot, flags, fd, offset):
-        '''
-        Creates a new mapping in the virtual address space of the calling process.
-        :rtype: int
-
-        :param address: the starting address for the new mapping. This address is used as hint unless the
-                        flag contains C{MAP_FIXED}.
-        :param size: the length of the mapping.
-        :param prot: the desired memory protection of the mapping.
-        :param flags: determines whether updates to the mapping are visible to other
-                      processes mapping the same region, and whether updates are carried
-                      through to the underlying file.
-        :param fd: the contents of a file mapping are initialized using C{size} bytes starting at
-                   offset C{offset} in the file referred to by the file descriptor C{fd}.
-        :param offset: the contents of a file mapping are initialized using C{size} bytes starting at
-                       offset C{offset} in the file referred to by the file descriptor C{fd}.
-        :return:
-                - C{-1} in case you use C{MAP_FIXED} in the flags and the mapping can not be place at the desired address.
-                - the address of the new mapping (that must be the same as address in case you included C{MAP_FIXED} in flags).
-        :todo: handle exception.
-        '''
-
-        if address == 0:
-            address = None
-
-        cpu = self.current
-        if flags & 0x10 != 0:
-            cpu.memory.munmap(address,size)
-
-        perms = perms_from_protflags(prot)
-
-        if flags & 0x20 != 0:
-            result = cpu.memory.mmap(address, size, perms)
-        elif fd == 0:
-            assert offset == 0
-            result = cpu.memory.mmap(address, size, perms)
-            data = self.files[fd].read(size)
-            cpu.write_bytes(result, data)
-        else:
-            #FIXME Check if file should be symbolic input and do as with fd0
-            result = cpu.memory.mmapFile(address, size, perms, self.files[fd].name, offset)
-
-        actually_mapped = '0x{:016x}'.format(result)
-        if address is None or result != address:
-            address = address or 0
-            actually_mapped += ' [requested: 0x{:016x}]'.format(address)
-
-        if flags & 0x10 != 0 and result != address:
-            cpu.memory.munmap(result, size)
-            result = -1
-
-        logger.debug("sys_mmap(%s, 0x%x, %s, %x, %d) - (0x%x)",
-                     actually_mapped,
-                     size,
-                     perms,
-                     flags,
-                     fd,
-                     result)
-        return result
-
 
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
