@@ -272,7 +272,7 @@ class Manticore(object):
     def verbosity(self, setting):
         levels = [[],
                   [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
-                  [('PLATFORM', logging.DEBUG)],
+                  [('PLATFORM', logging.DEBUG), ('EXECUTOR', logging.DEBUG)],
                   [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
                   [('REGISTERS', logging.DEBUG)],
                   [('SMT', logging.DEBUG)]]
