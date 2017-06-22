@@ -175,6 +175,7 @@ class Windows(Platform):
         assert nprocs > 0
         assert len(self.running) == 1, "For now lets consider only one thread running"
         self._current = self.running[0]
+        self._function_abi = I386StdcallAbi(self.procs[0])
 
         #Install event forwarders
         for proc in self.procs:
@@ -540,7 +541,7 @@ class ntdll(object):
     def RtlAllocateHeap(platform, handle, flags, size):
         if issymbolic(size):
             logger.info("RtlAllcoateHeap({}, {}, SymbolicSize); concretizing size".format(str(handle), str(flags)) )
-            raise ConcretizeArgument(2)
+            raise ConcretizeArgumet(platform.current, 2)
         else:
             raise IgnoreAPI("RtlAllocateHeap({}, {}, {:08x})".format(str(handle), str(flags), size))
 
@@ -582,7 +583,7 @@ class kernel32(object):
         except MemoryException as me:
             raise MemoryException("{}: {}".format(myname, me.cause), 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(platform.current, 1)
 
         logger.info("{}({}, [{}], {}, {}, {})".format(
             myname,
@@ -646,7 +647,7 @@ class kernel32(object):
         except MemoryException as me:
             raise MemoryException("{}: {}".format(myname, me.cause), 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(platform.current, 1)
 
         logger.info("{}({}, [{}], {}, {}, {}, {}, {}, {}, {})".format(myname,
             str(hKey), key_str, str(Reserved), str(lpClass), str(dwOptions), 
@@ -746,7 +747,7 @@ class kernel32(object):
             msg = "CreateFile{}: {}".format(utf16 and "W" or "A", me.cause)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgumet(platform.current, 0)
 
 
         logger.info("""CreateFile%s(
@@ -852,7 +853,7 @@ class kernel32(object):
             msg = "{}: {}".format(myname, me.cause)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgumet(platform.current, 0)
 
         try:
             cmdline = readStringFromPointer(platform, cpu, lpCommandLine, utf16)
@@ -860,7 +861,7 @@ class kernel32(object):
             msg = "{}: {}".format(myname, me.cause)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(platform.current, 1)
 
         raise IgnoreAPI("{}([{}], [{}], {}, {}, {}, {}, {}, {}, {}, {})".format(myname,
             appname, cmdline, str(lpProcessAttributes), 

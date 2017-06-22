@@ -1967,15 +1967,15 @@ class SLinux(Linux):
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgumet(self, 0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(self, 1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise ConcretizeArgument(2)
+            raise ConcretizeArgumet(self, 2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
@@ -2068,14 +2068,14 @@ class SLinux(Linux):
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgumet(self, 0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(self, 1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise ConcretizeArgument(2)
+            raise ConcretizeArgumet(self, 2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
