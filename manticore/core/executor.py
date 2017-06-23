@@ -198,10 +198,6 @@ class Executor(object):
             if filename.startswith('test_') and filename.endswith('.pkl'):
                 saved_testcases.append(self._workspace_filename(filename)) 
 
-        if saved_states or saved_testcases:
-            #We are trying to continue a paused analysis
-            if initial is not None:
-                raise ArgumentError('Cant set initial state when continuing from previous workspace: {}'.format(workspace))
 
         #Load saved states into the queue
         for filename in saved_states:
@@ -219,8 +215,9 @@ class Executor(object):
         for filename in saved_testcases:
             state_id = int(filename[6:-4])
             self._test_counter.value = max(self._test_counter.value, state_id)
-        
-        return True
+
+        #Return True if we have loaded some sates to continue from
+        return len(saved_states)>0
 
     ################################################
     # Workspace filenames 
