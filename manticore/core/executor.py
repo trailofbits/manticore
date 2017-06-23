@@ -3,7 +3,6 @@ import time
 import os
 import copy
 import cPickle
-import cProfile
 import random
 import logging
 import pstats
@@ -527,12 +526,7 @@ class Executor(object):
                     current_state = None
                     logger.setState(None)
     
-
-            if current_state != None:
-                #Notify this worker is done
-                self.will_terminate_state(current_state, current_state_id, 'Shutdown')
-                current_state = None
-                logger.setState(None)
+            assert current_state is None
 
             #notify siblings we are about to stop this run
             self._stop_run()

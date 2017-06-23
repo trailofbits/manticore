@@ -6,6 +6,9 @@ import logging
 import binascii
 import tempfile
 import functools
+import cProfile
+import pstats
+
 from multiprocessing import Process
 from contextlib import contextmanager
 
@@ -24,25 +27,6 @@ from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger('MANTICORE')
 
-
-
-class ProfilingResults(object):
-    def __init__(self, raw_stats, instructions_executed):
-        self.raw_stats = raw_stats
-        self.instructions_executed = instructions_executed
-
-        self.time_elapsed = raw_stats.total_tt
-
-        self.loading_time = 0
-        self.saving_time = 0
-        self.solver_time = 0
-        for (func_file, _, func_name), (_, _, _, func_time, _) in raw_stats.stats.iteritems():
-            if func_name == 'load':
-                self.loading_time += func_time
-            elif func_name == 'store':
-                self.saving_time += func_time
-            elif func_file.endswith('solver.py') and 'setstate' not in func_name and 'getstate' not in func_name and 'ckl' not in func_name:
-                self.solver_time += func_time
 
 
 
@@ -173,7 +157,7 @@ class Manticore(object):
         self._policy = 'random'
         self._coverage_file = None
         self._memory_errors = None
-        self._should_profile = False
+        self._profiling_stats = None
         self._workers = []
         # XXX(yan) '_args' will be removed soon; exists currently to ease porting
         self._args = args
@@ -214,7 +198,7 @@ class Manticore(object):
         
 
     @contextmanager
-    def locked_context(self, key=None):
+    def locked_context(self, key=None, default=list):
         ''' It refers to the manticore shared context 
             It needs a lock. Its used like this:
 
@@ -235,7 +219,8 @@ class Manticore(object):
             if key is None:
                 yield context
             else:
-                ctx = context[key]
+                assert default in (list, dict, set)
+                ctx = context.get(key, default())
                 yield ctx
                 context[key] = ctx
 
@@ -513,16 +498,17 @@ class Manticore(object):
 
         if profiling:
             def profile_this(func):
-                @wraps(f)
+                @functools.wraps(func)
                 def wrapper(*args, **kwargs):
                     profile = cProfile.Profile()
                     profile.enable()
                     result = func(*args, **kwargs)
                     profile.disable()
                     profile.create_stats()
-                    self.profile_stats.append(_profile.stats.items())
+                    with self.locked_context('profiling_stats', list) as profiling_stats:
+                        profiling_stats.append(profile.stats.items())
                     return result
-            return wrapper
+                return wrapper
 
             target = profile_this(self._executor.run)
         else:
@@ -734,7 +720,34 @@ class Manticore(object):
         return test_number
 
 
-    def _dump_stats_callback(self):
+    def finish_run(self):
+        if self.should_profile:
+            class PstatsFormatted:
+                def __init__(self, d):
+                    self.stats = dict(d)
+                def create_stats(self):
+                    pass
+            with self.locked_context('profiling_stats') as profiling_stats:
+                ps = None
+                for item in profiling_stats:
+                    try:
+                        stat = PstatsFormatted(item)
+                        if ps is None:
+                            ps = pstats.Stats(stat)
+                        else:
+                            ps.add(stat)
+                    except TypeError:
+                        logger.debug("Incorrectly formatted profiling information in _stats, skipping")
+
+                if ps is None:
+                    logger.info("Profiling failed")
+                else:
+                    filename = 'profiling.bin'
+                    logger.info("Dumping profiling info at %s", filename)
+                    ps.dump_stats(filename)
+
+
+
         _shared_context = self.context
         executor_visited = _shared_context.get('visited', set())
 
@@ -831,7 +844,7 @@ class Manticore(object):
             t = Timer(timeout, self.terminate)
             t.start()
         try:
-            self._start_workers(procs, profiling=False)
+            self._start_workers(procs, profiling=self.should_profile)
 
             self._join_workers()
         finally:
@@ -842,47 +855,8 @@ class Manticore(object):
         self._context = dict(self._executor._shared_context)
         self._executor = None
 
-        if self.should_profile:
+        self.finish_run()
 
-            class PstatsFormatted:
-                def __init__(self, d):
-                    self.stats = dict(d)
-                def create_stats(self):
-                    pass
-
-            ps = None
-            for item in self._stats:
-                try:
-                    stat = PstatsFormatted(item)
-                    if ps is None:
-                        ps = pstats.Stats(stat)
-                    else:
-                        ps.add(stat)
-                except TypeError:
-                    logger.debug("Incorrectly formatted profiling information in _stats, skipping")
-
-            if ps is None:
-                logger.info("Profiling failed")
-            else:
-                filename = self._getFilename('profiling.bin') 
-                logger.info("Dumping profiling info at %s", filename)
-                ps.dump_stats(filename)
-
-            results = ProfilingResults(ps, self.count)
-
-            logger.info("Total profiled time: %f", results.time_elapsed)
-            logger.info("Loading state time: %f", results.loading_time)
-            logger.info("Saving state time: %f", results.saving_time)
-            logger.info("Solver time: %f", results.solver_time)
-            logger.info("Other time: %f", results.time_elapsed - (results.loading_time + results.saving_time + results.solver_time))
-            return results
-
-
-
-        self._dump_stats_callback()
-
-        logger.info('Results dumped in %s', self.workspace)
-        logger.info('Total time: %s', time.time()-self._time_started)
 
     def terminate(self):
         '''
