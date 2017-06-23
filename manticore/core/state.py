@@ -1,4 +1,5 @@
 import os
+import copy
 from collections import OrderedDict
 
 from .smtlib import solver
@@ -104,7 +105,6 @@ class State(object):
         assert self._child is None
         new_state = State(self.constraints.__enter__(), self.platform)
         new_state.input_symbols = self.input_symbols
-        import copy
         new_state.context = copy.deepcopy(self.context)
         self._child = new_state
         

@@ -201,20 +201,17 @@ class Executor(object):
 
         #Load saved states into the queue
         for filename in saved_states:
-            #with open(filename, "r") as f:
-            #    temp_state = cPickle.loads(f.read())
-            #    self.policy.measure(temp_state)
             state_id = int(filename[6:-4])
             self._states.append(state_id)
 
         #reset test and states counter 
         for filename in saved_states:
             state_id = int(filename[6:-4])
-            self._state_counter.value = max(self._state_counter.value, state_id)
+            self._state_count.value = max(self._state_counter.value, state_id)
 
         for filename in saved_testcases:
             state_id = int(filename[6:-4])
-            self._test_counter.value = max(self._test_counter.value, state_id)
+            self._test_count.value = max(self._test_counter.value, state_id)
 
         #Return True if we have loaded some sates to continue from
         return len(saved_states)>0
@@ -254,7 +251,7 @@ class Executor(object):
         self._running.value+=1
 
     @sync
-    def _stop_run(self, count=0):
+    def _stop_run(self):
         #notify siblings we are about to stop this run()
         self._running.value-=1
         assert self._running.value >=0
@@ -327,7 +324,6 @@ class Executor(object):
                 logger.warning("Using iterpickle to dump state")
                 f.write(iterpickle.dumps(state, 2))
 
-            filesize = f.tell()
             f.flush()
 
         #broadcast event
@@ -436,11 +432,8 @@ class Executor(object):
         '''
         Entry point of the Executor; called by workers to start analysis.
         '''
-
         #policy_order=self.policy_order
         #policy=self.policy
-
-        count = 0
         current_state = None
         current_state_id = None
 
