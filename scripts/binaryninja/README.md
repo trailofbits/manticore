@@ -1,7 +1,6 @@
-To use a plugin:
+## Installation
 
-1. Symlink the desired plugin into the [plugin directory](https://github.com/Vector35/binaryninja-api/tree/dev/python/examples#loading-plugins)
-2. `import` it from the Binary Ninja Script Console, and call desired functions
+- Symlink the desired plugin into the [plugin directory](https://github.com/Vector35/binaryninja-api/tree/dev/python/examples#loading-plugins)
 
 Example:
 
@@ -10,7 +9,13 @@ $ ln -s $PWD/viz.py ~/Library/Application\ Support/Binary\ Ninja/plugins/
 
 ```
 
-From script console:
+## Usage
+
+- Run manticore on a binary
+- Open the binary in Binary Ninja
+- `import` it from the Binary Ninja Script Console, and call desired functions
+
+Example:
 
 ```
 >>> import viz
