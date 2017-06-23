@@ -186,7 +186,7 @@ class Executor(object):
         saved_states = []
         for filename in os.listdir(self.workspace):
             if filename.startswith('state_') and filename.endswith('.pkl'):
-                saved_states.append(self._getFilename(filename)) 
+                saved_states.append(self._workspace_filename(filename)) 
         
         #We didn't find any saved intermediate states in the workspace
         if not saved_states:
@@ -196,7 +196,7 @@ class Executor(object):
         saved_testcases = []
         for filename in os.listdir(self.workspace):
             if filename.startswith('test_') and filename.endswith('.pkl'):
-                saved_testcases.append(self._getFilename(filename)) 
+                saved_testcases.append(self._workspace_filename(filename)) 
 
         if saved_states or saved_testcases:
             #We are trying to continue a paused analysis
