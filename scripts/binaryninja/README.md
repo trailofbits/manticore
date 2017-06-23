@@ -1,6 +1,6 @@
 To use a plugin:
 
-1. Symlink the desired plugin into the directory specified here: https://github.com/Vector35/binaryninja-api/tree/dev/python/examples#loading-plugins
+1. Symlink the desired plugin into the [plugin directory](https://github.com/Vector35/binaryninja-api/tree/dev/python/examples#loading-plugins)
 2. `import` it from the Binary Ninja Script Console, and call desired functions
 
 Example:
