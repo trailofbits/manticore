@@ -157,7 +157,7 @@ class Manticore(object):
         self._policy = 'random'
         self._coverage_file = None
         self._memory_errors = None
-        self._profiling_stats = None
+        self._should_profile = False
         self._workers = []
         # XXX(yan) '_args' will be removed soon; exists currently to ease porting
         self._args = args
@@ -742,7 +742,7 @@ class Manticore(object):
                 if ps is None:
                     logger.info("Profiling failed")
                 else:
-                    filename = 'profiling.bin'
+                    filename = self._executor._workspace_filename('profiling.bin')
                     logger.info("Dumping profiling info at %s", filename)
                     ps.dump_stats(filename)
 
@@ -853,9 +853,8 @@ class Manticore(object):
                 t.cancel()
         #Copy back the shared conext
         self._context = dict(self._executor._shared_context)
-        self._executor = None
-
         self.finish_run()
+        self._executor = None
 
 
     def terminate(self):
