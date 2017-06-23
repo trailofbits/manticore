@@ -9,14 +9,15 @@ import sys
 #                level = logging.DEBUG)
 
 class ExpressionTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
 
     def setUp(self):
         self.solver = Z3Solver()
-        
+
 
     def tearDown(self):
         del self.solver
-        
+
 
     def testBasicAST_001(self):
         ''' Can't build abstract classes '''
@@ -45,7 +46,7 @@ class ExpressionTest(unittest.TestCase):
         self.assertIsInstance(c, Expression)
         self.assertTrue('SOURCE1' in c.taint)
         self.assertTrue('SOURCE2' in c.taint)
-    
+
 
     def testBasicConstraints(self):
         cs =  ConstraintSet()
@@ -72,7 +73,7 @@ class ExpressionTest(unittest.TestCase):
         cs =  ConstraintSet()
         #make array of 32->8 bits
         array = cs.new_array(32)
-        #make free 32bit bitvector 
+        #make free 32bit bitvector
         key = cs.new_bitvec(32)
 
         #assert that the array is 'A' at key position
@@ -84,13 +85,13 @@ class ExpressionTest(unittest.TestCase):
             #1001 position of array can be 'A'
             temp_cs.add(array[1001] == 'A')
             self.assertTrue(self.solver.check(temp_cs))
-        
+
         with cs as temp_cs:
             #1001 position of array can also be 'B'
             temp_cs.add(array[1001] == 'B')
             self.assertTrue(self.solver.check(temp_cs))
 
-        
+
         with cs as temp_cs:
             #but if it is 'B' ...
             temp_cs.add(array[1001] == 'B')
@@ -110,7 +111,7 @@ class ExpressionTest(unittest.TestCase):
         cs =  ConstraintSet()
         #make array of 32->8 bits
         array = cs.new_array(32, name=name)
-        #make free 32bit bitvector 
+        #make free 32bit bitvector
         key = cs.new_bitvec(32)
 
         #assert that the array is 'A' at key position
@@ -147,7 +148,7 @@ class ExpressionTest(unittest.TestCase):
 
         #make array of 32->8 bits
         array = cs.new_array(32)
-        #make free 32bit bitvector 
+        #make free 32bit bitvector
         key = cs.new_bitvec(32)
 
         #assert that the array is 'A' at key position
@@ -244,8 +245,8 @@ class ExpressionTest(unittest.TestCase):
         x = BitVecConstant(32, 100, taint=('important',))
         y = BitVecConstant(32, 200, taint=('stuff',))
         z = constant_folder(x+y)
-        self.assertItemsEqual(z.taint, ('important', 'stuff')) 
-        self.assertEqual(z.value, 300) 
+        self.assertItemsEqual(z.taint, ('important', 'stuff'))
+        self.assertEqual(z.value, 300)
 
     def test_arithmetic_simplifier(self):
         cs = ConstraintSet()
@@ -265,7 +266,7 @@ class ExpressionTest(unittest.TestCase):
         cs2 = ConstraintSet()
         exp = cs2.new_bitvec(32)
         exp |=  0
-        exp &= 1	
+        exp &= 1
         exp |= 0
         self.assertEqual(get_depth(exp), 4)
         self.assertEqual(translate_to_smtlib(exp), '(bvor (bvand (bvor V_1 #x00000000) #x00000001) #x00000000)')
@@ -414,7 +415,7 @@ class ExpressionTest(unittest.TestCase):
             b = cs.new_bitvec(32)
             c = cs.new_bitvec(32)
 
-            cs.add(c == Operators.SAR(32, a, b)) 
+            cs.add(c == Operators.SAR(32, a, b))
             cs.add(a == A)
             cs.add(b == B)
 
@@ -432,7 +433,7 @@ class ExpressionTest(unittest.TestCase):
         #linear relation
         #cs.add(x+y*5 == 0)
 
-        #Fork and divide in quadrants 
+        #Fork and divide in quadrants
 
         saved_up = None
         saved_up_right = None
@@ -661,7 +662,7 @@ class ExpressionTest(unittest.TestCase):
 import importlib
 class Z3Test(unittest.TestCase):
     def setUp(self):
-        #Manual mock for check_output 
+        #Manual mock for check_output
         self.module = importlib.import_module('manticore.core.smtlib.solver')
         self.module.check_output = lambda *args, **kwargs: self.version
         self.z3 = self.module.Z3Solver

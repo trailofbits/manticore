@@ -3,6 +3,7 @@ import unittest
 from manticore import Manticore
 
 class ManticoreTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     def setUp(self):
         self.m = Manticore('tests/binaries/arguments_linux_amd64')
 

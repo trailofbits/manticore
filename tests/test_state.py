@@ -36,6 +36,7 @@ class FakePlatform(object):
 
 
 class StateTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     def setUp(self):
         l = linux.Linux('/bin/ls')
         self.state = State(ConstraintSet(), l)
@@ -68,30 +69,30 @@ class StateTest(unittest.TestCase):
         solved = self.state.concretize(expr, 'ONE')
         self.assertEqual(len(solved), 1)
         self.assertIn(solved[0], xrange(100))
-    
+
     def test_state(self):
         constraints = ConstraintSet()
         initial_state = State(constraints, FakePlatform())
 
         arr = initial_state.symbolicate_buffer('+'*100, label='SYMBA')
         initial_state.constrain(arr[0] > 0x41)
-        self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
+        self.assertTrue(len(initial_state.constraints.declarations) == 1 )
         with initial_state as new_state:
 
-            self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
-            self.assertTrue(len(new_state.constraints.declarations) == 1 ) 
+            self.assertTrue(len(initial_state.constraints.declarations) == 1 )
+            self.assertTrue(len(new_state.constraints.declarations) == 1 )
             arrb = new_state.symbolicate_buffer('+'*100, label='SYMBB')
 
-            self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
-            self.assertTrue(len(new_state.constraints.declarations) == 1 ) 
+            self.assertTrue(len(initial_state.constraints.declarations) == 1 )
+            self.assertTrue(len(new_state.constraints.declarations) == 1 )
 
             new_state.constrain(arrb[0] > 0x42)
 
 
-            self.assertTrue(len(new_state.constraints.declarations) == 2 ) 
+            self.assertTrue(len(new_state.constraints.declarations) == 2 )
 
 
-        self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
+        self.assertTrue(len(initial_state.constraints.declarations) == 1 )
 
     def test_new_symbolic_buffer(self):
         length = 64
