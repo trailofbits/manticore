@@ -20,7 +20,7 @@ import logging
 logger = logging.getLogger("ARM_TESTS")
 
 __doc__ = '''
-Test the Unicorn emulation stub.  Armv7UnicornInstructions includes all 
+Test the Unicorn emulation stub.  Armv7UnicornInstructions includes all
 semantics from ARM tests to ensure that they match. UnicornConcretization tests
 to make sure symbolic values get properly concretized.
 '''
@@ -89,6 +89,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
     Import all of the tests from ARM, but execute with Unicorn to verify that
     all semantics match.
     '''
+    _multiprocess_can_split_ = True
     def setUp(self):
         self.cpu = Cpu(Memory32())
         self.mem = self.cpu.memory

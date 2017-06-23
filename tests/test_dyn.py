@@ -6,6 +6,7 @@ from manticore.core.memory import *
 
 
 class CPUTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     class ROOperand(object):
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
@@ -23,8 +24,8 @@ class CPUTest(unittest.TestCase):
 
 
     def test_MOVHPD_1(self):
-        ''' Instruction MOVHPD_1 
-            Groups: sse2 
+        ''' Instruction MOVHPD_1
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -48,7 +49,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7a249c9
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -67,8 +68,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_10(self):
-        ''' Instruction MOVHPD_10 
-            Groups: sse2 
+        ''' Instruction MOVHPD_10
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -92,7 +93,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -111,8 +112,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_11(self):
-        ''' Instruction MOVHPD_11 
-            Groups: sse2 
+        ''' Instruction MOVHPD_11
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -136,7 +137,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2956], 'V')
         self.assertEqual(mem[0x7ffff7a248d7], '.')
         self.assertEqual(mem[0x7ffff7df2953], 'f')
@@ -155,8 +156,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_12(self):
-        ''' Instruction MOVHPD_12 
-            Groups: sse2 
+        ''' Instruction MOVHPD_12
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -180,7 +181,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -199,8 +200,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_13(self):
-        ''' Instruction MOVHPD_13 
-            Groups: sse2 
+        ''' Instruction MOVHPD_13
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -224,7 +225,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7a218d2
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -243,8 +244,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_14(self):
-        ''' Instruction MOVHPD_14 
-            Groups: sse2 
+        ''' Instruction MOVHPD_14
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -268,7 +269,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7a20a93
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2953], 'f')
         self.assertEqual(mem[0x7ffff7df2954], '\x0f')
         self.assertEqual(mem[0x7ffff7df2955], '\x16')
@@ -287,8 +288,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_15(self):
-        ''' Instruction MOVHPD_15 
-            Groups: sse2 
+        ''' Instruction MOVHPD_15
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -312,7 +313,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7a232e6
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2953], 'f')
         self.assertEqual(mem[0x7ffff7df2954], '\x0f')
         self.assertEqual(mem[0x7ffff7df2955], '\x16')
@@ -331,8 +332,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_16(self):
-        ''' Instruction MOVHPD_16 
-            Groups: sse2 
+        ''' Instruction MOVHPD_16
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -356,7 +357,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2956], 'V')
         self.assertEqual(mem[0x7ffff7a248d7], '.')
         self.assertEqual(mem[0x7ffff7df2953], 'f')
@@ -375,8 +376,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_17(self):
-        ''' Instruction MOVHPD_17 
-            Groups: sse2 
+        ''' Instruction MOVHPD_17
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -400,7 +401,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7dd7669
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -419,8 +420,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_18(self):
-        ''' Instruction MOVHPD_18 
-            Groups: sse2 
+        ''' Instruction MOVHPD_18
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -444,7 +445,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2956], 'V')
         self.assertEqual(mem[0x7ffff7a248d7], '.')
         self.assertEqual(mem[0x7ffff7df2953], 'f')
@@ -463,8 +464,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_19(self):
-        ''' Instruction MOVHPD_19 
-            Groups: sse2 
+        ''' Instruction MOVHPD_19
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -488,7 +489,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7dd7748
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -507,8 +508,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_2(self):
-        ''' Instruction MOVHPD_2 
-            Groups: sse2 
+        ''' Instruction MOVHPD_2
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -532,7 +533,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -551,8 +552,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_20(self):
-        ''' Instruction MOVHPD_20 
-            Groups: sse2 
+        ''' Instruction MOVHPD_20
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -576,7 +577,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7a248af
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -595,8 +596,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_21(self):
-        ''' Instruction MOVHPD_21 
-            Groups: sse2 
+        ''' Instruction MOVHPD_21
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -620,7 +621,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7b99a28
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2953], 'f')
         self.assertEqual(mem[0x7ffff7df2954], '\x0f')
         self.assertEqual(mem[0x7ffff7df2955], '\x16')
@@ -639,8 +640,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_3(self):
-        ''' Instruction MOVHPD_3 
-            Groups: sse2 
+        ''' Instruction MOVHPD_3
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -664,7 +665,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -683,8 +684,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_4(self):
-        ''' Instruction MOVHPD_4 
-            Groups: sse2 
+        ''' Instruction MOVHPD_4
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -708,7 +709,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2956], 'V')
         self.assertEqual(mem[0x7ffff7a248d7], '.')
         self.assertEqual(mem[0x7ffff7df2953], 'f')
@@ -727,8 +728,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_5(self):
-        ''' Instruction MOVHPD_5 
-            Groups: sse2 
+        ''' Instruction MOVHPD_5
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -752,7 +753,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7ffa304
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7ffa30c], '6')
         self.assertEqual(mem[0x7ffff7ffa30d], '\x00')
         self.assertEqual(mem[0x7ffff7ffa30e], '\x00')
@@ -771,8 +772,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_MOVHPD_6(self):
-        ''' Instruction MOVHPD_6 
-            Groups: sse2 
+        ''' Instruction MOVHPD_6
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -796,7 +797,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2956], 'V')
         self.assertEqual(mem[0x7ffff7a248d7], '.')
         self.assertEqual(mem[0x7ffff7df2953], 'f')
@@ -815,8 +816,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_7(self):
-        ''' Instruction MOVHPD_7 
-            Groups: sse2 
+        ''' Instruction MOVHPD_7
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -840,7 +841,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7a248ce
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2956], 'V')
         self.assertEqual(mem[0x7ffff7a248d7], '.')
         self.assertEqual(mem[0x7ffff7df2953], 'f')
@@ -859,8 +860,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_8(self):
-        ''' Instruction MOVHPD_8 
-            Groups: sse2 
+        ''' Instruction MOVHPD_8
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         mem = Memory64()
@@ -884,7 +885,7 @@ class CPUTest(unittest.TestCase):
         cpu.RSI = 0x7ffff7ff74a0
         cpu.RIP = 0x7ffff7df2953
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2953], 'f')
         self.assertEqual(mem[0x7ffff7df2954], '\x0f')
         self.assertEqual(mem[0x7ffff7df2955], '\x16')
@@ -903,8 +904,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985496L)
 
     def test_MOVHPD_9(self):
-        ''' Instruction MOVHPD_9 
-            Groups: sse2 
+        ''' Instruction MOVHPD_9
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         mem = Memory64()
@@ -928,7 +929,7 @@ class CPUTest(unittest.TestCase):
         cpu.RDI = 0x7ffff7a2130d
         cpu.RIP = 0x7ffff7df294e
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df294e], 'f')
         self.assertEqual(mem[0x7ffff7df294f], '\x0f')
         self.assertEqual(mem[0x7ffff7df2950], '\x16')
@@ -947,8 +948,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985491L)
 
     def test_PSLLDQ_1(self):
-        ''' Instruction PSLLDQ_1 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_1
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -962,7 +963,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x1
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -972,8 +973,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_10(self):
-        ''' Instruction PSLLDQ_10 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_10
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -987,7 +988,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -997,8 +998,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_11(self):
-        ''' Instruction PSLLDQ_11 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_11
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1012,7 +1013,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1022,8 +1023,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_12(self):
-        ''' Instruction PSLLDQ_12 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_12
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1037,7 +1038,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1047,8 +1048,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_13(self):
-        ''' Instruction PSLLDQ_13 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_13
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1062,7 +1063,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x1
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1072,8 +1073,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_14(self):
-        ''' Instruction PSLLDQ_14 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_14
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1087,7 +1088,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1097,8 +1098,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_15(self):
-        ''' Instruction PSLLDQ_15 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_15
+            Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
         '''
         mem = Memory64()
@@ -1112,7 +1113,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x3000000020002000000352e322e32
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df38a0], '\xfa')
         self.assertEqual(mem[0x7ffff7df38a1], '\x04')
         self.assertEqual(mem[0x7ffff7df389d], 'f')
@@ -1122,8 +1123,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989410L)
 
     def test_PSLLDQ_16(self):
-        ''' Instruction PSLLDQ_16 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_16
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1137,7 +1138,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1147,8 +1148,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_17(self):
-        ''' Instruction PSLLDQ_17 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_17
+            Groups: sse2
             0x7ffff7df39dd:	pslldq	xmm2, 3
         '''
         mem = Memory64()
@@ -1162,7 +1163,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x494c4700352e322e325f4342494c4700
         cpu.RIP = 0x7ffff7df39dd
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df39e0], '\xfa')
         self.assertEqual(mem[0x7ffff7df39e1], '\x03')
         self.assertEqual(mem[0x7ffff7df39dd], 'f')
@@ -1172,8 +1173,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989730L)
 
     def test_PSLLDQ_18(self):
-        ''' Instruction PSLLDQ_18 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_18
+            Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
         '''
         mem = Memory64()
@@ -1187,7 +1188,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x665f4f495f006f6c6c657466006b6863
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df38a0], '\xfa')
         self.assertEqual(mem[0x7ffff7df38a1], '\x04')
         self.assertEqual(mem[0x7ffff7df389d], 'f')
@@ -1197,8 +1198,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989410L)
 
     def test_PSLLDQ_19(self):
-        ''' Instruction PSLLDQ_19 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_19
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1212,7 +1213,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x1
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1222,8 +1223,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_2(self):
-        ''' Instruction PSLLDQ_2 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_2
+            Groups: sse2
             0x7ffff7df2f70:	pslldq	xmm2, 0xb
         '''
         mem = Memory64()
@@ -1237,7 +1238,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df2f70
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df2f70], 'f')
         self.assertEqual(mem[0x7ffff7df2f71], '\x0f')
         self.assertEqual(mem[0x7ffff7df2f72], 's')
@@ -1247,8 +1248,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351987061L)
 
     def test_PSLLDQ_20(self):
-        ''' Instruction PSLLDQ_20 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_20
+            Groups: sse2
             0x7ffff7df3970:	pslldq	xmm2, 3
         '''
         mem = Memory64()
@@ -1262,7 +1263,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x322e6f732e34362d3638782d78756e69
         cpu.RIP = 0x7ffff7df3970
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3970], 'f')
         self.assertEqual(mem[0x7ffff7df3971], '\x0f')
         self.assertEqual(mem[0x7ffff7df3972], 's')
@@ -1272,8 +1273,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989621L)
 
     def test_PSLLDQ_21(self):
-        ''' Instruction PSLLDQ_21 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_21
+            Groups: sse2
             0x7ffff7df3830:	pslldq	xmm2, 4
         '''
         mem = Memory64()
@@ -1287,7 +1288,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x5f4342494c4700342e332e325f434249
         cpu.RIP = 0x7ffff7df3830
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3830], 'f')
         self.assertEqual(mem[0x7ffff7df3831], '\x0f')
         self.assertEqual(mem[0x7ffff7df3832], 's')
@@ -1297,8 +1298,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989301L)
 
     def test_PSLLDQ_3(self):
-        ''' Instruction PSLLDQ_3 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_3
+            Groups: sse2
             0x7ffff7df3ab0:	pslldq	xmm2, 2
         '''
         mem = Memory64()
@@ -1312,7 +1313,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x63007463656a626f5f726f665f6f7364
         cpu.RIP = 0x7ffff7df3ab0
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3ab0], 'f')
         self.assertEqual(mem[0x7ffff7df3ab1], '\x0f')
         self.assertEqual(mem[0x7ffff7df3ab2], 's')
@@ -1322,8 +1323,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989941L)
 
     def test_PSLLDQ_4(self):
-        ''' Instruction PSLLDQ_4 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_4
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1337,7 +1338,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1347,8 +1348,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_5(self):
-        ''' Instruction PSLLDQ_5 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_5
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1362,7 +1363,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x6972705f5f00362e6f732e6362696c00
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1372,8 +1373,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_6(self):
-        ''' Instruction PSLLDQ_6 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_6
+            Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
         '''
         mem = Memory64()
@@ -1387,7 +1388,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x3000000020002000000352e322e32
         cpu.RIP = 0x7ffff7df389d
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df38a0], '\xfa')
         self.assertEqual(mem[0x7ffff7df38a1], '\x04')
         self.assertEqual(mem[0x7ffff7df389d], 'f')
@@ -1397,8 +1398,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989410L)
 
     def test_PSLLDQ_7(self):
-        ''' Instruction PSLLDQ_7 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_7
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         mem = Memory64()
@@ -1412,7 +1413,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x1
         cpu.RIP = 0x7ffff7df3470
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3470], 'f')
         self.assertEqual(mem[0x7ffff7df3471], '\x0f')
         self.assertEqual(mem[0x7ffff7df3472], 's')
@@ -1422,8 +1423,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351988341L)
 
     def test_PSLLDQ_8(self):
-        ''' Instruction PSLLDQ_8 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_8
+            Groups: sse2
             0x7ffff7df39dd:	pslldq	xmm2, 3
         '''
         mem = Memory64()
@@ -1437,7 +1438,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x7461636f6c6c6165645f6c645f00636f
         cpu.RIP = 0x7ffff7df39dd
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df39e0], '\xfa')
         self.assertEqual(mem[0x7ffff7df39e1], '\x03')
         self.assertEqual(mem[0x7ffff7df39dd], 'f')
@@ -1447,8 +1448,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351989730L)
 
     def test_PSLLDQ_9(self):
-        ''' Instruction PSLLDQ_9 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_9
+            Groups: sse2
             0x7ffff7df3c5d:	pslldq	xmm2, 1
         '''
         mem = Memory64()
@@ -1462,7 +1463,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM2 = 0x68252e7568254d00796164666f656d69
         cpu.RIP = 0x7ffff7df3c5d
         cpu.execute()
-    
+
         self.assertEqual(mem[0x7ffff7df3c60], '\xfa')
         self.assertEqual(mem[0x7ffff7df3c61], '\x01')
         self.assertEqual(mem[0x7ffff7df3c5d], 'f')
@@ -1472,8 +1473,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351990370L)
 
     def test_MOVHPD_1_symbolic(self):
-        ''' Instruction MOVHPD_1 
-            Groups: sse2 
+        ''' Instruction MOVHPD_1
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -1567,11 +1568,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_10_symbolic(self):
-        ''' Instruction MOVHPD_10 
-            Groups: sse2 
+        ''' Instruction MOVHPD_10
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -1665,11 +1666,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_11_symbolic(self):
-        ''' Instruction MOVHPD_11 
-            Groups: sse2 
+        ''' Instruction MOVHPD_11
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -1763,11 +1764,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_12_symbolic(self):
-        ''' Instruction MOVHPD_12 
-            Groups: sse2 
+        ''' Instruction MOVHPD_12
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -1861,11 +1862,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_13_symbolic(self):
-        ''' Instruction MOVHPD_13 
-            Groups: sse2 
+        ''' Instruction MOVHPD_13
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -1959,11 +1960,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_14_symbolic(self):
-        ''' Instruction MOVHPD_14 
-            Groups: sse2 
+        ''' Instruction MOVHPD_14
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -2057,11 +2058,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_15_symbolic(self):
-        ''' Instruction MOVHPD_15 
-            Groups: sse2 
+        ''' Instruction MOVHPD_15
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -2155,11 +2156,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_16_symbolic(self):
-        ''' Instruction MOVHPD_16 
-            Groups: sse2 
+        ''' Instruction MOVHPD_16
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -2253,11 +2254,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_17_symbolic(self):
-        ''' Instruction MOVHPD_17 
-            Groups: sse2 
+        ''' Instruction MOVHPD_17
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -2351,11 +2352,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_18_symbolic(self):
-        ''' Instruction MOVHPD_18 
-            Groups: sse2 
+        ''' Instruction MOVHPD_18
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -2449,11 +2450,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_19_symbolic(self):
-        ''' Instruction MOVHPD_19 
-            Groups: sse2 
+        ''' Instruction MOVHPD_19
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -2547,11 +2548,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_2_symbolic(self):
-        ''' Instruction MOVHPD_2 
-            Groups: sse2 
+        ''' Instruction MOVHPD_2
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -2645,11 +2646,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_20_symbolic(self):
-        ''' Instruction MOVHPD_20 
-            Groups: sse2 
+        ''' Instruction MOVHPD_20
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -2743,11 +2744,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_21_symbolic(self):
-        ''' Instruction MOVHPD_21 
-            Groups: sse2 
+        ''' Instruction MOVHPD_21
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -2841,11 +2842,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_3_symbolic(self):
-        ''' Instruction MOVHPD_3 
-            Groups: sse2 
+        ''' Instruction MOVHPD_3
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -2939,11 +2940,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_4_symbolic(self):
-        ''' Instruction MOVHPD_4 
-            Groups: sse2 
+        ''' Instruction MOVHPD_4
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -3037,11 +3038,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_5_symbolic(self):
-        ''' Instruction MOVHPD_5 
-            Groups: sse2 
+        ''' Instruction MOVHPD_5
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -3135,11 +3136,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_6_symbolic(self):
-        ''' Instruction MOVHPD_6 
-            Groups: sse2 
+        ''' Instruction MOVHPD_6
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -3233,11 +3234,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_7_symbolic(self):
-        ''' Instruction MOVHPD_7 
-            Groups: sse2 
+        ''' Instruction MOVHPD_7
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -3331,11 +3332,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_8_symbolic(self):
-        ''' Instruction MOVHPD_8 
-            Groups: sse2 
+        ''' Instruction MOVHPD_8
+            Groups: sse2
             0x7ffff7df2953:	movhpd	xmm2, qword ptr [rsi + 8]
         '''
         cs = ConstraintSet()
@@ -3429,11 +3430,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVHPD_9_symbolic(self):
-        ''' Instruction MOVHPD_9 
-            Groups: sse2 
+        ''' Instruction MOVHPD_9
+            Groups: sse2
             0x7ffff7df294e:	movhpd	xmm1, qword ptr [rdi + 8]
         '''
         cs = ConstraintSet()
@@ -3527,11 +3528,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_1_symbolic(self):
-        ''' Instruction PSLLDQ_1 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_1
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -3573,11 +3574,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_10_symbolic(self):
-        ''' Instruction PSLLDQ_10 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_10
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -3619,11 +3620,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_11_symbolic(self):
-        ''' Instruction PSLLDQ_11 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_11
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -3665,11 +3666,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_12_symbolic(self):
-        ''' Instruction PSLLDQ_12 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_12
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -3711,11 +3712,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_13_symbolic(self):
-        ''' Instruction PSLLDQ_13 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_13
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -3757,11 +3758,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_14_symbolic(self):
-        ''' Instruction PSLLDQ_14 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_14
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -3803,11 +3804,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_15_symbolic(self):
-        ''' Instruction PSLLDQ_15 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_15
+            Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
         '''
         cs = ConstraintSet()
@@ -3849,11 +3850,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_16_symbolic(self):
-        ''' Instruction PSLLDQ_16 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_16
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -3895,11 +3896,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_17_symbolic(self):
-        ''' Instruction PSLLDQ_17 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_17
+            Groups: sse2
             0x7ffff7df39dd:	pslldq	xmm2, 3
         '''
         cs = ConstraintSet()
@@ -3941,11 +3942,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_18_symbolic(self):
-        ''' Instruction PSLLDQ_18 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_18
+            Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
         '''
         cs = ConstraintSet()
@@ -3987,11 +3988,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_19_symbolic(self):
-        ''' Instruction PSLLDQ_19 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_19
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -4033,11 +4034,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_2_symbolic(self):
-        ''' Instruction PSLLDQ_2 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_2
+            Groups: sse2
             0x7ffff7df2f70:	pslldq	xmm2, 0xb
         '''
         cs = ConstraintSet()
@@ -4079,11 +4080,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_20_symbolic(self):
-        ''' Instruction PSLLDQ_20 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_20
+            Groups: sse2
             0x7ffff7df3970:	pslldq	xmm2, 3
         '''
         cs = ConstraintSet()
@@ -4125,11 +4126,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_21_symbolic(self):
-        ''' Instruction PSLLDQ_21 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_21
+            Groups: sse2
             0x7ffff7df3830:	pslldq	xmm2, 4
         '''
         cs = ConstraintSet()
@@ -4171,11 +4172,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_3_symbolic(self):
-        ''' Instruction PSLLDQ_3 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_3
+            Groups: sse2
             0x7ffff7df3ab0:	pslldq	xmm2, 2
         '''
         cs = ConstraintSet()
@@ -4217,11 +4218,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_4_symbolic(self):
-        ''' Instruction PSLLDQ_4 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_4
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -4263,11 +4264,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_5_symbolic(self):
-        ''' Instruction PSLLDQ_5 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_5
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -4309,11 +4310,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_6_symbolic(self):
-        ''' Instruction PSLLDQ_6 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_6
+            Groups: sse2
             0x7ffff7df389d:	pslldq	xmm2, 4
         '''
         cs = ConstraintSet()
@@ -4355,11 +4356,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_7_symbolic(self):
-        ''' Instruction PSLLDQ_7 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_7
+            Groups: sse2
             0x7ffff7df3470:	pslldq	xmm2, 7
         '''
         cs = ConstraintSet()
@@ -4401,11 +4402,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_8_symbolic(self):
-        ''' Instruction PSLLDQ_8 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_8
+            Groups: sse2
             0x7ffff7df39dd:	pslldq	xmm2, 3
         '''
         cs = ConstraintSet()
@@ -4447,11 +4448,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSLLDQ_9_symbolic(self):
-        ''' Instruction PSLLDQ_9 
-            Groups: sse2 
+        ''' Instruction PSLLDQ_9
+            Groups: sse2
             0x7ffff7df3c5d:	pslldq	xmm2, 1
         '''
         cs = ConstraintSet()
@@ -4493,7 +4494,7 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
 if __name__ == '__main__':
     unittest.main()

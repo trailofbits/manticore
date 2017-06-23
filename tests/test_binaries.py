@@ -13,6 +13,7 @@ import time
 #                level = logging.DEBUG)
 
 class IntegrationTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     def setUp(self):
         # Create a temporary directory
         self.test_dir = tempfile.mkdtemp()
@@ -26,7 +27,7 @@ class IntegrationTest(unittest.TestCase):
         with open(os.path.join(os.pardir, logfile), "w") as output:
             po = subprocess.Popen(procargs, stdout=output)
             secs_used = 0
-    
+
             while po.poll() is None and secs_used < timeout:
                 time.sleep(1)
                 sys.stderr.write("~")
@@ -49,7 +50,7 @@ class IntegrationTest(unittest.TestCase):
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                 '--workspace', workspace,
-                                '--timeout', '1', 
+                                '--timeout', '1',
                                 '--procs', '4',
                                 filename,
                                 '+++++++++'], stdout=output)
@@ -85,7 +86,7 @@ class IntegrationTest(unittest.TestCase):
         assertions = '%s/assertions.txt'%self.test_dir
         file(assertions,'w').write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
-            self._runWithTimeout(['python', SE, 
+            self._runWithTimeout(['python', SE,
                                 '--workspace', workspace,
                                 '--proc', '4',
                                 '--assertions', assertions,
@@ -106,7 +107,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(len(data), 1828)
         self.assertEqual(hashlib.md5(data).hexdigest() , '8955a29d51c1edd39b0e53794ebcf464')
         workspace = '%s/workspace'%self.test_dir
-        self._runWithTimeout(['python', '-m', 'manticore', 
+        self._runWithTimeout(['python', '-m', 'manticore',
                     '--workspace', workspace,
                     '--timeout', '20',
                     '--proc', '4',

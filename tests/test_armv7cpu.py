@@ -23,6 +23,8 @@ def assemble(asm):
 
 
 class Armv7CpuTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     def setUp(self):
         self.c = Cpu(Memory32())
         self.rf = self.c.regfile

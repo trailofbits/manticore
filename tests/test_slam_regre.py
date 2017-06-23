@@ -5,6 +5,7 @@ from manticore.core.memory import *
 
 
 class CPUTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     class ROOperand(object):
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
@@ -22,8 +23,8 @@ class CPUTest(unittest.TestCase):
 
 
     def test_PUNPCKHDQ_1(self):
-        ''' Instruction PUNPCKHDQ_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_1
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -38,7 +39,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -49,8 +50,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_10(self):
-        ''' Instruction PUNPCKHDQ_10 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_10
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -65,7 +66,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -76,8 +77,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_11(self):
-        ''' Instruction PUNPCKHDQ_11 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_11
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -92,7 +93,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -103,8 +104,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_12(self):
-        ''' Instruction PUNPCKHDQ_12 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_12
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -119,7 +120,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -130,8 +131,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_13(self):
-        ''' Instruction PUNPCKHDQ_13 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_13
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -146,7 +147,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -157,8 +158,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_14(self):
-        ''' Instruction PUNPCKHDQ_14 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_14
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -173,7 +174,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -184,8 +185,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_15(self):
-        ''' Instruction PUNPCKHDQ_15 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_15
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -200,7 +201,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -211,8 +212,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_16(self):
-        ''' Instruction PUNPCKHDQ_16 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_16
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -227,7 +228,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -238,8 +239,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_17(self):
-        ''' Instruction PUNPCKHDQ_17 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_17
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -254,7 +255,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -265,8 +266,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_18(self):
-        ''' Instruction PUNPCKHDQ_18 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_18
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -281,7 +282,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -292,8 +293,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_19(self):
-        ''' Instruction PUNPCKHDQ_19 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_19
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -308,7 +309,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -319,8 +320,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_2(self):
-        ''' Instruction PUNPCKHDQ_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_2
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -335,7 +336,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -346,8 +347,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_20(self):
-        ''' Instruction PUNPCKHDQ_20 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_20
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -362,7 +363,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -373,8 +374,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_21(self):
-        ''' Instruction PUNPCKHDQ_21 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_21
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -389,7 +390,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -400,8 +401,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_3(self):
-        ''' Instruction PUNPCKHDQ_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_3
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -416,7 +417,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -427,8 +428,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_4(self):
-        ''' Instruction PUNPCKHDQ_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_4
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -443,7 +444,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -454,8 +455,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_5(self):
-        ''' Instruction PUNPCKHDQ_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_5
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -470,7 +471,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -481,8 +482,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_6(self):
-        ''' Instruction PUNPCKHDQ_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_6
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -497,7 +498,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -508,8 +509,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_7(self):
-        ''' Instruction PUNPCKHDQ_7 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_7
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -524,7 +525,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -535,8 +536,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_8(self):
-        ''' Instruction PUNPCKHDQ_8 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_8
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -551,7 +552,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -562,8 +563,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHDQ_9(self):
-        ''' Instruction PUNPCKHDQ_9 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_9
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         mem = Memory64()
@@ -578,7 +579,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM8 = 0x0
         cpu.RIP = 0x419c43
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c43], 'f')
         self.assertEqual(mem[0x419c44], 'A')
         self.assertEqual(mem[0x419c45], '\x0f')
@@ -589,8 +590,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299848L)
 
     def test_PUNPCKHQDQ_1(self):
-        ''' Instruction PUNPCKHQDQ_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_1
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -603,7 +604,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbae800000000006cbad8
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -612,8 +613,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_10(self):
-        ''' Instruction PUNPCKHQDQ_10 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_10
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -626,7 +627,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cb8e800000000006cb8d8
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -635,8 +636,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_11(self):
-        ''' Instruction PUNPCKHQDQ_11 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_11
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -649,7 +650,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cba8800000000006cba78
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -658,8 +659,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKHQDQ_12(self):
-        ''' Instruction PUNPCKHQDQ_12 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_12
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -672,7 +673,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbaa800000000006cba98
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -681,8 +682,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_13(self):
-        ''' Instruction PUNPCKHQDQ_13 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_13
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -695,7 +696,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbee800000000006cbed8
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -704,8 +705,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_14(self):
-        ''' Instruction PUNPCKHQDQ_14 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_14
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -718,7 +719,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cbf4800000000006cbf38
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -727,8 +728,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKHQDQ_15(self):
-        ''' Instruction PUNPCKHQDQ_15 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_15
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -741,7 +742,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cbdc800000000006cbdb8
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -750,8 +751,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKHQDQ_16(self):
-        ''' Instruction PUNPCKHQDQ_16 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_16
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -764,7 +765,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cb96800000000006cb958
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -773,8 +774,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_17(self):
-        ''' Instruction PUNPCKHQDQ_17 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_17
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -787,7 +788,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cbb4800000000006cbb38
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -796,8 +797,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKHQDQ_18(self):
-        ''' Instruction PUNPCKHQDQ_18 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_18
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -810,7 +811,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cb90800000000006cb8f8
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -819,8 +820,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKHQDQ_19(self):
-        ''' Instruction PUNPCKHQDQ_19 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_19
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -833,7 +834,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbfe800000000006cbfd8
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -842,8 +843,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_2(self):
-        ''' Instruction PUNPCKHQDQ_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_2
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -856,7 +857,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cb88800000000006cb878
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -865,8 +866,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKHQDQ_20(self):
-        ''' Instruction PUNPCKHQDQ_20 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_20
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -879,7 +880,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cb92800000000006cb918
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -888,8 +889,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_21(self):
-        ''' Instruction PUNPCKHQDQ_21 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_21
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -902,7 +903,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cbac800000000006cbab8
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -911,8 +912,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKHQDQ_3(self):
-        ''' Instruction PUNPCKHQDQ_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_3
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -925,7 +926,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbbe800000000006cbbd8
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -934,8 +935,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_4(self):
-        ''' Instruction PUNPCKHQDQ_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_4
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -948,7 +949,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cbd8800000000006cbd78
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -957,8 +958,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKHQDQ_5(self):
-        ''' Instruction PUNPCKHQDQ_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_5
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -971,7 +972,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cb86800000000006cb858
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -980,8 +981,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_6(self):
-        ''' Instruction PUNPCKHQDQ_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_6
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -994,7 +995,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbde800000000006cbdd8
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -1003,8 +1004,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_7(self):
-        ''' Instruction PUNPCKHQDQ_7 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_7
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -1017,7 +1018,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbd2800000000006cbd18
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -1026,8 +1027,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_8(self):
-        ''' Instruction PUNPCKHQDQ_8 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_8
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         mem = Memory64()
@@ -1040,7 +1041,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cb8a800000000006cb898
         cpu.RIP = 0x419c71
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c71], 'f')
         self.assertEqual(mem[0x419c72], '\x0f')
         self.assertEqual(mem[0x419c73], 'm')
@@ -1049,8 +1050,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299893L)
 
     def test_PUNPCKHQDQ_9(self):
-        ''' Instruction PUNPCKHQDQ_9 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_9
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         mem = Memory64()
@@ -1063,7 +1064,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM0 = 0x6cb94800000000006cb938
         cpu.RIP = 0x419c86
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c88], 'm')
         self.assertEqual(mem[0x419c89], '\xc0')
         self.assertEqual(mem[0x419c86], 'f')
@@ -1072,8 +1073,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299914L)
 
     def test_PUNPCKLBW_1(self):
-        ''' Instruction PUNPCKLBW_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_1
+            Groups: sse2
             0x4668ac:	punpcklbw	xmm1, xmm1
         '''
         mem = Memory64()
@@ -1086,7 +1087,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x2f
         cpu.RIP = 0x4668ac
         cpu.execute()
-    
+
         self.assertEqual(mem[0x4668ac], 'f')
         self.assertEqual(mem[0x4668ad], '\x0f')
         self.assertEqual(mem[0x4668ae], '`')
@@ -1095,8 +1096,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4614320L)
 
     def test_PUNPCKLDQ_1(self):
-        ''' Instruction PUNPCKLDQ_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_1
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1111,7 +1112,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0xa6000000a4000000a2000000a0
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1122,8 +1123,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_10(self):
-        ''' Instruction PUNPCKLDQ_10 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_10
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1138,7 +1139,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x3e0000003c0000003a00000038
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1149,8 +1150,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_11(self):
-        ''' Instruction PUNPCKLDQ_11 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_11
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1165,7 +1166,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6000000040000000200000000
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1176,8 +1177,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_12(self):
-        ''' Instruction PUNPCKLDQ_12 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_12
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1192,7 +1193,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x1e0000001c0000001a00000018
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1203,8 +1204,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_13(self):
-        ''' Instruction PUNPCKLDQ_13 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_13
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1219,7 +1220,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0xe0000000c0000000a00000008
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1230,8 +1231,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_14(self):
-        ''' Instruction PUNPCKLDQ_14 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_14
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1246,7 +1247,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0xee000000ec000000ea000000e8
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1257,8 +1258,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_15(self):
-        ''' Instruction PUNPCKLDQ_15 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_15
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1273,7 +1274,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x2e0000002c0000002a00000028
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1284,8 +1285,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_16(self):
-        ''' Instruction PUNPCKLDQ_16 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_16
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1300,7 +1301,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0xf6000000f4000000f2000000f0
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1311,8 +1312,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_17(self):
-        ''' Instruction PUNPCKLDQ_17 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_17
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1327,7 +1328,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x9e0000009c0000009a00000098
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1338,8 +1339,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_18(self):
-        ''' Instruction PUNPCKLDQ_18 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_18
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1354,7 +1355,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x16000000140000001200000010
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1365,8 +1366,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_19(self):
-        ''' Instruction PUNPCKLDQ_19 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_19
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1381,7 +1382,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x96000000940000009200000090
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1392,8 +1393,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_2(self):
-        ''' Instruction PUNPCKLDQ_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_2
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1408,7 +1409,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x76000000740000007200000070
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1419,8 +1420,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_20(self):
-        ''' Instruction PUNPCKLDQ_20 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_20
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1435,7 +1436,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0xde000000dc000000da000000d8
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1446,8 +1447,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_21(self):
-        ''' Instruction PUNPCKLDQ_21 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_21
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1462,7 +1463,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0xe6000000e4000000e2000000e0
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1473,8 +1474,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_3(self):
-        ''' Instruction PUNPCKLDQ_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_3
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1489,7 +1490,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x36000000340000003200000030
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1500,8 +1501,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_4(self):
-        ''' Instruction PUNPCKLDQ_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_4
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1516,7 +1517,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6e0000006c0000006a00000068
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1527,8 +1528,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_5(self):
-        ''' Instruction PUNPCKLDQ_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_5
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1543,7 +1544,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x7e0000007c0000007a00000078
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1554,8 +1555,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_6(self):
-        ''' Instruction PUNPCKLDQ_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_6
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1570,7 +1571,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x26000000240000002200000020
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1581,8 +1582,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_7(self):
-        ''' Instruction PUNPCKLDQ_7 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_7
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1597,7 +1598,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0xbe000000bc000000ba000000b8
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1608,8 +1609,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_8(self):
-        ''' Instruction PUNPCKLDQ_8 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_8
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1624,7 +1625,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0xce000000cc000000ca000000c8
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1635,8 +1636,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLDQ_9(self):
-        ''' Instruction PUNPCKLDQ_9 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_9
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         mem = Memory64()
@@ -1651,7 +1652,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x46000000440000004200000040
         cpu.RIP = 0x419c48
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c48], 'f')
         self.assertEqual(mem[0x419c49], 'A')
         self.assertEqual(mem[0x419c4a], '\x0f')
@@ -1662,8 +1663,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299853L)
 
     def test_PUNPCKLQDQ_1(self):
-        ''' Instruction PUNPCKLQDQ_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_1
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -1677,7 +1678,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbfc800000000006cbfb8
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -1687,8 +1688,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_10(self):
-        ''' Instruction PUNPCKLQDQ_10 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_10
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -1703,7 +1704,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbc6800000000006cbc58
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -1714,8 +1715,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_11(self):
-        ''' Instruction PUNPCKLQDQ_11 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_11
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -1729,7 +1730,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbb4800000000006cbb38
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -1739,8 +1740,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_12(self):
-        ''' Instruction PUNPCKLQDQ_12 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_12
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -1755,7 +1756,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbde800000000006cbdd8
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -1766,8 +1767,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_13(self):
-        ''' Instruction PUNPCKLQDQ_13 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_13
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -1782,7 +1783,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbee800000000006cbed8
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -1793,8 +1794,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_14(self):
-        ''' Instruction PUNPCKLQDQ_14 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_14
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -1809,7 +1810,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbba800000000006cbb98
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -1820,8 +1821,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_15(self):
-        ''' Instruction PUNPCKLQDQ_15 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_15
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -1835,7 +1836,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbcc800000000006cbcb8
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -1845,8 +1846,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_16(self):
-        ''' Instruction PUNPCKLQDQ_16 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_16
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -1860,7 +1861,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbe0800000000006cbdf8
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -1870,8 +1871,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_17(self):
-        ''' Instruction PUNPCKLQDQ_17 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_17
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -1885,7 +1886,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbec800000000006cbeb8
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -1895,8 +1896,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_18(self):
-        ''' Instruction PUNPCKLQDQ_18 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_18
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -1911,7 +1912,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbbe800000000006cbbd8
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -1922,8 +1923,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_19(self):
-        ''' Instruction PUNPCKLQDQ_19 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_19
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -1937,7 +1938,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbc8800000000006cbc78
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -1947,8 +1948,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_2(self):
-        ''' Instruction PUNPCKLQDQ_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_2
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -1963,7 +1964,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbf6800000000006cbf58
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -1974,8 +1975,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_20(self):
-        ''' Instruction PUNPCKLQDQ_20 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_20
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -1989,7 +1990,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cba8800000000006cba78
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -1999,8 +2000,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_21(self):
-        ''' Instruction PUNPCKLQDQ_21 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_21
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -2015,7 +2016,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cb96800000000006cb958
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -2026,8 +2027,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_3(self):
-        ''' Instruction PUNPCKLQDQ_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_3
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -2042,7 +2043,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbb2800000000006cbb18
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -2053,8 +2054,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_4(self):
-        ''' Instruction PUNPCKLQDQ_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_4
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -2069,7 +2070,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cb8a800000000006cb898
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -2080,8 +2081,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_5(self):
-        ''' Instruction PUNPCKLQDQ_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_5
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -2096,7 +2097,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbc2800000000006cbc18
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -2107,8 +2108,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_6(self):
-        ''' Instruction PUNPCKLQDQ_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_6
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -2122,7 +2123,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbf4800000000006cbf38
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -2132,8 +2133,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_7(self):
-        ''' Instruction PUNPCKLQDQ_7 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_7
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         mem = Memory64()
@@ -2148,7 +2149,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cba6800000000006cba58
         cpu.RIP = 0x419c6c
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c70], '\xc1')
         self.assertEqual(mem[0x419c6c], 'f')
         self.assertEqual(mem[0x419c6d], 'D')
@@ -2159,8 +2160,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299889L)
 
     def test_PUNPCKLQDQ_8(self):
-        ''' Instruction PUNPCKLQDQ_8 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_8
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -2174,7 +2175,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cba0800000000006cb9f8
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -2184,8 +2185,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLQDQ_9(self):
-        ''' Instruction PUNPCKLQDQ_9 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_9
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         mem = Memory64()
@@ -2199,7 +2200,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x6cbdc800000000006cbdb8
         cpu.RIP = 0x419c82
         cpu.execute()
-    
+
         self.assertEqual(mem[0x419c82], 'f')
         self.assertEqual(mem[0x419c83], '\x0f')
         self.assertEqual(mem[0x419c84], 'l')
@@ -2209,8 +2210,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4299910L)
 
     def test_PUNPCKLWD_1(self):
-        ''' Instruction PUNPCKLWD_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_1
+            Groups: sse2
             0x4668b6:	punpcklwd	xmm1, xmm1
         '''
         mem = Memory64()
@@ -2223,7 +2224,7 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x2f2f
         cpu.RIP = 0x4668b6
         cpu.execute()
-    
+
         self.assertEqual(mem[0x4668b8], 'a')
         self.assertEqual(mem[0x4668b9], '\xc9')
         self.assertEqual(mem[0x4668b6], 'f')
@@ -2232,8 +2233,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4614330L)
 
     def test_PUNPCKHDQ_1_symbolic(self):
-        ''' Instruction PUNPCKHDQ_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_1
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2278,11 +2279,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_10_symbolic(self):
-        ''' Instruction PUNPCKHDQ_10 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_10
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2327,11 +2328,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_11_symbolic(self):
-        ''' Instruction PUNPCKHDQ_11 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_11
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2376,11 +2377,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_12_symbolic(self):
-        ''' Instruction PUNPCKHDQ_12 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_12
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2425,11 +2426,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_13_symbolic(self):
-        ''' Instruction PUNPCKHDQ_13 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_13
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2474,11 +2475,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_14_symbolic(self):
-        ''' Instruction PUNPCKHDQ_14 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_14
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2523,11 +2524,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_15_symbolic(self):
-        ''' Instruction PUNPCKHDQ_15 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_15
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2572,11 +2573,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_16_symbolic(self):
-        ''' Instruction PUNPCKHDQ_16 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_16
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2621,11 +2622,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_17_symbolic(self):
-        ''' Instruction PUNPCKHDQ_17 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_17
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2670,11 +2671,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_18_symbolic(self):
-        ''' Instruction PUNPCKHDQ_18 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_18
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2719,11 +2720,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_19_symbolic(self):
-        ''' Instruction PUNPCKHDQ_19 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_19
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2768,11 +2769,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_2_symbolic(self):
-        ''' Instruction PUNPCKHDQ_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_2
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2817,11 +2818,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_20_symbolic(self):
-        ''' Instruction PUNPCKHDQ_20 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_20
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2866,11 +2867,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_21_symbolic(self):
-        ''' Instruction PUNPCKHDQ_21 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_21
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2915,11 +2916,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_3_symbolic(self):
-        ''' Instruction PUNPCKHDQ_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_3
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -2964,11 +2965,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_4_symbolic(self):
-        ''' Instruction PUNPCKHDQ_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_4
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -3013,11 +3014,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_5_symbolic(self):
-        ''' Instruction PUNPCKHDQ_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_5
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -3062,11 +3063,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_6_symbolic(self):
-        ''' Instruction PUNPCKHDQ_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_6
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -3111,11 +3112,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_7_symbolic(self):
-        ''' Instruction PUNPCKHDQ_7 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_7
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -3160,11 +3161,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_8_symbolic(self):
-        ''' Instruction PUNPCKHDQ_8 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_8
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -3209,11 +3210,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHDQ_9_symbolic(self):
-        ''' Instruction PUNPCKHDQ_9 
-            Groups: sse2 
+        ''' Instruction PUNPCKHDQ_9
+            Groups: sse2
             0x419c43:	punpckhdq	xmm0, xmm8
         '''
         cs = ConstraintSet()
@@ -3258,11 +3259,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_1_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_1
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -3302,11 +3303,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_10_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_10 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_10
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -3346,11 +3347,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_11_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_11 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_11
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -3390,11 +3391,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_12_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_12 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_12
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -3434,11 +3435,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_13_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_13 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_13
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -3478,11 +3479,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_14_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_14 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_14
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -3522,11 +3523,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_15_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_15 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_15
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -3566,11 +3567,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_16_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_16 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_16
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -3610,11 +3611,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_17_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_17 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_17
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -3654,11 +3655,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_18_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_18 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_18
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -3698,11 +3699,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_19_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_19 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_19
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -3742,11 +3743,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_2_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_2
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -3786,11 +3787,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_20_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_20 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_20
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -3830,11 +3831,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_21_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_21 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_21
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -3874,11 +3875,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_3_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_3
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -3918,11 +3919,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_4_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_4
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -3962,11 +3963,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_5_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_5
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -4006,11 +4007,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_6_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_6
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -4050,11 +4051,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_7_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_7 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_7
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -4094,11 +4095,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_8_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_8 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_8
+            Groups: sse2
             0x419c71:	punpckhqdq	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -4138,11 +4139,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKHQDQ_9_symbolic(self):
-        ''' Instruction PUNPCKHQDQ_9 
-            Groups: sse2 
+        ''' Instruction PUNPCKHQDQ_9
+            Groups: sse2
             0x419c86:	punpckhqdq	xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -4182,11 +4183,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLBW_1_symbolic(self):
-        ''' Instruction PUNPCKLBW_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_1
+            Groups: sse2
             0x4668ac:	punpcklbw	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -4226,11 +4227,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_1_symbolic(self):
-        ''' Instruction PUNPCKLDQ_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_1
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4275,11 +4276,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_10_symbolic(self):
-        ''' Instruction PUNPCKLDQ_10 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_10
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4324,11 +4325,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_11_symbolic(self):
-        ''' Instruction PUNPCKLDQ_11 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_11
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4373,11 +4374,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_12_symbolic(self):
-        ''' Instruction PUNPCKLDQ_12 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_12
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4422,11 +4423,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_13_symbolic(self):
-        ''' Instruction PUNPCKLDQ_13 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_13
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4471,11 +4472,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_14_symbolic(self):
-        ''' Instruction PUNPCKLDQ_14 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_14
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4520,11 +4521,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_15_symbolic(self):
-        ''' Instruction PUNPCKLDQ_15 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_15
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4569,11 +4570,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_16_symbolic(self):
-        ''' Instruction PUNPCKLDQ_16 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_16
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4618,11 +4619,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_17_symbolic(self):
-        ''' Instruction PUNPCKLDQ_17 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_17
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4667,11 +4668,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_18_symbolic(self):
-        ''' Instruction PUNPCKLDQ_18 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_18
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4716,11 +4717,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_19_symbolic(self):
-        ''' Instruction PUNPCKLDQ_19 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_19
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4765,11 +4766,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_2_symbolic(self):
-        ''' Instruction PUNPCKLDQ_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_2
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4814,11 +4815,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_20_symbolic(self):
-        ''' Instruction PUNPCKLDQ_20 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_20
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4863,11 +4864,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_21_symbolic(self):
-        ''' Instruction PUNPCKLDQ_21 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_21
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4912,11 +4913,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_3_symbolic(self):
-        ''' Instruction PUNPCKLDQ_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_3
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -4961,11 +4962,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_4_symbolic(self):
-        ''' Instruction PUNPCKLDQ_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_4
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -5010,11 +5011,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_5_symbolic(self):
-        ''' Instruction PUNPCKLDQ_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_5
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -5059,11 +5060,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_6_symbolic(self):
-        ''' Instruction PUNPCKLDQ_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_6
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -5108,11 +5109,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_7_symbolic(self):
-        ''' Instruction PUNPCKLDQ_7 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_7
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -5157,11 +5158,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_8_symbolic(self):
-        ''' Instruction PUNPCKLDQ_8 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_8
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -5206,11 +5207,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLDQ_9_symbolic(self):
-        ''' Instruction PUNPCKLDQ_9 
-            Groups: sse2 
+        ''' Instruction PUNPCKLDQ_9
+            Groups: sse2
             0x419c48:	punpckldq	xmm1, xmm8
         '''
         cs = ConstraintSet()
@@ -5255,11 +5256,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_1_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_1
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -5302,11 +5303,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_10_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_10 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_10
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -5351,11 +5352,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_11_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_11 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_11
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -5398,11 +5399,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_12_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_12 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_12
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -5447,11 +5448,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_13_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_13 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_13
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -5496,11 +5497,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_14_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_14 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_14
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -5545,11 +5546,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_15_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_15 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_15
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -5592,11 +5593,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_16_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_16 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_16
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -5639,11 +5640,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_17_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_17 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_17
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -5686,11 +5687,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_18_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_18 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_18
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -5735,11 +5736,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_19_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_19 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_19
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -5782,11 +5783,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_2_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_2
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -5831,11 +5832,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_20_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_20 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_20
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -5878,11 +5879,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_21_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_21 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_21
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -5927,11 +5928,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_3_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_3
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -5976,11 +5977,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_4_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_4
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -6025,11 +6026,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_5_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_5
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -6074,11 +6075,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_6_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_6
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -6121,11 +6122,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_7_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_7 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_7
+            Groups: sse2
             0x419c6c:	punpcklqdq	xmm8, xmm1
         '''
         cs = ConstraintSet()
@@ -6170,11 +6171,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_8_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_8 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_8
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -6217,11 +6218,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLQDQ_9_symbolic(self):
-        ''' Instruction PUNPCKLQDQ_9 
-            Groups: sse2 
+        ''' Instruction PUNPCKLQDQ_9
+            Groups: sse2
             0x419c82:	punpcklqdq	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -6264,11 +6265,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLWD_1_symbolic(self):
-        ''' Instruction PUNPCKLWD_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_1
+            Groups: sse2
             0x4668b6:	punpcklwd	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -6308,9 +6309,9 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
 
-          
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -21,6 +21,7 @@ class RWOperand(ROOperand):
 sizes = {'RAX': 64, 'EAX': 32, 'AX': 16, 'AL': 8, 'AH': 8, 'RCX': 64, 'ECX': 32, 'CX': 16, 'CL': 8, 'CH': 8, 'RDX': 64, 'EDX': 32, 'DX': 16, 'DL': 8, 'DH': 8, 'RBX': 64, 'EBX': 32, 'BX': 16, 'BL': 8, 'BH': 8, 'RSP': 64, 'ESP': 32, 'SP': 16, 'SPL': 8, 'RBP': 64, 'EBP': 32, 'BP': 16, 'BPL': 8, 'RSI': 64, 'ESI': 32, 'SI': 16, 'SIL': 8, 'RDI': 64, 'EDI': 32, 'DI': 16, 'DIL': 8, 'R8': 64, 'R8D': 32, 'R8W': 16, 'R8B': 8, 'R9': 64, 'R9D': 32, 'R9W': 16, 'R9B': 8, 'R10': 64, 'R10D': 32, 'R10W': 16, 'R10B': 8, 'R11': 64, 'R11D': 32, 'R11W': 16, 'R11B': 8, 'R12': 64, 'R12D': 32, 'R12W': 16, 'R12B': 8, 'R13': 64, 'R13D': 32, 'R13W': 16, 'R13B': 8, 'R14': 64, 'R14D': 32, 'R14W': 16, 'R14B': 8, 'R15': 64, 'R15D': 32, 'R15W': 16, 'R15B': 8, 'ES': 16, 'CS': 16, 'SS': 16, 'DS': 16, 'FS': 16, 'GS': 16, 'RIP': 64, 'EIP':32, 'IP': 16, 'RFLAGS': 64, 'EFLAGS': 32, 'FLAGS': 16, 'XMM0': 128, 'XMM1': 128, 'XMM2': 128, 'XMM3': 128, 'XMM4': 128, 'XMM5': 128, 'XMM6': 128, 'XMM7': 128, 'XMM8': 128, 'XMM9': 128, 'XMM10': 128, 'XMM11': 128, 'XMM12': 128, 'XMM13': 128, 'XMM14': 128, 'XMM15': 128, 'YMM0': 256, 'YMM1': 256, 'YMM2': 256, 'YMM3': 256, 'YMM4': 256, 'YMM5': 256, 'YMM6': 256, 'YMM7': 256, 'YMM8': 256, 'YMM9': 256, 'YMM10': 256, 'YMM11': 256, 'YMM12': 256, 'YMM13': 256, 'YMM14': 256, 'YMM15': 256}
 
 class SymCPUTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     _flag_offsets = {
         'CF': 0,
         'PF': 2,
@@ -41,7 +42,7 @@ class SymCPUTest(unittest.TestCase):
         'DF': 0x00400,
         'OF': 0x00800,
         'IF': 0x00200,}
-    
+
     class ROOperand(object):
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
@@ -97,7 +98,7 @@ class SymCPUTest(unittest.TestCase):
         cpu.SI = 0xAAAA
         self.assertEqual(cpu.SI, 0xAAAA)
 
-        
+
         cpu.RAX = 0x12345678aabbccdd
         self.assertEqual(cpu.ESI, 0x1234AAAA)
         cpu.SI = 0xAAAA
@@ -464,7 +465,7 @@ class SymCPUTest(unittest.TestCase):
         cpu.write_int(0x1000, 0x4142434445464748, 64)
         cpu.write_int(0x1004, 0x5152535455565758, 64)
         cpu.write_int(0x1008, 0x6162636465666768, 64)
-        
+
         self.assertEqual(cpu.read_int(0x1000,32), 0x45464748)
         self.assertEqual(cpu.read_int(0x1004,32), 0x55565758)
         self.assertEqual(cpu.read_int(0x1008,32), 0x65666768)
@@ -501,7 +502,7 @@ class SymCPUTest(unittest.TestCase):
         cs.add(addr1 == 0x1004)
         cpu.write_int(addr1, 0x58, 8)
 
-        # 48 47 46 45 58 43 42 41 68 67 66 65 64 63 62 61 
+        # 48 47 46 45 58 43 42 41 68 67 66 65 64 63 62 61
 
         value = cpu.read_int(0x1004, 16)
         self.assertItemsEqual(solver.get_all_values(cs, value), [0x4358] )
@@ -509,14 +510,14 @@ class SymCPUTest(unittest.TestCase):
         addr2 = cs.new_bitvec(64)
         cs.add(Operators.AND(addr2>=0x1000, addr2<=0x100c))
 
-        cpu.write_int(addr2, 0x5959, 16) 
-        
+        cpu.write_int(addr2, 0x5959, 16)
+
         solutions = solver.get_all_values(cs, cpu.read_int(addr2, 32) )
-    
+
         self.assertEqual( len(solutions), 0x100c-0x1000+1 )
         self.assertEqual( set(solutions), set([0x45465959, 0x41425959, 0x58455959, 0x65665959, 0x67685959, 0x43585959, 0x68415959, 0x42435959, 0x66675959, 0x62635959, 0x64655959, 0x63645959, 0x61625959]))
 
-        
+
     def test_cache_004(self):
         import random
         cs = ConstraintSet()
@@ -615,7 +616,7 @@ class SymCPUTest(unittest.TestCase):
 
         mem[code:code+3] = '\xf7\x7d\xf4'
         cpu.EIP = code
-        cpu.EAX = cs.new_bitvec(32, 'EAX')  
+        cpu.EAX = cs.new_bitvec(32, 'EAX')
         cs.add(cpu.EAX == 116)
         cpu.EBP = cs.new_bitvec(32, 'EBP')
         cs.add(cpu.EBP == stack+0x700)
@@ -652,11 +653,11 @@ class SymCPUTest(unittest.TestCase):
 
         mem[code:code+2] = '\xf7\xf9'
         cpu.EIP = code
-        cpu.EAX = cs.new_bitvec(32, 'EAX')  
+        cpu.EAX = cs.new_bitvec(32, 'EAX')
         cs.add(cpu.EAX == 0xffffffff)
-        cpu.EDX = cs.new_bitvec(32, 'EDX')  
+        cpu.EDX = cs.new_bitvec(32, 'EDX')
         cs.add(cpu.EDX == 0xffffffff)
-        cpu.ECX = cs.new_bitvec(32, 'ECX')  
+        cpu.ECX = cs.new_bitvec(32, 'ECX')
         cs.add(cpu.ECX == 0x32)
 
         cpu.execute()
@@ -695,11 +696,11 @@ class SymCPUTest(unittest.TestCase):
 
         mem[code:code+2] = '\x13\xf2'
         cpu.EIP = code
-        cpu.ESI = cs.new_bitvec(32, 'ESI')  
+        cpu.ESI = cs.new_bitvec(32, 'ESI')
         cs.add(cpu.ESI == 0)
-        cpu.EDX = cs.new_bitvec(32, 'EDX')  
+        cpu.EDX = cs.new_bitvec(32, 'EDX')
         cs.add(cpu.EDX == 0xffffffff)
-        cpu.CF = cs.new_bool('CF')  
+        cpu.CF = cs.new_bool('CF')
         cs.add(cpu.CF)
 
         cpu.execute()
@@ -725,19 +726,19 @@ class SymCPUTest(unittest.TestCase):
         mem[code:code+5] = '\xf0\x0f\xc7\x0f;'
         cpu.EIP = code
 
-        cpu.EDI = cs.new_bitvec(32, 'EDI')  
+        cpu.EDI = cs.new_bitvec(32, 'EDI')
         cs.add( Operators.OR(cpu.EDI == 0x2000, cpu.EDI == 0x2100, cpu.EDI == 0x2200 ) )
         self.assertEqual(sorted(solver.get_all_values(cs, cpu.EDI)),[0x2000,0x2100,0x2200])
         self.assertEqual(cpu.read_int(0x2000,64), 0)
         self.assertEqual(cpu.read_int(0x2100,64), 0)
         self.assertEqual(cpu.read_int(0x2200,64), 0)
-        self.assertItemsEqual(solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0]) 
+        self.assertItemsEqual(solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0])
         #self.assertEqual(cpu.read_int(cpu.EDI,64), 0 )
 
         cpu.write_int(0x2100, 0x4142434445464748, 64)
 
 
-        cpu.EAX = cs.new_bitvec(32, 'EAX')  
+        cpu.EAX = cs.new_bitvec(32, 'EAX')
         cs.add( Operators.OR(cpu.EAX == 0x41424344, cpu.EAX == 0x0badf00d, cpu.EAX == 0xf7f7f7f7 ) )
         cpu.EDX= 0x45464748
 
@@ -749,7 +750,7 @@ class SymCPUTest(unittest.TestCase):
     def test_POPCNT(self):
         '''POPCNT EAX, EAX
         CPU Dump
-        Address   Hex dump   
+        Address   Hex dump
         00333689  F3 0F B8 C0
         '''
 
@@ -768,8 +769,8 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, False)
 
     def test_DEC_1(self):
-        ''' Instruction DEC_1 
-            Groups: mode64 
+        ''' Instruction DEC_1
+            Groups: mode64
             0x41e10a:	dec	ecx
         '''
         mem = Memory64()
@@ -795,9 +796,9 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 12L)
 
     def test_PUSHFD_1(self):
-        ''' Instruction PUSHFD_1 
-            Groups: not64bitmode 
-            0x8065f6f:	pushfd	
+        ''' Instruction PUSHFD_1
+            Groups: not64bitmode
+            0x8065f6f:	pushfd
         '''
         mem = Memory32()
         cpu = I386Cpu(mem)
@@ -815,7 +816,7 @@ class SymCPUTest(unittest.TestCase):
         cpu.ZF = True
         cpu.PF = True
         cpu.execute()
-    
+
         self.assertItemsEqual(mem[0xffffc600:0xffffc609], '\x55\x08\x00\x00\x02\x03\x00\x00\x00')
         self.assertEqual(mem[0x8065f6f], '\x9c')
         self.assertEqual(cpu.EIP, 0x8065f70)
@@ -823,9 +824,9 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.ESP, 0xffffc600)
 
     def test_XLATB_1(self):
-        ''' Instruction XLATB_1 
-            Groups:  
-            0x8059a8d: xlatb   
+        ''' Instruction XLATB_1
+            Groups:
+            0x8059a8d: xlatb
         '''
         mem = Memory32()
         cpu = I386Cpu(mem)
@@ -838,16 +839,16 @@ class SymCPUTest(unittest.TestCase):
         cpu.AL=0x0a
         cpu.EIP = 0x8059a8d
         cpu.execute()
-    
+
         self.assertEqual(mem[0x8059a8d], '\xd7')
         self.assertEqual(mem[0xffffd00a], '\x41')
-        self.assertEqual(cpu.AL, 0x41)     
+        self.assertEqual(cpu.AL, 0x41)
         self.assertEqual(cpu.EIP, 134584974L)
 
     def test_XLATB_1_symbolic(self):
-        ''' Instruction XLATB_1 
-            Groups:  
-            0x8059a8d: xlatb   
+        ''' Instruction XLATB_1
+            Groups:
+            0x8059a8d: xlatb
         '''
         cs = ConstraintSet()
         mem = SMemory32(cs)
@@ -862,8 +863,8 @@ class SymCPUTest(unittest.TestCase):
         cpu.EBX=0xffffd000
 
     def test_SAR_1(self):
-        ''' Instruction SAR_1 
-            Groups: mode64 
+        ''' Instruction SAR_1
+            Groups: mode64
             0x41e10a:	SAR	cl, EBX
 Using the SAR instruction to perform a division operation does not produce the same result as the IDIV instruction. The quotient from the IDIV instruction is rounded toward zero, whereas the "quotient" of the SAR instruction is rounded toward negative infinity. This difference is apparent only for negative numbers. For example, when the IDIV instruction is used to divide -9 by 4, the result is -2 with a remainder of -1. If the SAR instruction is used to shift -9 right by two bits, the result is -3 and the "remainder" is +3; however, the SAR instruction stores only the most significant bit of the remainder (in the CF flag).
 
@@ -931,10 +932,10 @@ Using the SAR instruction to perform a division operation does not produce the s
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SAR_2(self):
-        ''' Instruction SAR_2 
+        ''' Instruction SAR_2
 
         '''
         mem = Memory32()
@@ -1003,9 +1004,9 @@ Using the SAR instruction to perform a division operation does not produce the s
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
     def test_SAR_3_symbolic(self):
-        ''' Instruction SAR_6 
+        ''' Instruction SAR_6
             eax            0xffffd000	-12288
             ecx            0x3d1ce0ff	1025302783
             eip            0x80483f3	0x80483f3

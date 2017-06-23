@@ -8,6 +8,7 @@ class LinuxTest(unittest.TestCase):
     '''
     TODO(mark): these tests assumes /bin/ls is a dynamic x64 binary
     '''
+    _multiprocess_can_split_ = True
     BIN_PATH = '/bin/ls'
 
     def setUp(self):
@@ -79,4 +80,4 @@ class LinuxTest(unittest.TestCase):
         model.syscall()
 
         print ''.join(model.current.read_bytes(stat, 100)).encode('hex')
-        
+

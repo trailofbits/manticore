@@ -5,6 +5,7 @@ from manticore.core.smtlib import *
 from manticore.core.memory import *
 
 class CPUTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     class ROOperand(object):
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
@@ -22,8 +23,8 @@ class CPUTest(unittest.TestCase):
 
 
     def test_ADD_1(self):
-        ''' Instruction ADD_1 
-            Groups:  
+        ''' Instruction ADD_1
+            Groups:
             0x7ffff7de438b:	add	rcx, 1
         '''
         mem = Memory64()
@@ -57,8 +58,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_ADD_2(self):
-        ''' Instruction ADD_2 
-            Groups:  
+        ''' Instruction ADD_2
+            Groups:
             0x7ffff7de4396:	add	rax, rdx
         '''
         mem = Memory64()
@@ -92,8 +93,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 101L)
 
     def test_ADD_3(self):
-        ''' Instruction ADD_3 
-            Groups:  
+        ''' Instruction ADD_3
+            Groups:
             0x7ffff7de6128:	add	rdx, 0x18
         '''
         mem = Memory64()
@@ -127,8 +128,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 140737348159888L)
 
     def test_ADD_4(self):
-        ''' Instruction ADD_4 
-            Groups:  
+        ''' Instruction ADD_4
+            Groups:
             0x7ffff7de3960:	add	r12, 1
         '''
         mem = Memory64()
@@ -162,8 +163,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_ADD_5(self):
-        ''' Instruction ADD_5 
-            Groups:  
+        ''' Instruction ADD_5
+            Groups:
             0x7ffff7de6124:	add	rax, qword ptr [rdx + 0x10]
         '''
         mem = Memory64()
@@ -216,8 +217,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 140737348145344L)
 
     def test_ADD_6(self):
-        ''' Instruction ADD_6 
-            Groups:  
+        ''' Instruction ADD_6
+            Groups:
             0x7ffff7de6124:	add	rax, qword ptr [rdx + 0x10]
         '''
         mem = Memory64()
@@ -270,8 +271,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 140737348156600L)
 
     def test_AND_1(self):
-        ''' Instruction AND_1 
-            Groups:  
+        ''' Instruction AND_1
+            Groups:
             0x7ffff7b58f2f:	and	r9d, 0xf
         '''
         mem = Memory64()
@@ -303,8 +304,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_AND_2(self):
-        ''' Instruction AND_2 
-            Groups:  
+        ''' Instruction AND_2
+            Groups:
             0x7ffff7aa7bd0:	and	edx, 0x808
         '''
         mem = Memory64()
@@ -340,8 +341,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_AND_3(self):
-        ''' Instruction AND_3 
-            Groups:  
+        ''' Instruction AND_3
+            Groups:
             0x7ffff7b58f2f:	and	r9d, 0xf
         '''
         mem = Memory64()
@@ -373,8 +374,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_AND_4(self):
-        ''' Instruction AND_4 
-            Groups:  
+        ''' Instruction AND_4
+            Groups:
             0x7ffff7de3930:	and	rax, rsi
         '''
         mem = Memory64()
@@ -406,8 +407,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_AND_5(self):
-        ''' Instruction AND_5 
-            Groups:  
+        ''' Instruction AND_5
+            Groups:
             0x7ffff7b58f2f:	and	r9d, 0xf
         '''
         mem = Memory64()
@@ -439,8 +440,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_AND_6(self):
-        ''' Instruction AND_6 
-            Groups:  
+        ''' Instruction AND_6
+            Groups:
             0x7ffff7de3909:	and	ecx, dword ptr [rbx + 0x2f0]
         '''
         mem = Memory64()
@@ -487,8 +488,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_BSF_1(self):
-        ''' Instruction BSF_1 
-            Groups:  
+        ''' Instruction BSF_1
+            Groups:
             0x4184cd:	bsf	eax, edx
         '''
         mem = Memory64()
@@ -512,8 +513,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293840L)
 
     def test_BSF_2(self):
-        ''' Instruction BSF_2 
-            Groups:  
+        ''' Instruction BSF_2
+            Groups:
             0x4183ed:	bsf	eax, edx
         '''
         mem = Memory64()
@@ -537,8 +538,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293616L)
 
     def test_BSF_3(self):
-        ''' Instruction BSF_3 
-            Groups:  
+        ''' Instruction BSF_3
+            Groups:
             0x4184bd:	bsf	eax, edx
         '''
         mem = Memory64()
@@ -562,8 +563,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293824L)
 
     def test_BSF_4(self):
-        ''' Instruction BSF_4 
-            Groups:  
+        ''' Instruction BSF_4
+            Groups:
             0x41850a:	bsf	rax, rdx
         '''
         mem = Memory64()
@@ -589,8 +590,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 140746078420992L)
 
     def test_BSF_5(self):
-        ''' Instruction BSF_5 
-            Groups:  
+        ''' Instruction BSF_5
+            Groups:
             0x7ffff7ab5d0a:	bsf	rax, rdx
         '''
         mem = Memory64()
@@ -616,8 +617,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 16204198715949842432L)
 
     def test_BSF_6(self):
-        ''' Instruction BSF_6 
-            Groups:  
+        ''' Instruction BSF_6
+            Groups:
             0x4183ed:	bsf	eax, edx
         '''
         mem = Memory64()
@@ -641,8 +642,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293616L)
 
     def test_BSR_1(self):
-        ''' Instruction BSR_1 
-            Groups:  
+        ''' Instruction BSR_1
+            Groups:
             0x4008b7:	bsr	esi, esi
         '''
         mem = Memory64()
@@ -664,8 +665,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196538L)
 
     def test_BSR_2(self):
-        ''' Instruction BSR_2 
-            Groups:  
+        ''' Instruction BSR_2
+            Groups:
             0x400907:	bsr	esi, esi
         '''
         mem = Memory64()
@@ -687,8 +688,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196618L)
 
     def test_BSR_3(self):
-        ''' Instruction BSR_3 
-            Groups:  
+        ''' Instruction BSR_3
+            Groups:
             0x457ac8:	bsr	rsi, rsi
         '''
         mem = Memory64()
@@ -712,8 +713,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553420L)
 
     def test_BSR_4(self):
-        ''' Instruction BSR_4 
-            Groups:  
+        ''' Instruction BSR_4
+            Groups:
             0x400847:	bsr	esi, esi
         '''
         mem = Memory64()
@@ -735,8 +736,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196426L)
 
     def test_BSR_5(self):
-        ''' Instruction BSR_5 
-            Groups:  
+        ''' Instruction BSR_5
+            Groups:
             0x457c18:	bsr	rsi, rsi
         '''
         mem = Memory64()
@@ -760,8 +761,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553756L)
 
     def test_BSR_6(self):
-        ''' Instruction BSR_6 
-            Groups:  
+        ''' Instruction BSR_6
+            Groups:
             0x457db8:	bsr	rsi, rsi
         '''
         mem = Memory64()
@@ -785,8 +786,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4554172L)
 
     def test_BT_1(self):
-        ''' Instruction BT_1 
-            Groups:  
+        ''' Instruction BT_1
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         mem = Memory64()
@@ -812,8 +813,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R8D, 1127L)
 
     def test_BT_2(self):
-        ''' Instruction BT_2 
-            Groups:  
+        ''' Instruction BT_2
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         mem = Memory64()
@@ -839,8 +840,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R8D, 1127L)
 
     def test_BT_3(self):
-        ''' Instruction BT_3 
-            Groups:  
+        ''' Instruction BT_3
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         mem = Memory64()
@@ -866,8 +867,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R8D, 1127L)
 
     def test_BT_4(self):
-        ''' Instruction BT_4 
-            Groups:  
+        ''' Instruction BT_4
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         mem = Memory64()
@@ -893,8 +894,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R8D, 1127L)
 
     def test_BT_5(self):
-        ''' Instruction BT_5 
-            Groups:  
+        ''' Instruction BT_5
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         mem = Memory64()
@@ -920,8 +921,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R8D, 1127L)
 
     def test_BT_6(self):
-        ''' Instruction BT_6 
-            Groups:  
+        ''' Instruction BT_6
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         mem = Memory64()
@@ -947,8 +948,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R8D, 1127L)
 
     def test_CALL_1(self):
-        ''' Instruction CALL_1 
-            Groups: call, mode64 
+        ''' Instruction CALL_1
+            Groups: call, mode64
             0x7ffff7de447a:	call	0x7ffff7de3800
         '''
         mem = Memory64()
@@ -1009,8 +1010,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345504L)
 
     def test_CALL_2(self):
-        ''' Instruction CALL_2 
-            Groups: call, mode64 
+        ''' Instruction CALL_2
+            Groups: call, mode64
             0x7ffff7a780e1:	call	qword ptr [r8 + 0x38]
         '''
         mem = Memory64()
@@ -1088,8 +1089,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488339760L)
 
     def test_CALL_3(self):
-        ''' Instruction CALL_3 
-            Groups: call, mode64 
+        ''' Instruction CALL_3
+            Groups: call, mode64
             0x4554b0:	call	0x45c7a0
         '''
         mem = Memory64()
@@ -1150,8 +1151,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345808L)
 
     def test_CALL_4(self):
-        ''' Instruction CALL_4 
-            Groups: call, mode64 
+        ''' Instruction CALL_4
+            Groups: call, mode64
             0x7ffff7de447a:	call	0x7ffff7de3800
         '''
         mem = Memory64()
@@ -1212,8 +1213,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345504L)
 
     def test_CALL_5(self):
-        ''' Instruction CALL_5 
-            Groups: call, mode64 
+        ''' Instruction CALL_5
+            Groups: call, mode64
             0x7ffff7de40a6:	call	0x7ffff7de3660
         '''
         mem = Memory64()
@@ -1274,8 +1275,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345344L)
 
     def test_CALL_6(self):
-        ''' Instruction CALL_6 
-            Groups: call, mode64 
+        ''' Instruction CALL_6
+            Groups: call, mode64
             0x45f878:	call	0x413490
         '''
         mem = Memory64()
@@ -1336,9 +1337,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345888L)
 
     def test_CDQE_1(self):
-        ''' Instruction CDQE_1 
-            Groups:  
-            0x400aa0:	cdqe	
+        ''' Instruction CDQE_1
+            Groups:
+            0x400aa0:	cdqe
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1355,9 +1356,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197026L)
 
     def test_CDQE_2(self):
-        ''' Instruction CDQE_2 
-            Groups:  
-            0x400aa0:	cdqe	
+        ''' Instruction CDQE_2
+            Groups:
+            0x400aa0:	cdqe
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1374,9 +1375,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197026L)
 
     def test_CDQE_3(self):
-        ''' Instruction CDQE_3 
-            Groups:  
-            0x400aa0:	cdqe	
+        ''' Instruction CDQE_3
+            Groups:
+            0x400aa0:	cdqe
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1393,9 +1394,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197026L)
 
     def test_CDQE_4(self):
-        ''' Instruction CDQE_4 
-            Groups:  
-            0x400acf:	cdqe	
+        ''' Instruction CDQE_4
+            Groups:
+            0x400acf:	cdqe
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1412,9 +1413,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197073L)
 
     def test_CDQE_5(self):
-        ''' Instruction CDQE_5 
-            Groups:  
-            0x400aa0:	cdqe	
+        ''' Instruction CDQE_5
+            Groups:
+            0x400aa0:	cdqe
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1431,9 +1432,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197026L)
 
     def test_CDQE_6(self):
-        ''' Instruction CDQE_6 
-            Groups:  
-            0x400b07:	cdqe	
+        ''' Instruction CDQE_6
+            Groups:
+            0x400b07:	cdqe
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1450,9 +1451,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197129L)
 
     def test_CLC_1(self):
-        ''' Instruction CLC_1 
-            Groups:  
-            0x46a9fc:	clc	
+        ''' Instruction CLC_1
+            Groups:
+            0x46a9fc:	clc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1467,9 +1468,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4631037L)
 
     def test_CLC_2(self):
-        ''' Instruction CLC_2 
-            Groups:  
-            0x7542c8:	clc	
+        ''' Instruction CLC_2
+            Groups:
+            0x7542c8:	clc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1484,9 +1485,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 7684809L)
 
     def test_CLC_3(self):
-        ''' Instruction CLC_3 
-            Groups:  
-            0x4b473c:	clc	
+        ''' Instruction CLC_3
+            Groups:
+            0x4b473c:	clc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1501,9 +1502,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4933437L)
 
     def test_CLC_4(self):
-        ''' Instruction CLC_4 
-            Groups:  
-            0x49d4dd:	clc	
+        ''' Instruction CLC_4
+            Groups:
+            0x49d4dd:	clc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1518,9 +1519,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4838622L)
 
     def test_CLC_5(self):
-        ''' Instruction CLC_5 
-            Groups:  
-            0x4fd621:	clc	
+        ''' Instruction CLC_5
+            Groups:
+            0x4fd621:	clc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1535,9 +1536,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5232162L)
 
     def test_CLC_6(self):
-        ''' Instruction CLC_6 
-            Groups:  
-            0x4fadef:	clc	
+        ''' Instruction CLC_6
+            Groups:
+            0x4fadef:	clc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -1552,8 +1553,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5221872L)
 
     def test_CMOVAE_1(self):
-        ''' Instruction CMOVAE_1 
-            Groups: cmov 
+        ''' Instruction CMOVAE_1
+            Groups: cmov
             0x4117e8:	cmovae	rax, r10
         '''
         mem = Memory64()
@@ -1578,8 +1579,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R10, 32L)
 
     def test_CMOVAE_2(self):
-        ''' Instruction CMOVAE_2 
-            Groups: cmov 
+        ''' Instruction CMOVAE_2
+            Groups: cmov
             0x414318:	cmovae	rax, r10
         '''
         mem = Memory64()
@@ -1604,8 +1605,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R10, 32L)
 
     def test_CMOVAE_3(self):
-        ''' Instruction CMOVAE_3 
-            Groups: cmov 
+        ''' Instruction CMOVAE_3
+            Groups: cmov
             0x5555555662c8:	cmovae	rdx, rbx
         '''
         mem = Memory64()
@@ -1630,8 +1631,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 7L)
 
     def test_CMOVAE_4(self):
-        ''' Instruction CMOVAE_4 
-            Groups: cmov 
+        ''' Instruction CMOVAE_4
+            Groups: cmov
             0x411778:	cmovae	rax, r10
         '''
         mem = Memory64()
@@ -1656,8 +1657,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R10, 1184L)
 
     def test_CMOVAE_5(self):
-        ''' Instruction CMOVAE_5 
-            Groups: cmov 
+        ''' Instruction CMOVAE_5
+            Groups: cmov
             0x411778:	cmovae	rax, r10
         '''
         mem = Memory64()
@@ -1682,8 +1683,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R10, 32L)
 
     def test_CMOVAE_6(self):
-        ''' Instruction CMOVAE_6 
-            Groups: cmov 
+        ''' Instruction CMOVAE_6
+            Groups: cmov
             0x411b58:	cmovae	rax, r10
         '''
         mem = Memory64()
@@ -1708,8 +1709,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R10, 80L)
 
     def test_CMOVA_1(self):
-        ''' Instruction CMOVA_1 
-            Groups: cmov 
+        ''' Instruction CMOVA_1
+            Groups: cmov
             0x7ffff7de0ab0:	cmova	rax, r8
         '''
         mem = Memory64()
@@ -1735,8 +1736,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351912116L)
 
     def test_CMOVA_2(self):
-        ''' Instruction CMOVA_2 
-            Groups: cmov 
+        ''' Instruction CMOVA_2
+            Groups: cmov
             0x7ffff7a9d404:	cmova	rbx, rax
         '''
         mem = Memory64()
@@ -1762,8 +1763,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 20L)
 
     def test_CMOVA_3(self):
-        ''' Instruction CMOVA_3 
-            Groups: cmov 
+        ''' Instruction CMOVA_3
+            Groups: cmov
             0x4082a4:	cmova	rbx, rax
         '''
         mem = Memory64()
@@ -1789,8 +1790,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 11L)
 
     def test_CMOVA_4(self):
-        ''' Instruction CMOVA_4 
-            Groups: cmov 
+        ''' Instruction CMOVA_4
+            Groups: cmov
             0x41462a:	cmova	rdx, r13
         '''
         mem = Memory64()
@@ -1816,8 +1817,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R13, 138736L)
 
     def test_CMOVA_5(self):
-        ''' Instruction CMOVA_5 
-            Groups: cmov 
+        ''' Instruction CMOVA_5
+            Groups: cmov
             0x41424a:	cmova	rdx, r13
         '''
         mem = Memory64()
@@ -1843,8 +1844,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R13, 138736L)
 
     def test_CMOVA_6(self):
-        ''' Instruction CMOVA_6 
-            Groups: cmov 
+        ''' Instruction CMOVA_6
+            Groups: cmov
             0x4142ba:	cmova	rdx, r13
         '''
         mem = Memory64()
@@ -1870,8 +1871,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R13, 138736L)
 
     def test_CMOVBE_1(self):
-        ''' Instruction CMOVBE_1 
-            Groups: cmov 
+        ''' Instruction CMOVBE_1
+            Groups: cmov
             0x40d233:	cmovbe	rbx, r14
         '''
         mem = Memory64()
@@ -1897,8 +1898,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 32L)
 
     def test_CMOVBE_2(self):
-        ''' Instruction CMOVBE_2 
-            Groups: cmov 
+        ''' Instruction CMOVBE_2
+            Groups: cmov
             0x7ffff7aa96b3:	cmovbe	rbx, r14
         '''
         mem = Memory64()
@@ -1924,8 +1925,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 4L)
 
     def test_CMOVBE_3(self):
-        ''' Instruction CMOVBE_3 
-            Groups: cmov 
+        ''' Instruction CMOVBE_3
+            Groups: cmov
             0x7ffff7aa96b3:	cmovbe	rbx, r14
         '''
         mem = Memory64()
@@ -1951,8 +1952,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 19L)
 
     def test_CMOVBE_4(self):
-        ''' Instruction CMOVBE_4 
-            Groups: cmov 
+        ''' Instruction CMOVBE_4
+            Groups: cmov
             0x40d263:	cmovbe	rbx, r14
         '''
         mem = Memory64()
@@ -1978,8 +1979,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 19L)
 
     def test_CMOVBE_5(self):
-        ''' Instruction CMOVBE_5 
-            Groups: cmov 
+        ''' Instruction CMOVBE_5
+            Groups: cmov
             0x7ffff7aa96b3:	cmovbe	rbx, r14
         '''
         mem = Memory64()
@@ -2005,8 +2006,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 19L)
 
     def test_CMOVBE_6(self):
-        ''' Instruction CMOVBE_6 
-            Groups: cmov 
+        ''' Instruction CMOVBE_6
+            Groups: cmov
             0x40fde3:	cmovbe	rbx, r14
         '''
         mem = Memory64()
@@ -2032,8 +2033,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 576L)
 
     def test_CMOVB_1(self):
-        ''' Instruction CMOVB_1 
-            Groups: cmov 
+        ''' Instruction CMOVB_1
+            Groups: cmov
             0x7ffff7deb97f:	cmovb	r12d, eax
         '''
         mem = Memory64()
@@ -2058,8 +2059,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351956867L)
 
     def test_CMOVB_2(self):
-        ''' Instruction CMOVB_2 
-            Groups: cmov 
+        ''' Instruction CMOVB_2
+            Groups: cmov
             0x7ffff7df45ad:	cmovb	eax, ecx
         '''
         mem = Memory64()
@@ -2082,8 +2083,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 4294967295L)
 
     def test_CMOVB_3(self):
-        ''' Instruction CMOVB_3 
-            Groups: cmov 
+        ''' Instruction CMOVB_3
+            Groups: cmov
             0x7ffff7df45ad:	cmovb	eax, ecx
         '''
         mem = Memory64()
@@ -2106,8 +2107,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 4294967295L)
 
     def test_CMOVB_4(self):
-        ''' Instruction CMOVB_4 
-            Groups: cmov 
+        ''' Instruction CMOVB_4
+            Groups: cmov
             0x7ffff7deb97f:	cmovb	r12d, eax
         '''
         mem = Memory64()
@@ -2132,8 +2133,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351956867L)
 
     def test_CMOVB_5(self):
-        ''' Instruction CMOVB_5 
-            Groups: cmov 
+        ''' Instruction CMOVB_5
+            Groups: cmov
             0x7ffff7df45ad:	cmovb	eax, ecx
         '''
         mem = Memory64()
@@ -2156,8 +2157,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 4294967295L)
 
     def test_CMOVB_6(self):
-        ''' Instruction CMOVB_6 
-            Groups: cmov 
+        ''' Instruction CMOVB_6
+            Groups: cmov
             0x7ffff7df45ad:	cmovb	eax, ecx
         '''
         mem = Memory64()
@@ -2180,8 +2181,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 4294967295L)
 
     def test_CMOVE_1(self):
-        ''' Instruction CMOVE_1 
-            Groups: cmov 
+        ''' Instruction CMOVE_1
+            Groups: cmov
             0x7ffff7de625e:	cmove	r8, rax
         '''
         mem = Memory64()
@@ -2206,8 +2207,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934562L)
 
     def test_CMOVE_2(self):
-        ''' Instruction CMOVE_2 
-            Groups: cmov 
+        ''' Instruction CMOVE_2
+            Groups: cmov
             0x415f05:	cmove	rax, rdx
         '''
         mem = Memory64()
@@ -2232,8 +2233,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 0L)
 
     def test_CMOVE_3(self):
-        ''' Instruction CMOVE_3 
-            Groups: cmov 
+        ''' Instruction CMOVE_3
+            Groups: cmov
             0x7ffff7de625e:	cmove	r8, rax
         '''
         mem = Memory64()
@@ -2258,8 +2259,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934562L)
 
     def test_CMOVE_4(self):
-        ''' Instruction CMOVE_4 
-            Groups: cmov 
+        ''' Instruction CMOVE_4
+            Groups: cmov
             0x7ffff7df2822:	cmove	rdi, qword ptr [rip + 0x20b886]
         '''
         mem = Memory64()
@@ -2307,8 +2308,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351985194L)
 
     def test_CMOVE_5(self):
-        ''' Instruction CMOVE_5 
-            Groups: cmov 
+        ''' Instruction CMOVE_5
+            Groups: cmov
             0x7ffff7de625e:	cmove	r8, rax
         '''
         mem = Memory64()
@@ -2333,8 +2334,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934562L)
 
     def test_CMOVE_6(self):
-        ''' Instruction CMOVE_6 
-            Groups: cmov 
+        ''' Instruction CMOVE_6
+            Groups: cmov
             0x7ffff7de625e:	cmove	r8, rax
         '''
         mem = Memory64()
@@ -2359,8 +2360,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934562L)
 
     def test_CMOVNE_1(self):
-        ''' Instruction CMOVNE_1 
-            Groups: cmov 
+        ''' Instruction CMOVNE_1
+            Groups: cmov
             0x462435:	cmovne	rbx, rax
         '''
         mem = Memory64()
@@ -2385,8 +2386,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 7075504L)
 
     def test_CMOVNE_2(self):
-        ''' Instruction CMOVNE_2 
-            Groups: cmov 
+        ''' Instruction CMOVNE_2
+            Groups: cmov
             0x7ffff7de5776:	cmovne	r14d, eax
         '''
         mem = Memory64()
@@ -2411,8 +2412,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351931770L)
 
     def test_CMOVNE_3(self):
-        ''' Instruction CMOVNE_3 
-            Groups: cmov 
+        ''' Instruction CMOVNE_3
+            Groups: cmov
             0x7ffff7de57f6:	cmovne	rbx, rax
         '''
         mem = Memory64()
@@ -2437,8 +2438,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 140737354102336L)
 
     def test_CMOVNE_4(self):
-        ''' Instruction CMOVNE_4 
-            Groups: cmov 
+        ''' Instruction CMOVNE_4
+            Groups: cmov
             0x457ba4:	cmovne	rsi, rdx
         '''
         mem = Memory64()
@@ -2463,8 +2464,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 1090551808L)
 
     def test_CMOVNE_5(self):
-        ''' Instruction CMOVNE_5 
-            Groups: cmov 
+        ''' Instruction CMOVNE_5
+            Groups: cmov
             0x7ffff7de0910:	cmovne	esi, eax
         '''
         mem = Memory64()
@@ -2487,8 +2488,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351911699L)
 
     def test_CMOVNE_6(self):
-        ''' Instruction CMOVNE_6 
-            Groups: cmov 
+        ''' Instruction CMOVNE_6
+            Groups: cmov
             0x457db0:	cmovne	rcx, rdi
         '''
         mem = Memory64()
@@ -2513,8 +2514,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4554164L)
 
     def test_CMOVNS_1(self):
-        ''' Instruction CMOVNS_1 
-            Groups: cmov 
+        ''' Instruction CMOVNS_1
+            Groups: cmov
             0x448555:	cmovns	rax, r11
         '''
         mem = Memory64()
@@ -2539,8 +2540,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R11, 0L)
 
     def test_CMOVNS_2(self):
-        ''' Instruction CMOVNS_2 
-            Groups: cmov 
+        ''' Instruction CMOVNS_2
+            Groups: cmov
             0x448555:	cmovns	rax, r11
         '''
         mem = Memory64()
@@ -2565,8 +2566,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R11, 0L)
 
     def test_CMPSB_1(self):
-        ''' Instruction CMPSB_1 
-            Groups:  
+        ''' Instruction CMPSB_1
+            Groups:
             0x40065b:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         mem = Memory64()
@@ -2622,8 +2623,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4195931L)
 
     def test_CMPSB_2(self):
-        ''' Instruction CMPSB_2 
-            Groups:  
+        ''' Instruction CMPSB_2
+            Groups:
             0x400657:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         mem = Memory64()
@@ -2679,8 +2680,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4195929L)
 
     def test_CMPSB_3(self):
-        ''' Instruction CMPSB_3 
-            Groups:  
+        ''' Instruction CMPSB_3
+            Groups:
             0x40065b:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         mem = Memory64()
@@ -2736,8 +2737,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4195933L)
 
     def test_CMPSB_4(self):
-        ''' Instruction CMPSB_4 
-            Groups:  
+        ''' Instruction CMPSB_4
+            Groups:
             0x400657:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         mem = Memory64()
@@ -2793,8 +2794,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4195929L)
 
     def test_CMPSB_5(self):
-        ''' Instruction CMPSB_5 
-            Groups:  
+        ''' Instruction CMPSB_5
+            Groups:
             0x55555555478b:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         mem = Memory64()
@@ -2849,8 +2850,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992233357L)
 
     def test_CMPSB_6(self):
-        ''' Instruction CMPSB_6 
-            Groups:  
+        ''' Instruction CMPSB_6
+            Groups:
             0x5555555548c0:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         mem = Memory64()
@@ -2905,8 +2906,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992233666L)
 
     def test_CMPXCHG8B_1(self):
-        ''' Instruction CMPXCHG8B_1 
-            Groups:  
+        ''' Instruction CMPXCHG8B_1
+            Groups:
             0x5c68cb:	lock cmpxchg8b	qword ptr [rsp + 4]
         '''
         mem = Memory64()
@@ -2957,8 +2958,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 128L)
 
     def test_CMPXCHG8B_2(self):
-        ''' Instruction CMPXCHG8B_2 
-            Groups:  
+        ''' Instruction CMPXCHG8B_2
+            Groups:
             0x5861a9:	lock cmpxchg8b	qword ptr [rsp]
         '''
         mem = Memory64()
@@ -3007,8 +3008,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 2147483648L)
 
     def test_CMPXCHG8B_3(self):
-        ''' Instruction CMPXCHG8B_3 
-            Groups:  
+        ''' Instruction CMPXCHG8B_3
+            Groups:
             0x58de05:	lock cmpxchg8b	qword ptr [rsp]
         '''
         mem = Memory64()
@@ -3057,8 +3058,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 64L)
 
     def test_CMPXCHG8B_4(self):
-        ''' Instruction CMPXCHG8B_4 
-            Groups:  
+        ''' Instruction CMPXCHG8B_4
+            Groups:
             0x59b473:	lock cmpxchg8b	qword ptr [rsp]
         '''
         mem = Memory64()
@@ -3107,8 +3108,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 128L)
 
     def test_CMPXCHG8B_5(self):
-        ''' Instruction CMPXCHG8B_5 
-            Groups:  
+        ''' Instruction CMPXCHG8B_5
+            Groups:
             0x624e14:	lock cmpxchg8b	qword ptr [rsp + 8]
         '''
         mem = Memory64()
@@ -3159,8 +3160,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 32769L)
 
     def test_CMPXCHG8B_6(self):
-        ''' Instruction CMPXCHG8B_6 
-            Groups:  
+        ''' Instruction CMPXCHG8B_6
+            Groups:
             0x5bfa73:	lock cmpxchg8b	qword ptr [rsp + 4]
         '''
         mem = Memory64()
@@ -3211,8 +3212,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 32769L)
 
     def test_CMPXCHG_1(self):
-        ''' Instruction CMPXCHG_1 
-            Groups:  
+        ''' Instruction CMPXCHG_1
+            Groups:
             0x7ffff7a65367:	cmpxchg	dword ptr [rip + 0x36fde2], esi
         '''
         mem = Memory64()
@@ -3263,8 +3264,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_CMPXCHG_2(self):
-        ''' Instruction CMPXCHG_2 
-            Groups:  
+        ''' Instruction CMPXCHG_2
+            Groups:
             0x40abbf:	cmpxchg	dword ptr [rdx], esi
         '''
         mem = Memory64()
@@ -3309,8 +3310,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 7071584L)
 
     def test_CMPXCHG_3(self):
-        ''' Instruction CMPXCHG_3 
-            Groups:  
+        ''' Instruction CMPXCHG_3
+            Groups:
             0x413646:	cmpxchg	dword ptr [rbx], esi
         '''
         mem = Memory64()
@@ -3355,8 +3356,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_CMPXCHG_4(self):
-        ''' Instruction CMPXCHG_4 
-            Groups:  
+        ''' Instruction CMPXCHG_4
+            Groups:
             0x435a25:	cmpxchg	qword ptr [rdx], rdi
         '''
         mem = Memory64()
@@ -3411,8 +3412,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 7066496L)
 
     def test_CMPXCHG_5(self):
-        ''' Instruction CMPXCHG_5 
-            Groups:  
+        ''' Instruction CMPXCHG_5
+            Groups:
             0x41086e:	cmpxchg	dword ptr [rdx], ecx
         '''
         mem = Memory64()
@@ -3457,8 +3458,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 7071584L)
 
     def test_CMPXCHG_6(self):
-        ''' Instruction CMPXCHG_6 
-            Groups:  
+        ''' Instruction CMPXCHG_6
+            Groups:
             0x7ffff7aafa06:	cmpxchg	dword ptr [rbx], esi
         '''
         mem = Memory64()
@@ -3503,8 +3504,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_CMP_1(self):
-        ''' Instruction CMP_1 
-            Groups:  
+        ''' Instruction CMP_1
+            Groups:
             0x7ffff7b58f43:	cmp	r12, r9
         '''
         mem = Memory64()
@@ -3538,8 +3539,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R9, 140737349041152L)
 
     def test_CMP_2(self):
-        ''' Instruction CMP_2 
-            Groups:  
+        ''' Instruction CMP_2
+            Groups:
             0x406e1d:	cmp	r14w, word ptr [rbx]
         '''
         mem = Memory64()
@@ -3580,8 +3581,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_CMP_3(self):
-        ''' Instruction CMP_3 
-            Groups:  
+        ''' Instruction CMP_3
+            Groups:
             0x40d167:	cmp	eax, 0xff
         '''
         mem = Memory64()
@@ -3613,8 +3614,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_CMP_4(self):
-        ''' Instruction CMP_4 
-            Groups:  
+        ''' Instruction CMP_4
+            Groups:
             0x7ffff7de4488:	cmp	qword ptr [rbp - 0x90], 0
         '''
         mem = Memory64()
@@ -3673,8 +3674,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345648L)
 
     def test_CMP_5(self):
-        ''' Instruction CMP_5 
-            Groups:  
+        ''' Instruction CMP_5
+            Groups:
             0x7ffff7de6111:	cmp	rax, 0x26
         '''
         mem = Memory64()
@@ -3708,8 +3709,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_CMP_6(self):
-        ''' Instruction CMP_6 
-            Groups:  
+        ''' Instruction CMP_6
+            Groups:
             0x7ffff7de620b:	cmp	r12, 0x24
         '''
         mem = Memory64()
@@ -3743,9 +3744,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_CQO_1(self):
-        ''' Instruction CQO_1 
-            Groups:  
-            0x400794:	cqo	
+        ''' Instruction CQO_1
+            Groups:
+            0x400794:	cqo
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3764,9 +3765,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196246L)
 
     def test_CQO_2(self):
-        ''' Instruction CQO_2 
-            Groups:  
-            0x4006d4:	cqo	
+        ''' Instruction CQO_2
+            Groups:
+            0x4006d4:	cqo
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3785,9 +3786,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196054L)
 
     def test_CQO_3(self):
-        ''' Instruction CQO_3 
-            Groups:  
-            0x7ffff7a4e234:	cqo	
+        ''' Instruction CQO_3
+            Groups:
+            0x7ffff7a4e234:	cqo
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3806,9 +3807,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348166198L)
 
     def test_CQO_4(self):
-        ''' Instruction CQO_4 
-            Groups:  
-            0x7ffff7a4e234:	cqo	
+        ''' Instruction CQO_4
+            Groups:
+            0x7ffff7a4e234:	cqo
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3827,9 +3828,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348166198L)
 
     def test_CQO_5(self):
-        ''' Instruction CQO_5 
-            Groups:  
-            0x4006d4:	cqo	
+        ''' Instruction CQO_5
+            Groups:
+            0x4006d4:	cqo
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3848,9 +3849,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196054L)
 
     def test_CQO_6(self):
-        ''' Instruction CQO_6 
-            Groups:  
-            0x7ffff7a4e234:	cqo	
+        ''' Instruction CQO_6
+            Groups:
+            0x7ffff7a4e234:	cqo
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -3869,8 +3870,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348166198L)
 
     def test_DEC_1(self):
-        ''' Instruction DEC_1 
-            Groups: mode64 
+        ''' Instruction DEC_1
+            Groups: mode64
             0x41e10a:	dec	ecx
         '''
         mem = Memory64()
@@ -3898,8 +3899,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 12L)
 
     def test_DEC_2(self):
-        ''' Instruction DEC_2 
-            Groups: mode64 
+        ''' Instruction DEC_2
+            Groups: mode64
             0x7ffff7df462c:	dec	ecx
         '''
         mem = Memory64()
@@ -3927,8 +3928,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 3L)
 
     def test_DEC_3(self):
-        ''' Instruction DEC_3 
-            Groups: mode64 
+        ''' Instruction DEC_3
+            Groups: mode64
             0x7ffff7df462c:	dec	ecx
         '''
         mem = Memory64()
@@ -3956,8 +3957,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 1L)
 
     def test_DEC_4(self):
-        ''' Instruction DEC_4 
-            Groups: mode64 
+        ''' Instruction DEC_4
+            Groups: mode64
             0x7ffff7a65448:	dec	dword ptr [rip + 0x36fd02]
         '''
         mem = Memory64()
@@ -4000,8 +4001,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_DEC_5(self):
-        ''' Instruction DEC_5 
-            Groups: mode64 
+        ''' Instruction DEC_5
+            Groups: mode64
             0x7ffff7df462c:	dec	ecx
         '''
         mem = Memory64()
@@ -4029,8 +4030,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 3L)
 
     def test_DEC_6(self):
-        ''' Instruction DEC_6 
-            Groups: mode64 
+        ''' Instruction DEC_6
+            Groups: mode64
             0x7ffff7df462c:	dec	ecx
         '''
         mem = Memory64()
@@ -4058,8 +4059,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0L)
 
     def test_DIV_1(self):
-        ''' Instruction DIV_1 
-            Groups:  
+        ''' Instruction DIV_1
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         mem = Memory64()
@@ -4083,8 +4084,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351925755L)
 
     def test_DIV_2(self):
-        ''' Instruction DIV_2 
-            Groups:  
+        ''' Instruction DIV_2
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         mem = Memory64()
@@ -4108,8 +4109,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351925755L)
 
     def test_DIV_3(self):
-        ''' Instruction DIV_3 
-            Groups:  
+        ''' Instruction DIV_3
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         mem = Memory64()
@@ -4133,8 +4134,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351925755L)
 
     def test_DIV_4(self):
-        ''' Instruction DIV_4 
-            Groups:  
+        ''' Instruction DIV_4
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         mem = Memory64()
@@ -4158,8 +4159,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351925755L)
 
     def test_DIV_5(self):
-        ''' Instruction DIV_5 
-            Groups:  
+        ''' Instruction DIV_5
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         mem = Memory64()
@@ -4183,8 +4184,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351925755L)
 
     def test_DIV_6(self):
-        ''' Instruction DIV_6 
-            Groups:  
+        ''' Instruction DIV_6
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         mem = Memory64()
@@ -4208,8 +4209,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351925755L)
 
     def test_IDIV_1(self):
-        ''' Instruction IDIV_1 
-            Groups:  
+        ''' Instruction IDIV_1
+            Groups:
             0x7ffff7a4e236:	idiv	r8
         '''
         mem = Memory64()
@@ -4233,8 +4234,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348166201L)
 
     def test_IDIV_2(self):
-        ''' Instruction IDIV_2 
-            Groups:  
+        ''' Instruction IDIV_2
+            Groups:
             0x4006d6:	idiv	r8
         '''
         mem = Memory64()
@@ -4258,8 +4259,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196057L)
 
     def test_IDIV_3(self):
-        ''' Instruction IDIV_3 
-            Groups:  
+        ''' Instruction IDIV_3
+            Groups:
             0x7ffff7a4e236:	idiv	r8
         '''
         mem = Memory64()
@@ -4283,8 +4284,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348166201L)
 
     def test_IDIV_4(self):
-        ''' Instruction IDIV_4 
-            Groups:  
+        ''' Instruction IDIV_4
+            Groups:
             0x4006d6:	idiv	r8
         '''
         mem = Memory64()
@@ -4308,8 +4309,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196057L)
 
     def test_IDIV_5(self):
-        ''' Instruction IDIV_5 
-            Groups:  
+        ''' Instruction IDIV_5
+            Groups:
             0x4006d6:	idiv	r8
         '''
         mem = Memory64()
@@ -4333,8 +4334,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196057L)
 
     def test_IDIV_6(self):
-        ''' Instruction IDIV_6 
-            Groups:  
+        ''' Instruction IDIV_6
+            Groups:
             0x7ffff7a4e236:	idiv	r8
         '''
         mem = Memory64()
@@ -4358,8 +4359,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348166201L)
 
     def test_IMUL_1(self):
-        ''' Instruction IMUL_1 
-            Groups:  
+        ''' Instruction IMUL_1
+            Groups:
             0x7ffff7acfec4:	imul	eax, edx
         '''
         mem = Memory64()
@@ -4389,8 +4390,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 6291456L)
 
     def test_IMUL_2(self):
-        ''' Instruction IMUL_2 
-            Groups:  
+        ''' Instruction IMUL_2
+            Groups:
             0x7ffff7acfeb3:	imul	eax, edx
         '''
         mem = Memory64()
@@ -4420,8 +4421,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 512L)
 
     def test_IMUL_3(self):
-        ''' Instruction IMUL_3 
-            Groups:  
+        ''' Instruction IMUL_3
+            Groups:
             0x43230c:	imul	edx
         '''
         mem = Memory64()
@@ -4447,8 +4448,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 2L)
 
     def test_IMUL_4(self):
-        ''' Instruction IMUL_4 
-            Groups:  
+        ''' Instruction IMUL_4
+            Groups:
             0x43230c:	imul	edx
         '''
         mem = Memory64()
@@ -4474,8 +4475,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 2L)
 
     def test_IMUL_5(self):
-        ''' Instruction IMUL_5 
-            Groups:  
+        ''' Instruction IMUL_5
+            Groups:
             0x41403c:	imul	r12, rsi
         '''
         mem = Memory64()
@@ -4507,8 +4508,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 4294967295L)
 
     def test_IMUL_6(self):
-        ''' Instruction IMUL_6 
-            Groups:  
+        ''' Instruction IMUL_6
+            Groups:
             0x413fdc:	imul	r12, rsi
         '''
         mem = Memory64()
@@ -4540,8 +4541,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 4294967295L)
 
     def test_INC_1(self):
-        ''' Instruction INC_1 
-            Groups:  
+        ''' Instruction INC_1
+            Groups:
             0x7ffff7df4596:	inc	rdi
         '''
         mem = Memory64()
@@ -4571,8 +4572,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_INC_2(self):
-        ''' Instruction INC_2 
-            Groups:  
+        ''' Instruction INC_2
+            Groups:
             0x7ffff7df4596:	inc	rdi
         '''
         mem = Memory64()
@@ -4602,8 +4603,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_INC_3(self):
-        ''' Instruction INC_3 
-            Groups:  
+        ''' Instruction INC_3
+            Groups:
             0x7ffff7df4599:	inc	rsi
         '''
         mem = Memory64()
@@ -4633,8 +4634,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_INC_4(self):
-        ''' Instruction INC_4 
-            Groups:  
+        ''' Instruction INC_4
+            Groups:
             0x7ffff7df4596:	inc	rdi
         '''
         mem = Memory64()
@@ -4664,8 +4665,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_INC_5(self):
-        ''' Instruction INC_5 
-            Groups:  
+        ''' Instruction INC_5
+            Groups:
             0x7ffff7df4599:	inc	rsi
         '''
         mem = Memory64()
@@ -4695,8 +4696,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_INC_6(self):
-        ''' Instruction INC_6 
-            Groups:  
+        ''' Instruction INC_6
+            Groups:
             0x7ffff7df4599:	inc	rsi
         '''
         mem = Memory64()
@@ -4726,8 +4727,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_JAE_1(self):
-        ''' Instruction JAE_1 
-            Groups: jump 
+        ''' Instruction JAE_1
+            Groups: jump
             0x7ffff7aa96ab:	jae	0x7ffff7aa96e8
         '''
         mem = Memory64()
@@ -4744,8 +4745,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348540077L)
 
     def test_JAE_2(self):
-        ''' Instruction JAE_2 
-            Groups: jump 
+        ''' Instruction JAE_2
+            Groups: jump
             0x400c11:	jae	0x400c69
         '''
         mem = Memory64()
@@ -4762,8 +4763,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197481L)
 
     def test_JAE_3(self):
-        ''' Instruction JAE_3 
-            Groups: jump 
+        ''' Instruction JAE_3
+            Groups: jump
             0x432400:	jae	0x432440
         '''
         mem = Memory64()
@@ -4780,8 +4781,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400130L)
 
     def test_JAE_4(self):
-        ''' Instruction JAE_4 
-            Groups: jump 
+        ''' Instruction JAE_4
+            Groups: jump
             0x411d5b:	jae	0x412155
         '''
         mem = Memory64()
@@ -4806,8 +4807,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4268373L)
 
     def test_JAE_5(self):
-        ''' Instruction JAE_5 
-            Groups: jump 
+        ''' Instruction JAE_5
+            Groups: jump
             0x7ffff7b58f5d:	jae	0x7ffff7b58f00
         '''
         mem = Memory64()
@@ -4824,8 +4825,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737349259008L)
 
     def test_JAE_6(self):
-        ''' Instruction JAE_6 
-            Groups: jump 
+        ''' Instruction JAE_6
+            Groups: jump
             0x400b82:	jae	0x400b9f
         '''
         mem = Memory64()
@@ -4842,8 +4843,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197252L)
 
     def test_JA_1(self):
-        ''' Instruction JA_1 
-            Groups: jump 
+        ''' Instruction JA_1
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         mem = Memory64()
@@ -4861,8 +4862,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934216L)
 
     def test_JA_2(self):
-        ''' Instruction JA_2 
-            Groups: jump 
+        ''' Instruction JA_2
+            Groups: jump
             0x7ffff7ddf066:	ja	0x7ffff7ddf0b2
         '''
         mem = Memory64()
@@ -4880,8 +4881,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351905384L)
 
     def test_JA_3(self):
-        ''' Instruction JA_3 
-            Groups: jump 
+        ''' Instruction JA_3
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         mem = Memory64()
@@ -4899,8 +4900,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934216L)
 
     def test_JA_4(self):
-        ''' Instruction JA_4 
-            Groups: jump 
+        ''' Instruction JA_4
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         mem = Memory64()
@@ -4918,8 +4919,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934216L)
 
     def test_JA_5(self):
-        ''' Instruction JA_5 
-            Groups: jump 
+        ''' Instruction JA_5
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         mem = Memory64()
@@ -4937,8 +4938,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934216L)
 
     def test_JA_6(self):
-        ''' Instruction JA_6 
-            Groups: jump 
+        ''' Instruction JA_6
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         mem = Memory64()
@@ -4956,8 +4957,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934216L)
 
     def test_JBE_1(self):
-        ''' Instruction JBE_1 
-            Groups: jump 
+        ''' Instruction JBE_1
+            Groups: jump
             0x41188d:	jbe	0x411ec0
         '''
         mem = Memory64()
@@ -4983,8 +4984,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4267712L)
 
     def test_JBE_2(self):
-        ''' Instruction JBE_2 
-            Groups: jump 
+        ''' Instruction JBE_2
+            Groups: jump
             0x4325e3:	jbe	0x4326cf
         '''
         mem = Memory64()
@@ -5010,8 +5011,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400617L)
 
     def test_JBE_3(self):
-        ''' Instruction JBE_3 
-            Groups: jump 
+        ''' Instruction JBE_3
+            Groups: jump
             0x432388:	jbe	0x4323aa
         '''
         mem = Memory64()
@@ -5029,8 +5030,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400010L)
 
     def test_JBE_4(self):
-        ''' Instruction JBE_4 
-            Groups: jump 
+        ''' Instruction JBE_4
+            Groups: jump
             0x4325e3:	jbe	0x4326cf
         '''
         mem = Memory64()
@@ -5056,8 +5057,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400617L)
 
     def test_JBE_5(self):
-        ''' Instruction JBE_5 
-            Groups: jump 
+        ''' Instruction JBE_5
+            Groups: jump
             0x7ffff7df1269:	jbe	0x7ffff7df1289
         '''
         mem = Memory64()
@@ -5075,8 +5076,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979627L)
 
     def test_JBE_6(self):
-        ''' Instruction JBE_6 
-            Groups: jump 
+        ''' Instruction JBE_6
+            Groups: jump
             0x7ffff7acff53:	jbe	0x7ffff7ad003f
         '''
         mem = Memory64()
@@ -5102,8 +5103,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348697945L)
 
     def test_JB_1(self):
-        ''' Instruction JB_1 
-            Groups: jump 
+        ''' Instruction JB_1
+            Groups: jump
             0x7ffff7b58f46:	jb	0x7ffff7b58f00
         '''
         mem = Memory64()
@@ -5120,8 +5121,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737349259008L)
 
     def test_JB_2(self):
-        ''' Instruction JB_2 
-            Groups: jump 
+        ''' Instruction JB_2
+            Groups: jump
             0x7ffff7b58f46:	jb	0x7ffff7b58f00
         '''
         mem = Memory64()
@@ -5138,8 +5139,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737349259080L)
 
     def test_JB_3(self):
-        ''' Instruction JB_3 
-            Groups: jump 
+        ''' Instruction JB_3
+            Groups: jump
             0x400bab:	jb	0x400ab4
         '''
         mem = Memory64()
@@ -5164,8 +5165,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197044L)
 
     def test_JB_4(self):
-        ''' Instruction JB_4 
-            Groups: jump 
+        ''' Instruction JB_4
+            Groups: jump
             0x7ffff7b58f46:	jb	0x7ffff7b58f00
         '''
         mem = Memory64()
@@ -5182,8 +5183,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737349259008L)
 
     def test_JB_5(self):
-        ''' Instruction JB_5 
-            Groups: jump 
+        ''' Instruction JB_5
+            Groups: jump
             0x7ffff7ddeff1:	jb	0x7ffff7ddefd0
         '''
         mem = Memory64()
@@ -5200,8 +5201,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351905232L)
 
     def test_JB_6(self):
-        ''' Instruction JB_6 
-            Groups: jump 
+        ''' Instruction JB_6
+            Groups: jump
             0x7ffff7b58f46:	jb	0x7ffff7b58f00
         '''
         mem = Memory64()
@@ -5218,8 +5219,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737349259008L)
 
     def test_JE_1(self):
-        ''' Instruction JE_1 
-            Groups: jump 
+        ''' Instruction JE_1
+            Groups: jump
             0x7ffff7de3a9d:	je	0x7ffff7de3ed1
         '''
         mem = Memory64()
@@ -5244,8 +5245,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351924387L)
 
     def test_JE_2(self):
-        ''' Instruction JE_2 
-            Groups: jump 
+        ''' Instruction JE_2
+            Groups: jump
             0x7ffff7de61be:	je	0x7ffff7de65b8
         '''
         mem = Memory64()
@@ -5270,8 +5271,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934404L)
 
     def test_JE_3(self):
-        ''' Instruction JE_3 
-            Groups: jump 
+        ''' Instruction JE_3
+            Groups: jump
             0x7ffff7de38c6:	je	0x7ffff7de3960
         '''
         mem = Memory64()
@@ -5296,8 +5297,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351923916L)
 
     def test_JE_4(self):
-        ''' Instruction JE_4 
-            Groups: jump 
+        ''' Instruction JE_4
+            Groups: jump
             0x7ffff7de440b:	je	0x7ffff7de4644
         '''
         mem = Memory64()
@@ -5322,8 +5323,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351926801L)
 
     def test_JE_5(self):
-        ''' Instruction JE_5 
-            Groups: jump 
+        ''' Instruction JE_5
+            Groups: jump
             0x7ffff7de6115:	je	0x7ffff7de6121
         '''
         mem = Memory64()
@@ -5340,8 +5341,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934231L)
 
     def test_JE_6(self):
-        ''' Instruction JE_6 
-            Groups: jump 
+        ''' Instruction JE_6
+            Groups: jump
             0x406e0b:	je	0x406dc6
         '''
         mem = Memory64()
@@ -5358,8 +5359,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4222477L)
 
     def test_JGE_1(self):
-        ''' Instruction JGE_1 
-            Groups: jump 
+        ''' Instruction JGE_1
+            Groups: jump
             0x7ffff7ab5b02:	jge	0x7ffff7ab5be0
         '''
         mem = Memory64()
@@ -5385,8 +5386,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348590344L)
 
     def test_JGE_2(self):
-        ''' Instruction JGE_2 
-            Groups: jump 
+        ''' Instruction JGE_2
+            Groups: jump
             0x7ffff7b09879:	jge	0x7ffff7b0987f
         '''
         mem = Memory64()
@@ -5404,8 +5405,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348933759L)
 
     def test_JGE_3(self):
-        ''' Instruction JGE_3 
-            Groups: jump 
+        ''' Instruction JGE_3
+            Groups: jump
             0x7ffff7ab5b02:	jge	0x7ffff7ab5be0
         '''
         mem = Memory64()
@@ -5431,8 +5432,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348590344L)
 
     def test_JG_1(self):
-        ''' Instruction JG_1 
-            Groups: jump 
+        ''' Instruction JG_1
+            Groups: jump
             0x403684:	jg	0x40361a
         '''
         mem = Memory64()
@@ -5451,8 +5452,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4208154L)
 
     def test_JG_2(self):
-        ''' Instruction JG_2 
-            Groups: jump 
+        ''' Instruction JG_2
+            Groups: jump
             0x40c120:	jg	0x40c3f0
         '''
         mem = Memory64()
@@ -5479,8 +5480,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4243750L)
 
     def test_JG_3(self):
-        ''' Instruction JG_3 
-            Groups: jump 
+        ''' Instruction JG_3
+            Groups: jump
             0x7ffff7df1357:	jg	0x7ffff7df13a0
         '''
         mem = Memory64()
@@ -5499,8 +5500,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979865L)
 
     def test_JG_4(self):
-        ''' Instruction JG_4 
-            Groups: jump 
+        ''' Instruction JG_4
+            Groups: jump
             0x7ffff7ddc9fb:	jg	0x7ffff7ddce16
         '''
         mem = Memory64()
@@ -5527,8 +5528,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351896598L)
 
     def test_JG_5(self):
-        ''' Instruction JG_5 
-            Groups: jump 
+        ''' Instruction JG_5
+            Groups: jump
             0x7ffff7ddc9fb:	jg	0x7ffff7ddce16
         '''
         mem = Memory64()
@@ -5555,8 +5556,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351896598L)
 
     def test_JG_6(self):
-        ''' Instruction JG_6 
-            Groups: jump 
+        ''' Instruction JG_6
+            Groups: jump
             0x40c2e4:	jg	0x40c250
         '''
         mem = Memory64()
@@ -5583,8 +5584,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4244202L)
 
     def test_JLE_1(self):
-        ''' Instruction JLE_1 
-            Groups: jump 
+        ''' Instruction JLE_1
+            Groups: jump
             0x400b2b:	jle	0x400b01
         '''
         mem = Memory64()
@@ -5603,8 +5604,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197121L)
 
     def test_JLE_2(self):
-        ''' Instruction JLE_2 
-            Groups: jump 
+        ''' Instruction JLE_2
+            Groups: jump
             0x7ffff7a4e1cb:	jle	0x7ffff7a4e429
         '''
         mem = Memory64()
@@ -5631,8 +5632,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348166097L)
 
     def test_JLE_3(self):
-        ''' Instruction JLE_3 
-            Groups: jump 
+        ''' Instruction JLE_3
+            Groups: jump
             0x437c08:	jle	0x437c1f
         '''
         mem = Memory64()
@@ -5651,8 +5652,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4422666L)
 
     def test_JLE_4(self):
-        ''' Instruction JLE_4 
-            Groups: jump 
+        ''' Instruction JLE_4
+            Groups: jump
             0x7ffff7de4486:	jle	0x7ffff7de4430
         '''
         mem = Memory64()
@@ -5671,8 +5672,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351926920L)
 
     def test_JLE_5(self):
-        ''' Instruction JLE_5 
-            Groups: jump 
+        ''' Instruction JLE_5
+            Groups: jump
             0x7ffff7de4486:	jle	0x7ffff7de4430
         '''
         mem = Memory64()
@@ -5691,8 +5692,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351926920L)
 
     def test_JLE_6(self):
-        ''' Instruction JLE_6 
-            Groups: jump 
+        ''' Instruction JLE_6
+            Groups: jump
             0x7ffff7de4486:	jle	0x7ffff7de4430
         '''
         mem = Memory64()
@@ -5711,8 +5712,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351926920L)
 
     def test_JL_1(self):
-        ''' Instruction JL_1 
-            Groups: jump 
+        ''' Instruction JL_1
+            Groups: jump
             0x555555556f00:	jl	0x555555556ee2
         '''
         mem = Memory64()
@@ -5730,8 +5731,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243426L)
 
     def test_JL_2(self):
-        ''' Instruction JL_2 
-            Groups: jump 
+        ''' Instruction JL_2
+            Groups: jump
             0x555555556f00:	jl	0x555555556ee2
         '''
         mem = Memory64()
@@ -5749,8 +5750,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243458L)
 
     def test_JL_3(self):
-        ''' Instruction JL_3 
-            Groups: jump 
+        ''' Instruction JL_3
+            Groups: jump
             0x555555556f00:	jl	0x555555556ee2
         '''
         mem = Memory64()
@@ -5768,8 +5769,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243426L)
 
     def test_JMP_1(self):
-        ''' Instruction JMP_1 
-            Groups: jump 
+        ''' Instruction JMP_1
+            Groups: jump
             0x7ffff7de4279:	jmp	0x7ffff7de3a98
         '''
         mem = Memory64()
@@ -5791,8 +5792,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351924376L)
 
     def test_JMP_2(self):
-        ''' Instruction JMP_2 
-            Groups: jump 
+        ''' Instruction JMP_2
+            Groups: jump
             0x7ffff7b58ee7:	jmp	0x7ffff7b58f10
         '''
         mem = Memory64()
@@ -5808,8 +5809,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737349259024L)
 
     def test_JMP_3(self):
-        ''' Instruction JMP_3 
-            Groups: jump 
+        ''' Instruction JMP_3
+            Groups: jump
             0x7ffff7df28e1:	jmp	0x7ffff7ddaa00
         '''
         mem = Memory64()
@@ -5831,8 +5832,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351887360L)
 
     def test_JMP_4(self):
-        ''' Instruction JMP_4 
-            Groups: mode64, jump 
+        ''' Instruction JMP_4
+            Groups: mode64, jump
             0x7ffff7de62ee:	jmp	rdx
         '''
         mem = Memory64()
@@ -5850,8 +5851,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934904L)
 
     def test_JMP_5(self):
-        ''' Instruction JMP_5 
-            Groups: jump 
+        ''' Instruction JMP_5
+            Groups: jump
             0x7ffff7de4042:	jmp	0x7ffff7de4054
         '''
         mem = Memory64()
@@ -5867,8 +5868,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351925844L)
 
     def test_JMP_6(self):
-        ''' Instruction JMP_6 
-            Groups: jump 
+        ''' Instruction JMP_6
+            Groups: jump
             0x7ffff7b58ee7:	jmp	0x7ffff7b58f10
         '''
         mem = Memory64()
@@ -5884,8 +5885,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737349259024L)
 
     def test_JNE_1(self):
-        ''' Instruction JNE_1 
-            Groups: jump 
+        ''' Instruction JNE_1
+            Groups: jump
             0x7ffff7df459e:	jne	0x7ffff7df4590
         '''
         mem = Memory64()
@@ -5902,8 +5903,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992720L)
 
     def test_JNE_2(self):
-        ''' Instruction JNE_2 
-            Groups: jump 
+        ''' Instruction JNE_2
+            Groups: jump
             0x7ffff7de5a4b:	jne	0x7ffff7de5a40
         '''
         mem = Memory64()
@@ -5920,8 +5921,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351932480L)
 
     def test_JNE_3(self):
-        ''' Instruction JNE_3 
-            Groups: jump 
+        ''' Instruction JNE_3
+            Groups: jump
             0x7ffff7de611b:	jne	0x7ffff7de73ad
         '''
         mem = Memory64()
@@ -5946,8 +5947,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934241L)
 
     def test_JNE_4(self):
-        ''' Instruction JNE_4 
-            Groups: jump 
+        ''' Instruction JNE_4
+            Groups: jump
             0x7ffff7aab197:	jne	0x7ffff7aab188
         '''
         mem = Memory64()
@@ -5964,8 +5965,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348546952L)
 
     def test_JNE_5(self):
-        ''' Instruction JNE_5 
-            Groups: jump 
+        ''' Instruction JNE_5
+            Groups: jump
             0x7ffff7df4594:	jne	0x7ffff7df45a3
         '''
         mem = Memory64()
@@ -5982,8 +5983,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992726L)
 
     def test_JNE_6(self):
-        ''' Instruction JNE_6 
-            Groups: jump 
+        ''' Instruction JNE_6
+            Groups: jump
             0x7ffff7df459e:	jne	0x7ffff7df4590
         '''
         mem = Memory64()
@@ -6000,8 +6001,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992720L)
 
     def test_JNS_1(self):
-        ''' Instruction JNS_1 
-            Groups: jump 
+        ''' Instruction JNS_1
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         mem = Memory64()
@@ -6018,8 +6019,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979921L)
 
     def test_JNS_2(self):
-        ''' Instruction JNS_2 
-            Groups: jump 
+        ''' Instruction JNS_2
+            Groups: jump
             0x555555565fb2:	jns	0x5555555659ec
         '''
         mem = Memory64()
@@ -6044,8 +6045,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992303596L)
 
     def test_JNS_3(self):
-        ''' Instruction JNS_3 
-            Groups: jump 
+        ''' Instruction JNS_3
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         mem = Memory64()
@@ -6062,8 +6063,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979921L)
 
     def test_JNS_4(self):
-        ''' Instruction JNS_4 
-            Groups: jump 
+        ''' Instruction JNS_4
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         mem = Memory64()
@@ -6080,8 +6081,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979856L)
 
     def test_JNS_5(self):
-        ''' Instruction JNS_5 
-            Groups: jump 
+        ''' Instruction JNS_5
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         mem = Memory64()
@@ -6098,8 +6099,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979921L)
 
     def test_JNS_6(self):
-        ''' Instruction JNS_6 
-            Groups: jump 
+        ''' Instruction JNS_6
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         mem = Memory64()
@@ -6116,8 +6117,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979856L)
 
     def test_JS_1(self):
-        ''' Instruction JS_1 
-            Groups: jump 
+        ''' Instruction JS_1
+            Groups: jump
             0x4326b2:	js	0x4328fb
         '''
         mem = Memory64()
@@ -6142,8 +6143,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400824L)
 
     def test_JS_2(self):
-        ''' Instruction JS_2 
-            Groups: jump 
+        ''' Instruction JS_2
+            Groups: jump
             0x4322d2:	js	0x43251b
         '''
         mem = Memory64()
@@ -6168,8 +6169,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399832L)
 
     def test_JS_3(self):
-        ''' Instruction JS_3 
-            Groups: jump 
+        ''' Instruction JS_3
+            Groups: jump
             0x555555565075:	js	0x555555566260
         '''
         mem = Memory64()
@@ -6194,8 +6195,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992301179L)
 
     def test_JS_4(self):
-        ''' Instruction JS_4 
-            Groups: jump 
+        ''' Instruction JS_4
+            Groups: jump
             0x40dd40:	js	0x40dd4c
         '''
         mem = Memory64()
@@ -6212,8 +6213,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4250956L)
 
     def test_JS_5(self):
-        ''' Instruction JS_5 
-            Groups: jump 
+        ''' Instruction JS_5
+            Groups: jump
             0x555555559cb6:	js	0x555555559ccf
         '''
         mem = Memory64()
@@ -6230,8 +6231,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992255183L)
 
     def test_JS_6(self):
-        ''' Instruction JS_6 
-            Groups: jump 
+        ''' Instruction JS_6
+            Groups: jump
             0x5555555673d5:	js	0x555555567450
         '''
         mem = Memory64()
@@ -6248,9 +6249,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992310231L)
 
     def test_LEAVE_1(self):
-        ''' Instruction LEAVE_1 
-            Groups: mode64 
-            0x7ffff7b30c15:	leave	
+        ''' Instruction LEAVE_1
+            Groups: mode64
+            0x7ffff7b30c15:	leave
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6334,9 +6335,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345792L)
 
     def test_LEAVE_2(self):
-        ''' Instruction LEAVE_2 
-            Groups: mode64 
-            0x4176f4:	leave	
+        ''' Instruction LEAVE_2
+            Groups: mode64
+            0x4176f4:	leave
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6420,9 +6421,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345888L)
 
     def test_LEAVE_3(self):
-        ''' Instruction LEAVE_3 
-            Groups: mode64 
-            0x7ffff7b59b18:	leave	
+        ''' Instruction LEAVE_3
+            Groups: mode64
+            0x7ffff7b59b18:	leave
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6508,9 +6509,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345664L)
 
     def test_LEAVE_4(self):
-        ''' Instruction LEAVE_4 
-            Groups: mode64 
-            0x7ffff7b59b18:	leave	
+        ''' Instruction LEAVE_4
+            Groups: mode64
+            0x7ffff7b59b18:	leave
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6596,9 +6597,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488346096L)
 
     def test_LEAVE_5(self):
-        ''' Instruction LEAVE_5 
-            Groups: mode64 
-            0x7ffff7ae0541:	leave	
+        ''' Instruction LEAVE_5
+            Groups: mode64
+            0x7ffff7ae0541:	leave
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6684,9 +6685,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345824L)
 
     def test_LEAVE_6(self):
-        ''' Instruction LEAVE_6 
-            Groups: mode64 
-            0x7ffff7a626cd:	leave	
+        ''' Instruction LEAVE_6
+            Groups: mode64
+            0x7ffff7a626cd:	leave
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -6772,8 +6773,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488346160L)
 
     def test_LEA_1(self):
-        ''' Instruction LEA_1 
-            Groups:  
+        ''' Instruction LEA_1
+            Groups:
             0x7ffff7de44f3:	lea	rsp, qword ptr [rbp - 0x28]
         '''
         mem = Memory64()
@@ -6814,8 +6815,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345504L)
 
     def test_LEA_2(self):
-        ''' Instruction LEA_2 
-            Groups:  
+        ''' Instruction LEA_2
+            Groups:
             0x7ffff7b58ee3:	lea	r8, qword ptr [r8 + rdx*4]
         '''
         mem = Memory64()
@@ -6856,8 +6857,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737349258983L)
 
     def test_LEA_3(self):
-        ''' Instruction LEA_3 
-            Groups:  
+        ''' Instruction LEA_3
+            Groups:
             0x7ffff7de3841:	lea	rsi, qword ptr [rbp - 0x3c]
         '''
         mem = Memory64()
@@ -6898,8 +6899,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345344L)
 
     def test_LEA_4(self):
-        ''' Instruction LEA_4 
-            Groups:  
+        ''' Instruction LEA_4
+            Groups:
             0x7ffff7b58f14:	lea	rdx, qword ptr [rbx + rdx*8]
         '''
         mem = Memory64()
@@ -6940,8 +6941,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 140737348050280L)
 
     def test_LEA_5(self):
-        ''' Instruction LEA_5 
-            Groups:  
+        ''' Instruction LEA_5
+            Groups:
             0x7ffff7a652b7:	lea	rsi, qword ptr [rip + 0x36e35a]
         '''
         mem = Memory64()
@@ -6986,8 +6987,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348260542L)
 
     def test_LEA_6(self):
-        ''' Instruction LEA_6 
-            Groups:  
+        ''' Instruction LEA_6
+            Groups:
             0x7ffff7de4418:	lea	rdi, qword ptr [rbp - 0xa0]
         '''
         mem = Memory64()
@@ -7034,8 +7035,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345520L)
 
     def test_MOVABS_1(self):
-        ''' Instruction MOVABS_1 
-            Groups:  
+        ''' Instruction MOVABS_1
+            Groups:
             0x7ffff7ddc5df:	movabs	r8, 0x37ffff1a0
         '''
         mem = Memory64()
@@ -7069,8 +7070,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351894505L)
 
     def test_MOVABS_2(self):
-        ''' Instruction MOVABS_2 
-            Groups:  
+        ''' Instruction MOVABS_2
+            Groups:
             0x7ffff7ddc5df:	movabs	r8, 0x37ffff1a0
         '''
         mem = Memory64()
@@ -7104,8 +7105,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351894505L)
 
     def test_MOVABS_3(self):
-        ''' Instruction MOVABS_3 
-            Groups:  
+        ''' Instruction MOVABS_3
+            Groups:
             0x7ffff7df1435:	movabs	rcx, -0x8000000000000000
         '''
         mem = Memory64()
@@ -7139,8 +7140,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351980095L)
 
     def test_MOVABS_4(self):
-        ''' Instruction MOVABS_4 
-            Groups:  
+        ''' Instruction MOVABS_4
+            Groups:
             0x45f853:	movabs	rdx, -0x3333333333333333
         '''
         mem = Memory64()
@@ -7174,8 +7175,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4585565L)
 
     def test_MOVABS_5(self):
-        ''' Instruction MOVABS_5 
-            Groups:  
+        ''' Instruction MOVABS_5
+            Groups:
             0x7ffff7df4630:	movabs	r8, -0x101010101010101
         '''
         mem = Memory64()
@@ -7209,8 +7210,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992890L)
 
     def test_MOVABS_6(self):
-        ''' Instruction MOVABS_6 
-            Groups:  
+        ''' Instruction MOVABS_6
+            Groups:
             0x7ffff7ddc5df:	movabs	r8, 0x37ffff1a0
         '''
         mem = Memory64()
@@ -7244,8 +7245,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351894505L)
 
     def test_MOVDQA_1(self):
-        ''' Instruction MOVDQA_1 
-            Groups: sse2 
+        ''' Instruction MOVDQA_1
+            Groups: sse2
             0x7ffff7ac0b0b:	movdqa	xmm4, xmm0
         '''
         mem = Memory64()
@@ -7269,8 +7270,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635407L)
 
     def test_MOVDQA_2(self):
-        ''' Instruction MOVDQA_2 
-            Groups: sse2 
+        ''' Instruction MOVDQA_2
+            Groups: sse2
             0x457d38:	movdqa	xmm0, xmm2
         '''
         mem = Memory64()
@@ -7294,8 +7295,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4554044L)
 
     def test_MOVDQA_3(self):
-        ''' Instruction MOVDQA_3 
-            Groups: sse2 
+        ''' Instruction MOVDQA_3
+            Groups: sse2
             0x457aaf:	movdqa	xmm5, xmm3
         '''
         mem = Memory64()
@@ -7319,8 +7320,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.XMM5, 152110698530748498584558466992035428691L)
 
     def test_MOVDQA_4(self):
-        ''' Instruction MOVDQA_4 
-            Groups: sse2 
+        ''' Instruction MOVDQA_4
+            Groups: sse2
             0x457a08:	movdqa	xmm2, xmmword ptr [rdi + 0x30]
         '''
         mem = Memory64()
@@ -7379,8 +7380,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553229L)
 
     def test_MOVDQA_5(self):
-        ''' Instruction MOVDQA_5 
-            Groups: sse2 
+        ''' Instruction MOVDQA_5
+            Groups: sse2
             0x457b38:	movdqa	xmm0, xmm2
         '''
         mem = Memory64()
@@ -7404,8 +7405,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553532L)
 
     def test_MOVDQA_6(self):
-        ''' Instruction MOVDQA_6 
-            Groups: sse2 
+        ''' Instruction MOVDQA_6
+            Groups: sse2
             0x7ffff7ac0b0b:	movdqa	xmm4, xmm0
         '''
         mem = Memory64()
@@ -7429,8 +7430,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635407L)
 
     def test_MOVDQU_1(self):
-        ''' Instruction MOVDQU_1 
-            Groups: sse2 
+        ''' Instruction MOVDQU_1
+            Groups: sse2
             0x6a74d4:	movdqu	xmm0, xmmword ptr [rsp]
         '''
         mem = Memory64()
@@ -7489,8 +7490,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 6976729L)
 
     def test_MOVDQU_2(self):
-        ''' Instruction MOVDQU_2 
-            Groups: sse2 
+        ''' Instruction MOVDQU_2
+            Groups: sse2
             0x568fac:	movdqu	xmm0, xmmword ptr [rsp]
         '''
         mem = Memory64()
@@ -7549,8 +7550,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5672881L)
 
     def test_MOVDQU_3(self):
-        ''' Instruction MOVDQU_3 
-            Groups: sse2 
+        ''' Instruction MOVDQU_3
+            Groups: sse2
             0x6f4c12:	movdqu	xmm1, xmmword ptr [rsp + 4]
         '''
         mem = Memory64()
@@ -7611,8 +7612,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 7293976L)
 
     def test_MOVDQU_4(self):
-        ''' Instruction MOVDQU_4 
-            Groups: sse2 
+        ''' Instruction MOVDQU_4
+            Groups: sse2
             0x56fa50:	movdqu	xmm1, xmmword ptr [rsp + 4]
         '''
         mem = Memory64()
@@ -7673,8 +7674,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5700182L)
 
     def test_MOVDQU_5(self):
-        ''' Instruction MOVDQU_5 
-            Groups: sse2 
+        ''' Instruction MOVDQU_5
+            Groups: sse2
             0x606649:	movdqu	xmm1, xmmword ptr [rsp + 4]
         '''
         mem = Memory64()
@@ -7735,8 +7736,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 6317647L)
 
     def test_MOVDQU_6(self):
-        ''' Instruction MOVDQU_6 
-            Groups: sse2 
+        ''' Instruction MOVDQU_6
+            Groups: sse2
             0x6fc91e:	movdqu	xmm0, xmmword ptr [rsp]
         '''
         mem = Memory64()
@@ -7795,8 +7796,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 7325987L)
 
     def test_MOVD_1(self):
-        ''' Instruction MOVD_1 
-            Groups: sse2 
+        ''' Instruction MOVD_1
+            Groups: sse2
             0x7ffff7df4370:	movd	xmm1, esi
         '''
         mem = Memory64()
@@ -7820,8 +7821,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992180L)
 
     def test_MOVD_2(self):
-        ''' Instruction MOVD_2 
-            Groups: sse2 
+        ''' Instruction MOVD_2
+            Groups: sse2
             0x7ffff7ab7980:	movd	xmm1, esi
         '''
         mem = Memory64()
@@ -7845,8 +7846,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348598148L)
 
     def test_MOVD_3(self):
-        ''' Instruction MOVD_3 
-            Groups: sse2 
+        ''' Instruction MOVD_3
+            Groups: sse2
             0x4578e0:	movd	xmm1, esi
         '''
         mem = Memory64()
@@ -7870,8 +7871,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4552932L)
 
     def test_MOVD_4(self):
-        ''' Instruction MOVD_4 
-            Groups: sse2 
+        ''' Instruction MOVD_4
+            Groups: sse2
             0x421b10:	movd	xmm1, esi
         '''
         mem = Memory64()
@@ -7895,8 +7896,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4332308L)
 
     def test_MOVD_5(self):
-        ''' Instruction MOVD_5 
-            Groups: sse2 
+        ''' Instruction MOVD_5
+            Groups: sse2
             0x457da0:	movd	xmm1, esi
         '''
         mem = Memory64()
@@ -7920,8 +7921,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4554148L)
 
     def test_MOVD_6(self):
-        ''' Instruction MOVD_6 
-            Groups: sse2 
+        ''' Instruction MOVD_6
+            Groups: sse2
             0x7ffff7ac0ae0:	movd	xmm1, esi
         '''
         mem = Memory64()
@@ -7945,8 +7946,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635364L)
 
     def test_MOVLPD_1(self):
-        ''' Instruction MOVLPD_1 
-            Groups: sse2 
+        ''' Instruction MOVLPD_1
+            Groups: sse2
             0x50f61f:	movlpd	xmm1, qword ptr [rsp]
         '''
         mem = Memory64()
@@ -7989,8 +7990,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5305892L)
 
     def test_MOVLPD_2(self):
-        ''' Instruction MOVLPD_2 
-            Groups: sse2 
+        ''' Instruction MOVLPD_2
+            Groups: sse2
             0x4aa891:	movlpd	qword ptr [rsp], xmm1
         '''
         mem = Memory64()
@@ -8033,8 +8034,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4892822L)
 
     def test_MOVLPD_3(self):
-        ''' Instruction MOVLPD_3 
-            Groups: sse2 
+        ''' Instruction MOVLPD_3
+            Groups: sse2
             0x4adf87:	movlpd	qword ptr [rsp], xmm1
         '''
         mem = Memory64()
@@ -8077,8 +8078,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4906892L)
 
     def test_MOVLPD_4(self):
-        ''' Instruction MOVLPD_4 
-            Groups: sse2 
+        ''' Instruction MOVLPD_4
+            Groups: sse2
             0x4acf88:	movlpd	qword ptr [rsp], xmm1
         '''
         mem = Memory64()
@@ -8121,8 +8122,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4902797L)
 
     def test_MOVLPD_5(self):
-        ''' Instruction MOVLPD_5 
-            Groups: sse2 
+        ''' Instruction MOVLPD_5
+            Groups: sse2
             0x50a2c7:	movlpd	xmm1, qword ptr [rsp]
         '''
         mem = Memory64()
@@ -8165,8 +8166,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5284556L)
 
     def test_MOVLPD_6(self):
-        ''' Instruction MOVLPD_6 
-            Groups: sse2 
+        ''' Instruction MOVLPD_6
+            Groups: sse2
             0x4d851b:	movlpd	qword ptr [rsp], xmm1
         '''
         mem = Memory64()
@@ -8209,8 +8210,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5080352L)
 
     def test_MOVSD_1(self):
-        ''' Instruction MOVSD_1 
-            Groups:  
+        ''' Instruction MOVSD_1
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         mem = Memory64()
@@ -8266,8 +8267,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243259L)
 
     def test_MOVSD_2(self):
-        ''' Instruction MOVSD_2 
-            Groups:  
+        ''' Instruction MOVSD_2
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         mem = Memory64()
@@ -8323,8 +8324,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243259L)
 
     def test_MOVSD_3(self):
-        ''' Instruction MOVSD_3 
-            Groups:  
+        ''' Instruction MOVSD_3
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         mem = Memory64()
@@ -8380,8 +8381,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243259L)
 
     def test_MOVSD_4(self):
-        ''' Instruction MOVSD_4 
-            Groups:  
+        ''' Instruction MOVSD_4
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         mem = Memory64()
@@ -8437,8 +8438,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243259L)
 
     def test_MOVSD_5(self):
-        ''' Instruction MOVSD_5 
-            Groups:  
+        ''' Instruction MOVSD_5
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         mem = Memory64()
@@ -8494,8 +8495,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243259L)
 
     def test_MOVSD_6(self):
-        ''' Instruction MOVSD_6 
-            Groups:  
+        ''' Instruction MOVSD_6
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         mem = Memory64()
@@ -8551,8 +8552,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992243259L)
 
     def test_MOVSXD_1(self):
-        ''' Instruction MOVSXD_1 
-            Groups:  
+        ''' Instruction MOVSXD_1
+            Groups:
             0x466083:	movsxd	rdi, edi
         '''
         mem = Memory64()
@@ -8574,8 +8575,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4612230L)
 
     def test_MOVSXD_2(self):
-        ''' Instruction MOVSXD_2 
-            Groups:  
+        ''' Instruction MOVSXD_2
+            Groups:
             0x7ffff7ddf068:	movsxd	rdx, dword ptr [r8 + rbx*4]
         '''
         mem = Memory64()
@@ -8610,8 +8611,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBX, 0L)
 
     def test_MOVSXD_3(self):
-        ''' Instruction MOVSXD_3 
-            Groups:  
+        ''' Instruction MOVSXD_3
+            Groups:
             0x436902:	movsxd	rax, dword ptr [rdx + rax*4]
         '''
         mem = Memory64()
@@ -8644,8 +8645,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 4803712L)
 
     def test_MOVSXD_4(self):
-        ''' Instruction MOVSXD_4 
-            Groups:  
+        ''' Instruction MOVSXD_4
+            Groups:
             0x7ffff7df214a:	movsxd	rax, dword ptr [rcx + rax*4]
         '''
         mem = Memory64()
@@ -8678,8 +8679,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351983438L)
 
     def test_MOVSXD_5(self):
-        ''' Instruction MOVSXD_5 
-            Groups:  
+        ''' Instruction MOVSXD_5
+            Groups:
             0x436b12:	movsxd	rax, dword ptr [rdx + rax*4]
         '''
         mem = Memory64()
@@ -8712,8 +8713,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 4804224L)
 
     def test_MOVSXD_6(self):
-        ''' Instruction MOVSXD_6 
-            Groups:  
+        ''' Instruction MOVSXD_6
+            Groups:
             0x7ffff7de62e7:	movsxd	rdx, dword ptr [rax + r12*4]
         '''
         mem = Memory64()
@@ -8748,8 +8749,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934699L)
 
     def test_MOVSX_1(self):
-        ''' Instruction MOVSX_1 
-            Groups:  
+        ''' Instruction MOVSX_1
+            Groups:
             0x7ffff7df1273:	movsx	edx, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -8774,8 +8775,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979638L)
 
     def test_MOVSX_2(self):
-        ''' Instruction MOVSX_2 
-            Groups:  
+        ''' Instruction MOVSX_2
+            Groups:
             0x7ffff7df1273:	movsx	edx, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -8800,8 +8801,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979638L)
 
     def test_MOVSX_3(self):
-        ''' Instruction MOVSX_3 
-            Groups:  
+        ''' Instruction MOVSX_3
+            Groups:
             0x7ffff7df1260:	movsx	eax, byte ptr [rsi]
         '''
         mem = Memory64()
@@ -8826,8 +8827,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979619L)
 
     def test_MOVSX_4(self):
-        ''' Instruction MOVSX_4 
-            Groups:  
+        ''' Instruction MOVSX_4
+            Groups:
             0x7ffff7df1260:	movsx	eax, byte ptr [rsi]
         '''
         mem = Memory64()
@@ -8852,8 +8853,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979619L)
 
     def test_MOVSX_5(self):
-        ''' Instruction MOVSX_5 
-            Groups:  
+        ''' Instruction MOVSX_5
+            Groups:
             0x7ffff7df1260:	movsx	eax, byte ptr [rsi]
         '''
         mem = Memory64()
@@ -8878,8 +8879,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979619L)
 
     def test_MOVSX_6(self):
-        ''' Instruction MOVSX_6 
-            Groups:  
+        ''' Instruction MOVSX_6
+            Groups:
             0x7ffff7df1273:	movsx	edx, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -8904,8 +8905,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351979638L)
 
     def test_MOVZX_1(self):
-        ''' Instruction MOVZX_1 
-            Groups:  
+        ''' Instruction MOVZX_1
+            Groups:
             0x7ffff7de3aa3:	movzx	edx, byte ptr [rcx + 4]
         '''
         mem = Memory64()
@@ -8932,8 +8933,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351924391L)
 
     def test_MOVZX_2(self):
-        ''' Instruction MOVZX_2 
-            Groups:  
+        ''' Instruction MOVZX_2
+            Groups:
             0x7ffff7de4399:	movzx	edx, byte ptr [rcx]
         '''
         mem = Memory64()
@@ -8958,8 +8959,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351926684L)
 
     def test_MOVZX_3(self):
-        ''' Instruction MOVZX_3 
-            Groups:  
+        ''' Instruction MOVZX_3
+            Groups:
             0x400aaa:	movzx	eax, al
         '''
         mem = Memory64()
@@ -8981,8 +8982,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4197037L)
 
     def test_MOVZX_4(self):
-        ''' Instruction MOVZX_4 
-            Groups:  
+        ''' Instruction MOVZX_4
+            Groups:
             0x7ffff7b58f18:	movzx	r10d, word ptr [rdx + 6]
         '''
         mem = Memory64()
@@ -9013,8 +9014,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R10D, 11L)
 
     def test_MOVZX_5(self):
-        ''' Instruction MOVZX_5 
-            Groups:  
+        ''' Instruction MOVZX_5
+            Groups:
             0x7ffff7de6219:	movzx	r9d, r9b
         '''
         mem = Memory64()
@@ -9038,8 +9039,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934493L)
 
     def test_MOVZX_6(self):
-        ''' Instruction MOVZX_6 
-            Groups:  
+        ''' Instruction MOVZX_6
+            Groups:
             0x7ffff7de3929:	movzx	ecx, byte ptr [rbp - 0x78]
         '''
         mem = Memory64()
@@ -9066,8 +9067,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 56L)
 
     def test_MOV_1(self):
-        ''' Instruction MOV_1 
-            Groups:  
+        ''' Instruction MOV_1
+            Groups:
             0x737287:	mov	ebx, 0x40
         '''
         mem = Memory64()
@@ -9091,8 +9092,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 7565964L)
 
     def test_MOV_2(self):
-        ''' Instruction MOV_2 
-            Groups:  
+        ''' Instruction MOV_2
+            Groups:
             0x7ffff7de6121:	mov	rax, r13
         '''
         mem = Memory64()
@@ -9114,8 +9115,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R13, 140737348034560L)
 
     def test_MOV_3(self):
-        ''' Instruction MOV_3 
-            Groups:  
+        ''' Instruction MOV_3
+            Groups:
             0x74dced:	mov	dword ptr [rsp], 0x7fff
         '''
         mem = Memory64()
@@ -9152,8 +9153,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 7658740L)
 
     def test_MOV_4(self):
-        ''' Instruction MOV_4 
-            Groups:  
+        ''' Instruction MOV_4
+            Groups:
             0x4b00dc:	mov	dword ptr [rsp + 4], 0x80
         '''
         mem = Memory64()
@@ -9192,8 +9193,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4915428L)
 
     def test_MOV_5(self):
-        ''' Instruction MOV_5 
-            Groups:  
+        ''' Instruction MOV_5
+            Groups:
             0x7776d9:	mov	dword ptr [rsp + 8], 0x80000000
         '''
         mem = Memory64()
@@ -9232,8 +9233,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 7829217L)
 
     def test_MOV_6(self):
-        ''' Instruction MOV_6 
-            Groups:  
+        ''' Instruction MOV_6
+            Groups:
             0x4c3b88:	mov	dword ptr [rsp + 0xc], 0x12345678
         '''
         mem = Memory64()
@@ -9272,8 +9273,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4995984L)
 
     def test_MUL_1(self):
-        ''' Instruction MUL_1 
-            Groups:  
+        ''' Instruction MUL_1
+            Groups:
             0x7ffff7de253f:	mul	rdx
         '''
         mem = Memory64()
@@ -9299,8 +9300,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 76L)
 
     def test_MUL_2(self):
-        ''' Instruction MUL_2 
-            Groups:  
+        ''' Instruction MUL_2
+            Groups:
             0x7ffff7de253f:	mul	rdx
         '''
         mem = Memory64()
@@ -9326,8 +9327,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 76L)
 
     def test_MUL_3(self):
-        ''' Instruction MUL_3 
-            Groups:  
+        ''' Instruction MUL_3
+            Groups:
             0x7ffff7de253f:	mul	rdx
         '''
         mem = Memory64()
@@ -9353,8 +9354,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 76L)
 
     def test_MUL_4(self):
-        ''' Instruction MUL_4 
-            Groups:  
+        ''' Instruction MUL_4
+            Groups:
             0x45f865:	mul	rdx
         '''
         mem = Memory64()
@@ -9380,8 +9381,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 69L)
 
     def test_MUL_5(self):
-        ''' Instruction MUL_5 
-            Groups:  
+        ''' Instruction MUL_5
+            Groups:
             0x4624e5:	mul	rdx
         '''
         mem = Memory64()
@@ -9407,8 +9408,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 69L)
 
     def test_MUL_6(self):
-        ''' Instruction MUL_6 
-            Groups:  
+        ''' Instruction MUL_6
+            Groups:
             0x443dc7:	mul	r9
         '''
         mem = Memory64()
@@ -9436,8 +9437,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 7378697629483820647L)
 
     def test_NEG_1(self):
-        ''' Instruction NEG_1 
-            Groups:  
+        ''' Instruction NEG_1
+            Groups:
             0x7ffff7df27cf:	neg	rax
         '''
         mem = Memory64()
@@ -9469,8 +9470,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_NEG_2(self):
-        ''' Instruction NEG_2 
-            Groups:  
+        ''' Instruction NEG_2
+            Groups:
             0x7ffff7de5c54:	neg	rax
         '''
         mem = Memory64()
@@ -9502,8 +9503,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_NEG_3(self):
-        ''' Instruction NEG_3 
-            Groups:  
+        ''' Instruction NEG_3
+            Groups:
             0x40baad:	neg	eax
         '''
         mem = Memory64()
@@ -9533,8 +9534,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_NEG_4(self):
-        ''' Instruction NEG_4 
-            Groups:  
+        ''' Instruction NEG_4
+            Groups:
             0x7ffff7df27b6:	neg	rdi
         '''
         mem = Memory64()
@@ -9566,8 +9567,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_NEG_5(self):
-        ''' Instruction NEG_5 
-            Groups:  
+        ''' Instruction NEG_5
+            Groups:
             0x411176:	neg	r10
         '''
         mem = Memory64()
@@ -9599,8 +9600,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_NEG_6(self):
-        ''' Instruction NEG_6 
-            Groups:  
+        ''' Instruction NEG_6
+            Groups:
             0x7ffff7df27b6:	neg	rdi
         '''
         mem = Memory64()
@@ -9632,8 +9633,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_NOT_1(self):
-        ''' Instruction NOT_1 
-            Groups:  
+        ''' Instruction NOT_1
+            Groups:
             0x7ffff7df144a:	not	rax
         '''
         mem = Memory64()
@@ -9653,8 +9654,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351980109L)
 
     def test_NOT_2(self):
-        ''' Instruction NOT_2 
-            Groups:  
+        ''' Instruction NOT_2
+            Groups:
             0x4008f7:	not	esi
         '''
         mem = Memory64()
@@ -9672,8 +9673,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4196601L)
 
     def test_NOT_3(self):
-        ''' Instruction NOT_3 
-            Groups:  
+        ''' Instruction NOT_3
+            Groups:
             0x7ffff7a78242:	not	rax
         '''
         mem = Memory64()
@@ -9693,8 +9694,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348338245L)
 
     def test_NOT_4(self):
-        ''' Instruction NOT_4 
-            Groups:  
+        ''' Instruction NOT_4
+            Groups:
             0x7ffff7de5765:	not	r10
         '''
         mem = Memory64()
@@ -9714,8 +9715,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351931752L)
 
     def test_NOT_5(self):
-        ''' Instruction NOT_5 
-            Groups:  
+        ''' Instruction NOT_5
+            Groups:
             0x7ffff7de5765:	not	r10
         '''
         mem = Memory64()
@@ -9735,8 +9736,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351931752L)
 
     def test_NOT_6(self):
-        ''' Instruction NOT_6 
-            Groups:  
+        ''' Instruction NOT_6
+            Groups:
             0x7ffff7de5765:	not	r10
         '''
         mem = Memory64()
@@ -9756,8 +9757,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351931752L)
 
     def test_OR_1(self):
-        ''' Instruction OR_1 
-            Groups:  
+        ''' Instruction OR_1
+            Groups:
             0x7ffff7de6235:	or	r9d, eax
         '''
         mem = Memory64()
@@ -9789,8 +9790,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_OR_2(self):
-        ''' Instruction OR_2 
-            Groups:  
+        ''' Instruction OR_2
+            Groups:
             0x7ffff7de4344:	or	qword ptr [rsp], 0
         '''
         mem = Memory64()
@@ -9841,8 +9842,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_OR_3(self):
-        ''' Instruction OR_3 
-            Groups:  
+        ''' Instruction OR_3
+            Groups:
             0x7ffff7de3814:	or	qword ptr [rsp], 0
         '''
         mem = Memory64()
@@ -9893,8 +9894,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_OR_4(self):
-        ''' Instruction OR_4 
-            Groups:  
+        ''' Instruction OR_4
+            Groups:
             0x7ffff7de3814:	or	qword ptr [rsp], 0
         '''
         mem = Memory64()
@@ -9945,8 +9946,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_OR_5(self):
-        ''' Instruction OR_5 
-            Groups:  
+        ''' Instruction OR_5
+            Groups:
             0x40a38c:	or	qword ptr [rsp], 0
         '''
         mem = Memory64()
@@ -9997,8 +9998,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_OR_6(self):
-        ''' Instruction OR_6 
-            Groups:  
+        ''' Instruction OR_6
+            Groups:
             0x7ffff7de6212:	or	r9d, eax
         '''
         mem = Memory64()
@@ -10030,8 +10031,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPEQB_1(self):
-        ''' Instruction PCMPEQB_1 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_1
+            Groups: sse2
             0x457e12:	pcmpeqb	xmm5, xmm2
         '''
         mem = Memory64()
@@ -10055,8 +10056,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.XMM5, 0)
 
     def test_PCMPEQB_2(self):
-        ''' Instruction PCMPEQB_2 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_2
+            Groups: sse2
             0x4184bf:	pcmpeqb	xmm12, xmm8
         '''
         mem = Memory64()
@@ -10082,8 +10083,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293828L)
 
     def test_PCMPEQB_3(self):
-        ''' Instruction PCMPEQB_3 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_3
+            Groups: sse2
             0x457a26:	pcmpeqb	xmm0, xmm7
         '''
         mem = Memory64()
@@ -10107,8 +10108,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553258L)
 
     def test_PCMPEQB_4(self):
-        ''' Instruction PCMPEQB_4 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_4
+            Groups: sse2
             0x4579e8:	pcmpeqb	xmm0, xmm1
         '''
         mem = Memory64()
@@ -10132,8 +10133,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553196L)
 
     def test_PCMPEQB_5(self):
-        ''' Instruction PCMPEQB_5 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_5
+            Groups: sse2
             0x7ffff7ab7ac6:	pcmpeqb	xmm0, xmm7
         '''
         mem = Memory64()
@@ -10157,8 +10158,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348598474L)
 
     def test_PCMPEQB_6(self):
-        ''' Instruction PCMPEQB_6 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_6
+            Groups: sse2
             0x7ffff7ab79b1:	pcmpeqb	xmm0, xmm1
         '''
         mem = Memory64()
@@ -10182,8 +10183,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348598197L)
 
     def test_PMINUB_1(self):
-        ''' Instruction PMINUB_1 
-            Groups: sse2 
+        ''' Instruction PMINUB_1
+            Groups: sse2
             0x41b15f:	pminub	xmm8, xmmword ptr [rax + 0x10]
         '''
         mem = Memory64()
@@ -10244,8 +10245,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4305253L)
 
     def test_PMINUB_2(self):
-        ''' Instruction PMINUB_2 
-            Groups: sse2 
+        ''' Instruction PMINUB_2
+            Groups: sse2
             0x41b142:	pminub	xmm8, xmmword ptr [rax + 0x70]
         '''
         mem = Memory64()
@@ -10306,8 +10307,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4305224L)
 
     def test_PMINUB_3(self):
-        ''' Instruction PMINUB_3 
-            Groups: sse2 
+        ''' Instruction PMINUB_3
+            Groups: sse2
             0x457af6:	pminub	xmm0, xmm2
         '''
         mem = Memory64()
@@ -10331,8 +10332,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553466L)
 
     def test_PMINUB_4(self):
-        ''' Instruction PMINUB_4 
-            Groups: sse2 
+        ''' Instruction PMINUB_4
+            Groups: sse2
             0x41b13c:	pminub	xmm8, xmmword ptr [rax + 0x60]
         '''
         mem = Memory64()
@@ -10393,8 +10394,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4305218L)
 
     def test_PMINUB_5(self):
-        ''' Instruction PMINUB_5 
-            Groups: sse2 
+        ''' Instruction PMINUB_5
+            Groups: sse2
             0x457ee2:	pminub	xmm0, xmm5
         '''
         mem = Memory64()
@@ -10418,8 +10419,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.XMM5, 134876510559778439374245404375482789731L)
 
     def test_PMINUB_6(self):
-        ''' Instruction PMINUB_6 
-            Groups: sse2 
+        ''' Instruction PMINUB_6
+            Groups: sse2
             0x7ffff7ab7abe:	pminub	xmm0, xmm4
         '''
         mem = Memory64()
@@ -10443,8 +10444,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348598466L)
 
     def test_PMOVMSKB_1(self):
-        ''' Instruction PMOVMSKB_1 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_1
+            Groups: sse2
             0x4184f1:	pmovmskb	ecx, xmm11
         '''
         mem = Memory64()
@@ -10470,8 +10471,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 0L)
 
     def test_PMOVMSKB_2(self):
-        ''' Instruction PMOVMSKB_2 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_2
+            Groups: sse2
             0x457d6e:	pmovmskb	r10d, xmm3
         '''
         mem = Memory64()
@@ -10497,8 +10498,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.R10D, 8448L)
 
     def test_PMOVMSKB_3(self):
-        ''' Instruction PMOVMSKB_3 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_3
+            Groups: sse2
             0x457ddd:	pmovmskb	edx, xmm3
         '''
         mem = Memory64()
@@ -10522,8 +10523,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4554209L)
 
     def test_PMOVMSKB_4(self):
-        ''' Instruction PMOVMSKB_4 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_4
+            Groups: sse2
             0x7ffff7ab5ce1:	pmovmskb	ecx, xmm11
         '''
         mem = Memory64()
@@ -10549,8 +10550,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ECX, 57568L)
 
     def test_PMOVMSKB_5(self):
-        ''' Instruction PMOVMSKB_5 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_5
+            Groups: sse2
             0x4184e7:	pmovmskb	edx, xmm9
         '''
         mem = Memory64()
@@ -10576,8 +10577,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293868L)
 
     def test_PMOVMSKB_6(self):
-        ''' Instruction PMOVMSKB_6 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_6
+            Groups: sse2
             0x4184c4:	pmovmskb	edx, xmm12
         '''
         mem = Memory64()
@@ -10603,8 +10604,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293833L)
 
     def test_POP_1(self):
-        ''' Instruction POP_1 
-            Groups: mode64 
+        ''' Instruction POP_1
+            Groups: mode64
             0x7ffff7de3b0b:	pop	rbp
         '''
         mem = Memory64()
@@ -10657,8 +10658,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345520L)
 
     def test_POP_2(self):
-        ''' Instruction POP_2 
-            Groups: mode64 
+        ''' Instruction POP_2
+            Groups: mode64
             0x7ffff7dea3ad:	pop	r14
         '''
         mem = Memory64()
@@ -10715,8 +10716,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345632L)
 
     def test_POP_3(self):
-        ''' Instruction POP_3 
-            Groups: mode64 
+        ''' Instruction POP_3
+            Groups: mode64
             0x4624e4:	pop	r12
         '''
         mem = Memory64()
@@ -10773,8 +10774,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345888L)
 
     def test_POP_4(self):
-        ''' Instruction POP_4 
-            Groups: mode64 
+        ''' Instruction POP_4
+            Groups: mode64
             0x6ff233:	pop	rdx
         '''
         mem = Memory64()
@@ -10829,8 +10830,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 0L)
 
     def test_POP_5(self):
-        ''' Instruction POP_5 
-            Groups: mode64 
+        ''' Instruction POP_5
+            Groups: mode64
             0x632f8a:	pop	rdx
         '''
         mem = Memory64()
@@ -10885,8 +10886,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 0L)
 
     def test_POP_6(self):
-        ''' Instruction POP_6 
-            Groups: mode64 
+        ''' Instruction POP_6
+            Groups: mode64
             0x737db3:	pop	rdx
         '''
         mem = Memory64()
@@ -10941,8 +10942,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 0L)
 
     def test_POR_1(self):
-        ''' Instruction POR_1 
-            Groups: sse2 
+        ''' Instruction POR_1
+            Groups: sse2
             0x7ffff7df43a7:	por	xmm0, xmm4
         '''
         mem = Memory64()
@@ -10966,8 +10967,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992235L)
 
     def test_POR_2(self):
-        ''' Instruction POR_2 
-            Groups: sse2 
+        ''' Instruction POR_2
+            Groups: sse2
             0x7ffff7df43a7:	por	xmm0, xmm4
         '''
         mem = Memory64()
@@ -10991,8 +10992,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992235L)
 
     def test_POR_3(self):
-        ''' Instruction POR_3 
-            Groups: sse2 
+        ''' Instruction POR_3
+            Groups: sse2
             0x7ffff7df43a7:	por	xmm0, xmm4
         '''
         mem = Memory64()
@@ -11016,8 +11017,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992235L)
 
     def test_POR_4(self):
-        ''' Instruction POR_4 
-            Groups: sse2 
+        ''' Instruction POR_4
+            Groups: sse2
             0x7ffff7df43a7:	por	xmm0, xmm4
         '''
         mem = Memory64()
@@ -11041,8 +11042,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992235L)
 
     def test_POR_5(self):
-        ''' Instruction POR_5 
-            Groups: sse2 
+        ''' Instruction POR_5
+            Groups: sse2
             0x7ffff7df4412:	por	xmm0, xmm3
         '''
         mem = Memory64()
@@ -11066,8 +11067,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992342L)
 
     def test_POR_6(self):
-        ''' Instruction POR_6 
-            Groups: sse2 
+        ''' Instruction POR_6
+            Groups: sse2
             0x7ffff7ac0b17:	por	xmm0, xmm4
         '''
         mem = Memory64()
@@ -11091,8 +11092,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635419L)
 
     def test_PSHUFD_1(self):
-        ''' Instruction PSHUFD_1 
-            Groups: sse2 
+        ''' Instruction PSHUFD_1
+            Groups: sse2
             0x7ffff7ac0af8:	pshufd	xmm1, xmm1, 0
         '''
         mem = Memory64()
@@ -11116,8 +11117,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635389L)
 
     def test_PSHUFD_2(self):
-        ''' Instruction PSHUFD_2 
-            Groups: sse2 
+        ''' Instruction PSHUFD_2
+            Groups: sse2
             0x7ffff7ac0af8:	pshufd	xmm1, xmm1, 0
         '''
         mem = Memory64()
@@ -11141,8 +11142,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635389L)
 
     def test_PSHUFD_3(self):
-        ''' Instruction PSHUFD_3 
-            Groups: sse2 
+        ''' Instruction PSHUFD_3
+            Groups: sse2
             0x7ffff7df4388:	pshufd	xmm1, xmm1, 0
         '''
         mem = Memory64()
@@ -11166,8 +11167,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992205L)
 
     def test_PSHUFD_4(self):
-        ''' Instruction PSHUFD_4 
-            Groups: sse2 
+        ''' Instruction PSHUFD_4
+            Groups: sse2
             0x7ffff7ab799a:	pshufd	xmm1, xmm1, 0
         '''
         mem = Memory64()
@@ -11191,8 +11192,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348598175L)
 
     def test_PSHUFD_5(self):
-        ''' Instruction PSHUFD_5 
-            Groups: sse2 
+        ''' Instruction PSHUFD_5
+            Groups: sse2
             0x7ffff7df4388:	pshufd	xmm1, xmm1, 0
         '''
         mem = Memory64()
@@ -11216,8 +11217,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992205L)
 
     def test_PSHUFD_6(self):
-        ''' Instruction PSHUFD_6 
-            Groups: sse2 
+        ''' Instruction PSHUFD_6
+            Groups: sse2
             0x7ffff7ab799a:	pshufd	xmm1, xmm1, 0
         '''
         mem = Memory64()
@@ -11241,8 +11242,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348598175L)
 
     def test_PUNPCKLBW_1(self):
-        ''' Instruction PUNPCKLBW_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_1
+            Groups: sse2
             0x7ffff7df437b:	punpcklbw	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11264,8 +11265,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992191L)
 
     def test_PUNPCKLBW_2(self):
-        ''' Instruction PUNPCKLBW_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_2
+            Groups: sse2
             0x7ffff7ac0aeb:	punpcklbw	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11287,8 +11288,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635375L)
 
     def test_PUNPCKLBW_3(self):
-        ''' Instruction PUNPCKLBW_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_3
+            Groups: sse2
             0x7ffff7ac0aeb:	punpcklbw	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11310,8 +11311,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635375L)
 
     def test_PUNPCKLBW_4(self):
-        ''' Instruction PUNPCKLBW_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_4
+            Groups: sse2
             0x4579cc:	punpcklbw	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11333,8 +11334,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553168L)
 
     def test_PUNPCKLBW_5(self):
-        ''' Instruction PUNPCKLBW_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_5
+            Groups: sse2
             0x45794c:	punpcklbw	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11356,8 +11357,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553040L)
 
     def test_PUNPCKLBW_6(self):
-        ''' Instruction PUNPCKLBW_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_6
+            Groups: sse2
             0x7ffff7df437b:	punpcklbw	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11379,8 +11380,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992191L)
 
     def test_PUNPCKLWD_1(self):
-        ''' Instruction PUNPCKLWD_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_1
+            Groups: sse2
             0x457a46:	punpcklwd	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11402,8 +11403,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4553290L)
 
     def test_PUNPCKLWD_2(self):
-        ''' Instruction PUNPCKLWD_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_2
+            Groups: sse2
             0x421b24:	punpcklwd	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11425,8 +11426,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4332328L)
 
     def test_PUNPCKLWD_3(self):
-        ''' Instruction PUNPCKLWD_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_3
+            Groups: sse2
             0x7ffff7df4384:	punpcklwd	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11448,8 +11449,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992200L)
 
     def test_PUNPCKLWD_4(self):
-        ''' Instruction PUNPCKLWD_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_4
+            Groups: sse2
             0x7ffff7df4384:	punpcklwd	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11471,8 +11472,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351992200L)
 
     def test_PUNPCKLWD_5(self):
-        ''' Instruction PUNPCKLWD_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_5
+            Groups: sse2
             0x45a576:	punpcklwd	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11494,8 +11495,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4564346L)
 
     def test_PUNPCKLWD_6(self):
-        ''' Instruction PUNPCKLWD_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_6
+            Groups: sse2
             0x7ffff7ac0af4:	punpcklwd	xmm1, xmm1
         '''
         mem = Memory64()
@@ -11517,8 +11518,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348635384L)
 
     def test_PUSH_1(self):
-        ''' Instruction PUSH_1 
-            Groups: mode64 
+        ''' Instruction PUSH_1
+            Groups: mode64
             0x7ffff7de407a:	push	r12
         '''
         mem = Memory64()
@@ -11575,8 +11576,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345200L)
 
     def test_PUSH_2(self):
-        ''' Instruction PUSH_2 
-            Groups: mode64 
+        ''' Instruction PUSH_2
+            Groups: mode64
             0x722546:	push	0xff00
         '''
         mem = Memory64()
@@ -11637,8 +11638,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 0L)
 
     def test_PUSH_3(self):
-        ''' Instruction PUSH_3 
-            Groups: mode64 
+        ''' Instruction PUSH_3
+            Groups: mode64
             0x744c3e:	push	0xf00aabb
         '''
         mem = Memory64()
@@ -11699,8 +11700,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 0L)
 
     def test_PUSH_4(self):
-        ''' Instruction PUSH_4 
-            Groups: mode64 
+        ''' Instruction PUSH_4
+            Groups: mode64
             0x6651fa:	push	rax
         '''
         mem = Memory64()
@@ -11755,8 +11756,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 0L)
 
     def test_PUSH_5(self):
-        ''' Instruction PUSH_5 
-            Groups: mode64 
+        ''' Instruction PUSH_5
+            Groups: mode64
             0x7ffff7de4330:	push	rbp
         '''
         mem = Memory64()
@@ -11809,8 +11810,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345968L)
 
     def test_PUSH_6(self):
-        ''' Instruction PUSH_6 
-            Groups: mode64 
+        ''' Instruction PUSH_6
+            Groups: mode64
             0x75c167:	push	0xf00aabb
         '''
         mem = Memory64()
@@ -11871,8 +11872,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 0L)
 
     def test_PXOR_1(self):
-        ''' Instruction PXOR_1 
-            Groups: sse2 
+        ''' Instruction PXOR_1
+            Groups: sse2
             0x418490:	pxor	xmm8, xmm8
         '''
         mem = Memory64()
@@ -11896,8 +11897,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293781L)
 
     def test_PXOR_2(self):
-        ''' Instruction PXOR_2 
-            Groups: sse2 
+        ''' Instruction PXOR_2
+            Groups: sse2
             0x41848f:	pxor	xmm11, xmm11
         '''
         mem = Memory64()
@@ -11921,8 +11922,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293780L)
 
     def test_PXOR_3(self):
-        ''' Instruction PXOR_3 
-            Groups: sse2 
+        ''' Instruction PXOR_3
+            Groups: sse2
             0x4184bf:	pxor	xmm11, xmm11
         '''
         mem = Memory64()
@@ -11946,8 +11947,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293828L)
 
     def test_PXOR_4(self):
-        ''' Instruction PXOR_4 
-            Groups: sse2 
+        ''' Instruction PXOR_4
+            Groups: sse2
             0x418480:	pxor	xmm8, xmm8
         '''
         mem = Memory64()
@@ -11971,8 +11972,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293765L)
 
     def test_PXOR_5(self):
-        ''' Instruction PXOR_5 
-            Groups: sse2 
+        ''' Instruction PXOR_5
+            Groups: sse2
             0x4183b5:	pxor	xmm9, xmm9
         '''
         mem = Memory64()
@@ -11996,8 +11997,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293562L)
 
     def test_PXOR_6(self):
-        ''' Instruction PXOR_6 
-            Groups: sse2 
+        ''' Instruction PXOR_6
+            Groups: sse2
             0x418495:	pxor	xmm9, xmm9
         '''
         mem = Memory64()
@@ -12021,9 +12022,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4293786L)
 
     def test_RET_1(self):
-        ''' Instruction RET_1 
-            Groups: ret, mode64 
-            0x7ffff7de3748:	ret	
+        ''' Instruction RET_1
+            Groups: ret, mode64
+            0x7ffff7de3748:	ret
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -12075,9 +12076,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345200L)
 
     def test_RET_2(self):
-        ''' Instruction RET_2 
-            Groups: ret, mode64 
-            0x7ffff7df537f:	ret	
+        ''' Instruction RET_2
+            Groups: ret, mode64
+            0x7ffff7df537f:	ret
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -12129,9 +12130,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345824L)
 
     def test_RET_3(self):
-        ''' Instruction RET_3 
-            Groups: ret, mode64 
-            0x406e67:	ret	
+        ''' Instruction RET_3
+            Groups: ret, mode64
+            0x406e67:	ret
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -12183,9 +12184,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345968L)
 
     def test_RET_4(self):
-        ''' Instruction RET_4 
-            Groups: ret, mode64 
-            0x7ffff7de2af3:	ret	
+        ''' Instruction RET_4
+            Groups: ret, mode64
+            0x7ffff7de2af3:	ret
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -12237,9 +12238,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488344864L)
 
     def test_RET_5(self):
-        ''' Instruction RET_5 
-            Groups: ret, mode64 
-            0x4118a1:	ret	
+        ''' Instruction RET_5
+            Groups: ret, mode64
+            0x4118a1:	ret
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -12291,9 +12292,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345856L)
 
     def test_RET_6(self):
-        ''' Instruction RET_6 
-            Groups: ret, mode64 
-            0x40fc8d:	ret	
+        ''' Instruction RET_6
+            Groups: ret, mode64
+            0x40fc8d:	ret
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -12345,8 +12346,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RBP, 140737488345776L)
 
     def test_ROL_1(self):
-        ''' Instruction ROL_1 
-            Groups:  
+        ''' Instruction ROL_1
+            Groups:
             0x44272a:	rol	rax, 0x11
         '''
         mem = Memory64()
@@ -12372,8 +12373,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4466478L)
 
     def test_ROL_2(self):
-        ''' Instruction ROL_2 
-            Groups:  
+        ''' Instruction ROL_2
+            Groups:
             0x7ffff7df408d:	rol	rax, 0x11
         '''
         mem = Memory64()
@@ -12399,8 +12400,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351991441L)
 
     def test_ROL_3(self):
-        ''' Instruction ROL_3 
-            Groups:  
+        ''' Instruction ROL_3
+            Groups:
             0x409c7a:	rol	rdi, 0x11
         '''
         mem = Memory64()
@@ -12426,8 +12427,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4234366L)
 
     def test_ROL_4(self):
-        ''' Instruction ROL_4 
-            Groups:  
+        ''' Instruction ROL_4
+            Groups:
             0x40725a:	rol	rdi, 0x11
         '''
         mem = Memory64()
@@ -12453,8 +12454,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4223582L)
 
     def test_ROL_5(self):
-        ''' Instruction ROL_5 
-            Groups:  
+        ''' Instruction ROL_5
+            Groups:
             0x4452b5:	rol	rdx, 0x11
         '''
         mem = Memory64()
@@ -12480,8 +12481,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 13910598262045056867L)
 
     def test_ROL_6(self):
-        ''' Instruction ROL_6 
-            Groups:  
+        ''' Instruction ROL_6
+            Groups:
             0x7ffff7a6220a:	rol	rax, 0x11
         '''
         mem = Memory64()
@@ -12507,8 +12508,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348248078L)
 
     def test_ROR_1(self):
-        ''' Instruction ROR_1 
-            Groups:  
+        ''' Instruction ROR_1
+            Groups:
             0x406f53:	ror	rax, 0x11
         '''
         mem = Memory64()
@@ -12534,8 +12535,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4222807L)
 
     def test_ROR_2(self):
-        ''' Instruction ROR_2 
-            Groups:  
+        ''' Instruction ROR_2
+            Groups:
             0x7ffff7a65253:	ror	rax, 0x11
         '''
         mem = Memory64()
@@ -12561,8 +12562,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348260439L)
 
     def test_ROR_3(self):
-        ''' Instruction ROR_3 
-            Groups:  
+        ''' Instruction ROR_3
+            Groups:
             0x406fd3:	ror	rax, 0x11
         '''
         mem = Memory64()
@@ -12588,8 +12589,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4222935L)
 
     def test_ROR_4(self):
-        ''' Instruction ROR_4 
-            Groups:  
+        ''' Instruction ROR_4
+            Groups:
             0x7ffff7a65253:	ror	rax, 0x11
         '''
         mem = Memory64()
@@ -12615,8 +12616,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348260439L)
 
     def test_ROR_5(self):
-        ''' Instruction ROR_5 
-            Groups:  
+        ''' Instruction ROR_5
+            Groups:
             0x406f53:	ror	rax, 0x11
         '''
         mem = Memory64()
@@ -12642,8 +12643,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4222807L)
 
     def test_ROR_6(self):
-        ''' Instruction ROR_6 
-            Groups:  
+        ''' Instruction ROR_6
+            Groups:
             0x406fc3:	ror	rax, 0x11
         '''
         mem = Memory64()
@@ -12669,8 +12670,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4222919L)
 
     def test_SAR_1(self):
-        ''' Instruction SAR_1 
-            Groups:  
+        ''' Instruction SAR_1
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         mem = Memory64()
@@ -12702,8 +12703,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 1394L)
 
     def test_SAR_2(self):
-        ''' Instruction SAR_2 
-            Groups:  
+        ''' Instruction SAR_2
+            Groups:
             0x7ffff7acfc78:	sar	r8d, 0x1f
         '''
         mem = Memory64()
@@ -12735,8 +12736,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SAR_3(self):
-        ''' Instruction SAR_3 
-            Groups:  
+        ''' Instruction SAR_3
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         mem = Memory64()
@@ -12768,8 +12769,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 1188L)
 
     def test_SAR_4(self):
-        ''' Instruction SAR_4 
-            Groups:  
+        ''' Instruction SAR_4
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         mem = Memory64()
@@ -12801,8 +12802,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 1300L)
 
     def test_SAR_5(self):
-        ''' Instruction SAR_5 
-            Groups:  
+        ''' Instruction SAR_5
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         mem = Memory64()
@@ -12834,8 +12835,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 1288L)
 
     def test_SAR_6(self):
-        ''' Instruction SAR_6 
-            Groups:  
+        ''' Instruction SAR_6
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         mem = Memory64()
@@ -12867,8 +12868,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 1052L)
 
     def test_SCASB_1(self):
-        ''' Instruction SCASB_1 
-            Groups:  
+        ''' Instruction SCASB_1
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -12926,8 +12927,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AL, 0L)
 
     def test_SCASB_2(self):
-        ''' Instruction SCASB_2 
-            Groups:  
+        ''' Instruction SCASB_2
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -12985,8 +12986,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AL, 0L)
 
     def test_SCASB_3(self):
-        ''' Instruction SCASB_3 
-            Groups:  
+        ''' Instruction SCASB_3
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -13044,8 +13045,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AL, 0L)
 
     def test_SCASB_4(self):
-        ''' Instruction SCASB_4 
-            Groups:  
+        ''' Instruction SCASB_4
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -13103,8 +13104,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AL, 0L)
 
     def test_SCASB_5(self):
-        ''' Instruction SCASB_5 
-            Groups:  
+        ''' Instruction SCASB_5
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -13162,8 +13163,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AL, 0L)
 
     def test_SCASB_6(self):
-        ''' Instruction SCASB_6 
-            Groups:  
+        ''' Instruction SCASB_6
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         mem = Memory64()
@@ -13221,8 +13222,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AL, 0L)
 
     def test_SETA_1(self):
-        ''' Instruction SETA_1 
-            Groups:  
+        ''' Instruction SETA_1
+            Groups:
             0x5555555548c2:	seta	dl
         '''
         mem = Memory64()
@@ -13244,8 +13245,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992233669L)
 
     def test_SETBE_1(self):
-        ''' Instruction SETBE_1 
-            Groups:  
+        ''' Instruction SETBE_1
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         mem = Memory64()
@@ -13269,8 +13270,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934475L)
 
     def test_SETBE_2(self):
-        ''' Instruction SETBE_2 
-            Groups:  
+        ''' Instruction SETBE_2
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         mem = Memory64()
@@ -13294,8 +13295,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934475L)
 
     def test_SETBE_3(self):
-        ''' Instruction SETBE_3 
-            Groups:  
+        ''' Instruction SETBE_3
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         mem = Memory64()
@@ -13319,8 +13320,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934475L)
 
     def test_SETBE_4(self):
-        ''' Instruction SETBE_4 
-            Groups:  
+        ''' Instruction SETBE_4
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         mem = Memory64()
@@ -13344,8 +13345,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934475L)
 
     def test_SETBE_5(self):
-        ''' Instruction SETBE_5 
-            Groups:  
+        ''' Instruction SETBE_5
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         mem = Memory64()
@@ -13369,8 +13370,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934475L)
 
     def test_SETBE_6(self):
-        ''' Instruction SETBE_6 
-            Groups:  
+        ''' Instruction SETBE_6
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         mem = Memory64()
@@ -13394,8 +13395,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934475L)
 
     def test_SETB_1(self):
-        ''' Instruction SETB_1 
-            Groups:  
+        ''' Instruction SETB_1
+            Groups:
             0x4342ea:	setb	al
         '''
         mem = Memory64()
@@ -13416,8 +13417,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4408045L)
 
     def test_SETB_2(self):
-        ''' Instruction SETB_2 
-            Groups:  
+        ''' Instruction SETB_2
+            Groups:
             0x43426a:	setb	al
         '''
         mem = Memory64()
@@ -13438,8 +13439,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4407917L)
 
     def test_SETB_3(self):
-        ''' Instruction SETB_3 
-            Groups:  
+        ''' Instruction SETB_3
+            Groups:
             0x4346ca:	setb	al
         '''
         mem = Memory64()
@@ -13460,8 +13461,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4409037L)
 
     def test_SETB_4(self):
-        ''' Instruction SETB_4 
-            Groups:  
+        ''' Instruction SETB_4
+            Groups:
             0x4342ea:	setb	al
         '''
         mem = Memory64()
@@ -13482,8 +13483,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4408045L)
 
     def test_SETB_5(self):
-        ''' Instruction SETB_5 
-            Groups:  
+        ''' Instruction SETB_5
+            Groups:
             0x4342ea:	setb	al
         '''
         mem = Memory64()
@@ -13504,8 +13505,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4408045L)
 
     def test_SETB_6(self):
-        ''' Instruction SETB_6 
-            Groups:  
+        ''' Instruction SETB_6
+            Groups:
             0x43430a:	setb	al
         '''
         mem = Memory64()
@@ -13526,8 +13527,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4408077L)
 
     def test_SETE_1(self):
-        ''' Instruction SETE_1 
-            Groups:  
+        ''' Instruction SETE_1
+            Groups:
             0x7ffff7de36a2:	sete	r10b
         '''
         mem = Memory64()
@@ -13550,8 +13551,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351923366L)
 
     def test_SETE_2(self):
-        ''' Instruction SETE_2 
-            Groups:  
+        ''' Instruction SETE_2
+            Groups:
             0x7ffff7de620f:	sete	al
         '''
         mem = Memory64()
@@ -13572,8 +13573,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934482L)
 
     def test_SETE_3(self):
-        ''' Instruction SETE_3 
-            Groups:  
+        ''' Instruction SETE_3
+            Groups:
             0x7ffff7de6229:	sete	al
         '''
         mem = Memory64()
@@ -13594,8 +13595,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934508L)
 
     def test_SETE_4(self):
-        ''' Instruction SETE_4 
-            Groups:  
+        ''' Instruction SETE_4
+            Groups:
             0x7ffff7de6229:	sete	al
         '''
         mem = Memory64()
@@ -13616,8 +13617,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934508L)
 
     def test_SETE_5(self):
-        ''' Instruction SETE_5 
-            Groups:  
+        ''' Instruction SETE_5
+            Groups:
             0x432458:	sete	r9b
         '''
         mem = Memory64()
@@ -13640,8 +13641,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400220L)
 
     def test_SETE_6(self):
-        ''' Instruction SETE_6 
-            Groups:  
+        ''' Instruction SETE_6
+            Groups:
             0x7ffff7de620f:	sete	al
         '''
         mem = Memory64()
@@ -13662,8 +13663,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351934482L)
 
     def test_SETG_1(self):
-        ''' Instruction SETG_1 
-            Groups:  
+        ''' Instruction SETG_1
+            Groups:
             0x555555567df4:	setg	r9b
         '''
         mem = Memory64()
@@ -13688,8 +13689,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992312824L)
 
     def test_SETG_2(self):
-        ''' Instruction SETG_2 
-            Groups:  
+        ''' Instruction SETG_2
+            Groups:
             0x555555567df4:	setg	r9b
         '''
         mem = Memory64()
@@ -13714,8 +13715,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992312824L)
 
     def test_SETLE_1(self):
-        ''' Instruction SETLE_1 
-            Groups:  
+        ''' Instruction SETLE_1
+            Groups:
             0x448ae0:	setle	dl
         '''
         mem = Memory64()
@@ -13738,8 +13739,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4492003L)
 
     def test_SETLE_2(self):
-        ''' Instruction SETLE_2 
-            Groups:  
+        ''' Instruction SETLE_2
+            Groups:
             0x448ae0:	setle	dl
         '''
         mem = Memory64()
@@ -13762,8 +13763,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4492003L)
 
     def test_SETNE_1(self):
-        ''' Instruction SETNE_1 
-            Groups:  
+        ''' Instruction SETNE_1
+            Groups:
             0x410ee5:	setne	cl
         '''
         mem = Memory64()
@@ -13784,8 +13785,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.CL, 0L)
 
     def test_SETNE_2(self):
-        ''' Instruction SETNE_2 
-            Groups:  
+        ''' Instruction SETNE_2
+            Groups:
             0x436d20:	setne	dl
         '''
         mem = Memory64()
@@ -13806,8 +13807,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4418851L)
 
     def test_SETNE_3(self):
-        ''' Instruction SETNE_3 
-            Groups:  
+        ''' Instruction SETNE_3
+            Groups:
             0x410f05:	setne	cl
         '''
         mem = Memory64()
@@ -13828,8 +13829,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.CL, 0L)
 
     def test_SETNE_4(self):
-        ''' Instruction SETNE_4 
-            Groups:  
+        ''' Instruction SETNE_4
+            Groups:
             0x436f20:	setne	dl
         '''
         mem = Memory64()
@@ -13850,8 +13851,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4419363L)
 
     def test_SETNE_5(self):
-        ''' Instruction SETNE_5 
-            Groups:  
+        ''' Instruction SETNE_5
+            Groups:
             0x4120f9:	setne	cl
         '''
         mem = Memory64()
@@ -13872,8 +13873,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.CL, 0L)
 
     def test_SETNE_6(self):
-        ''' Instruction SETNE_6 
-            Groups:  
+        ''' Instruction SETNE_6
+            Groups:
             0x7ffff7de5de4:	setne	al
         '''
         mem = Memory64()
@@ -13894,8 +13895,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351933415L)
 
     def test_SHLX_1(self):
-        ''' Instruction SHLX_1 
-            Groups: bmi2 
+        ''' Instruction SHLX_1
+            Groups: bmi2
             0x55555556594d:	shlx	rax, qword ptr [r14 + 0x50], rax
         '''
         mem = Memory64()
@@ -13940,8 +13941,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992303443L)
 
     def test_SHLX_2(self):
-        ''' Instruction SHLX_2 
-            Groups: bmi2 
+        ''' Instruction SHLX_2
+            Groups: bmi2
             0x55555556544a:	shlx	rax, rdx, rax
         '''
         mem = Memory64()
@@ -13967,8 +13968,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 1L)
 
     def test_SHLX_3(self):
-        ''' Instruction SHLX_3 
-            Groups: bmi2 
+        ''' Instruction SHLX_3
+            Groups: bmi2
             0x55555556544a:	shlx	rax, rdx, rax
         '''
         mem = Memory64()
@@ -13994,8 +13995,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 1L)
 
     def test_SHLX_4(self):
-        ''' Instruction SHLX_4 
-            Groups: bmi2 
+        ''' Instruction SHLX_4
+            Groups: bmi2
             0x55555556594d:	shlx	rax, qword ptr [r14 + 0x50], rax
         '''
         mem = Memory64()
@@ -14040,8 +14041,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992303443L)
 
     def test_SHL_1(self):
-        ''' Instruction SHL_1 
-            Groups:  
+        ''' Instruction SHL_1
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         mem = Memory64()
@@ -14071,8 +14072,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHL_2(self):
-        ''' Instruction SHL_2 
-            Groups:  
+        ''' Instruction SHL_2
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         mem = Memory64()
@@ -14102,8 +14103,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHL_3(self):
-        ''' Instruction SHL_3 
-            Groups:  
+        ''' Instruction SHL_3
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         mem = Memory64()
@@ -14133,8 +14134,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, True)
 
     def test_SHL_4(self):
-        ''' Instruction SHL_4 
-            Groups:  
+        ''' Instruction SHL_4
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         mem = Memory64()
@@ -14164,8 +14165,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHL_5(self):
-        ''' Instruction SHL_5 
-            Groups:  
+        ''' Instruction SHL_5
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         mem = Memory64()
@@ -14195,8 +14196,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHL_6(self):
-        ''' Instruction SHL_6 
-            Groups:  
+        ''' Instruction SHL_6
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         mem = Memory64()
@@ -14226,8 +14227,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHR_1(self):
-        ''' Instruction SHR_1 
-            Groups:  
+        ''' Instruction SHR_1
+            Groups:
             0x7ffff7de405d:	shr	rdx, 1
         '''
         mem = Memory64()
@@ -14255,8 +14256,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHR_2(self):
-        ''' Instruction SHR_2 
-            Groups:  
+        ''' Instruction SHR_2
+            Groups:
             0x7ffff7de391d:	shr	rsi, cl
         '''
         mem = Memory64()
@@ -14286,8 +14287,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHR_3(self):
-        ''' Instruction SHR_3 
-            Groups:  
+        ''' Instruction SHR_3
+            Groups:
             0x7ffff7de3926:	shr	rsi, cl
         '''
         mem = Memory64()
@@ -14317,8 +14318,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHR_4(self):
-        ''' Instruction SHR_4 
-            Groups:  
+        ''' Instruction SHR_4
+            Groups:
             0x7ffff7de61d2:	shr	al, 4
         '''
         mem = Memory64()
@@ -14346,8 +14347,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHR_5(self):
-        ''' Instruction SHR_5 
-            Groups:  
+        ''' Instruction SHR_5
+            Groups:
             0x7ffff7de391d:	shr	rsi, cl
         '''
         mem = Memory64()
@@ -14377,8 +14378,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SHR_6(self):
-        ''' Instruction SHR_6 
-            Groups:  
+        ''' Instruction SHR_6
+            Groups:
             0x4322bd:	shr	rax, 1
         '''
         mem = Memory64()
@@ -14406,9 +14407,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RAX, 0L)
 
     def test_STC_1(self):
-        ''' Instruction STC_1 
-            Groups:  
-            0x5667fa:	stc	
+        ''' Instruction STC_1
+            Groups:
+            0x5667fa:	stc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -14423,9 +14424,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5662715L)
 
     def test_STC_2(self):
-        ''' Instruction STC_2 
-            Groups:  
-            0x42a889:	stc	
+        ''' Instruction STC_2
+            Groups:
+            0x42a889:	stc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -14440,9 +14441,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4368522L)
 
     def test_STC_3(self):
-        ''' Instruction STC_3 
-            Groups:  
-            0x60b5d5:	stc	
+        ''' Instruction STC_3
+            Groups:
+            0x60b5d5:	stc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -14457,9 +14458,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 6338006L)
 
     def test_STC_4(self):
-        ''' Instruction STC_4 
-            Groups:  
-            0x52da4d:	stc	
+        ''' Instruction STC_4
+            Groups:
+            0x52da4d:	stc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -14474,9 +14475,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5429838L)
 
     def test_STC_5(self):
-        ''' Instruction STC_5 
-            Groups:  
-            0x56ba0e:	stc	
+        ''' Instruction STC_5
+            Groups:
+            0x56ba0e:	stc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -14491,9 +14492,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5683727L)
 
     def test_STC_6(self):
-        ''' Instruction STC_6 
-            Groups:  
-            0x61a7d6:	stc	
+        ''' Instruction STC_6
+            Groups:
+            0x61a7d6:	stc
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -14508,8 +14509,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 6399959L)
 
     def test_STOSD_1(self):
-        ''' Instruction STOSD_1 
-            Groups:  
+        ''' Instruction STOSD_1
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         mem = Memory64()
@@ -14566,8 +14567,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.EAX, 0L)
 
     def test_STOSD_2(self):
-        ''' Instruction STOSD_2 
-            Groups:  
+        ''' Instruction STOSD_2
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         mem = Memory64()
@@ -14624,8 +14625,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.EAX, 0L)
 
     def test_STOSD_3(self):
-        ''' Instruction STOSD_3 
-            Groups:  
+        ''' Instruction STOSD_3
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         mem = Memory64()
@@ -14682,8 +14683,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.EAX, 0L)
 
     def test_STOSD_4(self):
-        ''' Instruction STOSD_4 
-            Groups:  
+        ''' Instruction STOSD_4
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         mem = Memory64()
@@ -14740,8 +14741,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.EAX, 0L)
 
     def test_STOSD_5(self):
-        ''' Instruction STOSD_5 
-            Groups:  
+        ''' Instruction STOSD_5
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         mem = Memory64()
@@ -14798,8 +14799,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.EAX, 0L)
 
     def test_STOSD_6(self):
-        ''' Instruction STOSD_6 
-            Groups:  
+        ''' Instruction STOSD_6
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         mem = Memory64()
@@ -14856,8 +14857,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.EAX, 0L)
 
     def test_STOSQ_1(self):
-        ''' Instruction STOSQ_1 
-            Groups:  
+        ''' Instruction STOSQ_1
+            Groups:
             0x7ffff7ded09b:	rep stosq	qword ptr [rdi], rax
         '''
         mem = Memory64()
@@ -14916,8 +14917,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351962779L)
 
     def test_STOSQ_2(self):
-        ''' Instruction STOSQ_2 
-            Groups:  
+        ''' Instruction STOSQ_2
+            Groups:
             0x7ffff7ded09b:	rep stosq	qword ptr [rdi], rax
         '''
         mem = Memory64()
@@ -14976,8 +14977,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351962779L)
 
     def test_STOSQ_3(self):
-        ''' Instruction STOSQ_3 
-            Groups:  
+        ''' Instruction STOSQ_3
+            Groups:
             0x7ffff7de5ebf:	rep stosq	qword ptr [rdi], rax
         '''
         mem = Memory64()
@@ -15037,8 +15038,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351933631L)
 
     def test_STOSQ_4(self):
-        ''' Instruction STOSQ_4 
-            Groups:  
+        ''' Instruction STOSQ_4
+            Groups:
             0x7ffff7ded09b:	rep stosq	qword ptr [rdi], rax
         '''
         mem = Memory64()
@@ -15097,8 +15098,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351962779L)
 
     def test_STOSQ_5(self):
-        ''' Instruction STOSQ_5 
-            Groups:  
+        ''' Instruction STOSQ_5
+            Groups:
             0x555555554895:	rep stosq	qword ptr [rdi], rax
         '''
         mem = Memory64()
@@ -15157,8 +15158,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 93824992233621L)
 
     def test_STOSQ_6(self):
-        ''' Instruction STOSQ_6 
-            Groups:  
+        ''' Instruction STOSQ_6
+            Groups:
             0x7ffff7ded09b:	rep stosq	qword ptr [rdi], rax
         '''
         mem = Memory64()
@@ -15217,8 +15218,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737351962779L)
 
     def test_SUB_1(self):
-        ''' Instruction SUB_1 
-            Groups:  
+        ''' Instruction SUB_1
+            Groups:
             0x4326c3:	sub	rsp, 0x1020
         '''
         mem = Memory64()
@@ -15258,8 +15259,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_2(self):
-        ''' Instruction SUB_2 
-            Groups:  
+        ''' Instruction SUB_2
+            Groups:
             0x40b6dd:	sub	rsp, 0x1028
         '''
         mem = Memory64()
@@ -15299,8 +15300,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_3(self):
-        ''' Instruction SUB_3 
-            Groups:  
+        ''' Instruction SUB_3
+            Groups:
             0x7ffff7de406d:	sub	rsp, 8
         '''
         mem = Memory64()
@@ -15334,8 +15335,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_4(self):
-        ''' Instruction SUB_4 
-            Groups:  
+        ''' Instruction SUB_4
+            Groups:
             0x7ffff7decc04:	sub	rsp, 0x1020
         '''
         mem = Memory64()
@@ -15375,8 +15376,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_5(self):
-        ''' Instruction SUB_5 
-            Groups:  
+        ''' Instruction SUB_5
+            Groups:
             0x7ffff7de060d:	sub	rsp, 0x1020
         '''
         mem = Memory64()
@@ -15416,8 +15417,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_6(self):
-        ''' Instruction SUB_6 
-            Groups:  
+        ''' Instruction SUB_6
+            Groups:
             0x7ffff7deb22d:	sub	rsp, 0x1078
         '''
         mem = Memory64()
@@ -15457,8 +15458,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_TEST_1(self):
-        ''' Instruction TEST_1 
-            Groups:  
+        ''' Instruction TEST_1
+            Groups:
             0x7ffff7df459c:	test	al, al
         '''
         mem = Memory64()
@@ -15486,8 +15487,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_TEST_2(self):
-        ''' Instruction TEST_2 
-            Groups:  
+        ''' Instruction TEST_2
+            Groups:
             0x7ffff7df459c:	test	al, al
         '''
         mem = Memory64()
@@ -15515,8 +15516,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_TEST_3(self):
-        ''' Instruction TEST_3 
-            Groups:  
+        ''' Instruction TEST_3
+            Groups:
             0x7ffff7de3892:	test	r15d, r15d
         '''
         mem = Memory64()
@@ -15546,8 +15547,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_TEST_4(self):
-        ''' Instruction TEST_4 
-            Groups:  
+        ''' Instruction TEST_4
+            Groups:
             0x7ffff7b58f07:	test	byte ptr [r8 - 4], 1
         '''
         mem = Memory64()
@@ -15584,8 +15585,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_TEST_5(self):
-        ''' Instruction TEST_5 
-            Groups:  
+        ''' Instruction TEST_5
+            Groups:
             0x7ffff7ddc6b7:	test	rdi, rdi
         '''
         mem = Memory64()
@@ -15615,8 +15616,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_TEST_6(self):
-        ''' Instruction TEST_6 
-            Groups:  
+        ''' Instruction TEST_6
+            Groups:
             0x406e88:	test	rbx, rbx
         '''
         mem = Memory64()
@@ -15646,8 +15647,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_VMOVD_1(self):
-        ''' Instruction VMOVD_1 
-            Groups: avx 
+        ''' Instruction VMOVD_1
+            Groups: avx
             0x432054:	vmovd	xmm1, esi
         '''
         mem = Memory64()
@@ -15671,8 +15672,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399192L)
 
     def test_VMOVD_2(self):
-        ''' Instruction VMOVD_2 
-            Groups: avx 
+        ''' Instruction VMOVD_2
+            Groups: avx
             0x432154:	vmovd	xmm1, esi
         '''
         mem = Memory64()
@@ -15696,8 +15697,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399448L)
 
     def test_VMOVD_3(self):
-        ''' Instruction VMOVD_3 
-            Groups: avx 
+        ''' Instruction VMOVD_3
+            Groups: avx
             0x432124:	vmovd	xmm1, esi
         '''
         mem = Memory64()
@@ -15721,8 +15722,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399400L)
 
     def test_VMOVD_4(self):
-        ''' Instruction VMOVD_4 
-            Groups: avx 
+        ''' Instruction VMOVD_4
+            Groups: avx
             0x434cd4:	vmovd	xmm1, esi
         '''
         mem = Memory64()
@@ -15746,8 +15747,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4410584L)
 
     def test_VMOVD_5(self):
-        ''' Instruction VMOVD_5 
-            Groups: avx 
+        ''' Instruction VMOVD_5
+            Groups: avx
             0x432134:	vmovd	xmm1, esi
         '''
         mem = Memory64()
@@ -15771,8 +15772,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399416L)
 
     def test_VMOVD_6(self):
-        ''' Instruction VMOVD_6 
-            Groups: avx 
+        ''' Instruction VMOVD_6
+            Groups: avx
             0x432514:	vmovd	xmm1, esi
         '''
         mem = Memory64()
@@ -15796,8 +15797,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400408L)
 
     def test_VPSHUFB_1(self):
-        ''' Instruction VPSHUFB_1 
-            Groups: avx 
+        ''' Instruction VPSHUFB_1
+            Groups: avx
             0x4321af:	vpshufb	xmm0, xmm1, xmm0
         '''
         mem = Memory64()
@@ -15823,8 +15824,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399540L)
 
     def test_VPSHUFB_2(self):
-        ''' Instruction VPSHUFB_2 
-            Groups: avx 
+        ''' Instruction VPSHUFB_2
+            Groups: avx
             0x43215f:	vpshufb	xmm0, xmm1, xmm0
         '''
         mem = Memory64()
@@ -15850,8 +15851,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399460L)
 
     def test_VPSHUFB_3(self):
-        ''' Instruction VPSHUFB_3 
-            Groups: avx 
+        ''' Instruction VPSHUFB_3
+            Groups: avx
             0x43205f:	vpshufb	xmm0, xmm1, xmm0
         '''
         mem = Memory64()
@@ -15877,8 +15878,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399204L)
 
     def test_VPSHUFB_4(self):
-        ''' Instruction VPSHUFB_4 
-            Groups: avx 
+        ''' Instruction VPSHUFB_4
+            Groups: avx
             0x43212f:	vpshufb	xmm0, xmm1, xmm0
         '''
         mem = Memory64()
@@ -15904,8 +15905,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399412L)
 
     def test_VPSHUFB_5(self):
-        ''' Instruction VPSHUFB_5 
-            Groups: avx 
+        ''' Instruction VPSHUFB_5
+            Groups: avx
             0x43213f:	vpshufb	xmm0, xmm1, xmm0
         '''
         mem = Memory64()
@@ -15931,8 +15932,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399428L)
 
     def test_VPSHUFB_6(self):
-        ''' Instruction VPSHUFB_6 
-            Groups: avx 
+        ''' Instruction VPSHUFB_6
+            Groups: avx
             0x434cdf:	vpshufb	xmm0, xmm1, xmm0
         '''
         mem = Memory64()
@@ -15958,8 +15959,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4410596L)
 
     def test_VPXOR_1(self):
-        ''' Instruction VPXOR_1 
-            Groups: avx 
+        ''' Instruction VPXOR_1
+            Groups: avx
             0x4321a0:	vpxor	xmm0, xmm0, xmm0
         '''
         mem = Memory64()
@@ -15981,8 +15982,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399524L)
 
     def test_VPXOR_2(self):
-        ''' Instruction VPXOR_2 
-            Groups: avx 
+        ''' Instruction VPXOR_2
+            Groups: avx
             0x432510:	vpxor	xmm0, xmm0, xmm0
         '''
         mem = Memory64()
@@ -16004,8 +16005,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400404L)
 
     def test_VPXOR_3(self):
-        ''' Instruction VPXOR_3 
-            Groups: avx 
+        ''' Instruction VPXOR_3
+            Groups: avx
             0x432050:	vpxor	xmm0, xmm0, xmm0
         '''
         mem = Memory64()
@@ -16027,8 +16028,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399188L)
 
     def test_VPXOR_4(self):
-        ''' Instruction VPXOR_4 
-            Groups: avx 
+        ''' Instruction VPXOR_4
+            Groups: avx
             0x432150:	vpxor	xmm0, xmm0, xmm0
         '''
         mem = Memory64()
@@ -16050,8 +16051,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399444L)
 
     def test_VPXOR_5(self):
-        ''' Instruction VPXOR_5 
-            Groups: avx 
+        ''' Instruction VPXOR_5
+            Groups: avx
             0x432130:	vpxor	xmm0, xmm0, xmm0
         '''
         mem = Memory64()
@@ -16073,8 +16074,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399412L)
 
     def test_VPXOR_6(self):
-        ''' Instruction VPXOR_6 
-            Groups: avx 
+        ''' Instruction VPXOR_6
+            Groups: avx
             0x432130:	vpxor	xmm0, xmm0, xmm0
         '''
         mem = Memory64()
@@ -16096,9 +16097,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399412L)
 
     def test_VZEROUPPER_1(self):
-        ''' Instruction VZEROUPPER_1 
-            Groups: avx 
-            0x4322a9:	vzeroupper	
+        ''' Instruction VZEROUPPER_1
+            Groups: avx
+            0x4322a9:	vzeroupper
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16115,9 +16116,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399788L)
 
     def test_VZEROUPPER_2(self):
-        ''' Instruction VZEROUPPER_2 
-            Groups: avx 
-            0x432319:	vzeroupper	
+        ''' Instruction VZEROUPPER_2
+            Groups: avx
+            0x432319:	vzeroupper
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16134,9 +16135,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399900L)
 
     def test_VZEROUPPER_3(self):
-        ''' Instruction VZEROUPPER_3 
-            Groups: avx 
-            0x4322c9:	vzeroupper	
+        ''' Instruction VZEROUPPER_3
+            Groups: avx
+            0x4322c9:	vzeroupper
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16153,9 +16154,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399820L)
 
     def test_VZEROUPPER_4(self):
-        ''' Instruction VZEROUPPER_4 
-            Groups: avx 
-            0x432229:	vzeroupper	
+        ''' Instruction VZEROUPPER_4
+            Groups: avx
+            0x432229:	vzeroupper
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16172,9 +16173,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399660L)
 
     def test_VZEROUPPER_5(self):
-        ''' Instruction VZEROUPPER_5 
-            Groups: avx 
-            0x4322a9:	vzeroupper	
+        ''' Instruction VZEROUPPER_5
+            Groups: avx
+            0x4322a9:	vzeroupper
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16191,9 +16192,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4399788L)
 
     def test_VZEROUPPER_6(self):
-        ''' Instruction VZEROUPPER_6 
-            Groups: avx 
-            0x432689:	vzeroupper	
+        ''' Instruction VZEROUPPER_6
+            Groups: avx
+            0x432689:	vzeroupper
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16210,9 +16211,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4400780L)
 
     def test_XGETBV_1(self):
-        ''' Instruction XGETBV_1 
-            Groups:  
-            0x7ffff7a4eb1b:	xgetbv	
+        ''' Instruction XGETBV_1
+            Groups:
+            0x7ffff7a4eb1b:	xgetbv
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16235,9 +16236,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348168478L)
 
     def test_XGETBV_2(self):
-        ''' Instruction XGETBV_2 
-            Groups:  
-            0x437c0e:	xgetbv	
+        ''' Instruction XGETBV_2
+            Groups:
+            0x437c0e:	xgetbv
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16260,9 +16261,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4422673L)
 
     def test_XGETBV_3(self):
-        ''' Instruction XGETBV_3 
-            Groups:  
-            0x7ffff7a4eb1b:	xgetbv	
+        ''' Instruction XGETBV_3
+            Groups:
+            0x7ffff7a4eb1b:	xgetbv
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16285,9 +16286,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 140737348168478L)
 
     def test_XGETBV_4(self):
-        ''' Instruction XGETBV_4 
-            Groups:  
-            0x43a59e:	xgetbv	
+        ''' Instruction XGETBV_4
+            Groups:
+            0x43a59e:	xgetbv
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16310,9 +16311,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4433313L)
 
     def test_XGETBV_5(self):
-        ''' Instruction XGETBV_5 
-            Groups:  
-            0x43791e:	xgetbv	
+        ''' Instruction XGETBV_5
+            Groups:
+            0x43791e:	xgetbv
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16335,9 +16336,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4421921L)
 
     def test_XGETBV_6(self):
-        ''' Instruction XGETBV_6 
-            Groups:  
-            0x437a6e:	xgetbv	
+        ''' Instruction XGETBV_6
+            Groups:
+            0x437a6e:	xgetbv
         '''
         mem = Memory64()
         cpu = AMD64Cpu(mem)
@@ -16360,8 +16361,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 4422257L)
 
     def test_XORPS_1(self):
-        ''' Instruction XORPS_1 
-            Groups: sse1 
+        ''' Instruction XORPS_1
+            Groups: sse1
             0x530d2f:	xorps	xmm1, xmm0
         '''
         mem = Memory64()
@@ -16383,8 +16384,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5442866L)
 
     def test_XORPS_2(self):
-        ''' Instruction XORPS_2 
-            Groups: sse1 
+        ''' Instruction XORPS_2
+            Groups: sse1
             0x530a6c:	xorps	xmm1, xmm0
         '''
         mem = Memory64()
@@ -16406,8 +16407,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5442159L)
 
     def test_XORPS_3(self):
-        ''' Instruction XORPS_3 
-            Groups: sse1 
+        ''' Instruction XORPS_3
+            Groups: sse1
             0x54f76a:	xorps	xmm0, xmmword ptr [rsp]
         '''
         mem = Memory64()
@@ -16464,8 +16465,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5568366L)
 
     def test_XORPS_4(self):
-        ''' Instruction XORPS_4 
-            Groups: sse1 
+        ''' Instruction XORPS_4
+            Groups: sse1
             0x540f22:	xorps	xmm1, xmm0
         '''
         mem = Memory64()
@@ -16487,8 +16488,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5508901L)
 
     def test_XORPS_5(self):
-        ''' Instruction XORPS_5 
-            Groups: sse1 
+        ''' Instruction XORPS_5
+            Groups: sse1
             0x560955:	xorps	xmm0, xmmword ptr [rsp]
         '''
         mem = Memory64()
@@ -16545,8 +16546,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5638489L)
 
     def test_XORPS_6(self):
-        ''' Instruction XORPS_6 
-            Groups: sse1 
+        ''' Instruction XORPS_6
+            Groups: sse1
             0x551ec4:	xorps	xmm0, xmmword ptr [rsp]
         '''
         mem = Memory64()
@@ -16603,8 +16604,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RIP, 5578440L)
 
     def test_XOR_1(self):
-        ''' Instruction XOR_1 
-            Groups:  
+        ''' Instruction XOR_1
+            Groups:
             0x7ffff7de6223:	xor	eax, eax
         '''
         mem = Memory64()
@@ -16632,8 +16633,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_XOR_2(self):
-        ''' Instruction XOR_2 
-            Groups:  
+        ''' Instruction XOR_2
+            Groups:
             0x7ffff7de405a:	xor	rdx, r13
         '''
         mem = Memory64()
@@ -16665,8 +16666,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.RDX, 0L)
 
     def test_XOR_3(self):
-        ''' Instruction XOR_3 
-            Groups:  
+        ''' Instruction XOR_3
+            Groups:
             0x7ffff7df45a0:	xor	eax, eax
         '''
         mem = Memory64()
@@ -16694,8 +16695,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_XOR_4(self):
-        ''' Instruction XOR_4 
-            Groups:  
+        ''' Instruction XOR_4
+            Groups:
             0x7ffff7de3ff6:	xor	edx, edx
         '''
         mem = Memory64()
@@ -16723,8 +16724,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_XOR_5(self):
-        ''' Instruction XOR_5 
-            Groups:  
+        ''' Instruction XOR_5
+            Groups:
             0x7ffff7df40cc:	xor	eax, eax
         '''
         mem = Memory64()
@@ -16752,8 +16753,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_XOR_6(self):
-        ''' Instruction XOR_6 
-            Groups:  
+        ''' Instruction XOR_6
+            Groups:
             0x7ffff7de3699:	xor	r10d, r10d
         '''
         mem = Memory64()
@@ -16783,8 +16784,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.SF, False)
 
     def test_ADD_1_symbolic(self):
-        ''' Instruction ADD_1 
-            Groups:  
+        ''' Instruction ADD_1
+            Groups:
             0x7ffff7de438b:	add	rcx, 1
         '''
         cs = ConstraintSet()
@@ -16843,11 +16844,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ADD_2_symbolic(self):
-        ''' Instruction ADD_2 
-            Groups:  
+        ''' Instruction ADD_2
+            Groups:
             0x7ffff7de4396:	add	rax, rdx
         '''
         cs = ConstraintSet()
@@ -16907,11 +16908,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ADD_3_symbolic(self):
-        ''' Instruction ADD_3 
-            Groups:  
+        ''' Instruction ADD_3
+            Groups:
             0x7ffff7de6128:	add	rdx, 0x18
         '''
         cs = ConstraintSet()
@@ -16970,11 +16971,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ADD_4_symbolic(self):
-        ''' Instruction ADD_4 
-            Groups:  
+        ''' Instruction ADD_4
+            Groups:
             0x7ffff7de3960:	add	r12, 1
         '''
         cs = ConstraintSet()
@@ -17033,11 +17034,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ADD_5_symbolic(self):
-        ''' Instruction ADD_5 
-            Groups:  
+        ''' Instruction ADD_5
+            Groups:
             0x7ffff7de6124:	add	rax, qword ptr [rdx + 0x10]
         '''
         cs = ConstraintSet()
@@ -17148,11 +17149,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ADD_6_symbolic(self):
-        ''' Instruction ADD_6 
-            Groups:  
+        ''' Instruction ADD_6
+            Groups:
             0x7ffff7de6124:	add	rax, qword ptr [rdx + 0x10]
         '''
         cs = ConstraintSet()
@@ -17263,11 +17264,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_AND_1_symbolic(self):
-        ''' Instruction AND_1 
-            Groups:  
+        ''' Instruction AND_1
+            Groups:
             0x7ffff7b58f2f:	and	r9d, 0xf
         '''
         cs = ConstraintSet()
@@ -17323,11 +17324,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_AND_2_symbolic(self):
-        ''' Instruction AND_2 
-            Groups:  
+        ''' Instruction AND_2
+            Groups:
             0x7ffff7aa7bd0:	and	edx, 0x808
         '''
         cs = ConstraintSet()
@@ -17387,11 +17388,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_AND_3_symbolic(self):
-        ''' Instruction AND_3 
-            Groups:  
+        ''' Instruction AND_3
+            Groups:
             0x7ffff7b58f2f:	and	r9d, 0xf
         '''
         cs = ConstraintSet()
@@ -17447,11 +17448,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_AND_4_symbolic(self):
-        ''' Instruction AND_4 
-            Groups:  
+        ''' Instruction AND_4
+            Groups:
             0x7ffff7de3930:	and	rax, rsi
         '''
         cs = ConstraintSet()
@@ -17508,11 +17509,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_AND_5_symbolic(self):
-        ''' Instruction AND_5 
-            Groups:  
+        ''' Instruction AND_5
+            Groups:
             0x7ffff7b58f2f:	and	r9d, 0xf
         '''
         cs = ConstraintSet()
@@ -17568,11 +17569,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_AND_6_symbolic(self):
-        ''' Instruction AND_6 
-            Groups:  
+        ''' Instruction AND_6
+            Groups:
             0x7ffff7de3909:	and	ecx, dword ptr [rbx + 0x2f0]
         '''
         cs = ConstraintSet()
@@ -17660,11 +17661,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSF_1_symbolic(self):
-        ''' Instruction BSF_1 
-            Groups:  
+        ''' Instruction BSF_1
+            Groups:
             0x4184cd:	bsf	eax, edx
         '''
         cs = ConstraintSet()
@@ -17709,11 +17710,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSF_2_symbolic(self):
-        ''' Instruction BSF_2 
-            Groups:  
+        ''' Instruction BSF_2
+            Groups:
             0x4183ed:	bsf	eax, edx
         '''
         cs = ConstraintSet()
@@ -17758,11 +17759,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSF_3_symbolic(self):
-        ''' Instruction BSF_3 
-            Groups:  
+        ''' Instruction BSF_3
+            Groups:
             0x4184bd:	bsf	eax, edx
         '''
         cs = ConstraintSet()
@@ -17807,11 +17808,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSF_4_symbolic(self):
-        ''' Instruction BSF_4 
-            Groups:  
+        ''' Instruction BSF_4
+            Groups:
             0x41850a:	bsf	rax, rdx
         '''
         cs = ConstraintSet()
@@ -17858,11 +17859,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSF_5_symbolic(self):
-        ''' Instruction BSF_5 
-            Groups:  
+        ''' Instruction BSF_5
+            Groups:
             0x7ffff7ab5d0a:	bsf	rax, rdx
         '''
         cs = ConstraintSet()
@@ -17909,11 +17910,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSF_6_symbolic(self):
-        ''' Instruction BSF_6 
-            Groups:  
+        ''' Instruction BSF_6
+            Groups:
             0x4183ed:	bsf	eax, edx
         '''
         cs = ConstraintSet()
@@ -17958,11 +17959,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSR_1_symbolic(self):
-        ''' Instruction BSR_1 
-            Groups:  
+        ''' Instruction BSR_1
+            Groups:
             0x4008b7:	bsr	esi, esi
         '''
         cs = ConstraintSet()
@@ -18004,11 +18005,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSR_2_symbolic(self):
-        ''' Instruction BSR_2 
-            Groups:  
+        ''' Instruction BSR_2
+            Groups:
             0x400907:	bsr	esi, esi
         '''
         cs = ConstraintSet()
@@ -18050,11 +18051,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSR_3_symbolic(self):
-        ''' Instruction BSR_3 
-            Groups:  
+        ''' Instruction BSR_3
+            Groups:
             0x457ac8:	bsr	rsi, rsi
         '''
         cs = ConstraintSet()
@@ -18098,11 +18099,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSR_4_symbolic(self):
-        ''' Instruction BSR_4 
-            Groups:  
+        ''' Instruction BSR_4
+            Groups:
             0x400847:	bsr	esi, esi
         '''
         cs = ConstraintSet()
@@ -18144,11 +18145,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSR_5_symbolic(self):
-        ''' Instruction BSR_5 
-            Groups:  
+        ''' Instruction BSR_5
+            Groups:
             0x457c18:	bsr	rsi, rsi
         '''
         cs = ConstraintSet()
@@ -18192,11 +18193,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BSR_6_symbolic(self):
-        ''' Instruction BSR_6 
-            Groups:  
+        ''' Instruction BSR_6
+            Groups:
             0x457db8:	bsr	rsi, rsi
         '''
         cs = ConstraintSet()
@@ -18240,11 +18241,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BT_1_symbolic(self):
-        ''' Instruction BT_1 
-            Groups:  
+        ''' Instruction BT_1
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         cs = ConstraintSet()
@@ -18291,11 +18292,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BT_2_symbolic(self):
-        ''' Instruction BT_2 
-            Groups:  
+        ''' Instruction BT_2
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         cs = ConstraintSet()
@@ -18342,11 +18343,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BT_3_symbolic(self):
-        ''' Instruction BT_3 
-            Groups:  
+        ''' Instruction BT_3
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         cs = ConstraintSet()
@@ -18393,11 +18394,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BT_4_symbolic(self):
-        ''' Instruction BT_4 
-            Groups:  
+        ''' Instruction BT_4
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         cs = ConstraintSet()
@@ -18444,11 +18445,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BT_5_symbolic(self):
-        ''' Instruction BT_5 
-            Groups:  
+        ''' Instruction BT_5
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         cs = ConstraintSet()
@@ -18495,11 +18496,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_BT_6_symbolic(self):
-        ''' Instruction BT_6 
-            Groups:  
+        ''' Instruction BT_6
+            Groups:
             0x7ffff7de36b5:	bt	r8d, eax
         '''
         cs = ConstraintSet()
@@ -18546,11 +18547,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CALL_1_symbolic(self):
-        ''' Instruction CALL_1 
-            Groups: call, mode64 
+        ''' Instruction CALL_1
+            Groups: call, mode64
             0x7ffff7de447a:	call	0x7ffff7de3800
         '''
         cs = ConstraintSet()
@@ -18699,11 +18700,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CALL_2_symbolic(self):
-        ''' Instruction CALL_2 
-            Groups: call, mode64 
+        ''' Instruction CALL_2
+            Groups: call, mode64
             0x7ffff7a780e1:	call	qword ptr [r8 + 0x38]
         '''
         cs = ConstraintSet()
@@ -18902,11 +18903,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CALL_3_symbolic(self):
-        ''' Instruction CALL_3 
-            Groups: call, mode64 
+        ''' Instruction CALL_3
+            Groups: call, mode64
             0x4554b0:	call	0x45c7a0
         '''
         cs = ConstraintSet()
@@ -19055,11 +19056,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CALL_4_symbolic(self):
-        ''' Instruction CALL_4 
-            Groups: call, mode64 
+        ''' Instruction CALL_4
+            Groups: call, mode64
             0x7ffff7de447a:	call	0x7ffff7de3800
         '''
         cs = ConstraintSet()
@@ -19208,11 +19209,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CALL_5_symbolic(self):
-        ''' Instruction CALL_5 
-            Groups: call, mode64 
+        ''' Instruction CALL_5
+            Groups: call, mode64
             0x7ffff7de40a6:	call	0x7ffff7de3660
         '''
         cs = ConstraintSet()
@@ -19361,11 +19362,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CALL_6_symbolic(self):
-        ''' Instruction CALL_6 
-            Groups: call, mode64 
+        ''' Instruction CALL_6
+            Groups: call, mode64
             0x45f878:	call	0x413490
         '''
         cs = ConstraintSet()
@@ -19514,12 +19515,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CDQE_1_symbolic(self):
-        ''' Instruction CDQE_1 
-            Groups:  
-            0x400aa0:	cdqe	
+        ''' Instruction CDQE_1
+            Groups:
+            0x400aa0:	cdqe
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19555,12 +19556,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CDQE_2_symbolic(self):
-        ''' Instruction CDQE_2 
-            Groups:  
-            0x400aa0:	cdqe	
+        ''' Instruction CDQE_2
+            Groups:
+            0x400aa0:	cdqe
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19596,12 +19597,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CDQE_3_symbolic(self):
-        ''' Instruction CDQE_3 
-            Groups:  
-            0x400aa0:	cdqe	
+        ''' Instruction CDQE_3
+            Groups:
+            0x400aa0:	cdqe
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19637,12 +19638,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CDQE_4_symbolic(self):
-        ''' Instruction CDQE_4 
-            Groups:  
-            0x400acf:	cdqe	
+        ''' Instruction CDQE_4
+            Groups:
+            0x400acf:	cdqe
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19678,12 +19679,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CDQE_5_symbolic(self):
-        ''' Instruction CDQE_5 
-            Groups:  
-            0x400aa0:	cdqe	
+        ''' Instruction CDQE_5
+            Groups:
+            0x400aa0:	cdqe
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19719,12 +19720,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CDQE_6_symbolic(self):
-        ''' Instruction CDQE_6 
-            Groups:  
-            0x400b07:	cdqe	
+        ''' Instruction CDQE_6
+            Groups:
+            0x400b07:	cdqe
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19760,12 +19761,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CLC_1_symbolic(self):
-        ''' Instruction CLC_1 
-            Groups:  
-            0x46a9fc:	clc	
+        ''' Instruction CLC_1
+            Groups:
+            0x46a9fc:	clc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19799,12 +19800,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CLC_2_symbolic(self):
-        ''' Instruction CLC_2 
-            Groups:  
-            0x7542c8:	clc	
+        ''' Instruction CLC_2
+            Groups:
+            0x7542c8:	clc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19838,12 +19839,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CLC_3_symbolic(self):
-        ''' Instruction CLC_3 
-            Groups:  
-            0x4b473c:	clc	
+        ''' Instruction CLC_3
+            Groups:
+            0x4b473c:	clc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19877,12 +19878,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CLC_4_symbolic(self):
-        ''' Instruction CLC_4 
-            Groups:  
-            0x49d4dd:	clc	
+        ''' Instruction CLC_4
+            Groups:
+            0x49d4dd:	clc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19916,12 +19917,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CLC_5_symbolic(self):
-        ''' Instruction CLC_5 
-            Groups:  
-            0x4fd621:	clc	
+        ''' Instruction CLC_5
+            Groups:
+            0x4fd621:	clc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19955,12 +19956,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CLC_6_symbolic(self):
-        ''' Instruction CLC_6 
-            Groups:  
-            0x4fadef:	clc	
+        ''' Instruction CLC_6
+            Groups:
+            0x4fadef:	clc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -19994,11 +19995,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVAE_1_symbolic(self):
-        ''' Instruction CMOVAE_1 
-            Groups: cmov 
+        ''' Instruction CMOVAE_1
+            Groups: cmov
             0x4117e8:	cmovae	rax, r10
         '''
         cs = ConstraintSet()
@@ -20044,11 +20045,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVAE_2_symbolic(self):
-        ''' Instruction CMOVAE_2 
-            Groups: cmov 
+        ''' Instruction CMOVAE_2
+            Groups: cmov
             0x414318:	cmovae	rax, r10
         '''
         cs = ConstraintSet()
@@ -20094,11 +20095,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVAE_3_symbolic(self):
-        ''' Instruction CMOVAE_3 
-            Groups: cmov 
+        ''' Instruction CMOVAE_3
+            Groups: cmov
             0x5555555662c8:	cmovae	rdx, rbx
         '''
         cs = ConstraintSet()
@@ -20144,11 +20145,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVAE_4_symbolic(self):
-        ''' Instruction CMOVAE_4 
-            Groups: cmov 
+        ''' Instruction CMOVAE_4
+            Groups: cmov
             0x411778:	cmovae	rax, r10
         '''
         cs = ConstraintSet()
@@ -20194,11 +20195,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVAE_5_symbolic(self):
-        ''' Instruction CMOVAE_5 
-            Groups: cmov 
+        ''' Instruction CMOVAE_5
+            Groups: cmov
             0x411778:	cmovae	rax, r10
         '''
         cs = ConstraintSet()
@@ -20244,11 +20245,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVAE_6_symbolic(self):
-        ''' Instruction CMOVAE_6 
-            Groups: cmov 
+        ''' Instruction CMOVAE_6
+            Groups: cmov
             0x411b58:	cmovae	rax, r10
         '''
         cs = ConstraintSet()
@@ -20294,11 +20295,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVA_1_symbolic(self):
-        ''' Instruction CMOVA_1 
-            Groups: cmov 
+        ''' Instruction CMOVA_1
+            Groups: cmov
             0x7ffff7de0ab0:	cmova	rax, r8
         '''
         cs = ConstraintSet()
@@ -20346,11 +20347,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVA_2_symbolic(self):
-        ''' Instruction CMOVA_2 
-            Groups: cmov 
+        ''' Instruction CMOVA_2
+            Groups: cmov
             0x7ffff7a9d404:	cmova	rbx, rax
         '''
         cs = ConstraintSet()
@@ -20398,11 +20399,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVA_3_symbolic(self):
-        ''' Instruction CMOVA_3 
-            Groups: cmov 
+        ''' Instruction CMOVA_3
+            Groups: cmov
             0x4082a4:	cmova	rbx, rax
         '''
         cs = ConstraintSet()
@@ -20450,11 +20451,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVA_4_symbolic(self):
-        ''' Instruction CMOVA_4 
-            Groups: cmov 
+        ''' Instruction CMOVA_4
+            Groups: cmov
             0x41462a:	cmova	rdx, r13
         '''
         cs = ConstraintSet()
@@ -20502,11 +20503,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVA_5_symbolic(self):
-        ''' Instruction CMOVA_5 
-            Groups: cmov 
+        ''' Instruction CMOVA_5
+            Groups: cmov
             0x41424a:	cmova	rdx, r13
         '''
         cs = ConstraintSet()
@@ -20554,11 +20555,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVA_6_symbolic(self):
-        ''' Instruction CMOVA_6 
-            Groups: cmov 
+        ''' Instruction CMOVA_6
+            Groups: cmov
             0x4142ba:	cmova	rdx, r13
         '''
         cs = ConstraintSet()
@@ -20606,11 +20607,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVBE_1_symbolic(self):
-        ''' Instruction CMOVBE_1 
-            Groups: cmov 
+        ''' Instruction CMOVBE_1
+            Groups: cmov
             0x40d233:	cmovbe	rbx, r14
         '''
         cs = ConstraintSet()
@@ -20658,11 +20659,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVBE_2_symbolic(self):
-        ''' Instruction CMOVBE_2 
-            Groups: cmov 
+        ''' Instruction CMOVBE_2
+            Groups: cmov
             0x7ffff7aa96b3:	cmovbe	rbx, r14
         '''
         cs = ConstraintSet()
@@ -20710,11 +20711,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVBE_3_symbolic(self):
-        ''' Instruction CMOVBE_3 
-            Groups: cmov 
+        ''' Instruction CMOVBE_3
+            Groups: cmov
             0x7ffff7aa96b3:	cmovbe	rbx, r14
         '''
         cs = ConstraintSet()
@@ -20762,11 +20763,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVBE_4_symbolic(self):
-        ''' Instruction CMOVBE_4 
-            Groups: cmov 
+        ''' Instruction CMOVBE_4
+            Groups: cmov
             0x40d263:	cmovbe	rbx, r14
         '''
         cs = ConstraintSet()
@@ -20814,11 +20815,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVBE_5_symbolic(self):
-        ''' Instruction CMOVBE_5 
-            Groups: cmov 
+        ''' Instruction CMOVBE_5
+            Groups: cmov
             0x7ffff7aa96b3:	cmovbe	rbx, r14
         '''
         cs = ConstraintSet()
@@ -20866,11 +20867,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVBE_6_symbolic(self):
-        ''' Instruction CMOVBE_6 
-            Groups: cmov 
+        ''' Instruction CMOVBE_6
+            Groups: cmov
             0x40fde3:	cmovbe	rbx, r14
         '''
         cs = ConstraintSet()
@@ -20918,11 +20919,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVB_1_symbolic(self):
-        ''' Instruction CMOVB_1 
-            Groups: cmov 
+        ''' Instruction CMOVB_1
+            Groups: cmov
             0x7ffff7deb97f:	cmovb	r12d, eax
         '''
         cs = ConstraintSet()
@@ -20968,11 +20969,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVB_2_symbolic(self):
-        ''' Instruction CMOVB_2 
-            Groups: cmov 
+        ''' Instruction CMOVB_2
+            Groups: cmov
             0x7ffff7df45ad:	cmovb	eax, ecx
         '''
         cs = ConstraintSet()
@@ -21016,11 +21017,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVB_3_symbolic(self):
-        ''' Instruction CMOVB_3 
-            Groups: cmov 
+        ''' Instruction CMOVB_3
+            Groups: cmov
             0x7ffff7df45ad:	cmovb	eax, ecx
         '''
         cs = ConstraintSet()
@@ -21064,11 +21065,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVB_4_symbolic(self):
-        ''' Instruction CMOVB_4 
-            Groups: cmov 
+        ''' Instruction CMOVB_4
+            Groups: cmov
             0x7ffff7deb97f:	cmovb	r12d, eax
         '''
         cs = ConstraintSet()
@@ -21114,11 +21115,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVB_5_symbolic(self):
-        ''' Instruction CMOVB_5 
-            Groups: cmov 
+        ''' Instruction CMOVB_5
+            Groups: cmov
             0x7ffff7df45ad:	cmovb	eax, ecx
         '''
         cs = ConstraintSet()
@@ -21162,11 +21163,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVB_6_symbolic(self):
-        ''' Instruction CMOVB_6 
-            Groups: cmov 
+        ''' Instruction CMOVB_6
+            Groups: cmov
             0x7ffff7df45ad:	cmovb	eax, ecx
         '''
         cs = ConstraintSet()
@@ -21210,11 +21211,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVE_1_symbolic(self):
-        ''' Instruction CMOVE_1 
-            Groups: cmov 
+        ''' Instruction CMOVE_1
+            Groups: cmov
             0x7ffff7de625e:	cmove	r8, rax
         '''
         cs = ConstraintSet()
@@ -21260,11 +21261,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVE_2_symbolic(self):
-        ''' Instruction CMOVE_2 
-            Groups: cmov 
+        ''' Instruction CMOVE_2
+            Groups: cmov
             0x415f05:	cmove	rax, rdx
         '''
         cs = ConstraintSet()
@@ -21310,11 +21311,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVE_3_symbolic(self):
-        ''' Instruction CMOVE_3 
-            Groups: cmov 
+        ''' Instruction CMOVE_3
+            Groups: cmov
             0x7ffff7de625e:	cmove	r8, rax
         '''
         cs = ConstraintSet()
@@ -21360,11 +21361,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVE_4_symbolic(self):
-        ''' Instruction CMOVE_4 
-            Groups: cmov 
+        ''' Instruction CMOVE_4
+            Groups: cmov
             0x7ffff7df2822:	cmove	rdi, qword ptr [rip + 0x20b886]
         '''
         cs = ConstraintSet()
@@ -21464,11 +21465,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVE_5_symbolic(self):
-        ''' Instruction CMOVE_5 
-            Groups: cmov 
+        ''' Instruction CMOVE_5
+            Groups: cmov
             0x7ffff7de625e:	cmove	r8, rax
         '''
         cs = ConstraintSet()
@@ -21514,11 +21515,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVE_6_symbolic(self):
-        ''' Instruction CMOVE_6 
-            Groups: cmov 
+        ''' Instruction CMOVE_6
+            Groups: cmov
             0x7ffff7de625e:	cmove	r8, rax
         '''
         cs = ConstraintSet()
@@ -21564,11 +21565,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVNE_1_symbolic(self):
-        ''' Instruction CMOVNE_1 
-            Groups: cmov 
+        ''' Instruction CMOVNE_1
+            Groups: cmov
             0x462435:	cmovne	rbx, rax
         '''
         cs = ConstraintSet()
@@ -21614,11 +21615,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVNE_2_symbolic(self):
-        ''' Instruction CMOVNE_2 
-            Groups: cmov 
+        ''' Instruction CMOVNE_2
+            Groups: cmov
             0x7ffff7de5776:	cmovne	r14d, eax
         '''
         cs = ConstraintSet()
@@ -21664,11 +21665,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVNE_3_symbolic(self):
-        ''' Instruction CMOVNE_3 
-            Groups: cmov 
+        ''' Instruction CMOVNE_3
+            Groups: cmov
             0x7ffff7de57f6:	cmovne	rbx, rax
         '''
         cs = ConstraintSet()
@@ -21714,11 +21715,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVNE_4_symbolic(self):
-        ''' Instruction CMOVNE_4 
-            Groups: cmov 
+        ''' Instruction CMOVNE_4
+            Groups: cmov
             0x457ba4:	cmovne	rsi, rdx
         '''
         cs = ConstraintSet()
@@ -21764,11 +21765,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVNE_5_symbolic(self):
-        ''' Instruction CMOVNE_5 
-            Groups: cmov 
+        ''' Instruction CMOVNE_5
+            Groups: cmov
             0x7ffff7de0910:	cmovne	esi, eax
         '''
         cs = ConstraintSet()
@@ -21812,11 +21813,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVNE_6_symbolic(self):
-        ''' Instruction CMOVNE_6 
-            Groups: cmov 
+        ''' Instruction CMOVNE_6
+            Groups: cmov
             0x457db0:	cmovne	rcx, rdi
         '''
         cs = ConstraintSet()
@@ -21862,11 +21863,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVNS_1_symbolic(self):
-        ''' Instruction CMOVNS_1 
-            Groups: cmov 
+        ''' Instruction CMOVNS_1
+            Groups: cmov
             0x448555:	cmovns	rax, r11
         '''
         cs = ConstraintSet()
@@ -21912,11 +21913,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMOVNS_2_symbolic(self):
-        ''' Instruction CMOVNS_2 
-            Groups: cmov 
+        ''' Instruction CMOVNS_2
+            Groups: cmov
             0x448555:	cmovns	rax, r11
         '''
         cs = ConstraintSet()
@@ -21962,11 +21963,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPSB_1_symbolic(self):
-        ''' Instruction CMPSB_1 
-            Groups:  
+        ''' Instruction CMPSB_1
+            Groups:
             0x40065b:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -22107,11 +22108,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPSB_2_symbolic(self):
-        ''' Instruction CMPSB_2 
-            Groups:  
+        ''' Instruction CMPSB_2
+            Groups:
             0x400657:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -22252,11 +22253,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPSB_3_symbolic(self):
-        ''' Instruction CMPSB_3 
-            Groups:  
+        ''' Instruction CMPSB_3
+            Groups:
             0x40065b:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -22397,11 +22398,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPSB_4_symbolic(self):
-        ''' Instruction CMPSB_4 
-            Groups:  
+        ''' Instruction CMPSB_4
+            Groups:
             0x400657:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -22542,11 +22543,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPSB_5_symbolic(self):
-        ''' Instruction CMPSB_5 
-            Groups:  
+        ''' Instruction CMPSB_5
+            Groups:
             0x55555555478b:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -22686,11 +22687,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPSB_6_symbolic(self):
-        ''' Instruction CMPSB_6 
-            Groups:  
+        ''' Instruction CMPSB_6
+            Groups:
             0x5555555548c0:	repe cmpsb	byte ptr [rsi], byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -22830,11 +22831,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG8B_1_symbolic(self):
-        ''' Instruction CMPXCHG8B_1 
-            Groups:  
+        ''' Instruction CMPXCHG8B_1
+            Groups:
             0x5c68cb:	lock cmpxchg8b	qword ptr [rsp + 4]
         '''
         cs = ConstraintSet()
@@ -22940,11 +22941,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG8B_2_symbolic(self):
-        ''' Instruction CMPXCHG8B_2 
-            Groups:  
+        ''' Instruction CMPXCHG8B_2
+            Groups:
             0x5861a9:	lock cmpxchg8b	qword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -23048,11 +23049,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG8B_3_symbolic(self):
-        ''' Instruction CMPXCHG8B_3 
-            Groups:  
+        ''' Instruction CMPXCHG8B_3
+            Groups:
             0x58de05:	lock cmpxchg8b	qword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -23156,11 +23157,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG8B_4_symbolic(self):
-        ''' Instruction CMPXCHG8B_4 
-            Groups:  
+        ''' Instruction CMPXCHG8B_4
+            Groups:
             0x59b473:	lock cmpxchg8b	qword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -23264,11 +23265,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG8B_5_symbolic(self):
-        ''' Instruction CMPXCHG8B_5 
-            Groups:  
+        ''' Instruction CMPXCHG8B_5
+            Groups:
             0x624e14:	lock cmpxchg8b	qword ptr [rsp + 8]
         '''
         cs = ConstraintSet()
@@ -23374,11 +23375,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG8B_6_symbolic(self):
-        ''' Instruction CMPXCHG8B_6 
-            Groups:  
+        ''' Instruction CMPXCHG8B_6
+            Groups:
             0x5bfa73:	lock cmpxchg8b	qword ptr [rsp + 4]
         '''
         cs = ConstraintSet()
@@ -23484,11 +23485,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG_1_symbolic(self):
-        ''' Instruction CMPXCHG_1 
-            Groups:  
+        ''' Instruction CMPXCHG_1
+            Groups:
             0x7ffff7a65367:	cmpxchg	dword ptr [rip + 0x36fde2], esi
         '''
         cs = ConstraintSet()
@@ -23581,11 +23582,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG_2_symbolic(self):
-        ''' Instruction CMPXCHG_2 
-            Groups:  
+        ''' Instruction CMPXCHG_2
+            Groups:
             0x40abbf:	cmpxchg	dword ptr [rdx], esi
         '''
         cs = ConstraintSet()
@@ -23673,11 +23674,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG_3_symbolic(self):
-        ''' Instruction CMPXCHG_3 
-            Groups:  
+        ''' Instruction CMPXCHG_3
+            Groups:
             0x413646:	cmpxchg	dword ptr [rbx], esi
         '''
         cs = ConstraintSet()
@@ -23765,11 +23766,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG_4_symbolic(self):
-        ''' Instruction CMPXCHG_4 
-            Groups:  
+        ''' Instruction CMPXCHG_4
+            Groups:
             0x435a25:	cmpxchg	qword ptr [rdx], rdi
         '''
         cs = ConstraintSet()
@@ -23883,11 +23884,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG_5_symbolic(self):
-        ''' Instruction CMPXCHG_5 
-            Groups:  
+        ''' Instruction CMPXCHG_5
+            Groups:
             0x41086e:	cmpxchg	dword ptr [rdx], ecx
         '''
         cs = ConstraintSet()
@@ -23975,11 +23976,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMPXCHG_6_symbolic(self):
-        ''' Instruction CMPXCHG_6 
-            Groups:  
+        ''' Instruction CMPXCHG_6
+            Groups:
             0x7ffff7aafa06:	cmpxchg	dword ptr [rbx], esi
         '''
         cs = ConstraintSet()
@@ -24067,11 +24068,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMP_1_symbolic(self):
-        ''' Instruction CMP_1 
-            Groups:  
+        ''' Instruction CMP_1
+            Groups:
             0x7ffff7b58f43:	cmp	r12, r9
         '''
         cs = ConstraintSet()
@@ -24131,11 +24132,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMP_2_symbolic(self):
-        ''' Instruction CMP_2 
-            Groups:  
+        ''' Instruction CMP_2
+            Groups:
             0x406e1d:	cmp	r14w, word ptr [rbx]
         '''
         cs = ConstraintSet()
@@ -24210,11 +24211,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMP_3_symbolic(self):
-        ''' Instruction CMP_3 
-            Groups:  
+        ''' Instruction CMP_3
+            Groups:
             0x40d167:	cmp	eax, 0xff
         '''
         cs = ConstraintSet()
@@ -24271,11 +24272,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMP_4_symbolic(self):
-        ''' Instruction CMP_4 
-            Groups:  
+        ''' Instruction CMP_4
+            Groups:
             0x7ffff7de4488:	cmp	qword ptr [rbp - 0x90], 0
         '''
         cs = ConstraintSet()
@@ -24391,11 +24392,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMP_5_symbolic(self):
-        ''' Instruction CMP_5 
-            Groups:  
+        ''' Instruction CMP_5
+            Groups:
             0x7ffff7de6111:	cmp	rax, 0x26
         '''
         cs = ConstraintSet()
@@ -24454,11 +24455,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CMP_6_symbolic(self):
-        ''' Instruction CMP_6 
-            Groups:  
+        ''' Instruction CMP_6
+            Groups:
             0x7ffff7de620b:	cmp	r12, 0x24
         '''
         cs = ConstraintSet()
@@ -24517,12 +24518,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CQO_1_symbolic(self):
-        ''' Instruction CQO_1 
-            Groups:  
-            0x400794:	cqo	
+        ''' Instruction CQO_1
+            Groups:
+            0x400794:	cqo
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24561,12 +24562,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CQO_2_symbolic(self):
-        ''' Instruction CQO_2 
-            Groups:  
-            0x4006d4:	cqo	
+        ''' Instruction CQO_2
+            Groups:
+            0x4006d4:	cqo
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24605,12 +24606,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CQO_3_symbolic(self):
-        ''' Instruction CQO_3 
-            Groups:  
-            0x7ffff7a4e234:	cqo	
+        ''' Instruction CQO_3
+            Groups:
+            0x7ffff7a4e234:	cqo
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24649,12 +24650,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CQO_4_symbolic(self):
-        ''' Instruction CQO_4 
-            Groups:  
-            0x7ffff7a4e234:	cqo	
+        ''' Instruction CQO_4
+            Groups:
+            0x7ffff7a4e234:	cqo
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24693,12 +24694,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CQO_5_symbolic(self):
-        ''' Instruction CQO_5 
-            Groups:  
-            0x4006d4:	cqo	
+        ''' Instruction CQO_5
+            Groups:
+            0x4006d4:	cqo
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24737,12 +24738,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_CQO_6_symbolic(self):
-        ''' Instruction CQO_6 
-            Groups:  
-            0x7ffff7a4e234:	cqo	
+        ''' Instruction CQO_6
+            Groups:
+            0x7ffff7a4e234:	cqo
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -24781,11 +24782,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DEC_1_symbolic(self):
-        ''' Instruction DEC_1 
-            Groups: mode64 
+        ''' Instruction DEC_1
+            Groups: mode64
             0x41e10a:	dec	ecx
         '''
         cs = ConstraintSet()
@@ -24837,11 +24838,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DEC_2_symbolic(self):
-        ''' Instruction DEC_2 
-            Groups: mode64 
+        ''' Instruction DEC_2
+            Groups: mode64
             0x7ffff7df462c:	dec	ecx
         '''
         cs = ConstraintSet()
@@ -24893,11 +24894,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DEC_3_symbolic(self):
-        ''' Instruction DEC_3 
-            Groups: mode64 
+        ''' Instruction DEC_3
+            Groups: mode64
             0x7ffff7df462c:	dec	ecx
         '''
         cs = ConstraintSet()
@@ -24949,11 +24950,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DEC_4_symbolic(self):
-        ''' Instruction DEC_4 
-            Groups: mode64 
+        ''' Instruction DEC_4
+            Groups: mode64
             0x7ffff7a65448:	dec	dword ptr [rip + 0x36fd02]
         '''
         cs = ConstraintSet()
@@ -25035,11 +25036,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DEC_5_symbolic(self):
-        ''' Instruction DEC_5 
-            Groups: mode64 
+        ''' Instruction DEC_5
+            Groups: mode64
             0x7ffff7df462c:	dec	ecx
         '''
         cs = ConstraintSet()
@@ -25091,11 +25092,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DEC_6_symbolic(self):
-        ''' Instruction DEC_6 
-            Groups: mode64 
+        ''' Instruction DEC_6
+            Groups: mode64
             0x7ffff7df462c:	dec	ecx
         '''
         cs = ConstraintSet()
@@ -25147,11 +25148,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DIV_1_symbolic(self):
-        ''' Instruction DIV_1 
-            Groups:  
+        ''' Instruction DIV_1
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         cs = ConstraintSet()
@@ -25196,11 +25197,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DIV_2_symbolic(self):
-        ''' Instruction DIV_2 
-            Groups:  
+        ''' Instruction DIV_2
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         cs = ConstraintSet()
@@ -25245,11 +25246,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DIV_3_symbolic(self):
-        ''' Instruction DIV_3 
-            Groups:  
+        ''' Instruction DIV_3
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         cs = ConstraintSet()
@@ -25294,11 +25295,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DIV_4_symbolic(self):
-        ''' Instruction DIV_4 
-            Groups:  
+        ''' Instruction DIV_4
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         cs = ConstraintSet()
@@ -25343,11 +25344,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DIV_5_symbolic(self):
-        ''' Instruction DIV_5 
-            Groups:  
+        ''' Instruction DIV_5
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         cs = ConstraintSet()
@@ -25392,11 +25393,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_DIV_6_symbolic(self):
-        ''' Instruction DIV_6 
-            Groups:  
+        ''' Instruction DIV_6
+            Groups:
             0x7ffff7de3ff8:	div	rcx
         '''
         cs = ConstraintSet()
@@ -25441,11 +25442,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IDIV_1_symbolic(self):
-        ''' Instruction IDIV_1 
-            Groups:  
+        ''' Instruction IDIV_1
+            Groups:
             0x7ffff7a4e236:	idiv	r8
         '''
         cs = ConstraintSet()
@@ -25490,11 +25491,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IDIV_2_symbolic(self):
-        ''' Instruction IDIV_2 
-            Groups:  
+        ''' Instruction IDIV_2
+            Groups:
             0x4006d6:	idiv	r8
         '''
         cs = ConstraintSet()
@@ -25539,11 +25540,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IDIV_3_symbolic(self):
-        ''' Instruction IDIV_3 
-            Groups:  
+        ''' Instruction IDIV_3
+            Groups:
             0x7ffff7a4e236:	idiv	r8
         '''
         cs = ConstraintSet()
@@ -25588,11 +25589,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IDIV_4_symbolic(self):
-        ''' Instruction IDIV_4 
-            Groups:  
+        ''' Instruction IDIV_4
+            Groups:
             0x4006d6:	idiv	r8
         '''
         cs = ConstraintSet()
@@ -25637,11 +25638,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IDIV_5_symbolic(self):
-        ''' Instruction IDIV_5 
-            Groups:  
+        ''' Instruction IDIV_5
+            Groups:
             0x4006d6:	idiv	r8
         '''
         cs = ConstraintSet()
@@ -25686,11 +25687,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IDIV_6_symbolic(self):
-        ''' Instruction IDIV_6 
-            Groups:  
+        ''' Instruction IDIV_6
+            Groups:
             0x7ffff7a4e236:	idiv	r8
         '''
         cs = ConstraintSet()
@@ -25735,11 +25736,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IMUL_1_symbolic(self):
-        ''' Instruction IMUL_1 
-            Groups:  
+        ''' Instruction IMUL_1
+            Groups:
             0x7ffff7acfec4:	imul	eax, edx
         '''
         cs = ConstraintSet()
@@ -25793,11 +25794,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IMUL_2_symbolic(self):
-        ''' Instruction IMUL_2 
-            Groups:  
+        ''' Instruction IMUL_2
+            Groups:
             0x7ffff7acfeb3:	imul	eax, edx
         '''
         cs = ConstraintSet()
@@ -25851,11 +25852,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IMUL_3_symbolic(self):
-        ''' Instruction IMUL_3 
-            Groups:  
+        ''' Instruction IMUL_3
+            Groups:
             0x43230c:	imul	edx
         '''
         cs = ConstraintSet()
@@ -25904,11 +25905,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IMUL_4_symbolic(self):
-        ''' Instruction IMUL_4 
-            Groups:  
+        ''' Instruction IMUL_4
+            Groups:
             0x43230c:	imul	edx
         '''
         cs = ConstraintSet()
@@ -25957,11 +25958,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IMUL_5_symbolic(self):
-        ''' Instruction IMUL_5 
-            Groups:  
+        ''' Instruction IMUL_5
+            Groups:
             0x41403c:	imul	r12, rsi
         '''
         cs = ConstraintSet()
@@ -26017,11 +26018,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_IMUL_6_symbolic(self):
-        ''' Instruction IMUL_6 
-            Groups:  
+        ''' Instruction IMUL_6
+            Groups:
             0x413fdc:	imul	r12, rsi
         '''
         cs = ConstraintSet()
@@ -26077,11 +26078,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_INC_1_symbolic(self):
-        ''' Instruction INC_1 
-            Groups:  
+        ''' Instruction INC_1
+            Groups:
             0x7ffff7df4596:	inc	rdi
         '''
         cs = ConstraintSet()
@@ -26135,11 +26136,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_INC_2_symbolic(self):
-        ''' Instruction INC_2 
-            Groups:  
+        ''' Instruction INC_2
+            Groups:
             0x7ffff7df4596:	inc	rdi
         '''
         cs = ConstraintSet()
@@ -26193,11 +26194,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_INC_3_symbolic(self):
-        ''' Instruction INC_3 
-            Groups:  
+        ''' Instruction INC_3
+            Groups:
             0x7ffff7df4599:	inc	rsi
         '''
         cs = ConstraintSet()
@@ -26251,11 +26252,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_INC_4_symbolic(self):
-        ''' Instruction INC_4 
-            Groups:  
+        ''' Instruction INC_4
+            Groups:
             0x7ffff7df4596:	inc	rdi
         '''
         cs = ConstraintSet()
@@ -26309,11 +26310,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_INC_5_symbolic(self):
-        ''' Instruction INC_5 
-            Groups:  
+        ''' Instruction INC_5
+            Groups:
             0x7ffff7df4599:	inc	rsi
         '''
         cs = ConstraintSet()
@@ -26367,11 +26368,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_INC_6_symbolic(self):
-        ''' Instruction INC_6 
-            Groups:  
+        ''' Instruction INC_6
+            Groups:
             0x7ffff7df4599:	inc	rsi
         '''
         cs = ConstraintSet()
@@ -26425,11 +26426,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JAE_1_symbolic(self):
-        ''' Instruction JAE_1 
-            Groups: jump 
+        ''' Instruction JAE_1
+            Groups: jump
             0x7ffff7aa96ab:	jae	0x7ffff7aa96e8
         '''
         cs = ConstraintSet()
@@ -26465,11 +26466,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JAE_2_symbolic(self):
-        ''' Instruction JAE_2 
-            Groups: jump 
+        ''' Instruction JAE_2
+            Groups: jump
             0x400c11:	jae	0x400c69
         '''
         cs = ConstraintSet()
@@ -26505,11 +26506,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JAE_3_symbolic(self):
-        ''' Instruction JAE_3 
-            Groups: jump 
+        ''' Instruction JAE_3
+            Groups: jump
             0x432400:	jae	0x432440
         '''
         cs = ConstraintSet()
@@ -26545,11 +26546,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JAE_4_symbolic(self):
-        ''' Instruction JAE_4 
-            Groups: jump 
+        ''' Instruction JAE_4
+            Groups: jump
             0x411d5b:	jae	0x412155
         '''
         cs = ConstraintSet()
@@ -26593,11 +26594,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JAE_5_symbolic(self):
-        ''' Instruction JAE_5 
-            Groups: jump 
+        ''' Instruction JAE_5
+            Groups: jump
             0x7ffff7b58f5d:	jae	0x7ffff7b58f00
         '''
         cs = ConstraintSet()
@@ -26633,11 +26634,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JAE_6_symbolic(self):
-        ''' Instruction JAE_6 
-            Groups: jump 
+        ''' Instruction JAE_6
+            Groups: jump
             0x400b82:	jae	0x400b9f
         '''
         cs = ConstraintSet()
@@ -26673,11 +26674,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JA_1_symbolic(self):
-        ''' Instruction JA_1 
-            Groups: jump 
+        ''' Instruction JA_1
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         cs = ConstraintSet()
@@ -26715,11 +26716,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JA_2_symbolic(self):
-        ''' Instruction JA_2 
-            Groups: jump 
+        ''' Instruction JA_2
+            Groups: jump
             0x7ffff7ddf066:	ja	0x7ffff7ddf0b2
         '''
         cs = ConstraintSet()
@@ -26757,11 +26758,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JA_3_symbolic(self):
-        ''' Instruction JA_3 
-            Groups: jump 
+        ''' Instruction JA_3
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         cs = ConstraintSet()
@@ -26799,11 +26800,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JA_4_symbolic(self):
-        ''' Instruction JA_4 
-            Groups: jump 
+        ''' Instruction JA_4
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         cs = ConstraintSet()
@@ -26841,11 +26842,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JA_5_symbolic(self):
-        ''' Instruction JA_5 
-            Groups: jump 
+        ''' Instruction JA_5
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         cs = ConstraintSet()
@@ -26883,11 +26884,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JA_6_symbolic(self):
-        ''' Instruction JA_6 
-            Groups: jump 
+        ''' Instruction JA_6
+            Groups: jump
             0x7ffff7de6132:	ja	0x7ffff7de6108
         '''
         cs = ConstraintSet()
@@ -26925,11 +26926,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JBE_1_symbolic(self):
-        ''' Instruction JBE_1 
-            Groups: jump 
+        ''' Instruction JBE_1
+            Groups: jump
             0x41188d:	jbe	0x411ec0
         '''
         cs = ConstraintSet()
@@ -26975,11 +26976,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JBE_2_symbolic(self):
-        ''' Instruction JBE_2 
-            Groups: jump 
+        ''' Instruction JBE_2
+            Groups: jump
             0x4325e3:	jbe	0x4326cf
         '''
         cs = ConstraintSet()
@@ -27025,11 +27026,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JBE_3_symbolic(self):
-        ''' Instruction JBE_3 
-            Groups: jump 
+        ''' Instruction JBE_3
+            Groups: jump
             0x432388:	jbe	0x4323aa
         '''
         cs = ConstraintSet()
@@ -27067,11 +27068,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JBE_4_symbolic(self):
-        ''' Instruction JBE_4 
-            Groups: jump 
+        ''' Instruction JBE_4
+            Groups: jump
             0x4325e3:	jbe	0x4326cf
         '''
         cs = ConstraintSet()
@@ -27117,11 +27118,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JBE_5_symbolic(self):
-        ''' Instruction JBE_5 
-            Groups: jump 
+        ''' Instruction JBE_5
+            Groups: jump
             0x7ffff7df1269:	jbe	0x7ffff7df1289
         '''
         cs = ConstraintSet()
@@ -27159,11 +27160,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JBE_6_symbolic(self):
-        ''' Instruction JBE_6 
-            Groups: jump 
+        ''' Instruction JBE_6
+            Groups: jump
             0x7ffff7acff53:	jbe	0x7ffff7ad003f
         '''
         cs = ConstraintSet()
@@ -27209,11 +27210,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JB_1_symbolic(self):
-        ''' Instruction JB_1 
-            Groups: jump 
+        ''' Instruction JB_1
+            Groups: jump
             0x7ffff7b58f46:	jb	0x7ffff7b58f00
         '''
         cs = ConstraintSet()
@@ -27249,11 +27250,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JB_2_symbolic(self):
-        ''' Instruction JB_2 
-            Groups: jump 
+        ''' Instruction JB_2
+            Groups: jump
             0x7ffff7b58f46:	jb	0x7ffff7b58f00
         '''
         cs = ConstraintSet()
@@ -27289,11 +27290,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JB_3_symbolic(self):
-        ''' Instruction JB_3 
-            Groups: jump 
+        ''' Instruction JB_3
+            Groups: jump
             0x400bab:	jb	0x400ab4
         '''
         cs = ConstraintSet()
@@ -27337,11 +27338,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JB_4_symbolic(self):
-        ''' Instruction JB_4 
-            Groups: jump 
+        ''' Instruction JB_4
+            Groups: jump
             0x7ffff7b58f46:	jb	0x7ffff7b58f00
         '''
         cs = ConstraintSet()
@@ -27377,11 +27378,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JB_5_symbolic(self):
-        ''' Instruction JB_5 
-            Groups: jump 
+        ''' Instruction JB_5
+            Groups: jump
             0x7ffff7ddeff1:	jb	0x7ffff7ddefd0
         '''
         cs = ConstraintSet()
@@ -27417,11 +27418,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JB_6_symbolic(self):
-        ''' Instruction JB_6 
-            Groups: jump 
+        ''' Instruction JB_6
+            Groups: jump
             0x7ffff7b58f46:	jb	0x7ffff7b58f00
         '''
         cs = ConstraintSet()
@@ -27457,11 +27458,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JE_1_symbolic(self):
-        ''' Instruction JE_1 
-            Groups: jump 
+        ''' Instruction JE_1
+            Groups: jump
             0x7ffff7de3a9d:	je	0x7ffff7de3ed1
         '''
         cs = ConstraintSet()
@@ -27505,11 +27506,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JE_2_symbolic(self):
-        ''' Instruction JE_2 
-            Groups: jump 
+        ''' Instruction JE_2
+            Groups: jump
             0x7ffff7de61be:	je	0x7ffff7de65b8
         '''
         cs = ConstraintSet()
@@ -27553,11 +27554,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JE_3_symbolic(self):
-        ''' Instruction JE_3 
-            Groups: jump 
+        ''' Instruction JE_3
+            Groups: jump
             0x7ffff7de38c6:	je	0x7ffff7de3960
         '''
         cs = ConstraintSet()
@@ -27601,11 +27602,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JE_4_symbolic(self):
-        ''' Instruction JE_4 
-            Groups: jump 
+        ''' Instruction JE_4
+            Groups: jump
             0x7ffff7de440b:	je	0x7ffff7de4644
         '''
         cs = ConstraintSet()
@@ -27649,11 +27650,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JE_5_symbolic(self):
-        ''' Instruction JE_5 
-            Groups: jump 
+        ''' Instruction JE_5
+            Groups: jump
             0x7ffff7de6115:	je	0x7ffff7de6121
         '''
         cs = ConstraintSet()
@@ -27689,11 +27690,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JE_6_symbolic(self):
-        ''' Instruction JE_6 
-            Groups: jump 
+        ''' Instruction JE_6
+            Groups: jump
             0x406e0b:	je	0x406dc6
         '''
         cs = ConstraintSet()
@@ -27729,11 +27730,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JGE_1_symbolic(self):
-        ''' Instruction JGE_1 
-            Groups: jump 
+        ''' Instruction JGE_1
+            Groups: jump
             0x7ffff7ab5b02:	jge	0x7ffff7ab5be0
         '''
         cs = ConstraintSet()
@@ -27779,11 +27780,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JGE_2_symbolic(self):
-        ''' Instruction JGE_2 
-            Groups: jump 
+        ''' Instruction JGE_2
+            Groups: jump
             0x7ffff7b09879:	jge	0x7ffff7b0987f
         '''
         cs = ConstraintSet()
@@ -27821,11 +27822,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JGE_3_symbolic(self):
-        ''' Instruction JGE_3 
-            Groups: jump 
+        ''' Instruction JGE_3
+            Groups: jump
             0x7ffff7ab5b02:	jge	0x7ffff7ab5be0
         '''
         cs = ConstraintSet()
@@ -27871,11 +27872,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JG_1_symbolic(self):
-        ''' Instruction JG_1 
-            Groups: jump 
+        ''' Instruction JG_1
+            Groups: jump
             0x403684:	jg	0x40361a
         '''
         cs = ConstraintSet()
@@ -27915,11 +27916,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JG_2_symbolic(self):
-        ''' Instruction JG_2 
-            Groups: jump 
+        ''' Instruction JG_2
+            Groups: jump
             0x40c120:	jg	0x40c3f0
         '''
         cs = ConstraintSet()
@@ -27967,11 +27968,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JG_3_symbolic(self):
-        ''' Instruction JG_3 
-            Groups: jump 
+        ''' Instruction JG_3
+            Groups: jump
             0x7ffff7df1357:	jg	0x7ffff7df13a0
         '''
         cs = ConstraintSet()
@@ -28011,11 +28012,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JG_4_symbolic(self):
-        ''' Instruction JG_4 
-            Groups: jump 
+        ''' Instruction JG_4
+            Groups: jump
             0x7ffff7ddc9fb:	jg	0x7ffff7ddce16
         '''
         cs = ConstraintSet()
@@ -28063,11 +28064,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JG_5_symbolic(self):
-        ''' Instruction JG_5 
-            Groups: jump 
+        ''' Instruction JG_5
+            Groups: jump
             0x7ffff7ddc9fb:	jg	0x7ffff7ddce16
         '''
         cs = ConstraintSet()
@@ -28115,11 +28116,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JG_6_symbolic(self):
-        ''' Instruction JG_6 
-            Groups: jump 
+        ''' Instruction JG_6
+            Groups: jump
             0x40c2e4:	jg	0x40c250
         '''
         cs = ConstraintSet()
@@ -28167,11 +28168,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JLE_1_symbolic(self):
-        ''' Instruction JLE_1 
-            Groups: jump 
+        ''' Instruction JLE_1
+            Groups: jump
             0x400b2b:	jle	0x400b01
         '''
         cs = ConstraintSet()
@@ -28211,11 +28212,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JLE_2_symbolic(self):
-        ''' Instruction JLE_2 
-            Groups: jump 
+        ''' Instruction JLE_2
+            Groups: jump
             0x7ffff7a4e1cb:	jle	0x7ffff7a4e429
         '''
         cs = ConstraintSet()
@@ -28263,11 +28264,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JLE_3_symbolic(self):
-        ''' Instruction JLE_3 
-            Groups: jump 
+        ''' Instruction JLE_3
+            Groups: jump
             0x437c08:	jle	0x437c1f
         '''
         cs = ConstraintSet()
@@ -28307,11 +28308,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JLE_4_symbolic(self):
-        ''' Instruction JLE_4 
-            Groups: jump 
+        ''' Instruction JLE_4
+            Groups: jump
             0x7ffff7de4486:	jle	0x7ffff7de4430
         '''
         cs = ConstraintSet()
@@ -28351,11 +28352,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JLE_5_symbolic(self):
-        ''' Instruction JLE_5 
-            Groups: jump 
+        ''' Instruction JLE_5
+            Groups: jump
             0x7ffff7de4486:	jle	0x7ffff7de4430
         '''
         cs = ConstraintSet()
@@ -28395,11 +28396,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JLE_6_symbolic(self):
-        ''' Instruction JLE_6 
-            Groups: jump 
+        ''' Instruction JLE_6
+            Groups: jump
             0x7ffff7de4486:	jle	0x7ffff7de4430
         '''
         cs = ConstraintSet()
@@ -28439,11 +28440,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JL_1_symbolic(self):
-        ''' Instruction JL_1 
-            Groups: jump 
+        ''' Instruction JL_1
+            Groups: jump
             0x555555556f00:	jl	0x555555556ee2
         '''
         cs = ConstraintSet()
@@ -28481,11 +28482,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JL_2_symbolic(self):
-        ''' Instruction JL_2 
-            Groups: jump 
+        ''' Instruction JL_2
+            Groups: jump
             0x555555556f00:	jl	0x555555556ee2
         '''
         cs = ConstraintSet()
@@ -28523,11 +28524,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JL_3_symbolic(self):
-        ''' Instruction JL_3 
-            Groups: jump 
+        ''' Instruction JL_3
+            Groups: jump
             0x555555556f00:	jl	0x555555556ee2
         '''
         cs = ConstraintSet()
@@ -28565,11 +28566,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JMP_1_symbolic(self):
-        ''' Instruction JMP_1 
-            Groups: jump 
+        ''' Instruction JMP_1
+            Groups: jump
             0x7ffff7de4279:	jmp	0x7ffff7de3a98
         '''
         cs = ConstraintSet()
@@ -28609,11 +28610,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JMP_2_symbolic(self):
-        ''' Instruction JMP_2 
-            Groups: jump 
+        ''' Instruction JMP_2
+            Groups: jump
             0x7ffff7b58ee7:	jmp	0x7ffff7b58f10
         '''
         cs = ConstraintSet()
@@ -28647,11 +28648,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JMP_3_symbolic(self):
-        ''' Instruction JMP_3 
-            Groups: jump 
+        ''' Instruction JMP_3
+            Groups: jump
             0x7ffff7df28e1:	jmp	0x7ffff7ddaa00
         '''
         cs = ConstraintSet()
@@ -28691,11 +28692,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JMP_4_symbolic(self):
-        ''' Instruction JMP_4 
-            Groups: mode64, jump 
+        ''' Instruction JMP_4
+            Groups: mode64, jump
             0x7ffff7de62ee:	jmp	rdx
         '''
         cs = ConstraintSet()
@@ -28732,11 +28733,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JMP_5_symbolic(self):
-        ''' Instruction JMP_5 
-            Groups: jump 
+        ''' Instruction JMP_5
+            Groups: jump
             0x7ffff7de4042:	jmp	0x7ffff7de4054
         '''
         cs = ConstraintSet()
@@ -28770,11 +28771,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JMP_6_symbolic(self):
-        ''' Instruction JMP_6 
-            Groups: jump 
+        ''' Instruction JMP_6
+            Groups: jump
             0x7ffff7b58ee7:	jmp	0x7ffff7b58f10
         '''
         cs = ConstraintSet()
@@ -28808,11 +28809,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNE_1_symbolic(self):
-        ''' Instruction JNE_1 
-            Groups: jump 
+        ''' Instruction JNE_1
+            Groups: jump
             0x7ffff7df459e:	jne	0x7ffff7df4590
         '''
         cs = ConstraintSet()
@@ -28848,11 +28849,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNE_2_symbolic(self):
-        ''' Instruction JNE_2 
-            Groups: jump 
+        ''' Instruction JNE_2
+            Groups: jump
             0x7ffff7de5a4b:	jne	0x7ffff7de5a40
         '''
         cs = ConstraintSet()
@@ -28888,11 +28889,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNE_3_symbolic(self):
-        ''' Instruction JNE_3 
-            Groups: jump 
+        ''' Instruction JNE_3
+            Groups: jump
             0x7ffff7de611b:	jne	0x7ffff7de73ad
         '''
         cs = ConstraintSet()
@@ -28936,11 +28937,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNE_4_symbolic(self):
-        ''' Instruction JNE_4 
-            Groups: jump 
+        ''' Instruction JNE_4
+            Groups: jump
             0x7ffff7aab197:	jne	0x7ffff7aab188
         '''
         cs = ConstraintSet()
@@ -28976,11 +28977,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNE_5_symbolic(self):
-        ''' Instruction JNE_5 
-            Groups: jump 
+        ''' Instruction JNE_5
+            Groups: jump
             0x7ffff7df4594:	jne	0x7ffff7df45a3
         '''
         cs = ConstraintSet()
@@ -29016,11 +29017,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNE_6_symbolic(self):
-        ''' Instruction JNE_6 
-            Groups: jump 
+        ''' Instruction JNE_6
+            Groups: jump
             0x7ffff7df459e:	jne	0x7ffff7df4590
         '''
         cs = ConstraintSet()
@@ -29056,11 +29057,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNS_1_symbolic(self):
-        ''' Instruction JNS_1 
-            Groups: jump 
+        ''' Instruction JNS_1
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         cs = ConstraintSet()
@@ -29096,11 +29097,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNS_2_symbolic(self):
-        ''' Instruction JNS_2 
-            Groups: jump 
+        ''' Instruction JNS_2
+            Groups: jump
             0x555555565fb2:	jns	0x5555555659ec
         '''
         cs = ConstraintSet()
@@ -29144,11 +29145,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNS_3_symbolic(self):
-        ''' Instruction JNS_3 
-            Groups: jump 
+        ''' Instruction JNS_3
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         cs = ConstraintSet()
@@ -29184,11 +29185,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNS_4_symbolic(self):
-        ''' Instruction JNS_4 
-            Groups: jump 
+        ''' Instruction JNS_4
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         cs = ConstraintSet()
@@ -29224,11 +29225,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNS_5_symbolic(self):
-        ''' Instruction JNS_5 
-            Groups: jump 
+        ''' Instruction JNS_5
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         cs = ConstraintSet()
@@ -29264,11 +29265,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JNS_6_symbolic(self):
-        ''' Instruction JNS_6 
-            Groups: jump 
+        ''' Instruction JNS_6
+            Groups: jump
             0x7ffff7df138f:	jns	0x7ffff7df1350
         '''
         cs = ConstraintSet()
@@ -29304,11 +29305,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JS_1_symbolic(self):
-        ''' Instruction JS_1 
-            Groups: jump 
+        ''' Instruction JS_1
+            Groups: jump
             0x4326b2:	js	0x4328fb
         '''
         cs = ConstraintSet()
@@ -29352,11 +29353,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JS_2_symbolic(self):
-        ''' Instruction JS_2 
-            Groups: jump 
+        ''' Instruction JS_2
+            Groups: jump
             0x4322d2:	js	0x43251b
         '''
         cs = ConstraintSet()
@@ -29400,11 +29401,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JS_3_symbolic(self):
-        ''' Instruction JS_3 
-            Groups: jump 
+        ''' Instruction JS_3
+            Groups: jump
             0x555555565075:	js	0x555555566260
         '''
         cs = ConstraintSet()
@@ -29448,11 +29449,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JS_4_symbolic(self):
-        ''' Instruction JS_4 
-            Groups: jump 
+        ''' Instruction JS_4
+            Groups: jump
             0x40dd40:	js	0x40dd4c
         '''
         cs = ConstraintSet()
@@ -29488,11 +29489,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JS_5_symbolic(self):
-        ''' Instruction JS_5 
-            Groups: jump 
+        ''' Instruction JS_5
+            Groups: jump
             0x555555559cb6:	js	0x555555559ccf
         '''
         cs = ConstraintSet()
@@ -29528,11 +29529,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_JS_6_symbolic(self):
-        ''' Instruction JS_6 
-            Groups: jump 
+        ''' Instruction JS_6
+            Groups: jump
             0x5555555673d5:	js	0x555555567450
         '''
         cs = ConstraintSet()
@@ -29568,12 +29569,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEAVE_1_symbolic(self):
-        ''' Instruction LEAVE_1 
-            Groups: mode64 
-            0x7ffff7b30c15:	leave	
+        ''' Instruction LEAVE_1
+            Groups: mode64
+            0x7ffff7b30c15:	leave
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -29809,12 +29810,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEAVE_2_symbolic(self):
-        ''' Instruction LEAVE_2 
-            Groups: mode64 
-            0x4176f4:	leave	
+        ''' Instruction LEAVE_2
+            Groups: mode64
+            0x4176f4:	leave
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -30050,12 +30051,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEAVE_3_symbolic(self):
-        ''' Instruction LEAVE_3 
-            Groups: mode64 
-            0x7ffff7b59b18:	leave	
+        ''' Instruction LEAVE_3
+            Groups: mode64
+            0x7ffff7b59b18:	leave
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -30297,12 +30298,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEAVE_4_symbolic(self):
-        ''' Instruction LEAVE_4 
-            Groups: mode64 
-            0x7ffff7b59b18:	leave	
+        ''' Instruction LEAVE_4
+            Groups: mode64
+            0x7ffff7b59b18:	leave
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -30544,12 +30545,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEAVE_5_symbolic(self):
-        ''' Instruction LEAVE_5 
-            Groups: mode64 
-            0x7ffff7ae0541:	leave	
+        ''' Instruction LEAVE_5
+            Groups: mode64
+            0x7ffff7ae0541:	leave
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -30791,12 +30792,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEAVE_6_symbolic(self):
-        ''' Instruction LEAVE_6 
-            Groups: mode64 
-            0x7ffff7a626cd:	leave	
+        ''' Instruction LEAVE_6
+            Groups: mode64
+            0x7ffff7a626cd:	leave
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -31038,11 +31039,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEA_1_symbolic(self):
-        ''' Instruction LEA_1 
-            Groups:  
+        ''' Instruction LEA_1
+            Groups:
             0x7ffff7de44f3:	lea	rsp, qword ptr [rbp - 0x28]
         '''
         cs = ConstraintSet()
@@ -31135,11 +31136,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEA_2_symbolic(self):
-        ''' Instruction LEA_2 
-            Groups:  
+        ''' Instruction LEA_2
+            Groups:
             0x7ffff7b58ee3:	lea	r8, qword ptr [r8 + rdx*4]
         '''
         cs = ConstraintSet()
@@ -31232,11 +31233,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEA_3_symbolic(self):
-        ''' Instruction LEA_3 
-            Groups:  
+        ''' Instruction LEA_3
+            Groups:
             0x7ffff7de3841:	lea	rsi, qword ptr [rbp - 0x3c]
         '''
         cs = ConstraintSet()
@@ -31329,11 +31330,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEA_4_symbolic(self):
-        ''' Instruction LEA_4 
-            Groups:  
+        ''' Instruction LEA_4
+            Groups:
             0x7ffff7b58f14:	lea	rdx, qword ptr [rbx + rdx*8]
         '''
         cs = ConstraintSet()
@@ -31426,11 +31427,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEA_5_symbolic(self):
-        ''' Instruction LEA_5 
-            Groups:  
+        ''' Instruction LEA_5
+            Groups:
             0x7ffff7a652b7:	lea	rsi, qword ptr [rip + 0x36e35a]
         '''
         cs = ConstraintSet()
@@ -31526,11 +31527,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_LEA_6_symbolic(self):
-        ''' Instruction LEA_6 
-            Groups:  
+        ''' Instruction LEA_6
+            Groups:
             0x7ffff7de4418:	lea	rdi, qword ptr [rbp - 0xa0]
         '''
         cs = ConstraintSet()
@@ -31629,11 +31630,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVABS_1_symbolic(self):
-        ''' Instruction MOVABS_1 
-            Groups:  
+        ''' Instruction MOVABS_1
+            Groups:
             0x7ffff7ddc5df:	movabs	r8, 0x37ffff1a0
         '''
         cs = ConstraintSet()
@@ -31686,11 +31687,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVABS_2_symbolic(self):
-        ''' Instruction MOVABS_2 
-            Groups:  
+        ''' Instruction MOVABS_2
+            Groups:
             0x7ffff7ddc5df:	movabs	r8, 0x37ffff1a0
         '''
         cs = ConstraintSet()
@@ -31743,11 +31744,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVABS_3_symbolic(self):
-        ''' Instruction MOVABS_3 
-            Groups:  
+        ''' Instruction MOVABS_3
+            Groups:
             0x7ffff7df1435:	movabs	rcx, -0x8000000000000000
         '''
         cs = ConstraintSet()
@@ -31800,11 +31801,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVABS_4_symbolic(self):
-        ''' Instruction MOVABS_4 
-            Groups:  
+        ''' Instruction MOVABS_4
+            Groups:
             0x45f853:	movabs	rdx, -0x3333333333333333
         '''
         cs = ConstraintSet()
@@ -31857,11 +31858,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVABS_5_symbolic(self):
-        ''' Instruction MOVABS_5 
-            Groups:  
+        ''' Instruction MOVABS_5
+            Groups:
             0x7ffff7df4630:	movabs	r8, -0x101010101010101
         '''
         cs = ConstraintSet()
@@ -31914,11 +31915,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVABS_6_symbolic(self):
-        ''' Instruction MOVABS_6 
-            Groups:  
+        ''' Instruction MOVABS_6
+            Groups:
             0x7ffff7ddc5df:	movabs	r8, 0x37ffff1a0
         '''
         cs = ConstraintSet()
@@ -31971,11 +31972,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQA_1_symbolic(self):
-        ''' Instruction MOVDQA_1 
-            Groups: sse2 
+        ''' Instruction MOVDQA_1
+            Groups: sse2
             0x7ffff7ac0b0b:	movdqa	xmm4, xmm0
         '''
         cs = ConstraintSet()
@@ -32019,11 +32020,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQA_2_symbolic(self):
-        ''' Instruction MOVDQA_2 
-            Groups: sse2 
+        ''' Instruction MOVDQA_2
+            Groups: sse2
             0x457d38:	movdqa	xmm0, xmm2
         '''
         cs = ConstraintSet()
@@ -32067,11 +32068,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQA_3_symbolic(self):
-        ''' Instruction MOVDQA_3 
-            Groups: sse2 
+        ''' Instruction MOVDQA_3
+            Groups: sse2
             0x457aaf:	movdqa	xmm5, xmm3
         '''
         cs = ConstraintSet()
@@ -32115,11 +32116,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQA_4_symbolic(self):
-        ''' Instruction MOVDQA_4 
-            Groups: sse2 
+        ''' Instruction MOVDQA_4
+            Groups: sse2
             0x457a08:	movdqa	xmm2, xmmword ptr [rdi + 0x30]
         '''
         cs = ConstraintSet()
@@ -32262,11 +32263,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQA_5_symbolic(self):
-        ''' Instruction MOVDQA_5 
-            Groups: sse2 
+        ''' Instruction MOVDQA_5
+            Groups: sse2
             0x457b38:	movdqa	xmm0, xmm2
         '''
         cs = ConstraintSet()
@@ -32310,11 +32311,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQA_6_symbolic(self):
-        ''' Instruction MOVDQA_6 
-            Groups: sse2 
+        ''' Instruction MOVDQA_6
+            Groups: sse2
             0x7ffff7ac0b0b:	movdqa	xmm4, xmm0
         '''
         cs = ConstraintSet()
@@ -32358,11 +32359,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQU_1_symbolic(self):
-        ''' Instruction MOVDQU_1 
-            Groups: sse2 
+        ''' Instruction MOVDQU_1
+            Groups: sse2
             0x6a74d4:	movdqu	xmm0, xmmword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -32505,11 +32506,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQU_2_symbolic(self):
-        ''' Instruction MOVDQU_2 
-            Groups: sse2 
+        ''' Instruction MOVDQU_2
+            Groups: sse2
             0x568fac:	movdqu	xmm0, xmmword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -32652,11 +32653,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQU_3_symbolic(self):
-        ''' Instruction MOVDQU_3 
-            Groups: sse2 
+        ''' Instruction MOVDQU_3
+            Groups: sse2
             0x6f4c12:	movdqu	xmm1, xmmword ptr [rsp + 4]
         '''
         cs = ConstraintSet()
@@ -32801,11 +32802,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQU_4_symbolic(self):
-        ''' Instruction MOVDQU_4 
-            Groups: sse2 
+        ''' Instruction MOVDQU_4
+            Groups: sse2
             0x56fa50:	movdqu	xmm1, xmmword ptr [rsp + 4]
         '''
         cs = ConstraintSet()
@@ -32950,11 +32951,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQU_5_symbolic(self):
-        ''' Instruction MOVDQU_5 
-            Groups: sse2 
+        ''' Instruction MOVDQU_5
+            Groups: sse2
             0x606649:	movdqu	xmm1, xmmword ptr [rsp + 4]
         '''
         cs = ConstraintSet()
@@ -33099,11 +33100,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVDQU_6_symbolic(self):
-        ''' Instruction MOVDQU_6 
-            Groups: sse2 
+        ''' Instruction MOVDQU_6
+            Groups: sse2
             0x6fc91e:	movdqu	xmm0, xmmword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -33246,11 +33247,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVD_1_symbolic(self):
-        ''' Instruction MOVD_1 
-            Groups: sse2 
+        ''' Instruction MOVD_1
+            Groups: sse2
             0x7ffff7df4370:	movd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -33294,11 +33295,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVD_2_symbolic(self):
-        ''' Instruction MOVD_2 
-            Groups: sse2 
+        ''' Instruction MOVD_2
+            Groups: sse2
             0x7ffff7ab7980:	movd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -33342,11 +33343,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVD_3_symbolic(self):
-        ''' Instruction MOVD_3 
-            Groups: sse2 
+        ''' Instruction MOVD_3
+            Groups: sse2
             0x4578e0:	movd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -33390,11 +33391,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVD_4_symbolic(self):
-        ''' Instruction MOVD_4 
-            Groups: sse2 
+        ''' Instruction MOVD_4
+            Groups: sse2
             0x421b10:	movd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -33438,11 +33439,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVD_5_symbolic(self):
-        ''' Instruction MOVD_5 
-            Groups: sse2 
+        ''' Instruction MOVD_5
+            Groups: sse2
             0x457da0:	movd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -33486,11 +33487,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVD_6_symbolic(self):
-        ''' Instruction MOVD_6 
-            Groups: sse2 
+        ''' Instruction MOVD_6
+            Groups: sse2
             0x7ffff7ac0ae0:	movd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -33534,11 +33535,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVLPD_1_symbolic(self):
-        ''' Instruction MOVLPD_1 
-            Groups: sse2 
+        ''' Instruction MOVLPD_1
+            Groups: sse2
             0x50f61f:	movlpd	xmm1, qword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -33633,11 +33634,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVLPD_2_symbolic(self):
-        ''' Instruction MOVLPD_2 
-            Groups: sse2 
+        ''' Instruction MOVLPD_2
+            Groups: sse2
             0x4aa891:	movlpd	qword ptr [rsp], xmm1
         '''
         cs = ConstraintSet()
@@ -33732,11 +33733,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVLPD_3_symbolic(self):
-        ''' Instruction MOVLPD_3 
-            Groups: sse2 
+        ''' Instruction MOVLPD_3
+            Groups: sse2
             0x4adf87:	movlpd	qword ptr [rsp], xmm1
         '''
         cs = ConstraintSet()
@@ -33831,11 +33832,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVLPD_4_symbolic(self):
-        ''' Instruction MOVLPD_4 
-            Groups: sse2 
+        ''' Instruction MOVLPD_4
+            Groups: sse2
             0x4acf88:	movlpd	qword ptr [rsp], xmm1
         '''
         cs = ConstraintSet()
@@ -33930,11 +33931,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVLPD_5_symbolic(self):
-        ''' Instruction MOVLPD_5 
-            Groups: sse2 
+        ''' Instruction MOVLPD_5
+            Groups: sse2
             0x50a2c7:	movlpd	xmm1, qword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -34029,11 +34030,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVLPD_6_symbolic(self):
-        ''' Instruction MOVLPD_6 
-            Groups: sse2 
+        ''' Instruction MOVLPD_6
+            Groups: sse2
             0x4d851b:	movlpd	qword ptr [rsp], xmm1
         '''
         cs = ConstraintSet()
@@ -34128,11 +34129,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSD_1_symbolic(self):
-        ''' Instruction MOVSD_1 
-            Groups:  
+        ''' Instruction MOVSD_1
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -34273,11 +34274,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSD_2_symbolic(self):
-        ''' Instruction MOVSD_2 
-            Groups:  
+        ''' Instruction MOVSD_2
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -34418,11 +34419,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSD_3_symbolic(self):
-        ''' Instruction MOVSD_3 
-            Groups:  
+        ''' Instruction MOVSD_3
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -34563,11 +34564,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSD_4_symbolic(self):
-        ''' Instruction MOVSD_4 
-            Groups:  
+        ''' Instruction MOVSD_4
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -34708,11 +34709,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSD_5_symbolic(self):
-        ''' Instruction MOVSD_5 
-            Groups:  
+        ''' Instruction MOVSD_5
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -34853,11 +34854,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSD_6_symbolic(self):
-        ''' Instruction MOVSD_6 
-            Groups:  
+        ''' Instruction MOVSD_6
+            Groups:
             0x555555556e3b:	rep movsd	dword ptr [rdi], dword ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -34998,11 +34999,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSXD_1_symbolic(self):
-        ''' Instruction MOVSXD_1 
-            Groups:  
+        ''' Instruction MOVSXD_1
+            Groups:
             0x466083:	movsxd	rdi, edi
         '''
         cs = ConstraintSet()
@@ -35044,11 +35045,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSXD_2_symbolic(self):
-        ''' Instruction MOVSXD_2 
-            Groups:  
+        ''' Instruction MOVSXD_2
+            Groups:
             0x7ffff7ddf068:	movsxd	rdx, dword ptr [r8 + rbx*4]
         '''
         cs = ConstraintSet()
@@ -35120,11 +35121,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSXD_3_symbolic(self):
-        ''' Instruction MOVSXD_3 
-            Groups:  
+        ''' Instruction MOVSXD_3
+            Groups:
             0x436902:	movsxd	rax, dword ptr [rdx + rax*4]
         '''
         cs = ConstraintSet()
@@ -35193,11 +35194,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSXD_4_symbolic(self):
-        ''' Instruction MOVSXD_4 
-            Groups:  
+        ''' Instruction MOVSXD_4
+            Groups:
             0x7ffff7df214a:	movsxd	rax, dword ptr [rcx + rax*4]
         '''
         cs = ConstraintSet()
@@ -35266,11 +35267,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSXD_5_symbolic(self):
-        ''' Instruction MOVSXD_5 
-            Groups:  
+        ''' Instruction MOVSXD_5
+            Groups:
             0x436b12:	movsxd	rax, dword ptr [rdx + rax*4]
         '''
         cs = ConstraintSet()
@@ -35339,11 +35340,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSXD_6_symbolic(self):
-        ''' Instruction MOVSXD_6 
-            Groups:  
+        ''' Instruction MOVSXD_6
+            Groups:
             0x7ffff7de62e7:	movsxd	rdx, dword ptr [rax + r12*4]
         '''
         cs = ConstraintSet()
@@ -35415,11 +35416,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSX_1_symbolic(self):
-        ''' Instruction MOVSX_1 
-            Groups:  
+        ''' Instruction MOVSX_1
+            Groups:
             0x7ffff7df1273:	movsx	edx, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -35468,11 +35469,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSX_2_symbolic(self):
-        ''' Instruction MOVSX_2 
-            Groups:  
+        ''' Instruction MOVSX_2
+            Groups:
             0x7ffff7df1273:	movsx	edx, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -35521,11 +35522,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSX_3_symbolic(self):
-        ''' Instruction MOVSX_3 
-            Groups:  
+        ''' Instruction MOVSX_3
+            Groups:
             0x7ffff7df1260:	movsx	eax, byte ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -35574,11 +35575,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSX_4_symbolic(self):
-        ''' Instruction MOVSX_4 
-            Groups:  
+        ''' Instruction MOVSX_4
+            Groups:
             0x7ffff7df1260:	movsx	eax, byte ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -35627,11 +35628,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSX_5_symbolic(self):
-        ''' Instruction MOVSX_5 
-            Groups:  
+        ''' Instruction MOVSX_5
+            Groups:
             0x7ffff7df1260:	movsx	eax, byte ptr [rsi]
         '''
         cs = ConstraintSet()
@@ -35680,11 +35681,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVSX_6_symbolic(self):
-        ''' Instruction MOVSX_6 
-            Groups:  
+        ''' Instruction MOVSX_6
+            Groups:
             0x7ffff7df1273:	movsx	edx, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -35733,11 +35734,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVZX_1_symbolic(self):
-        ''' Instruction MOVZX_1 
-            Groups:  
+        ''' Instruction MOVZX_1
+            Groups:
             0x7ffff7de3aa3:	movzx	edx, byte ptr [rcx + 4]
         '''
         cs = ConstraintSet()
@@ -35788,11 +35789,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVZX_2_symbolic(self):
-        ''' Instruction MOVZX_2 
-            Groups:  
+        ''' Instruction MOVZX_2
+            Groups:
             0x7ffff7de4399:	movzx	edx, byte ptr [rcx]
         '''
         cs = ConstraintSet()
@@ -35841,11 +35842,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVZX_3_symbolic(self):
-        ''' Instruction MOVZX_3 
-            Groups:  
+        ''' Instruction MOVZX_3
+            Groups:
             0x400aaa:	movzx	eax, al
         '''
         cs = ConstraintSet()
@@ -35887,11 +35888,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVZX_4_symbolic(self):
-        ''' Instruction MOVZX_4 
-            Groups:  
+        ''' Instruction MOVZX_4
+            Groups:
             0x7ffff7b58f18:	movzx	r10d, word ptr [rdx + 6]
         '''
         cs = ConstraintSet()
@@ -35950,11 +35951,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVZX_5_symbolic(self):
-        ''' Instruction MOVZX_5 
-            Groups:  
+        ''' Instruction MOVZX_5
+            Groups:
             0x7ffff7de6219:	movzx	r9d, r9b
         '''
         cs = ConstraintSet()
@@ -35998,11 +35999,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOVZX_6_symbolic(self):
-        ''' Instruction MOVZX_6 
-            Groups:  
+        ''' Instruction MOVZX_6
+            Groups:
             0x7ffff7de3929:	movzx	ecx, byte ptr [rbp - 0x78]
         '''
         cs = ConstraintSet()
@@ -36053,11 +36054,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOV_1_symbolic(self):
-        ''' Instruction MOV_1 
-            Groups:  
+        ''' Instruction MOV_1
+            Groups:
             0x737287:	mov	ebx, 0x40
         '''
         cs = ConstraintSet()
@@ -36100,11 +36101,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOV_2_symbolic(self):
-        ''' Instruction MOV_2 
-            Groups:  
+        ''' Instruction MOV_2
+            Groups:
             0x7ffff7de6121:	mov	rax, r13
         '''
         cs = ConstraintSet()
@@ -36146,11 +36147,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOV_3_symbolic(self):
-        ''' Instruction MOV_3 
-            Groups:  
+        ''' Instruction MOV_3
+            Groups:
             0x74dced:	mov	dword ptr [rsp], 0x7fff
         '''
         cs = ConstraintSet()
@@ -36222,11 +36223,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOV_4_symbolic(self):
-        ''' Instruction MOV_4 
-            Groups:  
+        ''' Instruction MOV_4
+            Groups:
             0x4b00dc:	mov	dword ptr [rsp + 4], 0x80
         '''
         cs = ConstraintSet()
@@ -36300,11 +36301,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOV_5_symbolic(self):
-        ''' Instruction MOV_5 
-            Groups:  
+        ''' Instruction MOV_5
+            Groups:
             0x7776d9:	mov	dword ptr [rsp + 8], 0x80000000
         '''
         cs = ConstraintSet()
@@ -36378,11 +36379,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MOV_6_symbolic(self):
-        ''' Instruction MOV_6 
-            Groups:  
+        ''' Instruction MOV_6
+            Groups:
             0x4c3b88:	mov	dword ptr [rsp + 0xc], 0x12345678
         '''
         cs = ConstraintSet()
@@ -36456,11 +36457,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MUL_1_symbolic(self):
-        ''' Instruction MUL_1 
-            Groups:  
+        ''' Instruction MUL_1
+            Groups:
             0x7ffff7de253f:	mul	rdx
         '''
         cs = ConstraintSet()
@@ -36508,11 +36509,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MUL_2_symbolic(self):
-        ''' Instruction MUL_2 
-            Groups:  
+        ''' Instruction MUL_2
+            Groups:
             0x7ffff7de253f:	mul	rdx
         '''
         cs = ConstraintSet()
@@ -36560,11 +36561,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MUL_3_symbolic(self):
-        ''' Instruction MUL_3 
-            Groups:  
+        ''' Instruction MUL_3
+            Groups:
             0x7ffff7de253f:	mul	rdx
         '''
         cs = ConstraintSet()
@@ -36612,11 +36613,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MUL_4_symbolic(self):
-        ''' Instruction MUL_4 
-            Groups:  
+        ''' Instruction MUL_4
+            Groups:
             0x45f865:	mul	rdx
         '''
         cs = ConstraintSet()
@@ -36664,11 +36665,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MUL_5_symbolic(self):
-        ''' Instruction MUL_5 
-            Groups:  
+        ''' Instruction MUL_5
+            Groups:
             0x4624e5:	mul	rdx
         '''
         cs = ConstraintSet()
@@ -36716,11 +36717,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_MUL_6_symbolic(self):
-        ''' Instruction MUL_6 
-            Groups:  
+        ''' Instruction MUL_6
+            Groups:
             0x443dc7:	mul	r9
         '''
         cs = ConstraintSet()
@@ -36771,11 +36772,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NEG_1_symbolic(self):
-        ''' Instruction NEG_1 
-            Groups:  
+        ''' Instruction NEG_1
+            Groups:
             0x7ffff7df27cf:	neg	rax
         '''
         cs = ConstraintSet()
@@ -36832,11 +36833,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NEG_2_symbolic(self):
-        ''' Instruction NEG_2 
-            Groups:  
+        ''' Instruction NEG_2
+            Groups:
             0x7ffff7de5c54:	neg	rax
         '''
         cs = ConstraintSet()
@@ -36893,11 +36894,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NEG_3_symbolic(self):
-        ''' Instruction NEG_3 
-            Groups:  
+        ''' Instruction NEG_3
+            Groups:
             0x40baad:	neg	eax
         '''
         cs = ConstraintSet()
@@ -36952,11 +36953,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NEG_4_symbolic(self):
-        ''' Instruction NEG_4 
-            Groups:  
+        ''' Instruction NEG_4
+            Groups:
             0x7ffff7df27b6:	neg	rdi
         '''
         cs = ConstraintSet()
@@ -37013,11 +37014,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NEG_5_symbolic(self):
-        ''' Instruction NEG_5 
-            Groups:  
+        ''' Instruction NEG_5
+            Groups:
             0x411176:	neg	r10
         '''
         cs = ConstraintSet()
@@ -37074,11 +37075,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NEG_6_symbolic(self):
-        ''' Instruction NEG_6 
-            Groups:  
+        ''' Instruction NEG_6
+            Groups:
             0x7ffff7df27b6:	neg	rdi
         '''
         cs = ConstraintSet()
@@ -37135,11 +37136,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NOT_1_symbolic(self):
-        ''' Instruction NOT_1 
-            Groups:  
+        ''' Instruction NOT_1
+            Groups:
             0x7ffff7df144a:	not	rax
         '''
         cs = ConstraintSet()
@@ -37178,11 +37179,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NOT_2_symbolic(self):
-        ''' Instruction NOT_2 
-            Groups:  
+        ''' Instruction NOT_2
+            Groups:
             0x4008f7:	not	esi
         '''
         cs = ConstraintSet()
@@ -37219,11 +37220,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NOT_3_symbolic(self):
-        ''' Instruction NOT_3 
-            Groups:  
+        ''' Instruction NOT_3
+            Groups:
             0x7ffff7a78242:	not	rax
         '''
         cs = ConstraintSet()
@@ -37262,11 +37263,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NOT_4_symbolic(self):
-        ''' Instruction NOT_4 
-            Groups:  
+        ''' Instruction NOT_4
+            Groups:
             0x7ffff7de5765:	not	r10
         '''
         cs = ConstraintSet()
@@ -37305,11 +37306,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NOT_5_symbolic(self):
-        ''' Instruction NOT_5 
-            Groups:  
+        ''' Instruction NOT_5
+            Groups:
             0x7ffff7de5765:	not	r10
         '''
         cs = ConstraintSet()
@@ -37348,11 +37349,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_NOT_6_symbolic(self):
-        ''' Instruction NOT_6 
-            Groups:  
+        ''' Instruction NOT_6
+            Groups:
             0x7ffff7de5765:	not	r10
         '''
         cs = ConstraintSet()
@@ -37391,11 +37392,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_OR_1_symbolic(self):
-        ''' Instruction OR_1 
-            Groups:  
+        ''' Instruction OR_1
+            Groups:
             0x7ffff7de6235:	or	r9d, eax
         '''
         cs = ConstraintSet()
@@ -37452,11 +37453,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_OR_2_symbolic(self):
-        ''' Instruction OR_2 
-            Groups:  
+        ''' Instruction OR_2
+            Groups:
             0x7ffff7de4344:	or	qword ptr [rsp], 0
         '''
         cs = ConstraintSet()
@@ -37563,11 +37564,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_OR_3_symbolic(self):
-        ''' Instruction OR_3 
-            Groups:  
+        ''' Instruction OR_3
+            Groups:
             0x7ffff7de3814:	or	qword ptr [rsp], 0
         '''
         cs = ConstraintSet()
@@ -37674,11 +37675,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_OR_4_symbolic(self):
-        ''' Instruction OR_4 
-            Groups:  
+        ''' Instruction OR_4
+            Groups:
             0x7ffff7de3814:	or	qword ptr [rsp], 0
         '''
         cs = ConstraintSet()
@@ -37785,11 +37786,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_OR_5_symbolic(self):
-        ''' Instruction OR_5 
-            Groups:  
+        ''' Instruction OR_5
+            Groups:
             0x40a38c:	or	qword ptr [rsp], 0
         '''
         cs = ConstraintSet()
@@ -37896,11 +37897,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_OR_6_symbolic(self):
-        ''' Instruction OR_6 
-            Groups:  
+        ''' Instruction OR_6
+            Groups:
             0x7ffff7de6212:	or	r9d, eax
         '''
         cs = ConstraintSet()
@@ -37957,11 +37958,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PCMPEQB_1_symbolic(self):
-        ''' Instruction PCMPEQB_1 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_1
+            Groups: sse2
             0x457e12:	pcmpeqb	xmm5, xmm2
         '''
         cs = ConstraintSet()
@@ -38005,11 +38006,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PCMPEQB_2_symbolic(self):
-        ''' Instruction PCMPEQB_2 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_2
+            Groups: sse2
             0x4184bf:	pcmpeqb	xmm12, xmm8
         '''
         cs = ConstraintSet()
@@ -38055,11 +38056,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PCMPEQB_3_symbolic(self):
-        ''' Instruction PCMPEQB_3 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_3
+            Groups: sse2
             0x457a26:	pcmpeqb	xmm0, xmm7
         '''
         cs = ConstraintSet()
@@ -38103,11 +38104,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PCMPEQB_4_symbolic(self):
-        ''' Instruction PCMPEQB_4 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_4
+            Groups: sse2
             0x4579e8:	pcmpeqb	xmm0, xmm1
         '''
         cs = ConstraintSet()
@@ -38151,11 +38152,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PCMPEQB_5_symbolic(self):
-        ''' Instruction PCMPEQB_5 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_5
+            Groups: sse2
             0x7ffff7ab7ac6:	pcmpeqb	xmm0, xmm7
         '''
         cs = ConstraintSet()
@@ -38199,11 +38200,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PCMPEQB_6_symbolic(self):
-        ''' Instruction PCMPEQB_6 
-            Groups: sse2 
+        ''' Instruction PCMPEQB_6
+            Groups: sse2
             0x7ffff7ab79b1:	pcmpeqb	xmm0, xmm1
         '''
         cs = ConstraintSet()
@@ -38247,11 +38248,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMINUB_1_symbolic(self):
-        ''' Instruction PMINUB_1 
-            Groups: sse2 
+        ''' Instruction PMINUB_1
+            Groups: sse2
             0x41b15f:	pminub	xmm8, xmmword ptr [rax + 0x10]
         '''
         cs = ConstraintSet()
@@ -38396,11 +38397,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMINUB_2_symbolic(self):
-        ''' Instruction PMINUB_2 
-            Groups: sse2 
+        ''' Instruction PMINUB_2
+            Groups: sse2
             0x41b142:	pminub	xmm8, xmmword ptr [rax + 0x70]
         '''
         cs = ConstraintSet()
@@ -38545,11 +38546,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMINUB_3_symbolic(self):
-        ''' Instruction PMINUB_3 
-            Groups: sse2 
+        ''' Instruction PMINUB_3
+            Groups: sse2
             0x457af6:	pminub	xmm0, xmm2
         '''
         cs = ConstraintSet()
@@ -38593,11 +38594,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMINUB_4_symbolic(self):
-        ''' Instruction PMINUB_4 
-            Groups: sse2 
+        ''' Instruction PMINUB_4
+            Groups: sse2
             0x41b13c:	pminub	xmm8, xmmword ptr [rax + 0x60]
         '''
         cs = ConstraintSet()
@@ -38742,11 +38743,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMINUB_5_symbolic(self):
-        ''' Instruction PMINUB_5 
-            Groups: sse2 
+        ''' Instruction PMINUB_5
+            Groups: sse2
             0x457ee2:	pminub	xmm0, xmm5
         '''
         cs = ConstraintSet()
@@ -38790,11 +38791,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMINUB_6_symbolic(self):
-        ''' Instruction PMINUB_6 
-            Groups: sse2 
+        ''' Instruction PMINUB_6
+            Groups: sse2
             0x7ffff7ab7abe:	pminub	xmm0, xmm4
         '''
         cs = ConstraintSet()
@@ -38838,11 +38839,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMOVMSKB_1_symbolic(self):
-        ''' Instruction PMOVMSKB_1 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_1
+            Groups: sse2
             0x4184f1:	pmovmskb	ecx, xmm11
         '''
         cs = ConstraintSet()
@@ -38888,11 +38889,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMOVMSKB_2_symbolic(self):
-        ''' Instruction PMOVMSKB_2 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_2
+            Groups: sse2
             0x457d6e:	pmovmskb	r10d, xmm3
         '''
         cs = ConstraintSet()
@@ -38938,11 +38939,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMOVMSKB_3_symbolic(self):
-        ''' Instruction PMOVMSKB_3 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_3
+            Groups: sse2
             0x457ddd:	pmovmskb	edx, xmm3
         '''
         cs = ConstraintSet()
@@ -38986,11 +38987,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMOVMSKB_4_symbolic(self):
-        ''' Instruction PMOVMSKB_4 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_4
+            Groups: sse2
             0x7ffff7ab5ce1:	pmovmskb	ecx, xmm11
         '''
         cs = ConstraintSet()
@@ -39036,11 +39037,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMOVMSKB_5_symbolic(self):
-        ''' Instruction PMOVMSKB_5 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_5
+            Groups: sse2
             0x4184e7:	pmovmskb	edx, xmm9
         '''
         cs = ConstraintSet()
@@ -39086,11 +39087,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PMOVMSKB_6_symbolic(self):
-        ''' Instruction PMOVMSKB_6 
-            Groups: sse2 
+        ''' Instruction PMOVMSKB_6
+            Groups: sse2
             0x4184c4:	pmovmskb	edx, xmm12
         '''
         cs = ConstraintSet()
@@ -39136,11 +39137,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POP_1_symbolic(self):
-        ''' Instruction POP_1 
-            Groups: mode64 
+        ''' Instruction POP_1
+            Groups: mode64
             0x7ffff7de3b0b:	pop	rbp
         '''
         cs = ConstraintSet()
@@ -39281,11 +39282,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POP_2_symbolic(self):
-        ''' Instruction POP_2 
-            Groups: mode64 
+        ''' Instruction POP_2
+            Groups: mode64
             0x7ffff7dea3ad:	pop	r14
         '''
         cs = ConstraintSet()
@@ -39431,11 +39432,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POP_3_symbolic(self):
-        ''' Instruction POP_3 
-            Groups: mode64 
+        ''' Instruction POP_3
+            Groups: mode64
             0x4624e4:	pop	r12
         '''
         cs = ConstraintSet()
@@ -39581,11 +39582,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POP_4_symbolic(self):
-        ''' Instruction POP_4 
-            Groups: mode64 
+        ''' Instruction POP_4
+            Groups: mode64
             0x6ff233:	pop	rdx
         '''
         cs = ConstraintSet()
@@ -39729,11 +39730,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POP_5_symbolic(self):
-        ''' Instruction POP_5 
-            Groups: mode64 
+        ''' Instruction POP_5
+            Groups: mode64
             0x632f8a:	pop	rdx
         '''
         cs = ConstraintSet()
@@ -39877,11 +39878,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POP_6_symbolic(self):
-        ''' Instruction POP_6 
-            Groups: mode64 
+        ''' Instruction POP_6
+            Groups: mode64
             0x737db3:	pop	rdx
         '''
         cs = ConstraintSet()
@@ -40025,11 +40026,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POR_1_symbolic(self):
-        ''' Instruction POR_1 
-            Groups: sse2 
+        ''' Instruction POR_1
+            Groups: sse2
             0x7ffff7df43a7:	por	xmm0, xmm4
         '''
         cs = ConstraintSet()
@@ -40073,11 +40074,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POR_2_symbolic(self):
-        ''' Instruction POR_2 
-            Groups: sse2 
+        ''' Instruction POR_2
+            Groups: sse2
             0x7ffff7df43a7:	por	xmm0, xmm4
         '''
         cs = ConstraintSet()
@@ -40121,11 +40122,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POR_3_symbolic(self):
-        ''' Instruction POR_3 
-            Groups: sse2 
+        ''' Instruction POR_3
+            Groups: sse2
             0x7ffff7df43a7:	por	xmm0, xmm4
         '''
         cs = ConstraintSet()
@@ -40169,11 +40170,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POR_4_symbolic(self):
-        ''' Instruction POR_4 
-            Groups: sse2 
+        ''' Instruction POR_4
+            Groups: sse2
             0x7ffff7df43a7:	por	xmm0, xmm4
         '''
         cs = ConstraintSet()
@@ -40217,11 +40218,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POR_5_symbolic(self):
-        ''' Instruction POR_5 
-            Groups: sse2 
+        ''' Instruction POR_5
+            Groups: sse2
             0x7ffff7df4412:	por	xmm0, xmm3
         '''
         cs = ConstraintSet()
@@ -40265,11 +40266,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_POR_6_symbolic(self):
-        ''' Instruction POR_6 
-            Groups: sse2 
+        ''' Instruction POR_6
+            Groups: sse2
             0x7ffff7ac0b17:	por	xmm0, xmm4
         '''
         cs = ConstraintSet()
@@ -40313,11 +40314,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSHUFD_1_symbolic(self):
-        ''' Instruction PSHUFD_1 
-            Groups: sse2 
+        ''' Instruction PSHUFD_1
+            Groups: sse2
             0x7ffff7ac0af8:	pshufd	xmm1, xmm1, 0
         '''
         cs = ConstraintSet()
@@ -40360,11 +40361,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSHUFD_2_symbolic(self):
-        ''' Instruction PSHUFD_2 
-            Groups: sse2 
+        ''' Instruction PSHUFD_2
+            Groups: sse2
             0x7ffff7ac0af8:	pshufd	xmm1, xmm1, 0
         '''
         cs = ConstraintSet()
@@ -40407,11 +40408,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSHUFD_3_symbolic(self):
-        ''' Instruction PSHUFD_3 
-            Groups: sse2 
+        ''' Instruction PSHUFD_3
+            Groups: sse2
             0x7ffff7df4388:	pshufd	xmm1, xmm1, 0
         '''
         cs = ConstraintSet()
@@ -40454,11 +40455,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSHUFD_4_symbolic(self):
-        ''' Instruction PSHUFD_4 
-            Groups: sse2 
+        ''' Instruction PSHUFD_4
+            Groups: sse2
             0x7ffff7ab799a:	pshufd	xmm1, xmm1, 0
         '''
         cs = ConstraintSet()
@@ -40501,11 +40502,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSHUFD_5_symbolic(self):
-        ''' Instruction PSHUFD_5 
-            Groups: sse2 
+        ''' Instruction PSHUFD_5
+            Groups: sse2
             0x7ffff7df4388:	pshufd	xmm1, xmm1, 0
         '''
         cs = ConstraintSet()
@@ -40548,11 +40549,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PSHUFD_6_symbolic(self):
-        ''' Instruction PSHUFD_6 
-            Groups: sse2 
+        ''' Instruction PSHUFD_6
+            Groups: sse2
             0x7ffff7ab799a:	pshufd	xmm1, xmm1, 0
         '''
         cs = ConstraintSet()
@@ -40595,11 +40596,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLBW_1_symbolic(self):
-        ''' Instruction PUNPCKLBW_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_1
+            Groups: sse2
             0x7ffff7df437b:	punpcklbw	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -40640,11 +40641,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLBW_2_symbolic(self):
-        ''' Instruction PUNPCKLBW_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_2
+            Groups: sse2
             0x7ffff7ac0aeb:	punpcklbw	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -40685,11 +40686,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLBW_3_symbolic(self):
-        ''' Instruction PUNPCKLBW_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_3
+            Groups: sse2
             0x7ffff7ac0aeb:	punpcklbw	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -40730,11 +40731,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLBW_4_symbolic(self):
-        ''' Instruction PUNPCKLBW_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_4
+            Groups: sse2
             0x4579cc:	punpcklbw	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -40775,11 +40776,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLBW_5_symbolic(self):
-        ''' Instruction PUNPCKLBW_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_5
+            Groups: sse2
             0x45794c:	punpcklbw	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -40820,11 +40821,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLBW_6_symbolic(self):
-        ''' Instruction PUNPCKLBW_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKLBW_6
+            Groups: sse2
             0x7ffff7df437b:	punpcklbw	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -40865,11 +40866,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLWD_1_symbolic(self):
-        ''' Instruction PUNPCKLWD_1 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_1
+            Groups: sse2
             0x457a46:	punpcklwd	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -40910,11 +40911,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLWD_2_symbolic(self):
-        ''' Instruction PUNPCKLWD_2 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_2
+            Groups: sse2
             0x421b24:	punpcklwd	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -40955,11 +40956,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLWD_3_symbolic(self):
-        ''' Instruction PUNPCKLWD_3 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_3
+            Groups: sse2
             0x7ffff7df4384:	punpcklwd	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -41000,11 +41001,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLWD_4_symbolic(self):
-        ''' Instruction PUNPCKLWD_4 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_4
+            Groups: sse2
             0x7ffff7df4384:	punpcklwd	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -41045,11 +41046,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLWD_5_symbolic(self):
-        ''' Instruction PUNPCKLWD_5 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_5
+            Groups: sse2
             0x45a576:	punpcklwd	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -41090,11 +41091,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUNPCKLWD_6_symbolic(self):
-        ''' Instruction PUNPCKLWD_6 
-            Groups: sse2 
+        ''' Instruction PUNPCKLWD_6
+            Groups: sse2
             0x7ffff7ac0af4:	punpcklwd	xmm1, xmm1
         '''
         cs = ConstraintSet()
@@ -41135,11 +41136,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUSH_1_symbolic(self):
-        ''' Instruction PUSH_1 
-            Groups: mode64 
+        ''' Instruction PUSH_1
+            Groups: mode64
             0x7ffff7de407a:	push	r12
         '''
         cs = ConstraintSet()
@@ -41285,11 +41286,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUSH_2_symbolic(self):
-        ''' Instruction PUSH_2 
-            Groups: mode64 
+        ''' Instruction PUSH_2
+            Groups: mode64
             0x722546:	push	0xff00
         '''
         cs = ConstraintSet()
@@ -41438,11 +41439,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUSH_3_symbolic(self):
-        ''' Instruction PUSH_3 
-            Groups: mode64 
+        ''' Instruction PUSH_3
+            Groups: mode64
             0x744c3e:	push	0xf00aabb
         '''
         cs = ConstraintSet()
@@ -41591,11 +41592,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUSH_4_symbolic(self):
-        ''' Instruction PUSH_4 
-            Groups: mode64 
+        ''' Instruction PUSH_4
+            Groups: mode64
             0x6651fa:	push	rax
         '''
         cs = ConstraintSet()
@@ -41739,11 +41740,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUSH_5_symbolic(self):
-        ''' Instruction PUSH_5 
-            Groups: mode64 
+        ''' Instruction PUSH_5
+            Groups: mode64
             0x7ffff7de4330:	push	rbp
         '''
         cs = ConstraintSet()
@@ -41884,11 +41885,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PUSH_6_symbolic(self):
-        ''' Instruction PUSH_6 
-            Groups: mode64 
+        ''' Instruction PUSH_6
+            Groups: mode64
             0x75c167:	push	0xf00aabb
         '''
         cs = ConstraintSet()
@@ -42037,11 +42038,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PXOR_1_symbolic(self):
-        ''' Instruction PXOR_1 
-            Groups: sse2 
+        ''' Instruction PXOR_1
+            Groups: sse2
             0x418490:	pxor	xmm8, xmm8
         '''
         cs = ConstraintSet()
@@ -42084,11 +42085,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PXOR_2_symbolic(self):
-        ''' Instruction PXOR_2 
-            Groups: sse2 
+        ''' Instruction PXOR_2
+            Groups: sse2
             0x41848f:	pxor	xmm11, xmm11
         '''
         cs = ConstraintSet()
@@ -42131,11 +42132,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PXOR_3_symbolic(self):
-        ''' Instruction PXOR_3 
-            Groups: sse2 
+        ''' Instruction PXOR_3
+            Groups: sse2
             0x4184bf:	pxor	xmm11, xmm11
         '''
         cs = ConstraintSet()
@@ -42178,11 +42179,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PXOR_4_symbolic(self):
-        ''' Instruction PXOR_4 
-            Groups: sse2 
+        ''' Instruction PXOR_4
+            Groups: sse2
             0x418480:	pxor	xmm8, xmm8
         '''
         cs = ConstraintSet()
@@ -42225,11 +42226,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PXOR_5_symbolic(self):
-        ''' Instruction PXOR_5 
-            Groups: sse2 
+        ''' Instruction PXOR_5
+            Groups: sse2
             0x4183b5:	pxor	xmm9, xmm9
         '''
         cs = ConstraintSet()
@@ -42272,11 +42273,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_PXOR_6_symbolic(self):
-        ''' Instruction PXOR_6 
-            Groups: sse2 
+        ''' Instruction PXOR_6
+            Groups: sse2
             0x418495:	pxor	xmm9, xmm9
         '''
         cs = ConstraintSet()
@@ -42319,12 +42320,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_RET_1_symbolic(self):
-        ''' Instruction RET_1 
-            Groups: ret, mode64 
-            0x7ffff7de3748:	ret	
+        ''' Instruction RET_1
+            Groups: ret, mode64
+            0x7ffff7de3748:	ret
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -42464,12 +42465,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_RET_2_symbolic(self):
-        ''' Instruction RET_2 
-            Groups: ret, mode64 
-            0x7ffff7df537f:	ret	
+        ''' Instruction RET_2
+            Groups: ret, mode64
+            0x7ffff7df537f:	ret
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -42609,12 +42610,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_RET_3_symbolic(self):
-        ''' Instruction RET_3 
-            Groups: ret, mode64 
-            0x406e67:	ret	
+        ''' Instruction RET_3
+            Groups: ret, mode64
+            0x406e67:	ret
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -42754,12 +42755,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_RET_4_symbolic(self):
-        ''' Instruction RET_4 
-            Groups: ret, mode64 
-            0x7ffff7de2af3:	ret	
+        ''' Instruction RET_4
+            Groups: ret, mode64
+            0x7ffff7de2af3:	ret
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -42899,12 +42900,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_RET_5_symbolic(self):
-        ''' Instruction RET_5 
-            Groups: ret, mode64 
-            0x4118a1:	ret	
+        ''' Instruction RET_5
+            Groups: ret, mode64
+            0x4118a1:	ret
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -43044,12 +43045,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_RET_6_symbolic(self):
-        ''' Instruction RET_6 
-            Groups: ret, mode64 
-            0x40fc8d:	ret	
+        ''' Instruction RET_6
+            Groups: ret, mode64
+            0x40fc8d:	ret
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -43189,11 +43190,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROL_1_symbolic(self):
-        ''' Instruction ROL_1 
-            Groups:  
+        ''' Instruction ROL_1
+            Groups:
             0x44272a:	rol	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43240,11 +43241,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROL_2_symbolic(self):
-        ''' Instruction ROL_2 
-            Groups:  
+        ''' Instruction ROL_2
+            Groups:
             0x7ffff7df408d:	rol	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43291,11 +43292,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROL_3_symbolic(self):
-        ''' Instruction ROL_3 
-            Groups:  
+        ''' Instruction ROL_3
+            Groups:
             0x409c7a:	rol	rdi, 0x11
         '''
         cs = ConstraintSet()
@@ -43342,11 +43343,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROL_4_symbolic(self):
-        ''' Instruction ROL_4 
-            Groups:  
+        ''' Instruction ROL_4
+            Groups:
             0x40725a:	rol	rdi, 0x11
         '''
         cs = ConstraintSet()
@@ -43393,11 +43394,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROL_5_symbolic(self):
-        ''' Instruction ROL_5 
-            Groups:  
+        ''' Instruction ROL_5
+            Groups:
             0x4452b5:	rol	rdx, 0x11
         '''
         cs = ConstraintSet()
@@ -43444,11 +43445,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROL_6_symbolic(self):
-        ''' Instruction ROL_6 
-            Groups:  
+        ''' Instruction ROL_6
+            Groups:
             0x7ffff7a6220a:	rol	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43495,11 +43496,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROR_1_symbolic(self):
-        ''' Instruction ROR_1 
-            Groups:  
+        ''' Instruction ROR_1
+            Groups:
             0x406f53:	ror	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43546,11 +43547,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROR_2_symbolic(self):
-        ''' Instruction ROR_2 
-            Groups:  
+        ''' Instruction ROR_2
+            Groups:
             0x7ffff7a65253:	ror	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43597,11 +43598,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROR_3_symbolic(self):
-        ''' Instruction ROR_3 
-            Groups:  
+        ''' Instruction ROR_3
+            Groups:
             0x406fd3:	ror	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43648,11 +43649,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROR_4_symbolic(self):
-        ''' Instruction ROR_4 
-            Groups:  
+        ''' Instruction ROR_4
+            Groups:
             0x7ffff7a65253:	ror	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43699,11 +43700,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROR_5_symbolic(self):
-        ''' Instruction ROR_5 
-            Groups:  
+        ''' Instruction ROR_5
+            Groups:
             0x406f53:	ror	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43750,11 +43751,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_ROR_6_symbolic(self):
-        ''' Instruction ROR_6 
-            Groups:  
+        ''' Instruction ROR_6
+            Groups:
             0x406fc3:	ror	rax, 0x11
         '''
         cs = ConstraintSet()
@@ -43801,11 +43802,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SAR_1_symbolic(self):
-        ''' Instruction SAR_1 
-            Groups:  
+        ''' Instruction SAR_1
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         cs = ConstraintSet()
@@ -43861,11 +43862,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SAR_2_symbolic(self):
-        ''' Instruction SAR_2 
-            Groups:  
+        ''' Instruction SAR_2
+            Groups:
             0x7ffff7acfc78:	sar	r8d, 0x1f
         '''
         cs = ConstraintSet()
@@ -43921,11 +43922,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SAR_3_symbolic(self):
-        ''' Instruction SAR_3 
-            Groups:  
+        ''' Instruction SAR_3
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         cs = ConstraintSet()
@@ -43981,11 +43982,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SAR_4_symbolic(self):
-        ''' Instruction SAR_4 
-            Groups:  
+        ''' Instruction SAR_4
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         cs = ConstraintSet()
@@ -44041,11 +44042,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SAR_5_symbolic(self):
-        ''' Instruction SAR_5 
-            Groups:  
+        ''' Instruction SAR_5
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         cs = ConstraintSet()
@@ -44101,11 +44102,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SAR_6_symbolic(self):
-        ''' Instruction SAR_6 
-            Groups:  
+        ''' Instruction SAR_6
+            Groups:
             0x7ffff7de4085:	sar	rax, 2
         '''
         cs = ConstraintSet()
@@ -44161,11 +44162,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SCASB_1_symbolic(self):
-        ''' Instruction SCASB_1 
-            Groups:  
+        ''' Instruction SCASB_1
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -44309,11 +44310,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SCASB_2_symbolic(self):
-        ''' Instruction SCASB_2 
-            Groups:  
+        ''' Instruction SCASB_2
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -44457,11 +44458,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SCASB_3_symbolic(self):
-        ''' Instruction SCASB_3 
-            Groups:  
+        ''' Instruction SCASB_3
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -44605,11 +44606,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SCASB_4_symbolic(self):
-        ''' Instruction SCASB_4 
-            Groups:  
+        ''' Instruction SCASB_4
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -44753,11 +44754,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SCASB_5_symbolic(self):
-        ''' Instruction SCASB_5 
-            Groups:  
+        ''' Instruction SCASB_5
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -44901,11 +44902,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SCASB_6_symbolic(self):
-        ''' Instruction SCASB_6 
-            Groups:  
+        ''' Instruction SCASB_6
+            Groups:
             0x7ffff7a78233:	repne scasb	al, byte ptr [rdi]
         '''
         cs = ConstraintSet()
@@ -45049,11 +45050,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETA_1_symbolic(self):
-        ''' Instruction SETA_1 
-            Groups:  
+        ''' Instruction SETA_1
+            Groups:
             0x5555555548c2:	seta	dl
         '''
         cs = ConstraintSet()
@@ -45096,11 +45097,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETBE_1_symbolic(self):
-        ''' Instruction SETBE_1 
-            Groups:  
+        ''' Instruction SETBE_1
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         cs = ConstraintSet()
@@ -45145,11 +45146,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETBE_2_symbolic(self):
-        ''' Instruction SETBE_2 
-            Groups:  
+        ''' Instruction SETBE_2
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         cs = ConstraintSet()
@@ -45194,11 +45195,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETBE_3_symbolic(self):
-        ''' Instruction SETBE_3 
-            Groups:  
+        ''' Instruction SETBE_3
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         cs = ConstraintSet()
@@ -45243,11 +45244,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETBE_4_symbolic(self):
-        ''' Instruction SETBE_4 
-            Groups:  
+        ''' Instruction SETBE_4
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         cs = ConstraintSet()
@@ -45292,11 +45293,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETBE_5_symbolic(self):
-        ''' Instruction SETBE_5 
-            Groups:  
+        ''' Instruction SETBE_5
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         cs = ConstraintSet()
@@ -45341,11 +45342,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETBE_6_symbolic(self):
-        ''' Instruction SETBE_6 
-            Groups:  
+        ''' Instruction SETBE_6
+            Groups:
             0x7ffff7de6207:	setbe	r9b
         '''
         cs = ConstraintSet()
@@ -45390,11 +45391,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETB_1_symbolic(self):
-        ''' Instruction SETB_1 
-            Groups:  
+        ''' Instruction SETB_1
+            Groups:
             0x4342ea:	setb	al
         '''
         cs = ConstraintSet()
@@ -45435,11 +45436,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETB_2_symbolic(self):
-        ''' Instruction SETB_2 
-            Groups:  
+        ''' Instruction SETB_2
+            Groups:
             0x43426a:	setb	al
         '''
         cs = ConstraintSet()
@@ -45480,11 +45481,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETB_3_symbolic(self):
-        ''' Instruction SETB_3 
-            Groups:  
+        ''' Instruction SETB_3
+            Groups:
             0x4346ca:	setb	al
         '''
         cs = ConstraintSet()
@@ -45525,11 +45526,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETB_4_symbolic(self):
-        ''' Instruction SETB_4 
-            Groups:  
+        ''' Instruction SETB_4
+            Groups:
             0x4342ea:	setb	al
         '''
         cs = ConstraintSet()
@@ -45570,11 +45571,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETB_5_symbolic(self):
-        ''' Instruction SETB_5 
-            Groups:  
+        ''' Instruction SETB_5
+            Groups:
             0x4342ea:	setb	al
         '''
         cs = ConstraintSet()
@@ -45615,11 +45616,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETB_6_symbolic(self):
-        ''' Instruction SETB_6 
-            Groups:  
+        ''' Instruction SETB_6
+            Groups:
             0x43430a:	setb	al
         '''
         cs = ConstraintSet()
@@ -45660,11 +45661,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETE_1_symbolic(self):
-        ''' Instruction SETE_1 
-            Groups:  
+        ''' Instruction SETE_1
+            Groups:
             0x7ffff7de36a2:	sete	r10b
         '''
         cs = ConstraintSet()
@@ -45707,11 +45708,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETE_2_symbolic(self):
-        ''' Instruction SETE_2 
-            Groups:  
+        ''' Instruction SETE_2
+            Groups:
             0x7ffff7de620f:	sete	al
         '''
         cs = ConstraintSet()
@@ -45752,11 +45753,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETE_3_symbolic(self):
-        ''' Instruction SETE_3 
-            Groups:  
+        ''' Instruction SETE_3
+            Groups:
             0x7ffff7de6229:	sete	al
         '''
         cs = ConstraintSet()
@@ -45797,11 +45798,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETE_4_symbolic(self):
-        ''' Instruction SETE_4 
-            Groups:  
+        ''' Instruction SETE_4
+            Groups:
             0x7ffff7de6229:	sete	al
         '''
         cs = ConstraintSet()
@@ -45842,11 +45843,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETE_5_symbolic(self):
-        ''' Instruction SETE_5 
-            Groups:  
+        ''' Instruction SETE_5
+            Groups:
             0x432458:	sete	r9b
         '''
         cs = ConstraintSet()
@@ -45889,11 +45890,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETE_6_symbolic(self):
-        ''' Instruction SETE_6 
-            Groups:  
+        ''' Instruction SETE_6
+            Groups:
             0x7ffff7de620f:	sete	al
         '''
         cs = ConstraintSet()
@@ -45934,11 +45935,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETG_1_symbolic(self):
-        ''' Instruction SETG_1 
-            Groups:  
+        ''' Instruction SETG_1
+            Groups:
             0x555555567df4:	setg	r9b
         '''
         cs = ConstraintSet()
@@ -45985,11 +45986,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETG_2_symbolic(self):
-        ''' Instruction SETG_2 
-            Groups:  
+        ''' Instruction SETG_2
+            Groups:
             0x555555567df4:	setg	r9b
         '''
         cs = ConstraintSet()
@@ -46036,11 +46037,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETLE_1_symbolic(self):
-        ''' Instruction SETLE_1 
-            Groups:  
+        ''' Instruction SETLE_1
+            Groups:
             0x448ae0:	setle	dl
         '''
         cs = ConstraintSet()
@@ -46085,11 +46086,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETLE_2_symbolic(self):
-        ''' Instruction SETLE_2 
-            Groups:  
+        ''' Instruction SETLE_2
+            Groups:
             0x448ae0:	setle	dl
         '''
         cs = ConstraintSet()
@@ -46134,11 +46135,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETNE_1_symbolic(self):
-        ''' Instruction SETNE_1 
-            Groups:  
+        ''' Instruction SETNE_1
+            Groups:
             0x410ee5:	setne	cl
         '''
         cs = ConstraintSet()
@@ -46179,11 +46180,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETNE_2_symbolic(self):
-        ''' Instruction SETNE_2 
-            Groups:  
+        ''' Instruction SETNE_2
+            Groups:
             0x436d20:	setne	dl
         '''
         cs = ConstraintSet()
@@ -46224,11 +46225,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETNE_3_symbolic(self):
-        ''' Instruction SETNE_3 
-            Groups:  
+        ''' Instruction SETNE_3
+            Groups:
             0x410f05:	setne	cl
         '''
         cs = ConstraintSet()
@@ -46269,11 +46270,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETNE_4_symbolic(self):
-        ''' Instruction SETNE_4 
-            Groups:  
+        ''' Instruction SETNE_4
+            Groups:
             0x436f20:	setne	dl
         '''
         cs = ConstraintSet()
@@ -46314,11 +46315,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETNE_5_symbolic(self):
-        ''' Instruction SETNE_5 
-            Groups:  
+        ''' Instruction SETNE_5
+            Groups:
             0x4120f9:	setne	cl
         '''
         cs = ConstraintSet()
@@ -46359,11 +46360,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SETNE_6_symbolic(self):
-        ''' Instruction SETNE_6 
-            Groups:  
+        ''' Instruction SETNE_6
+            Groups:
             0x7ffff7de5de4:	setne	al
         '''
         cs = ConstraintSet()
@@ -46404,11 +46405,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHLX_1_symbolic(self):
-        ''' Instruction SHLX_1 
-            Groups: bmi2 
+        ''' Instruction SHLX_1
+            Groups: bmi2
             0x55555556594d:	shlx	rax, qword ptr [r14 + 0x50], rax
         '''
         cs = ConstraintSet()
@@ -46505,11 +46506,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHLX_2_symbolic(self):
-        ''' Instruction SHLX_2 
-            Groups: bmi2 
+        ''' Instruction SHLX_2
+            Groups: bmi2
             0x55555556544a:	shlx	rax, rdx, rax
         '''
         cs = ConstraintSet()
@@ -46555,11 +46556,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHLX_3_symbolic(self):
-        ''' Instruction SHLX_3 
-            Groups: bmi2 
+        ''' Instruction SHLX_3
+            Groups: bmi2
             0x55555556544a:	shlx	rax, rdx, rax
         '''
         cs = ConstraintSet()
@@ -46605,11 +46606,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHLX_4_symbolic(self):
-        ''' Instruction SHLX_4 
-            Groups: bmi2 
+        ''' Instruction SHLX_4
+            Groups: bmi2
             0x55555556594d:	shlx	rax, qword ptr [r14 + 0x50], rax
         '''
         cs = ConstraintSet()
@@ -46706,11 +46707,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHL_1_symbolic(self):
-        ''' Instruction SHL_1 
-            Groups:  
+        ''' Instruction SHL_1
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         cs = ConstraintSet()
@@ -46763,11 +46764,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHL_2_symbolic(self):
-        ''' Instruction SHL_2 
-            Groups:  
+        ''' Instruction SHL_2
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         cs = ConstraintSet()
@@ -46820,11 +46821,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHL_3_symbolic(self):
-        ''' Instruction SHL_3 
-            Groups:  
+        ''' Instruction SHL_3
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         cs = ConstraintSet()
@@ -46877,11 +46878,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHL_4_symbolic(self):
-        ''' Instruction SHL_4 
-            Groups:  
+        ''' Instruction SHL_4
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         cs = ConstraintSet()
@@ -46934,11 +46935,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHL_5_symbolic(self):
-        ''' Instruction SHL_5 
-            Groups:  
+        ''' Instruction SHL_5
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         cs = ConstraintSet()
@@ -46991,11 +46992,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHL_6_symbolic(self):
-        ''' Instruction SHL_6 
-            Groups:  
+        ''' Instruction SHL_6
+            Groups:
             0x7ffff7de438f:	shl	rsi, 5
         '''
         cs = ConstraintSet()
@@ -47048,11 +47049,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHR_1_symbolic(self):
-        ''' Instruction SHR_1 
-            Groups:  
+        ''' Instruction SHR_1
+            Groups:
             0x7ffff7de405d:	shr	rdx, 1
         '''
         cs = ConstraintSet()
@@ -47103,11 +47104,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHR_2_symbolic(self):
-        ''' Instruction SHR_2 
-            Groups:  
+        ''' Instruction SHR_2
+            Groups:
             0x7ffff7de391d:	shr	rsi, cl
         '''
         cs = ConstraintSet()
@@ -47161,11 +47162,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHR_3_symbolic(self):
-        ''' Instruction SHR_3 
-            Groups:  
+        ''' Instruction SHR_3
+            Groups:
             0x7ffff7de3926:	shr	rsi, cl
         '''
         cs = ConstraintSet()
@@ -47219,11 +47220,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHR_4_symbolic(self):
-        ''' Instruction SHR_4 
-            Groups:  
+        ''' Instruction SHR_4
+            Groups:
             0x7ffff7de61d2:	shr	al, 4
         '''
         cs = ConstraintSet()
@@ -47274,11 +47275,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHR_5_symbolic(self):
-        ''' Instruction SHR_5 
-            Groups:  
+        ''' Instruction SHR_5
+            Groups:
             0x7ffff7de391d:	shr	rsi, cl
         '''
         cs = ConstraintSet()
@@ -47332,11 +47333,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SHR_6_symbolic(self):
-        ''' Instruction SHR_6 
-            Groups:  
+        ''' Instruction SHR_6
+            Groups:
             0x4322bd:	shr	rax, 1
         '''
         cs = ConstraintSet()
@@ -47387,12 +47388,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STC_1_symbolic(self):
-        ''' Instruction STC_1 
-            Groups:  
-            0x5667fa:	stc	
+        ''' Instruction STC_1
+            Groups:
+            0x5667fa:	stc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -47426,12 +47427,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STC_2_symbolic(self):
-        ''' Instruction STC_2 
-            Groups:  
-            0x42a889:	stc	
+        ''' Instruction STC_2
+            Groups:
+            0x42a889:	stc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -47465,12 +47466,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STC_3_symbolic(self):
-        ''' Instruction STC_3 
-            Groups:  
-            0x60b5d5:	stc	
+        ''' Instruction STC_3
+            Groups:
+            0x60b5d5:	stc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -47504,12 +47505,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STC_4_symbolic(self):
-        ''' Instruction STC_4 
-            Groups:  
-            0x52da4d:	stc	
+        ''' Instruction STC_4
+            Groups:
+            0x52da4d:	stc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -47543,12 +47544,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STC_5_symbolic(self):
-        ''' Instruction STC_5 
-            Groups:  
-            0x56ba0e:	stc	
+        ''' Instruction STC_5
+            Groups:
+            0x56ba0e:	stc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -47582,12 +47583,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STC_6_symbolic(self):
-        ''' Instruction STC_6 
-            Groups:  
-            0x61a7d6:	stc	
+        ''' Instruction STC_6
+            Groups:
+            0x61a7d6:	stc
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -47621,11 +47622,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSD_1_symbolic(self):
-        ''' Instruction STOSD_1 
-            Groups:  
+        ''' Instruction STOSD_1
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         cs = ConstraintSet()
@@ -47768,11 +47769,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSD_2_symbolic(self):
-        ''' Instruction STOSD_2 
-            Groups:  
+        ''' Instruction STOSD_2
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         cs = ConstraintSet()
@@ -47915,11 +47916,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSD_3_symbolic(self):
-        ''' Instruction STOSD_3 
-            Groups:  
+        ''' Instruction STOSD_3
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         cs = ConstraintSet()
@@ -48062,11 +48063,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSD_4_symbolic(self):
-        ''' Instruction STOSD_4 
-            Groups:  
+        ''' Instruction STOSD_4
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         cs = ConstraintSet()
@@ -48209,11 +48210,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSD_5_symbolic(self):
-        ''' Instruction STOSD_5 
-            Groups:  
+        ''' Instruction STOSD_5
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         cs = ConstraintSet()
@@ -48356,11 +48357,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSD_6_symbolic(self):
-        ''' Instruction STOSD_6 
-            Groups:  
+        ''' Instruction STOSD_6
+            Groups:
             0x5555555547c2:	rep stosd	dword ptr [rdi], eax
         '''
         cs = ConstraintSet()
@@ -48503,11 +48504,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSQ_1_symbolic(self):
-        ''' Instruction STOSQ_1 
-            Groups:  
+        ''' Instruction STOSQ_1
+            Groups:
             0x7ffff7ded09b:	rep stosq	qword ptr [rdi], rax
         '''
         cs = ConstraintSet()
@@ -48652,11 +48653,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSQ_2_symbolic(self):
-        ''' Instruction STOSQ_2 
-            Groups:  
+        ''' Instruction STOSQ_2
+            Groups:
             0x7ffff7ded09b:	rep stosq	qword ptr [rdi], rax
         '''
         cs = ConstraintSet()
@@ -48801,11 +48802,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSQ_3_symbolic(self):
-        ''' Instruction STOSQ_3 
-            Groups:  
+        ''' Instruction STOSQ_3
+            Groups:
             0x7ffff7de5ebf:	rep stosq	qword ptr [rdi], rax
         '''
         cs = ConstraintSet()
@@ -48951,11 +48952,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSQ_4_symbolic(self):
-        ''' Instruction STOSQ_4 
-            Groups:  
+        ''' Instruction STOSQ_4
+            Groups:
             0x7ffff7ded09b:	rep stosq	qword ptr [rdi], rax
         '''
         cs = ConstraintSet()
@@ -49100,11 +49101,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSQ_5_symbolic(self):
-        ''' Instruction STOSQ_5 
-            Groups:  
+        ''' Instruction STOSQ_5
+            Groups:
             0x555555554895:	rep stosq	qword ptr [rdi], rax
         '''
         cs = ConstraintSet()
@@ -49249,11 +49250,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_STOSQ_6_symbolic(self):
-        ''' Instruction STOSQ_6 
-            Groups:  
+        ''' Instruction STOSQ_6
+            Groups:
             0x7ffff7ded09b:	rep stosq	qword ptr [rdi], rax
         '''
         cs = ConstraintSet()
@@ -49398,11 +49399,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SUB_1_symbolic(self):
-        ''' Instruction SUB_1 
-            Groups:  
+        ''' Instruction SUB_1
+            Groups:
             0x4326c3:	sub	rsp, 0x1020
         '''
         cs = ConstraintSet()
@@ -49467,11 +49468,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SUB_2_symbolic(self):
-        ''' Instruction SUB_2 
-            Groups:  
+        ''' Instruction SUB_2
+            Groups:
             0x40b6dd:	sub	rsp, 0x1028
         '''
         cs = ConstraintSet()
@@ -49536,11 +49537,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SUB_3_symbolic(self):
-        ''' Instruction SUB_3 
-            Groups:  
+        ''' Instruction SUB_3
+            Groups:
             0x7ffff7de406d:	sub	rsp, 8
         '''
         cs = ConstraintSet()
@@ -49599,11 +49600,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SUB_4_symbolic(self):
-        ''' Instruction SUB_4 
-            Groups:  
+        ''' Instruction SUB_4
+            Groups:
             0x7ffff7decc04:	sub	rsp, 0x1020
         '''
         cs = ConstraintSet()
@@ -49668,11 +49669,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SUB_5_symbolic(self):
-        ''' Instruction SUB_5 
-            Groups:  
+        ''' Instruction SUB_5
+            Groups:
             0x7ffff7de060d:	sub	rsp, 0x1020
         '''
         cs = ConstraintSet()
@@ -49737,11 +49738,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_SUB_6_symbolic(self):
-        ''' Instruction SUB_6 
-            Groups:  
+        ''' Instruction SUB_6
+            Groups:
             0x7ffff7deb22d:	sub	rsp, 0x1078
         '''
         cs = ConstraintSet()
@@ -49806,11 +49807,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_TEST_1_symbolic(self):
-        ''' Instruction TEST_1 
-            Groups:  
+        ''' Instruction TEST_1
+            Groups:
             0x7ffff7df459c:	test	al, al
         '''
         cs = ConstraintSet()
@@ -49862,11 +49863,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_TEST_2_symbolic(self):
-        ''' Instruction TEST_2 
-            Groups:  
+        ''' Instruction TEST_2
+            Groups:
             0x7ffff7df459c:	test	al, al
         '''
         cs = ConstraintSet()
@@ -49918,11 +49919,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_TEST_3_symbolic(self):
-        ''' Instruction TEST_3 
-            Groups:  
+        ''' Instruction TEST_3
+            Groups:
             0x7ffff7de3892:	test	r15d, r15d
         '''
         cs = ConstraintSet()
@@ -49976,11 +49977,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_TEST_4_symbolic(self):
-        ''' Instruction TEST_4 
-            Groups:  
+        ''' Instruction TEST_4
+            Groups:
             0x7ffff7b58f07:	test	byte ptr [r8 - 4], 1
         '''
         cs = ConstraintSet()
@@ -50045,11 +50046,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_TEST_5_symbolic(self):
-        ''' Instruction TEST_5 
-            Groups:  
+        ''' Instruction TEST_5
+            Groups:
             0x7ffff7ddc6b7:	test	rdi, rdi
         '''
         cs = ConstraintSet()
@@ -50103,11 +50104,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_TEST_6_symbolic(self):
-        ''' Instruction TEST_6 
-            Groups:  
+        ''' Instruction TEST_6
+            Groups:
             0x406e88:	test	rbx, rbx
         '''
         cs = ConstraintSet()
@@ -50161,11 +50162,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VMOVD_1_symbolic(self):
-        ''' Instruction VMOVD_1 
-            Groups: avx 
+        ''' Instruction VMOVD_1
+            Groups: avx
             0x432054:	vmovd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -50209,11 +50210,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VMOVD_2_symbolic(self):
-        ''' Instruction VMOVD_2 
-            Groups: avx 
+        ''' Instruction VMOVD_2
+            Groups: avx
             0x432154:	vmovd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -50257,11 +50258,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VMOVD_3_symbolic(self):
-        ''' Instruction VMOVD_3 
-            Groups: avx 
+        ''' Instruction VMOVD_3
+            Groups: avx
             0x432124:	vmovd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -50305,11 +50306,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VMOVD_4_symbolic(self):
-        ''' Instruction VMOVD_4 
-            Groups: avx 
+        ''' Instruction VMOVD_4
+            Groups: avx
             0x434cd4:	vmovd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -50353,11 +50354,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VMOVD_5_symbolic(self):
-        ''' Instruction VMOVD_5 
-            Groups: avx 
+        ''' Instruction VMOVD_5
+            Groups: avx
             0x432134:	vmovd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -50401,11 +50402,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VMOVD_6_symbolic(self):
-        ''' Instruction VMOVD_6 
-            Groups: avx 
+        ''' Instruction VMOVD_6
+            Groups: avx
             0x432514:	vmovd	xmm1, esi
         '''
         cs = ConstraintSet()
@@ -50449,11 +50450,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPSHUFB_1_symbolic(self):
-        ''' Instruction VPSHUFB_1 
-            Groups: avx 
+        ''' Instruction VPSHUFB_1
+            Groups: avx
             0x4321af:	vpshufb	xmm0, xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -50499,11 +50500,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPSHUFB_2_symbolic(self):
-        ''' Instruction VPSHUFB_2 
-            Groups: avx 
+        ''' Instruction VPSHUFB_2
+            Groups: avx
             0x43215f:	vpshufb	xmm0, xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -50549,11 +50550,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPSHUFB_3_symbolic(self):
-        ''' Instruction VPSHUFB_3 
-            Groups: avx 
+        ''' Instruction VPSHUFB_3
+            Groups: avx
             0x43205f:	vpshufb	xmm0, xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -50599,11 +50600,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPSHUFB_4_symbolic(self):
-        ''' Instruction VPSHUFB_4 
-            Groups: avx 
+        ''' Instruction VPSHUFB_4
+            Groups: avx
             0x43212f:	vpshufb	xmm0, xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -50649,11 +50650,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPSHUFB_5_symbolic(self):
-        ''' Instruction VPSHUFB_5 
-            Groups: avx 
+        ''' Instruction VPSHUFB_5
+            Groups: avx
             0x43213f:	vpshufb	xmm0, xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -50699,11 +50700,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPSHUFB_6_symbolic(self):
-        ''' Instruction VPSHUFB_6 
-            Groups: avx 
+        ''' Instruction VPSHUFB_6
+            Groups: avx
             0x434cdf:	vpshufb	xmm0, xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -50749,11 +50750,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPXOR_1_symbolic(self):
-        ''' Instruction VPXOR_1 
-            Groups: avx 
+        ''' Instruction VPXOR_1
+            Groups: avx
             0x4321a0:	vpxor	xmm0, xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -50794,11 +50795,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPXOR_2_symbolic(self):
-        ''' Instruction VPXOR_2 
-            Groups: avx 
+        ''' Instruction VPXOR_2
+            Groups: avx
             0x432510:	vpxor	xmm0, xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -50839,11 +50840,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPXOR_3_symbolic(self):
-        ''' Instruction VPXOR_3 
-            Groups: avx 
+        ''' Instruction VPXOR_3
+            Groups: avx
             0x432050:	vpxor	xmm0, xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -50884,11 +50885,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPXOR_4_symbolic(self):
-        ''' Instruction VPXOR_4 
-            Groups: avx 
+        ''' Instruction VPXOR_4
+            Groups: avx
             0x432150:	vpxor	xmm0, xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -50929,11 +50930,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPXOR_5_symbolic(self):
-        ''' Instruction VPXOR_5 
-            Groups: avx 
+        ''' Instruction VPXOR_5
+            Groups: avx
             0x432130:	vpxor	xmm0, xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -50974,11 +50975,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VPXOR_6_symbolic(self):
-        ''' Instruction VPXOR_6 
-            Groups: avx 
+        ''' Instruction VPXOR_6
+            Groups: avx
             0x432130:	vpxor	xmm0, xmm0, xmm0
         '''
         cs = ConstraintSet()
@@ -51019,12 +51020,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VZEROUPPER_1_symbolic(self):
-        ''' Instruction VZEROUPPER_1 
-            Groups: avx 
-            0x4322a9:	vzeroupper	
+        ''' Instruction VZEROUPPER_1
+            Groups: avx
+            0x4322a9:	vzeroupper
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51059,12 +51060,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VZEROUPPER_2_symbolic(self):
-        ''' Instruction VZEROUPPER_2 
-            Groups: avx 
-            0x432319:	vzeroupper	
+        ''' Instruction VZEROUPPER_2
+            Groups: avx
+            0x432319:	vzeroupper
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51099,12 +51100,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VZEROUPPER_3_symbolic(self):
-        ''' Instruction VZEROUPPER_3 
-            Groups: avx 
-            0x4322c9:	vzeroupper	
+        ''' Instruction VZEROUPPER_3
+            Groups: avx
+            0x4322c9:	vzeroupper
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51139,12 +51140,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VZEROUPPER_4_symbolic(self):
-        ''' Instruction VZEROUPPER_4 
-            Groups: avx 
-            0x432229:	vzeroupper	
+        ''' Instruction VZEROUPPER_4
+            Groups: avx
+            0x432229:	vzeroupper
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51179,12 +51180,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VZEROUPPER_5_symbolic(self):
-        ''' Instruction VZEROUPPER_5 
-            Groups: avx 
-            0x4322a9:	vzeroupper	
+        ''' Instruction VZEROUPPER_5
+            Groups: avx
+            0x4322a9:	vzeroupper
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51219,12 +51220,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_VZEROUPPER_6_symbolic(self):
-        ''' Instruction VZEROUPPER_6 
-            Groups: avx 
-            0x432689:	vzeroupper	
+        ''' Instruction VZEROUPPER_6
+            Groups: avx
+            0x432689:	vzeroupper
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51259,12 +51260,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XGETBV_1_symbolic(self):
-        ''' Instruction XGETBV_1 
-            Groups:  
-            0x7ffff7a4eb1b:	xgetbv	
+        ''' Instruction XGETBV_1
+            Groups:
+            0x7ffff7a4eb1b:	xgetbv
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51308,12 +51309,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XGETBV_2_symbolic(self):
-        ''' Instruction XGETBV_2 
-            Groups:  
-            0x437c0e:	xgetbv	
+        ''' Instruction XGETBV_2
+            Groups:
+            0x437c0e:	xgetbv
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51357,12 +51358,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XGETBV_3_symbolic(self):
-        ''' Instruction XGETBV_3 
-            Groups:  
-            0x7ffff7a4eb1b:	xgetbv	
+        ''' Instruction XGETBV_3
+            Groups:
+            0x7ffff7a4eb1b:	xgetbv
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51406,12 +51407,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XGETBV_4_symbolic(self):
-        ''' Instruction XGETBV_4 
-            Groups:  
-            0x43a59e:	xgetbv	
+        ''' Instruction XGETBV_4
+            Groups:
+            0x43a59e:	xgetbv
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51455,12 +51456,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XGETBV_5_symbolic(self):
-        ''' Instruction XGETBV_5 
-            Groups:  
-            0x43791e:	xgetbv	
+        ''' Instruction XGETBV_5
+            Groups:
+            0x43791e:	xgetbv
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51504,12 +51505,12 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XGETBV_6_symbolic(self):
-        ''' Instruction XGETBV_6 
-            Groups:  
-            0x437a6e:	xgetbv	
+        ''' Instruction XGETBV_6
+            Groups:
+            0x437a6e:	xgetbv
         '''
         cs = ConstraintSet()
         mem = SMemory64(cs)
@@ -51553,11 +51554,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XORPS_1_symbolic(self):
-        ''' Instruction XORPS_1 
-            Groups: sse1 
+        ''' Instruction XORPS_1
+            Groups: sse1
             0x530d2f:	xorps	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -51599,11 +51600,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XORPS_2_symbolic(self):
-        ''' Instruction XORPS_2 
-            Groups: sse1 
+        ''' Instruction XORPS_2
+            Groups: sse1
             0x530a6c:	xorps	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -51645,11 +51646,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XORPS_3_symbolic(self):
-        ''' Instruction XORPS_3 
-            Groups: sse1 
+        ''' Instruction XORPS_3
+            Groups: sse1
             0x54f76a:	xorps	xmm0, xmmword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -51790,11 +51791,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XORPS_4_symbolic(self):
-        ''' Instruction XORPS_4 
-            Groups: sse1 
+        ''' Instruction XORPS_4
+            Groups: sse1
             0x540f22:	xorps	xmm1, xmm0
         '''
         cs = ConstraintSet()
@@ -51836,11 +51837,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XORPS_5_symbolic(self):
-        ''' Instruction XORPS_5 
-            Groups: sse1 
+        ''' Instruction XORPS_5
+            Groups: sse1
             0x560955:	xorps	xmm0, xmmword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -51981,11 +51982,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XORPS_6_symbolic(self):
-        ''' Instruction XORPS_6 
-            Groups: sse1 
+        ''' Instruction XORPS_6
+            Groups: sse1
             0x551ec4:	xorps	xmm0, xmmword ptr [rsp]
         '''
         cs = ConstraintSet()
@@ -52126,11 +52127,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XOR_1_symbolic(self):
-        ''' Instruction XOR_1 
-            Groups:  
+        ''' Instruction XOR_1
+            Groups:
             0x7ffff7de6223:	xor	eax, eax
         '''
         cs = ConstraintSet()
@@ -52182,11 +52183,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XOR_2_symbolic(self):
-        ''' Instruction XOR_2 
-            Groups:  
+        ''' Instruction XOR_2
+            Groups:
             0x7ffff7de405a:	xor	rdx, r13
         '''
         cs = ConstraintSet()
@@ -52243,11 +52244,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XOR_3_symbolic(self):
-        ''' Instruction XOR_3 
-            Groups:  
+        ''' Instruction XOR_3
+            Groups:
             0x7ffff7df45a0:	xor	eax, eax
         '''
         cs = ConstraintSet()
@@ -52299,11 +52300,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XOR_4_symbolic(self):
-        ''' Instruction XOR_4 
-            Groups:  
+        ''' Instruction XOR_4
+            Groups:
             0x7ffff7de3ff6:	xor	edx, edx
         '''
         cs = ConstraintSet()
@@ -52355,11 +52356,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XOR_5_symbolic(self):
-        ''' Instruction XOR_5 
-            Groups:  
+        ''' Instruction XOR_5
+            Groups:
             0x7ffff7df40cc:	xor	eax, eax
         '''
         cs = ConstraintSet()
@@ -52411,11 +52412,11 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
     def test_XOR_6_symbolic(self):
-        ''' Instruction XOR_6 
-            Groups:  
+        ''' Instruction XOR_6
+            Groups:
             0x7ffff7de3699:	xor	r10d, r10d
         '''
         cs = ConstraintSet()
@@ -52469,7 +52470,7 @@ class CPUTest(unittest.TestCase):
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          
+
 
 if __name__ == '__main__':
     unittest.main()

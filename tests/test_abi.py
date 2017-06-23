@@ -21,6 +21,7 @@ from manticore.core.memory import SMemory32, Memory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
 
 class ABITests(unittest.TestCase):
+    _multiprocess_can_split_ = True
     def setUp(self):
         mem32 = SMemory32(ConstraintSet())
         mem32.mmap(0x1000, 0x1000, 'rw ')
@@ -51,7 +52,7 @@ class ABITests(unittest.TestCase):
 
     def test_executor(self):
         pass
-    
+
     def test_arm_abi_simple(self):
         cpu = self._cpu_arm
 
@@ -148,7 +149,7 @@ class ABITests(unittest.TestCase):
     def test_i386_cdecl(self):
         cpu = self._cpu_x86
 
-        base = cpu.ESP 
+        base = cpu.ESP
 
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
         cpu.push(0x1234, cpu.address_bit_size)
@@ -170,7 +171,7 @@ class ABITests(unittest.TestCase):
     def test_i386_stdcall(self):
         cpu = self._cpu_x86
 
-        base = cpu.ESP 
+        base = cpu.ESP
 
         bwidth = cpu.address_bit_size / 8
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
@@ -201,7 +202,7 @@ class ABITests(unittest.TestCase):
         cpu.push(0x1234, cpu.address_bit_size)
 
         eip = 0xDEADBEEF
-        base = cpu.ESP 
+        base = cpu.ESP
         cpu.EIP = eip
         def test(one, two, three, four, five):
             raise ConcretizeArgument(2)
@@ -218,10 +219,10 @@ class ABITests(unittest.TestCase):
     def test_i386_cdecl_concretize(self):
         cpu = self._cpu_x86
 
-        base = cpu.ESP 
+        base = cpu.ESP
         prev_eax = 0xcc
         cpu.EAX = prev_eax
-        
+
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
         cpu.push(0x1234, cpu.address_bit_size)
 
@@ -393,7 +394,7 @@ class ABITests(unittest.TestCase):
 
         cpu.push(2, cpu.address_bit_size)
         cpu.push(0x1234, cpu.address_bit_size)
-        
+
         def test(prefix, extracted):
             self.assertEquals(prefix, 1)
             self.assertEquals(extracted, 2)

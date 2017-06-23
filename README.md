@@ -104,6 +104,15 @@ nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
 nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
 ```
 
+Moreover, you can invoke multiprocess test invocation via the --processes
+flag. Note, however, that several tests (e.g., tests/test_memdumps.py) require
+longer execution times, thus you need to specify the appropriate timeout
+period via the --process-timeout flag. E.g.,
+
+```
+nosetests --processes=8 --process-timeout=120 tests/test_binaries.py
+```
+
 ## Usage
 
 ```

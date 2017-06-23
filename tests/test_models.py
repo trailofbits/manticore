@@ -39,6 +39,7 @@ class ModelTest(unittest.TestCase):
 
 
 class StrcmpTest(ModelTest):
+    _multiprocess_can_split_ = True
     def _push2(self, s1, s2):
         s1ptr = self._push_string(s1)
         s2ptr = self._push_string(s2)
