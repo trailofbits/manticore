@@ -314,7 +314,7 @@ class Manticore(object):
     @verbosity.setter
     def verbosity(self, setting):
         levels = [[],
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.DEBUG)],
+                  [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
                   [('PLATFORM', logging.DEBUG)],
                   [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
                   [('REGISTERS', logging.DEBUG)],
@@ -579,7 +579,6 @@ class Manticore(object):
         logger.debug("load state %r", state_id)
 
     def _terminate_state_callback(self, state, state_id, ex):
-        logger.info("Terminate_state_callback for %d", state_id)
         #aggregates state statistics into exceutor statistics. FIXME split
         logger.debug("Terminate state %r %r ", state, state_id)
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -640,10 +639,8 @@ class Manticore(object):
         '''
         import StringIO
         _getFilename = self._executor._workspace_filename
-        logger.debug("testcase",state, testcase_id, message)
         test_number = testcase_id
-
-        logger.info("Generating testcase No. %d - %s",
+        logger.debug("Generating testcase No. %d - %s",
                 test_number, message)
 
         # Summarize state
@@ -774,7 +771,7 @@ class Manticore(object):
 
         instructions_count = _shared_context.get('instructions_count',0)
         elapsed = time.time()-self._time_started
-        logger.info('Results dumped in %s', self.workspace)
+        logger.info('Results in %s', self.workspace)
         logger.info('Instructions executed: %d', instructions_count)
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
         #logger.info('Number of paths covered %r', State.state_count())

@@ -325,12 +325,12 @@ class Executor(object):
         if state_id is None:
             return None
         filename = self._state_filename(state_id)
-        logger.info("Restoring state: %s from %s", state_id, filename )
+        logger.debug("Restoring state: %s from %s", state_id, filename )
 
         with open(filename, 'rb') as f:
             loaded_state = cPickle.loads(f.read())
 
-        logger.info("Removing state %s from storage", state_id)
+        logger.debug("Removing state %s from storage", state_id)
         os.remove(filename)
 
         #Broadcast event
@@ -349,7 +349,7 @@ class Executor(object):
         :param message: Accompanying message
         '''
         testcase_id = self._new_testcase_id()
-        logger.info("Generating testcase No. %d  - %s", testcase_id, message)
+        logger.debug("Generating testcase No. %d  - %s", testcase_id, message)
 
         #broadcast test generation. This is the time for other modules 
         #to output whatever helps to understand this testcase
@@ -365,7 +365,7 @@ class Executor(object):
                 # there recursion limit exceeded problem, 
                 # try a slower, iterative solution
                 from ..utils import iterpickle
-                logger.info("WARNING: using iterpickle to dump state")
+                logger.debug("WARNING: using iterpickle to dump state")
                 f.write(iterpickle.dumps(state, 2))
             f.flush()
         logger.debug("saved in %d seconds", time.time() - start)
@@ -474,7 +474,7 @@ class Executor(object):
                         #policy
                         #setstate()
 
-                        logger.info("Generic state fork on condition")
+                        logger.debug("Generic state fork on condition")
                         self.fork(current_state, e.expression, e.policy, e.setstate)
                         current_state = None
 
@@ -488,7 +488,7 @@ class Executor(object):
                         #Notify this worker is done
                         self.will_terminate_state(current_state, current_state_id, e)
 
-                        logger.info("Generic terminate state")
+                        logger.debug("Generic terminate state")
                         if e.testcase:
                             self.generate_testcase(current_state, str(e))
                         current_state = None
