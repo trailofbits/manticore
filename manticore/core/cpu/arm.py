@@ -1,7 +1,7 @@
 import struct
 import sys
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
-from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
+from .abstractcpu import Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant
@@ -31,11 +31,17 @@ def instruction(body):
 
         should_execute = cpu.shouldExecuteConditional()
 
-        if issymbolic(should_execute):
-            i_size = cpu.address_bit_size / 8
-            cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC-i_size,
-                    cpu.PC)
-            return
+        if cpu._at_symbolic_conditional:
+            cpu._at_symbolic_conditional = False
+            should_execute = True
+        else:
+            if issymbolic(should_execute):
+                # Let's remember next time we get here we should not do this again
+                cpu._at_symbolic_conditional = True
+                i_size = cpu.address_bit_size / 8
+                cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC-i_size,
+                        cpu.PC)
+                return
 
         if should_execute:
             ret = body(cpu, *args, **kwargs)
@@ -260,7 +266,6 @@ class Armv7RegisterFile(RegisterFile):
     def canonical_registers(self):
         return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
 
-
 class Armv7LinuxSyscallAbi(SyscallAbi):
     '''
     ARMv7 Linux system call ABI
@@ -295,7 +300,7 @@ class Armv7CdeclAbi(Abi):
         self._cpu.R0 = result
 
     def ret(self):
-        self._cpu.PC = self._cpu.LR 
+        self._cpu.PC = self._cpu.LR
 
 class Armv7Cpu(Cpu):
     '''
@@ -316,19 +321,18 @@ class Armv7Cpu(Cpu):
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
-        self._force_next = False
+        self._at_symbolic_conditional = False
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()
         state['_last_flags'] = self._last_flags
-        state['_force_next'] = self._force_next
+        state['at_symbolic_conditional'] = self._at_symbolic_conditional
         return state
-
 
     def __setstate__(self, state):
         super(Armv7Cpu, self).__setstate__(state)
         self._last_flags = state['_last_flags']
-        self._force_next = state['_force_next']
+        self._at_symbolic_conditional = state['at_symbolic_conditional'] 
 
     def _set_mode(self, new_mode):
 		assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
@@ -453,16 +457,9 @@ class Armv7Cpu(Cpu):
     def shouldCommitFlags(cpu):
         return cpu.instruction.update_flags
 
-    def forceNextInstruction(cpu):
-        cpu._force_next = True
-
     def shouldExecuteConditional(cpu):
         cc = cpu.instruction.cc
         ret = False
-
-        if cpu._force_next:
-            cpu._force_next = False
-            return True
 
         C = cpu.regfile.read('APSR_C')
         N = cpu.regfile.read('APSR_N')

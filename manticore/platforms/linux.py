@@ -6,8 +6,10 @@ import random
 import struct
 import ctypes
 
+#Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 
+from ..utils.event import Signal, forward_signals
 from ..utils.helpers import issymbolic
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
@@ -15,11 +17,10 @@ from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
 from ..platforms.platform import Platform
 from ..core.cpu.arm import *
-from ..core.executor import SyscallNotImplemented, ProcessExit
+from ..core.executor import TerminateState
 from . import linux_syscalls
 
 logger = logging.getLogger("PLATFORM")
-
 
 class RestartSyscall(Exception):
     pass
@@ -157,9 +158,9 @@ class SymbolicFile(File):
         self.max_size = state['max_size']
         self.array = state['array']
 
-    @property
-    def constraints(self):
-        return self._constraints
+    #@property
+    #def constraints(self):
+    #    return self._constraints
 
     def tell(self):
         '''
@@ -363,6 +364,10 @@ class Linux(Platform):
         self.rwait = [set() for _ in xrange(nfiles)]
         self.twait = [set() for _ in xrange(nfiles)]
 
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
+
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
             mem = Memory32()
@@ -406,6 +411,7 @@ class Linux(Platform):
         state['functionabi'] = self._function_abi
         state['syscallabi'] = self._syscall_abi
         state['uname_machine'] = self._uname_machine
+
         if hasattr(self, '_arm_tls_memory'):
             state['_arm_tls_memory'] = self._arm_tls_memory
         return state
@@ -456,6 +462,10 @@ class Linux(Platform):
         self._uname_machine = state['uname_machine']
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory']
+            
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
 
     def _init_arm_kernel_helpers(self):
         '''
@@ -995,7 +1005,6 @@ class Linux(Platform):
         with the file descriptor fd to the argument offset according to the directive whence
 
 
-        :param self: current CPU.
         :param fd: a valid file descriptor
         :param offset: the offset in bytes
         :param whence: SEEK_SET: The file offset is set to offset bytes.
@@ -1445,6 +1454,7 @@ class Linux(Platform):
         :return: this call returns C{1000} for all the users.
         '''
         return 1000
+
     def sys_getgid(self):
         '''
         Gets group identity.
@@ -1453,6 +1463,7 @@ class Linux(Platform):
         :return: this call returns C{1000} for all the groups.
         '''
         return 1000
+
     def sys_geteuid(self):
         '''
         Gets user identity.
@@ -1461,6 +1472,7 @@ class Linux(Platform):
         :return: This call returns C{1000} for all the users.
         '''
         return 1000
+
     def sys_getegid(self):
         '''
         Gets group identity.
@@ -1469,7 +1481,6 @@ class Linux(Platform):
         :return: this call returns C{1000} for all the groups.
         '''
         return 1000
-
 
     def sys_readv(self, fd, iov, count):
         '''
@@ -1592,8 +1603,8 @@ class Linux(Platform):
         self.running.remove(procid)
         #self.procs[procid] = None
         logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
-        if len(self.running) == 0:
-            raise ProcessExit(error_code)
+        if len(self.running) == 0 :
+            raise TerminateState("ProcessExit %r"%error_code, testcase=True)
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
@@ -1639,7 +1650,7 @@ class Linux(Platform):
             name = table.get(index, None)
             implementation = getattr(self, name)
         except (AttributeError, KeyError):
-            raise SyscallNotImplemented(self.current.address_bit_size, index, name)
+            raise Exception("SyscallNotImplemented %d %d"%(self.current.address_bit_size, index))
 
         return self._syscall_abi.invoke(implementation)
 
@@ -2013,12 +2024,18 @@ class SLinux(Linux):
             mem = SMemory32(self.constraints)
         else:
             mem = SMemory64(self.constraints)
-
         return CpuFactory.get_cpu(mem, arch)
 
     @property
     def constraints(self):
         return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.memory.constraints = constraints
+
 
     #marshaling/pickle
     def __getstate__(self):
@@ -2050,66 +2067,29 @@ class SLinux(Linux):
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgumet(self, 0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(self, 1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise ConcretizeArgument(2)
+            raise ConcretizeArgumet(self, 2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgumet(self, 0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(self, 1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise ConcretizeArgument(2)
+            raise ConcretizeArgumet(self, 2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
-
-class DecreeEmu(object):
-
-    RANDOM = 0
-
-    @staticmethod
-    def cgc_initialize_secret_page(platform):
-        logger.info("Skipping: cgc_initialize_secret_page()")
-        return 0
-
-    @staticmethod
-    def cgc_random(platform, buf, count, rnd_bytes):
-        from . import cgcrandom
-        if issymbolic(buf):
-            logger.info("Ask to write random bytes to a symbolic buffer")
-            raise ConcretizeArgument(0)
-
-        if issymbolic(count):
-            logger.info("Ask to read a symbolic number of random bytes ")
-            raise ConcretizeArgument(1)
-
-        if issymbolic(rnd_bytes):
-            logger.info("Ask to return rnd size to a symbolic address ")
-            raise ConcretizeArgument(2)
-
-        data = []
-        for i in xrange(count):
-            value = cgcrandom.stream[DecreeEmu.RANDOM]
-            data.append(value)
-            DecreeEmu.random += 1
-
-        cpu = platform.current
-        cpu.write(buf, data)
-        if rnd_bytes:
-            cpu.store(rnd_bytes, len(data), 32)
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf, count, rnd_bytes, len(data))
-        return 0

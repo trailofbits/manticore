@@ -78,9 +78,9 @@ def strcmp(state, s1, s2):
     cpu = state.cpu
 
     if issymbolic(s1):
-        raise ConcretizeArgument(1)
+        raise ConcretizeArgumet(state.cpu, 1)
     if issymbolic(s2):
-        raise ConcretizeArgument(2)
+        raise ConcretizeArgumet(state.cpu, 2)
 
     s1_zero_idx = _find_zero(cpu, state.constraints, s1)
     s2_zero_idx = _find_zero(cpu, state.constraints, s2)
@@ -121,7 +121,7 @@ def strlen(state, s):
     cpu = state.cpu
 
     if issymbolic(s):
-        raise ConcretizeArgument(1)
+        raise ConcretizeArgumet(state.cpu, 1)
 
     zero_idx = _find_zero(cpu, state.constraints, s)
 
