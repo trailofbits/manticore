@@ -48,29 +48,69 @@ def sync(f):
 
 class Policy(object):
     ''' Base class for prioritization of state search '''
-    def __init__(self):
-        pass
+    def __init__(self, executor, *args, **kwargs):
+        super(Policy, self).__init__(*args, **kwargs)
+        self._executor = executor
+        self._executor.did_add_state += self._add_state_callback
+        
+    @contextmanager
+    def locked_context(self):
+        ''' Policy shared context dictionary '''
+        with self._executor.locked_context() as ctx:
+            policy_context = ctx.get('policy', None)
+            if policy_context is None:
+                policy_context = dict()
+            yield policy_context
+            ctx['policy'] = policy_context
 
-    def features(self, state):
-        ''' Save state features for prioritization before a state is stored '''
-        pass
+    def _add_state_callback(self, state_id, state):
+        ''' Save prepare(state) on policy shared context before 
+            the state is stored
+        '''
+        with self.locked_context() as ctx:
+            metric = self.prepare(state)
+            if metric is not None:
+                ctx[state_id] = metric
 
-    def priority(self, state_id):
-        ''' A numeric value representing likelihood to reach the interesting program spot '''
-        return 1.0
+    def prepare(self, state):
+        ''' Process a state and keep enough data to later decide it's
+            priority #fixme rephrase
+        '''
+        return None
+
+    def choice(self, state_ids):
+        ''' Select a state id from states_id.
+            self.context has a dict mapping state_ids -> prepare(state)'''
+        raise NotImplemented
 
 class Random(Policy):
-    def __init__(self):
-        super(Random, self).__init__()
+    def __init__(self, executor, *args, **kwargs):
+        super(Random, self).__init__(executor, *args, **kwargs)
 
-    def features(self, state):
-        ''' Save state features for prioritization before a state is stored '''
-        pass
+    def choice(self, state_ids):
+        return random.choice(state_ids)
 
-    def priority(self, state_id):
-        ''' A numeric value representing likelihood to reach the interesting program spot '''
-        return 1.0
+class Uncovered(Policy):
+    def __init__(self, executor, *args, **kwargs):
+        super(Uncovered, self).__init__(executor, *args, **kwargs)
+        #hook on the necesary executor signals 
+        #on callbacks save data in executor.context['policy']
 
+    def prepare(self, state):
+        ''' this is what we need to save for choosing later '''
+        return state.cpu.PC
+
+    def choice(self, state_ids):
+        # Use executor.context['uncovered'] = state_id -> stats
+        # am
+        with self._executor.locked_context() as ctx: 
+            lastpc = ctx['policy']
+            visited = ctx.get('visited', ())
+            interesting = set()
+            for _id in state_ids:
+                if lastpc.get(_id, None) not in visited:
+                    interesting.add(_id)
+            return random.choice(tuple(interesting))
 
 class Executor(object):
     '''
@@ -92,6 +132,7 @@ class Executor(object):
         self.will_fork_state = Signal()
         self.will_store_state = Signal()
         self.will_load_state = Signal()
+        self.did_add_state = Signal()
         self.will_terminate_state = Signal()
         self.will_generate_testcase = Signal()
 
@@ -123,7 +164,13 @@ class Executor(object):
         self._shared_context = manager.dict(context)
     
         #scheduling priority policy (wip)
-        self.policy = Random()
+        #Set policy
+        policies = {'random': Random, 
+                    'uncovered': Uncovered
+                    }
+        self._policy = policies[policy](self)
+        assert isinstance(self._policy, Policy)
+
 
         if self.load_workspace():
             if initial is not None:
@@ -168,6 +215,7 @@ class Executor(object):
         state_id = self.store(state)
         #add the state to the list of pending states
         self.put(state_id)
+        self.did_add_state(state_id, state)
         return state_id
 
     def load_workspace(self):
@@ -293,7 +341,7 @@ class Executor(object):
             logger.debug("Waiting for available states")
             self._lock.wait()
             
-        state_id = random.choice(self._states)
+        state_id = self._policy.choice(list(self._states))
         del  self._states[self._states.index(state_id)]
         return state_id
 
