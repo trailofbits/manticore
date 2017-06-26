@@ -549,6 +549,36 @@ class Armv7Cpu(Cpu):
         raise NotImplementedError("MRC: unimplemented combination of coprocessor, opcode, and coprocessor register")
 
     @instruction
+    def LDRD(cpu, dest1, dest2, src, offset=None):
+        '''
+        Loads double width data from memory.
+        '''
+        assert dest1.type == 'register'
+        assert dest2.type == 'register'
+        assert src.type == 'memory'
+        mem1 = cpu.read_int(src.address(), 32)
+        mem2 = cpu.read_int(src.address()+4, 32)
+        writeback = cpu._compute_writeback(src, offset)
+        dest1.write(mem1)
+        dest2.write(mem2)
+        cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
+
+    @instruction
+    def STRD(cpu, src1, src2, dest, offset=None):
+        '''
+        Writes the contents of two registers to memory.
+        '''
+        assert src1.type == 'register'
+        assert src2.type == 'register'
+        assert dest.type == 'memory'
+        val1 = src1.read()
+        val2 = src2.read()
+        writeback = cpu._compute_writeback(dest, offset)
+        cpu.write_int(dest.address(), val1, 32)
+        cpu.write_int(dest.address()+4, val2, 32)
+        cpu._cs_hack_ldr_str_writeback(dest, offset, writeback)
+
+    @instruction
     def LDREX(cpu, dest, src, offset=None):
         '''
         LDREX loads data from memory.
