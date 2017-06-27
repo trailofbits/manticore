@@ -905,6 +905,10 @@ class Armv7Cpu(Cpu):
         cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
 
     @instruction
+    def ORN(cpu, dest, op1, op2):
+        cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
+
+    @instruction
     def EOR(cpu, dest, op1, op2):
         cpu._bitwise_instruction(lambda x, y: x ^ y, dest, op1, op2)
 

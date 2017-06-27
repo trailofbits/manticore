@@ -1109,6 +1109,13 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R2'), 0xF5)
 
+    # ORN
+    @itest_setregs("R2=0x0", "R5=0xFFFFFFFA")
+    @itest_custom_thumb("orn r2, r2, r5")
+    def test_orn(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R2'), 0x5)
+
     # EOR
 
     @itest_custom("eor r2, r3, #5")
