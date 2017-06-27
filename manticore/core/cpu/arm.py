@@ -331,9 +331,9 @@ class Armv7Cpu(Cpu):
         self._force_next = state['_force_next']
 
     def _set_mode(self, new_mode):
-		assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
-		self.mode = new_mode
-		self._md.mode = new_mode
+        assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
+        self.mode = new_mode
+        self._md.mode = new_mode
 
     def _swap_mode(self):
         #swap from arm to thumb or back

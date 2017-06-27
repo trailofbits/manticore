@@ -1031,6 +1031,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_bx_basic(self):
         self.cpu.execute()
         self.assertEqual(self.rf.read('PC'), 0x1008)
+        self.assertEqual(self.cpu.mode, CS_MODE_ARM)
 
     @itest_custom("bx r1")
     @itest_setregs("R1=0x1009")
@@ -1038,6 +1039,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
         self.assertEqual(self.rf.read('PC'), pre_pc + 4)
+        self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
     # ORR
 
@@ -1351,12 +1353,14 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_blx_reg(self):
         self.assertEqual(self.rf.read('PC'), 0x1008)
         self.assertEqual(self.rf.read('LR'), 0x1008)
+        self.assertEqual(self.cpu.mode, CS_MODE_ARM)
 
     @itest_setregs("R1=0x1009")
     @itest("BLX R1")
     def test_blx_reg_thumb(self):
         self.assertEqual(self.rf.read('PC'), 0x1008)
         self.assertEqual(self.rf.read('LR'), 0x1008)
+        self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
     @itest_setregs("R1=0xffffffff", "R2=2")
     @itest("UMULLS R1, R2, R1, R2")
