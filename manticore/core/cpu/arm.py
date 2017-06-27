@@ -737,7 +737,6 @@ class Armv7Cpu(Cpu):
     def B(cpu, dest):
         cpu.PC = dest.read()
 
-    # XXX How should we deal with switching Thumb modes?
     @instruction
     def BX(cpu, dest):
         if dest.read() & 0x1:
@@ -757,23 +756,25 @@ class Armv7Cpu(Cpu):
         cpu.regfile.write('LR', next_instr_addr)
         cpu.regfile.write('PC', label.read())
 
-
     @instruction
     def BLX(cpu, dest):
-        ## XXX: Technically, this should use the values that are commented (sub
-        ## 2 and LSB of LR set, but we currently do not distinguish between
-        ## THUMB and regular modes, so we use the addresses as is. TODO: Handle
-        ## thumb correctly and fix this
         address = cpu.PC
         target = dest.read()
-        next_instr_addr = cpu.regfile.read('PC') #- 2
-        cpu.regfile.write('LR', next_instr_addr) # | 1)
+        next_instr_addr = cpu.regfile.read('PC')
+        cpu.regfile.write('LR', next_instr_addr)
         cpu.regfile.write('PC', target & ~1)
 
-        ## The `blx <label>` form of this instruction forces a state swap
+        ## The `blx <label>` form of this instruction forces a mode swap
+        ## Otherwise check the lsb of the destination and set the mode
         if dest.type=='immediate':
-            logger.debug("swapping ds mode due to BLX at inst 0x{:x}".format(address))
+            logger.debug("swapping mode due to BLX at inst 0x{:x}".format(address))
             cpu._swap_mode()
+        elif dest.type=='register':
+            if dest.read() & 0x1:
+                cpu._set_mode(CS_MODE_THUMB)
+            else:
+                cpu._set_mode(CS_MODE_ARM)
+
     @instruction
     def CMP(cpu, reg, cmp):
         notcmp = ~cmp.read() & Mask(cpu.address_bit_size)
@@ -907,19 +908,25 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     def _SR(cpu, insn_id, dest, op, *rest):
-        '''_SR reg has @rest, but _SR imm does not, its baked into @op
+        '''In ARM mode, _SR reg has @rest, but _SR imm does not, its baked into @op.
         '''
         assert insn_id in (ARM_INS_ASR, ARM_INS_LSL, ARM_INS_LSR)
 
         if insn_id == ARM_INS_ASR:
-            srtype = ARM_SFT_ASR_REG
+            if rest and rest[0].type == 'immediate':
+                srtype = ARM_SFT_ASR
+            else:
+                srtype = ARM_SFT_ASR_REG
         elif insn_id == ARM_INS_LSL:
             if rest and rest[0].type == 'immediate':
                 srtype = ARM_SFT_LSL
             else:
                 srtype = ARM_SFT_LSL_REG
         elif insn_id == ARM_INS_LSR:
-            srtype = ARM_SFT_LSR_REG
+            if rest and rest[0].type == 'immediate':
+                srtype = ARM_SFT_LSR
+            else:
+                srtype = ARM_SFT_LSR_REG
 
         carry = cpu.regfile.read('APSR_C')
         if rest and rest[0].type=='register':
