@@ -657,7 +657,6 @@ class Cpu(object):
         #No dynamic code!!! #TODO! 
         #Check if instruction was already decoded 
         if pc in self._instruction_cache:
-            logger.debug("Intruction cache hit at %x", pc)
             return self._instruction_cache[pc]
 
         text = ''

@@ -341,7 +341,7 @@ class Executor(object):
         ''' Returns the list of states ids currently queued '''
         return list(self._states)
 
-    def generate_testcase(self, state, message = 'Testcase generated'):
+    def generate_testcase(self, state, message='Testcase generated'):
         '''
         Create a serialized description of a given state.
 
@@ -349,7 +349,7 @@ class Executor(object):
         :param message: Accompanying message
         '''
         testcase_id = self._new_testcase_id()
-        logger.debug("Generating testcase No. %d  - %s", testcase_id, message)
+        logger.info("Generating testcase No. %d - %s", testcase_id, message)
 
         #broadcast test generation. This is the time for other modules 
         #to output whatever helps to understand this testcase

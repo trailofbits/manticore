@@ -1604,7 +1604,7 @@ class Linux(Platform):
         #self.procs[procid] = None
         logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
-            raise TerminateState("ProcessExit %r"%error_code, testcase=True)
+            raise TerminateState("Program finished with exit status: %r" % error_code, testcase=True)
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
