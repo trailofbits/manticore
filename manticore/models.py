@@ -1,5 +1,5 @@
 """
-Models here are intended to be passed to `State.invoke_model`, not invoked directly.
+Models here are intended to be passed to :meth:`~manticore.core.state.State.invoke_model`, not invoked directly.
 """
 
 from .core.cpu.abstractcpu import ConcretizeArgument
