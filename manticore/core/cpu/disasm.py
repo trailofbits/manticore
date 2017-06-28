@@ -2,7 +2,6 @@ from abc import abstractproperty, abstractmethod
 
 import capstone as cs
 
-
 class Instruction(object):
     """Capstone-like instruction to be used internally
     """

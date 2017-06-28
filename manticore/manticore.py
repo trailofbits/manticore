@@ -32,7 +32,6 @@ def makeBinja(program):
     logger.info('Loading binary ninja IL from %s', program)
     platform = binja.Binja(program)
     initial_state = State(constraints, platform)
-
     return initial_state
 
 def makeDecree(args):

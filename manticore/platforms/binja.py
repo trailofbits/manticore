@@ -6,6 +6,7 @@ from ..core.cpu.disasm import BinjaILDisasm
 from ..core.memory import SMemory64
 from ..core.smtlib import ConstraintSet
 from .platform import Platform
+from ..utils.event import Signal, forward_signals
 
 logger = logging.getLogger("PLATFORM")
 
@@ -65,6 +66,8 @@ class Binja(Platform):
         BinjaCpu.arch = 'linux'
         BinjaCpu.mode = 'amd64'
         BinjaCpu.disasm = BinjaILDisasm(self._bv)
+        for proc in self.procs:
+            forward_signals(self, proc)
         super(Binja, self).__init__(ifile)
 
     # XXX needed
@@ -93,7 +96,12 @@ class Binja(Platform):
 
         :todo: This is where we could implement a simple schedule.
         """
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
+
         self.current.execute()
+
         return True
 
     @property
@@ -115,6 +123,10 @@ class Binja(Platform):
         self.procs = state['procs']
         self._current = state['current']
         self.syscall_trace = state['syscall_trace']
+
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
 
     @staticmethod
     def _init_bv(program_file):
