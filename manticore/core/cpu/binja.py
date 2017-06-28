@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from .abstractcpu import (
     Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
     Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
@@ -57,6 +59,9 @@ class BinjaCpu(Cpu):
     mode = None
     disasm = None
 
+    instr_ptr = None
+    stack_ptr = None
+
     def __init__(self, memory):
         '''
         Builds a CPU model.
@@ -71,6 +76,18 @@ class BinjaCpu(Cpu):
                                        memory)
         # Binja segments
         self._segments = {}
+        self._function_hooks = defaultdict(list)
+        self._instr_hooks = defaultdict(list)
+        self.handlers = self.Handlers(self)
+
+    @property
+    def function_hooks(self):
+        return dict(self._function_hooks)
+
+    @property
+    def instr_hooks(self):
+        return defaultdict(list, self._instr_hooks)
+
 
     def __getstate__(self):
         state = super(BinjaCpu, self).__getstate__()
@@ -85,6 +102,39 @@ class BinjaCpu(Cpu):
     # to using manticore Instruction()
     def canonicalize_instruction_name(self, insn):
         return insn.name
+
+    # Adopt handlers similar from Josh Watson's 'emilator'
+    class Handlers(object):
+        _handlers = defaultdict(
+            lambda: lambda i,j: (_ for _ in ()).throw(NotImplementedError(i.operation))
+        )
+
+        def __init__(self, cpu):
+            self.cpu = cpu
+
+        @classmethod
+        def add(cls, operation):
+            def add_decorator(handler):
+                cls._handlers[operation] = handler
+                return handler
+            return add_decorator
+
+        def __getitem__(self, op):
+            hooks = self.cpu.instr_hooks[op]
+            handler = self._handlers[op]
+
+            def call_hooks(expr):
+                for hook in hooks:
+                    hook(expr, self.emilator)
+
+                try:
+                    return handler(expr, self.emilator)
+                except NotImplementedError:
+                    if not hooks:
+                        raise
+
+            return call_hooks
+
 
     @instruction
     def ADC(cpu):
@@ -169,9 +219,11 @@ class BinjaCpu(Cpu):
     @instruction
     def FLAG_COND(cpu):
         pass
+
     @instruction
-    def GOTO(cpu):
-        pass
+    def GOTO(cpu, dest):
+        cpu.instr_ptr = dest.value
+
     @instruction
     def IF(cpu):
         pass
@@ -229,12 +281,15 @@ class BinjaCpu(Cpu):
     @instruction
     def OR(cpu):
         pass
+
     @instruction
-    def POP(cpu):
-        pass
+    def POP(cpu, dest):
+        cpu.pop(dest)
+
     @instruction
-    def PUSH(cpu):
-        pass
+    def PUSH(cpu, src):
+        cpu.push(src)
+
     @instruction
     def REG(cpu):
         pass
@@ -262,11 +317,13 @@ class BinjaCpu(Cpu):
 
     @instruction
     def SET_REG(cpu, dest, src):
-        raise SystemExit("That's all folks!")
+        print(src)
+        #  dest.value = src.value
 
     @instruction
     def SET_REG_SPLIT(cpu):
         pass
+
     @instruction
     def STORE(cpu):
         pass

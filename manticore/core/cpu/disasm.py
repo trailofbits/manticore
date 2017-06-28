@@ -159,3 +159,5 @@ def init_disassembler(disassembler, arch, mode, programs):
         return BinjaDisasm(programs)
     elif disassembler == "binja-il":
         return BinjaILDisasm(programs)
+    else:
+        raise NotImplementedError("Disassembler not implemented")
