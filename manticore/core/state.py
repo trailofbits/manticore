@@ -64,8 +64,8 @@ class State(object):
     Representation of a unique program state/path.
 
     :param ConstraintSet constraints: Initial constraints 
-    :param platform: Initial operating system state
-    :type platform: Decree or Linux or Windows
+    :param Platform platform: Initial operating system state
+    :ivar dict context: Local context for arbitrary data storage
     '''
 
     def __init__(self, constraints, platform):
