@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import random, string, random
 chars = string.ascii_uppercase + string.digits
 

@@ -1,12 +1,46 @@
 import inspect
 from weakref import WeakSet, WeakKeyDictionary
-from multiprocessing import Manager
+from types import MethodType
 
 # Inspired by:
 # http://code.activestate.com/recipes/577980-improved-signalsslots-implementation-in-python/
 
 class SignalDisconnectedError(RuntimeError):
     pass
+
+
+def forward_signals(dest, source, arg=False):
+    ''' 
+        Replicate and forward all the signals from source to dest
+    '''
+    #Import all signals from state
+    for signal_name in dir(source):
+        signal = getattr(source, signal_name, None)
+        if isinstance(signal, Signal):
+            proxy = getattr(dest, signal_name, Signal())
+            proxy.when(source, signal, arg)
+            setattr(dest, signal_name, proxy)
+
+def _manage_signals(obj, enabled):
+    ''' 
+        Enable or disable all signals at obj
+    '''
+    #Import all signals from state
+    for signal_name in dir(obj):
+        signal = getattr(obj, signal_name)
+        if isinstance(signal, Signal):
+            if enabled:
+                signal.enable()
+            else:
+                signal.disable()
+
+
+def enable_signals(obj):
+    _manage_signals(obj, True)
+
+def disable_signals(obj):
+    _manage_signals(obj, False)
+
 
 class Signal(object):
     '''
@@ -19,13 +53,25 @@ class Signal(object):
     callable). All registered receivers will receive it, synchronously.
     '''
 
-    def __init__(self):
+    def __init__(self, description=None):
         '''
         Create a Signal() object. Pass 'True' to constructor if locking around
         emit() is required.
         '''
+        self.description = description
         self._functions = WeakSet()
         self._methods = WeakKeyDictionary()
+        self._forwards = WeakKeyDictionary()
+        self.disabled = False
+
+    def disable(self):
+        self.disabled = True
+    def enable(self):
+        self.disabled = False
+        
+
+    def __len__(self):
+        return len(self._functions) + len(self._methods)
 
     def __call__(self, *args, **kwargs):
         return self.emit(*args, **kwargs)
@@ -34,10 +80,14 @@ class Signal(object):
         'Invoke the signal with |args| and |kwargs|'
         results = []
 
+        if self.disabled:
+            return results
+
         for f in self._functions:
             if '__predicate__' in f.__dict__:
                 if not f.__dict__['__predicate__']():
                     continue
+
             results.append(f(*args, **kwargs))
 
         for obj, funcs in self._methods.items():
@@ -45,6 +95,7 @@ class Signal(object):
                 if '__predicate__' in f.__dict__:
                     if not f.__dict__['__predicate__']():
                         continue
+
                 results.append(f(obj, *args, **kwargs))
 
         return results
@@ -62,7 +113,6 @@ class Signal(object):
 
         '''
         assert callable(dest)
-
         if inspect.ismethod(dest):
             obj, impl = dest.__self__, dest.__func__
 
@@ -73,12 +123,29 @@ class Signal(object):
         else:
             if predicate is not None:
                 dest.__dict__['__predicate__'] = predicate
+
             self._functions.add(dest)
+
+        for signal, methods in self._forwards.items():
+            for method in methods:
+                signal.connect(method)
+        self._forwards.clear()
+
+    def when(self, obj, signal, arg=False):
+        ''' This forwards signal from obj '''
+        #will reemit forwarded signal prepending obj to arguments 
+        if arg:
+            method = MethodType(lambda *args, **kwargs: self.emit(*args, **kwargs), obj)
+        else:
+            method = self.emit
+        if len(self):
+            signal.connect(method)
+        else:
+            self._forwards.setdefault(signal, set()).add(method)
 
     def __iadd__(self, dest):
         self.connect(dest)
         return self
-
 
     def disconnect(self, dest):
         try:
@@ -97,4 +164,5 @@ class Signal(object):
     def reset(self):
         self._functions.clear()
         self._methods.clear()
+        self._forwards.clear()
 

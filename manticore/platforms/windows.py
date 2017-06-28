@@ -4,12 +4,12 @@ import sys, os, struct
 from ..core.memory import Memory, MemoryException, SMemory32, Memory32
 from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
-from ..core.cpu.x86 import I386Cpu, Sysenter, I386StdcallAbi
-from ..core.cpu.abstractcpu import Interruption, Syscall, \
-        ConcretizeRegister, ConcretizeArgument, IgnoreAPI
-from ..core.executor import ForkState, SyscallNotImplemented
+from ..core.cpu.x86 import I386Cpu, Syscall
+from ..core.cpu.abstractcpu import Interruption, Syscall
+from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
-from ..platforms.platform import Platform
+from ..platforms.platform import *
+from ..utils.event import Signal, forward_signals
 
 from ..binary.pe import minidump
 
@@ -20,9 +20,10 @@ import random
 from windows_syscalls import syscalls_num
 logger = logging.getLogger("PLATFORM")
 
-class ProcessExit(Exception):
-    def __init__(self, code):
-        super(ProcessExit, self).__init__("Process exited correctly. Code: %s"%code)
+
+class SyscallNotImplemented(TerminateState):
+    def __init__(self, message):
+        super(SyscallNotImplemented,self).__init__(message, testcase=True)
 
 class RestartSyscall(Exception):
     pass
@@ -32,11 +33,6 @@ class Deadlock(Exception):
 
 class SymbolicAPIArgument(Exception):
     pass
-
-class SymbolicSyscallArgument(ConcretizeRegister):
-    def __init__(self, number, message='Concretizing syscall argument', policy='SAMPLED'):
-        reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][number]
-        super(SymbolicSyscallArgument, self).__init__(reg_name, message, policy)
 
 #FIXME Consider moving this to executor.state?
 def toStr(state, value):
@@ -50,7 +46,7 @@ def toStr(state, value):
 
 class Windows(Platform):
     '''
-    A simple Windows Operating System Platform.
+    A simple Windows Operating System platform.
     This class emulates some Windows system calls
     '''
 
@@ -71,8 +67,6 @@ class Windows(Platform):
         '''
         Builds a Windows OS platform
         '''
-        super(Windows, self).__init__(path)
-
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []
@@ -174,7 +168,6 @@ class Windows(Platform):
                 self.running.append(self.procs.index(cpu))
         
 
-        self._function_abi = I386StdcallAbi(self.procs[0])
         # open standard files stdin, stdout, stderr
         logger.info("Not Opening any file")
 
@@ -182,6 +175,11 @@ class Windows(Platform):
         assert nprocs > 0
         assert len(self.running) == 1, "For now lets consider only one thread running"
         self._current = self.running[0]
+        self._function_abi = I386StdcallAbi(self.procs[0])
+
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
         
 
     @property
@@ -197,7 +195,6 @@ class Windows(Platform):
         state['syscall_trace'] = self.syscall_trace
         state['files'] = self.files
         state['flavor'] = self.flavor
-        state['function_abi'] = self._function_abi
 
         return state
 
@@ -213,7 +210,10 @@ class Windows(Platform):
         self.syscall_trace = state['syscall_trace']
         self.files = state['files']
         self.flavor = state['flavor']
-        self._function_abi = state['function_abi']
+
+        #Install event forwarders
+        for proc in self.procs:
+            forward_signals(self, proc)
 
     def _read_string(self, cpu, buf):
         """
@@ -330,7 +330,7 @@ class Windows(Platform):
             self.clocks += 1
             if self.clocks % 10000 == 0:
                 self.sched()
-        except Sysenter as e:
+        except Syscall as e:
             try:
                 e = None
                 self.sysenter(self.current)
@@ -432,7 +432,7 @@ class Windows(Platform):
 
 class SWindows(Windows):
     '''
-    A symbolic extension of a Decree Operating System Platform.
+    A symbolic extension of a Decree Operating System platform.
     '''
     def __init__(self, constraints, path, additional_context=None, snapshot_folder=None):
         '''
@@ -444,12 +444,19 @@ class SWindows(Windows):
         self._constraints =  constraints
         super(SWindows, self).__init__(path, additional_context, snapshot_folder)
 
-    def _mk_memory(self):
-        return SMemory32(self.constraints)
-
     @property
     def constraints(self):
         return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.memory.constraints = constraints
+
+
+    def _mk_memory(self):
+        return SMemory32(self.constraints)
 
     #marshaling/pickle
     def __getstate__(self):
@@ -460,7 +467,6 @@ class SWindows(Windows):
     def __setstate__(self, state):
         self._constraints = state['constraints']
         super(SWindows, self).__setstate__(state)
-
 
 def readStringFromPointer(state, cpu, ptr, utf16, max_symbols=8):
 
@@ -535,7 +541,7 @@ class ntdll(object):
     def RtlAllocateHeap(platform, handle, flags, size):
         if issymbolic(size):
             logger.info("RtlAllcoateHeap({}, {}, SymbolicSize); concretizing size".format(str(handle), str(flags)) )
-            raise ConcretizeArgument(2)
+            raise ConcretizeArgumet(platform.current, 2)
         else:
             raise IgnoreAPI("RtlAllocateHeap({}, {}, {:08x})".format(str(handle), str(flags), size))
 
@@ -577,7 +583,7 @@ class kernel32(object):
         except MemoryException as me:
             raise MemoryException("{}: {}".format(myname, me.cause), 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(platform.current, 1)
 
         logger.info("{}({}, [{}], {}, {}, {})".format(
             myname,
@@ -608,19 +614,19 @@ class kernel32(object):
                 str(phkResult)))
 
     @staticmethod
-    def RegCreateKeyExW(platform, hkey, lpSubKey, Reserved, lpClass, dwOptions,
+    def RegCreateKeyExW(platform, hkey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition):
-        return kernel32._RegCreateKeyEx(platform, True, hkey, lpSubKey, Reserved, lpClass, dwOptions,
+        return kernel32._RegCreateKeyEx(platform, True, hkey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition)
 
     @staticmethod
-    def RegCreateKeyExA(platform, hkey, lpSubKey, Reserved, lpClass, dwOptions,
+    def RegCreateKeyExA(platform, hkey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition):
-        return kernel32._RegCreateKeyEx(platform, False, hkey, lpSubKey, Reserved, lpClass, dwOptions,
+        return kernel32._RegCreateKeyEx(platform, False, hkey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition)
 
     @staticmethod
-    def _RegCreateKeyEx(platform, utf16, hKey, lpSubKey, Reserved, lpClass, dwOptions,
+    def _RegCreateKeyEx(platform, utf16, hKey, lpSubKey, Reserved, lpClass, dwOptions, 
             samDesired, lpSecurityAttributes, phkResult, lpdwDisposition):
         """ LONG WINAPI RegCreateKeyEx(
           _In_       HKEY                  hKey,
@@ -641,7 +647,7 @@ class kernel32(object):
         except MemoryException as me:
             raise MemoryException("{}: {}".format(myname, me.cause), 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(platform.current, 1)
 
         logger.info("{}({}, [{}], {}, {}, {}, {}, {}, {}, {})".format(myname,
             str(hKey), key_str, str(Reserved), str(lpClass), str(dwOptions), 
@@ -741,7 +747,7 @@ class kernel32(object):
             msg = "CreateFile{}: {}".format(utf16 and "W" or "A", me.cause)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgumet(platform.current, 0)
 
 
         logger.info("""CreateFile%s(
@@ -806,23 +812,23 @@ class kernel32(object):
         return 1
 
     @staticmethod
-    def CreateProcessW(platform, lpApplicationName, lpCommandLine, lpProcessAttributes,
+    def CreateProcessW(platform, lpApplicationName, lpCommandLine, lpProcessAttributes, 
             lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
             lpCurrentDirectory, lpStartupInfo, lpProcessInformation):
-        return kernel32._CreateProcess(platform, True, lpApplicationName, lpCommandLine, lpProcessAttributes,
+        return kernel32._CreateProcess(platform, True, lpApplicationName, lpCommandLine, lpProcessAttributes, 
                 lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
                 lpCurrentDirectory, lpStartupInfo, lpProcessInformation)
 
     @staticmethod
-    def CreateProcessA(platform, lpApplicationName, lpCommandLine, lpProcessAttributes,
+    def CreateProcessA(platform, lpApplicationName, lpCommandLine, lpProcessAttributes, 
             lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
             lpCurrentDirectory, lpStartupInfo, lpProcessInformation):
-        return kernel32._CreateProcess(platform, False, lpApplicationName, lpCommandLine, lpProcessAttributes,
+        return kernel32._CreateProcess(platform, False, lpApplicationName, lpCommandLine, lpProcessAttributes, 
                 lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
                 lpCurrentDirectory, lpStartupInfo, lpProcessInformation)
 
     @staticmethod
-    def _CreateProcess(platform, utf16, lpApplicationName, lpCommandLine, lpProcessAttributes,
+    def _CreateProcess(platform, utf16, lpApplicationName, lpCommandLine, lpProcessAttributes, 
             lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, 
             lpCurrentDirectory, lpStartupInfo, lpProcessInformation):
         """BOOL WINAPI CreateProcess(
@@ -847,7 +853,7 @@ class kernel32(object):
             msg = "{}: {}".format(myname, me.cause)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(0)
+            raise ConcretizeArgumet(platform.current, 0)
 
         try:
             cmdline = readStringFromPointer(platform, cpu, lpCommandLine, utf16)
@@ -855,7 +861,7 @@ class kernel32(object):
             msg = "{}: {}".format(myname, me.cause)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgument(1)
+            raise ConcretizeArgumet(platform.current, 1)
 
         raise IgnoreAPI("{}([{}], [{}], {}, {}, {}, {}, {}, {}, {}, {})".format(myname,
             appname, cmdline, str(lpProcessAttributes), 

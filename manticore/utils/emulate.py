@@ -41,7 +41,10 @@ class UnicornEmulator(object):
 
     def _unicorn(self):
         if self._cpu.arch == CS_ARCH_ARM:
-            return Uc(UC_ARCH_ARM, UC_MODE_ARM)
+            if self._cpu.mode == CS_MODE_ARM:
+                return Uc(UC_ARCH_ARM, UC_MODE_ARM)
+            elif self._cpu.mode == CS_MODE_THUMB:
+                return Uc(UC_ARCH_ARM, UC_MODE_THUMB)
         elif self._cpu.arch == CS_ARCH_X86:
             if self._cpu.mode == CS_MODE_32:
                 return Uc(UC_ARCH_X86, UC_MODE_32)
@@ -173,7 +176,7 @@ class UnicornEmulator(object):
                 for offset, byte in enumerate(values, start=address):
                     if issymbolic(byte):
                         from ..core.cpu.abstractcpu import ConcretizeMemory
-                        raise ConcretizeMemory(offset, 8,
+                        raise ConcretizeMemory(self._cpu.memory, offset, 8,
                                                "Concretizing for emulation")
 
                 self._emu.mem_write(address, ''.join(values))
@@ -218,11 +221,12 @@ class UnicornEmulator(object):
             val = self._cpu.read_register(reg)
             if issymbolic(val):
                 from ..core.cpu.abstractcpu import ConcretizeRegister
-                raise ConcretizeRegister(reg, "Concretizing for emulation.",
+                raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
                                          policy='ONE') 
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
         # Bring in the instruction itself
+        instruction = self._cpu.decode_instruction(self._cpu.PC)
         text_bytes = self._cpu.read_bytes(self._cpu.PC, instruction.size)
         self._emu.mem_write(self._cpu.PC, ''.join(text_bytes))
 

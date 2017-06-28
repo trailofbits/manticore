@@ -127,12 +127,9 @@ def main():
 
     m.verbosity = args.v
 
-    logger.info('Loading program: %s', args.programs)
-    logger.info('Workspace: %s', m.workspace)
-
     m.run(args.procs, args.timeout)
 
-    m.dump_stats()
+    #m.dump_stats()
 
 if __name__ == '__main__':
     main()

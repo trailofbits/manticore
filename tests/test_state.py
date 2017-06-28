@@ -1,9 +1,9 @@
 import unittest
 
-from manticore.core.state import State
-from manticore.core.smtlib import BitVecVariable
-from manticore.core.smtlib import ConstraintSet
 from manticore.platforms import linux
+from manticore.utils.event import Signal
+from manticore.core.state import State
+from manticore.core.smtlib import BitVecVariable, ConstraintSet
 
 class FakeMemory(object):
     def __init__(self):
@@ -13,8 +13,23 @@ class FakeMemory(object):
     def constraints(self):
         return self._constraints
 
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+
 class FakeCpu(object):
     def __init__(self):
+        self.will_decode_instruction = Signal()
+        self.will_execute_instruction = Signal()
+        self.did_execute_instruction = Signal()
+        self.will_emulate_instruction = Signal()
+        self.did_emulate_instruction = Signal()
+
+        self.will_read_register = Signal()
+        self.will_write_register = Signal()
+        self.will_read_memory = Signal()
+        self.will_write_memory = Signal()
+
         self._memory = FakeMemory()
 
     @property
@@ -34,8 +49,16 @@ class FakePlatform(object):
     def constraints(self):
         return self._constraints
 
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.memory.constraints = constraints
+
+
 
 class StateTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     def setUp(self):
         l = linux.Linux('/bin/ls')
         self.state = State(ConstraintSet(), l)
@@ -68,30 +91,30 @@ class StateTest(unittest.TestCase):
         solved = self.state.concretize(expr, 'ONE')
         self.assertEqual(len(solved), 1)
         self.assertIn(solved[0], xrange(100))
-    
+
     def test_state(self):
         constraints = ConstraintSet()
         initial_state = State(constraints, FakePlatform())
 
         arr = initial_state.symbolicate_buffer('+'*100, label='SYMBA')
         initial_state.constrain(arr[0] > 0x41)
-        self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
+        self.assertTrue(len(initial_state.constraints.declarations) == 1 )
         with initial_state as new_state:
 
-            self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
-            self.assertTrue(len(new_state.constraints.declarations) == 1 ) 
+            self.assertTrue(len(initial_state.constraints.declarations) == 1 )
+            self.assertTrue(len(new_state.constraints.declarations) == 1 )
             arrb = new_state.symbolicate_buffer('+'*100, label='SYMBB')
 
-            self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
-            self.assertTrue(len(new_state.constraints.declarations) == 1 ) 
+            self.assertTrue(len(initial_state.constraints.declarations) == 1 )
+            self.assertTrue(len(new_state.constraints.declarations) == 1 )
 
             new_state.constrain(arrb[0] > 0x42)
 
 
-            self.assertTrue(len(new_state.constraints.declarations) == 2 ) 
+            self.assertTrue(len(new_state.constraints.declarations) == 2 )
 
 
-        self.assertTrue(len(initial_state.constraints.declarations) == 1 ) 
+        self.assertTrue(len(initial_state.constraints.declarations) == 1 )
 
     def test_new_symbolic_buffer(self):
         length = 64
@@ -108,6 +131,7 @@ class StateTest(unittest.TestCase):
         with self.assertRaises(Exception):
             expr = self.state.new_symbolic_value(length)
 
+    @unittest.skip('Record branches not a part of state anymore')
     def test_record_branches(self):
         branch = 0x80488bb
         target = 0x8048997

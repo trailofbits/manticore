@@ -1,11 +1,13 @@
 import unittest
- 
+
 from manticore.core.cpu.arm import Armv7RegisterFile as RF
 from manticore.core.cpu.arm import *
 
 from capstone.arm import *
 
 class Armv7RF(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     def setUp(self):
         self.r = RF()
 

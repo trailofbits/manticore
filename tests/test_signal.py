@@ -9,6 +9,7 @@ class Sender(object):
         self.sig2 = Signal()
 
 class ManticoreDriver(unittest.TestCase):
+    _multiprocess_can_split_ = True
     def setUp(self):
         self.state = {}
 
@@ -39,7 +40,7 @@ class ManticoreDriver(unittest.TestCase):
     def test_method(self):
         s = Sender()
         s.sig += self.setReceived
-        
+
         s.sig('received', True)
 
         self.assertEqual(self.state['received'], True)

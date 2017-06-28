@@ -35,11 +35,10 @@ sudo apt-get update && sudo apt-get install z3 python-pip -y
 python -m pip install -U pip
 
 # Install manticore and its dependencies
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-sudo pip install .
+sudo pip install manticore
 
-# Build the examples
-cd examples/linux
+# Download and build the examples
+git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
 make
 
 # Use the Manticore CLI
@@ -61,8 +60,7 @@ Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 ```
 echo "PATH=\$PATH:~/.local/bin" >> ~/.profile
 source ~/.profile
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-pip install --user .
+pip install --user manticore
 ```
 
 Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/) or [similar](https://virtualenv.pypa.io/en/stable/)).
@@ -71,16 +69,14 @@ Option 2: Use a virtual environment (requires [virtualenvwrapper](https://virtua
 pip install virtualenvwrapper
 echo "source /usr/local/bin/virtualenvwrapper.sh" >> ~/.profile
 source ~/.profile
-git clone https://github.com/trailofbits/manticore.git && cd manticore
 mkvirtualenv manticore
-pip install .
+pip install manticore
 ```
 
 Option 3: Perform a system install.
 
 ```
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-sudo pip install .
+sudo pip install manticore
 ```
 
 Once installed, the `manticore` CLI tool and its Python API will be available.
@@ -90,6 +86,7 @@ Once installed, the `manticore` CLI tool and its Python API will be available.
 For a dev install that includes dependencies for tests, run:
 
 ```
+git clone https://github.com/trailofbits/manticore.git && cd manticore
 pip install --no-binary keystone-engine -e .[dev]
 ```
 
@@ -105,6 +102,15 @@ nosetests tests/test_armv7cpu.py
 nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
 # just one test
 nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
+```
+
+Moreover, you can invoke multiprocess test invocation via the --processes
+flag. Note, however, that several tests (e.g., tests/test_memdumps.py) require
+longer execution times, thus you need to specify the appropriate timeout
+period via the --process-timeout flag. E.g.,
+
+```
+nosetests --processes=8 --process-timeout=120 tests/test_binaries.py
 ```
 
 ## Usage

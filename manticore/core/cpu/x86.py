@@ -8,8 +8,16 @@ from functools import wraps
 import capstone as cs
 
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
+<<<<<<< HEAD
 from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
+=======
+from .abstractcpu import ConcretizeRegister, ConcretizeRegister, ConcretizeArgument
+from .abstractcpu import Interruption, Syscall
+from functools import wraps
+import collections
+>>>>>>> master
 from ..smtlib import *
+from ..memory import MemoryException
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger("CPU")
@@ -58,7 +66,7 @@ def rep(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -86,7 +94,7 @@ def repe(old_method):
             counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
-                raise ConcretizeRegister(counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
+                raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
 
             FLAG = count != 0
 
@@ -103,7 +111,7 @@ def repe(old_method):
                     FLAG = Operators.AND(cpu.ZF == False, count != 0) #true FLAG means loop
 
             #if issymbolic(FLAG):
-            #    raise ConcretizeRegister('ZF', "Concretizing ZF on REP instruction", policy='ALL')
+            #    raise ConcretizeRegister(cpu, 'ZF', "Concretizing ZF on REP instruction", policy='ALL')
 
             #if not FLAG:
             cpu.PC += Operators.ITEBV(cpu.address_bit_size, FLAG, 0, cpu.instruction.size)
@@ -5565,7 +5573,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         '''
-        raise Sysenter()
+        raise Syscall()
 
     @instruction
     def TZCNT(cpu, dest, src):
@@ -5752,6 +5760,7 @@ class SystemVAbi(Abi):
         self._cpu.RIP = self._cpu.pop(self._cpu.address_bit_size)
 
 
+
 class AMD64Cpu(X86Cpu):
     #Config
     max_instr_width = 15
@@ -5861,6 +5870,7 @@ class AMD64Cpu(X86Cpu):
         :param dest: destination operand.
         '''
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
+
 
 
 class I386Cpu(X86Cpu):

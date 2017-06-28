@@ -15,6 +15,7 @@ def isconcrete(value):
 
 
 class MemoryTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
     def get_open_fds(self):
         fds = []
         for fd in range(3, resource.RLIMIT_NOFILE):
@@ -76,14 +77,14 @@ class MemoryTest(unittest.TestCase):
         #Check the default initial value
         self.assertEqual(mem._search(0x1000, None), 0xf7fff000)
 
-       
+
         #alloc/map a byte at default address.
         first = mem.mmap(None, 0x0001, 'r')
         self.assertEqual(first, 0xf7fff000)
 
         #Okay 2 maps
         self.assertEqual(len(mem.mappings()), 1)
-        #check valid 
+        #check valid
         self.assertTrue(first in mem)
         self.assertTrue(mem.access_ok((first), 'r'))
         self.assertFalse(isinstance(mem[first], Expression))
@@ -99,7 +100,7 @@ class MemoryTest(unittest.TestCase):
         second = mem.mmap(None, 0x1000, 'w')
         #Okay 2 maps
         self.assertEqual(len(mem.mappings()), 2)
-        #check valid 
+        #check valid
         self.assertTrue(second in mem)
         self.assertTrue(mem.access_ok((second), 'w'))
         self.assertTrue(second+0x1000-1 in mem)
@@ -107,10 +108,10 @@ class MemoryTest(unittest.TestCase):
         #bytes outside the map should be not valid
         self.assertFalse(second-1 in mem)
         self.assertFalse(first+0x1000 in mem)
-                    
+
         #alloc/map a byte
         third = mem.mmap(None, 0x1000, 'x')
-        
+
         #Okay 3 maps
         self.assertEqual(len(mem.mappings()), 3)
 
@@ -127,7 +128,7 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(first+0x1000 in mem)
 
         self.assertFalse(mem.access_ok((second), 'x'))
-        mem.munmap(second,1) 
+        mem.munmap(second,1)
         self.assertFalse(second in mem)
         self.assertEqual(len(mem.mappings()), 2)
 
@@ -136,7 +137,7 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(forth, mem._ceil(third+1))
         self.assertTrue(forth in mem)
         self.assertTrue(mem.access_ok((forth), 'x'))
-        
+
     def test_search_and_mmap_several_chunks_testing_limits_memory_page_12(self):
         mem = Memory32()
 
@@ -159,7 +160,7 @@ class MemoryTest(unittest.TestCase):
 
         self.assertTrue(zero in mem)
         self.assertRaises(AssertionError, mem.mmap, 0x0000F000, 0, 'r')
-        
+
         self.assertEqual(zero, 0)
 
     def test_try_to_allocate_greater_than_last_space_memory_page_12(self):
@@ -225,7 +226,7 @@ class MemoryTest(unittest.TestCase):
 
         self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x41')
         self.assertRaises(MemoryException, mem.__setitem__, sym, '\x41')
-        
+
         #alloc/map a byte
         first = mem.mmap(0x1000, 0x1000, 'w')
 
@@ -238,7 +239,7 @@ class MemoryTest(unittest.TestCase):
         self.assertRaises(MemoryException, mem.__setitem__, sym, val)
 
         cs.add( sym.uge(0x1000))
-  
+
         mem[sym] = '\x40'
         mem[sym] = val
 
@@ -336,7 +337,7 @@ class MemoryTest(unittest.TestCase):
 
     def testBasicAnonMap(self):
         m = AnonMap(0x10000000, 0x2000, 'rwx')
-        
+
         #Check the size
         self.assertEqual(len(m), 0x2000)
 
@@ -370,7 +371,7 @@ class MemoryTest(unittest.TestCase):
     def test_basic_get_char(self):
         mem = SMemory32(ConstraintSet())
         addr = mem.mmap(None, 0x10, 'rw')
-        mem[addr] = 'a' 
+        mem[addr] = 'a'
 
         mem[addr+0x10:addr+0x20] = 'Y'*0x10
         self.assertItemsEqual(mem[addr+0x10-1:addr+0x20+1], '\x00' + 'Y'*0x10 +'\x00')
@@ -381,7 +382,7 @@ class MemoryTest(unittest.TestCase):
 
         #start with no maps
         self.assertEqual(len(mem.mappings()), 0)
-        
+
         #alloc/map a litlle mem
         addr = mem.mmap(None, 0x10, 'r')
         for c in xrange(0, 0x10):
@@ -509,7 +510,7 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr, size)
 
         #Okay 0 maps
@@ -543,12 +544,12 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr+0x1000+0x1234, 0x1234)
 
         '''
-        00000000f7ff0000-00000000f7ff2000  rwx 00000000 
-        00000000f7ff4000-00000000f8000000  rwx 00000000 
+        00000000f7ff0000-00000000f7ff2000  rwx 00000000
+        00000000f7ff4000-00000000f8000000  rwx 00000000
         '''
 
         #Okay 2 maps
@@ -584,7 +585,7 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr, size/2)
 
         #Okay 1 maps
@@ -619,7 +620,7 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr+size/2, size)
 
         #Okay 1 maps
@@ -651,7 +652,7 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr+size/3, size/3)
 
         #Okay 2 maps
@@ -772,7 +773,7 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr-size/2, size)
         #Okay 1 maps
         self.assertEqual(len(mem.mappings()), 1)
@@ -802,7 +803,7 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr+size/2, size)
 
         #limits
@@ -833,13 +834,13 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr, size/2)
 
         #Okay 1 maps
         self.assertEqual(len(mem.mappings()), 1)
-        
-        #Okay unmap 
+
+        #Okay unmap
         mem.munmap(addr+size/2, size/2)
 
         #Okay 1 maps
@@ -864,19 +865,19 @@ class MemoryTest(unittest.TestCase):
         self.assertFalse(addr-1 in mem)
         self.assertFalse(addr+size in mem)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr+size - size/3, size/2)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr - (size/2 - size/3), size/2)
 
         #limits
         self.assertTrue((addr+size - size/3 - 1) in mem )
         self.assertFalse((addr+size - size/3) in mem )
-        
+
         self.assertFalse((addr - (size/2 - size/3) + size/2 - 1) in mem )
         self.assertTrue((addr - (size/2 - size/3) + size/2) in mem )
-        
+
         self.assertFalse(addr in mem)
         self.assertFalse(addr+size-1 in mem)
         #Okay 1 maps
@@ -884,36 +885,36 @@ class MemoryTest(unittest.TestCase):
 
     def test_mmapFile(self):
         mem = SMemory32(ConstraintSet())
-        
+
         #start with no maps
         self.assertEqual(len(mem.mappings()), 0)
-        
+
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
         rwx_file.file.write('a'*0x1001)
         rwx_file.close()
-        
+
         addr_a = mem.mmapFile(0, 0x1000, 'rwx', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 1)
-        
+
         self.assertEqual(mem[addr_a], 'a')
         self.assertEqual(mem[addr_a+(0x1000/2)], 'a')
         self.assertEqual(mem[addr_a+(0x1000-1)], 'a')
         self.assertRaises(MemoryException, mem.__getitem__, addr_a+(0x1000))
-        
+
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
         rwx_file.file.write('b'*0x1001)
         rwx_file.close()
-        
+
         addr_b = mem.mmapFile(0, 0x1000, 'rw', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 2)
-        
+
         self.assertEqual(mem[addr_b], 'b')
         self.assertEqual(mem[addr_b+(0x1000/2)], 'b')
         self.assertEqual(mem[addr_b+(0x1000-1)], 'b')
 
-                                             
+
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
         rwx_file.file.write('c'*0x1001)
         rwx_file.close()
@@ -921,41 +922,41 @@ class MemoryTest(unittest.TestCase):
         addr_c = mem.mmapFile(0, 0x1000, 'rx', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 3)
-        
+
         self.assertEqual(mem[addr_c], 'c')
         self.assertEqual(mem[addr_c+(0x1000/2)], 'c')
         self.assertEqual(mem[addr_c+(0x1000-1)], 'c')
-        
+
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
         rwx_file.file.write('d'*0x1001)
         rwx_file.close()
-        
+
         addr_d = mem.mmapFile(0, 0x1000, 'r', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 4)
-        
+
         self.assertEqual(mem[addr_d], 'd')
         self.assertEqual(mem[addr_d+(0x1000/2)], 'd')
         self.assertEqual(mem[addr_d+(0x1000-1)], 'd')
-        
+
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
         rwx_file.file.write('e'*0x1001)
         rwx_file.close()
-        
+
         addr_e = mem.mmapFile(0, 0x1000, 'w', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 5)
-        
+
         self.assertRaises(MemoryException, mem.__getitem__, addr_e)
         self.assertRaises(MemoryException, mem.__getitem__, addr_e+(0x1000/2))
         self.assertRaises(MemoryException, mem.__getitem__, addr_e+(0x1000-1))
 
     def test_basic_mapping_with_mmapFile(self):
         mem = SMemory32(ConstraintSet())
-        
+
         #start with no maps
         self.assertEqual(len(mem.mappings()), 0)
-        
+
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
         rwx_file.file.write('d'*0x1001)
         rwx_file.close()
@@ -984,7 +985,7 @@ class MemoryTest(unittest.TestCase):
 
 
         self.assertEqual(len(mem.mappings()), 1)
-        
+
         r_file = tempfile.NamedTemporaryFile('w+b', delete=False)
         r_file.file.write('b'*0x1000)
         r_file.close()
@@ -1006,17 +1007,17 @@ class MemoryTest(unittest.TestCase):
 
         #Three mapping
         self.assertEqual(len(mem.mappings()), 3)
-        
+
         size = 0x30000
         w_file = tempfile.NamedTemporaryFile('w+b', delete=False)
         w_file.file.write('abc'*(size/3))
         w_file.close()
         addr = mem.mmapFile(0x20000000, size, 'w', w_file.name)
-        
+
         #Four mapping
         self.assertEqual(len(mem.mappings()), 4)
 
-        #Okay unmap 
+        #Okay unmap
         mem.munmap(addr+size/3, size/3)
 
         #Okay 2 maps
@@ -1046,15 +1047,15 @@ class MemoryTest(unittest.TestCase):
         #global mainsolver
         cs = ConstraintSet()
         mem = SMemory32(cs)
-        
+
         start_mapping_addr = mem.mmap(None, 0x1000, 'rwx')
-        
+
         concrete_addr = start_mapping_addr
         symbolic_addr = start_mapping_addr+1
-        
+
         mem[concrete_addr] = 'C'
         sym = cs.new_bitvec(8)
-        
+
         mem[symbolic_addr] = sym
         cs.add(sym.uge(0xfe))
         values = list(solver.get_all_values(cs, sym))
@@ -1068,7 +1069,7 @@ class MemoryTest(unittest.TestCase):
         self.assertIn(0xfe, values)
         self.assertIn(0xff, values)
         self.assertNotIn(0x7f, values)
-                    
+
         with cs as cs_temp:
             cs_temp.add(sym==0xfe)
             values = list(solver.get_all_values(cs_temp, sym))
@@ -1079,7 +1080,7 @@ class MemoryTest(unittest.TestCase):
             self.assertIn(0xfe, values)
             self.assertNotIn(0xff, values)
             self.assertNotIn(0x7f, values)
-        
+
 
         values = list(solver.get_all_values(cs, sym))
         self.assertIn(0xfe, values)
@@ -1093,15 +1094,15 @@ class MemoryTest(unittest.TestCase):
     def test_mix_of_concrete_and_symbolic(self):
         cs = ConstraintSet()
         mem = SMemory32(cs)
-        
+
         start_mapping_addr = mem.mmap(None, 0x1000, 'rwx')
-        
+
         concretes = [0, 2, 4, 6]
         symbolics = [1, 3, 5, 7]
-        
+
         for range in concretes:
             mem[start_mapping_addr+range] = 'C'
-        
+
         for range in symbolics:
             mem[start_mapping_addr+range] = cs.new_bitvec(8)
 
@@ -1110,16 +1111,16 @@ class MemoryTest(unittest.TestCase):
 
         for range in concretes:
             self.assertFalse(issymbolic(mem[start_mapping_addr+range]))
-        
+
         for range in symbolics:
-            self.assertTrue(issymbolic(mem[start_mapping_addr+range]))                
+            self.assertTrue(issymbolic(mem[start_mapping_addr+range]))
 
         for range in symbolics:
             self.assertFalse(isconcrete(mem[start_mapping_addr+range]))
-    
+
         for range in symbolics:
             mem[start_mapping_addr+range] = 'C'
-        
+
         for range in concretes:
             mem[start_mapping_addr+range] = cs.new_bitvec(8)
 
@@ -1128,9 +1129,9 @@ class MemoryTest(unittest.TestCase):
 
         for range in symbolics:
             self.assertFalse(issymbolic(mem[start_mapping_addr+range]))
-        
+
         for range in concretes:
-            self.assertTrue(issymbolic(mem[start_mapping_addr+range]))                
+            self.assertTrue(issymbolic(mem[start_mapping_addr+range]))
 
         for range in concretes:
             self.assertFalse(isconcrete(mem[start_mapping_addr+range]))
@@ -1139,29 +1140,29 @@ class MemoryTest(unittest.TestCase):
         #global mainsolver
         cs = ConstraintSet()
         mem = SMemory32(cs)
-        
+
         addr_for_symbol1 = mem.mmap(None, 0x1000, 'rwx')
         mem[addr_for_symbol1] = 'A'
 
         symbol1 = cs.new_bitvec(8)
-        
+
         cs.add(Operators.OR(symbol1==Operators.ORD('B'), symbol1==Operators.ORD('C')))
 
         mem[addr_for_symbol1+1] = symbol1
-        
+
         values = list(solver.get_all_values(cs, symbol1))
         self.assertIn(Operators.ORD('B'), values)
         self.assertIn(Operators.ORD('C'), values)
-        
+
         symbol2 = cs.new_bitvec(32)
         cs.add(symbol2>=addr_for_symbol1)
         cs.add(symbol2<=addr_for_symbol1+1)
 
         c = mem[symbol2]
-        self.assertTrue(issymbolic(c))           
-        
+        self.assertTrue(issymbolic(c))
+
         values = list(solver.get_all_values(cs, c))
-        
+
         self.assertIn(Operators.ORD('A'), values)
         self.assertIn(Operators.ORD('B'), values)
         self.assertIn(Operators.ORD('C'), values)
@@ -1183,7 +1184,7 @@ class MemoryTest(unittest.TestCase):
 
 
         #make a free symbol of 32 bits
-        x = cs.new_bitvec(32) 
+        x = cs.new_bitvec(32)
         #constraint it to range into [addr, addr+10)
         cs.add(x>=addr)
         cs.add(x<addr+10)
@@ -1216,7 +1217,7 @@ class MemoryTest(unittest.TestCase):
         cs.add(x<=addr)
         #It shall be a solution
         self.assertTrue(solver.check(cs))
-        #if we ask for a possible solution 
+        #if we ask for a possible solution
         sol = solver.get_value(cs, x)
         #it must be addr
         self.assertTrue(sol == addr)
@@ -1245,7 +1246,7 @@ class MemoryTest(unittest.TestCase):
             mem[i] = Operators.CHR(100+i-addr)
 
         #Make a char that ranges from 'A' to 'Z'
-        v = cs.new_bitvec(32) 
+        v = cs.new_bitvec(32)
         cs.add(v>=Operators.ORD('A'))
         cs.add(v<=Operators.ORD('Z'))
 
@@ -1254,7 +1255,7 @@ class MemoryTest(unittest.TestCase):
 
 
         #mak a free symbol of 32 bits
-        x = cs.new_bitvec(32) 
+        x = cs.new_bitvec(32)
         #constraint it to range into [addr, addr+10)
         cs.add(x>=addr)
         cs.add(x<addr+10)
@@ -1298,7 +1299,7 @@ class MemoryTest(unittest.TestCase):
         #alloc/map a little mem
         addr = mem.mmap(None, size, 'rwx')
 
-        #okay we should have 1 map 
+        #okay we should have 1 map
         self.assertEqual(len(mem.mappings()), 1)
 
         #free middle page
@@ -1316,7 +1317,7 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(mem[addr+0x2000], 'b')
 
         #make a free symbol of 32 bits
-        x = cs.new_bitvec(32) 
+        x = cs.new_bitvec(32)
         #constraint it to range into [addr, addr+10)
         cs.add(x>=addr)
         cs.add(x<=addr+0x2000)
@@ -1498,7 +1499,7 @@ class MemoryTest(unittest.TestCase):
         mem[addr_f] = sym
 
         #save it
-        
+
         s = StringIO(pickle.dumps(mem))
 
         #load it

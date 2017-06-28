@@ -26,12 +26,39 @@ for test in tests:
 
 print """
 import unittest
+import functools
 from manticore.core.cpu.x86 import *
 from manticore.core.smtlib import Operators
 from manticore.core.memory import *
 
 
+def skipIfNotImplemented(f):
+    # XXX(yan) the inner function name must start with test_
+    @functools.wraps(f)
+    def test_inner(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except NotImplementedError, e:
+            raise unittest.SkipTest(e.message)
+
+    return test_inner
+
+def forAllTests(decorator):
+    def decorate(cls):
+        for attr in cls.__dict__:
+            if not attr.startswith('test_'):
+                continue
+            method = getattr(cls, attr)
+            if callable(method):
+                setattr(cls, attr, decorator(method))
+        return cls
+
+    return decorate
+
+@forAllTests(skipIfNotImplemented)
 class CPUTest(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
     class ROOperand(object):
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
@@ -45,12 +72,11 @@ class CPUTest(unittest.TestCase):
         def write(self, value):
             self.value = value & ((1<<self.size)-1)
             return self.value
-
 """
 
 
 def isFlag(x):
-    return x in ['OF', 'SF', 'ZF', 'AF', 'PF', 'CF', 'DF']            
+    return x in ['OF', 'SF', 'ZF', 'AF', 'PF', 'CF', 'DF']
 
 def regSize(x):
     if x in ('BPL', 'AH', 'CH', 'DH', 'BH', 'AL', 'CL', 'DL', 'BL', 'SIL', 'DIL', 'SIH', 'DIH', 'R8B', 'R9B', 'R10B', 'R11B', 'R12B', 'R13B', 'R14B', 'R15B'):
@@ -75,7 +101,7 @@ def regSize(x):
         raise Exception('FPU not supported')
 
     raise Exception('%s not supported', x)
-    
+
 
 def get_maps(test):
     pages = set()
@@ -95,23 +121,23 @@ def get_maps(test):
 
 
 
-for test_name in sorted(test_dic.keys()):    
-    
+for test_name in sorted(test_dic.keys()):
+
     test = test_dic[test_name]
     bits = {'i386': 32, 'amd64': 64}[test['arch']]
     pc = {'i386': 'EIP', 'amd64': 'RIP'}[test['arch']]
 
     print """
     def test_%(test_name)s(self):
-        ''' Instruction %(test_name)s 
-            Groups: %(groups)s 
+        ''' Instruction %(test_name)s
+            Groups: %(groups)s
             %(disassembly)s
         '''
         mem = Memory%(bits)d()
         cpu = %(cpu)s(mem)"""%{   'test_name': test_name,
                                         'groups': ', '.join(map(str,test['groups'])),
-                                        'disassembly': test['disassembly'], 
-                                        'bits': bits, 
+                                        'disassembly': test['disassembly'],
+                                        'bits': bits,
                                         'arch': test['arch'],
                                         'cpu': {64:'AMD64Cpu', 32:'I386Cpu'}[bits], }
 
@@ -125,7 +151,7 @@ for test_name in sorted(test_dic.keys()):
 
     for reg_name, value in test['pre']['registers'].items():
         if isFlag(reg_name):
-            print """        cpu.%s = %r"""%(reg_name, value)            
+            print """        cpu.%s = %r"""%(reg_name, value)
         else:
             print """        cpu.%s = 0x%x"""%(reg_name, value)
 
@@ -138,24 +164,24 @@ for test_name in sorted(test_dic.keys()):
     for reg_name, value in test['pos']['registers'].items():
         print """        self.assertEqual(cpu.%s, %r)"""%(reg_name, value)
 
-for test_name in sorted(test_dic.keys()):    
-    
+for test_name in sorted(test_dic.keys()):
+
     test = test_dic[test_name]
     bits = {'i386': 32, 'amd64': 64}[test['arch']]
     pc = {'i386': 'EIP', 'amd64': 'RIP'}[test['arch']]
 
     print """
     def test_%(test_name)s_symbolic(self):
-        ''' Instruction %(test_name)s 
-            Groups: %(groups)s 
+        ''' Instruction %(test_name)s
+            Groups: %(groups)s
             %(disassembly)s
         '''
         cs = ConstraintSet()
         mem = SMemory%(bits)d(cs)
         cpu = %(cpu)s(mem)"""%{   'test_name': test_name,
                                         'groups': ', '.join(map(str,test['groups'])),
-                                        'disassembly': test['disassembly'], 
-                                        'bits': bits, 
+                                        'disassembly': test['disassembly'],
+                                        'bits': bits,
                                         'arch': test['arch'],
                                         'cpu': {64:'AMD64Cpu', 32:'I386Cpu'}[bits] }
 
@@ -214,7 +240,7 @@ for test_name in sorted(test_dic.keys()):
             print """        condition = Operators.AND(condition, cpu.%s == %r)"""%(reg_name, value)
         else:
             print """        condition = Operators.AND(condition, cpu.%s == 0x%x)"""%(reg_name, value)
-    
+
 
     print """
         with cs as temp_cs:

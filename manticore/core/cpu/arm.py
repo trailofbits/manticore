@@ -8,7 +8,7 @@ from bitwise import *
 import capstone as cs
 
 from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
-from .abstractcpu import SymbolicPCException, InvalidPCException, Interruption
+from .abstractcpu import Interruption
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant
@@ -31,13 +31,17 @@ def instruction(body):
 
         should_execute = cpu.shouldExecuteConditional()
 
-        if issymbolic(should_execute):
-            i_size = cpu.address_bit_size / 8
-            cpu.PC = Operators.ITEBV(cpu.address_bit_size,
-                                     should_execute,
-                                     cpu.PC - i_size,
-                                     cpu.PC)
-            return
+        if cpu._at_symbolic_conditional:
+            cpu._at_symbolic_conditional = False
+            should_execute = True
+        else:
+            if issymbolic(should_execute):
+                # Let's remember next time we get here we should not do this again
+                cpu._at_symbolic_conditional = True
+                i_size = cpu.address_bit_size / 8
+                cpu.PC = Operators.ITEBV(cpu.address_bit_size, should_execute, cpu.PC-i_size,
+                        cpu.PC)
+                return
 
         if should_execute:
             ret = body(cpu, *args, **kwargs)
@@ -94,7 +98,9 @@ class Armv7Operand(Operand):
             if withCarry:
                 return imm, self._getExpandImmCarry(carry)
             return imm
-
+        elif self.type == 'coprocessor':
+            imm = self.op.imm
+            return imm
         elif self.type == 'memory':
             val = self.cpu.read_int(self.address(), nbits)
             if withCarry:
@@ -195,6 +201,9 @@ class Armv7RegisterFile(RegisterFile):
         self._regs['APSR_C'] = Register(1)
         self._regs['APSR_V'] = Register(1)
 
+        #MMU Coprocessor  -- to support MCR/MRC for TLS
+        self._regs['P15_C13'] = Register(32)
+
     def _read_APSR(self):
         def make_apsr_flag(flag_expr, offset):
             'Helper for constructing an expression for the APSR register'
@@ -251,12 +260,12 @@ class Armv7RegisterFile(RegisterFile):
         return super(Armv7RegisterFile, self).all_registers + \
                 ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','D0','D1','D2',
                 'D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14','D15','D16','D17','D18','D19','D20',
-                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V')
+                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V',
+                'P15_C13')
 
     @property
     def canonical_registers(self):
         return ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','APSR')
-
 
 class Armv7LinuxSyscallAbi(SyscallAbi):
     '''
@@ -312,19 +321,32 @@ class Armv7Cpu(Cpu):
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
-        self._force_next = False
+        self._at_symbolic_conditional = False
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()
         state['_last_flags'] = self._last_flags
-        state['_force_next'] = self._force_next
+        state['at_symbolic_conditional'] = self._at_symbolic_conditional
         return state
-
 
     def __setstate__(self, state):
         super(Armv7Cpu, self).__setstate__(state)
         self._last_flags = state['_last_flags']
-        self._force_next = state['_force_next']
+        self._at_symbolic_conditional = state['at_symbolic_conditional']
+
+    def _set_mode(self, new_mode):
+        assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
+        self.mode = new_mode
+        self._md.mode = new_mode
+
+    def _swap_mode(self):
+        #swap from arm to thumb or back
+        assert self.mode in (CS_MODE_ARM, CS_MODE_THUMB)
+        if self.mode == CS_MODE_ARM:
+            self._set_mode(CS_MODE_THUMB)
+        else:
+            self._set_mode(CS_MODE_ARM)
+
 
     # Flags that are the result of arithmetic instructions. Unconditionally
     # set, but conditionally committed.
@@ -422,6 +444,9 @@ class Armv7Cpu(Cpu):
     def write(self, addr, data):
         return self.write_bytes(addr, data)
 
+    def set_arm_tls(self, data):
+        self.regfile.write('P15_C13', data)
+
     @staticmethod
     def canonicalize_instruction_name(instr):
         name = instr.insn_name().upper()
@@ -441,16 +466,9 @@ class Armv7Cpu(Cpu):
     def shouldCommitFlags(cpu):
         return cpu.instruction.update_flags
 
-    def forceNextInstruction(cpu):
-        cpu._force_next = True
-
     def shouldExecuteConditional(cpu):
         cc = cpu.instruction.cc
         ret = False
-
-        if cpu._force_next:
-            cpu._force_next = False
-            return True
 
         C = cpu.regfile.read('APSR_C')
         N = cpu.regfile.read('APSR_N')
@@ -495,6 +513,126 @@ class Armv7Cpu(Cpu):
         result, carry_out = src.read(withCarry=True)
         dest.write(result)
         cpu.setFlags(C=carry_out, N=HighBit(result), Z=(result == 0))
+
+    @instruction
+    def MOVT(cpu, dest, src):
+        '''
+        MOVT writes imm16 to Rd[31:16]. The write does not affect Rd[15:0].
+
+        :param Armv7Operand dest: The destination operand; register
+        :param Armv7Operand src: The source operand; 16-bit immediate
+        '''
+        assert src.type == 'immediate'
+        imm = src.read()
+        low_halfword = dest.read() & Mask(16)
+        dest.write((imm << 16) | low_halfword)
+
+    @instruction
+    def MRC(cpu, coprocessor, opcode1, dest, coprocessor_reg_n, coprocessor_reg_m, opcode2):
+        '''
+        MRC moves to ARM register from coprocessor.
+
+        :param Armv7Operand coprocessor: The name of the coprocessor; immediate
+        :param Armv7Operand opcode1: coprocessor specific opcode; 3-bit immediate
+        :param Armv7Operand dest: the destination operand: register
+        :param Armv7Operand coprocessor_reg_n: the coprocessor register; immediate
+        :param Armv7Operand coprocessor_reg_m: the coprocessor register; immediate
+        :param Armv7Operand opcode2: coprocessor specific opcode; 3-bit immediate
+        '''
+        assert coprocessor.type == 'coprocessor'
+        assert opcode1.type == 'immediate'
+        assert opcode2.type == 'immediate'
+        assert dest.type == 'register'
+        imm_coprocessor = coprocessor.read()
+        imm_opcode1 = opcode1.read()
+        imm_opcode2 = opcode2.read()
+        coprocessor_n_name = coprocessor_reg_n.read()
+        coprocessor_m_name = coprocessor_reg_m.read()
+
+        if 15 == imm_coprocessor: #MMU
+            if 0 == imm_opcode1:
+                if 13 == coprocessor_n_name:
+                    if 3 == imm_opcode2:
+                        dest.write(cpu.regfile.read('P15_C13'))
+                        return
+        raise NotImplementedError("MRC: unimplemented combination of coprocessor, opcode, and coprocessor register")
+
+    @instruction
+    def LDRD(cpu, dest1, dest2, src, offset=None):
+        '''
+        Loads double width data from memory.
+        '''
+        assert dest1.type == 'register'
+        assert dest2.type == 'register'
+        assert src.type == 'memory'
+        mem1 = cpu.read_int(src.address(), 32)
+        mem2 = cpu.read_int(src.address()+4, 32)
+        writeback = cpu._compute_writeback(src, offset)
+        dest1.write(mem1)
+        dest2.write(mem2)
+        cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
+
+    @instruction
+    def STRD(cpu, src1, src2, dest, offset=None):
+        '''
+        Writes the contents of two registers to memory.
+        '''
+        assert src1.type == 'register'
+        assert src2.type == 'register'
+        assert dest.type == 'memory'
+        val1 = src1.read()
+        val2 = src2.read()
+        writeback = cpu._compute_writeback(dest, offset)
+        cpu.write_int(dest.address(), val1, 32)
+        cpu.write_int(dest.address()+4, val2, 32)
+        cpu._cs_hack_ldr_str_writeback(dest, offset, writeback)
+
+    @instruction
+    def LDREX(cpu, dest, src, offset=None):
+        '''
+        LDREX loads data from memory.
+        * If the physical address has the shared TLB attribute, LDREX
+          tags the physical address as exclusive access for the current
+          processor, and clears any exclusive access tag for this
+          processor for any other physical address.
+        * Otherwise, it tags the fact that the executing processor has
+          an outstanding tagged physical address.
+
+        :param Armv7Operand dest: the destination register; register
+        :param Armv7Operand src: the source operand: register
+        '''
+        #TODO: add lock mechanism to underlying memory --GR, 2017-06-06
+        cpu._LDR(dest, src, 32, False, offset)
+
+    @instruction
+    def STREX(cpu, status, *args):
+        '''
+        STREX performs a conditional store to memory.
+        :param Armv7Operand status: the destination register for the returned status; register
+        '''
+        #TODO: implement conditional return with appropriate status --GR, 2017-06-06
+        status.write(0)
+        return cpu._STR(cpu.address_bit_size, *args)
+
+    @instruction
+    def UXTB(cpu, dest, src):
+        '''
+        UXTB extracts an 8-bit value from a register, zero-extends
+        it to the size of the register, and writes the result to the destination register.
+
+        :param ARMv7Operand dest: the destination register; register
+        :param ARMv7Operand dest: the source register; register
+        '''
+        val = GetNBits(src.read(), 8)
+        word = Operators.ZEXTEND(val, cpu.address_bit_size)
+        dest.write(word)
+
+    @instruction
+    def PLD(cpu, addr, offset=None):
+        '''
+        PLD instructs the cpu that the address at addr might be loaded soon.
+        '''
+        pass
 
     def _compute_writeback(cpu, operand, offset):
         if offset:
@@ -626,9 +764,12 @@ class Armv7Cpu(Cpu):
     def B(cpu, dest):
         cpu.PC = dest.read()
 
-    # XXX How should we deal with switching Thumb modes?
     @instruction
     def BX(cpu, dest):
+        if dest.read() & 0x1:
+            cpu._set_mode(CS_MODE_THUMB)
+        else:
+            cpu._set_mode(CS_MODE_ARM)
         cpu.PC = dest.read() & ~1
 
     @instruction
@@ -644,17 +785,24 @@ class Armv7Cpu(Cpu):
         cpu.regfile.write('LR', next_instr_addr)
         cpu.regfile.write('PC', label.read())
 
-
     @instruction
     def BLX(cpu, dest):
-        ## XXX: Technically, this should use the values that are commented (sub
-        ## 2 and LSB of LR set, but we currently do not distinguish between
-        ## THUMB and regular modes, so we use the addresses as is. TODO: Handle
-        ## thumb correctly and fix this
+        address = cpu.PC
         target = dest.read()
-        next_instr_addr = cpu.regfile.read('PC') #- 2
-        cpu.regfile.write('LR', next_instr_addr) # | 1)
+        next_instr_addr = cpu.regfile.read('PC')
+        cpu.regfile.write('LR', next_instr_addr)
         cpu.regfile.write('PC', target & ~1)
+
+        ## The `blx <label>` form of this instruction forces a mode swap
+        ## Otherwise check the lsb of the destination and set the mode
+        if dest.type=='immediate':
+            logger.debug("swapping mode due to BLX at inst 0x{:x}".format(address))
+            cpu._swap_mode()
+        elif dest.type=='register':
+            if dest.read() & 0x1:
+                cpu._set_mode(CS_MODE_THUMB)
+            else:
+                cpu._set_mode(CS_MODE_ARM)
 
     @instruction
     def CMP(cpu, reg, compare):
@@ -789,21 +937,33 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     def _SR(cpu, insn_id, dest, op, *rest):
-        '''_SR reg has @rest, but _SR imm does not, its baked into @op
+        '''In ARM mode, _SR reg has @rest, but _SR imm does not, its baked into @op.
         '''
         assert insn_id in (cs.arm.ARM_INS_ASR, cs.arm.ARM_INS_LSL, cs.arm.ARM_INS_LSR)
 
         if insn_id == cs.arm.ARM_INS_ASR:
-            srtype = cs.arm.ARM_SFT_ASR_REG
+            if rest and rest[0].type == 'immediate':
+                srtype = cs.arm.ARM_SFT_ASR
+            else:
+                srtype = cs.arm.ARM_SFT_ASR_REG
         elif insn_id == cs.arm.ARM_INS_LSL:
-            srtype = cs.arm.ARM_SFT_LSL_REG
+            if rest and rest[0].type == 'immediate':
+                srtype = cs.arm.ARM_SFT_LSL
+            else:
+                srtype = cs.arm.ARM_SFT_LSL_REG
         elif insn_id == cs.arm.ARM_INS_LSR:
-            srtype = cs.arm.ARM_SFT_LSR_REG
+            if rest and rest[0].type == 'immediate':
+                srtype = cs.arm.ARM_SFT_LSR
+            else:
+                srtype = cs.arm.ARM_SFT_LSR_REG
 
         carry = cpu.regfile.read('APSR_C')
-        if rest:
+        if rest and rest[0].type=='register':
             #FIXME we should make Operand.op private (and not accessible)
             result, carry = cpu._Shift(op.read(), srtype, rest[0].op.reg, carry)
+        elif rest and rest[0].type=='immediate':
+            amount = rest[0].read()
+            result, carry = cpu._Shift(op.read(), srtype, amount, carry)
         else:
             result, carry = op.read(withCarry=True)
         dest.write(result)
