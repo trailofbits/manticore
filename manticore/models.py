@@ -1,7 +1,12 @@
+"""
+Models here are intended to be passed to `State.invoke_model`, not invoked directly.
+"""
+
 from .core.cpu.abstractcpu import ConcretizeArgument
 from .utils.helpers import issymbolic
 from .core.smtlib.solver import solver
 from .core.smtlib.operators import ITEBV, ZEXTEND
+
 
 VARIADIC_FUNC_ATTR = '_variadic'
 
