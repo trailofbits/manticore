@@ -9,20 +9,19 @@ from ..utils.event import Signal, forward_signals
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
-from .memory import ConcretizeMemory
+from .memory import ConcretizeMemory, MemoryException
 from ..platforms.platform import *
 
 class StateException(Exception):
     ''' All state related exceptions '''
-    def __init__(self, *args, **kwargs):
-        super(StateException, self).__init__(*args)
-        
+    pass
+
 
 class TerminateState(StateException):
     ''' Terminates current state exploration '''
-    def __init__(self, *args, **kwargs):
-        super(TerminateState, self).__init__(*args, **kwargs)
-        self.testcase = kwargs.get('testcase', False)
+    def __init__(self, message, testcase=False):
+        super(TerminateState, self).__init__(message)
+        self.testcase = testcase
 
 
 class Concretize(StateException):
@@ -138,6 +137,8 @@ class State(object):
                                 expression=expression, 
                                 setstate=setstate,
                                 policy=e.policy)
+        except MemoryException as e:
+            raise TerminateState(e.message, testcase=True)
 
         #Remove when code gets stable?
         assert self.platform.constraints is self.constraints
