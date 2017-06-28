@@ -7,9 +7,13 @@ from bitwise import *
 
 import capstone as cs
 
-from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
-from .abstractcpu import Interruption
+from .abstractcpu import (
+    Abi, SyscallAbi, Cpu, RegisterFile, Operand, Interruption
+)
+
 from .abstractcpu import instruction as abstract_instruction
+from .disasm import init_disassembler
+
 from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant
 from ...utils.helpers import issymbolic
@@ -62,7 +66,9 @@ class Armv7Operand(Operand):
         type_map = {
             cs.arm.ARM_OP_REG: 'register',
             cs.arm.ARM_OP_MEM: 'memory',
-            cs.arm.ARM_OP_IMM: 'immediate'
+            cs.arm.ARM_OP_IMM: 'immediate',
+            cs.arm.ARM_OP_PIMM:'coprocessor',
+            cs.arm.ARM_OP_CIMM:'immediate'
         }
 
         return type_map[self.op.type]
@@ -335,17 +341,22 @@ class Armv7Cpu(Cpu):
         self._at_symbolic_conditional = state['at_symbolic_conditional']
 
     def _set_mode(self, new_mode):
-        assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
+        assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
         self.mode = new_mode
-        self._md.mode = new_mode
+
+        # FIXME (theo) should never happen, hack for the tests to pass
+        if not self.disasm:
+            self.disasm = init_disassembler('capstone', cs.CS_ARCH_ARM, new_mode, None)
+
+        self.disasm.disasm.mode = new_mode
 
     def _swap_mode(self):
         #swap from arm to thumb or back
-        assert self.mode in (CS_MODE_ARM, CS_MODE_THUMB)
-        if self.mode == CS_MODE_ARM:
-            self._set_mode(CS_MODE_THUMB)
+        assert self.mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
+        if self.mode == cs.CS_MODE_ARM:
+            self._set_mode(cs.CS_MODE_THUMB)
         else:
-            self._set_mode(CS_MODE_ARM)
+            self._set_mode(cs.CS_MODE_ARM)
 
 
     # Flags that are the result of arithmetic instructions. Unconditionally
@@ -767,9 +778,9 @@ class Armv7Cpu(Cpu):
     @instruction
     def BX(cpu, dest):
         if dest.read() & 0x1:
-            cpu._set_mode(CS_MODE_THUMB)
+            cpu._set_mode(cs.CS_MODE_THUMB)
         else:
-            cpu._set_mode(CS_MODE_ARM)
+            cpu._set_mode(cs.CS_MODE_ARM)
         cpu.PC = dest.read() & ~1
 
     @instruction
@@ -800,9 +811,9 @@ class Armv7Cpu(Cpu):
             cpu._swap_mode()
         elif dest.type=='register':
             if dest.read() & 0x1:
-                cpu._set_mode(CS_MODE_THUMB)
+                cpu._set_mode(cs.CS_MODE_THUMB)
             else:
-                cpu._set_mode(CS_MODE_ARM)
+                cpu._set_mode(cs.CS_MODE_ARM)
 
     @instruction
     def CMP(cpu, reg, compare):

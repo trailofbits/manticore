@@ -3,19 +3,15 @@ import logging
 
 from functools import wraps
 
-#  from capstone import *
-#  from capstone.x86 import *
 import capstone as cs
 
-from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction
-<<<<<<< HEAD
-from .abstractcpu import Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
-=======
-from .abstractcpu import ConcretizeRegister, ConcretizeRegister, ConcretizeArgument
-from .abstractcpu import Interruption, Syscall
-from functools import wraps
-import collections
->>>>>>> master
+from .abstractcpu import (
+    Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
+    ConcretizeRegister, ConcretizeRegister, ConcretizeArgument, Interruption,
+    Syscall
+)
+
+
 from ..smtlib import *
 from ..memory import MemoryException
 from ...utils.helpers import issymbolic

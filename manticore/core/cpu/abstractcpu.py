@@ -2,6 +2,10 @@ import inspect
 import logging
 import StringIO
 
+import sys
+import types
+from functools import wraps
+from itertools import islice, imap
 from abc import abstractmethod
 from functools import wraps
 from itertools import islice, imap
@@ -9,10 +13,12 @@ from itertools import islice, imap
 import capstone as cs
 
 from .disasm import init_disassembler
-from ..smtlib import BitVec, Operators, Constant
-from ..memory import MemoryException
+from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
+from ..memory import ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
+from ...utils.event import Signal
+
 
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
@@ -368,7 +374,6 @@ class Cpu(object):
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
-        self.instruction = None
         self._last_pc = None
 
         #####################################################
@@ -510,16 +515,12 @@ class Cpu(object):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-<<<<<<< HEAD
-        self.memory[where:where + size / 8] = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
-=======
         self.will_write_memory(where, expression, size)
 
         self.memory[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in xrange(0, size, 8)]
 
         self.did_write_memory(where, expression, size)
 
->>>>>>> master
 
     def read_int(self, where, size=None):
         '''
@@ -704,7 +705,7 @@ class Cpu(object):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
 
-        insn.operands = self._wrap_operands(insn.operands)
+        instruction.operands = self._wrap_operands(instruction.operands)
 
         self._instruction_cache[pc] = instruction
         return instruction
@@ -744,10 +745,10 @@ class Cpu(object):
         if instruction.address != self.PC:
             return
 
-        name = self.canonicalize_instruction_name(insn)
+        name = self.canonicalize_instruction_name(instruction)
 
         def fallback_to_emulate(*operands):
-            text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+            text_bytes = ' '.join('%02x'%x for x in instruction.bytes)
             logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                     instruction.address, text_bytes, instruction.mnemonic,
                     instruction.op_str)

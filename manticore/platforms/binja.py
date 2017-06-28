@@ -7,9 +7,6 @@ from ..core.memory import SMemory64
 from ..core.smtlib import ConstraintSet
 from .platform import Platform
 
-# FIXME (theo) implement this in an agnostic manner
-from ..core.cpu.x86 import Sysenter
-
 logger = logging.getLogger("PLATFORM")
 
 class RestartSyscall(Exception):
@@ -74,6 +71,13 @@ class Binja(Platform):
     @property
     def constraints(self):
         return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        for proc in self.procs:
+            proc.memory.constraints = constraints
+
 
     # XXX needed -> move to Platform as abstractproperty
     @property

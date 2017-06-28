@@ -2,7 +2,8 @@ from collections import defaultdict
 
 from .abstractcpu import (
     Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
-    Interruption, Sysenter, Syscall, ConcretizeRegister, ConcretizeArgument
+    ConcretizeRegister, ConcretizeRegister, ConcretizeArgument, Interruption,
+    Syscall
 )
 
 from .x86 import AMD64RegFile
