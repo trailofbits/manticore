@@ -17,6 +17,7 @@ from threading import Timer
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
+from .core.workspace import Workspace
 from .core.executor import Executor
 from .core.state import State, TerminateState
 from .core.parser import parse
@@ -155,6 +156,7 @@ class Manticore(object):
         self._env = {}
         # Will be set to a temporary directory if not set before running start()
         self._workspace_path = None
+        self._workspace = None
         self._policy = 'random'
         self._coverage_file = None
         self._memory_errors = None
@@ -406,25 +408,23 @@ class Manticore(object):
         
     @property
     def workspace(self):
-        if self._workspace_path is None:
-            self._workspace_path = self._make_workspace()
+        if self._workspace is None:
+            # Create a default workspace (filesystem, tempdir)
+            self.workspace = None
 
-        return self._workspace_path
+        return self._workspace
 
     @workspace.setter
-    def workspace(self, path):
+    def workspace(self, desc):
+        '''
+
+        :param desc: A workspace descriptor in the format of 'type:uri'
+        '''
         assert not self._running, "Can't set workspace if Manticore is running."
 
-        if os.path.exists(path):
-            assert os.path.isdir(path)
-        else:
-            os.mkdir(path)
+        type, uri = ('fs', '') if desc is None else desc.split(':', 1)
 
-        self._workspace_path = os.path.abspath(path)
-
-    def _make_workspace(self):
-        ''' Make working directory '''
-        return os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
+        self._workspace = Workspace.create_workspace(type, uri)
 
     @property
     def policy(self):
@@ -639,80 +639,53 @@ class Manticore(object):
         :param message: Accompanying message
         '''
         import StringIO
-        _getFilename = self._executor._workspace_filename
+        #_getFilename = self._executor._workspace_filename
         test_number = testcase_id
         logger.debug("Generating testcase No. %d - %s",
                 test_number, message)
 
         # Summarize state
-        output = StringIO.StringIO()
-        memories = set()
+        #with self._workspace.saved_stream('test_%08x.messages'%test_number) as msgs:
+        #    pass
 
-        output.write("Command line:\n  " + ' '.join(sys.argv) + '\n')
-        output.write('Status:\n  {}\n'.format(message))
-        output.write('\n')
-
-        for cpu in filter(None, state.platform.procs):
-            idx = state.platform.procs.index(cpu)
-            output.write("================ PROC: %02d ================\n"%idx)
-
-            output.write("Memory:\n")
-            if hash(cpu.memory) not in memories:
-                for m in str(cpu.memory).split('\n'):
-                    output.write("  %s\n"%m)
-                memories.add(hash(cpu.memory))
-
-            output.write("CPU:\n{}".format(cpu))
-
-            if hasattr(cpu, "instruction") and cpu.instruction is not None:
-                i = cpu.instruction
-                output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
-            else:
-                output.write("  Instruction: {symbolic}\n")
-
-        with open(_getFilename('test_%08x.messages'%test_number),'a') as f:
-            f.write(output.getvalue())
-            output.close()
-
-        tracefile = 'test_{:08x}.trace'.format(test_number)
-        with open(_getFilename(tracefile), 'w') as f:
-            for pc in state.context['visited']:
-                f.write('0x{:08x}\n'.format(pc))
+        #with self._workspace.saved_stream('test_%08x.trace'%test_number) as f:
+        #    pass
 
         # Save constraints formula
-        smtfile = 'test_{:08x}.smt'.format(test_number)
-        with open(_getFilename(smtfile), 'wb') as f:
-            f.write(str(state.constraints))
+        #smtfile = 'test_{:08x}.smt'.format(test_number)
+        #with open(_getFilename(smtfile), 'wb') as f:
+        #    f.write(str(state.constraints))
         
-        assert solver.check(state.constraints)
-        for symbol in state.input_symbols:
-            buf = solver.get_value(state.constraints, symbol)
-            file(_getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
+        #assert solver.check(state.constraints)
+
+        #for symbol in state.input_symbols:
+        #    buf = solver.get_value(state.constraints, symbol)
+        #    file(_getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
         
-        file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
+        # file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
 
-        stdout = ''
-        stderr = ''
-        for sysname, fd, data in state.platform.syscall_trace:
-            if sysname in ('_transmit', '_write') and fd == 1:
-                stdout += ''.join(map(str, data))
-            if sysname in ('_transmit', '_write') and fd == 2:
-                stderr += ''.join(map(str, data))
-        file(_getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
-        file(_getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
+        #stdout = ''
+        #stderr = ''
+        #for sysname, fd, data in state.platform.syscall_trace:
+        #    if sysname in ('_transmit', '_write') and fd == 1:
+        #        stdout += ''.join(map(str, data))
+        #    if sysname in ('_transmit', '_write') and fd == 2:
+        #        stderr += ''.join(map(str, data))
+        #file(_getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
+        #file(_getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
 
-        # Save STDIN solution
-        stdin_file = 'test_{:08x}.stdin'.format(test_number)
-        with open(_getFilename(stdin_file), 'wb') as f:
-            try:
-                for sysname, fd, data in state.platform.syscall_trace:
-                    if sysname not in ('_receive', '_read') or fd != 0:
-                        continue
-                    for c in data:
-                        f.write(chr(solver.get_value(state.constraints, c)))
-            except SolverException, e:
-                f.seek(0)
-                f.write("{SolverException}\n")
+        ## Save STDIN solution
+        #stdin_file = 'test_{:08x}.stdin'.format(test_number)
+        #with open(_getFilename(stdin_file), 'wb') as f:
+        #    try:
+        #        for sysname, fd, data in state.platform.syscall_trace:
+        #            if sysname not in ('_receive', '_read') or fd != 0:
+        #                continue
+        #            for c in data:
+        #                f.write(chr(solver.get_value(state.constraints, c)))
+        #    except SolverException, e:
+        #        f.seek(0)
+        #        f.write("{SolverException}\n")
                 f.truncate()
 
         return test_number

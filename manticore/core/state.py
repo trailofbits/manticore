@@ -1,5 +1,6 @@
 import os
 import copy
+import logging
 from collections import OrderedDict
 
 from .smtlib import solver
@@ -11,6 +12,8 @@ from ..utils.event import Signal, forward_signals
 from .cpu.abstractcpu import ConcretizeRegister
 from .memory import ConcretizeMemory
 from ..platforms.platform import *
+
+logger = logging.getLogger("STATE")
 
 class StateException(Exception):
     ''' All state related exceptions '''
@@ -58,6 +61,7 @@ class ForkState(Concretize):
 
 
 from ..utils.event import Signal
+
 
 class State(object):
     '''

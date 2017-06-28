@@ -912,7 +912,7 @@ class SMemory(Memory):
             assert solver.check(self.constraints)
             logger.debug('Reading %d bytes from symbolic address %s', size, address)
             try:
-                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
+                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x4000) #if more than 0x3000 exception
             except TooManySolutions, e:
                 m, M = solver.minmax(self.constraints, address)
                 logger.info('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)

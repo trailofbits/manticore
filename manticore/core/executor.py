@@ -21,7 +21,7 @@ from .memory import ConcretizeMemory
 from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
 from ..utils.event import Signal, forward_signals
 from ..utils.helpers import issymbolic
-from .state import Concretize, TerminateState
+from .state import Concretize, TerminateState, DirectoryStateSerializer
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
@@ -79,9 +79,8 @@ class Executor(object):
     '''
 
     def __init__(self, initial=None, workspace=None, policy='random', context=None, **options):
-        assert os.path.isdir(workspace), 'Workspace must be a directory'
+        self.serializer = DirectoryStateSerializer(workspace)
         self.workspace = workspace
-        logger.debug("Workspace set: %s", self.workspace)
 
         # Signals / Callbacks handlers will be invoked potentially at different 
         # worker processes. State provides a local context to save data.
