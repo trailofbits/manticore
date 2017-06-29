@@ -12,12 +12,8 @@ logger = logging.getLogger('WORKSPACE')
 
 class Store(object):
 
-    @classmethod
-    def create_store(cls, type, uri):
-        return _create_store(type, uri)
-
     def __init__(self, uri):
-        self._uri = uri
+        self.uri = uri
 
     def save_value(self, key, value):
         '''
@@ -38,6 +34,7 @@ class Store(object):
         '''
         raise NotImplementedError
 
+    @contextmanager
     def saved_stream(self, key):
         '''
         Return a managed file-like object into which the calling code can write
@@ -48,6 +45,7 @@ class Store(object):
         '''
         raise NotImplementedError
 
+    @contextmanager
     def loaded_stream(self, key):
         '''
         Return a managed file-like object from which the calling code can read
@@ -65,14 +63,90 @@ class Output(object):
 class Workspace(object):
     pass
 
-class Workspace(Store):
+class FilesystemStore(Store):
     '''
-    Base class for Manticore workspaces. Responsible for saving and loading
-    states, and arbitrary values.
+    A directory-backed Manticore workspace
+    '''
+    def __init__(self, uri=None):
+        '''
+
+        :param uri: The path to on-disk workspace, or None.
+        '''
+        if uri is None:
+            uri = os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
+
+        if os.path.exists(uri):
+            assert os.path.isdir(uri), 'Workspace must be a directory'
+        else:
+            os.mkdir(uri)
+
+        self.uri = os.path.abspath(uri)
+
+    @contextmanager
+    def saved_stream(self, key):
+        '''
+
+        :param key:
+        :return:
+        '''
+        with open(os.path.join(self.uri, key), 'w') as f:
+            yield f
+
+    @contextmanager
+    def loaded_stream(self, key):
+        '''
+        :param key:
+        :return:
+        '''
+        with open(os.path.join(self.uri, key), 'r') as f:
+            yield f
+
+    def save_value(self, key, value):
+        '''
+        Save an arbitrary, serializable `value` under `key`.
+
+        :param str key: A string identifier under which to store the value.
+        :param value: A serializable value
+        :return:
+        '''
+        raise NotImplementedError
+
+    def load_value(self, key):
+        '''
+        Load an arbitrary value identified by `key`.
+
+        :param str key: The key that identifies the value
+        :return: The loaded value
+        '''
+        raise NotImplementedError
+
+class RedisStore(Store):
+    def __init__(selfself, uri=None):
+        pass
+
+
+def _create_store(desc):
+    type, uri = ('fs', '') if desc is None else desc.split(':', 1)
+
+    if type == 'fs':
+        return FilesystemStore(uri)
+    elif type == 'redis':
+        return RedisStore(uri)
+    else:
+        raise NotImplementedError("Workspace type '%s' not supported.", type)
+
+class Output(object):
+    '''
+    Base class for Manticore output. Responsible for generating execution-based
+    output, such as state summaries, coverage information, etc.
     '''
 
-    def __init__(self, uri):
-        self._uri = uri
+    def __init__(self, desc=None):
+        self._store = _create_store(desc)
+
+    @property
+    def uri(self):
+        return self._store.uri
 
 
     def save_testcase(self, state, testcase_id):
@@ -103,7 +177,7 @@ class Workspace(Store):
     def save_summary(self, state, message):
         memories = set()
 
-        with self.saved_stream('test_%08x.messages'%self.id) as summary:
+        with self._store.saved_stream('test_%08x.messages'%self.id) as summary:
             summary.write("Command line:\n  " + ' '.join(sys.argv) + '\n')
             summary.write('Status:\n  {}\n'.format(message))
             summary.write('\n')
@@ -127,7 +201,7 @@ class Workspace(Store):
                     summary.write("  Instruction: {symbolic}\n")
 
     def save_trace(self, state):
-        with self.saved_stream('test_%08x.trace'%self.id) as f:
+        with self._store.saved_stream('test_%08x.trace'%self.id) as f:
             for pc in state.context['visited']:
                 f.write('0x{:08x}\n'.format(pc))
 
@@ -135,76 +209,31 @@ class Workspace(Store):
         # XXX(yan): We want to conditionally enable this check
         assert solver.check(state.constraints)
 
-        with self.saved_stream('test_%08x.smt'%self.id) as f:
+        with self._store.saved_stream('test_%08x.smt'%self.id) as f:
             f.write(str(state.constraints))
 
     def save_input_symbols(self, state):
-        with self.saved_stream('test_%08x.txt'%self.id) as f:
+        with self._store.saved_stream('test_%08x.txt'%self.id) as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
                 f.write('%s: %s\n'%(symbol.name, repr(buf)))
 
     def save_syscall_trace(self, state):
-        with self.saved_stream('test_%08x.syscalls'%self.id) as f:
+        with self._store.saved_stream('test_%08x.syscalls'%self.id) as f:
             f.write(state.platform.syscall_trace)
 
     def save_fds(self, state):
-        with self.saved_stream('test_%08x.stdout'%self.id) as _out:
-         with self.saved_stream('test_%08x.stdout'%self.id) as _err:
-          with self.saved_stream('test_%08x.stdin'%self.id) as _in:
-              for name, fd, data in state.platform.syscall_trace:
-                  if name in ('_transmit', '_write'):
-                      if   fd == 1: _out.write(map(str, data))
-                      elif fd == 2: _err.write(map(str, data))
-                   if name in ('_receive', '_read') and fd == 0:
-                       try:
-                           for c in data:
-                               _in.write(chr(solver.get_value(state.constraints, c)))
-                       except SolverException, e:
-                           _in.write('{SolverException}')
+        with self._store.saved_stream('test_%08x.stdout'%self.id) as _out:
+            with self._store.saved_stream('test_%08x.stdout'%self.id) as _err:
+                with self._store.saved_stream('test_%08x.stdin'%self.id) as _in:
+                    for name, fd, data in state.platform.syscall_trace:
+                        if name in ('_transmit', '_write'):
+                            if   fd == 1: _out.write(map(str, data))
+                            elif fd == 2: _err.write(map(str, data))
+                        if name in ('_receive', '_read') and fd == 0:
+                            try:
+                                for c in data:
+                                    _in.write(chr(solver.get_value(state.constraints, c)))
+                            except SolverException, e:
+                                _in.write('{SolverException}')
 
-
-
-class FilesystemStore(Store):
-    '''
-    A directory-backed Manticore workspace
-    '''
-    def __init__(self, uri=None):
-        '''
-
-        :param uri: The path to on-disk workspace, or None.
-        '''
-        if uri is None:
-            uri = os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
-
-        if os.path.exists(uri):
-            assert os.path.isdir(uri), 'Workspace must be a directory'
-        else:
-            os.mkdir(uri)
-
-        self._uri = os.path.abspath(uri)
-
-        logger.debug("Workspace set: %s", self._uri)
-
-    def save_state(self, state):
-        super(FilesystemWorkspace, self).save_state(state)
-
-    def load_state(self, state_id):
-        super(FilesystemWorkspace, self).load_state(state_id)
-
-    @contextmanager
-    def saved_stream(self, key):
-        '''
-
-        :param key:
-        :return:
-        '''
-        with open(os.path.join(self._uri, key)) as f:
-            yield f
-
-
-def _create_store(type, uri):
-    if type == 'fs':
-        FilesystemStore(uri)
-    else:
-        raise NotImplementedError("Workspace type '%s' not supported.", type)
