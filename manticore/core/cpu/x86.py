@@ -2463,7 +2463,7 @@ class X86Cpu(Cpu):
 
 
     @instruction
-    def MOV(cpu, dest, src, cs=0): # Fake argument to work around capstone issue # 950
+    def MOV(cpu, dest, src, *rest): # Fake argument to work around capstone issue # 950
         ''' 
         Move.
         
@@ -2477,7 +2477,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.        
         :param src: source operand.
-        :param cs: workaround for a capstone bug, should never be provided
+        :param rest: workaround for a capstone bug, should never be provided
         '''
         dest.write(src.read())
 
