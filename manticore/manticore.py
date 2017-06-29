@@ -17,7 +17,7 @@ from threading import Timer
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from .core.workspace import Workspace
+from .core.workspace import Output
 from .core.executor import Executor
 from .core.state import State, TerminateState
 from .core.parser import parse
@@ -155,8 +155,6 @@ class Manticore(object):
         self._argv = args # args.programs[1:]
         self._env = {}
         # Will be set to a temporary directory if not set before running start()
-        self._workspace_path = None
-        self._workspace = None
         self._policy = 'random'
         self._coverage_file = None
         self._memory_errors = None
@@ -180,7 +178,7 @@ class Manticore(object):
         self._executor = None
         #Executor wide shared context
         self._context = {}
-
+        self._output = Output(None)
 
 
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
@@ -406,25 +404,6 @@ class Manticore(object):
 
         return state
         
-    @property
-    def workspace(self):
-        if self._workspace is None:
-            # Create a default workspace (filesystem, tempdir)
-            self.workspace = None
-
-        return self._workspace
-
-    @workspace.setter
-    def workspace(self, desc):
-        '''
-
-        :param desc: A workspace descriptor in the format of 'type:uri'
-        '''
-        assert not self._running, "Can't set workspace if Manticore is running."
-
-        type, uri = ('fs', '') if desc is None else desc.split(':', 1)
-
-        self._workspace = Workspace.create_workspace(type, uri)
 
     @property
     def policy(self):
@@ -640,55 +619,10 @@ class Manticore(object):
         '''
         import StringIO
         #_getFilename = self._executor._workspace_filename
-        test_number = testcase_id
         logger.debug("Generating testcase No. %d - %s",
-                test_number, message)
-
-        # Summarize state
-        #with self._workspace.saved_stream('test_%08x.messages'%test_number) as msgs:
-        #    pass
-
-        #with self._workspace.saved_stream('test_%08x.trace'%test_number) as f:
-        #    pass
-
-        # Save constraints formula
-        #smtfile = 'test_{:08x}.smt'.format(test_number)
-        #with open(_getFilename(smtfile), 'wb') as f:
-        #    f.write(str(state.constraints))
-        
-        #assert solver.check(state.constraints)
-
-        #for symbol in state.input_symbols:
-        #    buf = solver.get_value(state.constraints, symbol)
-        #    file(_getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
-        
-        # file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
-
-        #stdout = ''
-        #stderr = ''
-        #for sysname, fd, data in state.platform.syscall_trace:
-        #    if sysname in ('_transmit', '_write') and fd == 1:
-        #        stdout += ''.join(map(str, data))
-        #    if sysname in ('_transmit', '_write') and fd == 2:
-        #        stderr += ''.join(map(str, data))
-        #file(_getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
-        #file(_getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
-
-        ## Save STDIN solution
-        #stdin_file = 'test_{:08x}.stdin'.format(test_number)
-        #with open(_getFilename(stdin_file), 'wb') as f:
-        #    try:
-        #        for sysname, fd, data in state.platform.syscall_trace:
-        #            if sysname not in ('_receive', '_read') or fd != 0:
-        #                continue
-        #            for c in data:
-        #                f.write(chr(solver.get_value(state.constraints, c)))
-        #    except SolverException, e:
-        #        f.seek(0)
-        #        f.write("{SolverException}\n")
-                f.truncate()
-
-        return test_number
+                testcase_id, message)
+        self._output.save_testcase(state, testcase_id)
+        return testcase_id
 
 
     def finish_run(self):
