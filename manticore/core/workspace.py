@@ -6,7 +6,10 @@ from .smtlib import solver
 
 logger = logging.getLogger('WORKSPACE')
 
-class Workspace(object):
+class Store(object):
+    pass
+
+class Workspace(Store):
     '''
     Base class for Manticore workspaces. Responsible for saving and loading
     states, and arbitrary values.
@@ -128,19 +131,17 @@ class Workspace(object):
                 f.write('%s: %s\n'%(symbol.name, repr(buf)))
 
     def save_syscall_trace(self, state):
-        with self.save_stream('test_%08x.syscalls'%self.id) as f:
+        with self.saved_stream('test_%08x.syscalls'%self.id) as f:
             f.write(state.platform.syscall_trace)
 
     def save_fds(self, state):
-        with self.save_stream('test_%08x.stdout'%self.id) as _out:
-         with self.save_stream('test_%08x.stdout'%self.id) as _err:
-          with self.save_stream('test_%08x.stdin'%self.id) as _in:
+        with self.saved_stream('test_%08x.stdout'%self.id) as _out:
+         with self.saved_stream('test_%08x.stdout'%self.id) as _err:
+          with self.saved_stream('test_%08x.stdin'%self.id) as _in:
               for sysname, fd, data in state.platform.syscall_trace:
                   if sysname in ('_transmit', '_write'):
-                      if fd == 1:
-                          _out.write(map(str, data))
-                      elif fd == 2:
-                          _err.write(map(str, data))
+                      if   fd == 1: _out.write(map(str, data))
+                      elif fd == 2: _err.write(map(str, data))
                    if sysname in ('_receive', '_read') and fd == 0:
                        try:
                            for c in data:
@@ -176,6 +177,15 @@ class FilesystemWorkspace(Workspace):
 
     def load_state(self, state_id):
         super(FilesystemWorkspace, self).load_state(state_id)
+
+    def saved_stream(self, key):
+        '''
+
+        :param key:
+        :return:
+        '''
+        with open(os.path.join(self._uri, key)) as f:
+            yield f
 
 
 def _create_workspace(type, uri):
