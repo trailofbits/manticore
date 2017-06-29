@@ -83,16 +83,18 @@ class BinjaILDisasm(Disasm):
         print(il)
         print ("%s %x %x\n") % (il.operation.name, il.instr_index, il.address)
         self.func_llil[func] = fllil
-        return self.BinjaILInstruction(il)
+        return self.BinjaILInstruction(self.bv, il)
 
 
     class BinjaILInstruction(Instruction):
-        def __init__(self, llil):
+        def __init__(self, view, llil):
+            self.bv = view
             self.llil = llil
             super(BinjaILDisasm.BinjaILInstruction, self).__init__()
 
         @property
         def size(self):
+            # FIXME (theo)
             return 1
 
         @property
@@ -106,10 +108,6 @@ class BinjaILDisasm(Disasm):
         @property
         def insn_name(self):
             return self.llil.operation.name
-
-        @property
-        def name(self):
-            return self.llil.operation.name[len("LLIL_"):]
 
         @property
         def name(self):

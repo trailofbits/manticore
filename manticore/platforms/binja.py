@@ -1,12 +1,9 @@
 import logging
 
 from ..core.cpu.binja import BinjaCpu
-from ..core.cpu.cpufactory import CpuFactory
-from ..core.cpu.disasm import BinjaILDisasm
-from ..core.memory import SMemory64
 from ..core.smtlib import ConstraintSet
 from .platform import Platform
-from ..utils.event import Signal, forward_signals
+from ..utils.event import forward_signals
 
 logger = logging.getLogger("PLATFORM")
 
@@ -23,50 +20,29 @@ class Binja(Platform):
         :param ifile: file containing program to analyze
         '''
         super(Binja, self).__init__(ifile)
-        # XXX needed
+
+        # XXX needed -> move to platform
         self.program = ifile
         self.clocks = 0
         self.files = []
-        # XXX needed
+
+        # XXX needed -> move to platform
         self.syscall_trace = []
 
         # binary view
         self._bv = self._init_bv(ifile)
+        self._constraints = ConstraintSet()
         self._entry_func = self._bv.get_functions_at(self._bv.entry_point)
 
         # constraints
-        self._constraints = ConstraintSet()
-        # FIXME (theo) Just have 64-bit memory for now
-        cpu = CpuFactory.get_cpu(SMemory64(self._constraints), 'binja_il')
-        # XXX needed
+        cpu = BinjaCpu(self._bv, self._constraints)
+
+        # XXX needed -> move to platform
         self.procs = [cpu]
         self._current = 0
-        self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', 'amd64')
-        self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', 'amd64')
+        self._function_abi = None
+        self._syscall_abi = None
 
-        # initialize memory with the segments that we have
-        for i, segment in enumerate(self._bv.segments):
-            cpu.memory.mmap(segment.start,
-                            segment.length,
-                            #  segment.flags,
-                            'rwx',
-                            self._bv.read(segment.start, segment.length),
-                            name='BinjaSegment_' + str(i))
-
-        # FIXME (theo) Just hardcopy stack settings from x64 for now
-        stack_size = 0x21000
-        stack_top = 0x800000000000
-        stack_base = stack_top - stack_size
-        stack = cpu.memory.mmap(stack_base, stack_size, 'rwx', name='stack') + stack_size
-
-        cpu.STACK = stack
-        cpu.PC = self._bv.entry_point
-
-        # set the class info now that we know it
-        # FIXME (theo) this should be generic
-        BinjaCpu.arch = 'linux'
-        BinjaCpu.mode = 'amd64'
-        BinjaCpu.disasm = BinjaILDisasm(self._bv)
         for proc in self.procs:
             forward_signals(self, proc)
 

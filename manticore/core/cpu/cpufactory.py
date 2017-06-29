@@ -7,7 +7,6 @@ class CpuFactory(object):
         'i386': I386Cpu,
         'amd64': AMD64Cpu,
         'armv7': Armv7Cpu,
-        'binja_il': BinjaCpu,
     }
 
     @staticmethod

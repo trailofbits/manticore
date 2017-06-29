@@ -6,6 +6,10 @@ from .abstractcpu import (
     Syscall
 )
 
+from ...core.memory import SMemory32, SMemory64
+from ...core.cpu.disasm import BinjaILDisasm
+
+# FIXME (theo) replace this
 from .x86 import AMD64RegFile
 
 class BinjaRegisterFile(RegisterFile):
@@ -51,14 +55,10 @@ class BinjaCpu(Cpu):
     '''
     A Virtual CPU model for Binary Ninja's IL
     '''
-    # FIXME (theo) copying settings from AMD64
-    # We want this to be dynamic so we should be loading this info directly
-    # from binary ninja's view (probably setting them to None then setting
-    # them inside the Platform?)
-    max_instr_width = 15
-    address_bit_size = 64
+    # Will be initialized based on the underlying Binja Architecture
+    max_instr_width = None
+    address_bit_size = None
     machine = 'binja_il'
-
     arch = None
     mode = None
     disasm = None
@@ -66,23 +66,57 @@ class BinjaCpu(Cpu):
     instr_ptr = None
     stack_ptr = None
 
-    def __init__(self, memory):
+    def __init__(self, view, constraints):
         '''
         Builds a CPU model.
-        :param regfile: regfile object for this CPU.
-        :param memory: memory object for this CPU.
+        :param view: BinaryNinja view.
         '''
-        # FIXME (theo) automatically fetch appropriate AMD64RegFile from binary
-        # ninja (through a thin translation layer?)
-        super(BinjaCpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP',
-                                                             'STACK': 'RSP',
-                                                             'FRAME': 'RBP'}),
-                                       memory)
+        self.view = view
+        self.__class__.max_instr_width = view.arch.max_instr_length
+        self.__class__.address_bit_size = 8 * view.arch.address_size
+        self.__class__.arch = view.arch
+        self.__class__.disasm = BinjaILDisasm(view)
+
+        if view.arch.address_size == 4:
+            stack_top = 0xc0000000
+            memory = SMemory32(constraints)
+            # FIXME (theo) get a register file automatically
+            regfile = AMD64RegFile(aliases={'PC' : 'RIP',
+                                            'STACK': 'RSP',
+                                            'FRAME': 'RBP'})
+        elif view.arch.address_size == 8:
+            memory = SMemory64(constraints)
+            regfile = AMD64RegFile(aliases={'PC' : 'EIP',
+                                            'STACK': 'ESP',
+                                            'FRAME': 'EBP'})
+            stack_top = 0x800000000000
+        else:
+            raise NotImplementedError("Memory model not supported!")
+
+        # initialize the memory and register files
+        super(BinjaCpu, self).__init__(regfile, memory)
+
         # Binja segments
         self._segments = {}
         self._function_hooks = defaultdict(list)
         self._instr_hooks = defaultdict(list)
         self.handlers = self.Handlers(self)
+
+        # initialize memory with the segments that we have
+        for i, segment in enumerate(view.segments):
+            self.memory.mmap(segment.start,
+                             segment.length,
+                             #  segment.flags,
+                             'rwx',
+                             view.read(segment.start, segment.length),
+                             name='BinjaSegment_' + str(i))
+
+        stack_size = 0x21000
+        stack_base = stack_top - stack_size
+        stack = self.memory.mmap(stack_base, stack_size, 'rwx', name='stack') + stack_size
+
+        self.STACK = stack
+        self.PC = view.entry_point
 
     @property
     def function_hooks(self):
@@ -113,7 +147,7 @@ class BinjaCpu(Cpu):
     # Adopt handlers similar from Josh Watson's 'emilator'
     class Handlers(object):
         _handlers = defaultdict(
-            lambda: lambda i,j: (_ for _ in ()).throw(NotImplementedErrorError(i.operation))
+            lambda: lambda i,j: (_ for _ in ()).throw(NotImplementedError(i.operation))
         )
 
         def __init__(self, cpu):
@@ -136,7 +170,7 @@ class BinjaCpu(Cpu):
 
                 try:
                     return handler(expr, self.emilator)
-                except NotImplementedErrorError:
+                except NotImplementedError:
                     if not hooks:
                         raise
 
@@ -324,7 +358,8 @@ class BinjaCpu(Cpu):
 
     @instruction
     def SET_REG(cpu, dest, src):
-        raise NotImplementedError
+        print(dest)
+        print(src)
         #  dest.value = src.value
 
     @instruction
