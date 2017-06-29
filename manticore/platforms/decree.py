@@ -1086,15 +1086,15 @@ class DecreeEmu(object):
         import cgcrandom
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
-            raise ConcretizeArgumet(platform.current, 0)
+            raise ConcretizeArgument(platform.current, 0)
 
         if issymbolic(count):
             logger.info("Ask to read a symbolic number of random bytes ")
-            raise ConcretizeArgumet(platform.current, 1)
+            raise ConcretizeArgument(platform.current, 1)
 
         if issymbolic(rnd_bytes):
             logger.info("Ask to return rnd size to a symbolic address ")
-            raise ConcretizeArgumet(platform.current, 2)
+            raise ConcretizeArgument(platform.current, 2)
 
         data = []
         for i in xrange(count):
