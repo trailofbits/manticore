@@ -115,7 +115,9 @@ class Operand(object):
         '''
         assert isinstance(cpu, Cpu)
         # Check against the list of supported operands
-        assert isinstance(op, (cs.x86.X86Op, cs.arm.ArmOp))
+        # FIXME (theo) don't check here as here we are agnostic to the
+        # disassembler
+        #  assert isinstance(op, (cs.x86.X86Op, cs.arm.ArmOp))
         self.cpu = cpu
         self.op = op
         self.mem = Operand.MemSpec(self)
@@ -695,20 +697,20 @@ class Cpu(object):
         if not self.disasm:
             self.__class__.disasm = init_disassembler('capstone', self.arch, self.mode, None)
         try:
-            instruction = self.disasm.disassemble_instruction(code, pc)
+            insn = self.disasm.disassemble_instruction(code, pc)
         except StopIteration as e:
             raise DecodeException(pc, code)
 
 
         #Check that the decoded intruction is contained in executable memory
-        if not self.memory.access_ok(slice(pc, pc+instruction.size), 'x'):
+        if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
 
-        instruction.operands = self._wrap_operands(instruction.operands)
+        insn.operands = self._wrap_operands(insn.operands)
 
-        self._instruction_cache[pc] = instruction
-        return instruction
+        self._instruction_cache[pc] = insn
+        return insn
 
     @property
     def instruction(self):
@@ -737,27 +739,26 @@ class Cpu(object):
 
         self.will_decode_instruction()
 
-        instruction = self.decode_instruction(self.PC)
-        self._last_pc=self.PC
+        insn = self.decode_instruction(self.PC)
+        self._last_pc = self.PC
 
-        self.will_execute_instruction(instruction)
+        self.will_execute_instruction(insn)
 
-        if instruction.address != self.PC:
+        if insn.address != self.PC:
             return
 
-        name = self.canonicalize_instruction_name(instruction)
+        name = self.canonicalize_instruction_name(insn)
 
         def fallback_to_emulate(*operands):
-            text_bytes = ' '.join('%02x'%x for x in instruction.bytes)
+            text_bytes = ' '.join('%02x'%x for x in insn.bytes)
             logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                    instruction.address, text_bytes, instruction.mnemonic,
-                    instruction.op_str)
+                    insn.address, text_bytes, insn.mnemonic, insn.op_str)
 
-            self.will_emulate_instruction(instruction)
+            self.will_emulate_instruction(insn)
 
-            self.emulate(instruction)
+            self.emulate(insn)
 
-            self.did_emulate_instruction(instruction)
+            self.did_emulate_instruction(insn)
 
         implementation = getattr(self, name, fallback_to_emulate)
 
@@ -766,13 +767,13 @@ class Cpu(object):
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        implementation(*instruction.operands)
-        self._icount+=1
+        implementation(*insn.operands)
+        self._icount += 1
 
-        self.did_execute_instruction(instruction)
+        self.did_execute_instruction(insn)
 
 
-    def emulate(self, instruction):
+    def emulate(self, insn):
         '''
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
@@ -781,7 +782,7 @@ class Cpu(object):
         '''
 
         emu = UnicornEmulator(self)
-        emu.emulate(instruction)
+        emu.emulate(insn)
 
 
         # We have been seeing occasional Unicorn issues with it not clearing

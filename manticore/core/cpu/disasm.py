@@ -111,6 +111,14 @@ class BinjaILDisasm(Disasm):
         def name(self):
             return self.llil.operation.name[len("LLIL_"):]
 
+        @property
+        def name(self):
+            return self.llil.operation.name[len("LLIL_"):]
+
+        @property
+        def address(self):
+            return self.llil.address
+
 class BinjaDisasm(Disasm):
 
     def __init__(self, view):
@@ -151,12 +159,12 @@ class BinjaDisasm(Disasm):
         def name(self):
             pass
 
-def init_disassembler(disassembler, arch, mode, programs):
+def init_disassembler(disassembler, arch, mode, view):
     if disassembler == "capstone":
         return CapstoneDisasm(arch, mode)
     elif disassembler == "binja":
-        return BinjaDisasm(programs)
+        return BinjaDisasm(view)
     elif disassembler == "binja-il":
-        return BinjaILDisasm(programs)
+        return BinjaILDisasm(view)
     else:
         raise NotImplementedError("Disassembler not implemented")

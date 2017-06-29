@@ -830,7 +830,7 @@ class Manticore(object):
                                   dumpstats=self.should_profile,
                                   context=self.context)
 
-        #Link Executor events to default callbacks in manticore object
+        # Link Executor events to default callbacks in manticore object
         self._executor.did_read_register += self._read_register_callback
         self._executor.will_write_register += self._write_register_callback
         self._executor.did_read_memory += self._read_memory_callback

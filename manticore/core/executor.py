@@ -87,7 +87,7 @@ class Executor(object):
         # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
 
-        #Executor signals
+        # Executor signals
         self.will_start_run = Signal()
         self.will_finish_run = Signal()
         self.will_fork_state = Signal()
@@ -97,33 +97,33 @@ class Executor(object):
         self.will_generate_testcase = Signal()
 
 
-        #Be sure every state will forward us their signals
+        # Be sure every state will forward us their signals
         self.will_load_state += self._register_state_callbacks
 
-        #The main executor lock. Acquire this for accessing shared objects
+        # The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
 
-        #Shutdown Event
+        # Shutdown Event
         self._shutdown = manager.Event()
 
-        #States on storage. Shared dict state name ->  state stats
+        # States on storage. Shared dict state name ->  state stats
         self._states = manager.list()
 
-        #Number of currently running workers. Initially no runnign workers
+        # Number of currently running workers. Initially no running workers
         self._running = manager.Value('i', 0 )
 
-        #Number of generated testcases
+        # Number of generated testcases
         self._test_count = manager.Value('i', 0 )
 
-        #Number of total intermediate states
+        # Number of total intermediate states
         self._state_count = manager.Value('i', 0 )
 
-        #Executor wide shared context
+        # Executor wide shared context
         if context is None:
             context = {}
         self._shared_context = manager.dict(context)
 
-        #scheduling priority policy (wip)
+        # scheduling priority policy (wip)
         self.policy = Random()
 
         if self.load_workspace():
@@ -239,13 +239,13 @@ class Executor(object):
     @sync
     def _start_run(self):
         #notify siblings we are about to start a run()
-        self._running.value+=1
+        self._running.value += 1
 
     @sync
     def _stop_run(self):
         #notify siblings we are about to stop this run()
-        self._running.value-=1
-        assert self._running.value >=0
+        self._running.value -= 1
+        assert self._running.value >= 0
         self._lock.notify_all()
 
 

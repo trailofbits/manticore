@@ -667,11 +667,11 @@ class AMD64Operand(Operand):
             cpu.write_int(self.address(), value, self.size)
         else:
             raise NotImplementedError("write_operand unknown type", o.type)
-        return value & ((1<<self.size)-1)
+        return value & ((1 << self.size) - 1)
 
     @property
     def size(self):
-        return self.op.size*8
+        return self.op.size * 8
 
     def __getattr__(self, name):
         return getattr(self.op, name)
@@ -713,7 +713,7 @@ class X86Cpu(Cpu):
 
 
     def _wrap_operands(self, operands):
-        return [ AMD64Operand(self, op) for op in operands ]
+        return [AMD64Operand(self, op) for op in operands]
 
     #####################
     # Auxiliar stack acess
@@ -2469,7 +2469,7 @@ class X86Cpu(Cpu):
 
 
     @instruction
-    def MOV(cpu, dest, src):
+    def MOV(cpu, dest, src, *rest): # Fake argument to work around capstone issue # 950
         '''
         Move.
 
@@ -2483,6 +2483,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         :param src: source operand.
+        :param rest: workaround for a capstone bug, should never be provided
         '''
         dest.write(src.read())
 

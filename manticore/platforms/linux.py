@@ -6,8 +6,6 @@ import random
 import struct
 import ctypes
 
-import capstone as cs
-
 #Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 

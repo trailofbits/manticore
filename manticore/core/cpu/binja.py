@@ -39,10 +39,13 @@ class BinjaOperand(Operand):
         return 64
 
     def read(self, nbits=None, withCarry=False):
-        pass
+        raise NotImplementedError
 
     def write(self, value, nbits=None):
-        pass
+        raise NotImplementedError
+
+    def __getattr__(self, name):
+        return getattr(self.op, name)
 
 class BinjaCpu(Cpu):
     '''
@@ -104,10 +107,13 @@ class BinjaCpu(Cpu):
     def canonicalize_instruction_name(self, insn):
         return insn.name
 
+    def _wrap_operands(self, operands):
+        return [BinjaOperand(self, op) for op in operands]
+
     # Adopt handlers similar from Josh Watson's 'emilator'
     class Handlers(object):
         _handlers = defaultdict(
-            lambda: lambda i,j: (_ for _ in ()).throw(NotImplementedError(i.operation))
+            lambda: lambda i,j: (_ for _ in ()).throw(NotImplementedErrorError(i.operation))
         )
 
         def __init__(self, cpu):
@@ -130,7 +136,7 @@ class BinjaCpu(Cpu):
 
                 try:
                     return handler(expr, self.emilator)
-                except NotImplementedError:
+                except NotImplementedErrorError:
                     if not hooks:
                         raise
 
@@ -139,87 +145,87 @@ class BinjaCpu(Cpu):
 
     @instruction
     def ADC(cpu):
-        pass
+        raise NotImplementedError
 
     @instruction
     def ADD(cpu):
-        pass
+        raise NotImplementedError
 
     @instruction
     def ADD_OVERFLOW(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def AND(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def ASR(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def BOOL_TO_INT(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def BP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CALL(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_E(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_NE(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_SGE(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_SGT(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_SLE(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_SLT(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_UGE(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_UGT(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_ULE(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CMP_ULT(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CONST(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def CONST_PTR(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def DIVS(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def DIVS_DP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def DIVU(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def DIVU_DP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def FLAG(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def FLAG_BIT(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def FLAG_COND(cpu):
-        pass
+        raise NotImplementedError
 
     @instruction
     def GOTO(cpu, dest):
@@ -227,61 +233,61 @@ class BinjaCpu(Cpu):
 
     @instruction
     def IF(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def JUMP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def JUMP_TO(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def LOAD(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def LOW_PART(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def LSL(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def LSR(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def MODS(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def MODS_DP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def MODU(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def MODU_DP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def MUL(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def MULS_DP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def MULU_DP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def NEG(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def NOP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def NORET(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def NOT(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def OR(cpu):
-        pass
+        raise NotImplementedError
 
     @instruction
     def POP(cpu, dest):
@@ -293,68 +299,68 @@ class BinjaCpu(Cpu):
 
     @instruction
     def REG(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def RET(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def RLC(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def ROL(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def ROR(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def RRC(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def SBB(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def SET_FLAG(cpu):
-        pass
+        raise NotImplementedError
 
     @instruction
     def SET_REG(cpu, dest, src):
-        print(src)
+        raise NotImplementedError
         #  dest.value = src.value
 
     @instruction
     def SET_REG_SPLIT(cpu):
-        pass
+        raise NotImplementedError
 
     @instruction
     def STORE(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def SUB(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def SX(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def SYSCALL(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def TEST_BIT(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def TRAP(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def UNDEF(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def UNIMPL(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def UNIMPL_MEM(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def XOR(cpu):
-        pass
+        raise NotImplementedError
     @instruction
     def ZX(cpu):
-        pass
+        raise NotImplementedError

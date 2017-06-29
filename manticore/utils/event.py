@@ -10,11 +10,11 @@ class SignalDisconnectedError(RuntimeError):
 
 
 def forward_signals(dest, source, arg=False):
-    ''' 
+    '''
         Replicate and forward all the signals from source to dest
     '''
     #Import all signals from state
-    for signal_name in dir(source):
+    for signal_name in source.__dict__:
         signal = getattr(source, signal_name, None)
         if isinstance(signal, Signal):
             proxy = getattr(dest, signal_name, Signal())
@@ -22,7 +22,7 @@ def forward_signals(dest, source, arg=False):
             setattr(dest, signal_name, proxy)
 
 def _manage_signals(obj, enabled):
-    ''' 
+    '''
         Enable or disable all signals at obj
     '''
     #Import all signals from state
@@ -45,7 +45,7 @@ def disable_signals(obj):
 class Signal(object):
     '''
     The Signal class is an approximation of Qt's signals+slot system. Each event
-    that an object would like to produce requires a Signal() object. All 
+    that an object would like to produce requires a Signal() object. All
     interested parties on the event must register themselves as receivers via
     connect() or the '+=' operator.
 
@@ -68,7 +68,7 @@ class Signal(object):
         self.disabled = True
     def enable(self):
         self.disabled = False
-        
+
 
     def __len__(self):
         return len(self._functions) + len(self._methods)
@@ -108,7 +108,7 @@ class Signal(object):
         NOTE: Passing identical values to multiple invocations of connect() with
         different values of predicate will overwrite previous predicates and
         persist the last-used value.
-        
+
         To achieve a similar effect, wrap |dest| in a function.
 
         '''
@@ -133,7 +133,7 @@ class Signal(object):
 
     def when(self, obj, signal, arg=False):
         ''' This forwards signal from obj '''
-        #will reemit forwarded signal prepending obj to arguments 
+        #will reemit forwarded signal prepending obj to arguments
         if arg:
             method = MethodType(lambda *args, **kwargs: self.emit(*args, **kwargs), obj)
         else:

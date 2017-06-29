@@ -22,6 +22,7 @@ class Binja(Platform):
         Builds a BinaryNinja Emulator
         :param ifile: file containing program to analyze
         '''
+        super(Binja, self).__init__(ifile)
         # XXX needed
         self.program = ifile
         self.clocks = 0
@@ -68,7 +69,6 @@ class Binja(Platform):
         BinjaCpu.disasm = BinjaILDisasm(self._bv)
         for proc in self.procs:
             forward_signals(self, proc)
-        super(Binja, self).__init__(ifile)
 
     # XXX needed
     @property
@@ -101,7 +101,6 @@ class Binja(Platform):
             forward_signals(self, proc)
 
         self.current.execute()
-
         return True
 
     @property
