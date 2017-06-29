@@ -11,6 +11,10 @@ from .smtlib.solver import SolverException
 logger = logging.getLogger('WORKSPACE')
 
 class Store(object):
+    '''
+    A Store can save arbitrary keys/values and file streams. Used for producing
+    output, and state saving and loading.
+    '''
 
     def __init__(self, uri):
         self.uri = uri
@@ -56,12 +60,13 @@ class Store(object):
         '''
         raise NotImplementedError
 
+    def list_keys(self, prefix):
+        '''
 
-class Output(object):
-    pass
-
-class Workspace(object):
-    pass
+        :param prefix:
+        :return:
+        '''
+        raise NotImplementedError
 
 class FilesystemStore(Store):
     '''
@@ -133,7 +138,32 @@ def _create_store(desc):
     elif type == 'redis':
         return RedisStore(uri)
     else:
-        raise NotImplementedError("Workspace type '%s' not supported.", type)
+        raise NotImplementedError("Storage type '%s' not supported.", type)
+
+class Workspace(object):
+
+    def __init__(self, desc=None):
+        self._store = _create_store(desc)
+
+    def load_state(self, state_id):
+        '''
+        Load a state from storage identified by `state_id`.
+
+        :param state_id: The state reference of what to load
+        :return: The deserialized state
+        :rtype: State
+        '''
+        raise NotImplementedError
+
+    def save_state(self, state):
+        '''
+        Save a state to storage, return identifier.
+
+        :param state_id: The state reference of what to load
+        :return: The deserialized state
+        :rtype: State
+        '''
+        raise NotImplementedError
 
 class Output(object):
     '''
@@ -157,6 +187,9 @@ class Output(object):
         :param State state: The state to serialize
         :return: A state id representing the saved state
         '''
+
+        self._last_id = testcase_id
+
         self.save_summary(state)
         self.save_trace(state)
         self.save_constraints(state)
@@ -164,20 +197,21 @@ class Output(object):
         self.save_syscall_trace(state)
         self.save_fds(state)
 
-    def load_state(self, state_id):
+    @contextmanager
+    def _named_stream(self, name):
         '''
-        Load a state from storage identified by `state_id`.
+        Create an indexed output stream i.e. '00000001_name'
 
-        :param state_id: The state reference of what to load
-        :return: The deserialized state
-        :rtype: State
+        :param name: Identifier for the stream
+        :return: A context-managed stream-like object
         '''
-        raise NotImplementedError
+        with self._store.saved_stream('{:8x}.{}'.format(self._last_id, name)) as s:
+            yield s
 
     def save_summary(self, state, message):
         memories = set()
 
-        with self._store.saved_stream('test_%08x.messages'%self.id) as summary:
+        with self._named_stream('messages') as summary:
             summary.write("Command line:\n  " + ' '.join(sys.argv) + '\n')
             summary.write('Status:\n  {}\n'.format(message))
             summary.write('\n')
@@ -201,7 +235,7 @@ class Output(object):
                     summary.write("  Instruction: {symbolic}\n")
 
     def save_trace(self, state):
-        with self._store.saved_stream('test_%08x.trace'%self.id) as f:
+        with self._named_stream('trace') as f:
             for pc in state.context['visited']:
                 f.write('0x{:08x}\n'.format(pc))
 
@@ -209,23 +243,23 @@ class Output(object):
         # XXX(yan): We want to conditionally enable this check
         assert solver.check(state.constraints)
 
-        with self._store.saved_stream('test_%08x.smt'%self.id) as f:
+        with self._named_stream('smt') as f:
             f.write(str(state.constraints))
 
     def save_input_symbols(self, state):
-        with self._store.saved_stream('test_%08x.txt'%self.id) as f:
+        with self._named_stream('txt') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
                 f.write('%s: %s\n'%(symbol.name, repr(buf)))
 
     def save_syscall_trace(self, state):
-        with self._store.saved_stream('test_%08x.syscalls'%self.id) as f:
+        with self._named_stream('syscalls') as f:
             f.write(state.platform.syscall_trace)
 
     def save_fds(self, state):
-        with self._store.saved_stream('test_%08x.stdout'%self.id) as _out:
-            with self._store.saved_stream('test_%08x.stdout'%self.id) as _err:
-                with self._store.saved_stream('test_%08x.stdin'%self.id) as _in:
+        with self._named_stream('stdout') as _out:
+            with self._named_stream('stdout') as _err:
+                with self._named_stream('stdin') as _in:
                     for name, fd, data in state.platform.syscall_trace:
                         if name in ('_transmit', '_write'):
                             if   fd == 1: _out.write(map(str, data))
