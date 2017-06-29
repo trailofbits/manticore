@@ -39,7 +39,7 @@ class Store(object):
         raise NotImplementedError
 
     @contextmanager
-    def saved_stream(self, key):
+    def save_stream(self, key):
         '''
         Return a managed file-like object into which the calling code can write
         arbitrary data.
@@ -50,7 +50,7 @@ class Store(object):
         raise NotImplementedError
 
     @contextmanager
-    def loaded_stream(self, key):
+    def load_stream(self, key):
         '''
         Return a managed file-like object from which the calling code can read
         previously-serialized data.
@@ -85,10 +85,10 @@ class FilesystemStore(Store):
         else:
             os.mkdir(uri)
 
-        self.uri = os.path.abspath(uri)
+        super(FilesystemStore, self).__init__(uri)
 
     @contextmanager
-    def saved_stream(self, key):
+    def save_stream(self, key):
         '''
 
         :param key:
@@ -98,7 +98,7 @@ class FilesystemStore(Store):
             yield f
 
     @contextmanager
-    def loaded_stream(self, key):
+    def load_stream(self, key):
         '''
         :param key:
         :return:
@@ -131,7 +131,7 @@ class RedisStore(Store):
 
 
 def _create_store(desc):
-    type, uri = ('fs', '') if desc is None else desc.split(':', 1)
+    type, uri = ('fs', None) if desc is None else desc.split(':', 1)
 
     if type == 'fs':
         return FilesystemStore(uri)
@@ -178,24 +178,31 @@ class Output(object):
     def uri(self):
         return self._store.uri
 
-
-    def save_testcase(self, state, testcase_id):
+    def save_testcase(self, state, testcase_id, message=''):
         '''
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
 
         :param State state: The state to serialize
+        :param int testcase_id: Identifier for the state
+        :param str state: Optional message to include
         :return: A state id representing the saved state
         '''
 
         self._last_id = testcase_id
 
-        self.save_summary(state)
+        self.save_summary(state, message)
         self.save_trace(state)
         self.save_constraints(state)
         self.save_input_symbols(state)
         self.save_syscall_trace(state)
         self.save_fds(state)
+
+    @contextmanager
+    def save_stream(self, key):
+        with self._store.save_stream(key) as s:
+            yield s
+
 
     @contextmanager
     def _named_stream(self, name):
@@ -205,16 +212,15 @@ class Output(object):
         :param name: Identifier for the stream
         :return: A context-managed stream-like object
         '''
-        with self._store.saved_stream('{:8x}.{}'.format(self._last_id, name)) as s:
+        with self._store.save_stream('{:08x}.{}'.format(self._last_id, name)) as s:
             yield s
 
     def save_summary(self, state, message):
         memories = set()
 
         with self._named_stream('messages') as summary:
-            summary.write("Command line:\n  " + ' '.join(sys.argv) + '\n')
-            summary.write('Status:\n  {}\n'.format(message))
-            summary.write('\n')
+            summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
+            summary.write('Status:\n  {}\n\n'.format(message))
 
             for cpu in filter(None, state.platform.procs):
                 idx = state.platform.procs.index(cpu)
@@ -254,7 +260,7 @@ class Output(object):
 
     def save_syscall_trace(self, state):
         with self._named_stream('syscalls') as f:
-            f.write(state.platform.syscall_trace)
+            f.write(repr(state.platform.syscall_trace))
 
     def save_fds(self, state):
         with self._named_stream('stdout') as _out:
@@ -262,8 +268,8 @@ class Output(object):
                 with self._named_stream('stdin') as _in:
                     for name, fd, data in state.platform.syscall_trace:
                         if name in ('_transmit', '_write'):
-                            if   fd == 1: _out.write(map(str, data))
-                            elif fd == 2: _err.write(map(str, data))
+                            if   fd == 1: _out.write(''.join(str(c) for c in data))
+                            elif fd == 2: _err.write(''.join(str(c) for c in data))
                         if name in ('_receive', '_read') and fd == 0:
                             try:
                                 for c in data:

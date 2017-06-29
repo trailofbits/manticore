@@ -617,11 +617,9 @@ class Manticore(object):
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        import StringIO
         #_getFilename = self._executor._workspace_filename
-        logger.debug("Generating testcase No. %d - %s",
-                testcase_id, message)
-        self._output.save_testcase(state, testcase_id)
+        logger.debug("Generating testcase No. %d - %s", testcase_id, message)
+        self._output.save_testcase(state, testcase_id, message)
         return testcase_id
 
 
@@ -664,10 +662,16 @@ class Manticore(object):
                 for m in executor_visited:
                     f.write(fmt.format(m[1]))
 
-        visited = ['%d:%08x'%(0,site) for site in executor_visited]
-        with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
-            for entry in sorted(visited):
-                f.write(entry + '\n')
+        with self._output.save_stream('visited.txt') as f:
+            for entry in sorted(executor_visited):
+                f.write('0:{:8x}\n'.format(entry))
+
+        #'\n'.join(entry for entry in sorted(executor_visited))
+
+        #visited = ['%d:%08x'%(0,site) for site in executor_visited]
+        #with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
+        #    for entry in sorted(visited):
+        #        f.write(entry + '\n')
 
                     
         #if self.memory_errors_file is not None:
@@ -679,7 +683,7 @@ class Manticore(object):
 
         instructions_count = _shared_context.get('instructions_count',0)
         elapsed = time.time()-self._time_started
-        logger.info('Results in %s', self.workspace)
+        logger.info('Results in %s', self._output.uri)
         logger.info('Instructions executed: %d', instructions_count)
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
         #logger.info('Number of paths covered %r', State.state_count())
@@ -687,7 +691,7 @@ class Manticore(object):
         logger.info('IPS: %d', instructions_count/elapsed)
 
 
-        with file(os.path.join(self.workspace,'command.sh'),'w') as f:
+        with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
         
     def run(self, procs=1, timeout=0):
@@ -708,7 +712,7 @@ class Manticore(object):
         initial_state = self._make_state(self._binary)
 
         self._executor = Executor(initial_state,
-                                  workspace=self.workspace, 
+                                  workspace=self._output.uri,
                                   policy=self._policy, 
                                   dumpafter=self.dumpafter, 
                                   maxstates=self.maxstates,
