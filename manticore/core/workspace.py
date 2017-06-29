@@ -1,51 +1,23 @@
 import os
+import sys
 import logging
 import tempfile
 
+from contextlib import contextmanager
+
 from .smtlib import solver
+from .smtlib.solver import SolverException
 
 logger = logging.getLogger('WORKSPACE')
 
 class Store(object):
-    pass
 
-class Workspace(Store):
-    '''
-    Base class for Manticore workspaces. Responsible for saving and loading
-    states, and arbitrary values.
-    '''
     @classmethod
-    def create_workspace(cls, type, uri):
-        return _create_workspace(type, uri)
+    def create_store(cls, type, uri):
+        return _create_store(type, uri)
 
     def __init__(self, uri):
         self._uri = uri
-
-
-    def save_testcase(self, state, testcase_id):
-        '''
-        Save the environment from `state` to storage. Return a state id
-        describing it, which should be an int or a string.
-
-        :param State state: The state to serialize
-        :return: A state id representing the saved state
-        '''
-        self.save_summary(state)
-        self.save_trace(state)
-        self.save_constraints(state)
-        self.save_input_symbols(state)
-        self.save_syscall_trace(state)
-        self.save_fds(state)
-
-    def load_state(self, state_id):
-        '''
-        Load a state from storage identified by `state_id`.
-
-        :param state_id: The state reference of what to load
-        :return: The deserialized state
-        :rtype: State
-        '''
-        raise NotImplementedError
 
     def save_value(self, key, value):
         '''
@@ -86,7 +58,49 @@ class Workspace(Store):
         '''
         raise NotImplementedError
 
-    def save_summary(self, state):
+
+class Output(object):
+    pass
+
+class Workspace(object):
+    pass
+
+class Workspace(Store):
+    '''
+    Base class for Manticore workspaces. Responsible for saving and loading
+    states, and arbitrary values.
+    '''
+
+    def __init__(self, uri):
+        self._uri = uri
+
+
+    def save_testcase(self, state, testcase_id):
+        '''
+        Save the environment from `state` to storage. Return a state id
+        describing it, which should be an int or a string.
+
+        :param State state: The state to serialize
+        :return: A state id representing the saved state
+        '''
+        self.save_summary(state)
+        self.save_trace(state)
+        self.save_constraints(state)
+        self.save_input_symbols(state)
+        self.save_syscall_trace(state)
+        self.save_fds(state)
+
+    def load_state(self, state_id):
+        '''
+        Load a state from storage identified by `state_id`.
+
+        :param state_id: The state reference of what to load
+        :return: The deserialized state
+        :rtype: State
+        '''
+        raise NotImplementedError
+
+    def save_summary(self, state, message):
         memories = set()
 
         with self.saved_stream('test_%08x.messages'%self.id) as summary:
@@ -138,11 +152,11 @@ class Workspace(Store):
         with self.saved_stream('test_%08x.stdout'%self.id) as _out:
          with self.saved_stream('test_%08x.stdout'%self.id) as _err:
           with self.saved_stream('test_%08x.stdin'%self.id) as _in:
-              for sysname, fd, data in state.platform.syscall_trace:
-                  if sysname in ('_transmit', '_write'):
+              for name, fd, data in state.platform.syscall_trace:
+                  if name in ('_transmit', '_write'):
                       if   fd == 1: _out.write(map(str, data))
                       elif fd == 2: _err.write(map(str, data))
-                   if sysname in ('_receive', '_read') and fd == 0:
+                   if name in ('_receive', '_read') and fd == 0:
                        try:
                            for c in data:
                                _in.write(chr(solver.get_value(state.constraints, c)))
@@ -151,7 +165,7 @@ class Workspace(Store):
 
 
 
-class FilesystemWorkspace(Workspace):
+class FilesystemStore(Store):
     '''
     A directory-backed Manticore workspace
     '''
@@ -178,6 +192,7 @@ class FilesystemWorkspace(Workspace):
     def load_state(self, state_id):
         super(FilesystemWorkspace, self).load_state(state_id)
 
+    @contextmanager
     def saved_stream(self, key):
         '''
 
@@ -188,8 +203,8 @@ class FilesystemWorkspace(Workspace):
             yield f
 
 
-def _create_workspace(type, uri):
+def _create_store(type, uri):
     if type == 'fs':
-        FilesystemWorkspace(uri)
+        FilesystemStore(uri)
     else:
         raise NotImplementedError("Workspace type '%s' not supported.", type)
