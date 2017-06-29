@@ -14,7 +14,7 @@ def forward_signals(dest, source, arg=False):
         Replicate and forward all the signals from source to dest
     '''
     #Import all signals from state
-    for signal_name in dir(source):
+    for signal_name in source.__dict__:
         signal = getattr(source, signal_name, None)
         if isinstance(signal, Signal):
             proxy = getattr(dest, signal_name, Signal())
