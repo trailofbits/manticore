@@ -367,9 +367,7 @@ class BinjaCpu(Cpu):
 
     @instruction
     def SET_REG(cpu, dest, src):
-        print(dest)
-        print(src)
-        #  dest.value = src.value
+        raise NotImplementedError
 
     @instruction
     def SET_REG_SPLIT(cpu):

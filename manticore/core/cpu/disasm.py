@@ -87,22 +87,21 @@ class BinjaILDisasm(Disasm):
         pc = self._fix_addr(pc)
         blocks = self.bv.get_basic_blocks_at(pc)
         func = blocks[0].function
-        fllil = self.func_llil.get(func,
-                                   iter([il for block in func.low_level_il
-                                         for il in block]))
-
-        il = next(fllil)
+        il = func.get_lifted_il_at(pc)
         print(il)
         print ("%s %x %x\n") % (il.operation.name, il.instr_index, il.address)
-        self.func_llil[func] = fllil
-        return self.BinjaILInstruction(self.bv, il)
+        return self.BinjaILInstruction(self.bv, il, self.entry_point_diff)
 
 
     class BinjaILInstruction(Instruction):
-        def __init__(self, view, llil):
+        def __init__(self, view, llil, offset):
             self.bv = view
             self.llil = llil
+            self.offset = offset
             super(BinjaILDisasm.BinjaILInstruction, self).__init__()
+
+        def _fix_addr(self, addr):
+            return addr + self.offset
 
         @property
         def size(self):
@@ -127,7 +126,7 @@ class BinjaILDisasm(Disasm):
 
         @property
         def address(self):
-            return self.llil.address
+            return self._fix_addr(self.llil.address)
 
 class BinjaDisasm(Disasm):
 
