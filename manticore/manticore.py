@@ -17,7 +17,7 @@ from threading import Timer
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from .core.workspace import Output
+from .core.workspace import ManticoreOutput
 from .core.executor import Executor
 from .core.state import State, TerminateState
 from .core.parser import parse
@@ -178,7 +178,7 @@ class Manticore(object):
         self._executor = None
         #Executor wide shared context
         self._context = {}
-        self._output = Output(None)
+        self._output = ManticoreOutput(None)
 
 
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
@@ -617,46 +617,48 @@ class Manticore(object):
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        #_getFilename = self._executor._workspace_filename
         logger.debug("Generating testcase No. %d - %s", testcase_id, message)
         self._output.save_testcase(state, testcase_id, message)
         return testcase_id
 
-
-    def finish_run(self):
-        if self.should_profile:
-            class PstatsFormatted:
-                def __init__(self, d):
-                    self.stats = dict(d)
-                def create_stats(self):
-                    pass
-            with self.locked_context('profiling_stats') as profiling_stats:
+    def _produce_profiling_data(self):
+        class PstatsFormatted:
+            def __init__(self, d):
+                self.stats = dict(d)
+            def create_stats(self):
+                pass
+        with self.locked_context('profiling_stats') as profiling_stats:
+            with self._output.save_stream('profiling.bin', binary=True) as s:
                 ps = None
                 for item in profiling_stats:
                     try:
                         stat = PstatsFormatted(item)
                         if ps is None:
-                            ps = pstats.Stats(stat)
+                            ps = pstats.Stats(stat, stream=s)
                         else:
                             ps.add(stat)
                     except TypeError:
-                        logger.debug("Incorrectly formatted profiling information in _stats, skipping")
+                        logger.info("Incorrectly formatted profiling information in _stats, skipping")
 
                 if ps is None:
                     logger.info("Profiling failed")
                 else:
-                    filename = self._executor._workspace_filename('profiling.bin')
-                    logger.info("Dumping profiling info at %s", filename)
-                    ps.dump_stats(filename)
+                    # XXX(yan): pstats does not support dumping to a file stream, only to a file
+                    # name. Below is essentially the implementation of pstats.dump_stats() without
+                    # the extra open().
+                    import marshal
+                    marshal.dump(ps.stats, s)
 
 
+    def finish_run(self):
+        if self.should_profile:
+            self._produce_profiling_data()
 
         _shared_context = self.context
         executor_visited = _shared_context.get('visited', set())
 
         #Fixme this is duplicated?
         if self.coverage_file is not None:
-
             with open(self.coverage_file, "w") as f:
                 fmt = "0x{:016x}\n"
                 for m in executor_visited:
@@ -664,22 +666,14 @@ class Manticore(object):
 
         with self._output.save_stream('visited.txt') as f:
             for entry in sorted(executor_visited):
-                f.write('0:{:8x}\n'.format(entry))
+                f.write('0:{:08x}\n'.format(entry))
 
-        #'\n'.join(entry for entry in sorted(executor_visited))
+        #if self.coverage_file is not None:
+        #    import shutil
+        #    shutil.copyfile('visited.txt', self.coverage_file)
 
-        #visited = ['%d:%08x'%(0,site) for site in executor_visited]
-        #with file(os.path.join(self.workspace,'visited.txt'),'w') as f:
-        #    for entry in sorted(visited):
-        #        f.write(entry + '\n')
-
-                    
-        #if self.memory_errors_file is not None:
-        #    with open(self._args.errorfile, "w") as f:
-        #        fmt = "0x{:016x}\n"
-        #        for m in self._executor.errors:
-        #            f.write(fmt.format(m))
-
+        with self._output.save_stream('command.sh') as f:
+            f.write(' '.join(sys.argv))
 
         instructions_count = _shared_context.get('instructions_count',0)
         elapsed = time.time()-self._time_started
@@ -691,9 +685,6 @@ class Manticore(object):
         logger.info('IPS: %d', instructions_count/elapsed)
 
 
-        with self._output.save_stream('command.sh') as f:
-            f.write(' '.join(sys.argv))
-        
     def run(self, procs=1, timeout=0):
         '''
         Runs analysis.
