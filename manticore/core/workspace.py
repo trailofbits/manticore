@@ -13,25 +13,38 @@ logger = logging.getLogger('WORKSPACE')
 
 
 def _serialize_pickle(state, f):
-    '''
-    Serialize `state` to file object `f` using cPickle.
 
-    :param state:
-    :param f:
-    :return:
-    '''
-    try:
-        f.write(cPickle.dumps(state, 2))
-    except RuntimeError:
-        # recursion exceeded. try a slower, iterative solution
-        from ..utils import iterpickle
-        logger.warning("Using iterpickle to dump state")
-        f.write(iterpickle.dumps(state, 2))
 
+class StateSerializer(object):
+    '''
+    StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
+    stream-like objects.
+    '''
+    def __init__(self):
+        pass
+
+    def serialize(self, state, f):
+        raise NotImplementedError
+
+    def deserialize(self, f):
+        raise NotImplementedError
+
+class PickleSerializer(StateSerializer):
+    def serialize(self, state, f):
+        try:
+            f.write(cPickle.dumps(state, 2))
+        except RuntimeError:
+            # recursion exceeded. try a slower, iterative solution
+            from ..utils import iterpickle
+            logger.warning("Using iterpickle to dump state")
+            f.write(iterpickle.dumps(state, 2))
+
+    def deserialize(self, f):
+        return cPickle.load(f)
 
 class Store(object):
     '''
-    A Store can save arbitrary keys/values and file streams. Used for producing
+    A Store can save arbitrary keys/values (including states) and file streams. Used for generating
     output, and state saving and loading.
     '''
 
@@ -39,7 +52,7 @@ class Store(object):
         self.uri = uri
 
         if state_serialization_method == 'pickle':
-            self._serialize = lambda self, *args: _serialize_pickle(*args)
+            self._serializer = PickleSerializer()
         else:
             raise NotImplementedError("Pickling method '{}' not supported.".format(state_serialization_method))
 
@@ -91,9 +104,9 @@ class Store(object):
         :param state:
         :return:
         '''
+        key = 'state_{:08x}.pkl'.format(key)
         with self.save_stream(key) as f:
-            self._method(state, f)
-
+            self._serializer.serialize(state, f)
 
     def load_state(self, key):
         '''
@@ -101,7 +114,18 @@ class Store(object):
         :param state_id:
         :return:
         '''
-        pass
+        key = 'state_{:08x}.pkl'.format(key)
+        with self.load_stream(key) as f:
+            return self._serializer.deserialize(f)
+
+    def rm_key(self, key):
+        '''
+        Delete the value identified by `key` from storage.
+
+        :param key:
+        :return:
+        '''
+        raise NotImplementedError
 
     def list_keys(self, prefix):
         '''
