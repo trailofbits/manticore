@@ -20,17 +20,23 @@ from elftools.elf.sections import SymbolTableSection
 from .core.executor import Executor
 from .core.state import State, TerminateState
 from .core.parser import parse
-from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
-from core.smtlib import BitVec, Bool
-from .platforms import linux, decree, windows, binja
+from .core.smtlib import (
+    solver, Expression, Operators, SolverException, Array, ConstraintSet,
+    BitVec, Bool
+)
+from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger('MANTICORE')
 
-def makeBinja(program):
+def makeBinja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     constraints = ConstraintSet()
     logger.info('Loading binary ninja IL from %s', program)
-    platform = binja.Binja(program)
+    platform = linux.SLinux(program,
+                            argv=argv,
+                            envp=env,
+                            symbolic_files=symbolic_files,
+                            disasm=disasm)
     initial_state = State(constraints, platform)
     return initial_state
 
@@ -49,7 +55,9 @@ def makeLinux(program, disasm, argv, env, symbolic_files, concrete_start=''):
 
     constraints = ConstraintSet()
 
-    platform = linux.SLinux(program, argv=argv, envp=env,
+    platform = linux.SLinux(program,
+                            argv=argv,
+                            envp=env,
                             symbolic_files=symbolic_files,
                             disasm=disasm)
     initial_state = State(constraints, platform)
@@ -398,7 +406,9 @@ class Manticore(object):
     def _make_state(self, path):
         if self._binary_type == 'BinaryNinjaIL' or self._disasm == "binja-il":
             # Binary Ninja
-            state = makeBinja(self._binary)
+            env = ['%s=%s' % (k, v) for k, v in self._env.items()]
+            state = makeBinja(self._binary, self._disasm, self._argv, env,
+                              self._symbolic_files, self._concrete_data)
         elif self._binary_type == 'ELF':
             # Linux
             env = ['%s=%s' % (k, v) for k, v in self._env.items()]

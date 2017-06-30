@@ -2,7 +2,8 @@ import sys
 import argparse
 import logging
 
-from manticore import Manticore
+from .utils.helpers import is_binja_disassembler
+from .manticore import Manticore
 
 sys.setrecursionlimit(10000)
 
@@ -77,7 +78,7 @@ def parse_arguments():
     return parsed
 
 def check_disassembler_present(disasm):
-    if disasm == "binja" or disasm == "binja-il":
+    if is_binja_disassembler(disasm):
         try:
             import binaryninja
         except ImportError:

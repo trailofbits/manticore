@@ -64,7 +64,19 @@ class BinjaILDisasm(Disasm):
         # using an iterator, so that we don't repeat ourselves whenever
         # we ask for the next IL
         self.func_llil = {}
+        self.entry_point_diff = None
         super(BinjaILDisasm, self).__init__(view)
+
+    def _fix_addr(self, addr):
+        # FIXME how to deal with discrepancies of binja vs real program
+        # entry point addresses? We need to lookup the symbols and
+        # we should make sure all offsets are appropriate
+
+        if not self.entry_point_diff:
+            # assume that the first time we are called, this is the entry point
+            self.entry_point_diff = addr - self.bv.entry_point
+
+        return addr - self.entry_point_diff
 
     def disassemble_instruction(self, _, pc):
         """Get next instruction based on Capstone disassembler
@@ -72,7 +84,7 @@ class BinjaILDisasm(Disasm):
         :param code: disassembled code
         :param pc: program counter
         """
-        #  print(self.bv.get_disassembly(pc))
+        pc = self._fix_addr(pc)
         blocks = self.bv.get_basic_blocks_at(pc)
         func = blocks[0].function
         fllil = self.func_llil.get(func,

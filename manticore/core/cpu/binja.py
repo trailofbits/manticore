@@ -9,17 +9,69 @@ from .abstractcpu import (
 from ...core.memory import SMemory32, SMemory64
 from ...core.cpu.disasm import BinjaILDisasm
 
-# FIXME (theo) replace this
-from .x86 import AMD64RegFile
-
 class BinjaRegisterFile(RegisterFile):
-    def __init__(self):
+
+    def __init__(self, view):
         '''
         ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         '''
-        super(BinjaRegisterFile, self).__init__({})
-        self._regs = {}
+        self.reg_aliases = {
+            'STACK' : str(view.arch.stack_pointer),
+            'PC' : self._get_pc(view),
+        }
+        super(BinjaRegisterFile, self).__init__(aliases=self.reg_aliases)
+
+        # Initialize register values, cache and side-effects
+        self._cache = dict()
+        all_regs = view.arch.regs.keys() + self.reg_aliases.values()
+        self._registers = {reg : 0 for reg in all_regs}
+        # FIXME (theo) get side effects
+        self._affects = {reg : set() for reg in all_regs}
+
+    def write(self, reg, value):
+        reg = self._alias(reg)
+        # FIXME we will need to be calling the appropriate setters as in x86
+        self._update_cache(reg, value)
+        return value
+
+    def read(self, reg):
+        reg = self._alias(reg)
+        if reg in self._cache:
+            return self._cache[reg]
+
+        # FIXME we will need to be calling the appropriate getters as in x86
+        value = self._registers[reg]
+        self._cache[reg] = value
+        return value
+
+    def _update_cache(self, reg, value):
+        reg = self._alias(reg)
+        self._cache[reg] = value
+        for affected in self._affects[reg]:
+            assert affected != reg
+            self._cache.pop(affected, None)
+
+    @property
+    def all_registers(self):
+        return tuple(self._registers.keys() + self._aliases.keys())
+
+    @property
+    def canonical_registers(self):
+        return tuple(self._registers.keys())
+
+    def __contains__(self, register):
+        return register in self.all_registers
+
+    def _get_pc(self, view):
+        from binaryninja import Architecture
+
+        if view.arch == Architecture['x86']:
+            return 'eip'
+        elif view.arch == Architecture['x86_64']:
+            return 'rip'
+        else:
+            raise NotImplementedError
 
 class BinjaOperand(Operand):
     def __init__(self, cpu, op, **kwargs):
@@ -39,8 +91,7 @@ class BinjaOperand(Operand):
     @property
     def size(self):
         assert self.type == 'register'
-        # FIXME (theo)
-        return 64
+        return self.op.info.size
 
     def read(self, nbits=None, withCarry=False):
         raise NotImplementedError
@@ -66,7 +117,7 @@ class BinjaCpu(Cpu):
     instr_ptr = None
     stack_ptr = None
 
-    def __init__(self, view, constraints):
+    def __init__(self, view, memory):
         '''
         Builds a CPU model.
         :param view: BinaryNinja view.
@@ -77,46 +128,8 @@ class BinjaCpu(Cpu):
         self.__class__.arch = view.arch
         self.__class__.disasm = BinjaILDisasm(view)
 
-        if view.arch.address_size == 4:
-            stack_top = 0xc0000000
-            memory = SMemory32(constraints)
-            # FIXME (theo) get a register file automatically
-            regfile = AMD64RegFile(aliases={'PC' : 'RIP',
-                                            'STACK': 'RSP',
-                                            'FRAME': 'RBP'})
-        elif view.arch.address_size == 8:
-            memory = SMemory64(constraints)
-            regfile = AMD64RegFile(aliases={'PC' : 'EIP',
-                                            'STACK': 'ESP',
-                                            'FRAME': 'EBP'})
-            stack_top = 0x800000000000
-        else:
-            raise NotImplementedError("Memory model not supported!")
-
         # initialize the memory and register files
-        super(BinjaCpu, self).__init__(regfile, memory)
-
-        # Binja segments
-        self._segments = {}
-        self._function_hooks = defaultdict(list)
-        self._instr_hooks = defaultdict(list)
-        self.handlers = self.Handlers(self)
-
-        # initialize memory with the segments that we have
-        for i, segment in enumerate(view.segments):
-            self.memory.mmap(segment.start,
-                             segment.length,
-                             #  segment.flags,
-                             'rwx',
-                             view.read(segment.start, segment.length),
-                             name='BinjaSegment_' + str(i))
-
-        stack_size = 0x21000
-        stack_base = stack_top - stack_size
-        stack = self.memory.mmap(stack_base, stack_size, 'rwx', name='stack') + stack_size
-
-        self.STACK = stack
-        self.PC = view.entry_point
+        super(BinjaCpu, self).__init__(BinjaRegisterFile(view), memory)
 
     @property
     def function_hooks(self):
@@ -126,14 +139,11 @@ class BinjaCpu(Cpu):
     def instr_hooks(self):
         return defaultdict(list, self._instr_hooks)
 
-
     def __getstate__(self):
         state = super(BinjaCpu, self).__getstate__()
-        state['segments'] = self._segments
         return state
 
     def __setstate__(self, state):
-        self._segments = state['segments']
         super(BinjaCpu, self).__setstate__(state)
 
     # FIXME (theo) that should no longer be necessary once we move everything
@@ -166,10 +176,9 @@ class BinjaCpu(Cpu):
 
             def call_hooks(expr):
                 for hook in hooks:
-                    hook(expr, self.emilator)
-
+                    hook(expr, self.cpu)
                 try:
-                    return handler(expr, self.emilator)
+                    return handler(expr, self.cpu)
                 except NotImplementedError:
                     if not hooks:
                         raise

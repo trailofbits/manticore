@@ -9,6 +9,7 @@ import ctypes
 #Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 
+from ..utils.helpers import is_binja_disassembler
 from ..utils.event import Signal, forward_signals
 from ..utils.helpers import issymbolic
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
@@ -1994,7 +1995,10 @@ class Linux(Platform):
 
         # Establish segment registers for x86 architectures
         if self.arch in {'i386', 'amd64'}:
-            x86_defaults = {'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b}
+            if is_binja_disassembler(self.disasm):
+                x86_defaults = {'cs': 0x23, 'ss': 0x2b, 'ds': 0x2b, 'es': 0x2b}
+            else:
+                x86_defaults = {'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b}
             for reg, val in x86_defaults.iteritems():
                 self.current.regfile.write(reg, val)
 
@@ -2035,9 +2039,15 @@ class SLinux(Linux):
         self.symbolic_files = symbolic_files
         super(SLinux, self).__init__(programs, argv=argv, envp=envp, disasm=disasm)
 
+
     def _mk_proc(self, arch):
         mem = SMemory32(self.constraints) if arch in {'i386', 'armv7'} else SMemory64(self.constraints)
+
+        if is_binja_disassembler(self.disasm):
+            return self._init_binja_cpu(mem)
+
         cpu = CpuFactory.get_cpu(mem, arch)
+
         # FIXME
         arch_map = {
             'i386': (cs.CS_ARCH_X86, cs.CS_MODE_32),
@@ -2047,6 +2057,26 @@ class SLinux(Linux):
         arch, mode = arch_map[arch]
         cpu.__class__.disasm = init_disassembler(self.disasm, arch, mode, self.programs)
         return cpu
+
+    def _init_binja_cpu(self, memory):
+        from ..core.cpu.binja import BinjaCpu
+
+        def init_bv():
+            """
+            Reads a binary and returns a binary vieww
+            """
+            #  FIXME (theo) this will be replaced by a function that simply
+            #  loads the IL from a file
+            import binaryninja as bn
+            bv = bn.binaryview.BinaryViewType.get_view_of_file(self.program)
+            bv.update_analysis_and_wait()
+            return bv
+
+        bv = init_bv()
+        cpu = BinjaCpu(bv, memory)
+        return cpu
+
+
 
     @property
     def constraints(self):
