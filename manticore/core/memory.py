@@ -22,11 +22,11 @@ class MemoryException(Exception):
         '''
         self.address = address
         self.message = message
-        if not issymbolic(address):
-            self.message += ' <0x{:x}>'.format(address)
+        if address is not None and not issymbolic(address):
+            self.message += ' <{:x}>'.format(address)
 
     def __str__(self):
-        return '%s <%s>'%(self.message, '%08x'%self.address)
+        return self.message
 
 
 class ConcretizeMemory(MemoryException):
@@ -60,9 +60,6 @@ class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
         #the crashing constraint you need to assert 
         self.constraint = constraint 
         self.size = size
-
-    def __str__(self):
-        return '%s <%s>'%(self.message, repr(self.address))
 
 
 class Map(object):
