@@ -1,26 +1,17 @@
-import sys
 import time
 import os
-import copy
 import cPickle
 import random
 import logging
-import pstats
-import traceback
 import signal
-import weakref
 try:
     import cStringIO as StringIO
 except:
     import StringIO
-from math import ceil, log
 
 from ..utils.nointerrupt import WithKeyboardInterruptAs
-from .cpu.abstractcpu import DecodeException, ConcretizeRegister
-from .memory import ConcretizeMemory
-from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
+from .smtlib import solver, Expression, SolverException
 from ..utils.event import Signal, forward_signals
-from ..utils.helpers import issymbolic
 from .state import Concretize, TerminateState
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
@@ -31,7 +22,6 @@ def mgr_init():
 manager = SyncManager()
 manager.start(mgr_init)
 
-#module wide logger
 logger = logging.getLogger("EXECUTOR")
 
 
@@ -493,7 +483,6 @@ class Executor(object):
 
                     except SolverException as e:
                         import traceback
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
                         print "*** print_exc:"
                         traceback.print_exc()
 

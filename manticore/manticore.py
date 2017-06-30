@@ -4,7 +4,6 @@ import time
 import types
 import logging
 import binascii
-import tempfile
 import functools
 import cProfile
 import pstats
@@ -21,14 +20,12 @@ from .core.workspace import ManticoreOutput
 from .core.executor import Executor
 from .core.state import State, TerminateState
 from .core.parser import parse
-from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
-from core.smtlib import BitVec, Bool
+from .core.smtlib import solver, ConstraintSet
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
+
 logger = logging.getLogger('MANTICORE')
-
-
 
 
 def makeDecree(args):
