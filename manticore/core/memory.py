@@ -23,7 +23,7 @@ class MemoryException(Exception):
         self.address = address
         self.message = message
         if not issymbolic(address):
-            self.message += ' <{}>'.format(address)
+            self.message += ' <0x{:x}>'.format(address)
 
     def __str__(self):
         return '%s <%s>'%(self.message, '%08x'%self.address)
