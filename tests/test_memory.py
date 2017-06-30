@@ -1280,7 +1280,9 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(mem[addr], 'a')
 
         mem.mprotect(addr, size, 'w')
-        self.assertRaisesRegexp(MemoryException, "No access reading <%08x>"%addr, mem.__getitem__, addr)
+        with self.assertRaisesRegexp(InvalidMemoryAccess, 'Invalid memory access \(mode:.\) <{:x}>'.format(addr)):
+            _ = mem[addr]
+
 
 
     def testmprotectFailSymbReading(self):
@@ -1333,7 +1335,10 @@ class MemoryTest(unittest.TestCase):
         #print map(hex,sorted(solver.get_all_values(cs, x, 0x100000))),  map(hex,solver.minmax(cs, x)), mem[x]
 
                                                    #No Access Reading <4160741376>
-        self.assertRaisesRegexp(MemoryException, r"No access reading.*", mem.__getitem__, x)
+        # self.assertRaisesRegexp(MemoryException, r"No access reading.*", mem.__getitem__, x)
+        with self.assertRaisesRegexp(InvalidSymbolicMemoryAccess, 'Invalid symbolic memory access.*'.format(addr)):
+            _ = mem[x]
+            # mem[addr] = 'a'
 
     def testmprotectFailWriting(self):
         mem = Memory32()
@@ -1346,7 +1351,8 @@ class MemoryTest(unittest.TestCase):
         addr = mem.mmap(None, size, 'wx')
         mem[addr] = 'a'
         mem.mprotect(addr, size, 'r')
-        self.assertRaisesRegexp(MemoryException, "No access writing <%08x>"%addr, mem.__setitem__, addr, 'a')
+        with self.assertRaisesRegexp(InvalidMemoryAccess, 'Invalid memory access \(mode:w\) <{:x}>'.format(addr)):
+            mem[addr] = 'a'
 
     def testmprotecNoReadthenOkRead(self):
         mem = Memory32()
@@ -1359,7 +1365,8 @@ class MemoryTest(unittest.TestCase):
         addr = mem.mmap(None, size, 'wx')
         mem[addr] = 'a'
 
-        self.assertRaisesRegexp(MemoryException, "No access reading <%08x>"%addr, mem.__getitem__, addr)
+        with self.assertRaisesRegexp(InvalidMemoryAccess, 'Invalid memory access \(mode:r\) <{:x}>'.format(addr)):
+            _ = mem[addr]
 
         mem.mprotect(addr, size, 'r')
         self.assertEqual(mem[addr], 'a')
