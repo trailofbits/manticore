@@ -8,6 +8,7 @@ from ..utils.helpers import issymbolic
 
 logger = logging.getLogger('MEMORY')
 
+
 class MemoryException(Exception):
     '''
     Memory exceptions
@@ -19,30 +20,14 @@ class MemoryException(Exception):
         :param message: exception message.
         :param address: memory address where the exception occurred.
         '''
-        self.message = '{} <{}>'.format(message, address)
         self.address = address
+        self.message = message
+        if not issymbolic(address):
+            self.message += ' <{}>'.format(address)
 
     def __str__(self):
         return '%s <%s>'%(self.message, '%08x'%self.address)
 
-class InvalidMemoryAccess(MemoryException):
-    _message = 'Invalid memory access'
-    def __init__(self, address, mode):
-        assert mode in 'rwx'
-        suffix = ' (mode:{})'.format(mode)
-        super(InvalidMemoryAccess, self, ).__init__(self._message + suffix, address)
-        self.mode = mode
-
-class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
-    _message = 'Invalid symbolic memory access'
-    def __init__(self, address, mode, size, constraint):
-        super(InvalidSymbolicMemoryAccess, self, ).__init__(address, mode)
-        #the crashing constraint you need to assert 
-        self.constraint = constraint 
-        self.size = size
-
-    def __str__(self):
-        return '%s <%s>'%(self.message, repr(self.address))
 
 class ConcretizeMemory(MemoryException):
     '''
@@ -54,6 +39,31 @@ class ConcretizeMemory(MemoryException):
         self.address = address
         self.size = size
         self.policy = policy
+
+
+class InvalidMemoryAccess(MemoryException):
+    _message = 'Invalid memory access'
+
+    def __init__(self, address, mode):
+        assert mode in 'rwx'
+        suffix = ' (mode:{})'.format(mode)
+        message = self._message + suffix
+        super(InvalidMemoryAccess, self, ).__init__(message, address)
+        self.mode = mode
+
+
+class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
+    _message = 'Invalid symbolic memory access'
+
+    def __init__(self, address, mode, size, constraint):
+        super(InvalidSymbolicMemoryAccess, self, ).__init__(address, mode)
+        #the crashing constraint you need to assert 
+        self.constraint = constraint 
+        self.size = size
+
+    def __str__(self):
+        return '%s <%s>'%(self.message, repr(self.address))
+
 
 class Map(object):
     '''
@@ -916,7 +926,6 @@ class SMemory(Memory):
             try:
                 solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
             except TooManySolutions as e:
-                print 1234
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
 
