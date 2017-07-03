@@ -59,7 +59,7 @@ class CapstoneDisasm(Disasm):
 class BinjaILDisasm(Disasm):
 
     def __init__(self, view):
-        self.bv = view
+        self.view = view
         # dictionary with llil for each function. This will be consumed
         # using an iterator, so that we don't repeat ourselves whenever
         # we ask for the next IL
@@ -74,7 +74,7 @@ class BinjaILDisasm(Disasm):
 
         if not self.entry_point_diff:
             # assume that the first time we are called, this is the entry point
-            self.entry_point_diff = addr - self.bv.entry_point
+            self.entry_point_diff = addr - self.view.entry_point
 
         return addr - self.entry_point_diff
 
@@ -85,17 +85,17 @@ class BinjaILDisasm(Disasm):
         :param pc: program counter
         """
         pc = self._fix_addr(pc)
-        blocks = self.bv.get_basic_blocks_at(pc)
+        blocks = self.view.get_basic_blocks_at(pc)
+        # FIXME is this proper? Should we be calling blocks[0](blah?)
         func = blocks[0].function
         il = func.get_lifted_il_at(pc)
-        print(il)
-        print ("%s %x %x\n") % (il.operation.name, il.instr_index, il.address)
-        return self.BinjaILInstruction(self.bv, il, self.entry_point_diff)
+        print ("%s %s %x %x\n") % (str(il), il.operation.name, il.instr_index, il.address)
+        return self.BinjaILInstruction(self.view, il, self.entry_point_diff)
 
 
     class BinjaILInstruction(Instruction):
         def __init__(self, view, llil, offset):
-            self.bv = view
+            self.view = view
             self.llil = llil
             self.offset = offset
             super(BinjaILDisasm.BinjaILInstruction, self).__init__()
@@ -105,8 +105,10 @@ class BinjaILDisasm(Disasm):
 
         @property
         def size(self):
-            # FIXME (theo)
-            return 1
+            next_addr = self.llil.function[self.llil.instr_index + 1].address
+            # FIXME what about the end of the function? Should be OK because
+            # that should be a CALL or a JMP
+            return next_addr - self.llil.address
 
         @property
         def operands(self):
@@ -114,7 +116,8 @@ class BinjaILDisasm(Disasm):
 
         @operands.setter
         def operands(self, value):
-            self._operands = value
+            # This will be overloaded by a BinjaILOperand
+            self.llil.operands = value
 
         @property
         def insn_name(self):
@@ -131,7 +134,7 @@ class BinjaILDisasm(Disasm):
 class BinjaDisasm(Disasm):
 
     def __init__(self, view):
-        self.bv = view
+        self.view = view
         super(BinjaDisasm, self).__init__(view)
 
     def disassemble_instruction(self, _, pc):
@@ -140,8 +143,7 @@ class BinjaDisasm(Disasm):
         :param code: disassembled code
         :param pc: program counter
         """
-        raise SystemExit("BinaryNinja disassembler not supported yet")
-        return self.bv.get_disassembly(pc)
+        return self.view.get_disassembly(pc)
 
     class BinjaInstruction(Instruction):
         def __init__(self, insn):
@@ -154,7 +156,7 @@ class BinjaDisasm(Disasm):
 
         @property
         def operands(self):
-            pass
+            return self._operands
 
         @operands.setter
         def operands(self, value):

@@ -708,7 +708,6 @@ class Cpu(object):
             raise InvalidMemoryAccess(pc, 'x')
 
         insn.operands = self._wrap_operands(insn.operands)
-
         self._instruction_cache[pc] = insn
         return insn
 
