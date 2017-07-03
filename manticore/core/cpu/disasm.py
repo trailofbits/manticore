@@ -10,6 +10,14 @@ class Instruction(object):
         pass
 
     @abstractproperty
+    def mnemonic(self):
+        pass
+
+    @abstractproperty
+    def op_str(self):
+        pass
+
+    @abstractproperty
     def size(self):
         pass
 
@@ -106,9 +114,15 @@ class BinjaILDisasm(Disasm):
         @property
         def size(self):
             next_addr = self.llil.function[self.llil.instr_index + 1].address
-            # FIXME what about the end of the function? Should be OK because
-            # that should be a CALL or a JMP
             return next_addr - self.llil.address
+
+        @property
+        def mnemonic(self):
+            return self.llil.operation.name
+
+        @property
+        def op_str(self):
+            return str(self.llil.operands)
 
         @property
         def operands(self):

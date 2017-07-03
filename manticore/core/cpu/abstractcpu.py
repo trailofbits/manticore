@@ -12,7 +12,7 @@ from itertools import islice, imap
 
 import capstone as cs
 
-from .disasm import init_disassembler
+from .disasm import init_disassembler, BinjaILDisasm
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
 from ...utils.helpers import issymbolic
@@ -767,10 +767,16 @@ class Cpu(object):
                 register_logger.debug(l)
 
         implementation(*insn.operands)
+
+        # In case we are executing IL instructions, we could iteratively
+        # invoke multiple instructions due to the tree form, thus we only
+        # want to increment the PC once, based on its previous position
+        if isinstance(self.__class__.disasm, BinjaILDisasm):
+            self.PC = self._last_pc + insn.size
+
         self._icount += 1
 
         self.did_execute_instruction(insn)
-
 
     def emulate(self, insn):
         '''
