@@ -116,10 +116,7 @@ class BinjaOperand(Operand):
                 # FIXME ugly hack to see if the CONST is a CONST_PTR
                 # It is always the source that might be a const pointer, but
                 # this information seems to only be present in LowLevelIL?
-                llil_address = op.address
-                blocks = cpu.view.get_basic_blocks_at(llil_address)
-                func = blocks[0].function
-                llil = func.get_low_level_il_at(llil_address)
+                llil = cpu.view.current_func.get_low_level_il_at(op.address)
                 if llil.src.operation.name == "LLIL_CONST_PTR":
                     implementation = getattr(cpu, "CONST_PTR")
                     return implementation(*op.operands)
@@ -204,7 +201,6 @@ class BinjaCpu(Cpu):
         return self._segments.setdefault(selector, (0, 0xfffff000, 'rwx'))
 
     def _wrap_operands(self, operands):
-        #  print [type(op) for op in operands]
         return [BinjaOperand(self, op) for op in operands]
 
     def push(cpu, value, size):
@@ -214,8 +210,7 @@ class BinjaCpu(Cpu):
         :param value: the value to put in the stack.
         :param size: the size of the value.
         '''
-        # FIXME this does not look proper
-        cpu.STACK = cpu.STACK - size / 8
+        cpu.STACK -= size / 8
         base, _, _ = cpu.get_descriptor(cpu.ss)
         address = cpu.STACK + base
         cpu.write_int(address, value, size)
@@ -231,7 +226,7 @@ class BinjaCpu(Cpu):
         base, _, _ = cpu.get_descriptor(cpu.ss)
         address = cpu.STACK + base
         value = cpu.read_int(address, size)
-        cpu.STACK = cpu.STACK + size / 8
+        cpu.STACK += size / 8
         return value
 
     @instruction
@@ -328,9 +323,15 @@ class BinjaCpu(Cpu):
     @instruction
     def FLAG_COND(cpu):
         raise NotImplementedError
+
     @instruction
-    def GOTO(cpu, dest):
-        raise NotImplementedError
+    def GOTO(cpu, expr):
+        if isinstance(expr.op, long):
+            addr = cpu.view.current_func.lifted_il[expr.op].address
+        else:
+            raise NotImplementedError
+        cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
+
     @instruction
     def IF(cpu):
         raise NotImplementedError
@@ -412,7 +413,14 @@ class BinjaCpu(Cpu):
 
     @instruction
     def PUSH(cpu, src):
-        cpu.push(src.read(), src.op.size * 8)
+        opname = src.op.operation.name
+        if opname == "LLIL_REG":
+            cpu.push(src.read(), src.op.size * 8)
+        elif opname == "LLIL_CONST":
+            cpu.push(src.read(), src.op.size * 8)
+        else:
+            print opname
+            raise NotImplementedError
 
     @instruction
     def REG(cpu, expr):

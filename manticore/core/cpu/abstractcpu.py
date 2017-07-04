@@ -734,6 +734,11 @@ class Cpu(object):
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
+        #  if not self.disasm.entry_point_diff:
+            #  print str(self.disasm) + " WITHOUT DIFF"
+        #  else:
+            #  print "DECODING " + hex(self.PC - self.disasm.entry_point_diff)
+
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
@@ -772,8 +777,12 @@ class Cpu(object):
         # In case we are executing IL instructions, we could iteratively
         # invoke multiple instructions due to the tree form, thus we only
         # want to increment the PC once, based on its previous position
-        if isinstance(self.__class__.disasm, BinjaILDisasm):
-            self.PC = self._last_pc + insn.size
+        # for CALLS and JUMPS the PC should have been set automatically
+        # and self.instruction.size is 0 because we compute the size from
+        # the address of the next instruction
+        if (isinstance(self.__class__.disasm, BinjaILDisasm) and
+                self.instruction.size != 0):
+            self.__class__.PC = self._last_pc + self.instruction.size
 
         self._icount += 1
 

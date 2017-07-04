@@ -72,7 +72,10 @@ class BinjaILDisasm(Disasm):
         # using an iterator, so that we don't repeat ourselves whenever
         # we ask for the next IL
         self.func_llil = {}
+        # offset to account for section vs segment view of the binary
         self.entry_point_diff = None
+        # current LowLevelILFunction
+        self.current_func = None
         super(BinjaILDisasm, self).__init__(view)
 
     def _fix_addr(self, addr):
@@ -93,13 +96,23 @@ class BinjaILDisasm(Disasm):
         :param pc: program counter
         """
         pc = self._fix_addr(pc)
-        print "AT PC " + hex(pc)
         blocks = self.view.get_basic_blocks_at(pc)
-        print blocks
-        # FIXME is this proper? Should we be using the instruction index?
-        func = blocks[0].function
+        if not blocks:
+            # Looks like Binja did not know about this PC..
+            self.view.create_user_function(pc)
+            self.view.update_analysis_and_wait()
+            func = self.view.get_basic_blocks_at(pc)[0].function
+        else:
+            # FIXME is this proper? Should we be using the instruction index?
+            func = blocks[0].function
+
+        self.view.current_func = func
         il = func.get_lifted_il_at(pc)
-        print ("%s %s %x %x\n") % (str(il), il.operation.name, il.instr_index,
+
+        # FIXME debug printing
+        print ("%s %s %x %x\n") % (str(il),
+                                   il.operation.name,
+                                   il.instr_index,
                                    il.address)
         return self.BinjaILInstruction(self.view, il, self.entry_point_diff)
 
