@@ -734,11 +734,6 @@ class Cpu(object):
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
-        if not self.disasm.entry_point_diff:
-            print str(self.disasm) + " WITHOUT DIFF"
-        else:
-            print "DECODING " + hex(self.PC - self.disasm.entry_point_diff)
-
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 

@@ -338,7 +338,6 @@ class BinjaCpu(Cpu):
     @instruction
     def JUMP(cpu, expr):
         addr = expr.read()
-        print "JUMPING TO " + hex(addr)
         cpu.regfile.write('PC', addr)
         cpu.__class__.PC = addr
 
@@ -348,7 +347,13 @@ class BinjaCpu(Cpu):
 
     @instruction
     def LOAD(cpu, expr):
-        return cpu.read_int(expr.read(), expr.size)
+        # This is a weird trick because we don't have a consistency between
+        # section mapping and segment mapping in Binja. We substract the
+        # entry point diff to go back to section view, then read the address
+        # from the mapped file, then map back to the segment view
+        section_addr = expr.read() - cpu.disasm.entry_point_diff
+        target = cpu.read_int(section_addr, expr.size * 8)
+        return target + cpu.disasm.entry_point_diff
 
     @instruction
     def LOW_PART(cpu):

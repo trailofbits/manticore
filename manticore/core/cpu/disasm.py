@@ -93,7 +93,9 @@ class BinjaILDisasm(Disasm):
         :param pc: program counter
         """
         pc = self._fix_addr(pc)
+        print "AT PC " + hex(pc)
         blocks = self.view.get_basic_blocks_at(pc)
+        print blocks
         # FIXME is this proper? Should we be using the instruction index?
         func = blocks[0].function
         il = func.get_lifted_il_at(pc)
