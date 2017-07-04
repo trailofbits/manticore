@@ -57,18 +57,18 @@ class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
 
     def __init__(self, address, mode, size, constraint):
         super(InvalidSymbolicMemoryAccess, self, ).__init__(address, mode)
-        #the crashing constraint you need to assert 
-        self.constraint = constraint 
+        #the crashing constraint you need to assert
+        self.constraint = constraint
         self.size = size
 
 
 class Map(object):
     '''
     A memory map.
-        
+
     It represents a convex chunk of memory with a start and an end address.
     It may be implemented as an actual file mapping or as a StringIO/bytearray.
-    
+
     >>>           ######################################
                   ^                                    ^
                 start                                 end
@@ -246,7 +246,7 @@ class AnonMap(Map):
 class FileMap(Map):
     '''
     A file map.
-    
+
     A  file is mapped in multiples of the page size.  For a file that is not a
     multiple of the page size, the remaining memory is zeroed when mapped, and
     writes to that region are not written out to the file. The effect of
@@ -460,7 +460,7 @@ class Memory(object):
     def _floor(self, address):
         '''
         Returns largest page boundary value not greater than the address.
-        
+
         :param address: the address to calculate its floor.
         :return: the floor of C{address}.
         :rtype: int
@@ -480,7 +480,7 @@ class Memory(object):
     def _search(self, size, start=None, counter=0):
         '''
         Recursively searches the address space for enough free space to allocate C{size} bytes.
-        
+
         :param size: the size in bytes to allocate.
         :param start: an address from where to start the search.
         :param counter: internal parameter to know if all the memory was already scanned.
@@ -517,7 +517,7 @@ class Memory(object):
     def mmapFile(self, addr, size, perms, filename, offset=0):
         '''
         Creates a new file mapping in the memory address space.
-                
+
         :param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
                      chunk of memory will be selected as starting address.
         :param size: the contents of a file mapping are initialized using C{size} bytes starting
@@ -564,7 +564,7 @@ class Memory(object):
     def mmap(self, addr, size, perms, data_init=None, name=None):
         '''
         Creates a new mapping in the memory address space.
-        
+
         :param addr: the starting address (took as hint). If C{addr} is C{0} the first big enough
                      chunk of memory will be selected as starting address.
         :param size: the length of the mapping.
@@ -577,7 +577,7 @@ class Memory(object):
                    - 'Address too big' if C{addr} goes beyond the limit of the memory.
                    - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
         :rtype: int
-        
+
         '''
         #If addr is NULL, the system determines where to allocate the region.
         assert addr is None or type(addr) in [int, long], 'Address shall be concrete'
@@ -629,7 +629,7 @@ class Memory(object):
     def map_containing(self, address):
         '''
         Returns the L{MMap} object containing the address.
-	
+
         :param address: the address to obtain its mapping.
         :rtype: L{MMap}
 
@@ -644,7 +644,7 @@ class Memory(object):
     def mappings(self):
         '''
         Returns a sorted list of all the mappings for this memory.
-        
+
         :return: a list of mappings.
         :rtype: list
         '''
@@ -665,7 +665,7 @@ class Memory(object):
     def _maps_in_range(self, start, end):
         '''
         Generates the list of maps that overlaps with the range [start:end]
-        ''' 
+        '''
 
         # Search for the first matching map
         addr = start
@@ -676,7 +676,7 @@ class Memory(object):
                 m = self._page2map[self._page(addr)]
                 yield m
                 addr = m.end
-        
+
 
     def munmap(self, start, size):
         '''
@@ -685,7 +685,7 @@ class Memory(object):
         references.
 
         :param start: the starting address to delete.
-        :param size: the length of the unmapping. 
+        :param size: the length of the unmapping.
         '''
         start = self._floor(start)
         end = self._ceil(start+size)
@@ -738,8 +738,7 @@ class Memory(object):
 
     def access_ok(self, index, access):
         if isinstance(index, slice):
-            assert index.stop - index.start > 0
-            result = []
+            assert index.stop - index.start >= 0
             addr = index.start
             while addr < index.stop:
                 if addr not in self:
@@ -749,7 +748,7 @@ class Memory(object):
 
                 if not m.access_ok(access):
                     return False
-                addr+=size
+                addr += size
             assert addr == index.stop
             return True
         else:
@@ -945,7 +944,7 @@ class SMemory(Memory):
 
             #So here we have all potential solutions to address
             assert len(solutions) > 0
-            
+
 
             crashing_condition = False
             for base in solutions:

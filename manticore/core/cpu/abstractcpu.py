@@ -538,7 +538,7 @@ class Cpu(object):
         assert size in SANE_SIZES
         self.will_read_memory(where, size)
 
-        data = self.memory[where:where+size/8]
+        data = self.memory[where:where + size / 8]
         assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
@@ -695,6 +695,7 @@ class Cpu(object):
         # directly and without going through a platform. This only happens
         # in testcases
         if not self.disasm:
+            print "INITIALIZING CAPSTONE DISASM"
             self.__class__.disasm = init_disassembler('capstone', self.arch, self.mode, None)
         try:
             insn = self.disasm.disassemble_instruction(code, pc)
@@ -733,7 +734,12 @@ class Cpu(object):
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
-        if not self.memory.access_ok(self.PC,'x'):
+        if not self.disasm.entry_point_diff:
+            print str(self.disasm) + " WITHOUT DIFF"
+        else:
+            print "DECODING " + hex(self.PC - self.disasm.entry_point_diff)
+
+        if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
         self.will_decode_instruction()

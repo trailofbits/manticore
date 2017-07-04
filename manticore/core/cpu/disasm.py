@@ -94,10 +94,11 @@ class BinjaILDisasm(Disasm):
         """
         pc = self._fix_addr(pc)
         blocks = self.view.get_basic_blocks_at(pc)
-        # FIXME is this proper? Should we be calling blocks[0](blah?)
+        # FIXME is this proper? Should we be using the instruction index?
         func = blocks[0].function
         il = func.get_lifted_il_at(pc)
-        print ("%s %s %x %x\n") % (str(il), il.operation.name, il.instr_index, il.address)
+        print ("%s %s %x %x\n") % (str(il), il.operation.name, il.instr_index,
+                                   il.address)
         return self.BinjaILInstruction(self.view, il, self.entry_point_diff)
 
 
@@ -113,6 +114,7 @@ class BinjaILDisasm(Disasm):
 
         @property
         def size(self):
+            assert self.llil.instr_index < len(self.llil.function)
             next_addr = self.llil.function[self.llil.instr_index + 1].address
             return next_addr - self.llil.address
 
@@ -122,7 +124,7 @@ class BinjaILDisasm(Disasm):
 
         @property
         def op_str(self):
-            return str(self.llil.operands)
+            return " ".join([str(x.op) for x in self.llil.operands])
 
         @property
         def operands(self):

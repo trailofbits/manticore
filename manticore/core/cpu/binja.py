@@ -96,21 +96,35 @@ class BinjaOperand(Operand):
 
     @property
     def size(self):
-        assert self.type == 'register'
+        # FIXME (does this assert need to be here? we could be reading memory)
+        #  assert self.type == 'register'
         return self.op.info.size
 
     def read(self):
+        #  try:
+            #  raise NotImplementedError("READ " + str(self.op))
+        #  except Exception as e:
+            #  import traceback
+            #  traceback.print_stack()
         cpu, op = self.cpu, self.op
         if self.type == 'register':
             value = cpu.read_register(self.op)
             #  print("Reading %d from %s" % (value, op))
             return value
         elif self.type == 'instruction':
-            # FIXME (theo) what if this is symbolic? should this be getting
-            # called here?
+            if op.operation.name[len("LLIL_"):] == "CONST":
+                # FIXME ugly hack to see if the CONST is a CONST_PTR
+                # It is always the source that might be a const pointer, but
+                # this information seems to only be present in LowLevelIL?
+                llil_address = op.address
+                blocks = cpu.view.get_basic_blocks_at(llil_address)
+                func = blocks[0].function
+                llil = func.get_low_level_il_at(llil_address)
+                if llil.src.operation.name == "LLIL_CONST_PTR":
+                    implementation = getattr(cpu, "CONST_PTR")
+                    return implementation(*op.operands)
+
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
-            #  print "Calling " + str(implementation)
-            #  print "Operands " + str(op.operands)
             return implementation(*op.operands)
 
     def write(self, value):
@@ -193,97 +207,6 @@ class BinjaCpu(Cpu):
         #  print [type(op) for op in operands]
         return [BinjaOperand(self, op) for op in operands]
 
-    def get_register_value(self, register):
-        from binaryninja import (
-            LLIL_REG_IS_TEMP, LLIL_GET_TEMP_REG_INDEX, ILRegister
-        )
-        if (isinstance(register, int) and
-                LLIL_REG_IS_TEMP(register)):
-            reg_value = self.regfile.registers.get(register)
-
-            if reg_value is None:
-                raise SystemExit("Register Not defined")
-
-            return reg_value
-
-        if isinstance(register, ILRegister):
-            register = register.name
-
-        reg_info = self.view.arch.regs[register]
-        full_reg_value = self.regfile.registers.get(reg_info.full_width_reg)
-
-        if full_reg_value is None:
-            raise SystemExit("Register Not defined")
-
-        if register == reg_info.full_width_reg:
-            return full_reg_value
-
-        mask = (1 << reg_info.size * 8) - 1
-        reg_bits = mask << (reg_info.offset * 8)
-
-        reg_value = (full_reg_value & reg_bits) >> (reg_info.offset * 8)
-
-        return reg_value
-
-    def set_register_value(self, register, value):
-        # If it's a temp register, just set the value no matter what.
-        # Maybe this will be an issue  eventually, maybe not.
-        from binaryninja import (
-            LLIL_REG_IS_TEMP, LLIL_GET_TEMP_REG_INDEX, ILRegister
-        )
-        if (isinstance(register, (int, long)) and
-                LLIL_REG_IS_TEMP(register)):
-            self.regfile.registers[register] = value
-
-        if isinstance(register, ILRegister):
-            register = register.name
-
-        reg_info = self.view.arch.regs[register]
-
-        # normalize value to be unsigned
-        if value < 0:
-            value = value + (1 << reg_info.size * 8)
-
-        if 0 > value >= (1 << reg_info.size * 8):
-            raise ValueError('value is out of range')
-
-        if register == reg_info.full_width_reg:
-            self.regfile.registers[register] = value
-            return value
-
-        full_width_reg_info = self.view.arch.regs[reg_info.full_width_reg]
-        full_width_reg_value = self.regfile.registers.get(full_width_reg_info.full_width_reg)
-
-        # XXX: The RegisterInfo.extend field currently holds a string for
-        #      for built-in Architectures.
-        if (full_width_reg_value is None and
-                (reg_info.extend == 'NoExtend' or
-                 reg_info.offset != 0)):
-            raise SystemExit("reg_info Error")
-
-        if reg_info.extend == 'ZeroExtendToFullWidth':
-            full_width_reg_value = value
-
-        elif reg_info.extend == 'SignExtendToFullWidth':
-            full_width_reg_value = (
-                (value ^ ((1 << reg_info.size * 8) - 1)) -
-                ((1 << reg_info.size * 8) - 1) +
-                (1 << full_width_reg_info.size * 8)
-            )
-
-        elif reg_info.extend == 'NoExtend':
-            # mask off the value that will be replaced
-            mask = (1 << reg_info.size * 8) - 1
-            full_mask = (1 << full_width_reg_info.size * 8) - 1
-            reg_bits = mask << (reg_info.offset * 8)
-
-            full_width_reg_value &= full_mask ^ reg_bits
-            full_width_reg_value |= value << reg_info.offset * 8
-
-        self.regfile.registers[full_width_reg_info.full_width_reg] = full_width_reg_value
-
-        return full_width_reg_value
-
     def push(cpu, value, size):
         '''
         Writes a value in the stack.
@@ -293,7 +216,7 @@ class BinjaCpu(Cpu):
         '''
         # FIXME this does not look proper
         cpu.STACK = cpu.STACK - size / 8
-        base, _, _ = cpu.get_descriptor(cpu.read_register('ss'))
+        base, _, _ = cpu.get_descriptor(cpu.ss)
         address = cpu.STACK + base
         cpu.write_int(address, value, size)
 
@@ -336,9 +259,14 @@ class BinjaCpu(Cpu):
     @instruction
     def BP(cpu):
         raise NotImplementedError
+
     @instruction
-    def CALL(cpu):
-        raise NotImplementedError
+    def CALL(cpu, expr):
+        new_pc = int(str(expr.op), 16) + cpu.disasm.entry_point_diff
+        cpu.regfile.write('PC', new_pc)
+        cpu.__class__.PC = new_pc
+        cpu.push(new_pc, cpu.address_bit_size)
+
     @instruction
     def CMP_E(cpu):
         raise NotImplementedError
@@ -375,8 +303,10 @@ class BinjaCpu(Cpu):
         return expr.op
 
     @instruction
-    def CONST_PTR(cpu):
-        raise NotImplementedError
+    def CONST_PTR(cpu, expr):
+        val = expr.op + cpu.disasm.entry_point_diff
+        return expr.op + cpu.disasm.entry_point_diff
+
     @instruction
     def DIVS(cpu):
         raise NotImplementedError
@@ -404,15 +334,22 @@ class BinjaCpu(Cpu):
     @instruction
     def IF(cpu):
         raise NotImplementedError
+
     @instruction
-    def JUMP(cpu):
-        raise NotImplementedError
+    def JUMP(cpu, expr):
+        addr = expr.read()
+        print "JUMPING TO " + hex(addr)
+        cpu.regfile.write('PC', addr)
+        cpu.__class__.PC = addr
+
     @instruction
     def JUMP_TO(cpu):
         raise NotImplementedError
+
     @instruction
-    def LOAD(cpu):
-        raise NotImplementedError
+    def LOAD(cpu, expr):
+        return cpu.read_int(expr.read(), expr.size)
+
     @instruction
     def LOW_PART(cpu):
         raise NotImplementedError
@@ -470,11 +407,13 @@ class BinjaCpu(Cpu):
 
     @instruction
     def PUSH(cpu, src):
-        cpu.push(src.read(), src.op.size)
+        cpu.push(src.read(), src.op.size * 8)
 
     @instruction
     def REG(cpu, expr):
-        return cpu.get_register_value(expr.op)
+        value = cpu.regfile.read(expr.op)
+        return value
+
     @instruction
     def RET(cpu):
         raise NotImplementedError
@@ -499,7 +438,6 @@ class BinjaCpu(Cpu):
 
     @instruction
     def SET_REG(cpu, dest, src):
-        value = src.read()
         dest.write(src.read())
 
     @instruction
