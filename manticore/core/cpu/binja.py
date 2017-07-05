@@ -23,10 +23,12 @@ class BinjaRegisterFile(RegisterFile):
             'STACK' : str(view.arch.stack_pointer),
             'PC' : self._get_pc(view),
         }
+
         super(BinjaRegisterFile, self).__init__(aliases=self.reg_aliases)
 
         # Initialize register values, cache and side-effects
         self._cache = dict()
+        self.flags = {f : 0 for f in view.arch.flags}
         all_regs = view.arch.regs.keys() + self.reg_aliases.values()
         self.registers = {reg : 0 for reg in all_regs}
         # FIXME (theo) get side effects
@@ -112,16 +114,20 @@ class BinjaOperand(Operand):
             #  print("Reading %d from %s" % (value, op))
             return value
         elif self.type == 'instruction':
+            # FIXME change to check the enum instead of doing strcmp
             if op.operation.name[len("LLIL_"):] == "CONST":
                 # FIXME ugly hack to see if the CONST is a CONST_PTR
                 # It is always the source that might be a const pointer, but
                 # this information seems to only be present in LowLevelIL?
                 llil = cpu.view.current_func.get_low_level_il_at(op.address)
-                if llil.src.operation.name == "LLIL_CONST_PTR":
+                if (hasattr(llil, 'src') and
+                        llil.src.operation.name == "LLIL_CONST_PTR"):
                     implementation = getattr(cpu, "CONST_PTR")
                     return implementation(*op.operands)
 
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
+            if op.operation.name == "LLIL_LOAD":
+                return implementation(*op.operands, expr_size=op.size)
             return implementation(*op.operands)
 
     def write(self, value):
@@ -154,6 +160,13 @@ class BinjaCpu(Cpu):
     # Keep a virtual stack
     stack = []
 
+    # FIXME
+    # FIXME
+    # FIXME         NO FLAGS WHATSOEVER IN THE @instruction implementations
+    #               XXX perhaps utilize a decorator for this?
+    # FIXME
+    # FIXME
+    # FIXME
     def __init__(self, view, memory):
         '''
         Builds a CPU model.
@@ -165,7 +178,6 @@ class BinjaCpu(Cpu):
         self.__class__.arch = view.arch
         self.__class__.disasm = BinjaILDisasm(view)
         self._segments = {}
-
         # initialize the memory and register files
         super(BinjaCpu, self).__init__(BinjaRegisterFile(view), memory)
 
@@ -246,8 +258,9 @@ class BinjaCpu(Cpu):
         return left.read() & right.read()
 
     @instruction
-    def ASR(cpu):
-        raise NotImplementedError
+    def ASR(cpu, reg, shift):
+        return reg.read() >> shift.read()
+
     @instruction
     def BOOL_TO_INT(cpu):
         raise NotImplementedError
@@ -257,7 +270,7 @@ class BinjaCpu(Cpu):
 
     @instruction
     def CALL(cpu, expr):
-        new_pc = int(str(expr.op), 16) + cpu.disasm.entry_point_diff
+        new_pc = long(str(expr.op), 16) + cpu.disasm.entry_point_diff
         cpu.regfile.write('PC', new_pc)
         cpu.__class__.PC = new_pc
         cpu.push(new_pc, cpu.address_bit_size)
@@ -320,9 +333,10 @@ class BinjaCpu(Cpu):
     @instruction
     def FLAG_BIT(cpu):
         raise NotImplementedError
+
     @instruction
-    def FLAG_COND(cpu):
-        raise NotImplementedError
+    def FLAG_COND(cpu, condition):
+        return condition.op
 
     @instruction
     def GOTO(cpu, expr):
@@ -333,8 +347,59 @@ class BinjaCpu(Cpu):
         cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
 
     @instruction
-    def IF(cpu):
-        raise NotImplementedError
+    def IF(cpu, condition, true, false):
+        cond = condition.read()
+
+        import binaryninja.enums as enums
+
+        # FLAGS are ['c', 'p', 'a', 'z', 's', 'd', 'o']
+        # FIXME check these for correctness. Probably buggy!!
+        if cond == enums.LowLevelILFlagCondition.LLFC_E:
+            res = (cpu.regfile.flags['z'] == 1)
+        elif cond == enums.LowLevelILFlagCondition.LLFC_NE:
+            res = (cpu.regfile.flags['z'] == 0)
+        elif cond == enums.LowLevelILFlagCondition.LLFC_NEG:
+            print cond
+            raise NotImplementedError
+        elif cond == enums.LowLevelILFlagCondition.LLFC_NO:
+            res = (cpu.regfile.flags['o'] == 0)
+        elif cond == enums.LowLevelILFlagCondition.LLFC_O:
+            res = (cpu.regfile.flags['o'] == 1)
+        elif cond == enums.LowLevelILFlagCondition.LLFC_POS:
+            print cond
+            raise NotImplementedError
+        elif cond == enums.LowLevelILFlagCondition.LLFC_SGE:
+            print cond
+            raise NotImplementedError
+        elif cond == enums.LowLevelILFlagCondition.LLFC_SGT:
+            print cond
+            raise NotImplementedError
+        elif cond == enums.LowLevelILFlagCondition.LLFC_SLE:
+            print cond
+            raise NotImplementedError
+        elif cond == enums.LowLevelILFlagCondition.LLFC_SLT:
+            print cond
+            raise NotImplementedError
+        elif cond == enums.LowLevelILFlagCondition.LLFC_UGE:
+            res = (cpu.regfile.flags['c'] == 0)
+        elif cond == enums.LowLevelILFlagCondition.LLFC_UGT:
+            res = ((cpu.regfile.flags['z'] & cpu.regfile.flags['c']) == 0)
+        elif cond == enums.LowLevelILFlagCondition.LLFC_ULE:
+            res = ((cpu.regfile.flags['z'] | cpu.regfile.flags['c']) == 1)
+        elif cond == enums.LowLevelILFlagCondition.LLFC_ULT:
+            res = (cpu.regfile.flags['c'] == 1)
+        else:
+            print cond
+            raise NotImplementedError
+
+        idx = true.op if res else false.op
+        assert isinstance(idx, long)
+        print false.op
+        print true.op
+        addr = cpu.view.current_func.lifted_il[idx].address
+        assert addr != cpu.disasm.current_pc
+        print "JUMPING AT " + hex(addr)
+        cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
 
     @instruction
     def JUMP(cpu, expr):
@@ -347,21 +412,20 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     @instruction
-    def LOAD(cpu, expr):
-        # This is a weird trick because we don't have a consistency between
-        # section mapping and segment mapping in Binja. We substract the
-        # entry point diff to go back to section view, then read the address
-        # from the mapped file, then map back to the segment view
-        section_addr = expr.read() - cpu.disasm.entry_point_diff
-        target = cpu.read_int(section_addr, expr.size * 8)
-        return target + cpu.disasm.entry_point_diff
+    def LOAD(cpu, expr, expr_size=None):
+        return cpu.read_int(expr.read(), expr_size * 8)
 
     @instruction
-    def LOW_PART(cpu):
-        raise NotImplementedError
+    def LOW_PART(cpu, expr):
+        # FIXME account for the size this is currently wrong. should
+        # read() handle this or not?
+        return expr.read()
+
     @instruction
-    def LSL(cpu):
-        raise NotImplementedError
+    def LSL(cpu, reg, shift):
+        # FIXME ALL FLAGS
+        return reg.read() << shift.read()
+
     @instruction
     def LSR(cpu):
         raise NotImplementedError
@@ -413,19 +477,11 @@ class BinjaCpu(Cpu):
 
     @instruction
     def PUSH(cpu, src):
-        opname = src.op.operation.name
-        if opname == "LLIL_REG":
-            cpu.push(src.read(), src.op.size * 8)
-        elif opname == "LLIL_CONST":
-            cpu.push(src.read(), src.op.size * 8)
-        else:
-            print opname
-            raise NotImplementedError
+        cpu.push(src.read(), src.op.size * 8)
 
     @instruction
     def REG(cpu, expr):
-        value = cpu.regfile.read(expr.op)
-        return value
+        return cpu.regfile.read(expr.op)
 
     @instruction
     def RET(cpu):
@@ -458,11 +514,14 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     @instruction
-    def STORE(cpu):
-        raise NotImplementedError
+    def STORE(cpu, dest, src):
+        cpu.write_int(dest.read(), src.read(), src.size * 8)
+
     @instruction
-    def SUB(cpu):
-        raise NotImplementedError
+    def SUB(cpu, left, right):
+        # FIXME ALL FLAGS AFFECTED
+        return left.read() - right.read()
+
     @instruction
     def SX(cpu):
         raise NotImplementedError
@@ -478,9 +537,18 @@ class BinjaCpu(Cpu):
     @instruction
     def UNDEF(cpu):
         raise NotImplementedError
+
     @instruction
     def UNIMPL(cpu):
+        # FIXME invoke platform-specific CPU here
+        disasm = cpu.view.get_disassembly(cpu.disasm.current_pc)
+        if disasm == "rdtsc":
+            val = cpu.icount
+            cpu.regfile.write('rax', val & 0xffffffff)
+            cpu.regfile.write('rdx', (val >> 32) & 0xffffffff)
+            return
         raise NotImplementedError
+
     @instruction
     def UNIMPL_MEM(cpu):
         raise NotImplementedError
@@ -493,5 +561,7 @@ class BinjaCpu(Cpu):
         return left.read() ^ right.read()
 
     @instruction
-    def ZX(cpu):
-        raise NotImplementedError
+    def ZX(cpu, expr):
+        # FIXME zero extension
+        val = expr.read()
+        return val

@@ -76,6 +76,8 @@ class BinjaILDisasm(Disasm):
         self.entry_point_diff = None
         # current LowLevelILFunction
         self.current_func = None
+        # current pc
+        self.current_pc = None
         super(BinjaILDisasm, self).__init__(view)
 
     def _fix_addr(self, addr):
@@ -96,24 +98,21 @@ class BinjaILDisasm(Disasm):
         :param pc: program counter
         """
         pc = self._fix_addr(pc)
-        blocks = self.view.get_basic_blocks_at(pc)
-        if not blocks:
+        func = self.view.get_function_at(pc)
+        if not func:
             # Looks like Binja did not know about this PC..
             self.view.create_user_function(pc)
             self.view.update_analysis_and_wait()
-            func = self.view.get_basic_blocks_at(pc)[0].function
-        else:
-            # FIXME is this proper? Should we be using the instruction index?
-            func = blocks[0].function
+            func = self.view.get_function_at(pc)
 
         self.view.current_func = func
         il = func.get_lifted_il_at(pc)
-
-        # FIXME debug printing
-        print ("%s %s %x %x\n") % (str(il),
-                                   il.operation.name,
-                                   il.instr_index,
-                                   il.address)
+        self.current_pc = pc
+        print ("%s\t%s %s %x %x") % (hex(pc),
+                                     str(il),
+                                     il.operation.name,
+                                     il.instr_index,
+                                     il.address)
         return self.BinjaILInstruction(self.view, il, self.entry_point_diff)
 
 

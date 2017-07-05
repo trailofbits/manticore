@@ -2077,7 +2077,6 @@ class SLinux(Linux):
         return cpu
 
 
-
     @property
     def constraints(self):
         return self._constraints

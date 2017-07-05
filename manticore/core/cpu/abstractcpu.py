@@ -734,11 +734,6 @@ class Cpu(object):
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
-        #  if not self.disasm.entry_point_diff:
-            #  print str(self.disasm) + " WITHOUT DIFF"
-        #  else:
-            #  print "DECODING " + hex(self.PC - self.disasm.entry_point_diff)
-
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
@@ -749,6 +744,7 @@ class Cpu(object):
 
         self.will_execute_instruction(insn)
 
+        # FIXME why is this the case?
         if insn.address != self.PC:
             return
 
@@ -780,8 +776,16 @@ class Cpu(object):
         # for CALLS and JUMPS the PC should have been set automatically
         # and self.instruction.size is 0 because we compute the size from
         # the address of the next instruction
+
+        # FIXME replace the check with an instruction property denoting
+        # that PC is modified.
         if (isinstance(self.__class__.disasm, BinjaILDisasm) and
-                self.instruction.size != 0):
+                not (self.instruction.mnemonic == "LLIL_CALL" or
+                     self.instruction.mnemonic == "LLIL_JMP" or
+                     self.instruction.mnemonic == "LLIL_IF" or
+                     self.instruction.mnemonic == "LLIL_GOTO"
+                     )
+                ):
             self.__class__.PC = self._last_pc + self.instruction.size
 
         self._icount += 1

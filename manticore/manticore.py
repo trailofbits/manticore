@@ -545,10 +545,12 @@ class Manticore(object):
         else:
             target = self._executor.run
 
-        for _ in range(num_processes):
-            p = Process(target=target, args=())
-            self._workers.append(p)
-            p.start()
+        # FIXME temp mod for Binja Multiprocessing issue
+        target()
+        #  for _ in range(num_processes):
+            #  p = Process(target=target, args=())
+            #  self._workers.append(p)
+            #  p.start()
 
     def _join_workers(self):
         with WithKeyboardInterruptAs(self._executor.shutdown):
