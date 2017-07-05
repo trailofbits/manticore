@@ -1,168 +1,81 @@
 import inspect
-from weakref import WeakSet, WeakKeyDictionary
+from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
 from types import MethodType
 
-# Inspired by:
-# http://code.activestate.com/recipes/577980-improved-signalsslots-implementation-in-python/
 
-class SignalDisconnectedError(RuntimeError):
-    pass
-
-
-def forward_signals(dest, source, arg=False):
-    ''' 
-        Replicate and forward all the signals from source to dest
-    '''
-    #Import all signals from state
-    for signal_name in dir(source):
-        signal = getattr(source, signal_name, None)
-        if isinstance(signal, Signal):
-            proxy = getattr(dest, signal_name, Signal())
-            proxy.when(source, signal, arg)
-            setattr(dest, signal_name, proxy)
-
-def _manage_signals(obj, enabled):
-    ''' 
-        Enable or disable all signals at obj
-    '''
-    #Import all signals from state
-    for signal_name in dir(obj):
-        signal = getattr(obj, signal_name)
-        if isinstance(signal, Signal):
-            if enabled:
-                signal.enable()
-            else:
-                signal.disable()
-
-
-def enable_signals(obj):
-    _manage_signals(obj, True)
-
-def disable_signals(obj):
-    _manage_signals(obj, False)
-
-
-class Signal(object):
-    '''
-    The Signal class is an approximation of Qt's signals+slot system. Each event
-    that an object would like to produce requires a Signal() object. All 
-    interested parties on the event must register themselves as receivers via
-    connect() or the '+=' operator.
-
-    The event source calls emit() to produce an event (or treat it as a
-    callable). All registered receivers will receive it, synchronously.
-    '''
-
-    def __init__(self, description=None):
-        '''
-        Create a Signal() object. Pass 'True' to constructor if locking around
-        emit() is required.
-        '''
-        self.description = description
-        self._functions = WeakSet()
-        self._methods = WeakKeyDictionary()
+class Eventful(object):
+    def __init__(self, *args, **kwargs):
+        self._signals = dict()
         self._forwards = WeakKeyDictionary()
-        self.disabled = False
+        super(Eventful, self).__init__(*args, **kwargs)
 
-    def disable(self):
-        self.disabled = True
-    def enable(self):
-        self.disabled = False
-        
+    def __setstate__(self, state):
+        self._signals = dict()
+        self._forwards = WeakKeyDictionary()
+        return True
 
-    def __len__(self):
-        return len(self._functions) + len(self._methods)
+    def __getstate__(self):
+        return {}
 
-    def __call__(self, *args, **kwargs):
-        return self.emit(*args, **kwargs)
 
-    def emit(self, *args, **kwargs):
-        'Invoke the signal with |args| and |kwargs|'
-        results = []
+    def _unref(self, robj):
+        remove = set()
+        for name, bucket in self._signals.items():
+            if robj in bucket:
+                del bucket[robj]
+            if len(bucket) == 0:
+                remove.add(name)
+        for name in remove:
+            del self._signals[name]
 
-        if self.disabled:
-            return results
+    def _get_signal_bucket(self, name):
+        return self._signals.setdefault(name,  dict())
 
-        for f in self._functions:
-            if '__predicate__' in f.__dict__:
-                if not f.__dict__['__predicate__']():
-                    continue
-
-            results.append(f(*args, **kwargs))
-
-        for obj, funcs in self._methods.items():
-            for f in funcs:
-                if '__predicate__' in f.__dict__:
-                    if not f.__dict__['__predicate__']():
-                        continue
-
-                results.append(f(obj, *args, **kwargs))
-
-        return results
-
-    def connect(self, dest, predicate=None):
-        '''
-        Connect |dest| to the signal. If |predicate| is set, it is treated as a
-        nullary callable whose return value determines if the signal is fired.
-
-        NOTE: Passing identical values to multiple invocations of connect() with
-        different values of predicate will overwrite previous predicates and
-        persist the last-used value.
-        
-        To achieve a similar effect, wrap |dest| in a function.
-
-        '''
-        assert callable(dest)
-        if inspect.ismethod(dest):
-            obj, impl = dest.__self__, dest.__func__
-
-            if predicate is not None:
-                impl.__dict__['__predicate__'] = predicate
-
-            self._methods.setdefault(obj, set()).add(impl)
-        else:
-            if predicate is not None:
-                dest.__dict__['__predicate__'] = predicate
-
-            self._functions.add(dest)
-
-        for signal, methods in self._forwards.items():
-            for method in methods:
-                signal.connect(method)
-        self._forwards.clear()
-
-    def when(self, obj, signal, arg=False):
-        ''' This forwards signal from obj '''
-        #will reemit forwarded signal prepending obj to arguments 
-        if arg:
-            method = MethodType(lambda *args, **kwargs: self.emit(*args, **kwargs), obj)
-        else:
-            method = self.emit
-        if len(self):
-            signal.connect(method)
-        else:
-            self._forwards.setdefault(signal, set()).add(method)
-
-    def __iadd__(self, dest):
-        self.connect(dest)
-        return self
-
-    def disconnect(self, dest):
-        try:
-            if inspect.ismethod(dest):
-                obj, impl = dest.__self__, dest.__func__
-                self._methods[obj].remove(impl)
+    def publish(self, name, *args, **kwargs):   
+        bucket = self._get_signal_bucket(name)
+        for obj, methods in bucket.items():
+            for callback in methods:
+                callback(obj(), *args, **kwargs)
+        for sink, include_source in self._forwards.items():
+            if include_source:
+                sink.publish(name, self, *args, **kwargs)
             else:
-                self._functions.remove(dest)
-        except KeyError:
-            raise SignalDisconnectedError()
+                sink.publish(name, *args, **kwargs)
 
-    def __isub__(self, dest):
-        self.disconnect(dest)
-        return self
+    def subscribe(self, name, method):
+        assert inspect.ismethod(method)
+        obj, callback = method.__self__, method.__func__
+        bucket = self._get_signal_bucket(name)
+        robj = ref(obj, self._unref)
+        bucket.setdefault(robj, set()).add(callback)
 
-    def reset(self):
-        self._functions.clear()
-        self._methods.clear()
-        self._forwards.clear()
+    def forward_events_from(self, source, include_source=False):
+        if isinstance(source, Eventful):
+            source.forward_events_to(self, include_source=include_source)
+
+    def forward_events_to(self, sink, include_source=False):
+        ''' This forwards signal to sink '''
+        assert isinstance(sink, Eventful)
+        self._forwards[sink] = include_source
+
+
+
+if __name__ == '__main__':
+    class A(Eventful):
+        def callback(self):
+            print "CALBACK", self
+
+    a = A()
+    b = A()
+    a.subscribe('lala', b.callback)
+
+    a.publish('lala')
+
+    a.publish('lala')
+
+    a.publish('lala')
+
+    del b
+    print "del "
+    print "S", a._signals.items()
 

@@ -4,8 +4,7 @@ from collections import OrderedDict
 
 from .smtlib import solver
 from ..utils.helpers import issymbolic
-from ..utils.event import Signal, forward_signals
-
+from ..utils.event import Eventful
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
@@ -57,9 +56,7 @@ class ForkState(Concretize):
         super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
 
 
-from ..utils.event import Signal
-
-class State(object):
+class State(Eventful):
     '''
     Representation of a unique program state/path.
 
@@ -68,7 +65,8 @@ class State(object):
     :type platform: Decree or Linux or Windows
     '''
 
-    def __init__(self, constraints, platform):
+    def __init__(self, constraints, platform, **kwargs):
+        super(State, self).__init__(**kwargs)
         self.platform = platform
         self.forks = 0
         self.constraints = constraints
@@ -83,7 +81,7 @@ class State(object):
         #self.will_add_constraint = Signal()
 
         #Import all signals from platform
-        forward_signals(self, platform)
+        self.forward_events_from(platform)
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.platform),

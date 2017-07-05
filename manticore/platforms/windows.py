@@ -9,7 +9,6 @@ from ..core.cpu.abstractcpu import Interruption, Syscall
 from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
 from ..platforms.platform import *
-from ..utils.event import Signal, forward_signals
 
 from ..binary.pe import minidump
 
@@ -179,7 +178,7 @@ class Windows(Platform):
 
         #Install event forwarders
         for proc in self.procs:
-            forward_signals(self, proc)
+            self.forward_events_from(proc)
         
 
     @property

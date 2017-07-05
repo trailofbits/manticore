@@ -21,6 +21,7 @@ class IntegrationTest(unittest.TestCase):
     def tearDown(self):
         # Remove the directory after the test
         shutil.rmtree(self.test_dir)
+        pass
 
     def _runWithTimeout(self, procargs, logfile, timeout=1200):
 
@@ -48,12 +49,13 @@ class IntegrationTest(unittest.TestCase):
         workspace = '%s/workspace'%self.test_dir
         t = time.time()
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
-            subprocess.check_call(['python', '-m', 'manticore',
+            po = subprocess.check_call(['python', '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--timeout', '1',
                                 '--procs', '4',
                                 filename,
                                 '+++++++++'], stdout=output)
+            
         self.assertTrue(time.time()-t < 20)
 
     def test_cli_verbosity(self):
@@ -66,7 +68,6 @@ class IntegrationTest(unittest.TestCase):
         output = subprocess.check_output(['python', '-m', 'manticore', filename])
         self.assertLessEqual(len(output.splitlines()), 25)
 
-    @unittest.skip('TODO(mark); skipping so we can move on with our lives and merge x86_new. ask felipe to fix later.')
     def testArgumentsAssertions(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/arguments_linux_amd64'))
@@ -80,15 +81,17 @@ class IntegrationTest(unittest.TestCase):
         assertions = '%s/assertions.txt'%self.test_dir
         file(assertions,'w').write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
-            self._runWithTimeout(['python', SE,
+            po = subprocess.Popen(['python', '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--proc', '4',
                                 '--assertions', assertions,
                                 filename,
                                 '+++++++++'], stdout=output)
+            po.wait()
+
         data = file('%s/visited.txt'%workspace,'r').read()
         data = '\n'.join(sorted(set(data.split('\n'))))
-        self.assertEqual(hashlib.md5(data).hexdigest() , 'c52d7d471ba5c94fcf59936086821a6b')
+        self.assertEqual(hashlib.md5(data).hexdigest() , '6e07108975a1a4fe37207f2ffff7d0a7')
 
 
     def testDecree(self):

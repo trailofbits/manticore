@@ -599,7 +599,7 @@ class Manticore(object):
 
         logger.debug("About to store state %r %r %r", state, expression, values, policy)
 
-    def _read_register_callback(self, state, reg_name, value):
+    def _read_register_callback(self, state, reg_name, value): 
         logger.debug("Read Register %r %r", reg_name, value)
 
     def _write_register_callback(self, state, reg_name, value):
@@ -802,36 +802,31 @@ class Manticore(object):
         self._executor = Executor(initial_state,
                                   workspace=self.workspace, 
                                   policy=self._policy, 
-                                  dumpafter=self.dumpafter, 
-                                  maxstates=self.maxstates,
-                                  maxstorage=self.maxstorage,
-                                  replay=replay,
-                                  dumpstats=self.should_profile,
                                   context=self.context)
         
 
 
         #Link Executor events to default callbacks in manticore object
-        self._executor.did_read_register += self._read_register_callback
-        self._executor.will_write_register += self._write_register_callback
-        self._executor.did_read_memory += self._read_memory_callback
-        self._executor.will_write_memory += self._write_memory_callback
-        self._executor.will_execute_instruction += self._execute_instruction_callback
-        self._executor.will_decode_instruction += self._decode_instruction_callback
-        self._executor.will_store_state += self._store_state_callback
-        self._executor.will_load_state += self._load_state_callback
-        self._executor.will_fork_state += self._fork_state_callback
-        self._executor.will_terminate_state += self._terminate_state_callback
-        self._executor.will_generate_testcase += self._generate_testcase_callback
+        self._executor.subscribe('did_read_register', self._read_register_callback)
+        self._executor.subscribe('will_write_register', self._write_register_callback)
+        self._executor.subscribe('did_read_memory', self._read_memory_callback)
+        self._executor.subscribe('will_write_memory', self._write_memory_callback)
+        self._executor.subscribe('will_execute_instruction', self._execute_instruction_callback)
+        self._executor.subscribe('will_decode_instruction', self._decode_instruction_callback)
+        self._executor.subscribe('will_store_state', self._store_state_callback)
+        self._executor.subscribe('will_load_state', self._load_state_callback)
+        self._executor.subscribe('will_fork_state', self._fork_state_callback)
+        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
+        self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
         if self._hooks:
-            self._executor.will_execute_instruction += self._hook_callback
+            self._executor.subscribe('will_execute_instruction', self._hook_callback)
 
         if self._model_hooks:
-            self._executor.will_execute_instruction += self._model_hook_callback
+            self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
 
         if self._assertions:
-            self._executor.will_execute_instruction += self._assertions_callback
+            self._executor.subscribe('will_execute_instruction', self._assertions_callback)
 
         self._time_started = time.time()
 
@@ -861,7 +856,7 @@ class Manticore(object):
         '''
         self._executor.shutdown()
 
-    def _assertions_callback(self, state):
+    def _assertions_callback(self, state, instruction):
         pc = state.cpu.PC
         if pc not in self._assertions:
             return
@@ -872,7 +867,7 @@ class Manticore(object):
 
         #This will interpret the buffer specification written in INTEL ASM.
         # (It may dereference pointers)
-        assertion = parse(program, state.cpu.read, state.cpu.read_register)
+        assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",

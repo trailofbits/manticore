@@ -1,5 +1,5 @@
 
-from manticore.utils.event import Signal
+from manticore.utils.event import Eventful
 from itertools import islice, imap
 import inspect
 
@@ -21,12 +21,28 @@ class ConcretizeSyscallArgument(OSException):
         super(ConcretizeSyscallArgument, self).__init__(message)
 
 
-class Platform(object):
+class Platform(Eventful):
     '''
     Base class for all operating system platforms.
     '''
-    def __init__(self, path):
-        self._path = path
+    def __init__(self, path, **kwargs):
+        super(Platform, self).__init__(**kwargs)
+        self._path = path #Not clear why all platforms must have a "path"
 
     def invoke_model(self, model, prefix_args=None):
         self._function_abi.invoke(model, prefix_args)
+
+    def __setstate__(self, state):
+        super(Platform, self).__setstate__(state)
+        self._path = state['path']
+
+    def __getstate__(self):
+        state = super(Platform, self).__getstate__()
+        state['path'] = self._path
+        return state
+
+
+    #def __reduce__(self):
+    #    return (self.__class__, (self._path,) )
+
+

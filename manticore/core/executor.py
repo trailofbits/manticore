@@ -19,7 +19,7 @@ from ..utils.nointerrupt import WithKeyboardInterruptAs
 from .cpu.abstractcpu import DecodeException, ConcretizeRegister
 from .memory import ConcretizeMemory
 from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
-from ..utils.event import Signal, forward_signals
+from ..utils.event import Eventful
 from ..utils.helpers import issymbolic
 from .state import Concretize, TerminateState
 from multiprocessing.managers import SyncManager
@@ -51,7 +51,7 @@ class Policy(object):
     def __init__(self, executor, *args, **kwargs):
         super(Policy, self).__init__(*args, **kwargs)
         self._executor = executor
-        self._executor.did_add_state += self._add_state_callback
+        self._executor.subscribe('did_add_state', self._add_state_callback)
         
     @contextmanager
     def locked_context(self):
@@ -110,15 +110,21 @@ class Uncovered(Policy):
             for _id in state_ids:
                 if lastpc.get(_id, None) not in visited:
                     interesting.add(_id)
-            return random.choice(tuple(interesting))
+            if len(interesting) > 0:
+                return random.choice(tuple(interesting))
+            else:
+                return random.choice(state_ids)
 
-class Executor(object):
+
+class Executor(Eventful):
     '''
     The executor guides the execution of an initial state or a paused previous run. 
     It handles all exceptional conditions (system calls, memory faults, concretization, etc.)
     '''
 
-    def __init__(self, initial=None, workspace=None, policy='random', context=None, **options):
+    def __init__(self, initial=None, workspace=None, policy='random', context=None, **kwargs):
+        super(Executor, self).__init__(**kwargs)
+
         assert os.path.isdir(workspace), 'Workspace must be a directory'
         self.workspace = workspace
         logger.debug("Workspace set: %s", self.workspace)
@@ -126,19 +132,8 @@ class Executor(object):
         # Signals / Callbacks handlers will be invoked potentially at different 
         # worker processes. State provides a local context to save data.
 
-        #Executor signals
-        self.will_start_run = Signal()
-        self.will_finish_run = Signal()
-        self.will_fork_state = Signal()
-        self.will_store_state = Signal()
-        self.will_load_state = Signal()
-        self.did_add_state = Signal()
-        self.will_terminate_state = Signal()
-        self.will_generate_testcase = Signal()
-
-
         #Be sure every state will forward us their signals
-        self.will_load_state += self._register_state_callbacks
+        self.subscribe('will_load_state', self._register_state_callbacks)
 
         #The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
@@ -180,7 +175,7 @@ class Executor(object):
                 self.add(initial)
                 ##FIXME PUBSUB  We need to forward signals here so they get declared
                 ##forward signals from initial state so they are declared here
-                forward_signals(self, initial, True)
+                self.forward_events_from(initial, True)
 
     @contextmanager
     def locked_context(self):
@@ -203,7 +198,7 @@ class Executor(object):
             Going up, we prepend state in the arguments.
         ''' 
         #Forward all state signals
-        forward_signals(self, state, True)
+        self.forward_events_from(state, True)
 
     def add(self, state):
         '''
@@ -215,7 +210,7 @@ class Executor(object):
         state_id = self.store(state)
         #add the state to the list of pending states
         self.put(state_id)
-        self.did_add_state(state_id, state)
+        self.publish('did_add_state', state_id, state)
         return state_id
 
     def load_workspace(self):
@@ -365,7 +360,7 @@ class Executor(object):
             f.flush()
 
         #broadcast event
-        self.will_store_state(state, state_id)
+        self.publish('will_store_state', state, state_id)
         return state_id
 
     def load(self, state_id):
@@ -382,7 +377,7 @@ class Executor(object):
         os.remove(filename)
 
         #Broadcast event
-        self.will_load_state(loaded_state, state_id)
+        self.publish('will_load_state', loaded_state, state_id)
         return loaded_state 
 
     def list(self):
@@ -401,7 +396,7 @@ class Executor(object):
 
         #broadcast test generation. This is the time for other modules 
         #to output whatever helps to understand this testcase
-        self.will_generate_testcase(state, testcase_id, message)
+        self.publish('will_generate_testcase', state, testcase_id, message)
 
         # Save state
         start = time.time()
@@ -448,7 +443,7 @@ class Executor(object):
 
         #We are about to fork current_state
         with self._lock:
-            self.will_fork_state(state, expression, solutions, policy)
+            self.publish('will_fork_state', state, expression, solutions, policy)
 
         #Build and enqueue a state for each solution 
         children = []
@@ -512,7 +507,7 @@ class Executor(object):
                                 break
                         else:
                             #Notify this worker is done
-                            self.will_terminate_state(current_state, current_state_id, 'Shutdown')
+                            self.publish('will_terminate_state', current_state, current_state_id, 'Shutdown')
                             current_state = None
 
 
@@ -527,14 +522,8 @@ class Executor(object):
                         current_state = None
 
                     except TerminateState as e:
-                        #logger.error("MemoryException at PC: 0x{:016x}. Cause: {}\n".format(current_state.cpu.instruction.address, e.cause))
-                        #self.generate_testcase(current_state, "Memory Exception: " + str(e))
-                        #self.generate_testcase(current_state, "Invalid PC Exception" + str(e))
-                        #self.generate_testcase(current_state, "Program finished correctly")
-                        #logger.error("Syscall not implemented: %s", str(e))
-
                         #Notify this worker is done
-                        self.will_terminate_state(current_state, current_state_id, e)
+                        self.publish('will_terminate_state', current_state, current_state_id, e)
 
                         logger.debug("Generic terminate state")
                         if e.testcase:
@@ -548,7 +537,7 @@ class Executor(object):
                         traceback.print_exc()
 
                         #Notify this state is done
-                        self.will_terminate_state(current_state, current_state_id, e)
+                        self.publish('will_terminate_state', current_state, current_state_id, e)
 
                         if solver.check(current_state.constraints):
                             self.generate_testcase(current_state, "Solver failed" + str(e))
@@ -557,11 +546,12 @@ class Executor(object):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
+                    print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
                     for trace_line in trace.splitlines():
                         logger.error(trace_line) 
                     #Notify this worker is done
-                    self.will_terminate_state(current_state, current_state_id, 'Exception')
+                    self.publish('will_terminate_state', current_state, current_state_id, 'Exception')
                     current_state = None
                     logger.setState(None)
     
@@ -571,6 +561,6 @@ class Executor(object):
             self._stop_run()
 
             #Notify this worker is done (not sure it's needed)
-            self.will_finish_run()
+            self.publish('will_finish_run', )
 
 
