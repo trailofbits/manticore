@@ -63,7 +63,7 @@ class Eventful(object):
 if __name__ == '__main__':
     class A(Eventful):
         def callback(self):
-            print "CALBACK", self
+            print "CALLBACK", self
 
     a = A()
     b = A()
