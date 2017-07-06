@@ -98,21 +98,20 @@ class BinjaILDisasm(Disasm):
         :param pc: program counter
         """
         pc = self._fix_addr(pc)
-        func = self.view.get_function_at(pc)
-        if not func:
+        blocks = self.view.get_basic_blocks_at(pc)
+        if not blocks:
             # Looks like Binja did not know about this PC..
+            print "\t\t\t CREATED A FUNCTION AT " + str(pc)
             self.view.create_user_function(pc)
             self.view.update_analysis_and_wait()
-            func = self.view.get_function_at(pc)
+            self.current_func = self.view.get_function_at(pc)
+        else:
+            # XXX each PC should belong to a single basic block
+            assert len(blocks) == 1
+            self.current_func = blocks[0].function
 
-        self.view.current_func = func
-        il = func.get_lifted_il_at(pc)
+        il = self.current_func.get_lifted_il_at(pc)
         self.current_pc = pc
-        print ("%s\t%s %s %x %x") % (hex(pc),
-                                     str(il),
-                                     il.operation.name,
-                                     il.instr_index,
-                                     il.address)
         return self.BinjaILInstruction(self.view, il, self.entry_point_diff)
 
 
@@ -160,6 +159,22 @@ class BinjaILDisasm(Disasm):
         @property
         def address(self):
             return self._fix_addr(self.llil.address)
+
+        @property
+        def sets_pc(self):
+            import binaryninja.enums as enums
+            op = self.llil.operation
+            return (op == enums.LowLevelILOperation.LLIL_CALL or
+                    op == enums.LowLevelILOperation.LLIL_JUMP or
+                    op == enums.LowLevelILOperation.LLIL_IF or
+                    op == enums.LowLevelILOperation.LLIL_GOTO)
+
+        def __repr__(self):
+            return ("%d %s\t%s %s %x") % (self.llil.instr_index,
+                                          hex(self.llil.address),
+                                          str(self.llil),
+                                          self.llil.operation.name,
+                                          self.llil.address)
 
 class BinjaDisasm(Disasm):
 

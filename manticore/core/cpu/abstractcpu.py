@@ -679,10 +679,11 @@ class Cpu(object):
                 if isinstance(c, Constant):
                     c = chr(c.value)
                 else:
-                    logger.error('Concretize executable memory %r %r', c, text )
-                    raise ConcretizeMemory(self.memory, address = pc,
-                                            size = 8 * self.max_instr_width,
-                                            policy = 'INSTRUCTION' )
+                    logger.error('Concretize executable memory %r %r', c, text)
+                    raise ConcretizeMemory(self.memory,
+                                           address=pc,
+                                           size=8 * self.max_instr_width,
+                                           policy='INSTRUCTION')
             text += c
 
 
@@ -768,6 +769,7 @@ class Cpu(object):
             for l in self.render_registers():
                 register_logger.debug(l)
 
+        print "Executing " + str(insn)
         implementation(*insn.operands)
 
         # In case we are executing IL instructions, we could iteratively
@@ -776,17 +778,9 @@ class Cpu(object):
         # for CALLS and JUMPS the PC should have been set automatically
         # and self.instruction.size is 0 because we compute the size from
         # the address of the next instruction
-
-        # FIXME replace the check with an instruction property denoting
-        # that PC is modified.
         if (isinstance(self.__class__.disasm, BinjaILDisasm) and
-                not (self.instruction.mnemonic == "LLIL_CALL" or
-                     self.instruction.mnemonic == "LLIL_JMP" or
-                     self.instruction.mnemonic == "LLIL_IF" or
-                     self.instruction.mnemonic == "LLIL_GOTO"
-                     )
-                ):
-            self.__class__.PC = self._last_pc + self.instruction.size
+                not insn.sets_pc):
+            self.__class__.PC = self._last_pc + insn.size
 
         self._icount += 1
 
@@ -837,7 +831,8 @@ class Cpu(object):
         # backup, null, use, then restore the list.
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
-        return map(self.render_register, self._regfile.canonical_registers)
+        return map(self.render_register,
+                   sorted(self._regfile.canonical_registers))
 
     #Generic string representation
     def __str__(self):

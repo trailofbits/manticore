@@ -7,6 +7,7 @@ from .abstractcpu import (
     Syscall
 )
 
+from ..smtlib import Operators
 from ...core.memory import SMemory32, SMemory64
 from ...core.cpu.disasm import BinjaILDisasm
 
@@ -34,6 +35,8 @@ class BinjaRegisterFile(RegisterFile):
         # FIXME (theo) get side effects
 
     def write(self, reg, value):
+        # FIXME account for sizes
+        #
         reg = self._alias(str(reg))
         # FIXME we will need to be calling the appropriate setters as in x86
         self._update_cache(reg, value)
@@ -103,37 +106,32 @@ class BinjaOperand(Operand):
         return self.op.info.size
 
     def read(self):
-        #  try:
-            #  raise NotImplementedError("READ " + str(self.op))
-        #  except Exception as e:
-            #  import traceback
-            #  traceback.print_stack()
+        import binaryninja.enums as enums
+
         cpu, op = self.cpu, self.op
         if self.type == 'register':
             value = cpu.read_register(self.op)
-            #  print("Reading %d from %s" % (value, op))
             return value
         elif self.type == 'instruction':
-            # FIXME change to check the enum instead of doing strcmp
-            if op.operation.name[len("LLIL_"):] == "CONST":
-                # FIXME ugly hack to see if the CONST is a CONST_PTR
+            if op.operation == enums.LowLevelILOperation.LLIL_CONST:
+                # FIXME ugly hack to see if  CONST is a CONST_PTR
                 # It is always the source that might be a const pointer, but
                 # this information seems to only be present in LowLevelIL?
-                llil = cpu.view.current_func.get_low_level_il_at(op.address)
+                llil = cpu.disasm.current_func.get_low_level_il_at(op.address)
                 if (hasattr(llil, 'src') and
-                        llil.src.operation.name == "LLIL_CONST_PTR"):
+                        llil.src.operation == enums.LowLevelILOperation.LLIL_CONST_PTR):
                     implementation = getattr(cpu, "CONST_PTR")
                     return implementation(*op.operands)
 
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
-            if op.operation.name == "LLIL_LOAD":
+            #  print "Calling " + op.operation.name
+            if op.operation == enums.LowLevelILOperation.LLIL_LOAD:
                 return implementation(*op.operands, expr_size=op.size)
             return implementation(*op.operands)
 
     def write(self, value):
         cpu, op = self.cpu, self.op
         if self.type == 'register':
-            #  print("Writing %d to %s" % (value, op))
             cpu.write_register(str(op), value)
         else:
             raise NotImplementedError("write_operand type", o.type)
@@ -141,6 +139,33 @@ class BinjaOperand(Operand):
 
     def __getattr__(self, name):
         return getattr(self.op, name)
+
+def _carry_flag(args):
+    return Operators.ULT(args["left"], args["right"])
+
+def _adjust_flag(args):
+    return ((args["left"] ^ args["right"]) ^ args["result"]) & 0x10 != 0
+
+def _zero_flag(args):
+    return args["result"] == 0
+
+def _sign_flag(args):
+    mask = 1 << (args["size"] - 1)
+    return (args["result"] & mask) != 0
+
+def _direction_flag(args):
+    pass
+
+def _parity_flag(args):
+    v = args["result"]
+    return (v ^ v >> 1 ^ v >> 2 ^ v >> 3 ^ v >> 4 ^ v >> 5 ^ v >> 6 ^ v >> 7) & 1 == 0
+
+def _overflow_flag(args):
+    mask = 1 << (args["size"] - 1)
+    sign_l = (args["left"] & mask) == mask
+    sign_r = (args["right"] & mask) == mask
+    sign_res = (args["result"] & mask) == mask
+    return Operators.AND(sign_l ^ sign_r, sign_l ^ sign_res)
 
 class BinjaCpu(Cpu):
     '''
@@ -160,13 +185,6 @@ class BinjaCpu(Cpu):
     # Keep a virtual stack
     stack = []
 
-    # FIXME
-    # FIXME
-    # FIXME         NO FLAGS WHATSOEVER IN THE @instruction implementations
-    #               XXX perhaps utilize a decorator for this?
-    # FIXME
-    # FIXME
-    # FIXME
     def __init__(self, view, memory):
         '''
         Builds a CPU model.
@@ -241,13 +259,45 @@ class BinjaCpu(Cpu):
         cpu.STACK += size / 8
         return value
 
+    def _update_flags(cpu, args, flags=None):
+        if not flags:
+            f = cpu.disasm.current_func
+            i = f.get_lifted_il_at(cpu.disasm.current_pc)
+            flags = f.get_flags_written_by_lifted_il_instruction(i.instr_index)
+
+        handlers = {
+            'c': _carry_flag,
+            'p': _parity_flag,
+            'a': _adjust_flag,
+            'z': _zero_flag,
+            's': _sign_flag,
+            'd': _direction_flag,
+            'o': _overflow_flag
+        }
+
+        for f in flags:
+            handlers[f](args)
+
     @instruction
     def ADC(cpu):
         raise NotImplementedError
 
     @instruction
     def ADD(cpu, left, right):
-        return left.read() + right.read()
+        left_v = left.read()
+        right_v = right.read()
+        result = left_v + right_v
+        size = left.op.size
+        print "SIZE " + str(size)
+        args = {
+            "result" : result,
+            "size" : size,
+            "left" : left_v,
+            "right" : right_v
+        }
+
+        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
+        return result
 
     @instruction
     def ADD_OVERFLOW(cpu):
@@ -255,7 +305,22 @@ class BinjaCpu(Cpu):
 
     @instruction
     def AND(cpu, left, right):
-        return left.read() & right.read()
+        left_v = left.read()
+        right_v = right.read()
+        result = left_v & right_v
+        size = left.op.size
+
+        print "SIZE " + str(size)
+        args = {
+            "result" : result,
+            "size" : size,
+            "left" : left_v,
+            "right" : right_v
+        }
+
+        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
+        return result
+        return value
 
     @instruction
     def ASR(cpu, reg, shift):
@@ -312,7 +377,6 @@ class BinjaCpu(Cpu):
 
     @instruction
     def CONST_PTR(cpu, expr):
-        val = expr.op + cpu.disasm.entry_point_diff
         return expr.op + cpu.disasm.entry_point_diff
 
     @instruction
@@ -341,7 +405,7 @@ class BinjaCpu(Cpu):
     @instruction
     def GOTO(cpu, expr):
         if isinstance(expr.op, long):
-            addr = cpu.view.current_func.lifted_il[expr.op].address
+            addr = cpu.disasm.current_func.lifted_il[expr.op].address
         else:
             raise NotImplementedError
         cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
@@ -355,16 +419,16 @@ class BinjaCpu(Cpu):
         # FLAGS are ['c', 'p', 'a', 'z', 's', 'd', 'o']
         # FIXME check these for correctness. Probably buggy!!
         if cond == enums.LowLevelILFlagCondition.LLFC_E:
-            res = (cpu.regfile.flags['z'] == 1)
+            res = cpu.regfile.flags['z'] == 1
         elif cond == enums.LowLevelILFlagCondition.LLFC_NE:
-            res = (cpu.regfile.flags['z'] == 0)
+            res = cpu.regfile.flags['z'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_NEG:
             print cond
             raise NotImplementedError
         elif cond == enums.LowLevelILFlagCondition.LLFC_NO:
-            res = (cpu.regfile.flags['o'] == 0)
+            res = cpu.regfile.flags['o'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_O:
-            res = (cpu.regfile.flags['o'] == 1)
+            res = cpu.regfile.flags['o'] == 1
         elif cond == enums.LowLevelILFlagCondition.LLFC_POS:
             print cond
             raise NotImplementedError
@@ -381,25 +445,34 @@ class BinjaCpu(Cpu):
             print cond
             raise NotImplementedError
         elif cond == enums.LowLevelILFlagCondition.LLFC_UGE:
-            res = (cpu.regfile.flags['c'] == 0)
+            res = cpu.regfile.flags['c'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_UGT:
-            res = ((cpu.regfile.flags['z'] & cpu.regfile.flags['c']) == 0)
+            res = (cpu.regfile.flags['z'] & cpu.regfile.flags['c']) == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_ULE:
-            res = ((cpu.regfile.flags['z'] | cpu.regfile.flags['c']) == 1)
+            res = (cpu.regfile.flags['z'] | cpu.regfile.flags['c']) == 1
         elif cond == enums.LowLevelILFlagCondition.LLFC_ULT:
-            res = (cpu.regfile.flags['c'] == 1)
+            res = cpu.regfile.flags['c'] == 1
         else:
             print cond
             raise NotImplementedError
 
         idx = true.op if res else false.op
         assert isinstance(idx, long)
-        print false.op
-        print true.op
-        addr = cpu.view.current_func.lifted_il[idx].address
-        assert addr != cpu.disasm.current_pc
-        print "JUMPING AT " + hex(addr)
-        cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
+
+        next_il = cpu.disasm.current_func.lifted_il[idx]
+        # it could be that a single assembly instruction results in multiple
+        # IL instructions involving an IF (e.g., `sete al {0,0} {0x1}`). In
+        # case the next address is the same as the current instruction's, just
+        # advance the index in the IL until we find a new address
+        while next_il.address == cpu.disasm.current_pc:
+            implementation = getattr(cpu, next_il.operation.name[len("LLIL_"):])
+            next_il.operands = [BinjaOperand(cpu, x) for x in next_il.operands]
+            implementation(*next_il.operands)
+            idx += 1
+            next_il = cpu.disasm.current_func.lifted_il[idx]
+        else:
+            addr = next_il.address + cpu.disasm.entry_point_diff
+        cpu.__class__.PC = addr
 
     @instruction
     def JUMP(cpu, expr):
@@ -423,8 +496,20 @@ class BinjaCpu(Cpu):
 
     @instruction
     def LSL(cpu, reg, shift):
-        # FIXME ALL FLAGS
-        return reg.read() << shift.read()
+        left_v = reg.read()
+        right_v = shift.read()
+        result = left_v << right_v
+        size = reg.op.size
+        print "SIZE " + str(size)
+
+        args = {
+            "result" : result,
+            "size" : size,
+            "left" : left_v,
+            "right" : right_v
+        }
+        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
+        return result
 
     @instruction
     def LSR(cpu):
@@ -468,7 +553,20 @@ class BinjaCpu(Cpu):
 
     @instruction
     def OR(cpu, left, right):
-        return left.read() | right.read()
+        left_v = left.read()
+        right_v = right.read()
+        result = left_v | right_v
+        size = left.op.size
+        print "SIZE " + str(size)
+
+        args = {
+            "result" : result,
+            "size" : size,
+            "left" : left_v,
+            "right" : right_v
+        }
+        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
+        return result
 
     @instruction
     def POP(cpu):
@@ -507,6 +605,11 @@ class BinjaCpu(Cpu):
 
     @instruction
     def SET_REG(cpu, dest, src):
+        # FIXME
+        #  if dest.op.size > src.op.size:
+            #  dest.write(Operators.ZEXTEND(src.read(), src.op.size))
+        #  else:
+            #  dest.write(Operators.EXTRACT(src.read(), 0, src.op.size))
         dest.write(src.read())
 
     @instruction
@@ -515,12 +618,27 @@ class BinjaCpu(Cpu):
 
     @instruction
     def STORE(cpu, dest, src):
-        cpu.write_int(dest.read(), src.read(), src.size * 8)
+        print "SIZE " + str(dest.op.size)
+        cpu.write_int(dest.read(), src.read(), dest.op.size * 8)
 
     @instruction
     def SUB(cpu, left, right):
-        # FIXME ALL FLAGS AFFECTED
-        return left.read() - right.read()
+        left_v = left.read()
+        right_v = right.read()
+        result = left_v - right_v
+        size = left.op.size
+        print "SIZE " + str(size)
+
+        args = {
+            "result" : result,
+            "size" : size,
+            "left" : left_v,
+            "right" : right_v
+        }
+
+        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
+        return result
+
 
     @instruction
     def SX(cpu):
@@ -543,11 +661,11 @@ class BinjaCpu(Cpu):
         # FIXME invoke platform-specific CPU here
         disasm = cpu.view.get_disassembly(cpu.disasm.current_pc)
         if disasm == "rdtsc":
-            val = cpu.icount
-            cpu.regfile.write('rax', val & 0xffffffff)
-            cpu.regfile.write('rdx', (val >> 32) & 0xffffffff)
-            return
-        raise NotImplementedError
+            x86_rdtsc(cpu)
+        elif disasm == "cpuid":
+            x86_cpuid(cpu)
+        else:
+            raise NotImplementedError
 
     @instruction
     def UNIMPL_MEM(cpu):
@@ -555,13 +673,99 @@ class BinjaCpu(Cpu):
 
     @instruction
     def XOR(cpu, left, right):
-        # FIXME Flags?
-        if str(left) == str(right):
-            return 0
-        return left.read() ^ right.read()
+        left_v = left.read()
+        right_v = right.read()
+        result = left_v ^ right_v
+        size = left.op.size
+        print "SIZE " + str(size)
+
+        args = {
+            "result" : result,
+            "size" : size,
+            "left" : left_v,
+            "right" : right_v
+        }
+
+        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
+        return result
 
     @instruction
     def ZX(cpu, expr):
         # FIXME zero extension
         val = expr.read()
         return val
+
+#
+#
+# ARCH-SPECIFIC INSNS
+#
+#
+
+def x86_rdtsc(cpu):
+    val = cpu.icount
+    cpu.regfile.write('rax', val & 0xffffffff)
+    cpu.regfile.write('rdx', (val >> 32) & 0xffffffff)
+
+def x86_cpuid(cpu):
+    '''
+    CPUID instruction.
+
+    The ID flag (bit 21) in the EFLAGS register indicates support for the
+    CPUID instruction.  If a software procedure can set and clear this
+    flag, the processor executing the procedure supports the CPUID
+    instruction. This instruction operates the same in non-64-bit modes and
+    64-bit mode.  CPUID returns processor identification and feature
+    information in the EAX, EBX, ECX, and EDX registers.
+
+    The instruction's output is dependent on the contents of the EAX
+    register upon execution.
+
+    :param cpu: current CPU.
+    '''
+    conf = {   0x0:        (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
+               0x1:        (0x000306c3, 0x05100800, 0x7ffafbff, 0xbfebfbff),
+               0x2:        (0x76035a01, 0x00f0b5ff, 0x00000000, 0x00c10000),
+               0x4: { 0x0: (0x1c004121, 0x01c0003f, 0x0000003f, 0x00000000),
+                      0x1: (0x1c004122, 0x01c0003f, 0x0000003f, 0x00000000),
+                      0x2: (0x1c004143, 0x01c0003f, 0x000001ff, 0x00000000),
+                      0x3: (0x1c03c163, 0x03c0003f, 0x00000fff, 0x00000006)},
+               0x7:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
+               0x8:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
+               0xb: { 0x0: (0x00000001, 0x00000002, 0x00000100, 0x00000005),
+                      0x1: (0x00000004, 0x00000004, 0x00000201, 0x00000003)},
+               0xd: { 0x0: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
+                      0x1: (0x00000000, 0x00000000, 0x00000000, 0x00000000)},
+              }
+
+    if cpu.regfile.registers['eax'] not in conf:
+        logger.warning('CPUID with EAX=%x not implemented @ %x',
+                       cpu.regfile.registers['eax'], cpu.__class__.PC)
+        cpu.write_register('eax', 0)
+        cpu.write_register('ebx', 0)
+        cpu.write_register('ecx', 0)
+        cpu.write_register('edx', 0)
+        return
+
+    if isinstance(conf[cpu.regfile.registers['eax']], tuple):
+        v = conf[cpu.regfile.registers['eax']]
+        cpu.write_register('eax', v[0])
+        cpu.write_register('ebx', v[1])
+        cpu.write_register('ecx', v[2])
+        cpu.write_register('edx', v[3])
+        return
+
+    if cpu.regfile.registers['ecx'] not in conf[cpu.regfile.registers['eax']]:
+        logger.warning('CPUID with EAX=%x ECX=%x not implemented',
+                       cpu.regfile.registers['eax'],
+                       cpu.regfile.registers['ecx'])
+        cpu.write_register('eax', 0)
+        cpu.write_register('ebx', 0)
+        cpu.write_register('ecx', 0)
+        cpu.write_register('edx', 0)
+        return
+
+    v = conf[cpu.regfile.registers['eax']][cpu.regfile.registers['ecx']]
+    cpu.write_register('eax', v[0])
+    cpu.write_register('ebx', v[1])
+    cpu.write_register('ecx', v[2])
+    cpu.write_register('edx', v[3])

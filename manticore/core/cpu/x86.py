@@ -12,7 +12,7 @@ from .abstractcpu import (
 )
 
 
-from ..smtlib import *
+from ..smtlib import Operators, BitVec, Bool, BitVecConstant, operator
 from ..memory import MemoryException
 from ...utils.helpers import issymbolic
 
@@ -776,14 +776,14 @@ class X86Cpu(Cpu):
         self.AF = ((arg0 ^ arg1) ^ res) & 0x10 != 0
         self.ZF = res == 0
         self.SF = (res & SIGN_MASK)!=0
-        sign0 = (arg0 & SIGN_MASK) ==SIGN_MASK
-        sign1 = (arg1 & SIGN_MASK) ==SIGN_MASK
-        signr = (res & SIGN_MASK) ==SIGN_MASK
+        sign0 = (arg0 & SIGN_MASK) == SIGN_MASK
+        sign1 = (arg1 & SIGN_MASK) == SIGN_MASK
+        signr = (res & SIGN_MASK) == SIGN_MASK
         self.OF = Operators.AND(sign0 ^ sign1, sign0 ^ signr)
         self.PF = self._calculate_parity_flag(res)
 
     def _calculate_parity_flag(self, res):
-        return (res ^ res>>1 ^ res>>2 ^ res>>3 ^ res>>4 ^ res>>5 ^ res>>6 ^ res>>7)&1 == 0
+        return (res ^ res >> 1 ^ res >> 2 ^ res >> 3 ^ res >> 4 ^ res >> 5 ^ res >> 6 ^ res >> 7) & 1 == 0
 
     def _calculate_logic_flags(self, size, res):
         SIGN_MASK = 1<<(size-1)
@@ -801,12 +801,15 @@ class X86Cpu(Cpu):
         '''
         CPUID instruction.
 
-        The ID flag (bit 21) in the EFLAGS register indicates support for the CPUID instruction.
-        If a software procedure can set and clear this flag, the processor executing the procedure
-        supports the CPUID instruction. This instruction operates the same in non-64-bit modes and 64-bit mode.
-        CPUID returns processor identification and feature information in the EAX, EBX, ECX, and EDX registers.
+        The ID flag (bit 21) in the EFLAGS register indicates support for the
+        CPUID instruction.  If a software procedure can set and clear this
+        flag, the processor executing the procedure supports the CPUID
+        instruction. This instruction operates the same in non-64-bit modes and
+        64-bit mode.  CPUID returns processor identification and feature
+        information in the EAX, EBX, ECX, and EDX registers.
 
-        The instruction's output is dependent on the contents of the EAX register upon execution.
+        The instruction's output is dependent on the contents of the EAX
+        register upon execution.
 
         :param cpu: current CPU.
         '''
@@ -1206,8 +1209,8 @@ class X86Cpu(Cpu):
         cpu._ADD(dest, src, carry=False)
 
     def _ADD(cpu, dest, src, carry=False):
-        MASK = (1<<dest.size)-1
-        SIGN_MASK = 1<<(dest.size-1)
+        MASK = (1 << dest.size) - 1
+        SIGN_MASK = 1 << (dest.size - 1)
         arg0 = dest.read()
         if src.size < dest.size:
             arg1 = Operators.SEXTEND(src.read(), src.size, dest.size)
@@ -1912,20 +1915,20 @@ class X86Cpu(Cpu):
 
         Adds the source operand (second operand) and the carry (CF) flag, and
         subtracts the result from the destination operand (first operand). The
-        result of the subtraction is stored in the destination operand. The destination
-        operand can be a register or a memory location; the source operand can
-        be an immediate, a register, or a memory location. (However, two memory
-        operands cannot be used in one instruction.) The state of the CF flag
-        represents a borrow from a previous subtraction.
+        result of the subtraction is stored in the destination operand. The
+        destination operand can be a register or a memory location; the source
+        operand can be an immediate, a register, or a memory location.
+        (However, two memory operands cannot be used in one instruction.) The
+        state of the CF flag represents a borrow from a previous subtraction.
         When an immediate value is used as an operand, it is sign-extended to
         the length of the destination operand format.
         The SBB instruction does not distinguish between signed or unsigned
-        operands. Instead, the processor evaluates the result for both data types
-        and sets the OF and CF flags to indicate a borrow in the signed or unsigned
-        result, respectively. The SF flag indicates the sign of the signed result.
-        The SBB instruction is usually executed as part of a multibyte
-        or multiword
-        subtraction in which a SUB instruction is followed by a SBB instruction::
+        operands. Instead, the processor evaluates the result for both data
+        types and sets the OF and CF flags to indicate a borrow in the signed
+        or unsigned result, respectively. The SF flag indicates the sign of the
+        signed result.  The SBB instruction is usually executed as part of a
+        multibyte or multiword subtraction in which a SUB instruction is
+        followed by a SBB instruction::
 
                 DEST  =  DEST - (SRC + CF);
 
@@ -1942,15 +1945,16 @@ class X86Cpu(Cpu):
 
         Subtracts the second operand (source operand) from the first operand
         (destination operand) and stores the result in the destination operand.
-        The destination operand can be a register or a memory location; the source
-        operand can be an immediate, register, or memory location. (However, two
-        memory operands cannot be used in one instruction.) When an immediate
-        value is used as an operand, it is sign-extended to the length of the
-        destination operand format.
+        The destination operand can be a register or a memory location; the
+        source operand can be an immediate, register, or memory location.
+        (However, two memory operands cannot be used in one instruction.) When
+        an immediate value is used as an operand, it is sign-extended to the
+        length of the destination operand format.
         The SUB instruction does not distinguish between signed or unsigned
-        operands. Instedef SUBad, the processor evaluates the result for both data types
-        and sets the OF and CF flags to indicate a borrow in the signed or unsigned
-        result, respectively. The SF flag indicates the sign of the signed result::
+        operands. Instedef SUBad, the processor evaluates the result for both
+        data types and sets the OF and CF flags to indicate a borrow in the
+        signed or unsigned result, respectively. The SF flag indicates the sign
+        of the signed result::
 
             DEST  =  DEST - SRC;
 
@@ -1962,20 +1966,15 @@ class X86Cpu(Cpu):
 
     def _SUB(cpu, dest, src, carry=False):
         size = dest.size
-        arg0 = dest.read()
+        minuend = dest.read()
 
-        if src.size < dest.size:
-            arg1 = Operators.SEXTEND(src.read(), src.size, size)
-        else:
-            arg1 = src.read()
-
-        to_sub = arg1
+        subtrahend = Operators.SEXTEND(src.read(), src.size, size) if src.size < dest.size else src.read()
         if carry:
             cv = Operators.ITEBV(size, cpu.CF, 1, 0)
-            to_sub = to_sub + cv
+            subtrahend += cv
 
-        res = dest.write( arg0 - to_sub ) & ((1<<size)-1)
-        cpu._calculate_CMP_flags(dest.size, res, arg0, to_sub)
+        res = dest.write(minuend - subtrahend) & ((1 << size) - 1)
+        cpu._calculate_CMP_flags(dest.size, res, minuend, subtrahend)
 
     @instruction
     def XADD(cpu, dest, src):
