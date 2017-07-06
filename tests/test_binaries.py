@@ -112,8 +112,8 @@ class IntegrationTest(unittest.TestCase):
                     '--policy', 'uncovered',
                     filename], '%s/output.log'%self.test_dir)
 
-        actual = self._loadVisitedSet('%s/visited.txt'%workspace)
-        expected = self._loadVisitedSet('reference/cadet_visited.txt')
+        actual = self._loadVisitedSet(os.path.join(dirname, '%s/visited.txt'%workspace))
+        expected = self._loadVisitedSet(os.path.join(dirname, 'reference/cadet_visited.txt'))
         self.assertTrue(len(actual) > 100 )
         self.assertEqual(actual, expected)
 
