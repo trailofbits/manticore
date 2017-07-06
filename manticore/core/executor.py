@@ -10,9 +10,10 @@ except:
     import StringIO
 
 from ..utils.nointerrupt import WithKeyboardInterruptAs
-from .smtlib import solver, Expression, SolverException
 from ..utils.event import Signal, forward_signals
+from .smtlib import solver, Expression, SolverException
 from .state import Concretize, TerminateState
+from workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
@@ -105,6 +106,8 @@ class Executor(object):
         #Number of total intermediate states
         self._state_count = manager.Value('i', 0 )
 
+        self._new_workspace = Workspace(self._lock, 'fs:'+workspace)
+
         #Executor wide shared context
         if context is None:
             context = {}
@@ -153,8 +156,8 @@ class Executor(object):
             priority queue
         '''
         #save the state to secondary storage
-        state_id = self.store(state)
-        #add the state to the list of pending states
+        state_id = self._new_workspace.save_state(state)
+        self.will_store_state(state, state_id)
         self.put(state_id)
         return state_id
 
@@ -287,43 +290,6 @@ class Executor(object):
 
     ###############################################################
     # File Storage 
-    def store(self, state):
-        ''' Put state in secondary storage and retuns an state_id for it'''
-        state_id = self._new_state_id()
-        state_filename = self._state_filename(state_id)
-        logger.debug("Saving state %d to file %s", state_id, state_filename)
-        with open(state_filename, 'w+') as f:
-            try:
-                f.write(cPickle.dumps(state, 2))
-            except RuntimeError:
-                # there recursion limit exceeded problem, 
-                # try a slower, iterative solution
-                from ..utils import iterpickle
-                logger.warning("Using iterpickle to dump state")
-                f.write(iterpickle.dumps(state, 2))
-
-            f.flush()
-
-        #broadcast event
-        self.will_store_state(state, state_id)
-        return state_id
-
-    def load(self, state_id):
-        ''' Brings a state from storage selected by state_id'''
-        if state_id is None:
-            return None
-        filename = self._state_filename(state_id)
-        logger.debug("Restoring state: %s from %s", state_id, filename )
-
-        with open(filename, 'rb') as f:
-            loaded_state = cPickle.loads(f.read())
-
-        logger.debug("Removing state %s from storage", state_id)
-        os.remove(filename)
-
-        #Broadcast event
-        self.will_load_state(loaded_state, state_id)
-        return loaded_state 
 
     def list(self):
         ''' Returns the list of states ids currently queued '''
@@ -331,32 +297,17 @@ class Executor(object):
 
     def generate_testcase(self, state, message='Testcase generated'):
         '''
-        Create a serialized description of a given state.
+        Simply announce that we're going to generate a testcase. Actual generation
+        should be handled by the driver class (such as :class:`~manticore.Manticore`)
 
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        testcase_id = self._new_testcase_id()
         logger.info("Generating testcase No. %d - %s", testcase_id, message)
 
         #broadcast test generation. This is the time for other modules 
         #to output whatever helps to understand this testcase
         self.will_generate_testcase(state, testcase_id, message)
-
-        # Save state
-        start = time.time()
-        filename = self._testcase_filename(testcase_id)
-        with open(filename, 'wb') as f:
-            try:
-                f.write(cPickle.dumps(state, 2))
-            except RuntimeError:
-                # there recursion limit exceeded problem, 
-                # try a slower, iterative solution
-                from ..utils import iterpickle
-                logger.debug("WARNING: using iterpickle to dump state")
-                f.write(iterpickle.dumps(state, 2))
-            f.flush()
-        logger.debug("saved in %d seconds", time.time() - start)
 
 
     def fork(self, state, expression, policy='ALL', setstate=None):
@@ -433,7 +384,8 @@ class Executor(object):
                             #Select a single state_id
                             current_state_id = self.get()
                             #load selected state from secondary storage
-                            current_state = self.load(current_state_id)
+                            current_state = self._new_workspace.load_state(current_state_id)
+                            self.will_load_state(current_state, current_state_id)
                             #notify siblings we have a state to play with
                             self._start_run()
 

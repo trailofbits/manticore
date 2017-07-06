@@ -12,9 +12,6 @@ from .smtlib.solver import SolverException
 logger = logging.getLogger('WORKSPACE')
 
 
-def _serialize_pickle(state, f):
-
-
 class StateSerializer(object):
     '''
     StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
@@ -50,6 +47,7 @@ class Store(object):
 
     def __init__(self, uri, state_serialization_method='pickle'):
         self.uri = uri
+        self._sub = []
 
         if state_serialization_method == 'pickle':
             self._serializer = PickleSerializer()
@@ -104,7 +102,7 @@ class Store(object):
         :param state:
         :return:
         '''
-        key = 'state_{:08x}.pkl'.format(key)
+        #key = 'state_{:08x}.pkl'.format(key)
         with self.save_stream(key) as f:
             self._serializer.serialize(state, f)
 
@@ -116,24 +114,19 @@ class Store(object):
         '''
         key = 'state_{:08x}.pkl'.format(key)
         with self.load_stream(key) as f:
-            return self._serializer.deserialize(f)
+            state = self._serializer.deserialize(f)
+            self.rm(key)
+            return state
 
-    def rm_key(self, key):
+    def rm(self, key):
         '''
-        Delete the value identified by `key` from storage.
+        Remove value identified by `key` from storage.
 
-        :param key:
-        :return:
-        '''
-        raise NotImplementedError
-
-    def list_keys(self, prefix):
-        '''
-
-        :param prefix:
-        :return:
+        :param str key: What to remove
         '''
         raise NotImplementedError
+
+
 
 class FilesystemStore(Store):
     '''
@@ -161,6 +154,9 @@ class FilesystemStore(Store):
         :param key:
         :return:
         '''
+        if isinstance(key, bool):
+            raise Exception
+
         mode = 'w{}'.format('b' if binary else '')
         with open(os.path.join(self.uri, key), mode) as f:
             yield f
@@ -193,6 +189,10 @@ class FilesystemStore(Store):
         '''
         raise NotImplementedError
 
+    def rm(self, key):
+        path = os.path.join(self.uri, key)
+        os.remove(path)
+
 class RedisStore(Store):
     def __init__(selfself, uri=None):
         pass
@@ -209,12 +209,28 @@ def _create_store(desc):
 
 class Workspace(object):
 
-    def __init__(self, desc=None):
+    def __init__(self, lock, desc=None):
         self._store = _create_store(desc)
+        self._serializer = PickleSerializer()
         self._last_id = 0
+        self._lock = lock
 
     def _try_loading_workspace(self):
         pass
+
+    def _get_id(self):
+        '''
+        Get a unique state id.
+
+        :rtype: int
+        '''
+        try:
+            self._lock.acquire()
+            id = self._last_id
+            self._last_id = id + 1
+            return id
+        finally:
+            self._lock.release()
 
     def load_state(self, state_id):
         '''
@@ -224,25 +240,29 @@ class Workspace(object):
         :return: The deserialized state
         :rtype: State
         '''
-        raise NotImplementedError
+        return self._store.load_state(state_id)
 
-    def save_state(self, state, final=True):
+    def save_state(self, state, final=False):
         '''
         Save a state to storage, return identifier.
 
         :param state_id: The state reference of what to load
         :param bool final: Whether the state is finalized (i.e. testcase)
-        :return: The deserialized state
-        :rtype: State
+        :return: New state id
+        :rtype: int
         '''
-        raise NotImplementedError
+        id = self._get_id()
+        prefix = 'state' if not final else 'test'
+        logger.debug("Saving state {:08x}".format(id))
+        self._store.save_state(state, '{}_{:08x}.pkl'.format(prefix, id))
+        return id
+
 
 class ManticoreOutput(object):
     '''
     Base class for Manticore output. Responsible for generating execution-based
     output, such as state summaries, coverage information, etc.
     '''
-
     def __init__(self, desc=None):
         '''
         Create an object capable of producing Manticore output.
@@ -250,12 +270,13 @@ class ManticoreOutput(object):
         :param desc: A descriptor ('type:uri') of where to write output.
         '''
         self._store = _create_store(desc)
+        self._last_id = 0
 
     @property
     def uri(self):
         return self._store.uri
 
-    def save_testcase(self, state, testcase_id, message=''):
+    def save_testcase(self, state, message=''):#testcase_id, message=''):
         '''
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
