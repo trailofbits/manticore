@@ -266,14 +266,19 @@ class ManticoreOutput(object):
         :return: A state id representing the saved state
         '''
 
-        self._last_id = testcase_id
-
         self.save_summary(state, message)
         self.save_trace(state)
         self.save_constraints(state)
         self.save_input_symbols(state)
         self.save_syscall_trace(state)
         self.save_fds(state)
+        key = 'test_{:08x}.pkl'.format(self._last_id)
+        self._store.save_state(state, key)
+
+        self._last_id += 1
+
+    def save_stream(self, *rest):
+        return self._store.save_stream(*rest)
 
     @contextmanager
     def _named_stream(self, name):
@@ -283,7 +288,9 @@ class ManticoreOutput(object):
         :param name: Identifier for the stream
         :return: A context-managed stream-like object
         '''
-        with self._store.save_stream('{:08x}.{}'.format(self._last_id, name)) as s:
+
+
+        with self._store.save_stream('test_{:08x}.{}'.format(self._last_id, name)) as s:
             yield s
 
     def save_summary(self, state, message):

@@ -656,7 +656,7 @@ class Manticore(object):
 
         #Fixme this is duplicated?
         if self.coverage_file is not None:
-            with open(self.coverage_file, "w") as f:
+            with self._output.save_stream(self.coverage_file) as f:
                 fmt = "0x{:016x}\n"
                 for m in executor_visited:
                     f.write(fmt.format(m[1]))
