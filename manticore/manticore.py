@@ -175,8 +175,6 @@ class Manticore(object):
         self._executor = None
         #Executor wide shared context
         self._context = {}
-        self._output = ManticoreOutput(None)
-
 
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
@@ -607,16 +605,17 @@ class Manticore(object):
             state.context['instructions_count'] = count + 1
 
 
-    def _generate_testcase_callback(self, state, testcase_id, message = 'Testcase generated'):
-        #Fixme split this!
+    def _generate_testcase_callback(self, state, message = 'Testcase generated'):
         '''
         Create a serialized description of a given state.
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        logger.debug("Generating testcase No. %d - %s", testcase_id, message)
-        self._output.save_testcase(state, testcase_id, message)
-        return testcase_id
+
+        # Lock the context for exclusivitiy, not to use it
+        with self.locked_context() as _:
+            testcase_id = self._output.save_testcase(state, message)
+            logger.debug("Generating testcase No. %d - %s", testcase_id, message)
 
     def _produce_profiling_data(self):
         class PstatsFormatted:
@@ -698,6 +697,13 @@ class Manticore(object):
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
         initial_state = self._make_state(self._binary)
+
+        if args.workspace and ':' not in args.workspace:
+            ws_path = 'fs:' + args.workspace
+        else:
+            ws_path = args.workspace
+
+        self._output = ManticoreOutput(ws_path)
 
         self._executor = Executor(initial_state,
                                   workspace=self._output.uri,

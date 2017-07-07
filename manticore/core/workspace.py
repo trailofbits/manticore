@@ -163,11 +163,11 @@ class FilesystemStore(Store):
 
         :param uri: The path to on-disk workspace, or None.
         '''
-        if uri is None:
+        if not uri:
             uri = os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
 
         if os.path.exists(uri):
-            assert os.path.isdir(uri), 'Workspace must be a directory'
+            assert os.path.isdir(uri), 'Store must be a directory'
         else:
             os.mkdir(uri)
 

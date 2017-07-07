@@ -113,12 +113,16 @@ class Executor(object):
         if self.load_workspace():
             if initial is not None:
                 logger.error("Ignoring initial state")
-        else:
-            if initial is not None:
-                self.add(initial)
-                ##FIXME PUBSUB  We need to forward signals here so they get declared
-                ##forward signals from initial state so they are declared here
-                forward_signals(self, initial, True)
+            # We loaded state ids, now load the actual state
+
+            current_state_id = self.get()
+            initial = self._new_workspace.load_state(current_state_id)
+            self._register_state_callbacks(initial, current_state_id)
+
+        self.add(initial)
+        ##FIXME PUBSUB  We need to forward signals here so they get declared
+        ##forward signals from initial state so they are declared here
+        self._register_state_callbacks(initial, 0) # id param unused
 
     @contextmanager
     def locked_context(self):
@@ -151,7 +155,6 @@ class Executor(object):
         '''
         #save the state to secondary storage
         state_id = self._new_workspace.save_state(state)
-        #print self._new_workspace.ls()
         self.will_store_state(state, state_id)
         self.put(state_id)
         return state_id
