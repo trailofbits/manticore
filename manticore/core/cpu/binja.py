@@ -288,7 +288,6 @@ class BinjaCpu(Cpu):
         right_v = right.read()
         result = left_v + right_v
         size = left.op.size
-        print "SIZE " + str(size)
         args = {
             "result" : result,
             "size" : size,
@@ -310,7 +309,6 @@ class BinjaCpu(Cpu):
         result = left_v & right_v
         size = left.op.size
 
-        print "SIZE " + str(size)
         args = {
             "result" : result,
             "size" : size,
@@ -500,7 +498,6 @@ class BinjaCpu(Cpu):
         right_v = shift.read()
         result = left_v << right_v
         size = reg.op.size
-        print "SIZE " + str(size)
 
         args = {
             "result" : result,
@@ -557,7 +554,6 @@ class BinjaCpu(Cpu):
         right_v = right.read()
         result = left_v | right_v
         size = left.op.size
-        print "SIZE " + str(size)
 
         args = {
             "result" : result,
@@ -570,6 +566,7 @@ class BinjaCpu(Cpu):
 
     @instruction
     def POP(cpu):
+        raise NotImplementedError
         # FIXME this is wrong! get it from the destination register!
         return cpu.pop(cpu.address_bit_size)
 
@@ -603,14 +600,30 @@ class BinjaCpu(Cpu):
     def SET_FLAG(cpu):
         raise NotImplementedError
 
+
+    def _get_op_size(cpu, op):
+        from binaryninja.lowlevelil import ILRegister
+        # FIXME integrate all of this into BinjaOperand
+        if isinstance(op, ILRegister):
+            return op.info.size
+        elif isinstance(op, BinjaOperand):
+            return op.size
+        else:
+            raise NotImplementedError
+
     @instruction
     def SET_REG(cpu, dest, src):
-        # FIXME
-        #  if dest.op.size > src.op.size:
-            #  dest.write(Operators.ZEXTEND(src.read(), src.op.size))
-        #  else:
-            #  dest.write(Operators.EXTRACT(src.read(), 0, src.op.size))
+        dest_size = cpu._get_op_size(dest)
+        src_size = cpu._get_op_size(dest)
         dest.write(src.read())
+        return
+        print "Would write " + hex(src.read())
+        if dest_size > src_size:
+            print "Writing " + hex(Operators.ZEXTEND(src.read(), src_size))
+            dest.write(Operators.ZEXTEND(src.read(), src_size))
+        else:
+            print "Writing 2 " + hex(Operators.EXTRACT(src.read(), 0, src_size))
+            dest.write(Operators.EXTRACT(src.read(), 0, src_size))
 
     @instruction
     def SET_REG_SPLIT(cpu):
@@ -618,7 +631,6 @@ class BinjaCpu(Cpu):
 
     @instruction
     def STORE(cpu, dest, src):
-        print "SIZE " + str(dest.op.size)
         cpu.write_int(dest.read(), src.read(), dest.op.size * 8)
 
     @instruction
@@ -627,7 +639,6 @@ class BinjaCpu(Cpu):
         right_v = right.read()
         result = left_v - right_v
         size = left.op.size
-        print "SIZE " + str(size)
 
         args = {
             "result" : result,
@@ -677,7 +688,6 @@ class BinjaCpu(Cpu):
         right_v = right.read()
         result = left_v ^ right_v
         size = left.op.size
-        print "SIZE " + str(size)
 
         args = {
             "result" : result,

@@ -769,6 +769,7 @@ class Cpu(object):
             for l in self.render_registers():
                 register_logger.debug(l)
 
+        print "Executing " + str(insn) + " SIZE: " + str(insn.size)
         implementation(*insn.operands)
 
         # In case we are executing IL instructions, we could iteratively
@@ -780,6 +781,7 @@ class Cpu(object):
         if (isinstance(self.__class__.disasm, BinjaILDisasm) and
                 not insn.sets_pc):
             self.__class__.PC = self._last_pc + insn.size
+            print "Increasing PC to " + hex(self.__class__.PC)
 
         self._icount += 1
 
@@ -815,6 +817,8 @@ class Cpu(object):
         result = ""
 
         value = self.read_register(reg_name)
+        if value == 0:
+            return None
 
         if issymbolic(value):
             aux = "%3s: "%reg_name +"%16s"%value
@@ -830,8 +834,8 @@ class Cpu(object):
         # backup, null, use, then restore the list.
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
-        return map(self.render_register,
-                   sorted(self._regfile.canonical_registers))
+        return filter(None, map(self.render_register,
+                                sorted(self._regfile.canonical_registers)))
 
     #Generic string representation
     def __str__(self):
