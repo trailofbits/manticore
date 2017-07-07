@@ -862,7 +862,7 @@ class Manticore(object):
         '''
         self._executor.shutdown()
 
-    def _assertions_callback(self, state):
+    def _assertions_callback(self, state, instruction):
         pc = state.cpu.PC
         if pc not in self._assertions:
             return
@@ -873,7 +873,7 @@ class Manticore(object):
 
         #This will interpret the buffer specification written in INTEL ASM.
         # (It may dereference pointers)
-        assertion = parse(program, state.cpu.read, state.cpu.read_register)
+        assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",

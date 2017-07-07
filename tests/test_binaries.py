@@ -73,29 +73,25 @@ class IntegrationTest(unittest.TestCase):
         output = subprocess.check_output(['python', '-m', 'manticore', filename])
         self.assertLessEqual(len(output.splitlines()), 25)
 
-    @unittest.skip('TODO(mark); skipping so we can move on with our lives and merge x86_new. ask felipe to fix later.')
     def testArgumentsAssertions(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        SE = os.path.join(dirname, '../main.py')
         data = file(filename,'rb').read()
-        self.assertEqual(len(data), 767152)
-        self.assertEqual(hashlib.md5(data).hexdigest() , '00fb23e47831a1054ca4a74656035472')
         workspace = '%s/workspace'%self.test_dir
         assertions = '%s/assertions.txt'%self.test_dir
         file(assertions,'w').write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
-            self._runWithTimeout(['python', SE,
-                                '--workspace', workspace,
-                                '--proc', '4',
-                                '--assertions', assertions,
-                                filename,
-                                '+++++++++'], stdout=output)
-        data = file('%s/visited.txt'%workspace,'r').read()
-        data = '\n'.join(sorted(set(data.split('\n'))))
-        self.assertEqual(hashlib.md5(data).hexdigest() , 'c52d7d471ba5c94fcf59936086821a6b')
+            subprocess.check_call(['python', '-m', 'manticore',
+                                   '--workspace', workspace,
+                                   '--proc', '4',
+                                   '--assertions', assertions,
+                                   filename,
+                                   '+++++++++'], stdout=output)
+        actual = self._loadVisitedSet(os.path.join(dirname, '%s/visited.txt'%workspace))
+        expected = self._loadVisitedSet(os.path.join(dirname, 'reference/arguments_linux_arm64_visited.txt'))
+        self.assertEqual(actual, expected)
 
     def testDecree(self):
         dirname = os.path.dirname(__file__)
