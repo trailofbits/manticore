@@ -698,10 +698,13 @@ class Manticore(object):
 
         initial_state = self._make_state(self._binary)
 
-        if args.workspace and ':' not in args.workspace:
-            ws_path = 'fs:' + args.workspace
+        if args is not None and hasattr(args, 'workspace') and isinstance(args.workspace, str):
+            if ':' not in args.workspace:
+                ws_path = 'fs:' + args.workspace
+            else:
+                ws_path = args.workspace
         else:
-            ws_path = args.workspace
+            ws_path = None
 
         self._output = ManticoreOutput(ws_path)
 
