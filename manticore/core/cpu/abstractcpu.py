@@ -769,7 +769,6 @@ class Cpu(object):
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        print "Executing " + str(insn)
         implementation(*insn.operands)
 
         # In case we are executing IL instructions, we could iteratively

@@ -2029,7 +2029,8 @@ class SLinux(Linux):
     :param list envp: environment variables
     :param tuple[str] symbolic_files: files to consider symbolic
     """
-    def __init__(self, programs, argv=None, envp=None, symbolic_files=None, disasm='capstone'):
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=None,
+                 disasm='capstone'):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
         symbolic_files = [] if symbolic_files is None else symbolic_files
@@ -2037,11 +2038,17 @@ class SLinux(Linux):
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files = symbolic_files
-        super(SLinux, self).__init__(programs, argv=argv, envp=envp, disasm=disasm)
+        super(SLinux, self).__init__(programs,
+                                     argv=argv,
+                                     envp=envp,
+                                     disasm=disasm)
 
 
     def _mk_proc(self, arch):
-        mem = SMemory32(self.constraints) if arch in {'i386', 'armv7'} else SMemory64(self.constraints)
+        if arch in {'i386', 'armv7'}:
+            mem = SMemory32(self.constraints)
+        else:
+            mem = SMemory64(self.constraints)
 
         if is_binja_disassembler(self.disasm):
             return self._init_binja_cpu(mem)
@@ -2055,22 +2062,41 @@ class SLinux(Linux):
             'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
         }
         arch, mode = arch_map[arch]
-        cpu.__class__.disasm = init_disassembler(self.disasm, arch, mode, self.programs)
+        cpu.__class__.disasm = init_disassembler(self.disasm,
+                                                 arch,
+                                                 mode,
+                                                 self.programs)
         return cpu
 
     def _init_binja_cpu(self, memory):
         from ..core.cpu.binja import BinjaCpu
 
+        #  FIXME (theo) this will be replaced by a function that simply
+        #  loads the IL from a file
         def init_bv():
             """
             Reads a binary and returns a binary vieww
             """
-            #  FIXME (theo) this will be replaced by a function that simply
-            #  loads the IL from a file
             import binaryninja as bn
-            bv = bn.binaryview.BinaryViewType.get_view_of_file(self.program)
-            bv.update_analysis_and_wait()
-            return bv
+            from binaryninja import BinaryView as bview
+
+            # see if we have cached the db
+            db_name = "." + os.path.basename(self.program) + ".bnfm"
+            dbpath = os.path.join(os.path.dirname(self.program), db_name)
+            if not os.path.isfile(dbpath):
+                bv = bn.binaryview.BinaryViewType.get_view_of_file(self.program)
+                bv.update_analysis_and_wait()
+                # cache for later
+                bv.create_database(dbpath)
+                return bv
+            else:
+                fm = bn.FileMetadata()
+                db = fm.open_existing_database(dbpath)
+                vtypes = filter(lambda x: x.name != "Raw",
+                                bview.open(self.program).available_view_types)
+                bv = db.get_view_of_type(vtypes[0].name)
+                bv.update_analysis_and_wait()
+                return bv
 
         bv = init_bv()
         cpu = BinjaCpu(bv, memory)
