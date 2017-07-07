@@ -80,7 +80,7 @@ class IntegrationTest(unittest.TestCase):
         afile = os.path.join(workspace, params['actual'])
         actual = self._loadVisitedSet(afile)
 
-        self.assertEqual(actual, expected)
+        self.assertGreaterEqual(actual, expected)
 
     def testSimpleParse(self):
         self._runManticore("simple_parse")
