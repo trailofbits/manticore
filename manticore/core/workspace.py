@@ -47,9 +47,13 @@ class Store(object):
     '''
     A Store can save arbitrary keys/values (including states) and file streams. Used for generating
     output, and state saving and loading.
+
+    Implement either save_value/load_value in subclasses, or save_stream/load_stream, or both.
     '''
 
     def __init__(self, uri, state_serialization_method='pickle'):
+        assert self.__class__ != Store, "The Store class can not be instantiated (create a subclass)"
+
         self.uri = uri
         self._sub = []
 
@@ -58,6 +62,9 @@ class Store(object):
         else:
             raise NotImplementedError("Pickling method '{}' not supported.".format(state_serialization_method))
 
+
+    # save_value/load_value and save_stream/load_stream are implemented in terms of each other. A backing store
+    # is optimized for
     def save_value(self, key, value):
         '''
         Save an arbitrary, serializable `value` under `key`.
@@ -66,7 +73,8 @@ class Store(object):
         :param value: A serializable value
         :return:
         '''
-        raise NotImplementedError
+        with self.save_stream(key) as s:
+            s.write(value)
 
     def load_value(self, key):
         '''
@@ -75,7 +83,8 @@ class Store(object):
         :param str key: The key that identifies the value
         :return: The loaded value
         '''
-        raise NotImplementedError
+        with self.load_stream(key) as s:
+            return s.read()
 
     @contextmanager
     def save_stream(self, key):
@@ -86,7 +95,9 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         '''
-        raise NotImplementedError
+        s = StringIO.StringIO()
+        yield s
+        self.save_value(key, s.getvalue())
 
     @contextmanager
     def load_stream(self, key):
@@ -97,7 +108,9 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         '''
-        raise NotImplementedError
+        value = self.load_value(key)
+        yield StringIO.StringIO(value)
+
 
     def save_state(self, state, key):
         '''
@@ -106,7 +119,6 @@ class Store(object):
         :param state:
         :return:
         '''
-        #key = 'state_{:08x}.pkl'.format(key)
         with self.save_stream(key) as f:
             self._serializer.serialize(state, f)
 
@@ -171,25 +183,6 @@ class FilesystemStore(Store):
         with open(os.path.join(self.uri, key), 'r') as f:
             yield f
 
-    def save_value(self, key, value):
-        '''
-        Save an arbitrary, serializable `value` under `key`.
-
-        :param str key: A string identifier under which to store the value.
-        :param value: A serializable value
-        :return:
-        '''
-        raise NotImplementedError
-
-    def load_value(self, key):
-        '''
-        Load an arbitrary value identified by `key`.
-
-        :param str key: The key that identifies the value
-        :return: The loaded value
-        '''
-        raise NotImplementedError
-
     def rm(self, key):
         path = os.path.join(self.uri, key)
         os.remove(path)
@@ -206,28 +199,6 @@ class RedisStore(Store):
         hostname, port = uri.split(':')
         self._client = redis.StrictRedis(host=hostname, port=int(port), db=0)
         super(RedisStore, self).__init__(uri)
-
-    @contextmanager
-    def save_stream(self, key, binary=False):
-        '''
-
-        :param key:
-        :return:
-        '''
-        s = StringIO.StringIO()
-        yield s
-        val = s.getvalue()
-        self._client.set(key, val)
-
-    @contextmanager
-    def load_stream(self, key):
-        '''
-        :param key:
-        :return:
-        '''
-        val = self._client.get(key)
-        s = StringIO.StringIO(val)
-        yield s
 
     def save_value(self, key, value):
         '''
