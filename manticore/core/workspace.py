@@ -3,6 +3,10 @@ import sys
 import cPickle
 import logging
 import tempfile
+try:
+    import cStringIO as StringIO
+except:
+    import StringIO
 
 from contextlib import contextmanager
 
@@ -154,9 +158,6 @@ class FilesystemStore(Store):
         :param key:
         :return:
         '''
-        if isinstance(key, bool):
-            raise Exception
-
         mode = 'w{}'.format('b' if binary else '')
         with open(os.path.join(self.uri, key), mode) as f:
             yield f
@@ -194,8 +195,61 @@ class FilesystemStore(Store):
         os.remove(path)
 
 class RedisStore(Store):
-    def __init__(selfself, uri=None):
-        pass
+    '''
+    A redis-backed Manticore workspace
+    '''
+    def __init__(self, uri=None):
+        '''
+        :param uri: A url for redis
+        '''
+        import redis
+        hostname, port = uri.split(':')
+        self._client = redis.StrictRedis(host=hostname, port=int(port), db=0)
+        super(RedisStore, self).__init__(uri)
+
+    @contextmanager
+    def save_stream(self, key, binary=False):
+        '''
+
+        :param key:
+        :return:
+        '''
+        s = StringIO.StringIO()
+        yield s
+        val = s.getvalue()
+        self._client.set(key, val)
+
+    @contextmanager
+    def load_stream(self, key):
+        '''
+        :param key:
+        :return:
+        '''
+        val = self._client.get(key)
+        s = StringIO.StringIO(val)
+        yield s
+
+    def save_value(self, key, value):
+        '''
+        Save an arbitrary, serializable `value` under `key`.
+
+        :param str key: A string identifier under which to store the value.
+        :param value: A serializable value
+        :return:
+        '''
+        return self._client.set(key, value)
+
+    def load_value(self, key):
+        '''
+        Load an arbitrary value identified by `key`.
+
+        :param str key: The key that identifies the value
+        :return: The loaded value
+        '''
+        return self._client.get(key)
+
+    def rm(self, key):
+        self._client.delete(key)
 
 def _create_store(desc):
     type, uri = ('fs', None) if desc is None else desc.split(':', 1)
@@ -276,7 +330,7 @@ class ManticoreOutput(object):
     def uri(self):
         return self._store.uri
 
-    def save_testcase(self, state, message=''):#testcase_id, message=''):
+    def save_testcase(self, state, message=''):
         '''
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
