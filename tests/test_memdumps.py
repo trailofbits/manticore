@@ -82,15 +82,12 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertEqual(actual, expected)
 
-    @unittest.skip('TODO')
     def testSimpleParse(self):
         self._runManticore("simple_parse")
 
-    @unittest.skip('TODO')
     def testSimpleDeref(self):
         self._runManticore("simple_bad_deref")
 
-    @unittest.skip('TODO')
     def testSimpleBufferOverflow(self):
         self._runManticore("simple_buffer_overflow")
 
@@ -103,7 +100,6 @@ class IntegrationTest(unittest.TestCase):
     def testWin32API(self):
         self._runManticore("win32_api_test")
 
-    @unittest.skip('TODO')
     def testAPIInterception(self):
         self._runManticore("api_interception")
 
