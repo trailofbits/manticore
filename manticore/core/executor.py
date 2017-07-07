@@ -100,12 +100,6 @@ class Executor(object):
         #Number of currently running workers. Initially no runnign workers
         self._running = manager.Value('i', 0 )
 
-        #Number of generated testcases
-        self._test_count = manager.Value('i', 0 )
-
-        #Number of total intermediate states
-        self._state_count = manager.Value('i', 0 )
-
         self._new_workspace = Workspace(self._lock, 'fs:'+workspace)
 
         #Executor wide shared context
@@ -157,6 +151,7 @@ class Executor(object):
         '''
         #save the state to secondary storage
         state_id = self._new_workspace.save_state(state)
+        #print self._new_workspace.ls()
         self.will_store_state(state, state_id)
         self.put(state_id)
         return state_id
@@ -164,38 +159,14 @@ class Executor(object):
     def load_workspace(self):
         #Browse and load states in a workspace in case we are trying to 
         # continue from paused run
-        saved_states = []
-        for filename in os.listdir(self.workspace):
-            if filename.startswith('state_') and filename.endswith('.pkl'):
-                saved_states.append(self._workspace_filename(filename)) 
-        
-        #We didn't find any saved intermediate states in the workspace
-        if not saved_states:
+        loaded_state_ids = self._new_workspace.try_loading_workspace()
+        if not loaded_state_ids:
             return False
 
-        #search finalized testcases
-        saved_testcases = []
-        for filename in os.listdir(self.workspace):
-            if filename.startswith('test_') and filename.endswith('.pkl'):
-                saved_testcases.append(self._workspace_filename(filename)) 
+        for id in loaded_state_ids:
+            self._states.append(id)
 
-
-        #Load saved states into the queue
-        for filename in saved_states:
-            state_id = int(filename[6:-4])
-            self._states.append(state_id)
-
-        #reset test and states counter 
-        for filename in saved_states:
-            state_id = int(filename[6:-4])
-            self._state_count.value = max(self._state_counter.value, state_id)
-
-        for filename in saved_testcases:
-            state_id = int(filename[6:-4])
-            self._test_count.value = max(self._test_counter.value, state_id)
-
-        #Return True if we have loaded some sates to continue from
-        return len(saved_states)>0
+        return True
 
     ################################################
     # Workspace filenames 
@@ -209,20 +180,6 @@ class Executor(object):
     def _testcase_filename(self, state_id):
         filename = 'test_%06d.pkl'%state_id
         return self._workspace_filename(filename)
-
-    ################################################
-    #Shared counters 
-    @sync
-    def _new_state_id(self):
-        ''' This gets an uniq shared id for a new state '''
-        self._state_count.value += 1
-        return self._state_count.value
-
-    @sync
-    def _new_testcase_id(self):
-        ''' This gets an uniq shared id for a new testcase '''
-        self._test_count.value += 1
-        return self._test_count.value
 
     ###############################################
     # Synchronization helpers
@@ -303,11 +260,10 @@ class Executor(object):
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        logger.info("Generating testcase No. %d - %s", testcase_id, message)
 
-        #broadcast test generation. This is the time for other modules 
+        #broadcast test generation. This is the time for other modules
         #to output whatever helps to understand this testcase
-        self.will_generate_testcase(state, testcase_id, message)
+        self.will_generate_testcase(state, message)
 
 
     def fork(self, state, expression, policy='ALL', setstate=None):

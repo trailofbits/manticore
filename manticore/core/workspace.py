@@ -1,5 +1,6 @@
 import os
 import sys
+import glob
 import cPickle
 import logging
 import tempfile
@@ -64,7 +65,7 @@ class Store(object):
 
 
     # save_value/load_value and save_stream/load_stream are implemented in terms of each other. A backing store
-    # is optimized for
+    # can choose the pair it's best optimized for.
     def save_value(self, key, value):
         '''
         Save an arbitrary, serializable `value` under `key`.
@@ -142,6 +143,15 @@ class Store(object):
         '''
         raise NotImplementedError
 
+    def ls(self, glob):
+        '''
+        List all keys in storage
+
+        :return:
+        '''
+        raise NotImplementedError
+
+
 
 
 class FilesystemStore(Store):
@@ -184,8 +194,24 @@ class FilesystemStore(Store):
             yield f
 
     def rm(self, key):
+        '''
+
+        :param key:
+        :return:
+        '''
         path = os.path.join(self.uri, key)
         os.remove(path)
+
+    def ls(self, glob_str):
+        '''
+        Return just the filenames that match `glob_str` inside the store directory.
+
+        :param glob_str:
+        :return:
+        '''
+        path = os.path.join(self.uri, glob_str)
+        return map(lambda s: os.path.split(s)[1], glob.glob(path))
+
 
 class RedisStore(Store):
     '''
@@ -195,9 +221,13 @@ class RedisStore(Store):
         '''
         :param uri: A url for redis
         '''
+
+        # Local import to not create an explicit dependency
         import redis
+
         hostname, port = uri.split(':')
         self._client = redis.StrictRedis(host=hostname, port=int(port), db=0)
+
         super(RedisStore, self).__init__(uri)
 
     def save_value(self, key, value):
@@ -222,7 +252,20 @@ class RedisStore(Store):
     def rm(self, key):
         self._client.delete(key)
 
+    def ls(self, glob_str):
+        return self._client.keys(glob_str)
+
 def _create_store(desc):
+    '''
+    Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
+
+    Valid descriptors:
+      fs:<path>
+      redis:<hostname>:<port>
+
+    :param str desc: Store descriptor
+    :return: Store instance
+    '''
     type, uri = ('fs', None) if desc is None else desc.split(':', 1)
 
     if type == 'fs':
@@ -233,15 +276,30 @@ def _create_store(desc):
         raise NotImplementedError("Storage type '%s' not supported.", type)
 
 class Workspace(object):
+    '''
+    A workspace maintains a list of states to run and assigns them IDs.
+    '''
 
     def __init__(self, lock, desc=None):
         self._store = _create_store(desc)
         self._serializer = PickleSerializer()
         self._last_id = 0
         self._lock = lock
+        self._prefix = 'state_'
+        self._suffix = '.pkl'
 
-    def _try_loading_workspace(self):
-        pass
+    def try_loading_workspace(self):
+        state_names = self._store.ls('{}*'.format(self._prefix))
+        def get_state_id(name):
+            return int(name[len(self._prefix):-len(self._suffix)], 16)
+        state_ids = map(get_state_id, state_names)
+
+        if not state_ids:
+            return []
+
+        self._last_id = max(state_ids) + 1
+
+        return state_ids
 
     def _get_id(self):
         '''
@@ -267,7 +325,7 @@ class Workspace(object):
         '''
         return self._store.load_state(state_id)
 
-    def save_state(self, state, final=False):
+    def save_state(self, state):
         '''
         Save a state to storage, return identifier.
 
@@ -277,16 +335,15 @@ class Workspace(object):
         :rtype: int
         '''
         id = self._get_id()
-        prefix = 'state' if not final else 'test'
-        logger.debug("Saving state {:08x}".format(id))
-        self._store.save_state(state, '{}_{:08x}.pkl'.format(prefix, id))
+        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id, self._suffix))
         return id
+
 
 
 class ManticoreOutput(object):
     '''
-    Base class for Manticore output. Responsible for generating execution-based
-    output, such as state summaries, coverage information, etc.
+    Functionality related to producing output. Responsible for generating state summaries,
+    coverage information, etc.
     '''
     def __init__(self, desc=None):
         '''
