@@ -193,7 +193,7 @@ class RegisterFile(object):
         :type value: int or long or Expression
         :return: the value actually written to the register
         '''
-        pass
+        raise NotImplementedError
 
     def read(self, register):
         '''
@@ -202,7 +202,7 @@ class RegisterFile(object):
         :param str register: a register name. Must be listed on all_registers
         :return: the register value
         '''
-        pass
+        raise NotImplementedError
 
     @property
     def all_registers(self):
@@ -212,7 +212,7 @@ class RegisterFile(object):
     @property
     def canonical_registers(self):
         ''' List the minimal most beautiful set of registers needed '''
-        pass
+        raise NotImplementedError
 
     def __contains__(self, register):
         '''
@@ -732,6 +732,10 @@ class Cpu(object):
         '''
         Decode, and execute one instruction pointed by register PC
         '''
+        #  # FIXME (theo) Debugging Aid
+        #  if hex(self.PC) == "0x400d31L":
+            #  raise NotImplementedError
+
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
@@ -769,7 +773,7 @@ class Cpu(object):
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        print "Executing " + str(insn) + " SIZE: " + str(insn.size)
+        #  print "Executing " + str(insn) + " SIZE: " + str(insn.size)
         implementation(*insn.operands)
 
         # In case we are executing IL instructions, we could iteratively
@@ -781,7 +785,6 @@ class Cpu(object):
         if (isinstance(self.__class__.disasm, BinjaILDisasm) and
                 not insn.sets_pc):
             self.__class__.PC = self._last_pc + insn.size
-            print "Increasing PC to " + hex(self.__class__.PC)
 
         self._icount += 1
 
@@ -817,7 +820,10 @@ class Cpu(object):
         result = ""
 
         value = self.read_register(reg_name)
-        if value == 0:
+        reg_name = reg_name.upper()
+        if (value == 0 or
+                value == (0, 0) or
+                reg_name in ["CS", "DS", "ES", "SS"]):
             return None
 
         if issymbolic(value):

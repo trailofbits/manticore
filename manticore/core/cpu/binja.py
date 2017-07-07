@@ -20,42 +20,83 @@ class BinjaRegisterFile(RegisterFile):
         ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         '''
+        # XXX we do not use view as part of the class, because then
+        # we need to do a lot more work to pickle the object
+        self.arch = self._get_arch(view)
         self.reg_aliases = {
             'STACK' : str(view.arch.stack_pointer),
-            'PC' : self._get_pc(view),
+            'PC' : self._get_pc(),
         }
-
         super(BinjaRegisterFile, self).__init__(aliases=self.reg_aliases)
 
-        # Initialize register values, cache and side-effects
-        self._cache = dict()
-        self.flags = {f : 0 for f in view.arch.flags}
-        all_regs = view.arch.regs.keys() + self.reg_aliases.values()
+        # Get "dummy" registers for flags. We append 'F' for consistency
+        # with the X86 CPU
+        f_regs = [f + "f" for f in view.arch.flags]
+        # get (full width) architecture registers
+        arch_regs = list(set([view.arch.regs[r].full_width_reg
+                              for r in view.arch.regs.keys()]))
+
+        # all regs are: architecture, aliases and flags
+        all_regs = arch_regs + self.reg_aliases.values() + f_regs
         self.registers = {reg : 0 for reg in all_regs}
-        # FIXME (theo) get side effects
 
     def write(self, reg, value):
-        # FIXME account for sizes
-        #
-        reg = self._alias(str(reg))
-        # FIXME we will need to be calling the appropriate setters as in x86
-        self._update_cache(reg, value)
-        return value
+        from binaryninja.enums import ImplicitRegisterExtend
+        from binaryninja import Architecture
+
+        arch = Architecture[self.arch]
+
+        r = self._alias(str(reg))
+        # if this is a custom register just write to the dictionary
+        if r not in arch.regs:
+            self.registers[r] = value
+            return
+
+        # get the ILRegister object from Architecture
+        ilreg = arch.regs[r]
+
+        # full_width -> just write to it
+        if ilreg.full_width_reg == r:
+            self.registers[r] = value
+            return
+
+        ilreg_full = arch.regs[ilreg.full_width_reg]
+        full_width_reg_value = self.registers[ilreg.full_width_reg]
+        if ilreg.extend == ImplicitRegisterExtend.NoExtend:
+            # mask off the value that will be replaced
+            mask = (1 << ilreg.size * 8) - 1
+            full_mask = (1 << ilreg_full.size * 8) - 1
+            reg_bits = mask << (ilreg.offset * 8)
+            full_width_reg_value &= full_mask ^ reg_bits
+            full_width_reg_value |= value << ilreg.offset * 8
+        elif ilreg.extend == ImplicitRegisterExtend.ZeroExtendToFullWidth:
+            full_width_reg_value = value
+        elif ilreg.extend == ImplicitRegisterExtend.SignExtendToFullWidth:
+            full_width_reg_value = (
+                (value ^ ((1 << ilreg.size * 8) - 1)) -
+                ((1 << ilreg.size * 8) - 1) +
+                (1 << ilreg_full.size * 8)
+            )
+        else:
+            raise NotImplementedError
+
+        self.registers[ilreg.full_width_reg] = full_width_reg_value
 
     def read(self, reg):
-        reg = self._alias(str(reg))
-        if reg in self._cache:
-            return self._cache[reg]
+        from binaryninja import Architecture
 
-        # FIXME we will need to be calling the appropriate getters as in x86
-        value = self.registers[reg]
-        # FIXME we should read via get_register
-        self._cache[reg] = value
-        return value
+        arch = Architecture[self.arch]
 
-    def _update_cache(self, reg, value):
-        reg = self._alias(str(reg))
-        self._cache[reg] = value
+        r = self._alias(str(reg))
+        if r in self.registers:
+            return self.registers[r]
+
+        reg_info = arch.regs[r]
+        full_reg_value = self.registers[reg_info.full_width_reg]
+        mask = (1 << reg_info.size * 8) - 1
+        reg_bits = mask << (reg_info.offset * 8)
+        reg_value = (full_reg_value & reg_bits) >> (reg_info.offset * 8)
+        return reg_value
 
     @property
     def all_registers(self):
@@ -68,13 +109,21 @@ class BinjaRegisterFile(RegisterFile):
     def __contains__(self, register):
         return register in self.all_registers
 
-    def _get_pc(self, view):
+    def _get_pc(self):
+        if self.arch == 'x86':
+            return 'eip'
+        elif self.arch == 'x86_64':
+            return 'rip'
+        else:
+            raise NotImplementedError
+
+    def _get_arch(self, view):
         from binaryninja import Architecture
 
         if view.arch == Architecture['x86']:
-            return 'eip'
+            return 'x86'
         elif view.arch == Architecture['x86_64']:
-            return 'rip'
+            return 'x86_64'
         else:
             raise NotImplementedError
 
@@ -121,6 +170,7 @@ class BinjaOperand(Operand):
                 if (hasattr(llil, 'src') and
                         llil.src.operation == enums.LowLevelILOperation.LLIL_CONST_PTR):
                     implementation = getattr(cpu, "CONST_PTR")
+                    #  print "Calling " + op.operation.name
                     return implementation(*op.operands)
 
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
@@ -128,43 +178,47 @@ class BinjaOperand(Operand):
             if op.operation == enums.LowLevelILOperation.LLIL_LOAD:
                 return implementation(*op.operands, expr_size=op.size)
             return implementation(*op.operands)
+        else:
+            raise NotImplementedError("write_operand type", op.type)
 
     def write(self, value):
         cpu, op = self.cpu, self.op
         if self.type == 'register':
             cpu.write_register(str(op), value)
+        elif self.type == 'instruction':
+            implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
+            return implementation(*op.operands)
         else:
-            raise NotImplementedError("write_operand type", o.type)
+            raise NotImplementedError("write_operand type", op.type)
         return value & ((1 << self.size) - 1)
 
     def __getattr__(self, name):
         return getattr(self.op, name)
 
-def _carry_flag(args):
-    return Operators.ULT(args["left"], args["right"])
+def _carry_ult(left, right):
+    return Operators.ULT(left, right)
 
-def _adjust_flag(args):
-    return ((args["left"] ^ args["right"]) ^ args["result"]) & 0x10 != 0
+def _adjust_flag(result, left, right):
+    return ((left ^ right) ^ result) & 0x10 != 0
 
-def _zero_flag(args):
-    return args["result"] == 0
+def _zero_flag(res):
+    return res == 0
 
-def _sign_flag(args):
-    mask = 1 << (args["size"] - 1)
-    return (args["result"] & mask) != 0
+def _sign_flag(res, size):
+    mask = 1 << (size - 1)
+    return (res & mask) != 0
 
 def _direction_flag(args):
     pass
 
-def _parity_flag(args):
-    v = args["result"]
+def _parity_flag(v):
     return (v ^ v >> 1 ^ v >> 2 ^ v >> 3 ^ v >> 4 ^ v >> 5 ^ v >> 6 ^ v >> 7) & 1 == 0
 
-def _overflow_flag(args):
-    mask = 1 << (args["size"] - 1)
-    sign_l = (args["left"] & mask) == mask
-    sign_r = (args["right"] & mask) == mask
-    sign_res = (args["result"] & mask) == mask
+def _overflow_flag(res, left, right, size):
+    mask = 1 << (size - 1)
+    sign_l = (left & mask) == mask
+    sign_r = (right & mask) == mask
+    sign_res = (res & mask) == mask
     return Operators.AND(sign_l ^ sign_r, sign_l ^ sign_res)
 
 class BinjaCpu(Cpu):
@@ -259,148 +313,120 @@ class BinjaCpu(Cpu):
         cpu.STACK += size / 8
         return value
 
-    def _update_flags(cpu, args, flags=None):
-        if not flags:
+    def update_flags(cpu, flags=None, args=None):
+        if flags is None:
+            assert args is not None
             f = cpu.disasm.current_func
             i = f.get_lifted_il_at(cpu.disasm.current_pc)
             flags = f.get_flags_written_by_lifted_il_instruction(i.instr_index)
 
-        handlers = {
-            'c': _carry_flag,
-            'p': _parity_flag,
-            'a': _adjust_flag,
-            'z': _zero_flag,
-            's': _sign_flag,
-            'd': _direction_flag,
-            'o': _overflow_flag
-        }
+            handlers = {
+                'c': _carry_ult(args["left"], args["right"]),
+                'p': _parity_flag(args["res"]),
+                'a': _adjust_flag(args["res"], args["left"], args["right"]),
+                'z': _zero_flag(args["res"]),
+                's': _sign_flag(args["res"], args["size"]),
+                'd': _direction_flag,
+                'o': _overflow_flag(args["res"],
+                                    args["left"],
+                                    args["right"],
+                                    args["size"])
+            }
+            for f in flags:
+                cpu.regfile.write(f + "f", handlers[f])
+        else:
+            for f, val in flags.items():
+                cpu.regfile.write(f + "f", val)
 
-        for f in flags:
-            handlers[f](args)
+    def ADC(cpu, left, right):
+        return x86_add(cpu, left, right, True)
 
-    @instruction
-    def ADC(cpu):
-        raise NotImplementedError
-
-    @instruction
     def ADD(cpu, left, right):
-        left_v = left.read()
-        right_v = right.read()
-        result = left_v + right_v
-        size = left.op.size
-        args = {
-            "result" : result,
-            "size" : size,
-            "left" : left_v,
-            "right" : right_v
-        }
+        return x86_add(cpu, left, right)
 
-        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
-        return result
-
-    @instruction
     def ADD_OVERFLOW(cpu):
         raise NotImplementedError
 
-    @instruction
     def AND(cpu, left, right):
-        left_v = left.read()
-        right_v = right.read()
-        result = left_v & right_v
-        size = left.op.size
+        res = left.read() & right.read()
+        x86_update_logic_flags(cpu, res, left.op.size * 8)
+        return res
 
-        args = {
-            "result" : result,
-            "size" : size,
-            "left" : left_v,
-            "right" : right_v
-        }
-
-        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
-        return result
-        return value
-
-    @instruction
     def ASR(cpu, reg, shift):
         return reg.read() >> shift.read()
 
-    @instruction
     def BOOL_TO_INT(cpu):
         raise NotImplementedError
-    @instruction
+
     def BP(cpu):
         raise NotImplementedError
 
-    @instruction
     def CALL(cpu, expr):
         new_pc = long(str(expr.op), 16) + cpu.disasm.entry_point_diff
         cpu.regfile.write('PC', new_pc)
         cpu.__class__.PC = new_pc
+        cpu.disasm.current_func = cpu.view.get_function_at(new_pc)
+        assert cpu.disasm.current_func is not None
         cpu.push(new_pc, cpu.address_bit_size)
 
-    @instruction
+
     def CMP_E(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_NE(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_SGE(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_SGT(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_SLE(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_SLT(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_UGE(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_UGT(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_ULE(cpu):
         raise NotImplementedError
-    @instruction
+
     def CMP_ULT(cpu):
         raise NotImplementedError
 
-    @instruction
     def CONST(cpu, expr):
         return expr.op
 
-    @instruction
     def CONST_PTR(cpu, expr):
         return expr.op + cpu.disasm.entry_point_diff
 
-    @instruction
     def DIVS(cpu):
         raise NotImplementedError
-    @instruction
+
     def DIVS_DP(cpu):
         raise NotImplementedError
-    @instruction
+
     def DIVU(cpu):
         raise NotImplementedError
-    @instruction
+
     def DIVU_DP(cpu):
         raise NotImplementedError
-    @instruction
+
     def FLAG(cpu):
         raise NotImplementedError
-    @instruction
+
     def FLAG_BIT(cpu):
         raise NotImplementedError
 
-    @instruction
     def FLAG_COND(cpu, condition):
         return condition.op
 
-    @instruction
     def GOTO(cpu, expr):
         if isinstance(expr.op, long):
             addr = cpu.disasm.current_func.lifted_il[expr.op].address
@@ -408,25 +434,24 @@ class BinjaCpu(Cpu):
             raise NotImplementedError
         cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
 
-    @instruction
     def IF(cpu, condition, true, false):
         cond = condition.read()
 
         import binaryninja.enums as enums
 
         # FLAGS are ['c', 'p', 'a', 'z', 's', 'd', 'o']
-        # FIXME check these for correctness. Probably buggy!!
+        # FIXME make this call the arch-specific flags
         if cond == enums.LowLevelILFlagCondition.LLFC_E:
-            res = cpu.regfile.flags['z'] == 1
+            res = cpu.regfile.registers['zf'] == 1
         elif cond == enums.LowLevelILFlagCondition.LLFC_NE:
-            res = cpu.regfile.flags['z'] == 0
+            res = cpu.regfile.registers['zf'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_NEG:
             print cond
             raise NotImplementedError
         elif cond == enums.LowLevelILFlagCondition.LLFC_NO:
-            res = cpu.regfile.flags['o'] == 0
+            res = cpu.regfile.registers['of'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_O:
-            res = cpu.regfile.flags['o'] == 1
+            res = cpu.regfile.registers['of'] == 1
         elif cond == enums.LowLevelILFlagCondition.LLFC_POS:
             print cond
             raise NotImplementedError
@@ -443,13 +468,13 @@ class BinjaCpu(Cpu):
             print cond
             raise NotImplementedError
         elif cond == enums.LowLevelILFlagCondition.LLFC_UGE:
-            res = cpu.regfile.flags['c'] == 0
+            res = cpu.regfile.registers['cf'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_UGT:
-            res = (cpu.regfile.flags['z'] & cpu.regfile.flags['c']) == 0
+            res = (cpu.regfile.registers['zf'] & cpu.regfile.registers['cf']) == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_ULE:
-            res = (cpu.regfile.flags['z'] | cpu.regfile.flags['c']) == 1
+            res = (cpu.regfile.registers['zf'] | cpu.regfile.registers['cf']) == 1
         elif cond == enums.LowLevelILFlagCondition.LLFC_ULT:
-            res = cpu.regfile.flags['c'] == 1
+            res = cpu.regfile.registers['cf'] == 1
         else:
             print cond
             raise NotImplementedError
@@ -472,131 +497,112 @@ class BinjaCpu(Cpu):
             addr = next_il.address + cpu.disasm.entry_point_diff
         cpu.__class__.PC = addr
 
-    @instruction
+
     def JUMP(cpu, expr):
         addr = expr.read()
         cpu.regfile.write('PC', addr)
         cpu.__class__.PC = addr
+        cpu.disasm.current_func = cpu.view.get_function_at(addr)
+        assert cpu.disasm.current_func is not None
 
-    @instruction
+
     def JUMP_TO(cpu):
         raise NotImplementedError
 
-    @instruction
+
     def LOAD(cpu, expr, expr_size=None):
         return cpu.read_int(expr.read(), expr_size * 8)
 
-    @instruction
+
     def LOW_PART(cpu, expr):
         # FIXME account for the size this is currently wrong. should
         # read() handle this or not?
         return expr.read()
 
-    @instruction
+
     def LSL(cpu, reg, shift):
         left_v = reg.read()
         right_v = shift.read()
         result = left_v << right_v
-        size = reg.op.size
-
-        args = {
-            "result" : result,
-            "size" : size,
-            "left" : left_v,
-            "right" : right_v
-        }
-        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
+        # FIXME flags!
         return result
 
-    @instruction
+
     def LSR(cpu):
         raise NotImplementedError
-    @instruction
+
     def MODS(cpu):
         raise NotImplementedError
-    @instruction
+
     def MODS_DP(cpu):
         raise NotImplementedError
-    @instruction
+
     def MODU(cpu):
         raise NotImplementedError
-    @instruction
+
     def MODU_DP(cpu):
         raise NotImplementedError
 
-    @instruction
+
     def MUL(cpu, left, right):
         return left.read() * right.read()
 
-    @instruction
+
     def MULS_DP(cpu):
         raise NotImplementedError
-    @instruction
+
     def MULU_DP(cpu):
         raise NotImplementedError
-    @instruction
+
     def NEG(cpu):
         raise NotImplementedError
-    @instruction
+
     def NOP(cpu):
         return
 
-    @instruction
+
     def NORET(cpu):
         raise NotImplementedError
-    @instruction
+
     def NOT(cpu):
         raise NotImplementedError
 
-    @instruction
     def OR(cpu, left, right):
-        left_v = left.read()
-        right_v = right.read()
-        result = left_v | right_v
-        size = left.op.size
+        res = left.read() | right.read()
+        x86_update_logic_flags(cpu, res, left.op.size * 8)
+        return res
 
-        args = {
-            "result" : result,
-            "size" : size,
-            "left" : left_v,
-            "right" : right_v
-        }
-        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
-        return result
 
-    @instruction
     def POP(cpu):
-        raise NotImplementedError
         # FIXME this is wrong! get it from the destination register!
         return cpu.pop(cpu.address_bit_size)
 
-    @instruction
+
     def PUSH(cpu, src):
         cpu.push(src.read(), src.op.size * 8)
 
-    @instruction
     def REG(cpu, expr):
         return cpu.regfile.read(expr.op)
 
-    @instruction
+
     def RET(cpu):
         raise NotImplementedError
-    @instruction
+
     def RLC(cpu):
         raise NotImplementedError
-    @instruction
+
     def ROL(cpu):
         raise NotImplementedError
-    @instruction
+
     def ROR(cpu):
         raise NotImplementedError
-    @instruction
+
     def RRC(cpu):
         raise NotImplementedError
-    @instruction
+
     def SBB(cpu):
         raise NotImplementedError
-    @instruction
+
     def SET_FLAG(cpu):
         raise NotImplementedError
 
@@ -611,63 +617,62 @@ class BinjaCpu(Cpu):
         else:
             raise NotImplementedError
 
-    @instruction
+
     def SET_REG(cpu, dest, src):
+        # FIXME size?
         dest_size = cpu._get_op_size(dest)
         src_size = cpu._get_op_size(dest)
         dest.write(src.read())
-        return
-        print "Would write " + hex(src.read())
-        if dest_size > src_size:
-            print "Writing " + hex(Operators.ZEXTEND(src.read(), src_size))
-            dest.write(Operators.ZEXTEND(src.read(), src_size))
-        else:
-            print "Writing 2 " + hex(Operators.EXTRACT(src.read(), 0, src_size))
-            dest.write(Operators.EXTRACT(src.read(), 0, src_size))
+        #  return
+        #  print "Would write " + hex(src.read())
+        #  if dest_size > src_size:
+            #  print "Writing " + hex(Operators.ZEXTEND(src.read(), src_size))
+            #  dest.write(Operators.ZEXTEND(src.read(), src_size))
+        #  else:
+            #  print "Writing 2 " + hex(Operators.EXTRACT(src.read(), 0, src_size))
+            #  dest.write(Operators.EXTRACT(src.read(), 0, src_size))
 
-    @instruction
+
     def SET_REG_SPLIT(cpu):
         raise NotImplementedError
 
-    @instruction
+
     def STORE(cpu, dest, src):
         cpu.write_int(dest.read(), src.read(), dest.op.size * 8)
 
-    @instruction
     def SUB(cpu, left, right):
         left_v = left.read()
         right_v = right.read()
-        result = left_v - right_v
+        res = left_v - right_v
         size = left.op.size
 
-        args = {
-            "result" : result,
-            "size" : size,
-            "left" : left_v,
-            "right" : right_v
+        # FIXME arch-specific flags
+        flags = {
+            'c': _carry_ult(left_v, right_v),
+            'p': _parity_flag(res),
+            'a': _adjust_flag(res, left_v, right_v),
+            'z': res == 0,
+            's': _sign_flag(res, size),
+            'o': _overflow_flag(res, left_v, right_v, size)
         }
+        cpu.update_flags(flags)
+        return res
 
-        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
-        return result
-
-
-    @instruction
     def SX(cpu):
         raise NotImplementedError
-    @instruction
+
     def SYSCALL(cpu):
         raise NotImplementedError
-    @instruction
+
     def TEST_BIT(cpu):
         raise NotImplementedError
-    @instruction
+
     def TRAP(cpu):
         raise NotImplementedError
-    @instruction
+
     def UNDEF(cpu):
         raise NotImplementedError
 
-    @instruction
     def UNIMPL(cpu):
         # FIXME invoke platform-specific CPU here
         disasm = cpu.view.get_disassembly(cpu.disasm.current_pc)
@@ -678,28 +683,14 @@ class BinjaCpu(Cpu):
         else:
             raise NotImplementedError
 
-    @instruction
     def UNIMPL_MEM(cpu):
         raise NotImplementedError
 
-    @instruction
     def XOR(cpu, left, right):
-        left_v = left.read()
-        right_v = right.read()
-        result = left_v ^ right_v
-        size = left.op.size
+        res = left.read() ^ right.read()
+        x86_update_logic_flags(cpu, res, left.op.size * 8)
+        return res
 
-        args = {
-            "result" : result,
-            "size" : size,
-            "left" : left_v,
-            "right" : right_v
-        }
-
-        cpu._update_flags(args, ['c', 'p', 'a', 'z', 's', 'o'])
-        return result
-
-    @instruction
     def ZX(cpu, expr):
         # FIXME zero extension
         val = expr.read()
@@ -710,6 +701,54 @@ class BinjaCpu(Cpu):
 # ARCH-SPECIFIC INSNS
 #
 #
+
+def x86_update_logic_flags(cpu, result, size):
+    flags = {
+        'c': False,
+        'p': _parity_flag(result),
+        'a': False,
+        'z': result == 0,
+        's': _sign_flag(result, size),
+        'o': False
+    }
+    cpu.update_flags(flags)
+
+
+def x86_add(cpu, dest, src, carry=False):
+    MASK = (1 << dest.size) - 1
+    SIGN_MASK = 1 << (dest.size - 1)
+    dest_v = dest.read()
+    if src.size < dest.size:
+        src_v = Operators.SEXTEND(src.read(), src.size, dest.size)
+    else:
+        src_v = src.read()
+
+    to_add = src_v
+    if carry:
+        cv = Operators.ITEBV(dest.size, cpu.CF, 1, 0)
+        to_add = src_v + cv
+
+    res = dest.write((dest_v + to_add) & MASK)
+
+    #Affected flags: oszapc
+    tempCF = Operators.OR(_carry_ult(res, dest_v & MASK),
+                          _carry_ult(res, src_v & MASK))
+    if carry:
+        # case of 0xFFFFFFFF + 0xFFFFFFFF + CF(1)
+        tempCF = Operators.OR(tempCF,
+                              Operators.AND(res == MASK,
+                                            cpu.regfile.registers['cf']))
+    flags = {
+        'c' : tempCF,
+        'a' : _adjust_flag(res, dest_v, src_v),
+        'z' : res == 0,
+        's' : _sign_flag(res, dest.size),
+        'o' : (((dest_v ^ src_v ^ SIGN_MASK) & (res ^ src_v)) & SIGN_MASK) != 0,
+        'p' : _parity_flag(res)
+    }
+    cpu.update_flags(flags)
+    return res
+
 
 def x86_rdtsc(cpu):
     val = cpu.icount
@@ -747,34 +786,34 @@ def x86_cpuid(cpu):
                       0x1: (0x00000000, 0x00000000, 0x00000000, 0x00000000)},
               }
 
-    if cpu.regfile.registers['eax'] not in conf:
+    if cpu.regfile.read('eax') not in conf:
         logger.warning('CPUID with EAX=%x not implemented @ %x',
-                       cpu.regfile.registers['eax'], cpu.__class__.PC)
+                       cpu.regfile.read('rax'), cpu.__class__.PC)
         cpu.write_register('eax', 0)
         cpu.write_register('ebx', 0)
         cpu.write_register('ecx', 0)
         cpu.write_register('edx', 0)
         return
 
-    if isinstance(conf[cpu.regfile.registers['eax']], tuple):
-        v = conf[cpu.regfile.registers['eax']]
+    if isinstance(conf[cpu.regfile.read('eax')], tuple):
+        v = conf[cpu.regfile.read('rax')]
         cpu.write_register('eax', v[0])
         cpu.write_register('ebx', v[1])
         cpu.write_register('ecx', v[2])
         cpu.write_register('edx', v[3])
         return
 
-    if cpu.regfile.registers['ecx'] not in conf[cpu.regfile.registers['eax']]:
+    if cpu.regfile.read('ecx') not in conf[cpu.regfile.read('eax')]:
         logger.warning('CPUID with EAX=%x ECX=%x not implemented',
-                       cpu.regfile.registers['eax'],
-                       cpu.regfile.registers['ecx'])
+                       cpu.regfile.read('rax'),
+                       cpu.regfile.read('rcx'))
         cpu.write_register('eax', 0)
         cpu.write_register('ebx', 0)
         cpu.write_register('ecx', 0)
         cpu.write_register('edx', 0)
         return
 
-    v = conf[cpu.regfile.registers['eax']][cpu.regfile.registers['ecx']]
+    v = conf[cpu.regfile.read('eax')][cpu.regfile.read('ecx')]
     cpu.write_register('eax', v[0])
     cpu.write_register('ebx', v[1])
     cpu.write_register('ecx', v[2])

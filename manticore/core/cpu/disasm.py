@@ -85,7 +85,7 @@ class BinjaILDisasm(Disasm):
         # entry point addresses? We need to lookup the symbols and
         # we should make sure all offsets are appropriate
 
-        if not self.entry_point_diff:
+        if self.entry_point_diff is None:
             # assume that the first time we are called, this is the entry point
             self.entry_point_diff = addr - self.view.entry_point
 
@@ -101,7 +101,6 @@ class BinjaILDisasm(Disasm):
         blocks = self.view.get_basic_blocks_at(pc)
         if not blocks:
             # Looks like Binja did not know about this PC..
-            print "\t\t\t CREATED A FUNCTION AT " + str(pc)
             self.view.create_user_function(pc)
             self.view.update_analysis_and_wait()
             self.current_func = self.view.get_function_at(pc)
