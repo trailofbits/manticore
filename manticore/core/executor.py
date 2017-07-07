@@ -378,12 +378,6 @@ class Executor(object):
                         current_state = None
 
                     except TerminateState as e:
-                        #logger.error("MemoryException at PC: 0x{:016x}. Cause: {}\n".format(current_state.cpu.instruction.address, e.cause))
-                        #self.generate_testcase(current_state, "Memory Exception: " + str(e))
-                        #self.generate_testcase(current_state, "Invalid PC Exception" + str(e))
-                        #self.generate_testcase(current_state, "Program finished correctly")
-                        #logger.error("Syscall not implemented: %s", str(e))
-
                         #Notify this worker is done
                         self.will_terminate_state(current_state, current_state_id, e)
 
