@@ -343,16 +343,17 @@ class Executor(object):
                             #Select a single state_id
                             current_state_id = self.get()
                             #load selected state from secondary storage
-                            current_state = self._new_workspace.load_state(current_state_id)
-                            self.will_load_state(current_state, current_state_id)
-                            #notify siblings we have a state to play with
+                            if current_state_id is not None:
+                                current_state = self._new_workspace.load_state(current_state_id)
+                                self.will_load_state(current_state, current_state_id)
+                                #notify siblings we have a state to play with
                             self._start_run()
 
                         #If current_state is still None. We are done.
                         if current_state is None:
                             logger.debug("No more states in the queue, byte bye!")
                             break
-                        
+
                         assert current_state is not None
 
                     try:

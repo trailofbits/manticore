@@ -129,7 +129,6 @@ class Store(object):
         :param state_id:
         :return:
         '''
-        key = 'state_{:08x}.pkl'.format(key)
         with self.load_stream(key) as f:
             state = self._serializer.deserialize(f)
             self.rm(key)
@@ -323,7 +322,7 @@ class Workspace(object):
         :return: The deserialized state
         :rtype: State
         '''
-        return self._store.load_state(state_id)
+        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix))
 
     def save_state(self, state):
         '''
