@@ -556,6 +556,8 @@ class Manticore(object):
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
         logger.debug("Terminate state %r %r ", state, state_id)
+        if state is None:
+            return
         state_visited = state.context.get('visited_since_last_fork', set())
         state_instructions_count = state.context.get('instructions_count', 0)
         with self.locked_context() as manticore_context:

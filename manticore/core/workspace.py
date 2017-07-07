@@ -159,7 +159,6 @@ class FilesystemStore(Store):
     '''
     def __init__(self, uri=None):
         '''
-
         :param uri: The path to on-disk workspace, or None.
         '''
         if not uri:
@@ -175,11 +174,13 @@ class FilesystemStore(Store):
     @contextmanager
     def save_stream(self, key, binary=False):
         '''
+        Yield a file object representing `key`
 
-        :param key:
+        :param str key: The file to save to
+        :param bool binary: Whether we should treat it as binary
         :return:
         '''
-        mode = 'w{}'.format('b' if binary else '')
+        mode = 'wb' if binary else 'w'
         with open(os.path.join(self.uri, key), mode) as f:
             yield f
 
@@ -194,9 +195,9 @@ class FilesystemStore(Store):
 
     def rm(self, key):
         '''
+        Remove file identified by `key`.
 
-        :param key:
-        :return:
+        :param str key: The file to delete
         '''
         path = os.path.join(self.uri, key)
         os.remove(path)
@@ -205,8 +206,8 @@ class FilesystemStore(Store):
         '''
         Return just the filenames that match `glob_str` inside the store directory.
 
-        :param glob_str:
-        :return:
+        :param str glob_str: A glob string, i.e. 'state_*'
+        :return: list of matched keys
         '''
         path = os.path.join(self.uri, glob_str)
         return map(lambda s: os.path.split(s)[1], glob.glob(path))
@@ -221,7 +222,7 @@ class RedisStore(Store):
         :param uri: A url for redis
         '''
 
-        # Local import to not create an explicit dependency
+        # Local import to avoid an explicit dependency
         import redis
 
         hostname, port = uri.split(':')
@@ -385,7 +386,7 @@ class ManticoreOutput(object):
     @contextmanager
     def _named_stream(self, name):
         '''
-        Create an indexed output stream i.e. '00000001_name'
+        Create an indexed output stream i.e. 'test_00000001.name'
 
         :param name: Identifier for the stream
         :return: A context-managed stream-like object
