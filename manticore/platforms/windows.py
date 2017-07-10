@@ -540,7 +540,7 @@ class ntdll(object):
     def RtlAllocateHeap(platform, handle, flags, size):
         if issymbolic(size):
             logger.info("RtlAllcoateHeap({}, {}, SymbolicSize); concretizing size".format(str(handle), str(flags)) )
-            raise ConcretizeArgumet(platform.current, 2)
+            raise ConcretizeArgument(platform.current, 2)
         else:
             raise IgnoreAPI("RtlAllocateHeap({}, {}, {:08x})".format(str(handle), str(flags), size))
 
@@ -580,9 +580,9 @@ class kernel32(object):
         try:
             key_str = readStringFromPointer(platform, cpu, lpSubKey, utf16)
         except MemoryException as me:
-            raise MemoryException("{}: {}".format(myname, me.cause), 0xFFFFFFFF)
+            raise MemoryException("{}: {}".format(myname, me.message), 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgumet(platform.current, 1)
+            raise ConcretizeArgument(platform.current, 1)
 
         logger.info("{}({}, [{}], {}, {}, {})".format(
             myname,
@@ -644,9 +644,9 @@ class kernel32(object):
         try:
             key_str = readStringFromPointer(platform, cpu, lpSubKey, utf16)
         except MemoryException as me:
-            raise MemoryException("{}: {}".format(myname, me.cause), 0xFFFFFFFF)
+            raise MemoryException("{}: {}".format(myname, me.message), 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgumet(platform.current, 1)
+            raise ConcretizeArgument(platform.current, 1)
 
         logger.info("{}({}, [{}], {}, {}, {}, {}, {}, {}, {})".format(myname,
             str(hKey), key_str, str(Reserved), str(lpClass), str(dwOptions), 
@@ -743,10 +743,10 @@ class kernel32(object):
         try:
             filename = readStringFromPointer(platform, cpu, lpFileName, utf16)
         except MemoryException as me:
-            msg = "CreateFile{}: {}".format(utf16 and "W" or "A", me.cause)
+            msg = "CreateFile{}: {}".format(utf16 and "W" or "A", me.message)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgumet(platform.current, 0)
+            raise ConcretizeArgument(platform.current, 0)
 
 
         logger.info("""CreateFile%s(
@@ -849,18 +849,18 @@ class kernel32(object):
         try:
             appname = readStringFromPointer(platform, cpu, lpApplicationName, utf16)
         except MemoryException as me:
-            msg = "{}: {}".format(myname, me.cause)
+            msg = "{}: {}".format(myname, me.message)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgumet(platform.current, 0)
+            raise ConcretizeArgument(platform.current, 0)
 
         try:
             cmdline = readStringFromPointer(platform, cpu, lpCommandLine, utf16)
         except MemoryException as me:
-            msg = "{}: {}".format(myname, me.cause)
+            msg = "{}: {}".format(myname, me.message)
             raise MemoryException(msg, 0xFFFFFFFF)
         except SymbolicAPIArgument:
-            raise ConcretizeArgumet(platform.current, 1)
+            raise ConcretizeArgument(platform.current, 1)
 
         raise IgnoreAPI("{}([{}], [{}], {}, {}, {}, {}, {}, {}, {}, {})".format(myname,
             appname, cmdline, str(lpProcessAttributes), 

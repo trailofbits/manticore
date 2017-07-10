@@ -2,7 +2,6 @@ import inspect
 from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
 from types import MethodType
 
-
 class Eventful(object):
     def __init__(self, *args, **kwargs):
         self._signals = dict()
@@ -57,25 +56,3 @@ class Eventful(object):
         ''' This forwards signal to sink '''
         assert isinstance(sink, Eventful)
         self._forwards[sink] = include_source
-
-
-
-if __name__ == '__main__':
-    class A(Eventful):
-        def callback(self):
-            print "CALLBACK", self
-
-    a = A()
-    b = A()
-    a.subscribe('lala', b.callback)
-
-    a.publish('lala')
-
-    a.publish('lala')
-
-    a.publish('lala')
-
-    del b
-    print "del "
-    print "S", a._signals.items()
-

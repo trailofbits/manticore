@@ -384,7 +384,7 @@ class Executor(Eventful):
         ''' Returns the list of states ids currently queued '''
         return list(self._states)
 
-    def generate_testcase(self, state, message = 'Testcase generated'):
+    def generate_testcase(self, state, message='Testcase generated'):
         '''
         Create a serialized description of a given state.
 
@@ -392,7 +392,7 @@ class Executor(Eventful):
         :param message: Accompanying message
         '''
         testcase_id = self._new_testcase_id()
-        logger.debug("Generating testcase No. %d  - %s", testcase_id, message)
+        logger.info("Generating testcase No. %d - %s", testcase_id, message)
 
         #broadcast test generation. This is the time for other modules 
         #to output whatever helps to understand this testcase
@@ -548,8 +548,6 @@ class Executor(Eventful):
                     trace = traceback.format_exc()
                     print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
-                    for trace_line in trace.splitlines():
-                        logger.error(trace_line) 
                     #Notify this worker is done
                     self.publish('will_terminate_state', current_state, current_state_id, 'Exception')
                     current_state = None

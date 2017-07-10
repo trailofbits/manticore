@@ -1604,7 +1604,7 @@ class Linux(Platform):
         #self.procs[procid] = None
         logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
-            raise TerminateState("ProcessExit %r"%error_code, testcase=True)
+            raise TerminateState("Program finished with exit status: %r" % error_code, testcase=True)
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
@@ -2067,29 +2067,29 @@ class SLinux(Linux):
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise ConcretizeArgumet(self, 0)
+            raise ConcretizeArgument(self, 0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise ConcretizeArgumet(self, 1)
+            raise ConcretizeArgument(self, 1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise ConcretizeArgumet(self, 2)
+            raise ConcretizeArgument(self, 2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise ConcretizeArgumet(self, 0)
+            raise ConcretizeArgument(self, 0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise ConcretizeArgumet(self, 1)
+            raise ConcretizeArgument(self, 1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise ConcretizeArgumet(self, 2)
+            raise ConcretizeArgument(self, 2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
