@@ -6,7 +6,7 @@ import logging
 import tempfile
 try:
     import cStringIO as StringIO
-except:
+except ImportError:
     import StringIO
 
 from contextlib import contextmanager
@@ -18,10 +18,10 @@ logger = logging.getLogger('WORKSPACE')
 
 
 class StateSerializer(object):
-    '''
+    """
     StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
     stream-like objects.
-    '''
+    """
     def __init__(self):
         pass
 
@@ -30,6 +30,7 @@ class StateSerializer(object):
 
     def deserialize(self, f):
         raise NotImplementedError
+
 
 class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
@@ -44,13 +45,14 @@ class PickleSerializer(StateSerializer):
     def deserialize(self, f):
         return cPickle.load(f)
 
+
 class Store(object):
-    '''
+    """
     A Store can save arbitrary keys/values (including states) and file streams. Used for generating
     output, and state saving and loading.
 
     Implement either save_value/load_value in subclasses, or save_stream/load_stream, or both.
-    '''
+    """
 
     def __init__(self, uri, state_serialization_method='pickle'):
         assert self.__class__ != Store, "The Store class can not be instantiated (create a subclass)"
@@ -63,104 +65,102 @@ class Store(object):
         else:
             raise NotImplementedError("Pickling method '{}' not supported.".format(state_serialization_method))
 
-
     # save_value/load_value and save_stream/load_stream are implemented in terms of each other. A backing store
     # can choose the pair it's best optimized for.
     def save_value(self, key, value):
-        '''
+        """
         Save an arbitrary, serializable `value` under `key`.
 
         :param str key: A string identifier under which to store the value.
         :param value: A serializable value
         :return:
-        '''
+        """
         with self.save_stream(key) as s:
             s.write(value)
 
     def load_value(self, key):
-        '''
+        """
         Load an arbitrary value identified by `key`.
 
         :param str key: The key that identifies the value
         :return: The loaded value
-        '''
+        """
         with self.load_stream(key) as s:
             return s.read()
 
     @contextmanager
     def save_stream(self, key):
-        '''
+        """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
 
         :param key:
         :return: A managed stream-like object
-        '''
+        """
         s = StringIO.StringIO()
         yield s
         self.save_value(key, s.getvalue())
 
     @contextmanager
     def load_stream(self, key):
-        '''
+        """
         Return a managed file-like object from which the calling code can read
         previously-serialized data.
 
         :param key:
         :return: A managed stream-like object
-        '''
+        """
         value = self.load_value(key)
         yield StringIO.StringIO(value)
 
-
     def save_state(self, state, key):
-        '''
+        """
         Save a state to storage.
 
-        :param state:
+        :param manticore.core.State state:
+        :param str key:
         :return:
-        '''
+        """
         with self.save_stream(key) as f:
             self._serializer.serialize(state, f)
 
     def load_state(self, key):
-        '''
+        """
+        Load a state from storage.
 
-        :param state_id:
-        :return:
-        '''
+        :param key: key that identifies state
+        :rtype: manticore.core.State
+        """
         with self.load_stream(key) as f:
             state = self._serializer.deserialize(f)
             self.rm(key)
             return state
 
     def rm(self, key):
-        '''
+        """
         Remove value identified by `key` from storage.
 
         :param str key: What to remove
-        '''
+        """
         raise NotImplementedError
 
-    def ls(self, glob):
-        '''
+    def ls(self, glob_str):
+        """
         List all keys in storage
 
         :return:
-        '''
+        """
         raise NotImplementedError
 
 
-
-
 class FilesystemStore(Store):
-    '''
+    """
     A directory-backed Manticore workspace
-    '''
+    """
     def __init__(self, uri=None):
-        '''
+        """
         :param uri: The path to on-disk workspace, or None.
-        '''
+        """
         if not uri:
             uri = os.path.abspath(tempfile.mkdtemp(prefix="mcore_", dir='./'))
 
@@ -173,54 +173,54 @@ class FilesystemStore(Store):
 
     @contextmanager
     def save_stream(self, key, binary=False):
-        '''
+        """
         Yield a file object representing `key`
 
         :param str key: The file to save to
         :param bool binary: Whether we should treat it as binary
         :return:
-        '''
+        """
         mode = 'wb' if binary else 'w'
         with open(os.path.join(self.uri, key), mode) as f:
             yield f
 
     @contextmanager
     def load_stream(self, key):
-        '''
+        """
         :param key:
         :return:
-        '''
+        """
         with open(os.path.join(self.uri, key), 'r') as f:
             yield f
 
     def rm(self, key):
-        '''
+        """
         Remove file identified by `key`.
 
         :param str key: The file to delete
-        '''
+        """
         path = os.path.join(self.uri, key)
         os.remove(path)
 
     def ls(self, glob_str):
-        '''
+        """
         Return just the filenames that match `glob_str` inside the store directory.
 
         :param str glob_str: A glob string, i.e. 'state_*'
         :return: list of matched keys
-        '''
+        """
         path = os.path.join(self.uri, glob_str)
         return map(lambda s: os.path.split(s)[1], glob.glob(path))
 
 
 class RedisStore(Store):
-    '''
+    """
     A redis-backed Manticore workspace
-    '''
+    """
     def __init__(self, uri=None):
-        '''
+        """
         :param uri: A url for redis
-        '''
+        """
 
         # Local import to avoid an explicit dependency
         import redis
@@ -231,22 +231,22 @@ class RedisStore(Store):
         super(RedisStore, self).__init__(uri)
 
     def save_value(self, key, value):
-        '''
+        """
         Save an arbitrary, serializable `value` under `key`.
 
         :param str key: A string identifier under which to store the value.
         :param value: A serializable value
         :return:
-        '''
+        """
         return self._client.set(key, value)
 
     def load_value(self, key):
-        '''
+        """
         Load an arbitrary value identified by `key`.
 
         :param str key: The key that identifies the value
         :return: The loaded value
-        '''
+        """
         return self._client.get(key)
 
     def rm(self, key):
@@ -255,8 +255,9 @@ class RedisStore(Store):
     def ls(self, glob_str):
         return self._client.keys(glob_str)
 
+
 def _create_store(desc):
-    '''
+    """
     Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
 
     Valid descriptors:
@@ -265,20 +266,20 @@ def _create_store(desc):
 
     :param str desc: Store descriptor
     :return: Store instance
-    '''
-    type, uri = ('fs', None) if desc is None else desc.split(':', 1)
+    """
+    type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
 
-    if type == 'fs':
+    if type_ == 'fs':
         return FilesystemStore(uri)
-    elif type == 'redis':
+    elif type_ == 'redis':
         return RedisStore(uri)
     else:
         raise NotImplementedError("Storage type '%s' not supported.", type)
 
 class Workspace(object):
-    '''
+    """
     A workspace maintains a list of states to run and assigns them IDs.
-    '''
+    """
 
     def __init__(self, lock, desc=None):
         self._store = _create_store(desc)
@@ -290,8 +291,10 @@ class Workspace(object):
 
     def try_loading_workspace(self):
         state_names = self._store.ls('{}*'.format(self._prefix))
+
         def get_state_id(name):
             return int(name[len(self._prefix):-len(self._suffix)], 16)
+
         state_ids = map(get_state_id, state_names)
 
         if not state_ids:
@@ -301,56 +304,54 @@ class Workspace(object):
 
         return state_ids
 
+    @sync
     def _get_id(self):
-        '''
+        """
         Get a unique state id.
 
         :rtype: int
-        '''
-        try:
-            self._lock.acquire()
-            id = self._last_id
-            self._last_id = id + 1
-            return id
-        finally:
-            self._lock.release()
+        """
+        id_ = self._last_id
+        self._last_id = id_ + 1
+        return id_
 
     def load_state(self, state_id):
-        '''
+        """
         Load a state from storage identified by `state_id`.
 
         :param state_id: The state reference of what to load
         :return: The deserialized state
         :rtype: State
-        '''
+        """
         return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix))
 
     def save_state(self, state):
-        '''
+        """
         Save a state to storage, return identifier.
 
-        :param state_id: The state reference of what to load
-        :param bool final: Whether the state is finalized (i.e. testcase)
+        :param state: The state to save
         :return: New state id
         :rtype: int
-        '''
-        id = self._get_id()
+        """
+        id_ = self._get_id()
         self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id, self._suffix))
-        return id
-
+        return id_
 
 
 class ManticoreOutput(object):
-    '''
+    """
     Functionality related to producing output. Responsible for generating state summaries,
     coverage information, etc.
-    '''
+
+    Invoked only from :class:`manticore.Manticore` from a single parent process, so
+    locking is not required.
+    """
     def __init__(self, desc=None):
-        '''
+        """
         Create an object capable of producing Manticore output.
 
         :param desc: A descriptor ('type:uri') of where to write output.
-        '''
+        """
         self._store = _create_store(desc)
         self._last_id = 0
 
@@ -359,15 +360,14 @@ class ManticoreOutput(object):
         return self._store.uri
 
     def save_testcase(self, state, message=''):
-        '''
+        """
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
 
         :param State state: The state to serialize
-        :param int testcase_id: Identifier for the state
-        :param str state: Optional message to include
+        :param str message: The message to add to output
         :return: A state id representing the saved state
-        '''
+        """
 
         self.save_summary(state, message)
         self.save_trace(state)
@@ -385,14 +385,12 @@ class ManticoreOutput(object):
 
     @contextmanager
     def _named_stream(self, name):
-        '''
+        """
         Create an indexed output stream i.e. 'test_00000001.name'
 
         :param name: Identifier for the stream
         :return: A context-managed stream-like object
-        '''
-
-
+        """
         with self._store.save_stream('test_{:08x}.{}'.format(self._last_id, name)) as s:
             yield s
 
@@ -404,7 +402,7 @@ class ManticoreOutput(object):
             memories = set()
             for cpu in filter(None, state.platform.procs):
                 idx = state.platform.procs.index(cpu)
-                summary.write("================ PROC: %02d ================\n"%idx)
+                summary.write("================ PROC: %02d ================\n" % idx)
                 summary.write("Memory:\n")
                 if hash(cpu.memory) not in memories:
                     summary.write(str(cpu.memory).replace('\n', '\n  '))
@@ -414,7 +412,7 @@ class ManticoreOutput(object):
 
                 if hasattr(cpu, "instruction") and cpu.instruction is not None:
                     i = cpu.instruction
-                    summary.write("  Instruction: 0x%x\t(%s %s)\n"%(
+                    summary.write("  Instruction: 0x%x\t(%s %s)\n" % (
                         i.address, i.mnemonic, i.op_str))
                 else:
                     summary.write("  Instruction: {symbolic}\n")
@@ -435,7 +433,7 @@ class ManticoreOutput(object):
         with self._named_stream('txt') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
-                f.write('%s: %s\n'%(symbol.name, repr(buf)))
+                f.write('%s: %s\n' % (symbol.name, repr(buf)))
 
     def save_syscall_trace(self, state):
         with self._named_stream('syscalls') as f:
@@ -443,16 +441,17 @@ class ManticoreOutput(object):
 
     def save_fds(self, state):
         with self._named_stream('stdout') as _out:
-         with self._named_stream('stdout') as _err:
-          with self._named_stream('stdin') as _in:
-              for name, fd, data in state.platform.syscall_trace:
-                  if name in ('_transmit', '_write'):
-                      if   fd == 1: _out.write(''.join(str(c) for c in data))
-                      elif fd == 2: _err.write(''.join(str(c) for c in data))
-                  if name in ('_receive', '_read') and fd == 0:
-                      try:
-                          for c in data:
-                              _in.write(chr(solver.get_value(state.constraints, c)))
-                      except SolverException, e:
-                          _in.write('{SolverException}')
-
+            with self._named_stream('stdout') as _err:
+                with self._named_stream('stdin') as _in:
+                    for name, fd, data in state.platform.syscall_trace:
+                        if name in ('_transmit', '_write'):
+                            if fd == 1:
+                                _out.write(''.join(str(c) for c in data))
+                            elif fd == 2:
+                                _err.write(''.join(str(c) for c in data))
+                        if name in ('_receive', '_read') and fd == 0:
+                            try:
+                                for c in data:
+                                    _in.write(chr(solver.get_value(state.constraints, c)))
+                            except SolverException:
+                                _in.write('{SolverException}')
