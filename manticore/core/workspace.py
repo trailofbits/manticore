@@ -435,7 +435,7 @@ class ManticoreOutput(object):
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check
-        assert solver.check(state.constraints)
+        # assert solver.check(state.constraints)
 
         with self._named_stream('smt') as f:
             f.write(str(state.constraints))
