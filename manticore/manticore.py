@@ -613,11 +613,8 @@ class Manticore(object):
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-
-        # Lock the context for exclusivitiy, not to use it
-        with self.locked_context() as _:
-            testcase_id = self._output.save_testcase(state, message)
-            logger.debug("Generating testcase No. %d - %s", testcase_id, message)
+        testcase_id = self._output.save_testcase(state, message)
+        logger.debug("Generated testcase No. %d - %s", testcase_id, message)
 
     def _produce_profiling_data(self):
         class PstatsFormatted:

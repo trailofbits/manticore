@@ -1,6 +1,7 @@
 import os
 import sys
 import glob
+import signal
 import cPickle
 import logging
 import tempfile
@@ -10,11 +11,16 @@ except ImportError:
     import StringIO
 
 from contextlib import contextmanager
+from multiprocessing.managers import SyncManager
 
 from .smtlib import solver
 from .smtlib.solver import SolverException
 
 logger = logging.getLogger('WORKSPACE')
+
+#This is the single global manager that will handle all shared memory among workers
+manager = SyncManager()
+manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
 
 
 class StateSerializer(object):
@@ -365,10 +371,18 @@ class ManticoreOutput(object):
         """
         self._store = _create_store(desc)
         self._last_id = 0
+        self._lock = manager.Condition(manager.RLock())
 
     @property
     def uri(self):
         return self._store.uri
+
+    @sync
+    def _get_id(self):
+        id_ = self._last_id
+        self._last_id += 1
+        return id_
+
 
     def save_testcase(self, state, message=''):
         """
@@ -386,10 +400,9 @@ class ManticoreOutput(object):
         self.save_input_symbols(state)
         self.save_syscall_trace(state)
         self.save_fds(state)
-        key = 'test_{:08x}.pkl'.format(self._last_id)
-        self._store.save_state(state, key)
 
-        self._last_id += 1
+        key = 'test_{:08x}.pkl'.format(self._get_id())
+        self._store.save_state(state, key)
 
     def save_stream(self, *rest):
         return self._store.save_stream(*rest)
