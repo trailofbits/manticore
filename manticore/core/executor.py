@@ -69,10 +69,8 @@ class Executor(object):
     It handles all exceptional conditions (system calls, memory faults, concretization, etc.)
     '''
 
-    def __init__(self, initial=None, workspace=None, policy='random', context=None, **options):
-        self.workspace = workspace
-
-        # Signals / Callbacks handlers will be invoked potentially at different 
+    def __init__(self, initial=None, workspace='', policy='random', context=None, **options):
+        # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
 
         #Executor signals
@@ -83,7 +81,6 @@ class Executor(object):
         self.will_load_state = Signal()
         self.will_terminate_state = Signal()
         self.will_generate_testcase = Signal()
-
 
         #Be sure every state will forward us their signals
         self.will_load_state += self._register_state_callbacks
@@ -100,7 +97,7 @@ class Executor(object):
         #Number of currently running workers. Initially no runnign workers
         self._running = manager.Value('i', 0 )
 
-        self._new_workspace = Workspace(self._lock, 'fs:'+workspace)
+        self._workspace = Workspace(self._lock, 'fs:'+workspace)
 
         #Executor wide shared context
         if context is None:
@@ -116,7 +113,7 @@ class Executor(object):
             # We loaded state ids, now load the actual state
 
             current_state_id = self.get()
-            initial = self._new_workspace.load_state(current_state_id)
+            initial = self._workspace.load_state(current_state_id)
             self._register_state_callbacks(initial, current_state_id)
 
         self.add(initial)
@@ -154,7 +151,7 @@ class Executor(object):
             priority queue
         '''
         #save the state to secondary storage
-        state_id = self._new_workspace.save_state(state)
+        state_id = self._workspace.save_state(state)
         self.will_store_state(state, state_id)
         self.put(state_id)
         return state_id
@@ -162,7 +159,7 @@ class Executor(object):
     def load_workspace(self):
         #Browse and load states in a workspace in case we are trying to 
         # continue from paused run
-        loaded_state_ids = self._new_workspace.try_loading_workspace()
+        loaded_state_ids = self._workspace.try_loading_workspace()
         if not loaded_state_ids:
             return False
 
@@ -170,19 +167,6 @@ class Executor(object):
             self._states.append(id)
 
         return True
-
-    ################################################
-    # Workspace filenames 
-    def _workspace_filename(self, filename):
-        return os.path.join(self.workspace, filename)
-
-    def _state_filename(self, state_id):
-        filename = 'state_%06d.pkl'%state_id
-        return self._workspace_filename(filename)
-
-    def _testcase_filename(self, state_id):
-        filename = 'test_%06d.pkl'%state_id
-        return self._workspace_filename(filename)
 
     ###############################################
     # Synchronization helpers
@@ -344,7 +328,7 @@ class Executor(object):
                             current_state_id = self.get()
                             #load selected state from secondary storage
                             if current_state_id is not None:
-                                current_state = self._new_workspace.load_state(current_state_id)
+                                current_state = self._workspace.load_state(current_state_id)
                                 self.will_load_state(current_state, current_state_id)
                                 #notify siblings we have a state to play with
                             self._start_run()
