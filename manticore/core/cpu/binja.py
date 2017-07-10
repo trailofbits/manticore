@@ -81,6 +81,7 @@ class BinjaRegisterFile(RegisterFile):
             raise NotImplementedError
 
         self.registers[ilreg.full_width_reg] = full_width_reg_value
+        return full_width_reg_value
 
     def read(self, reg):
         from binaryninja import Architecture
@@ -159,21 +160,8 @@ class BinjaOperand(Operand):
 
         cpu, op = self.cpu, self.op
         if self.type == 'register':
-            value = cpu.read_register(self.op)
-            return value
+            return cpu.read_register(self.op)
         elif self.type == 'instruction':
-            if op.operation == enums.LowLevelILOperation.LLIL_CONST:
-                # FIXME ugly hack to see if  CONST is a CONST_PTR
-                # It is always the source that might be a const pointer, but
-                # this information seems to only be present in LowLevelIL?
-                llil = cpu.disasm.current_func.get_low_level_il_at(op.address)
-                if (hasattr(llil, 'src') and
-                        llil.src.operation == (enums.LowLevelILOperation
-                                               .LLIL_CONST_PTR)):
-                    implementation = getattr(cpu, "CONST_PTR")
-                    #  print "Calling " + op.operation.name
-                    return implementation(*op.operands)
-
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             #  print "Calling " + op.operation.name
             return implementation(*op.operands)
@@ -183,13 +171,12 @@ class BinjaOperand(Operand):
     def write(self, value):
         cpu, op = self.cpu, self.op
         if self.type == 'register':
-            cpu.write_register(str(op), value)
+            return cpu.write_register(str(op), value)
         elif self.type == 'instruction':
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             return implementation(*op.operands)
         else:
             raise NotImplementedError("write_operand type", op.type)
-        return value & ((1 << self.size) - 1)
 
     def __getattr__(self, name):
         return getattr(self.op, name)
@@ -503,14 +490,14 @@ class BinjaCpu(Cpu):
         # if we have an (real) instruction from the IF family, the next
         # instruction should have a next address different than the current.
         next_il = cpu.disasm.current_func.lifted_il[idx]
-        if next_il.address != cpu.disasm.current_func.lifted_il[idx]:
+        if next_il.address != cpu.disasm.current_pc:
             cpu.__class__.PC = next_il.address + cpu.disasm.entry_point_diff
             return
 
         # The next IL instruction has the same PC. Probably a real assembly
         # instruction was resolved into multiple IL instrucitons. Clear the
         # queue and execute them here
-        assert (cpu.disasm.il_queue[-1].operation ==
+        assert (cpu.disasm.il_queue[-1][1].operation ==
                 enums.LowLevelILOperation.LLIL_GOTO)
         del cpu.disasm.il_queue[:]
 
@@ -519,7 +506,7 @@ class BinjaCpu(Cpu):
         # make sure we don't also execute on the False branch
         break_idx = true.op if not res else false.op
 
-        while idx != break_idx and  next_il.address == cpu.disasm.current_pc:
+        while idx != break_idx and next_il.address == cpu.disasm.current_pc:
             goto_addr = None
             implementation = getattr(cpu, next_il.operation.name[len("LLIL_"):])
             next_il.operands = [BinjaOperand(cpu, x) for x in next_il.operands]
@@ -527,11 +514,11 @@ class BinjaCpu(Cpu):
             cpu._icount += 1
             goto_addr = implementation(*next_il.operands)
 
-            if logger.level == logging.DEBUG :
-                logger.debug(str(next_il))
-                for l in cpu.render_registers():
-                    register_logger = logging.getLogger("REGISTERS")
-                    register_logger.debug(l)
+            #  if logger.level == logging.DEBUG:
+                #  logger.debug(str(next_il))
+                #  for l in cpu.render_registers():
+                    #  register_logger = logging.getLogger("REGISTERS")
+                    #  register_logger.debug(l)
 
             idx += 1
             next_il = cpu.disasm.current_func.lifted_il[idx]
@@ -552,7 +539,7 @@ class BinjaCpu(Cpu):
 
 
     def LOAD(cpu, expr):
-        return cpu.read_int(expr.read(), expr.size * 8)
+        return cpu.read_int(expr.read(), cpu.disasm.insn_size * 8)
 
 
     def LOW_PART(cpu, expr):
@@ -644,7 +631,8 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def SET_REG(cpu, dest, src):
-        dest.write(src.read())
+        value = src.read()
+        dest.write(value)
 
     def SET_REG_SPLIT(cpu):
         raise NotImplementedError
@@ -740,8 +728,11 @@ def x86_add(cpu, dest, src, carry=False):
         cv = Operators.ITEBV(dest.size, cpu.CF, 1, 0)
         to_add = src_v + cv
 
-    res = dest.write((dest_v + to_add) & MASK)
 
+    # FIXME ignore this for now, we will deal with it if we are to
+    # store the register properly.
+    #  res = dest.write((dest_v + to_add) & MASK)
+    res = dest_v + to_add
     #Affected flags: oszapc
     tempCF = Operators.OR(_carry_ult(res, dest_v & MASK),
                           _carry_ult(res, src_v & MASK))

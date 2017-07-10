@@ -181,6 +181,8 @@ class BinjaILDisasm(Disasm):
             except IndexError:
                 if str(self.llil) == "noreturn":
                     return 0
+                else:
+                    raise NotImplementedError
             except AssertionError:
                 print "ASSERTION ERROR FOR SIZE " + str(self.llil)
                 raise AssertionError
