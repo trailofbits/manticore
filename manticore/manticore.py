@@ -68,7 +68,7 @@ def makeEVM(args):
 def makeDecree(args):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, ','.join(args.programs))
-    initial_state = State(constraints, model)
+    initial_state = State(constraints, platform)
     logger.info('Loading program %s', args.programs)
 
     #if args.data != '':
