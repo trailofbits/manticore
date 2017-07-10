@@ -301,7 +301,7 @@ class Workspace(object):
     def __init__(self, lock, desc=None):
         self._store = _create_store(desc)
         self._serializer = PickleSerializer()
-        self._last_id = 0
+        self._last_id = manager.Value('i', 0)
         self._lock = lock
         self._prefix = 'state_'
         self._suffix = '.pkl'
@@ -317,7 +317,7 @@ class Workspace(object):
         if not state_ids:
             return []
 
-        self._last_id = max(state_ids) + 1
+        self._last_id.value = max(state_ids) + 1
 
         return state_ids
 
@@ -328,8 +328,8 @@ class Workspace(object):
 
         :rtype: int
         """
-        id_ = self._last_id
-        self._last_id = id_ + 1
+        id_ = self._last_id.value
+        self._last_id.value += 1
         return id_
 
     def load_state(self, state_id):
@@ -371,6 +371,7 @@ class ManticoreOutput(object):
         """
         self._store = _create_store(desc)
         self._last_id = 0
+        self._id_gen = manager.Value('i', self._last_id)
         self._lock = manager.Condition(manager.RLock())
 
     @property
@@ -378,11 +379,12 @@ class ManticoreOutput(object):
         return self._store.uri
 
     @sync
-    def _get_id(self):
-        id_ = self._last_id
-        self._last_id += 1
-        return id_
+    def _increment_id(self):
+        self._last_id = self._id_gen.value
+        self._id_gen.value += 1
 
+    def _named_key(self, suffix):
+        return 'test_{:08x}.{}'.format(self._last_id, suffix)
 
     def save_testcase(self, state, message=''):
         """
@@ -394,15 +396,18 @@ class ManticoreOutput(object):
         :return: A state id representing the saved state
         """
 
+        self._increment_id()
+
         self.save_summary(state, message)
         self.save_trace(state)
         self.save_constraints(state)
         self.save_input_symbols(state)
         self.save_syscall_trace(state)
         self.save_fds(state)
+        self._store.save_state(state, self._named_key('pkl'))
 
-        key = 'test_{:08x}.pkl'.format(self._get_id())
-        self._store.save_state(state, key)
+        print ' generating ', self._last_id
+
 
     def save_stream(self, *rest):
         return self._store.save_stream(*rest)
@@ -415,7 +420,7 @@ class ManticoreOutput(object):
         :param name: Identifier for the stream
         :return: A context-managed stream-like object
         """
-        with self._store.save_stream('test_{:08x}.{}'.format(self._last_id, name)) as s:
+        with self._store.save_stream(self._named_key(name)) as s:
             yield s
 
     def save_summary(self, state, message):
