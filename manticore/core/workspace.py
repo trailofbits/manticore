@@ -276,6 +276,17 @@ def _create_store(desc):
     else:
         raise NotImplementedError("Storage type '%s' not supported.", type)
 
+# This is copied from Executor to not create a dependency on the naming of the lock field
+def sync(f):
+    """ Synchronization decorator. """
+    def newFunction(self, *args, **kw):
+        self._lock.acquire()
+        try:
+            return f(self, *args, **kw)
+        finally:
+            self._lock.release()
+    return newFunction
+
 class Workspace(object):
     """
     A workspace maintains a list of states to run and assigns them IDs.
