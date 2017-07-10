@@ -12,6 +12,7 @@ setup(
         'pyelftools',
         'unicorn',
         'ply',
+        'sha3',
     ],
     extras_require={
         'dev': [
