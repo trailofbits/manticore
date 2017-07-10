@@ -345,7 +345,7 @@ class Workspace(object):
         :rtype: int
         """
         id_ = self._get_id()
-        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id, self._suffix))
+        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix))
         return id_
 
 
