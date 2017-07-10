@@ -168,15 +168,14 @@ class BinjaOperand(Operand):
                 # this information seems to only be present in LowLevelIL?
                 llil = cpu.disasm.current_func.get_low_level_il_at(op.address)
                 if (hasattr(llil, 'src') and
-                        llil.src.operation == enums.LowLevelILOperation.LLIL_CONST_PTR):
+                        llil.src.operation == (enums.LowLevelILOperation
+                                               .LLIL_CONST_PTR)):
                     implementation = getattr(cpu, "CONST_PTR")
                     #  print "Calling " + op.operation.name
                     return implementation(*op.operands)
 
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             #  print "Calling " + op.operation.name
-            if op.operation == enums.LowLevelILOperation.LLIL_LOAD:
-                return implementation(*op.operands, expr_size=op.size)
             return implementation(*op.operands)
         else:
             raise NotImplementedError("write_operand type", op.type)
@@ -314,12 +313,15 @@ class BinjaCpu(Cpu):
         return value
 
     def update_flags(cpu, flags=None, args=None):
+        f = cpu.disasm.current_func
+        i = f.get_lifted_il_at(cpu.disasm.current_pc)
+        mod_flags = f.get_flags_written_by_lifted_il_instruction(i.instr_index)
+        if not mod_flags:
+            return
+
         if flags is None:
             assert args is not None
-            f = cpu.disasm.current_func
-            i = f.get_lifted_il_at(cpu.disasm.current_pc)
-            flags = f.get_flags_written_by_lifted_il_instruction(i.instr_index)
-
+            flags = mod_flags
             handlers = {
                 'c': _carry_ult(args["left"], args["right"]),
                 'p': _parity_flag(args["res"]),
@@ -433,6 +435,8 @@ class BinjaCpu(Cpu):
         else:
             raise NotImplementedError
         cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
+        # return a value since this will be used by an IF ending in a GOTO
+        return cpu.__class__.PC
 
     def IF(cpu, condition, true, false):
         cond = condition.read()
@@ -446,11 +450,15 @@ class BinjaCpu(Cpu):
         elif cond == enums.LowLevelILFlagCondition.LLFC_NE:
             res = cpu.regfile.registers['zf'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_NEG:
-            print cond
+            print cod
             raise NotImplementedError
         elif cond == enums.LowLevelILFlagCondition.LLFC_NO:
+            print cond
+            raise NotImplementedError
             res = cpu.regfile.registers['of'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_O:
+            print cond
+            raise NotImplementedError
             res = cpu.regfile.registers['of'] == 1
         elif cond == enums.LowLevelILFlagCondition.LLFC_POS:
             print cond
@@ -462,18 +470,28 @@ class BinjaCpu(Cpu):
             print cond
             raise NotImplementedError
         elif cond == enums.LowLevelILFlagCondition.LLFC_SLE:
-            print cond
-            raise NotImplementedError
+            res = Operators.OR(cpu.regfile.registers['zf'],
+                               (cpu.regfile.registers['sf'] !=
+                                cpu.regfile.registers['of']))
         elif cond == enums.LowLevelILFlagCondition.LLFC_SLT:
             print cond
             raise NotImplementedError
         elif cond == enums.LowLevelILFlagCondition.LLFC_UGE:
+            print cond
+            raise NotImplementedError
             res = cpu.regfile.registers['cf'] == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_UGT:
-            res = (cpu.regfile.registers['zf'] & cpu.regfile.registers['cf']) == 0
+            print cond
+            raise NotImplementedError
+            res = ((cpu.regfile.registers['zf'] &
+                    cpu.regfile.registers['cf'])) == 0
         elif cond == enums.LowLevelILFlagCondition.LLFC_ULE:
+            print cond
+            raise NotImplementedError
             res = (cpu.regfile.registers['zf'] | cpu.regfile.registers['cf']) == 1
         elif cond == enums.LowLevelILFlagCondition.LLFC_ULT:
+            print cond
+            raise NotImplementedError
             res = cpu.regfile.registers['cf'] == 1
         else:
             print cond
@@ -482,20 +500,43 @@ class BinjaCpu(Cpu):
         idx = true.op if res else false.op
         assert isinstance(idx, long)
 
+        # if we have an (real) instruction from the IF family, the next
+        # instruction should have a next address different than the current.
         next_il = cpu.disasm.current_func.lifted_il[idx]
-        # it could be that a single assembly instruction results in multiple
-        # IL instructions involving an IF (e.g., `sete al {0,0} {0x1}`). In
-        # case the next address is the same as the current instruction's, just
-        # advance the index in the IL until we find a new address
-        while next_il.address == cpu.disasm.current_pc:
+        if next_il.address != cpu.disasm.current_func.lifted_il[idx]:
+            cpu.__class__.PC = next_il.address + cpu.disasm.entry_point_diff
+            return
+
+        # The next IL instruction has the same PC. Probably a real assembly
+        # instruction was resolved into multiple IL instrucitons. Clear the
+        # queue and execute them here
+        assert (cpu.disasm.il_queue[-1].operation ==
+                enums.LowLevelILOperation.LLIL_GOTO)
+        del cpu.disasm.il_queue[:]
+
+        # the sequence of instructions sharing the same PC includes both the
+        # True and False branches. If we start executing at the True branch,
+        # make sure we don't also execute on the False branch
+        break_idx = true.op if not res else false.op
+
+        while idx != break_idx and  next_il.address == cpu.disasm.current_pc:
+            goto_addr = None
             implementation = getattr(cpu, next_il.operation.name[len("LLIL_"):])
             next_il.operands = [BinjaOperand(cpu, x) for x in next_il.operands]
-            implementation(*next_il.operands)
+            cpu.disasm.insn_size = next_il.size
+            cpu._icount += 1
+            goto_addr = implementation(*next_il.operands)
+
+            if logger.level == logging.DEBUG :
+                logger.debug(str(next_il))
+                for l in cpu.render_registers():
+                    register_logger = logging.getLogger("REGISTERS")
+                    register_logger.debug(l)
+
             idx += 1
             next_il = cpu.disasm.current_func.lifted_il[idx]
-        else:
-            addr = next_il.address + cpu.disasm.entry_point_diff
-        cpu.__class__.PC = addr
+        assert goto_addr is not None
+        cpu.__class__.PC = goto_addr
 
 
     def JUMP(cpu, expr):
@@ -510,8 +551,8 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
 
-    def LOAD(cpu, expr, expr_size=None):
-        return cpu.read_int(expr.read(), expr_size * 8)
+    def LOAD(cpu, expr):
+        return cpu.read_int(expr.read(), expr.size * 8)
 
 
     def LOW_PART(cpu, expr):
@@ -560,7 +601,6 @@ class BinjaCpu(Cpu):
     def NOP(cpu):
         return
 
-
     def NORET(cpu):
         raise NotImplementedError
 
@@ -572,18 +612,15 @@ class BinjaCpu(Cpu):
         x86_update_logic_flags(cpu, res, left.op.size * 8)
         return res
 
-
     def POP(cpu):
         # FIXME this is wrong! get it from the destination register!
         return cpu.pop(cpu.address_bit_size)
-
 
     def PUSH(cpu, src):
         cpu.push(src.read(), src.op.size * 8)
 
     def REG(cpu, expr):
         return cpu.regfile.read(expr.op)
-
 
     def RET(cpu):
         raise NotImplementedError
@@ -606,39 +643,14 @@ class BinjaCpu(Cpu):
     def SET_FLAG(cpu):
         raise NotImplementedError
 
-
-    def _get_op_size(cpu, op):
-        from binaryninja.lowlevelil import ILRegister
-        # FIXME integrate all of this into BinjaOperand
-        if isinstance(op, ILRegister):
-            return op.info.size
-        elif isinstance(op, BinjaOperand):
-            return op.size
-        else:
-            raise NotImplementedError
-
-
     def SET_REG(cpu, dest, src):
-        # FIXME size?
-        dest_size = cpu._get_op_size(dest)
-        src_size = cpu._get_op_size(dest)
         dest.write(src.read())
-        #  return
-        #  print "Would write " + hex(src.read())
-        #  if dest_size > src_size:
-            #  print "Writing " + hex(Operators.ZEXTEND(src.read(), src_size))
-            #  dest.write(Operators.ZEXTEND(src.read(), src_size))
-        #  else:
-            #  print "Writing 2 " + hex(Operators.EXTRACT(src.read(), 0, src_size))
-            #  dest.write(Operators.EXTRACT(src.read(), 0, src_size))
-
 
     def SET_REG_SPLIT(cpu):
         raise NotImplementedError
 
-
     def STORE(cpu, dest, src):
-        cpu.write_int(dest.read(), src.read(), dest.op.size * 8)
+        cpu.write_int(dest.read(), src.read(), cpu.disasm.insn_size * 8)
 
     def SUB(cpu, left, right):
         left_v = left.read()

@@ -78,6 +78,12 @@ class BinjaILDisasm(Disasm):
         self.current_func = None
         # current pc
         self.current_pc = None
+        # queue of il instructions at current PC. If we get called again from
+        # the same PC, we will pop from the queue
+        self.il_queue = []
+
+        self.insn_size = None
+
         super(BinjaILDisasm, self).__init__(view)
 
     def _fix_addr(self, addr):
@@ -90,6 +96,37 @@ class BinjaILDisasm(Disasm):
             self.entry_point_diff = addr - self.view.entry_point
 
         return addr - self.entry_point_diff
+
+    def _pop_from_il_queue(self, pc):
+        # queue contains tuples of the form (idx, il_insn)
+        if self.il_queue != []:
+            # if we have multiple ils for the same pc, pop from the queue
+            if self.il_queue[0][1].address == pc:
+                return self.il_queue.pop()[1]
+            else:
+                # somehow we have a queue but we are now at a different pc,
+                # clear the queue
+                del self.il_queue[:]
+
+        # get current il
+        il = self.current_func.get_lifted_il_at(pc)
+
+        # add all other instructions with same address to the queue
+        next_idx = il.instr_index + 1
+        next_il = self.current_func.lifted_il[next_idx]
+        if next_il is None:
+            return il
+        while next_il.address == pc:
+            self.il_queue.append((next_idx, next_il))
+            next_idx += 1
+            try:
+                next_il = self.current_func.lifted_il[next_idx]
+            except IndexError:
+                break
+
+        # return the current instruction
+        return il
+
 
     def disassemble_instruction(self, _, pc):
         """Get next instruction based on Capstone disassembler
@@ -109,15 +146,20 @@ class BinjaILDisasm(Disasm):
             assert len(blocks) == 1
             self.current_func = blocks[0].function
 
-        il = self.current_func.get_lifted_il_at(pc)
+        il = self._pop_from_il_queue(pc)
+        self.insn_size = il.size
         self.current_pc = pc
-        return self.BinjaILInstruction(self.view, il, self.entry_point_diff)
+        return self.BinjaILInstruction(self.view,
+                                       il,
+                                       self.entry_point_diff,
+                                       self.current_func)
 
 
     class BinjaILInstruction(Instruction):
-        def __init__(self, view, llil, offset):
+        def __init__(self, view, llil, offset, function):
             self.view = view
             self.llil = llil
+            self.function = function
             self.offset = offset
             super(BinjaILDisasm.BinjaILInstruction, self).__init__()
 
@@ -126,9 +168,22 @@ class BinjaILDisasm(Disasm):
 
         @property
         def size(self):
+            import binaryninja.enums as enums
             assert self.llil.instr_index < len(self.llil.function)
-            next_addr = self.llil.function[self.llil.instr_index + 1].address
-            return next_addr - self.llil.address
+            try:
+                if self.sets_pc:
+                    return 0
+                else:
+                    next_il = self.function.lifted_il[self.llil.instr_index + 1]
+                    next_addr = next_il.address
+                assert next_addr >= self.llil.address
+                return next_addr - self.llil.address
+            except IndexError:
+                if str(self.llil) == "noreturn":
+                    return 0
+            except AssertionError:
+                print "ASSERTION ERROR FOR SIZE " + str(self.llil)
+                raise AssertionError
 
         @property
         def mnemonic(self):

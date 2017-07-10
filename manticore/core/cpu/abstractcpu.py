@@ -661,7 +661,8 @@ class Cpu(object):
         '''
         #No dynamic code!!! #TODO!
         #Check if instruction was already decoded
-        if pc in self._instruction_cache:
+        if (pc in self._instruction_cache and
+                not isinstance(self.__class__.disasm, BinjaILDisasm)):
             return self._instruction_cache[pc]
 
         text = ''
@@ -696,8 +697,10 @@ class Cpu(object):
         # directly and without going through a platform. This only happens
         # in testcases
         if not self.disasm:
-            print "INITIALIZING CAPSTONE DISASM"
-            self.__class__.disasm = init_disassembler('capstone', self.arch, self.mode, None)
+            self.__class__.disasm = init_disassembler('capstone',
+                                                      self.arch,
+                                                      self.mode,
+                                                      None)
         try:
             insn = self.disasm.disassemble_instruction(code, pc)
         except StopIteration as e:
@@ -732,8 +735,8 @@ class Cpu(object):
         '''
         Decode, and execute one instruction pointed by register PC
         '''
-        #  # FIXME (theo) Debugging Aid
-        #  if hex(self.PC) == "0x400d31L":
+        # FIXME (theo) Debugging Aid
+        #  if hex(self.PC) == "0x400d52L":
             #  raise NotImplementedError
 
         if issymbolic(self.PC):
@@ -769,11 +772,10 @@ class Cpu(object):
         implementation = getattr(self, name, fallback_to_emulate)
 
         if logger.level == logging.DEBUG :
-            logger.debug(self.render_instruction())
+            logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        #  print "Executing " + str(insn) + " SIZE: " + str(insn.size)
         implementation(*insn.operands)
 
         # In case we are executing IL instructions, we could iteratively
@@ -807,13 +809,14 @@ class Cpu(object):
         # line present.
         del emu
 
-    def render_instruction(self):
+    def render_instruction(self, insn=None):
         try:
-            insn = self.instruction
+            if insn is None:
+                insn = self.instruction
             return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
                                                       insn.mnemonic,
                                                       insn.op_str)
-        except:
+        except Exception as e:
             return "{can't decode instruction}"
 
     def render_register(self, reg_name):
