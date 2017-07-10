@@ -22,7 +22,7 @@ from .core.state import State, TerminateState
 from .core.parser import parse
 from .core.smtlib import solver, Expression, Operators, SolverException, Array, ConstraintSet
 from core.smtlib import BitVec, Bool
-from .platforms import linux, decree, windows
+from .platforms import linux, decree, windows, evm
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger('MANTICORE')
@@ -30,10 +30,45 @@ logger = logging.getLogger('MANTICORE')
 
 
 
+def makeEVM(args):
+    constraints = ConstraintSet()
+    import ast
+    contract = {}
+    for l in open(args.programs[0]).readlines():
+        l = l.strip()
+        if l.startswith('#') or not '=' in l :
+            continue
+        name,value = l.split('=')
+        name = name.strip().lower()
+        contract[name]=ast.literal_eval(value)
+
+    contract['data'] = contract.get('data', '+'*256)
+
+    #attack, constraints, address, origin, price, data, sender, value, bytecode, header, depth):
+    bytecode=contract['bytecode']
+    address=contract['address']
+    origin=contract['sender']
+    sender=contract['sender']
+    value=contract['value']
+    header=contract['header']
+    price=contract['price']
+    data = constraints.new_array(256, name='DATA', index_max=256)
+    memory = constraints.new_array(256, 'MEM_0')
+
+    vm = evm.EVM(memory, address, origin, price, data, sender, value, bytecode, header, storage={})
+    platform = evm.EVMWorld(constraints, vm)
+    initial_state = State(constraints, platform)
+    initial_state.input_symbols.append(data)
+    platform.data = contract['data']
+    print '[+] Loading EVM program\n' # %s'% platform.disassemble()
+
+    return initial_state
+
+
 def makeDecree(args):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, ','.join(args.programs))
-    initial_state = State(constraints, platform)
+    initial_state = State(constraints, model)
     logger.info('Loading program %s', args.programs)
 
     #if args.data != '':
@@ -130,6 +165,8 @@ def binary_type(path):
         return 'PE'
     elif magic == '\x7fCGC':
         return 'DECREE'
+    elif magic == '#EVM':
+        return 'EVM'
     else:
         raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
 
@@ -399,6 +436,9 @@ class Manticore(object):
         elif self._binary_type == 'DECREE':
             # Decree
             state = makeDecree(self._args)
+        elif self._binary_type == 'EVM':
+            # Decree
+            state = makeEVM(self._args)
         else:
             raise NotImplementedError("Binary {} not supported.".format(path))
 
@@ -612,7 +652,7 @@ class Manticore(object):
     def _write_memory_callback(self, state, address, value, size):
         logger.debug("Write Memory %r %r %r", address, value, size)
 
-    def _decode_instruction_callback(self, state):
+    def _decode_instruction_callback(self, state, pc):
         logger.debug("Decoding stuff instruction not available")
 
 
@@ -651,25 +691,28 @@ class Manticore(object):
         output.write("Command line:\n  " + ' '.join(sys.argv) + '\n')
         output.write('Status:\n  {}\n'.format(message))
         output.write('\n')
+        
+        #Fixme This should go in generate_testcase_lisnux only
+        try:
+            for cpu in filter(None, state.platform.procs):
+                idx = state.platform.procs.index(cpu)
+                output.write("================ PROC: %02d ================\n"%idx)
 
-        for cpu in filter(None, state.platform.procs):
-            idx = state.platform.procs.index(cpu)
-            output.write("================ PROC: %02d ================\n"%idx)
+                output.write("Memory:\n")
+                if hash(cpu.memory) not in memories:
+                    for m in str(cpu.memory).split('\n'):
+                        output.write("  %s\n"%m)
+                    memories.add(hash(cpu.memory))
 
-            output.write("Memory:\n")
-            if hash(cpu.memory) not in memories:
-                for m in str(cpu.memory).split('\n'):
-                    output.write("  %s\n"%m)
-                memories.add(hash(cpu.memory))
+                output.write("CPU:\n{}".format(cpu))
 
-            output.write("CPU:\n{}".format(cpu))
-
-            if hasattr(cpu, "instruction") and cpu.instruction is not None:
-                i = cpu.instruction
-                output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
-            else:
-                output.write("  Instruction: {symbolic}\n")
-
+                if hasattr(cpu, "instruction") and cpu.instruction is not None:
+                    i = cpu.instruction
+                    output.write("  Instruction: 0x%x\t(%s %s)\n" %(i.address, i.mnemonic, i.op_str))
+                else:
+                    output.write("  Instruction: {symbolic}\n")
+        except:
+            pass
         with open(_getFilename('test_%08x.messages'%test_number),'a') as f:
             f.write(output.getvalue())
             output.close()
@@ -689,31 +732,43 @@ class Manticore(object):
             buf = solver.get_value(state.constraints, symbol)
             file(_getFilename('test_%08x.txt'%test_number),'a').write("%s: %s\n"%(symbol.name, repr(buf)))
         
-        file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
+        #Fixme This should go in generate_testcase_lisnux only
+        try:
+            file(_getFilename('test_%08x.syscalls'%test_number),'a').write(repr(state.platform.syscall_trace))
+        except:
+            pass
 
-        stdout = ''
-        stderr = ''
-        for sysname, fd, data in state.platform.syscall_trace:
-            if sysname in ('_transmit', '_write') and fd == 1:
-                stdout += ''.join(map(str, data))
-            if sysname in ('_transmit', '_write') and fd == 2:
-                stderr += ''.join(map(str, data))
-        file(_getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
-        file(_getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
+        #Fixme This should go in generate_testcase_lisnux only
+        try:
+            stdout = ''
+            stderr = ''
+            for sysname, fd, data in state.platform.syscall_trace:
+                if sysname in ('_transmit', '_write') and fd == 1:
+                    stdout += ''.join(map(str, data))
+                if sysname in ('_transmit', '_write') and fd == 2:
+                    stderr += ''.join(map(str, data))
+            file(_getFilename('test_%08x.stdout'%test_number),'a').write(stdout)
+            file(_getFilename('test_%08x.stderr'%test_number),'a').write(stderr)
+        except:
+            pass
 
-        # Save STDIN solution
-        stdin_file = 'test_{:08x}.stdin'.format(test_number)
-        with open(_getFilename(stdin_file), 'wb') as f:
-            try:
-                for sysname, fd, data in state.platform.syscall_trace:
-                    if sysname not in ('_receive', '_read') or fd != 0:
-                        continue
-                    for c in data:
-                        f.write(chr(solver.get_value(state.constraints, c)))
-            except SolverException, e:
-                f.seek(0)
-                f.write("{SolverException}\n")
-                f.truncate()
+        #Fixme This should go in generate_testcase_lisnux only
+        try:
+            # Save STDIN solution
+            stdin_file = 'test_{:08x}.stdin'.format(test_number)
+            with open(_getFilename(stdin_file), 'wb') as f:
+                try:
+                    for sysname, fd, data in state.platform.syscall_trace:
+                        if sysname not in ('_receive', '_read') or fd != 0:
+                            continue
+                        for c in data:
+                            f.write(chr(solver.get_value(state.constraints, c)))
+                except SolverException, e:
+                    f.seek(0)
+                    f.write("{SolverException}\n")
+                    f.truncate()
+        except:
+            pass
 
         return test_number
 

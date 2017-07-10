@@ -237,6 +237,10 @@ class BitVec(Expression):
 
     def __truediv__(self, other):
         return BitVecDiv(self, self.cast(other))
+
+    def __floordiv__(self, other):
+        return self /other
+
     # These methods are called to implement the binary arithmetic operations
     # (+, # -, *, /, %, divmod(), pow(), **, <<, >>, &, ^, |) with reflected
     # (swapped) operands. These functions are only called if the left operand
@@ -525,7 +529,7 @@ class UnsignedGreaterOrEqual(BoolOperation):
 # Array  BV32 -> BV8  or BV64 -> BV8
 class Array(Expression):
     def __init__(self, index_bits, index_max, *operands, **kwargs):
-        assert index_bits in (32, 64)
+        assert index_bits in (32, 64, 256)
         assert index_max is None or isinstance(index_max, int)
         assert index_max is None or index_max > 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits
