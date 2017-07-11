@@ -18,7 +18,6 @@ from .smtlib.solver import SolverException
 
 logger = logging.getLogger('WORKSPACE')
 
-#This is the single global manager that will handle all shared memory among workers
 manager = SyncManager()
 manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
 
@@ -282,16 +281,18 @@ def _create_store(desc):
     else:
         raise NotImplementedError("Storage type '%s' not supported.", type)
 
+
 # This is copied from Executor to not create a dependency on the naming of the lock field
 def sync(f):
     """ Synchronization decorator. """
-    def newFunction(self, *args, **kw):
+    def new_function(self, *args, **kw):
         self._lock.acquire()
         try:
             return f(self, *args, **kw)
         finally:
             self._lock.release()
-    return newFunction
+    return new_function
+
 
 class Workspace(object):
     """
@@ -405,9 +406,6 @@ class ManticoreOutput(object):
         self.save_syscall_trace(state)
         self.save_fds(state)
         self._store.save_state(state, self._named_key('pkl'))
-
-        print ' generating ', self._last_id
-
 
     def save_stream(self, *rest):
         return self._store.save_stream(*rest)
