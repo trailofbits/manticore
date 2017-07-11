@@ -736,7 +736,7 @@ class Cpu(object):
         Decode, and execute one instruction pointed by register PC
         '''
         # FIXME (theo) Debugging Aid
-        #  if hex(self.PC) == "0x400d52L":
+        #  if hex(self.PC) == "0x400a73L":
             #  raise NotImplementedError
 
         if issymbolic(self.PC):
@@ -776,6 +776,11 @@ class Cpu(object):
             for l in self.render_registers():
                 register_logger.debug(l)
 
+        #  try:
+            #  print "READ " + hex(self.read_int(0x7ffffffffe30, 16 * 8))
+        #  except Exception as e:
+            #  print "Could not read"
+
         implementation(*insn.operands)
 
         # In case we are executing IL instructions, we could iteratively
@@ -811,11 +816,14 @@ class Cpu(object):
 
     def render_instruction(self, insn=None):
         try:
-            if insn is None:
+            if (insn is None or
+                    not isinstance(self.__class__.disasm, BinjaILDisasm)):
                 insn = self.instruction
-            return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
-                                                      insn.mnemonic,
-                                                      insn.op_str)
+                return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
+                                                          insn.mnemonic,
+                                                          insn.op_str)
+            else:
+                return str(insn)
         except Exception as e:
             return "{can't decode instruction}"
 

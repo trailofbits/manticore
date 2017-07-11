@@ -133,9 +133,10 @@ class BinjaRegisterFile(RegisterFile):
             raise NotImplementedError
 
 class BinjaOperand(Operand):
-    def __init__(self, cpu, op, **kwargs):
+    def __init__(self, cpu, parent_il, op, **kwargs):
+        self.llil = parent_il
         if hasattr(op, "operands") and op.operands:
-            op.operands = [BinjaOperand(cpu, x) for x in op.operands]
+            op.operands = [BinjaOperand(cpu, op, x) for x in op.operands]
         super(BinjaOperand, self).__init__(cpu, op, **kwargs)
 
     @property
@@ -167,7 +168,6 @@ class BinjaOperand(Operand):
             return cpu.read_register(self.op)
         elif self.type == 'instruction':
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
-            #  print "Calling " + op.operation.name
             return implementation(*op.operands)
         else:
             raise NotImplementedError("write_operand type", op.type)
@@ -275,7 +275,7 @@ class BinjaCpu(Cpu):
         return self._segments.setdefault(selector, (0, 0xfffff000, 'rwx'))
 
     def _wrap_operands(self, operands):
-        return [BinjaOperand(self, op) for op in operands]
+        return [BinjaOperand(self, self.disasm.disasm_il, op) for op in operands]
 
     def push(cpu, value, size):
         '''
@@ -305,7 +305,8 @@ class BinjaCpu(Cpu):
 
     def update_flags(cpu, flags=None, args=None):
         f = cpu.disasm.current_func
-        i = f.get_lifted_il_at(cpu.disasm.current_pc)
+        i = cpu.disasm.disasm_il
+
         # if the original instruction does not modify flags, don't set anything
         # (we could be here because of a STORE involving an ADD)
         mod_flags = f.get_flags_written_by_lifted_il_instruction(i.instr_index)
@@ -344,7 +345,7 @@ class BinjaCpu(Cpu):
 
     def AND(cpu, left, right):
         res = left.read() & right.read()
-        x86_update_logic_flags(cpu, res, cpu.disasm.insn_size * 8)
+        x86_update_logic_flags(cpu, res, right.llil.size * 8)
         return res
 
     def ASR(cpu, reg, shift):
@@ -527,7 +528,8 @@ class BinjaCpu(Cpu):
         while idx != break_idx and next_il.address == cpu.disasm.current_pc:
             goto_addr = None
             implementation = getattr(cpu, next_il.operation.name[len("LLIL_"):])
-            next_il.operands = [BinjaOperand(cpu, x) for x in next_il.operands]
+            next_il.operands = [BinjaOperand(cpu, next_il, x)
+                                for x in next_il.operands]
             cpu.disasm.insn_size = next_il.size
             cpu._icount += 1
             goto_addr = implementation(*next_il.operands)
@@ -557,24 +559,25 @@ class BinjaCpu(Cpu):
 
 
     def LOAD(cpu, expr):
-        return cpu.read_int(expr.read(), cpu.disasm.insn_size * 8)
+        return cpu.read_int(expr.read(), expr.llil.size * 8)
 
 
     def LOW_PART(cpu, expr):
         # FIXME account for the size this is currently wrong. should
         # read() handle this or not?
+        raise NotImplementedError
         return expr.read()
 
 
     def LSL(cpu, reg, shift):
-        rsize = cpu.disasm.insn_size
+        rsize = reg.llil.size * 8
         count = shift.read()
         value = reg.read()
         countMask = {8 : 0x1f,
                      16: 0x1f,
                      32: 0x1f,
                      64: 0x3f }[rsize]
-        temp = Operators.ZEXTEND(count & countMask, reg.size)
+        temp = Operators.ZEXTEND(count & countMask, rsize)
 
         tempD = value = reg.read()
         res = value << count
@@ -586,7 +589,7 @@ class BinjaCpu(Cpu):
                                         tempD & (1 << (rsize - temp)) != 0))
         of = Operators.ITE(temp != 0,
                            (cpu.regfile.registers['cf'] ^
-                            (((res >> (rsize-1)) & 0x1) == 1)),
+                            (((res >> (rsize - 1)) & 0x1) == 1)),
                            cpu.regfile.registers['of'])
 
         SIGN_MASK = 1 << (rsize - 1)
@@ -609,14 +612,12 @@ class BinjaCpu(Cpu):
         return res
 
     def LSR(cpu, reg, shift):
-        # FIXME inconcistency in SF
-        rsize = cpu.disasm.insn_size
-        count = shift.read()
+        rsize = reg.llil.size * 8
         value = reg.read()
-
+        count = Operators.ZEXTEND(shift.read() & (rsize - 1), rsize)
         res = value >> count
 
-        SIGN_MASK = 1 << (rsize-1)
+        SIGN_MASK = 1 << (rsize - 1)
 
         # carry flag
         if count != 0:
@@ -658,6 +659,7 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def MUL(cpu, left, right):
+        raise NotImplementedError
         return left.read() * right.read()
 
     def MULS_DP(cpu):
@@ -680,21 +682,21 @@ class BinjaCpu(Cpu):
 
     def OR(cpu, left, right):
         res = left.read() | right.read()
-        x86_update_logic_flags(cpu, res, left.op.size * 8)
+        x86_update_logic_flags(cpu, res, left.llil.size * 8)
         return res
 
     def POP(cpu):
-        # FIXME this is wrong! get it from the destination register!
         return cpu.pop(cpu.address_bit_size)
 
     def PUSH(cpu, src):
-        cpu.push(src.read(), src.op.size * 8)
+        # in bytes already so no need to multiply
+        cpu.push(src.read(), cpu.address_bit_size)
 
     def REG(cpu, expr):
         return cpu.regfile.read(expr.op)
 
     def RET(cpu, expr):
-        cpu.__class__.PC = expr.read()
+        cpu.__class__.PC = cpu.pop(cpu.address_bit_size)
 
     def RLC(cpu):
         raise NotImplementedError
@@ -715,17 +717,16 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def SET_REG(cpu, dest, src):
-        value = src.read()
-        dest.write(value)
+        dest.write(src.read())
 
     def SET_REG_SPLIT(cpu):
         raise NotImplementedError
 
     def STORE(cpu, dest, src):
-        cpu.write_int(dest.read(), src.read(), cpu.disasm.insn_size * 8)
+        cpu.write_int(dest.read(), src.read(), dest.llil.size * 8)
 
     def SUB(cpu, left, right):
-        size = cpu.disasm.insn_size
+        size = right.llil.size * 8
         right_v = right.read()
         left_v = left.read()
         res = left_v - right_v
@@ -743,20 +744,7 @@ class BinjaCpu(Cpu):
         return res
 
     def SX(cpu, expr):
-        print "SX SIZE: " + hex(cpu.disasm.insn_size)
-        full_size = cpu.disasm.insn_size
-        print hex(expr.size)
-        value = expr.read()
-        print hex(value)
-        full_value = (
-            (value ^ ((1 << expr.size * 8) - 1)) -
-            ((1 << expr.size * 8) - 1) +
-            (1 << full_size * 8)
-        )
-        print hex(Operators.SEXTEND(expr.read(), expr.size, cpu.disasm.insn_size))
-        print hex(full_value)
-        raise NotImplementedError
-        return (full_value)
+        return Operators.SEXTEND(expr.read(), expr.size, expr.llil.size)
 
     def SYSCALL(cpu):
         raise NotImplementedError
@@ -789,11 +777,11 @@ class BinjaCpu(Cpu):
 
     def XOR(cpu, left, right):
         res = left.read() ^ right.read()
-        x86_update_logic_flags(cpu, res, left.op.size * 8)
+        x86_update_logic_flags(cpu, res, left.llil.size * 8)
         return res
 
     def ZX(cpu, expr):
-        return Operators.ZEXTEND(expr.read(), cpu.disasm.insn_size)
+        return Operators.ZEXTEND(expr.read(), expr.llil.size * 8)
 
 #
 #
@@ -818,17 +806,18 @@ def x86_update_logic_flags(cpu, result, size):
     cpu.update_flags(flags)
 
 def x86_add(cpu, dest, src, carry=False):
-    MASK = (1 << dest.size) - 1
-    SIGN_MASK = 1 << (dest.size - 1)
+    size = dest.llil.size * 8
+    MASK = (1 << size) - 1
+    SIGN_MASK = 1 << (size - 1)
     dest_v = dest.read()
     if src.size < dest.size:
-        src_v = Operators.SEXTEND(src.read(), src.size, dest.size)
+        src_v = Operators.SEXTEND(src.read(), src.size * 8, size)
     else:
         src_v = src.read()
 
     to_add = src_v
     if carry:
-        cv = Operators.ITEBV(dest.size, cpu.CF, 1, 0)
+        cv = Operators.ITEBV(size, cpu.CF, 1, 0)
         to_add = src_v + cv
 
 
@@ -848,7 +837,7 @@ def x86_add(cpu, dest, src, carry=False):
         'c' : tempCF,
         'a' : _adjust_flag(res, dest_v, src_v),
         'z' : res == 0,
-        's' : _sign_flag(res, dest.size),
+        's' : _sign_flag(res, size),
         'o' : (((dest_v ^ src_v ^ SIGN_MASK) & (res ^ src_v)) & SIGN_MASK) != 0,
         'p' : _parity_flag(res)
     }

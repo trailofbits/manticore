@@ -3783,10 +3783,13 @@ class X86Cpu(Cpu):
         '''
         Shift logical right.
 
-        The shift arithmetic right (SAR) and shift logical right (SHR) instructions shift the bits of the destination operand to
-        the right (toward less significant bit locations). For each shift count, the least significant bit of the destination
-        operand is shifted into the CF flag, and the most significant bit is either set or cleared depending on the instruction
-        type. The SHR instruction clears the most significant bit.
+        The shift arithmetic right (SAR) and shift logical right (SHR)
+        instructions shift the bits of the destination operand to the right
+        (toward less significant bit locations). For each shift count, the
+        least significant bit of the destination operand is shifted into the CF
+        flag, and the most significant bit is either set or cleared depending
+        on the instruction type. The SHR instruction clears the most
+        significant bit.
 
         :param cpu: current CPU.
         :param dest: destination operand.
@@ -3802,7 +3805,9 @@ class X86Cpu(Cpu):
         SIGN_MASK = 1<<(OperandSize-1)
 
         if issymbolic(count):
-            cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
+            cpu.CF = Operators.ITE(count!=0,
+                                   ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0,
+                                   cpu.CF)
         else:
             if count != 0:
                 cpu.CF = Operators.EXTRACT(value, count-1, 1) != 0

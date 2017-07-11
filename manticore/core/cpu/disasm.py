@@ -82,6 +82,8 @@ class BinjaILDisasm(Disasm):
         # the same PC, we will pop from the queue
         self.il_queue = []
 
+        self.disasm_il = None
+
         self.insn_size = None
 
         super(BinjaILDisasm, self).__init__(view)
@@ -149,6 +151,7 @@ class BinjaILDisasm(Disasm):
         il = self._pop_from_il_queue(pc)
         self.insn_size = il.size
         self.current_pc = pc
+        self.disasm_il = il
         return self.BinjaILInstruction(self.view,
                                        il,
                                        self.entry_point_diff,
