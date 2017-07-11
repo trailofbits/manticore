@@ -1822,9 +1822,14 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         '''
-        stat = self.files[fd].stat()
+
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
+            return -errno.EBADF
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -1864,9 +1869,14 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         '''
-        stat = self.files[fd].stat()
+
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
+            return -errno.EBADF
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -1903,10 +1913,15 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         :todo: Fix device number.
         '''
-        stat = self.files[fd].stat()
+
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
+            return -errno.EBADF
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
