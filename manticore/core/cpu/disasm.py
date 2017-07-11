@@ -225,6 +225,7 @@ class BinjaILDisasm(Disasm):
             op = self.llil.operation
             return (op == enums.LowLevelILOperation.LLIL_CALL or
                     op == enums.LowLevelILOperation.LLIL_JUMP or
+                    op == enums.LowLevelILOperation.LLIL_JUMP_TO or
                     op == enums.LowLevelILOperation.LLIL_IF or
                     op == enums.LowLevelILOperation.LLIL_RET or
                     op == enums.LowLevelILOperation.LLIL_GOTO)

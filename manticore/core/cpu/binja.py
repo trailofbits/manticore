@@ -8,8 +8,9 @@ from .abstractcpu import (
     Syscall
 )
 
-from ..smtlib import Operators
+from ..smtlib import Operators, BitVecConstant, operator
 from ...core.cpu.disasm import BinjaILDisasm
+from ...utils.helpers import issymbolic
 
 logger = logging.getLogger("CPU")
 
@@ -370,7 +371,6 @@ class BinjaCpu(Cpu):
         cpu.disasm.current_func = cpu.view.get_function_at(new_pc)
         assert cpu.disasm.current_func is not None
 
-
     def CMP_E(cpu):
         raise NotImplementedError
 
@@ -542,18 +542,17 @@ class BinjaCpu(Cpu):
         assert goto_addr is not None
         cpu.__class__.PC = goto_addr
 
-
     def JUMP(cpu, expr):
         addr = expr.read()
         cpu.regfile.write('PC', addr)
         cpu.__class__.PC = addr
-        cpu.disasm.current_func = cpu.view.get_function_at(addr)
-        assert cpu.disasm.current_func is not None
 
-
-    def JUMP_TO(cpu):
-        raise NotImplementedError
-
+    def JUMP_TO(cpu, expr, target_indexes):
+        """ Jump table construct handling
+        """
+        addr = expr.read()
+        cpu.regfile.write('PC', addr)
+        cpu.__class__.PC = addr
 
     def LOAD(cpu, expr):
         # FIXME hack until push qword is fixed in binja
@@ -561,13 +560,8 @@ class BinjaCpu(Cpu):
             return cpu.read_int(expr.read(), 8 * 8)
         return cpu.read_int(expr.read(), expr.llil.size * 8)
 
-
     def LOW_PART(cpu, expr):
-        # FIXME account for the size this is currently wrong. should
-        # read() handle this or not?
         raise NotImplementedError
-        return expr.read()
-
 
     def LSL(cpu, reg, shift):
         rsize = reg.llil.size * 8
@@ -753,7 +747,9 @@ class BinjaCpu(Cpu):
         return Operators.SEXTEND(expr.read(), expr.size, expr.llil.size)
 
     def SYSCALL(cpu):
-        raise NotImplementedError
+        cpu.write_register('rcx', cpu.regfile.registers['rip'])
+        cpu.write_register('r11', x86_get_eflags(cpu, 'RFLAGS'))
+        raise Syscall()
 
     def TEST_BIT(cpu):
         raise NotImplementedError
@@ -795,6 +791,36 @@ class BinjaCpu(Cpu):
 #
 #
 
+
+def x86_get_eflags(cpu, reg):
+    def make_symbolic(flag_expr):
+        register_size = 32 if reg == 'EFLAGS' else 64
+        value, offset = flag_expr
+        return Operators.ITEBV(register_size, value,
+                               BitVecConstant(register_size, 1 << offset),
+                               BitVecConstant(register_size, 0))
+    x86_flags = {
+        'cf': 0,
+        'pf': 2,
+        'af': 4,
+        'zf': 6,
+        'sf': 7,
+        'if': 9,
+        'df': 10,
+        'of': 11
+    }
+
+    flags = []
+    for flag, offset in x86_flags.iteritems():
+        flags.append((cpu.regfile.registers.get(flag, 0), offset))
+
+    if any(issymbolic(flag) for flag, offset in flags):
+        res = reduce(operator.or_, map(make_symbolic, flags))
+    else:
+        res = 0
+        for flag, offset in flags:
+            res += flag << offset
+    return res
 
 def x86_xgetbv(cpu):
     cpu.write_register('eax', 7)
