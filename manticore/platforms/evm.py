@@ -235,11 +235,11 @@ class EVMDecoder(object):
                 0x9d: ('SWAP', 0, 15, 15, 'Exchange 1st and 15rd stack items.'),
                 0x9e: ('SWAP', 0, 16, 16, 'Exchange 1st and 16rd stack items.'),
                 0x9f: ('SWAP', 0, 17, 17, 'Exchange 1st and 17th stack items.'),
-                0xa0: ('LOG0', 0, 2, 0, 'Append log record with no topics.'),
-                0xa1: ('LOG1', 0, 3, 0, 'Append log record with one topic.'),
-                0xa2: ('LOG1', 0, 4, 0, 'Append log record with two topics.'),
-                0xa3: ('LOG1', 0, 5, 0, 'Append log record with three topics.'),
-                0xa4: ('LOG4', 0, 6, 0, 'Append log record with four topics.'),
+                0xa0: ('LOG', 0, 2, 0, 'Append log record with no topics.'),
+                0xa1: ('LOG', 0, 3, 0, 'Append log record with one topic.'),
+                0xa2: ('LOG', 0, 4, 0, 'Append log record with two topics.'),
+                0xa3: ('LOG', 0, 5, 0, 'Append log record with three topics.'),
+                0xa4: ('LOG', 0, 6, 0, 'Append log record with four topics.'),
                 0xf0: ('CREATE', 0, 3, 1, 'Create a new account with associated code.'),
                 0xf1: ('CALL', 0, 7, 1, 'Message-call into an account.'),
                 0xf2: ('CALLCODE', 0, 7, 1, 'Message-call into this account with alternative account\'s code.'),
@@ -805,23 +805,23 @@ class EVM(Eventful):
         #FIXME SHOULD query self.header structure
         return 0
 
-    def COINBASE(self, a,b):
+    def COINBASE(self):
         '''Get the block's beneficiary address'''
         return self.header['coinbase']
 
-    def TIMESTAMP(self, a,b):
+    def TIMESTAMP(self):
         '''Get the block's timestamp'''
         return self.header['timestamp']
 
-    def NUMBER(self, a,b):
+    def NUMBER(self):
         '''Get the block's number'''
         return self.header['number']
 
-    def DIFFICULTY(self, a,b):
+    def DIFFICULTY(self):
         '''Get the block's difficulty'''
         return self.header['difficulty']
 
-    def GASLIMIT(self, a,b):
+    def GASLIMIT(self):
         '''Get the block's gas limit'''
         return self.header['gaslimit']
 
@@ -928,11 +928,11 @@ class EVM(Eventful):
 
     def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
-        raise Call(value, gas, to, value, in_offset, in_size, out_offset, out_size)
+        raise Call(gas, to, value, in_offset, in_size, out_offset, out_size)
 
     def CALLCODE(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
-        raise Call(value, gas, self.address, value, in_offset, in_size, out_offset, out_size)
+        raise Call(gas, self.address, value, in_offset, in_size, out_offset, out_size)
 
     def RETURN(self, offset, size):
         '''Halt execution returning output data'''
@@ -1019,7 +1019,7 @@ class EVMWorld(Platform):
         except Create as ex:
             self.CREATE(value, ex.offset, ex.size)
         except Call as ex:
-            self.CALL(value, ex.gas, ex.to, ex.value, ex.in_offset, ex.in_size, ex.out_offset, ex.out_size)
+            self.CALL(ex.gas, ex.to, ex.value, ex.in_offset, ex.in_size, ex.out_offset, ex.out_size)
         except Stop as ex:
             self.STOP()
         except Return as ex:
@@ -1045,7 +1045,7 @@ class EVMWorld(Platform):
         self._push(new_vm)
 
     def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
-        data = self.read.current_buffer(in_offset, in_size)
+        data = self.current.read_buffer(in_offset, in_size)
         address = to
         origin = self.current.origin
         sender = self.current.address
