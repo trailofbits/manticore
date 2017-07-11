@@ -1968,7 +1968,11 @@ class X86Cpu(Cpu):
         size = dest.size
         minuend = dest.read()
 
-        subtrahend = Operators.SEXTEND(src.read(), src.size, size) if src.size < dest.size else src.read()
+        if src.size < dest.size:
+            subtrahend = Operators.SEXTEND(src.read(), src.size, size)
+        else:
+            subtrahend = src.read()
+
         if carry:
             cv = Operators.ITEBV(size, cpu.CF, 1, 0)
             subtrahend += cv

@@ -1,3 +1,4 @@
+import ctypes
 import logging
 from collections import defaultdict
 
@@ -8,14 +9,10 @@ from .abstractcpu import (
 )
 
 from ..smtlib import Operators
-from ...core.memory import SMemory32, SMemory64
 from ...core.cpu.disasm import BinjaILDisasm
 
 logger = logging.getLogger("CPU")
 
-
-# FIXME replace cpu.disasm_size, with the size in each subexpression
-# that should be part of the operand!!
 
 class BinjaRegisterFile(RegisterFile):
 
@@ -170,7 +167,7 @@ class BinjaOperand(Operand):
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             return implementation(*op.operands)
         else:
-            raise NotImplementedError("write_operand type", op.type)
+            raise NotImplementedError("read_operand type", op.type)
 
     def write(self, value):
         cpu, op = self.cpu, self.op
@@ -405,10 +402,10 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def CONST(cpu, expr):
-        return expr.op
+        return ctypes.c_int64(expr.op).value
 
     def CONST_PTR(cpu, expr):
-        return expr.op + cpu.disasm.entry_point_diff
+        return ctypes.c_int64(expr.op).value + cpu.disasm.entry_point_diff
 
     def DIVS(cpu):
         raise NotImplementedError
@@ -559,6 +556,9 @@ class BinjaCpu(Cpu):
 
 
     def LOAD(cpu, expr):
+        # FIXME hack until push qword is fixed in binja
+        if str(cpu.disasm.disasm_il).startswith("push(zx.q"):
+            return cpu.read_int(expr.read(), 8 * 8)
         return cpu.read_int(expr.read(), expr.llil.size * 8)
 
 
@@ -726,10 +726,16 @@ class BinjaCpu(Cpu):
         cpu.write_int(dest.read(), src.read(), dest.llil.size * 8)
 
     def SUB(cpu, left, right):
-        size = right.llil.size * 8
-        right_v = right.read()
+        size = left.llil.size * 8
         left_v = left.read()
-        res = left_v - right_v
+        if right.llil.size < left.llil.size:
+            right_v = Operators.SEXTEND(right.read(),
+                                        right.llil.size * 8,
+                                        left.llil.size * 8)
+        else:
+            right_v = right.read()
+
+        res = (left_v - right_v) & ((1 << size) - 1)
 
         # FIXME arch-specific flags
         flags = {
@@ -820,11 +826,7 @@ def x86_add(cpu, dest, src, carry=False):
         cv = Operators.ITEBV(size, cpu.CF, 1, 0)
         to_add = src_v + cv
 
-
-    # FIXME ignore this for now, we will deal with it if we are to
-    # store the register properly.
-    #  res = dest.write((dest_v + to_add) & MASK)
-    res = dest_v + to_add
+    res = (dest_v + to_add) & MASK
     #Affected flags: oszapc
     tempCF = Operators.OR(_carry_ult(res, dest_v & MASK),
                           _carry_ult(res, src_v & MASK))

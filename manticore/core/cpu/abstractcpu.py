@@ -776,11 +776,6 @@ class Cpu(object):
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        #  try:
-            #  print "READ " + hex(self.read_int(0x7ffffffffe30, 16 * 8))
-        #  except Exception as e:
-            #  print "Could not read"
-
         implementation(*insn.operands)
 
         # In case we are executing IL instructions, we could iteratively
