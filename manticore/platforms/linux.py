@@ -1825,11 +1825,11 @@ class Linux(Platform):
         :return: C{0} on success, EBADF when called with bad fd
         '''
 
-        if fd < 0:
-            logger.info("Calling fstat with negative fd {}, returning EBADF".format(fd))
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
             return -errno.EBADF
-
-        stat = self.files[fd].stat()
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -1872,11 +1872,11 @@ class Linux(Platform):
         :return: C{0} on success, EBADF when called with bad fd
         '''
 
-        if fd < 0:
-            logger.info("Calling fstat with negative fd {}, returning EBADF".format(fd))
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
             return -errno.EBADF
-
-        stat = self.files[fd].stat()
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -1917,11 +1917,11 @@ class Linux(Platform):
         :todo: Fix device number.
         '''
 
-        if fd < 0:
-            logger.info("Calling fstat with negative fd {}, returning EBADF".format(fd))
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
             return -errno.EBADF
-
-        stat = self.files[fd].stat()
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
