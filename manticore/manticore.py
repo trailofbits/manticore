@@ -220,7 +220,9 @@ class Manticore(object):
                 yield context
             else:
                 assert default in (list, dict, set)
-                ctx = context.get(key, default())
+                ctx = context.get(key, None)
+                if ctx is None:
+                    ctx = default()
                 yield ctx
                 context[key] = ctx
 

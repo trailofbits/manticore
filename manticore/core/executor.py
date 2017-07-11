@@ -52,35 +52,40 @@ class Policy(object):
         super(Policy, self).__init__(*args, **kwargs)
         self._executor = executor
         self._executor.did_add_state += self._add_state_callback
-        
+
+    @property        
+    def executor(self):
+        return self._executor
+
     @contextmanager
-    def locked_context(self):
+    def locked_context(self, key=None, default=dict):
         ''' Policy shared context dictionary '''
-        with self._executor.locked_context() as ctx:
-            policy_context = ctx.get('policy', None)
-            if policy_context is None:
-                policy_context = dict()
+        keys = ['policy']
+        if key is not None:
+            keys.append(key)
+        with self._executor.locked_context('.'.join(keys), default) as policy_context:
             yield policy_context
-            ctx['policy'] = policy_context
 
     def _add_state_callback(self, state_id, state):
-        ''' Save prepare(state) on policy shared context before 
+        ''' Save sumarize(state) on policy shared context before 
             the state is stored
         '''
-        with self.locked_context() as ctx:
-            metric = self.prepare(state)
-            if metric is not None:
-                ctx[state_id] = metric
+        summary = self.summarize(state)
+        if summary is None:
+            return
+        with self.locked_context('summaries', dict) as ctx:
+            ctx[state_id] = summary
 
-    def prepare(self, state):
-        ''' Process a state and keep enough data to later decide it's
-            priority #fixme rephrase
+    def summarize(self, state):
+        '''
+            Extract the relevant information from a state for later
+            prioritization
         '''
         return None
 
     def choice(self, state_ids):
-        ''' Select a state id from states_id.
-            self.context has a dict mapping state_ids -> prepare(state)'''
+        ''' Select a state id from state_ids.
+            self.context has a dict mapping state_ids -> summarize(state)'''
         raise NotImplemented
 
 class Random(Policy):
@@ -96,21 +101,31 @@ class Uncovered(Policy):
         #hook on the necesary executor signals 
         #on callbacks save data in executor.context['policy']
 
-    def prepare(self, state):
-        ''' this is what we need to save for choosing later '''
+        self._executor.will_load_state += self._register
+
+    def _register(self, *args):
+        self.executor.will_execute_instruction += self._visited_callback
+
+    def _visited_callback(self, state, instr):
+        ''' Maintain our own copy of the visited set
+        '''
+        pc = state.platform.current.PC
+        with self.locked_context('visited', set) as ctx:
+            ctx.add(pc)
+
+    def summarize(self, state):
+        ''' Save the last pc before storing the state '''
         return state.cpu.PC
 
     def choice(self, state_ids):
-        # Use executor.context['uncovered'] = state_id -> stats
-        # am
-        with self._executor.locked_context() as ctx: 
-            lastpc = ctx['policy']
-            visited = ctx.get('visited', ())
-            interesting = set()
+        interesting = set()
+        with self.locked_context() as policy_ctx: 
+            visited = policy_ctx.get('visited', set())
+            lastpc = policy_ctx.get('summaries', dict())
             for _id in state_ids:
                 if lastpc.get(_id, None) not in visited:
                     interesting.add(_id)
-            return random.choice(tuple(interesting))
+        return random.choice(tuple(interesting))
 
 class Executor(object):
     '''
@@ -183,7 +198,7 @@ class Executor(object):
                 forward_signals(self, initial, True)
 
     @contextmanager
-    def locked_context(self):
+    def locked_context(self, key=None, default=dict):
         ''' Executor context is a shared memory object. All workers share this. 
             It needs a lock. Its used like this:
 
@@ -192,8 +207,24 @@ class Executor(object):
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
         '''
+        assert default in (list, dict, set)
         with self._lock:
-            yield self._shared_context
+            if key is None:
+                yield self._shared_context
+            elif '.' in key:
+                keys = key.split('.')
+                with self.locked_context('.'.join(keys[:-1])) as sub_context:
+                    sub_sub_context = sub_context.get(keys[-1], None)
+                    if sub_sub_context is None:
+                        sub_sub_context = default()
+                    yield sub_sub_context
+                    sub_context[keys[-1]] = sub_sub_context
+            else:
+                sub_context = self._shared_context.get(key, None)
+                if sub_context is None:
+                    sub_context = default()
+                yield sub_context
+                self._shared_context[key] = sub_context
 
 
 
