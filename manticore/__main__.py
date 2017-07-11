@@ -15,8 +15,6 @@ except ImportError:
     pass
 sys.setrecursionlimit(10000)
 
-logger = logging.getLogger('MAIN')
-
 def parse_arguments():
     ###########################################################################
     # parse arguments
