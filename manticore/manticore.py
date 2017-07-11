@@ -243,16 +243,11 @@ class Manticore(object):
 
         ctxfilter = ContextFilter()
 
-        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
+        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout, level=logging.ERROR)
 
-        for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
+        for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM']:
             logging.getLogger(loggername).addFilter(ctxfilter)
             logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
-        
-        logging.getLogger('SMT').setLevel(logging.INFO)
-        logging.getLogger('MEMORY').setLevel(logging.INFO)
-        logging.getLogger('LIBC').setLevel(logging.INFO)
-        logging.getLogger('MANTICORE').setLevel(logging.INFO)
 
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
@@ -315,9 +310,9 @@ class Manticore(object):
     @verbosity.setter
     def verbosity(self, setting):
         zero = map(lambda x: (x, logging.ERROR),
-                   ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM'])
+                   ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM'])
         levels = [zero,
-                  [('MAIN', logging.INFO), ('EXECUTOR', logging.INFO)],
+                  [('MANTICORE', logging.INFO), ('EXECUTOR', logging.INFO)],
                   [('PLATFORM', logging.DEBUG)],
                   [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
                   [('REGISTERS', logging.DEBUG)],
