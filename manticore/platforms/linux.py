@@ -1822,8 +1822,13 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         '''
+
+        if fd < 0:
+            logger.info("Calling fstat with negative fd {}, returning EBADF".format(fd))
+            return -errno.EBADF
+
         stat = self.files[fd].stat()
 
         def add(width, val):
@@ -1864,8 +1869,13 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         '''
+
+        if fd < 0:
+            logger.info("Calling fstat with negative fd {}, returning EBADF".format(fd))
+            return -errno.EBADF
+
         stat = self.files[fd].stat()
 
         def add(width, val):
@@ -1903,9 +1913,14 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         :todo: Fix device number.
         '''
+
+        if fd < 0:
+            logger.info("Calling fstat with negative fd {}, returning EBADF".format(fd))
+            return -errno.EBADF
+
         stat = self.files[fd].stat()
 
         def add(width, val):
