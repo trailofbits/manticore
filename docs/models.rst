@@ -1,9 +1,9 @@
 Function Models
 ===============
 
-The Manticore function modeling API can be used to replace a certain
-function in the target program with a model that implements the equivalent
-semantics. This can greatly increase performance.
+The Manticore function modeling API can be used to override a certain
+function in the target program with an custom implementation in Python.
+This can greatly increase performance.
 
 Manticore comes with implementations of function models for some popular library routines (core models),
 and also offers a user API for defining user-defined models.
