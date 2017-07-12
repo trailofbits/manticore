@@ -127,6 +127,46 @@ class Uncovered(Policy):
                     interesting.add(_id)
         return random.choice(tuple(interesting))
 
+class BranchLimited(Policy):
+    def __init__(self, executor, *args, **kwargs):
+        super(BranchLimited, self).__init__(executor, *args, **kwargs)
+        self._executor.will_load_state += self._register
+        self._limit = kwargs.get('limit', 5)
+
+    def _register(self, *args):
+        self.executor.will_execute_instruction += self._visited_callback
+
+    def _visited_callback(self, state, instr):
+        ''' Maintain our own copy of the visited set
+        '''
+        pc = state.platform.current.PC
+        with self.locked_context('visited', dict) as ctx:
+            ctx[pc] = ctx.get(pc, 0) + 1
+
+    def summarize(self, state):
+        return state.cpu.PC
+
+    def choice(self, state_ids):
+        interesting = set(state_ids)
+        with self.locked_context() as policy_ctx: 
+            visited = policy_ctx.get('visited', dict())
+            summaries = policy_ctx.get('summaries', dict())
+            lst = []
+            for id_, pc in summaries.items():
+                cnt = visited.get(pc, 0)
+                if id_ not in state_ids:
+                    continue
+                if cnt <= self._limit:
+                    lst.append((id_, visited.get(pc, 0)))
+            lst = sorted(lst, key=lambda x: x[1])
+
+        if lst:
+            return lst[0][0]
+        else:
+            return None
+
+
+
 class Executor(object):
     '''
     The executor guides the execution of an initial state or a paused previous run. 
@@ -181,7 +221,8 @@ class Executor(object):
         #scheduling priority policy (wip)
         #Set policy
         policies = {'random': Random, 
-                    'uncovered': Uncovered
+                    'uncovered': Uncovered,
+                    'branchlimited': BranchLimited,
                     }
         self._policy = policies[policy](self)
         assert isinstance(self._policy, Policy)
@@ -373,6 +414,8 @@ class Executor(object):
             self._lock.wait()
             
         state_id = self._policy.choice(list(self._states))
+        if state_id is None:
+            return None
         del  self._states[self._states.index(state_id)]
         return state_id
 
