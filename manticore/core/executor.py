@@ -97,7 +97,7 @@ class Executor(object):
         #Number of currently running workers. Initially no runnign workers
         self._running = manager.Value('i', 0 )
 
-        self._workspace = Workspace(self._lock, 'fs:'+workspace)
+        self._workspace = Workspace(self._lock, workspace)
 
         #Executor wide shared context
         if context is None:
