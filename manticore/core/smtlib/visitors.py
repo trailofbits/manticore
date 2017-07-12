@@ -472,7 +472,7 @@ class ArithmeticSimplifier(Visitor):
         
 def arithmetic_simplifier(expression):
     simp = ArithmeticSimplifier()
-    simp.visit(expression, use_fixed_point=False)
+    simp.visit(expression, use_fixed_point=True)
     return simp.result
 
 class TranslatorSmtlib(Visitor):
