@@ -139,6 +139,9 @@ class Map(object):
         '''
         return '<%s 0x%016x-0x%016x %s>'%(self.__class__.__name__, self.start, self.end, self.perms)
 
+    def __cmp__(self, other):
+        return cmp(self.start, other.start)
+
     def _in_range(self, index):
         ''' Returns True if index is in range '''
         if isinstance(index, slice):
