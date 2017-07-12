@@ -218,6 +218,33 @@ class FilesystemStore(Store):
         return map(lambda s: os.path.split(s)[1], glob.glob(path))
 
 
+class MemoryStore(Store):
+    """
+    An in-memory (dict) Manticore workspace.
+
+    NOTE: This is mostly used for experimentation and testing funcionality. 
+    Can not be used with multiple workers!
+    """
+
+    #TODO(yan): Once we get a global config store, check it to make sure
+    # we're executing in a single-worker or test environment.
+
+    def __init__(self):
+        self._data = {}
+        super(MemoryStore, self).__init__(None)
+
+    def save_value(self, key, value):
+        self._data[key] = value
+
+    def load_value(self, key):
+        return self._data.get(key)
+
+    def rm(self, key):
+        del self._data[key]
+
+    def ls(self, glob_str):
+        return list(self._data)
+
 class RedisStore(Store):
     """
     A redis-backed Manticore workspace
@@ -268,6 +295,7 @@ def _create_store(desc):
     Valid descriptors:
       fs:<path>
       redis:<hostname>:<port>
+      mem:
 
     :param str desc: Store descriptor
     :return: Store instance
@@ -278,6 +306,8 @@ def _create_store(desc):
         return FilesystemStore(uri)
     elif type_ == 'redis':
         return RedisStore(uri)
+    elif type_ == 'mem':
+        return MemoryStore()
     else:
         raise NotImplementedError("Storage type '%s' not supported.", type)
 
