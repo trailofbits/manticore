@@ -612,7 +612,7 @@ class Manticore(object):
     def _write_memory_callback(self, state, address, value, size):
         logger.debug("Write Memory %r %r %r", address, value, size)
 
-    def _decode_instruction_callback(self, state):
+    def _decode_instruction_callback(self, state, pc):
         logger.debug("Decoding stuff instruction not available")
 
 
