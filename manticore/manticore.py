@@ -523,7 +523,7 @@ class Manticore(object):
                     state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
                 self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
 
-    def _model_hook_callback(self, state):
+    def _model_hook_callback(self, state, instruction):
         pc = state.cpu.PC
         if pc not in self._model_hooks:
             return

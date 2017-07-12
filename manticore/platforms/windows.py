@@ -4,7 +4,7 @@ import sys, os, struct
 from ..core.memory import Memory, MemoryException, SMemory32, Memory32
 from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
-from ..core.cpu.x86 import I386Cpu, Syscall
+from ..core.cpu.x86 import I386Cpu, I386StdcallAbi, Syscall
 from ..core.cpu.abstractcpu import Interruption, Syscall
 from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
@@ -175,12 +175,15 @@ class Windows(Platform):
         assert nprocs > 0
         assert len(self.running) == 1, "For now lets consider only one thread running"
         self._current = self.running[0]
-        self._function_abi = I386StdcallAbi(self.procs[0])
 
         #Install event forwarders
         for proc in self.procs:
             forward_signals(self, proc)
         
+
+    @property
+    def _function_abi(self):
+        return I386StdcallAbi(self.procs[0])
 
     @property
     def current(self):
