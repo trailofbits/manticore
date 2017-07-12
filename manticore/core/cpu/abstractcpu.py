@@ -709,7 +709,7 @@ class Cpu(Eventful):
         if not self.memory.access_ok(self.PC,'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
-        self.publish('will_decode_instruction', )
+        self.publish('will_decode_instruction', self.PC)
 
         instruction = self.decode_instruction(self.PC)
         self._last_pc=self.PC
