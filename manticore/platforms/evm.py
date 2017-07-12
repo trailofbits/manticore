@@ -4,7 +4,7 @@ Implements the yellow paper: http://gavwood.com/paper.pdf
 Get example contracts from here:
 https://ethereum.github.io/browser-solidity/#version=soljson-latest.js
 '''
-import random
+import random, copy
 from ..platforms.platform import *
 from ..core.smtlib import Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant
 from ..utils.helpers import issymbolic
@@ -293,6 +293,15 @@ class EVMDecoder(object):
 class EVMException(Exception):
     pass
 
+class ConcretizeStack(EVMException):
+    '''
+    Raised when a symbolic memory cell needs to be concretized.
+    '''
+    def __init__(self, pos, expression, policy='MINMAX'):
+        self.message = "Concretizing evm stack item {}".format(pos)
+        self.pos = pos
+        self.expression = expression
+
 class StackOverflow(EVMException):
     ''' Attemped to push more than 1024 items '''
     pass
@@ -305,14 +314,9 @@ class InvalidOpcode(EVMException):
     ''' Trying to execute invalid opcode '''
     pass
 
-class Create(EVMException):
-    def __init__(self, value, offset, size):
-        self.value = value
-        self.offset = offset
-        self.size = size
 
 class Call(EVMException):
-    def __init__(self, gas, to, value, in_offset, in_size, out_offset, out_size):
+    def __init__(self, gas, to, value, in_offset, in_size, out_offset=0, out_size=0):
         self.gas = gas
         self.to = to
         self.value = value
@@ -320,6 +324,11 @@ class Call(EVMException):
         self.in_size = in_size
         self.out_offset = out_offset
         self.out_size = out_size
+
+
+class Create(Call):
+    def __init__(self, value, offset, size):
+        super(Create, self).__init__(gas=None, to=None, value=value, in_offset=offset, in_size=size)
 
 
 class Stop(EVMException):
@@ -387,7 +396,7 @@ class EVM(Eventful):
         self.price = price #This is gas price specified by the originating transaction
         self.value = value
         self.depth = depth
-        self.bytecode = bytecode.decode('hex')
+        self.bytecode = bytecode
 
         #FIXME parse decode and mark invalid instructions
         #self.invalid = set()
@@ -548,7 +557,7 @@ class EVM(Eventful):
         if implementation is None:
             raise TerminateState("Instruction not implemented %s"%current.semantics, testcase=True)
 
-        self.publish('did_execute_instruction', self, current)
+
 
         #Get arguments (imm, pop)
         arguments = []
@@ -557,9 +566,20 @@ class EVM(Eventful):
         for _ in range(current.pops):
             arguments.append(self._pop())
 
+        self.publish('did_execute_instruction', current)
+
         #Execute
         try:
             result = implementation(*arguments)
+        except ConcretizeStack as ex:
+            for arg in reversed(arguments):
+                self._push(arg)
+            def setstate(state, value):
+                self.stack[-ex.pos] = value
+            raise Concretize("Concretice Stack Variable",
+                                expression=ex.expression, 
+                                setstate=setstate,
+                                policy='ALL')
         except EVMException as e:
             self.last_exception = e
             raise
@@ -570,6 +590,8 @@ class EVM(Eventful):
             traceback.print_exc(file=sys.stdout)
             print '-'*60
             raise TerminateState("Exception executing %s (%r)"%(current.semantics, e), testcase=True)
+
+        self.publish('did_execute_instruction', self, current)
 
         
         #Check result (push)
@@ -764,6 +786,10 @@ class EVM(Eventful):
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
         #FIXME put zero if not enough data
+        size = arithmetic_simplifier(size)
+        if issymbolic(size):
+            raise ConcretizeStack(3, expression=size)
+        
         for i in range(size):
             if (data_offset+i >= len(self.data)):
                 raise EVM.Stop()
@@ -875,7 +901,7 @@ class EVM(Eventful):
 
     def MSIZE(self):
         '''Get the size of active memory in bytes'''
-        return len(self.memory)*32
+        return self.allocated
 
     def GAS(self):
         '''Get the amount of available gas, including the corresponding reduction the amount of available gas'''
@@ -921,6 +947,12 @@ class EVM(Eventful):
         for i in range(size):
             buf.append(Operators.CHR(self._load(offset+i)))
         return buf
+
+    def write_buffer(self, offset, buf):
+        count = 0
+        for c in buf:
+            self._store(offset+count, c)
+            count +=1 
 
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
@@ -969,27 +1001,33 @@ class EVMWorld(Platform):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
         self.constraints = constraints
         self._stack = [initial_vm] 
+        self._created_address = set()
         self.forward_events_from(self.current)
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
         state['constraints'] = self.constraints
         state['stack'] = self._stack
+        state['created_address'] = self._created_address
         return state
 
     def __setstate__(self, state):
         super(EVMWorld, self).__setstate__(state)
         self.constraints = state['constraints']
         self._stack = state['stack']
+        self._created_address = state['created_address']
         self.forward_events_from(self.current)
 
         
     @property
     def current(self):
         return self._stack[-1]
+    @property
+    def storage(self):
+        return self.current.storage
 
     def _push(self, vm):
-        cpy_storage = copy.deepcopy(self.storage)
+        cpy_storage = copy.deepcopy(self.current.storage)
         vm.storage = cpy_storage
         self._stack.append(vm)
         self.forward_events_from(self.current)
@@ -999,6 +1037,7 @@ class EVMWorld(Platform):
         if not rollback:
             self.current.storage = vm.storage
         self.forward_events_from(self.current)
+        return vm
 
     @property
     def depth(self):
@@ -1007,9 +1046,9 @@ class EVMWorld(Platform):
     def _new_address(self):
         ''' create a fresh 160bit address '''
         new_address = random.randint(100, pow(2, 160))
-        if new_address in self.created_address:
+        if new_address in self._created_address:
             return self._new_address()
-        self.created_address.add(new_address)
+        self._created_address.add(new_address)
         return new_address
 
 
@@ -1017,7 +1056,7 @@ class EVMWorld(Platform):
         try:
             self.current.execute()
         except Create as ex:
-            self.CREATE(value, ex.offset, ex.size)
+            self.CREATE(ex.value, ex.in_offset, ex.in_size)
         except Call as ex:
             self.CALL(ex.gas, ex.to, ex.value, ex.in_offset, ex.in_size, ex.out_offset, ex.out_size)
         except Stop as ex:
@@ -1033,6 +1072,7 @@ class EVMWorld(Platform):
         except EVMException as e:
             self.THROW()
 
+
     def CREATE(self, value, offset, size):
         bytecode = self.current.read_buffer(offset, size)
         address = self._new_address()
@@ -1041,8 +1081,11 @@ class EVMWorld(Platform):
         price = self.current.price
         depth = self.depth
         memory = self.constraints.new_array(256, 'MEM_%d'%depth)
-        new_vm = EVM(memory, address, origin, price, data, sender, value, bytecode, header, depth)
+        header = {'timestamp': 100}
+        new_vm = EVM(memory, address, origin, price, "", sender, value, bytecode, header, depth)
         self._push(new_vm)
+        self.storage[address] = {}
+        self.storage[address]['bytecode'] = bytecode
 
     def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         data = self.current.read_buffer(in_offset, in_size)
@@ -1051,26 +1094,32 @@ class EVMWorld(Platform):
         sender = self.current.address
         price = self.current.price
         depth = self.depth
-        bytecode = self.current.storage[to].bytecode
+        bytecode = self.current.storage[to]['bytecode']
         memory = self.constraints.new_array(256, 'MEM_%d'%depth)
+        header = {'timestamp' :1}
         new_vm = EVM(memory, address, origin, price, data, sender, value, bytecode, header, depth)
         self._push(new_vm)
 
     def RETURN(self, offset, size):
-        data = self.current.read_buffer(offset, size)
         if self.depth == 1:
+            data = self.current.read_buffer(offset, size)
             self.last_return=data
             raise TerminateState("RETURN", testcase=True)
 
-        self._vm = self._stack.pop()
+        prev_vm = self._pop()
         #current VM changed!^
         last_ex = self.current.last_exception
-        assert isinstance(last_ex, EVM.CALL)
-        size = min(last_ex.out_size, ex.size)
-        data = data[:size]
+        assert isinstance(last_ex, Call)
+        size = min(last_ex.out_size, size)
+        data = self.current.read_buffer(offset, size)
         self.current.write_buffer(last_ex.out_offset, data)
-        self.current.push(1)
-        #we are still on the CALL
+
+        if isinstance(last_ex, Create):
+            self.current._push(prev_vm.address)
+        else:
+            self.current._push(1)
+
+        #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 
     def STOP(self):

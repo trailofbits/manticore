@@ -631,7 +631,9 @@ class ArrayProxy(ArrayVariable):
         size = index.stop - index.start
         if isinstance(size, BitVec):
             import visitors
-            size = visitors.ArithmeticSimplifier(expression=size)
+            from manticore.core.smtlib.visitors import pretty_print, arithmetic_simplifier
+            size = arithmetic_simplifier(size)
+            #size = visitors.ArithmeticSimplifier(expression=size)
         else:
             size = BitVecConstant(self._array.index_bits, size)
         assert isinstance(size, BitVecConstant)

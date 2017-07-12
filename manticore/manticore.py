@@ -45,7 +45,7 @@ def makeEVM(args):
     contract['data'] = contract.get('data', '+'*256)
 
     #attack, constraints, address, origin, price, data, sender, value, bytecode, header, depth):
-    bytecode=contract['bytecode']
+    bytecode=contract['bytecode'].decode('hex')
     address=contract['address']
     origin=contract['sender']
     sender=contract['sender']

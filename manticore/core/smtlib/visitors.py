@@ -379,6 +379,9 @@ class ArithmeticSimplifier(Visitor):
             elif self._same_constant(left.operands[1], right):
                 return left.operands[0]
         
+
+
+
     def visit_BitVecOr(self, expression, *operands):
         ''' a | 0 => a
             0 | a => a
@@ -469,7 +472,7 @@ class ArithmeticSimplifier(Visitor):
         
 def arithmetic_simplifier(expression):
     simp = ArithmeticSimplifier()
-    simp.visit(expression, use_fixed_point=True)
+    simp.visit(expression, use_fixed_point=False)
     return simp.result
 
 class TranslatorSmtlib(Visitor):
