@@ -355,6 +355,8 @@ class State(object):
         function, the following arguments correspond to the arguments of the C function
         being modeled. If the `model` models a variadic function, the following argument
         is a generator object, which can be used to access function arguments dynamically.
+        The `model` callable should simply return the value that should be returned by the
+        native function being modeled.
 
         :param callable model: Model to invoke
         '''
