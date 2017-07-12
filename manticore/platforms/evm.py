@@ -620,7 +620,7 @@ class EVM(Eventful):
 
     def STOP(self):
         ''' Halts execution '''
-        raise EVM.Stop()
+        raise Stop()
 
     def ADD(self, a, b):
         ''' Addition operation '''
@@ -741,7 +741,7 @@ class EVM(Eventful):
         #read memory from start to end
         #calculate hash on it/ maybe remember in some structure where that hash came from
         #http://gavwood.com/paper.pdf
-        raise EVM.Sha3(start, end)
+        raise Sha3(start, end)
 
     ##########################################################################
     ##Environmental Information
@@ -792,7 +792,7 @@ class EVM(Eventful):
         
         for i in range(size):
             if (data_offset+i >= len(self.data)):
-                raise EVM.Stop()
+                raise Stop()
             self._store(mem_offset+i, self.data[data_offset+i])
 
     def CODESIZE(self):
@@ -1079,7 +1079,7 @@ class EVMWorld(Platform):
         origin = self.current.origin
         sender = self.current.address
         price = self.current.price
-        depth = self.depth
+        depth = self.depth+1
         memory = self.constraints.new_array(256, 'MEM_%d'%depth)
         header = {'timestamp': 100}
         new_vm = EVM(memory, address, origin, price, "", sender, value, bytecode, header, depth)
@@ -1093,7 +1093,7 @@ class EVMWorld(Platform):
         origin = self.current.origin
         sender = self.current.address
         price = self.current.price
-        depth = self.depth
+        depth = self.depth+1
         bytecode = self.current.storage[to]['bytecode']
         memory = self.constraints.new_array(256, 'MEM_%d'%depth)
         header = {'timestamp' :1}
