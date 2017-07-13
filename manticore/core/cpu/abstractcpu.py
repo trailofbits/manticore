@@ -337,6 +337,9 @@ class Abi(object):
 
             self.ret()
 
+        if type(self._cpu).__name__ == "BinjaCpu":
+            self._cpu.resume_from_syscall()
+
         return result
 
 class SyscallAbi(Abi):
@@ -777,7 +780,6 @@ class Cpu(object):
                 register_logger.debug(l)
 
         implementation(*insn.operands)
-
         # In case we are executing IL instructions, we could iteratively
         # invoke multiple instructions due to the tree form, thus we only
         # want to increment the PC once, based on its previous position

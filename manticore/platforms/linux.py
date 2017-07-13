@@ -14,6 +14,7 @@ from ..utils.event import Signal, forward_signals
 from ..utils.helpers import issymbolic
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
+from ..core.cpu.binja import BinjaCpu
 from ..core.cpu.disasm import init_disassembler
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet

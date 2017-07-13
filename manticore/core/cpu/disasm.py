@@ -228,6 +228,7 @@ class BinjaILDisasm(Disasm):
                     op == enums.LowLevelILOperation.LLIL_JUMP_TO or
                     op == enums.LowLevelILOperation.LLIL_IF or
                     op == enums.LowLevelILOperation.LLIL_RET or
+                    op == enums.LowLevelILOperation.LLIL_SYSCALL or
                     op == enums.LowLevelILOperation.LLIL_GOTO)
 
         def __repr__(self):
