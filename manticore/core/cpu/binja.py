@@ -154,8 +154,9 @@ class BinjaOperand(Operand):
     def type(self):
         from binaryninja import lowlevelil as il
         type_map = {
-            il.ILRegister: 'register',
-            il.LowLevelILInstruction: 'instruction',
+            il.ILRegister : 'register',
+            il.LowLevelILInstruction : 'instruction',
+            il.ILFlag : 'flag',
         }
 
         try:
@@ -176,7 +177,9 @@ class BinjaOperand(Operand):
 
         cpu, op = self.cpu, self.op
         if self.type == 'register':
-            return cpu.read_register(self.op)
+            return cpu.read_register(op)
+        if self.type == 'flag':
+            return cpu.regfile.registers[op.name + 'f']
         elif self.type == 'instruction':
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             return implementation(*op.operands)
@@ -187,6 +190,8 @@ class BinjaOperand(Operand):
         cpu, op = self.cpu, self.op
         if self.type == 'register':
             return cpu.write_register(str(op), value)
+        if self.type == 'flag':
+            return cpu.write_register(op.name + 'f', value)
         elif self.type == 'instruction':
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             return implementation(*op.operands)
@@ -524,8 +529,8 @@ class BinjaCpu(Cpu):
     def DIVU_DP(cpu):
         raise NotImplementedError
 
-    def FLAG(cpu):
-        raise NotImplementedError
+    def FLAG(cpu, flag):
+        return flag.read()
 
     def FLAG_BIT(cpu):
         raise NotImplementedError
@@ -543,68 +548,20 @@ class BinjaCpu(Cpu):
         return cpu.__class__.PC
 
     def IF(cpu, condition, true, false):
-        cond = condition.read()
-
         import binaryninja.enums as enums
+        from binaryninja.lowlevelil import LowLevelILInstruction
 
-        # FLAGS are ['c', 'p', 'a', 'z', 's', 'd', 'o']
-        # FIXME make this call the arch-specific flags
-        if cond == enums.LowLevelILFlagCondition.LLFC_E:
-            res = cpu.regfile.registers['zf']
-        elif cond == enums.LowLevelILFlagCondition.LLFC_NE:
-            res = cpu.regfile.registers['zf'] == 0
-        elif cond == enums.LowLevelILFlagCondition.LLFC_NEG:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-        elif cond == enums.LowLevelILFlagCondition.LLFC_NO:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-            res = cpu.regfile.registers['of']
-        elif cond == enums.LowLevelILFlagCondition.LLFC_O:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-            res = cpu.regfile.registers['of']
-        elif cond == enums.LowLevelILFlagCondition.LLFC_POS:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-        elif cond == enums.LowLevelILFlagCondition.LLFC_SGE:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-        elif cond == enums.LowLevelILFlagCondition.LLFC_SGT:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-        elif cond == enums.LowLevelILFlagCondition.LLFC_SLE:
-            res = Operators.OR(cpu.regfile.registers['zf'],
-                               (cpu.regfile.registers['sf'] !=
-                                cpu.regfile.registers['of']))
-        elif cond == enums.LowLevelILFlagCondition.LLFC_SLT:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-        elif cond == enums.LowLevelILFlagCondition.LLFC_UGE:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-        elif cond == enums.LowLevelILFlagCondition.LLFC_UGT:
-            res = Operators.AND(cpu.regfile.registers['cf'] == 0,
-                                cpu.regfile.registers['zf'] == 0)
-        elif cond == enums.LowLevelILFlagCondition.LLFC_ULE:
-            res = Operators.OR(cpu.regfile.registers['zf'],
-                               cpu.regfile.registers['cf'])
-        elif cond == enums.LowLevelILFlagCondition.LLFC_ULT:
-            print cond
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
-        else:
-            print cond
-            raise NotImplementedError
-
+        # FIXME get this from condition.op?
+        il = cpu.disasm.disasm_il
+        cond = il.operands[0].operands[0].op
+        exp = cpu.view.arch.get_default_flag_condition_low_level_il(cond,
+                                                                    il.function)
+        cond_il = LowLevelILInstruction(cpu.disasm.current_func.lifted_il,
+                                        exp.index)
+        implementation = getattr(cpu, cond_il.operation.name[len("LLIL_"):])
+        cond_il.operands = [BinjaOperand(cpu, cond_il, x)
+                            for x in cond_il.operands]
+        res = implementation(*cond_il.operands)
         idx = true.op if res else false.op
         assert isinstance(idx, long)
 
@@ -666,7 +623,8 @@ class BinjaCpu(Cpu):
         return cpu.read_int(expr.read(), expr.llil.size * 8)
 
     def LOW_PART(cpu, expr):
-        raise NotImplementedError
+        mask = (1 << expr.llil.size * 8) - 1
+        return expr.read() & mask
 
     def LSL(cpu, reg, shift):
         rsize = reg.llil.size * 8
@@ -708,7 +666,6 @@ class BinjaCpu(Cpu):
             'o': of
         }
         cpu.update_flags(flags)
-        cpu.update_flags_from_il(reg.llil)
         return res
 
     def LSR(cpu, reg, shift):
@@ -777,8 +734,8 @@ class BinjaCpu(Cpu):
     def NORET(cpu):
         raise NotImplementedError
 
-    def NOT(cpu):
-        raise NotImplementedError
+    def NOT(cpu, expr):
+        return not expr.read()
 
     def OR(cpu, left, right):
         res = left.read() | right.read()
@@ -857,7 +814,6 @@ class BinjaCpu(Cpu):
         cpu.write_register('rcx', cpu.regfile.registers['rip'])
         cpu.write_register('r11', x86_get_eflags(cpu, 'RFLAGS'))
         raise Syscall()
-        raise NotImplementedError
 
     def TEST_BIT(cpu):
         raise NotImplementedError
@@ -871,19 +827,31 @@ class BinjaCpu(Cpu):
     def UNIMPL(cpu):
         # FIXME invoke platform-specific CPU here
         disasm = cpu.view.get_disassembly(cpu.disasm.current_pc)
+        # FIXME logging
+        if "xmm" in disasm:
+            return
         if disasm == "rdtsc":
             x86_rdtsc(cpu)
         elif disasm == "cpuid":
             x86_cpuid(cpu)
         elif disasm == "xgetbv":
             x86_xgetbv(cpu)
+        elif disasm.startswith("bsf"):
+            x86_bsf(cpu, disasm)
         else:
             print disasm
             print hex(cpu.disasm.current_pc)
             raise NotImplementedError
 
-    def UNIMPL_MEM(cpu):
-        raise NotImplementedError
+    def UNIMPL_MEM(cpu, expr):
+        disasm = cpu.view.get_disassembly(cpu.disasm.current_pc)
+        # FIXME logging
+        if "xmm" in disasm:
+            return
+        else:
+            print disasm
+            print hex(cpu.disasm.current_pc)
+            raise NotImplementedError
 
     def XOR(cpu, left, right):
         res = left.read() ^ right.read()
@@ -900,6 +868,8 @@ class BinjaCpu(Cpu):
 #
 #
 
+def x86_bsf(cpu, disasm):
+    raise NotImplementedError
 
 def x86_get_eflags(cpu, reg):
     def make_symbolic(flag_expr):
@@ -936,6 +906,12 @@ def x86_xgetbv(cpu):
     cpu.write_register('edx', 0)
 
 def x86_update_logic_flags(cpu, result, size):
+    f = cpu.disasm.current_func
+    i = cpu.disasm.disasm_il
+    mod_flags = f.get_flags_written_by_lifted_il_instruction(i.instr_index)
+    if not mod_flags:
+        return
+
     flags = {
         'c': False,
         'p': _parity_flag(result),
