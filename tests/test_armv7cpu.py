@@ -1116,6 +1116,13 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R2'), 0x5)
 
+    @itest_setregs("R2=0xFF", "R3=0x1")
+    @itest_custom_thumb("uadd8 r2, r2, r3")
+    def test_uadd8(self):
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R2'), 0)
+
+
     # EOR
 
     @itest_custom("eor r2, r3, #5")
@@ -1490,3 +1497,55 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_uxtb(self):
         self.assertEqual(self.cpu.R2, 0x55555555)
         self.assertEqual(self.cpu.R1, 0x55)
+
+    def test_itt_ne_noexec(self):
+        asms = ["teq r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"]
+        self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
+        self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
+        self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
+        start = self.code + 4
+        offset = 0
+        for asm in asms:
+            asm_inst = assemble(asm, CS_MODE_THUMB)
+            self.mem.write(start + offset, asm_inst)
+            offset += len(asm_inst)
+        self.rf.write('PC', start)
+        self.rf.write('SP', self.stack + 0x1000)
+        self.rf.write('R1', 0x1)
+        self.rf.write('R2', 0x0)
+        self.rf.write('R3', 0x0)
+        self.rf.write('R4', 0x0)
+        self.rf.write('R12', 0x4141)
+        self.cpu._set_mode(CS_MODE_THUMB)
+        for m in range(len(asms)):
+            self.cpu.execute()
+        self.assertEqual(self.rf.read('R2'), 0x0)
+        self.assertEqual(self.rf.read('R3'), 0x0)
+        self.assertEqual(self.rf.read('R4'), 0x4141)
+
+    def test_itt_ne_execute(self):
+        asms = ["teq r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"]
+        self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
+        self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
+        self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
+        start = self.code + 4
+        offset = 0
+        for asm in asms:
+            asm_inst = assemble(asm, CS_MODE_THUMB)
+            self.mem.write(start + offset, asm_inst)
+            offset += len(asm_inst)
+        self.rf.write('PC', start)
+        self.rf.write('SP', self.stack + 0x1000)
+        self.rf.write('R1', 0x0)
+        self.rf.write('R2', 0x0)
+        self.rf.write('R3', 0x0)
+        self.rf.write('R4', 0x0)
+        self.rf.write('R12', 0x4141)
+        self.cpu._set_mode(CS_MODE_THUMB)
+        for m in range(len(asms)):
+            self.cpu.execute()
+        self.assertEqual(self.rf.read('R2'), 0x4141)
+        self.assertEqual(self.rf.read('R3'), 0x4141)
+        self.assertEqual(self.rf.read('R4'), 0x4141)
+
+

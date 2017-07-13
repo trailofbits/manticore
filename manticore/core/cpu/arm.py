@@ -317,6 +317,7 @@ class Armv7Cpu(Cpu):
     arch = CS_ARCH_ARM
     mode = CS_MODE_ARM
 
+    _it_conditional = list()
 
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
@@ -470,6 +471,15 @@ class Armv7Cpu(Cpu):
         cc = cpu.instruction.cc
         ret = False
 
+        #support for the it[x[y[z]]] <op> instructions
+        if len(cpu._it_conditional):
+            logger.debug("it instruction effect!")
+            ret = cpu._it_conditional.pop(0)
+            return ret
+
+        return cpu._evaluate_conditional(cc)
+
+    def _evaluate_conditional(cpu, cc):
         C = cpu.regfile.read('APSR_C')
         N = cpu.regfile.read('APSR_N')
         V = cpu.regfile.read('APSR_V')
@@ -498,6 +508,28 @@ class Armv7Cpu(Cpu):
             raise NotImplementedError("Bad conditional tag")
 
         return ret
+
+    @instruction
+    def IT(cpu):
+        cc = cpu.instruction.cc
+        true_case = cpu._evaluate_conditional(cc)
+        #this is incredibly hacky--how else does capstone expose this?
+        for c in cpu.instruction.mnemonic[1:]:
+            if c == 't':
+                cpu._it_conditional.append(true_case)
+            elif c == 'e':
+                cpu._it_conditional.append(not true_case)
+        logger.debug("result of it: {}".format(cpu._it_conditional))
+
+    @instruction
+    def UADD8(cpu, dest, src, op):
+        op1 = src.read()
+        op2 = op.read()
+        result = 0
+        for i in range(4):
+            byte = ((op1 >> (8*i)) & 0xFF) + ((op2 >> (8*i)) & 0xFF)
+            result |= (byte & 0xFF) << (8*i)
+        dest.write(result)
 
     @instruction
     def MOV(cpu, dest, src):
