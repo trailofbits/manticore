@@ -140,12 +140,13 @@ def itest_custom(asm):
 
     return instr_dec
 
-def itest_custom_thumb(asm):
-    def instr_dec(custom_func):
-        @wraps(custom_func)
+def itest_thumb(asm):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
         def wrapper(self):
             self._setupCpu(asm, mode=CS_MODE_THUMB)
-            custom_func(self)
+            self.cpu.execute()
+            assertions_func(self)
 
         return wrapper
 
@@ -669,6 +670,14 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R3'), 2 ** 32 - 1)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
+    # UADD8
+
+    @itest_setregs("R2=0x00FF00FF", "R3=0x00010001")
+    @itest_thumb("uadd8 r2, r2, r3")
+    def test_uadd8(self):
+        self.assertEqual(self.rf.read('R2'), 0)
+        self.assertEqual(self.rf.read('APSR_GE'), 5)
+
     # LDR imm
 
     @itest_custom("ldr r1, [sp]")
@@ -1131,17 +1140,9 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     # ORN
     @itest_setregs("R2=0x0", "R5=0xFFFFFFFA")
-    @itest_custom_thumb("orn r2, r2, r5")
+    @itest_thumb("orn r2, r2, r5")
     def test_orn(self):
-        self.cpu.execute()
         self.assertEqual(self.rf.read('R2'), 0x5)
-
-    @itest_setregs("R2=0xFF", "R3=0x1")
-    @itest_custom_thumb("uadd8 r2, r2, r3")
-    def test_uadd8(self):
-        self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0)
-
 
     # EOR
 
@@ -1332,10 +1333,9 @@ class Armv7CpuInstructions(unittest.TestCase):
         self._checkFlagsNZCV(1, 0, 1, 0)
 
     @itest_setregs("R5=1", "R6=2")
-    @itest_custom_thumb("lsl.w r5, r6, #3")
+    @itest_thumb("lsl.w r5, r6, #3")
     def test_lslw_thumb(self):
         '''thumb mode specific behavior'''
-        self.cpu.execute()
         self.assertEqual(self.cpu.R5, 0x2 << 3)
 
     # lsr
@@ -1350,15 +1350,13 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R0'), 0x1000 >> 3)
 
     @itest_setregs("R5=0", "R6=16")
-    @itest_custom_thumb("lsr.w R5, R6, #3")
+    @itest_thumb("lsr.w R5, R6, #3")
     def test_lsrw_thumb(self):
-        self.cpu.execute()
         self.assertEqual(self.cpu.R5, 16>>3)
 
     @itest_setregs("R5=0", "R6=16")
-    @itest_custom_thumb("asr.w R5, R6, #3")
+    @itest_thumb("asr.w R5, R6, #3")
     def test_asrw_thumb(self):
-        self.cpu.execute()
         self.assertEqual(self.cpu.R5, 16>>3)
 
     @itest_setregs("R2=29")
