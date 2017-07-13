@@ -469,14 +469,17 @@ class Armv7Cpu(Cpu):
         return cpu.instruction.update_flags
 
     def shouldExecuteConditional(cpu):
+        #for the IT instuction, the cc applies to the subsequent instructions,
+        #so the IT instruction should be executed regardless of its cc
+        if cpu.instruction.id == ARM_INS_IT:
+            return True
+
         cc = cpu.instruction.cc
         ret = False
 
         #support for the it[x[y[z]]] <op> instructions
         if len(cpu._it_conditional):
-            logger.debug("it instruction effect!")
-            ret = cpu._it_conditional.pop(0)
-            return ret
+            return cpu._it_conditional.pop(0)
 
         return cpu._evaluate_conditional(cc)
 
@@ -515,22 +518,29 @@ class Armv7Cpu(Cpu):
         cc = cpu.instruction.cc
         true_case = cpu._evaluate_conditional(cc)
         #this is incredibly hacky--how else does capstone expose this?
+        #TODO: find a better way than string parsing the mnemonic -GR, 2017-07-13
         for c in cpu.instruction.mnemonic[1:]:
             if c == 't':
                 cpu._it_conditional.append(true_case)
             elif c == 'e':
                 cpu._it_conditional.append(not true_case)
-        logger.debug("result of it: {}".format(cpu._it_conditional))
 
     @instruction
     def UADD8(cpu, dest, src, op):
         op1 = src.read()
         op2 = op.read()
         result = 0
+        overflow = 0
         for i in range(4):
             byte = ((op1 >> (8*i)) & 0xFF) + ((op2 >> (8*i)) & 0xFF)
             result |= (byte & 0xFF) << (8*i)
+            if byte > 0xFF:
+                overflow |= 1<<i
         dest.write(result)
+        #TODO: this flag is set and updated independantly of the CVZN flags; this approach
+        #      works, but in incongruent with all the other flag handling. How to make this
+        #      better? -GR, 2017-07-13
+        cpu.regfile.write('APSR_GE', overflow)
 
     @instruction
     def SEL(cpu, dest, op1, op2):

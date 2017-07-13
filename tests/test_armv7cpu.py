@@ -151,6 +151,19 @@ def itest_custom_thumb(asm):
 
     return instr_dec
 
+def itest_thumb_multiple(asms):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
+        def wrapper(self):
+            self._setupCpu(asms, mode=CS_MODE_THUMB, multiple_insts=True)
+            for i in range(len(asms)):
+                self.cpu.execute()
+            assertions_func(self)
+
+        return wrapper
+
+    return instr_dec
+
 
 class Armv7CpuInstructions(unittest.TestCase):
     def setUp(self):
@@ -158,12 +171,19 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
-    def _setupCpu(self, asm, mode=CS_MODE_ARM):
+    def _setupCpu(self, asm, mode=CS_MODE_ARM, multiple_insts=False):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
         start = self.code + 4
-        self.mem.write(start, assemble(asm, mode))
+        if multiple_insts:
+            offset = 0
+            for asm_single in asm:
+                asm_inst = assemble(asm_single, mode)
+                self.mem.write(start+offset, asm_inst)
+                offset += len(asm_inst)
+        else:
+            self.mem.write(start, assemble(asm, mode))
         self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000)
         self.cpu._set_mode(mode)
@@ -1498,54 +1518,32 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.cpu.R2, 0x55555555)
         self.assertEqual(self.cpu.R1, 0x55)
 
+    @itest_setregs("R1=1","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_thumb_multiple(["cmp r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
     def test_itt_ne_noexec(self):
-        asms = ["teq r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"]
-        self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
-        self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
-        self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
-        start = self.code + 4
-        offset = 0
-        for asm in asms:
-            asm_inst = assemble(asm, CS_MODE_THUMB)
-            self.mem.write(start + offset, asm_inst)
-            offset += len(asm_inst)
-        self.rf.write('PC', start)
-        self.rf.write('SP', self.stack + 0x1000)
-        self.rf.write('R1', 0x1)
-        self.rf.write('R2', 0x0)
-        self.rf.write('R3', 0x0)
-        self.rf.write('R4', 0x0)
-        self.rf.write('R12', 0x4141)
-        self.cpu._set_mode(CS_MODE_THUMB)
-        for m in range(len(asms)):
-            self.cpu.execute()
-        self.assertEqual(self.rf.read('R2'), 0x0)
-        self.assertEqual(self.rf.read('R3'), 0x0)
+        self.assertEqual(self.rf.read('R2'), 0)
+        self.assertEqual(self.rf.read('R3'), 0)
         self.assertEqual(self.rf.read('R4'), 0x4141)
 
-    def test_itt_ne_execute(self):
-        asms = ["teq r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"]
-        self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
-        self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
-        self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
-        start = self.code + 4
-        offset = 0
-        for asm in asms:
-            asm_inst = assemble(asm, CS_MODE_THUMB)
-            self.mem.write(start + offset, asm_inst)
-            offset += len(asm_inst)
-        self.rf.write('PC', start)
-        self.rf.write('SP', self.stack + 0x1000)
-        self.rf.write('R1', 0x0)
-        self.rf.write('R2', 0x0)
-        self.rf.write('R3', 0x0)
-        self.rf.write('R4', 0x0)
-        self.rf.write('R12', 0x4141)
-        self.cpu._set_mode(CS_MODE_THUMB)
-        for m in range(len(asms)):
-            self.cpu.execute()
+
+    @itest_setregs("R1=0","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_thumb_multiple(["cmp r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
+    def test_itt_ne_exec(self):
         self.assertEqual(self.rf.read('R2'), 0x4141)
         self.assertEqual(self.rf.read('R3'), 0x4141)
         self.assertEqual(self.rf.read('R4'), 0x4141)
+
+    @itest_setregs("R1=0","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_thumb_multiple(["cmp r1, #1", "ite ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
+    def test_ite_ne_exec(self):
+        self.assertEqual(self.rf.read('R2'), 0x4141)
+        self.assertEqual(self.rf.read('R3'), 0x0)
+        self.assertEqual(self.rf.read('R4'), 0x4141)
+
+    @itest_setregs("R1=0","R2=0xFFFFFFFF","R3=0x01000001","R4=0","R5=0x01010101","R6=0x02020202")
+    @itest_thumb_multiple(["uadd8 r1, r2, r3","sel r4, r5, r6"])
+    def test_sel(self):
+        self.assertEqual(self.rf.read('R1'), 0x00FFFF00)
+        self.assertEqual(self.rf.read('R4'), 0x01020201)
 
 
