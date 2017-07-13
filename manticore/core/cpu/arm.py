@@ -199,6 +199,7 @@ class Armv7RegisterFile(RegisterFile):
         self._regs['APSR_Z'] = Register(1)
         self._regs['APSR_C'] = Register(1)
         self._regs['APSR_V'] = Register(1) 
+        self._regs['APSR_GE'] = Register(4)
 
         #MMU Coprocessor  -- to support MCR/MRC for TLS
         self._regs['P15_C13'] = Register(32)
@@ -259,7 +260,7 @@ class Armv7RegisterFile(RegisterFile):
         return super(Armv7RegisterFile, self).all_registers + \
                 ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','D0','D1','D2',
                 'D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14','D15','D16','D17','D18','D19','D20',
-                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V',
+                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V','APSR_GE',
                 'P15_C13')
 
     @property
@@ -321,7 +322,7 @@ class Armv7Cpu(Cpu):
 
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
-        self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
+        self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = False
 
     def __getstate__(self):
@@ -529,6 +530,19 @@ class Armv7Cpu(Cpu):
         for i in range(4):
             byte = ((op1 >> (8*i)) & 0xFF) + ((op2 >> (8*i)) & 0xFF)
             result |= (byte & 0xFF) << (8*i)
+        dest.write(result)
+
+    @instruction
+    def SEL(cpu, dest, op1, op2):
+        op1val = op1.read()
+        op2val = op2.read()
+        result = 0
+        GE = cpu.regfile.read('APSR_GE')
+        for i in range(4):
+            if GE & (1 << i):
+                result |= op1val & (0xFF << (8*i))
+            else:
+                result |= op2val & (0xFF << (8*i))
         dest.write(result)
 
     @instruction
