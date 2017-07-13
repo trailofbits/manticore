@@ -69,6 +69,8 @@ class IntegrationTest(unittest.TestCase):
 
         args = ['python', '-m', 'manticore', '--timeout', '400', '--workspace', workspace, dumpfile]
 
+        os.mkdir(workspace)
+
         for k,v in params.iteritems():
             if k.startswith("--"):
                 args.extend([k, v.format(dumpdir=dumpdir, workspace=workspace)])
