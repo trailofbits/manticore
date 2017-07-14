@@ -371,14 +371,14 @@ class EVM(Eventful):
         contents are a series of zeroes of bitsize 256
     '''
 
-    def __init__(self, memory, address, origin, price, data, sender, value, bytecode, header, storage=None, depth=0, **kwargs):
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, world=None, depth=0, **kwargs):
         '''
         memory, the initial memory
         address, the address of the account which owns the code that is executing.
         origin, the sender address of the transaction that originated this execution. A 160-bit code used for identifying Accounts.
         price, the price of gas in the transaction that originated this execution.
         data, the byte array that is the input data to this execution
-        sender, the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
+        caller, the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
         value, the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei.
         bytecode, the byte array that is the machine code to be executed.
         header, the block header of the present block.
@@ -386,17 +386,18 @@ class EVM(Eventful):
 
         '''
         super(EVM, self).__init__(**kwargs)
+        self.constraints = constraints
         self.last_exception = None
-        self.memory = memory
+        self.memory = self.constraints.new_array(256, 'MEM_%x_%d'%(address,depth))
         self.address = address
         self.origin = origin # always an account with empty associated code
-        self.caller = sender # address of the account that is directly responsible for this execution
+        self.caller = caller # address of the account that is directly responsible for this execution
         self.coinbase = 0
         self.data = data
         self.price = price #This is gas price specified by the originating transaction
         self.value = value
         self.depth = depth
-        self.bytecode = bytecode
+        self.bytecode = code
 
         #FIXME parse decode and mark invalid instructions
         #self.invalid = set()
@@ -408,16 +409,18 @@ class EVM(Eventful):
         self.pc = 0
         self.stack = []
         self.gas = 0
-        self.storage = storage
+        self.world = world
         self.allocated = 0
 
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
+        state['world'] = self.world
+        state['constraints'] = self.constraints
         state['last_exception'] = self.last_exception
         state['memory'] = self.memory
         state['address'] = self.address
         state['origin'] = self.origin
-        state['sender'] = self.caller
+        state['caller'] = self.caller
         state['coinbase'] = self.coinbase
         state['data'] = self.data
         state['price'] = self.price
@@ -429,17 +432,17 @@ class EVM(Eventful):
         state['gas'] = self.gas
         state['allocated'] = self.allocated
 
-        state['storage'] = self.storage
         return state
 
     def __setstate__(self, state):
         super(EVM, self).__setstate__(state)
-        self.storage = state['storage']
+        self.world = state['world']
+        self.constraints = state['constraints']
         self.last_exception = state['last_exception']
         self.memory = state['memory']
         self.address = state['address']
         self.origin = state['origin']
-        self.caller = state['sender']
+        self.caller = state['caller']
         self.coinbase = state['coinbase']
         self.data = state['data']
         self.price = state['price']
@@ -751,7 +754,7 @@ class EVM(Eventful):
 
     def BALANCE(self, account):
         '''Get balance of the given account'''
-        value = self.storage[account & TT256M1 ].balance
+        value = self.storage[account & TT256M1 ]['balance']
         if value is None:
             return 0
         return value
@@ -814,12 +817,12 @@ class EVM(Eventful):
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
         #FIXME
-        return len(self.storage[account & TT256M1].bytecode)
+        return len(self.world[account & TT256M1]['code'])
 
     def EXTCODECOPY(self, account, address, offset, size): 
         '''Copy an account's code to memory'''
         #FIXME STOP! if not enough data
-        extbytecode = self.storage[account& TT256M1].bytecode
+        extbytecode = self.world[account& TT256M1]['code']
         for i in range(size):
             self._store(address+i, extbytecode[offset+i])
 
@@ -997,60 +1000,74 @@ class EVM(Eventful):
 
 
 class EVMWorld(Platform):
-    def __init__(self, constraints, initial_vm, **kwargs):
+    def __init__(self, constraints, storage=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
-        self.constraints = constraints
-        self._stack = [initial_vm] 
-        self._created_address = set()
-        self.forward_events_from(self.current)
+        self._global_storage = {} if storage is None else storage
+        self._constraints = constraints
+        self._callstack = [] 
+        self._deleted_address = set()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
-        state['constraints'] = self.constraints
-        state['stack'] = self._stack
-        state['created_address'] = self._created_address
+        state['storage'] = self._global_storage
+        state['constraints'] = self._constraints
+        state['callstack'] = self._callstack
+        state['deleted_address'] = self._deleted_address
         return state
 
     def __setstate__(self, state):
         super(EVMWorld, self).__setstate__(state)
-        self.constraints = state['constraints']
-        self._stack = state['stack']
-        self._created_address = state['created_address']
+        self._global_storage = state['storage']
+        self._constraints = state['constraints']
+        self._callstack = state['callstack']
+        self._deleted_address = state['deleted_address']
         self.forward_events_from(self.current)
 
+    def __str__(self):
+        return "WORLD:" + str(self._global_storage)
         
     @property
     def current(self):
-        return self._stack[-1]
+        return self._callstack[-1]
+
     @property
     def storage(self):
-        return self.current.storage
+        if self.depth:
+            return self.current.global_storage
+        else:
+            return self._global_storage
+
+    @storage.setter
+    def storage(self, value):
+        if self.depth:
+            self.current.global_storage = value
+        else:
+            self._global_storage = value
 
     def _push(self, vm):
-        cpy_storage = copy.deepcopy(self.current.storage)
-        vm.storage = cpy_storage
-        self._stack.append(vm)
+        vm.global_storage = copy.deepcopy(self.storage)
+        self._callstack.append(vm)
+        self.current.depth = self.depth
         self.forward_events_from(self.current)
 
     def _pop(self, rollback=False):
-        vm = self._stack.pop()
+        vm = self._callstack.pop()
         if not rollback:
-            self.current.storage = vm.storage
+            print "REPLACING storage"
+            self.storage = vm.global_storage
         self.forward_events_from(self.current)
         return vm
 
     @property
     def depth(self):
-        return len(self._stack)
+        return len(self._callstack)
 
     def _new_address(self):
         ''' create a fresh 160bit address '''
         new_address = random.randint(100, pow(2, 160))
-        if new_address in self._created_address:
+        if new_address in self._global_storage.keys():
             return self._new_address()
-        self._created_address.add(new_address)
         return new_address
-
 
     def execute(self):
         try:
@@ -1072,51 +1089,85 @@ class EVMWorld(Platform):
         except EVMException as e:
             self.THROW()
 
+    def run(self):
+        while True:
+            print self, self.current
+            self.execute()
+
+    def create_account(self, address=None, balance=0, code='', storage=None):
+        ''' code is the runtime code '''
+        assert self.depth == 0  #External access
+        if address is None:
+            address = self._new_address()
+        assert address not in self.storage.keys(), 'The account already exists'
+        self.storage[address] = {}
+        self.storage[address]['nonce'] = 0
+        self.storage[address]['balance'] = balance
+        self.storage[address]['storage'] = {} if storage is None else storage
+        self.storage[address]['code'] = code
+        return address
+
+    def create_contract(self, origin, price, address=None, balance=0, init=''):
+        assert len(init) > 0
+        address = self.create_account(address, balance)
+        header = {'timestamp' : 0}
+        new_vm = EVM(self._constraints, address, origin, price, init, origin, value=balance, code=init, header=header)
+        new_vm.last_exception = Create(None, None, None)
+        self._push(new_vm)
+
+
+    def transaction(self, address, origin, price, data, caller, value, header):
+        bytecode = self.storage[address]['code']
+        new_vm = EVM(address, origin, price, "", caller, value, bytecode, header, depth)
+        self._push(new_vm)
+
 
     def CREATE(self, value, offset, size):
         bytecode = self.current.read_buffer(offset, size)
         address = self._new_address()
         origin = self.current.origin
-        sender = self.current.address
+        caller = self.current.address
         price = self.current.price
         depth = self.depth+1
-        memory = self.constraints.new_array(256, 'MEM_%d'%depth)
         header = {'timestamp': 100}
-        new_vm = EVM(memory, address, origin, price, "", sender, value, bytecode, header, depth)
+        new_vm = EVM(self._constraints, address, origin, price, "", caller, value, bytecode, header, depth)
         self._push(new_vm)
         self.storage[address] = {}
-        self.storage[address]['bytecode'] = bytecode
 
     def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         data = self.current.read_buffer(in_offset, in_size)
         address = to
         origin = self.current.origin
-        sender = self.current.address
+        caller = self.current.address
         price = self.current.price
         depth = self.depth+1
-        bytecode = self.current.storage[to]['bytecode']
-        memory = self.constraints.new_array(256, 'MEM_%d'%depth)
+        bytecode = self.storage[to]['code']
         header = {'timestamp' :1}
-        new_vm = EVM(memory, address, origin, price, data, sender, value, bytecode, header, depth)
+        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, depth)
         self._push(new_vm)
 
     def RETURN(self, offset, size):
+        print "RETURN", self.depth
+        print self
+        data = self.current.read_buffer(offset, size)
+
         if self.depth == 1:
-            data = self.current.read_buffer(offset, size)
             self.last_return=data
             raise TerminateState("RETURN", testcase=True)
+        prev_vm = self._pop() #current VM changed!
+        print "prev_vm.address", prev_vm.address
+        print self
 
-        prev_vm = self._pop()
-        #current VM changed!^
         last_ex = self.current.last_exception
-        assert isinstance(last_ex, Call)
-        size = min(last_ex.out_size, size)
-        data = self.current.read_buffer(offset, size)
-        self.current.write_buffer(last_ex.out_offset, data)
+        assert isinstance(last_ex, (Call, Create))
 
         if isinstance(last_ex, Create):
             self.current._push(prev_vm.address)
+            self.storage[prev_vm.address]['code'] = data
+
         else:
+            size = min(last_ex.out_size, size)
+            self.current.write_buffer(last_ex.out_offset, data[:size])
             self.current._push(1)
 
         #we are still on the CALL/CREATE
@@ -1140,8 +1191,8 @@ class EVMWorld(Platform):
     def SELFDESTRUCT(self, recipient):
         recipient = Operators.EXTRACT(recipient, 0, 160)
         address = self.current.address
-        self.current.storage[recipient].balance += self.current.storage[address].balance
-        self.current.storage[address].balance = 0
+        self.storage[recipient]['balance'] += self.storage[address]['balance']
+        self.storage[address]['balance'] = 0
         self._pop(rollback=False)
         
     def HASH(self, offset, size):

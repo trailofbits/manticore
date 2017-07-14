@@ -53,10 +53,15 @@ def makeEVM(args):
     header=contract['header']
     price=contract['price']
     data = constraints.new_array(256, name='DATA', index_max=256)
-    memory = constraints.new_array(256, 'MEM_0')
 
-    vm = evm.EVM(memory, address, origin, price, data, sender, value, bytecode, header, storage={})
-    platform = evm.EVMWorld(constraints, vm)
+    platform = evm.EVMWorld(constraints)
+    user_account = platform.create_account(address=None, balance=1000)
+    contract_account = platform.create_contract(origin=user_account, price=0, address=None, balance=0, init=bytecode)
+    print platform
+    print platform.current.address
+    
+    platform.run()
+    kj
     initial_state = State(constraints, platform)
     initial_state.input_symbols.append(data)
     platform.data = contract['data']
