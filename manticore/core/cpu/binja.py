@@ -1,9 +1,9 @@
 import ctypes
 import logging
+import re
 from collections import defaultdict
 
 from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
-
 from .cpufactory import CpuFactory
 from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
@@ -100,7 +100,6 @@ class BinjaRegisterFile(RegisterFile):
         from binaryninja import Architecture
 
         arch = Architecture[self.arch]
-
         r = self._alias(str(reg))
         if r in self.registers:
             return self.registers[r]
@@ -181,6 +180,7 @@ class BinjaOperand(Operand):
         if self.type == 'flag':
             return cpu.regfile.registers[op.name + 'f']
         elif self.type == 'instruction':
+            #  print "Calling " + op.operation.name
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             return implementation(*op.operands)
         else:
@@ -193,6 +193,7 @@ class BinjaOperand(Operand):
         if self.type == 'flag':
             return cpu.write_register(op.name + 'f', value)
         elif self.type == 'instruction':
+            #  print "Calling " + op.operation.name
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             return implementation(*op.operands)
         else:
@@ -346,14 +347,9 @@ class BinjaCpu(Cpu):
     def _wrap_operands(self, operands):
         return [BinjaOperand(self, self.disasm.disasm_il, op) for op in operands]
 
-    def resume_from_syscall(self):
-        # FIXME arch-specific. for AMD64, 2 'syscall' is 2 bytes
-        self.__class__.PC += 2
-
     # XXX this is currently not active because a bunch of flag-setting
     # LLIL are not implemented by Binja :(
     def update_flags_from_il(cpu, il):
-        return
         from binaryninja.lowlevelil import LowLevelILInstruction
         flags = cpu.view.arch.flags_written_by_flag_write_type.get(il.flags)
         if flags is None:
@@ -456,26 +452,24 @@ class BinjaCpu(Cpu):
         return reg.read() >> shift.read()
 
     def BOOL_TO_INT(cpu, expr):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def BP(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def CALL(cpu, expr):
-        # FIXME size calculation
         f = cpu.disasm.current_func
         il = f.get_lifted_il_at(cpu.disasm.current_pc)
         next_il = f.lifted_il[il.instr_index + 1].address
-        diff = next_il - il.address
 
         # push next PC into the stack
-        cpu.push(cpu.__class__.PC + diff, cpu.address_bit_size)
-
+        cpu.push(cpu.__class__.PC + next_il - il.address, cpu.address_bit_size)
+        # go for it
         new_pc = expr.read() + cpu.disasm.entry_point_diff
         cpu.__class__.PC = new_pc
         cpu.regfile.write('PC', new_pc)
-        cpu.disasm.current_func = cpu.view.get_function_at(new_pc)
-        assert cpu.disasm.current_func is not None
 
     def CMP_E(cpu, left, right):
         return left.read() == right.read()
@@ -518,21 +512,34 @@ class BinjaCpu(Cpu):
         return ctypes.c_int64(expr.op).value + cpu.disasm.entry_point_diff
 
     def DIVS(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def DIVS_DP(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def DIVU(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def DIVU_DP(cpu):
-        raise NotImplementedError
+    def DIVU_DP(cpu, dividend_h, dividend_l, divisor):
+        # XXX (theo) at least for x86, divu returns the quotient in a
+        # temp register, modu will return the mod
+        size = divisor.size * 8
+
+        dividend = Operators.CONCAT(size * 2,
+                                    dividend_h.read(),
+                                    dividend_l.read())
+        divisor = Operators.ZEXTEND(divisor.read(), size * 2)
+        quotient = Operators.UDIV(dividend, divisor)
+        return Operators.EXTRACT(quotient, 0, size)
 
     def FLAG(cpu, flag):
         return flag.read()
 
     def FLAG_BIT(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def FLAG_COND(cpu, condition):
@@ -704,34 +711,63 @@ class BinjaCpu(Cpu):
         return res
 
     def MODS(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def MODS_DP(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
+        # FIXME what should we return here?
     def MODU(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def MODU_DP(cpu):
-        raise NotImplementedError
+    def MODU_DP(cpu, dividend_h, dividend_l, divisor):
+        size = divisor.size
+        dividend = Operators.CONCAT(size * 2,
+                                    dividend_h.read(),
+                                    dividend_l.read())
+        divisor = Operators.ZEXTEND(divisor.read(), size * 2)
+        remainder = Operators.UREM(dividend, divisor)
+        return Operators.EXTRACT(remainder, 0, size)
 
     def MUL(cpu, left, right):
-        raise NotImplementedError
-        return left.read() * right.read()
+        size = left.llil.size * 8
+        arg0 = left.read()
+        arg1 = right.read()
 
-    def MULS_DP(cpu):
+        arg1 = Operators.SEXTEND(arg1, size, size * 2)
+        temp = Operators.SEXTEND(arg0, size, size * 2) * arg1
+        temp = temp & ((1 << (size * 2)) - 1)
+        res = Operators.EXTRACT(temp, 0, size)
+        cf = Operators.SEXTEND(res, size, size * 2) != temp
+
+        cpu.regfile.write('cf', cf)
+        cpu.regfile.write('of', cf)
+        return res
+
+    def MULS_DP(cpu, left, right):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def MULU_DP(cpu):
+    def MULU_DP(cpu, left, right):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def NEG(cpu):
-        raise NotImplementedError
+    def NEG(cpu, expr):
+        src = expr.read()
+        res = -1 * src
+        x86_update_logic_flags(cpu, res, expr.llil.size * 8)
+        cpu.regfile.write('cf', src != 0)
+        cpu.regfile.write('af', (res & 0x0f) != 0x0)
+        return res
 
     def NOP(cpu):
         return
 
     def NORET(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def NOT(cpu, expr):
@@ -750,33 +786,40 @@ class BinjaCpu(Cpu):
         cpu.push(src.read(), cpu.address_bit_size)
 
     def REG(cpu, expr):
-        return cpu.regfile.read(expr.op)
+        return ctypes.c_int64(cpu.regfile.read(expr.op)).value
 
     def RET(cpu, expr):
         cpu.__class__.PC = cpu.pop(cpu.address_bit_size)
 
     def RLC(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def ROL(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def ROR(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def RRC(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def SBB(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def SET_FLAG(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def SET_REG(cpu, dest, src):
         dest.write(src.read())
 
     def SET_REG_SPLIT(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def STORE(cpu, dest, src):
@@ -804,24 +847,31 @@ class BinjaCpu(Cpu):
             'o': _overflow_flag(res, right_v, left_v, size)
         }
         cpu.update_flags(flags)
-        cpu.update_flags_from_il(left.llil)
         return res
 
     def SX(cpu, expr):
-        return Operators.SEXTEND(expr.read(), expr.size, expr.llil.size)
+        return Operators.SEXTEND(expr.read(), expr.size * 8, expr.llil.size * 8)
 
     def SYSCALL(cpu):
+        # FIXME arch-specific. for AMD64, 2 'syscall' is 2 bytes
+        # bump the PC to the next instruction
+        cpu.__class__.PC += 2
+
+        cpu.write_register('PC', cpu.__class__.PC)
         cpu.write_register('rcx', cpu.regfile.registers['rip'])
         cpu.write_register('r11', x86_get_eflags(cpu, 'RFLAGS'))
         raise Syscall()
 
     def TEST_BIT(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def TRAP(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def UNDEF(cpu):
+        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def UNIMPL(cpu):
@@ -856,7 +906,6 @@ class BinjaCpu(Cpu):
     def XOR(cpu, left, right):
         res = left.read() ^ right.read()
         x86_update_logic_flags(cpu, res, left.llil.size * 8)
-        cpu.update_flags_from_il(left.llil)
         return res
 
     def ZX(cpu, expr):
@@ -869,7 +918,24 @@ class BinjaCpu(Cpu):
 #
 
 def x86_bsf(cpu, disasm):
-    raise NotImplementedError
+    left, right = disasm.rstrip().split(",")
+    dest = re.split('\s+', left)[1]
+    src = right.split()[0]
+    dest_info = cpu.view.arch.regs[dest]
+    src_info = cpu.view.arch.regs[src]
+    value = cpu.regfile.read(src)
+    flag = Operators.EXTRACT(value, 0, 1) == 1
+    res = 0
+    for pos in xrange(1, src_info.size * 8):
+        res = Operators.ITEBV(dest_info.size * 8, flag, res, pos)
+        flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
+
+        cpu.ZF = value == 0
+        cpu.write_register(dest,
+                           Operators.ITEBV(dest_info.size * 8,
+                                           cpu.ZF,
+                                           cpu.regfile.read(dest),
+                                           res))
 
 def x86_get_eflags(cpu, reg):
     def make_symbolic(flag_expr):

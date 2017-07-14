@@ -337,9 +337,6 @@ class Abi(object):
 
             self.ret()
 
-        if type(self._cpu).__name__ == "BinjaCpu":
-            self._cpu.resume_from_syscall()
-
         return result
 
 class SyscallAbi(Abi):
@@ -739,7 +736,7 @@ class Cpu(object):
         Decode, and execute one instruction pointed by register PC
         '''
         # FIXME (theo) Debugging Aid
-        #  if hex(self.PC) == "0x400a73L":
+        #  if hex(self.PC) == "0x44423eL":
             #  raise NotImplementedError
 
         if issymbolic(self.PC):
@@ -831,9 +828,11 @@ class Cpu(object):
         reg_name = reg_name.upper()
         if (value == 0 or
                 value == (0, 0) or
+                reg_name.startswith("TEMP") or
                 reg_name in ["CS", "DS", "ES", "SS"]):
             return None
-
+        if reg_name == "FSBASE":
+            reg_name = "FS"
         if issymbolic(value):
             aux = "%3s: "%reg_name +"%16s"%value
             result += aux

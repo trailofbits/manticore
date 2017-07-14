@@ -102,9 +102,10 @@ class BinjaILDisasm(Disasm):
     def _pop_from_il_queue(self, pc):
         # queue contains tuples of the form (idx, il_insn)
         if self.il_queue != []:
-            # if we have multiple ils for the same pc, pop from the queue
+            # if we have multiple ils for the same pc
+            # pop from the front of the queue
             if self.il_queue[0][1].address == pc:
-                return self.il_queue.pop()[1]
+                return self.il_queue.pop(0)[1]
             else:
                 # somehow we have a queue but we are now at a different pc,
                 # clear the queue
