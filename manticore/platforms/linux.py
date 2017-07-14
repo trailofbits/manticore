@@ -113,7 +113,7 @@ class SymbolicFile(File):
         :param constraints: the SMT constraints
         :param str path: the pathname of the symbolic file
         :param str mode: the access permissions of the symbolic file
-        :param max_size: Maximun amount of bytes of the symbolic file
+        :param max_size: Maximum amount of bytes of the symbolic file
         :param str wildcard: Wildcard to be used in symbolic file
         '''
         super(SymbolicFile, self).__init__(path, mode)
@@ -170,14 +170,25 @@ class SymbolicFile(File):
         '''
         return self.pos
 
-    def seek(self, pos):
+    def seek(self, offset, whence = os.SEEK_SET):
         '''
         Returns the read/write file offset
         :rtype: int
         :return: the read/write file offset.
         '''
-        assert isinstance(pos, (int, long))
-        self.pos = pos
+        assert isinstance(offset, (int, long))
+        assert isinstance(whence, (int, long))
+
+        # horribly simplified (omits mode checks, error handling)
+        if whence == os.SEEK_SET:
+            self.pos = offset
+        elif whence == os.SEEK_CUR:
+            self.pos += offset
+        elif whence == os.SEEK_END:
+            self.max_size += offset
+        # SEEK_DATA, SEEK_HOLE niy
+        else:
+            logger.warning("Symbolic seek: whence %d is not implemented yet", whence)
 
     def read(self, count):
         '''
