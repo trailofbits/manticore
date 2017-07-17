@@ -94,7 +94,7 @@ class Store(object):
             return s.read()
 
     @contextmanager
-    def save_stream(self, key):
+    def save_stream(self, key, *rest, **kwargs):
         """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
