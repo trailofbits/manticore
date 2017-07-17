@@ -51,6 +51,10 @@ class BinjaRegisterFile(RegisterFile):
         all_regs = arch_regs + self.reg_aliases.values() + f_regs
         self.registers = {reg : 0 for reg in all_regs}
 
+        # FIXME get these from the platform!! they are already part of registers
+        self.segment_registers = (['cs', 'ds', 'es', 'ss'] +
+                                  ['fs', 'gs', 'fsbase', 'gsbase'])
+
     def write(self, reg, value):
         from binaryninja.enums import ImplicitRegisterExtend
         from binaryninja import Architecture
@@ -786,7 +790,12 @@ class BinjaCpu(Cpu):
         cpu.push(src.read(), cpu.address_bit_size)
 
     def REG(cpu, expr):
-        return ctypes.c_int64(cpu.regfile.read(expr.op)).value
+        if str(expr.op) in cpu.regfile.segment_registers:
+            base, _, _ = cpu.get_descriptor(cpu.regfile.read(expr.op))
+            reg = base
+        else:
+            reg = cpu.regfile.read(expr.op)
+        return ctypes.c_int64(reg).value
 
     def RET(cpu, expr):
         cpu.__class__.PC = cpu.pop(cpu.address_bit_size)
@@ -837,16 +846,7 @@ class BinjaCpu(Cpu):
 
         res = (left_v - right_v) & ((1 << size) - 1)
 
-        # FIXME arch-specific flags
-        flags = {
-            'c': _carry_ult(left_v, right_v),
-            'p': _parity_flag(res),
-            'a': _adjust_flag(res, left_v, right_v),
-            'z': res == 0,
-            's': _sign_flag(res, size),
-            'o': _overflow_flag(res, right_v, left_v, size)
-        }
-        cpu.update_flags(flags)
+        cpu.x86_calculate_cmp_flags(size, res, left_v, right_v)
         return res
 
     def SX(cpu, expr):
@@ -898,6 +898,8 @@ class BinjaCpu(Cpu):
         # FIXME logging
         if "xmm" in disasm:
             return
+        elif disasm.startswith("cmpxchg"):
+            x86_cmpxch(cpu, disasm)
         else:
             print disasm
             print hex(cpu.disasm.current_pc)
@@ -937,6 +939,34 @@ def x86_bsf(cpu, disasm):
                                            cpu.regfile.read(dest),
                                            res))
 
+def x86_cmpxch(cpu, disasm):
+    left, right = disasm.rstrip().split(",")
+    dest = left.split(' ')[1:]
+    src = right
+    print disasm
+    print "DEST: " + str(dest)
+    # destination is register or memory
+    if len(dest) == 2:
+        # memory
+        size = dest[0]
+        assert dest[1][0] == '[' or dest[1][-1] == ']'
+        dest_reg = dest[1][1:-1]
+        dval = cpu.regfile.read(dest)
+    else:
+        print dest
+        raise NotImplementedError
+    print "SRC: " + str(src)
+    size = cpu.view.arch.regs[dest_reg].size
+    reg_name = {8:'al', 16:'ax', 32:'eax', 64:'rax'}[size]
+    accumulator = cpu.regfile.read(reg_name)
+    sval = cpu.regfile.read(src)
+
+    cpu.write_register(reg_name, dval)
+    dest_val = Operators.ITEBV(size, accumulator == dval, sval, dval)
+
+    #Affected Flags o..szapc
+    cpu._calculate_CMP_flags(size, accumulator - dval, accumulator, dval)
+
 def x86_get_eflags(cpu, reg):
     def make_symbolic(flag_expr):
         register_size = 32 if reg == 'EFLAGS' else 64
@@ -970,6 +1000,23 @@ def x86_get_eflags(cpu, reg):
 def x86_xgetbv(cpu):
     cpu.write_register('eax', 7)
     cpu.write_register('edx', 0)
+
+def x86_calculate_cmp_flags(cpu, size, res, left_v, right_v):
+    f = cpu.disasm.current_func
+    i = cpu.disasm.disasm_il
+    mod_flags = f.get_flags_written_by_lifted_il_instruction(i.instr_index)
+    if not mod_flags:
+        return
+
+    flags = {
+        'c': _carry_ult(left_v, right_v),
+        'p': _parity_flag(res),
+        'a': _adjust_flag(res, left_v, right_v),
+        'z': res == 0,
+        's': _sign_flag(res, size),
+        'o': _overflow_flag(res, right_v, left_v, size)
+    }
+    cpu.update_flags(flags)
 
 def x86_update_logic_flags(cpu, result, size):
     f = cpu.disasm.current_func
