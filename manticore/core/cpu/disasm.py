@@ -145,8 +145,6 @@ class BinjaILDisasm(Disasm):
             self.view.update_analysis_and_wait()
             self.current_func = self.view.get_function_at(pc)
         else:
-            # XXX each PC should belong to a single basic block
-            assert len(blocks) == 1
             self.current_func = blocks[0].function
 
         il = self._pop_from_il_queue(pc)

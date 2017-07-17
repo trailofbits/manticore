@@ -787,7 +787,8 @@ class Cpu(object):
                 not insn.sets_pc):
             self.__class__.PC = self._last_pc + insn.size
 
-        self._icount += 1
+        if self.PC != self._last_pc:
+            self._icount += 1
 
         self.did_execute_instruction(insn)
 

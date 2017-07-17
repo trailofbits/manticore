@@ -60,7 +60,6 @@ class BinjaRegisterFile(RegisterFile):
         from binaryninja import Architecture
 
         arch = Architecture[self.arch]
-
         r = self._alias(str(reg))
         # if this is a custom register just write to the dictionary
         if r not in arch.regs:
@@ -455,7 +454,7 @@ class BinjaCpu(Cpu):
     def ASR(cpu, reg, shift):
         return reg.read() >> shift.read()
 
-    def BOOL_TO_INT(cpu, expr):
+    def BOOL_TO_INT(cpu, src_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
@@ -464,12 +463,19 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def CALL(cpu, expr):
+        import binaryninja.enums as enums
         f = cpu.disasm.current_func
         il = f.get_lifted_il_at(cpu.disasm.current_pc)
-        next_il = f.lifted_il[il.instr_index + 1].address
+        next_il = f.lifted_il[il.instr_index + 1]
+
+        if next_il.operation == enums.LowLevelILOperation.LLIL_GOTO:
+            next_addr = f.lifted_il[next_il.operands[0]].address
+        else:
+            next_addr = next_il.address
 
         # push next PC into the stack
-        cpu.push(cpu.__class__.PC + next_il - il.address, cpu.address_bit_size)
+        cpu.push(cpu.__class__.PC + next_addr - il.address,
+                 cpu.address_bit_size)
         # go for it
         new_pc = expr.read() + cpu.disasm.entry_point_diff
         cpu.__class__.PC = new_pc
@@ -509,21 +515,21 @@ class BinjaCpu(Cpu):
     def CMP_ULT(cpu, left, right):
         return left.read() < right.read()
 
-    def CONST(cpu, expr):
-        return ctypes.c_int64(expr.op).value
+    def CONST(cpu, const_int):
+        return const_int.op
 
-    def CONST_PTR(cpu, expr):
-        return ctypes.c_int64(expr.op).value + cpu.disasm.entry_point_diff
+    def CONST_PTR(cpu, const_int):
+        return const_int.op + cpu.disasm.entry_point_diff
 
-    def DIVS(cpu):
+    def DIVS(cpu, left_expr, right_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def DIVS_DP(cpu):
+    def DIVS_DP(cpu, left_expr, right_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def DIVU(cpu):
+    def DIVU(cpu, left_expr, right_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
@@ -539,10 +545,10 @@ class BinjaCpu(Cpu):
         quotient = Operators.UDIV(dividend, divisor)
         return Operators.EXTRACT(quotient, 0, size)
 
-    def FLAG(cpu, flag):
-        return flag.read()
+    def FLAG(cpu, src_flag):
+        return src_flag.read()
 
-    def FLAG_BIT(cpu):
+    def FLAG_BIT(cpu, src_flag, bit_int):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
@@ -601,15 +607,7 @@ class BinjaCpu(Cpu):
             next_il.operands = [BinjaOperand(cpu, next_il, x)
                                 for x in next_il.operands]
             cpu.disasm.insn_size = next_il.size
-            cpu._icount += 1
             goto_addr = implementation(*next_il.operands)
-
-            #  if logger.level == logging.DEBUG:
-                #  logger.debug(str(next_il))
-                #  for l in cpu.render_registers():
-                    #  register_logger = logging.getLogger("REGISTERS")
-                    #  register_logger.debug(l)
-
             idx += 1
             next_il = cpu.disasm.current_func.lifted_il[idx]
         assert goto_addr is not None
@@ -627,11 +625,11 @@ class BinjaCpu(Cpu):
         cpu.regfile.write('PC', addr)
         cpu.__class__.PC = addr
 
-    def LOAD(cpu, expr):
+    def LOAD(cpu, src_expr):
         # FIXME hack until push qword is fixed in binja
         if str(cpu.disasm.disasm_il).startswith("push(zx.q"):
-            return cpu.read_int(expr.read(), 8 * 8)
-        return cpu.read_int(expr.read(), expr.llil.size * 8)
+            return cpu.read_int(src_expr.read(), 8 * 8)
+        return cpu.read_int(src_expr.read(), src_expr.llil.size * 8)
 
     def LOW_PART(cpu, expr):
         mask = (1 << expr.llil.size * 8) - 1
@@ -714,16 +712,15 @@ class BinjaCpu(Cpu):
         cpu.update_flags(flags)
         return res
 
-    def MODS(cpu):
+    def MODS(cpu, left_expr, right_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def MODS_DP(cpu):
+    def MODS_DP(cpu, hi_expr, lo_expr, right_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-        # FIXME what should we return here?
-    def MODU(cpu):
+    def MODU(cpu, left_expr, right_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
@@ -751,13 +748,32 @@ class BinjaCpu(Cpu):
         cpu.regfile.write('of', cf)
         return res
 
-    def MULS_DP(cpu, left, right):
-        print hex(cpu.disasm.current_pc)
-        raise NotImplementedError
+    def MULS_DP(cpu, low_expr, high_expr):
+        # XXX SET_REG_SPLIT will be called afterwards, taking care of the
+        # result splitting into registers
+        size = high_expr.llil.size * 8
+        arg0 = high_expr.read()
+        arg1 = low_expr.read()
+        temp = (Operators.SEXTEND(arg0, size, size * 2) *
+                Operators.SEXTEND(arg1, size, size * 2))
+        res = temp & ((1 << (size * 2)) - 1)
+        normres = Operators.EXTRACT(res, 0, size)
 
-    def MULU_DP(cpu, left, right):
-        print hex(cpu.disasm.current_pc)
-        raise NotImplementedError
+        cf = Operators.SEXTEND(normres, size, size * 2) != res
+        cpu.regfile.write('cf', cf)
+        cpu.regfile.write('of', cf)
+        return res
+
+    def MULU_DP(cpu, low_expr, high_expr):
+        # XXX SET_REG_SPLIT will be called afterwards, taking care of the
+        # result splitting into registers
+        size = high_expr.llil.size * 8
+        res = (Operators.ZEXTEND(low_expr.read(), 256) *
+               Operators.ZEXTEND(high_expr.read(), 256))
+        of = Operators.EXTRACT(res, size, size) != 0
+        cpu.regfile.write('of', of)
+        cpu.regfile.write('cf', of)
+        return res
 
     def NEG(cpu, expr):
         src = expr.read()
@@ -785,54 +801,115 @@ class BinjaCpu(Cpu):
     def POP(cpu):
         return cpu.pop(cpu.address_bit_size)
 
-    def PUSH(cpu, src):
+    def PUSH(cpu, src_expr):
         # in bytes already so no need to multiply
-        cpu.push(src.read(), cpu.address_bit_size)
+        cpu.push(src_expr.read(), cpu.address_bit_size)
 
-    def REG(cpu, expr):
-        if str(expr.op) in cpu.regfile.segment_registers:
-            base, _, _ = cpu.get_descriptor(cpu.regfile.read(expr.op))
+    def REG(cpu, src_reg):
+        if str(src_reg.op) in cpu.regfile.segment_registers:
+            base, _, _ = cpu.get_descriptor(cpu.regfile.read(src_reg.op))
             reg = base
         else:
-            reg = cpu.regfile.read(expr.op)
-        return ctypes.c_int64(reg).value
+            reg = cpu.regfile.read(src_reg.op)
+        return reg
 
     def RET(cpu, expr):
         cpu.__class__.PC = cpu.pop(cpu.address_bit_size)
 
-    def RLC(cpu):
+    def RLC(cpu, left_expr, right_expr, carry_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def ROL(cpu):
+    def ROL(cpu, left_expr, right_expr):
+        size = left_expr.llil.size * 8
+        count = right_expr.read()
+        countMask = {
+            8 : 0x1f,
+            16: 0x1f,
+            32: 0x1f,
+            64: 0x3f
+        }[size]
+        tempCount = Operators.ZEXTEND((count & countMask) % (size), size)
+        value = left_expr.read()
+        res = (value << tempCount) | (value >> (size - tempCount))
+
+        cpu.regfile.write('cf',
+                          Operators.ITE(tempCount != 0,
+                                        (res & 1) == 1,
+                                        cpu.regfile.read('cf')))
+        s_MSB = ((res >> (size - 1)) & 0x1) == 1
+        cpu.regfile.write('of',
+                          Operators.ITE(tempCount == 1,
+                                        s_MSB ^ cpu.regfile.read('cf'),
+                                        cpu.regfile.read('of')))
+        return res
+
+    def ROR(cpu, left_expr, right_expr):
+        # FIXME refactor ROL, ROR
+        size = left_expr.llil.size * 8
+        count = right_expr.read()
+        countMask = { 8 : 0x1f,
+                      16: 0x1f,
+                      32: 0x1f,
+                      64: 0x3f }[size]
+        tempCount = Operators.ZEXTEND((count & countMask) % (size), size)
+
+        value = left_expr.read()
+
+        res = (value >> tempCount) | (value << (size - tempCount))
+
+        cpu.regfile.write('cf',
+                          Operators.ITE(tempCount != 0,
+                                        ((res >> (size - 1)) & 0x1) == 1,
+                                        cpu.regfile.read('cf')))
+        s_MSB = ((res >> (size-1)) & 0x1) == 1
+        s_MSB2 = ((res >> (size-2)) & 0x1) == 1
+        cpu.regfile.write('of',
+                          Operators.ITE(tempCount == 1,
+                                        s_MSB ^ s_MSB2,
+                                        cpu.regfile.read('of')))
+        return res
+
+    def RRC(cpu, left_expr, right_expr, carry_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def ROR(cpu):
+    def SBB(cpu, left_expr, right_expr, carry_expr):
+        # FIXME refactor with SUB
+        size = left_expr.llil.size * 8
+        left_v = left_expr.read()
+        if right_expr.llil.size < left_expr.llil.size:
+            right_v = Operators.SEXTEND(right_expr.read(),
+                                        right_expr.llil.size * 8,
+                                        left_expr.llil.size * 8)
+        else:
+            right_v = right_expr.read()
+
+        # add if carry
+        right_v += Operators.ITEBV(size, carry_expr.read(), 1, 0)
+
+        res = (left_v - right_v) & ((1 << size) - 1)
+
+        x86_calculate_cmp_flags(cpu, size, res, left_v, right_v)
+        return res
+
+    def SET_FLAG(cpu, dest_flag, src_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def RRC(cpu):
-        print hex(cpu.disasm.current_pc)
-        raise NotImplementedError
+    def SET_REG(cpu, dest_reg, src_expr):
+        dest_reg.write(src_expr.read())
 
-    def SBB(cpu):
-        print hex(cpu.disasm.current_pc)
-        raise NotImplementedError
+    def SET_REG_SPLIT(cpu, high_reg, low_reg, src_expr):
+        res = src_expr.read()
+        size = src_expr.llil.size
+        cpu.regfile.write(str(low_reg.op), Operators.EXTRACT(res, 0, size))
+        cpu.regfile.write(str(high_reg.op), Operators.EXTRACT(res, size, size))
 
-    def SET_FLAG(cpu):
-        print hex(cpu.disasm.current_pc)
-        raise NotImplementedError
-
-    def SET_REG(cpu, dest, src):
-        dest.write(src.read())
-
-    def SET_REG_SPLIT(cpu):
-        print hex(cpu.disasm.current_pc)
-        raise NotImplementedError
-
-    def STORE(cpu, dest, src):
-        cpu.write_int(dest.read(), src.read(), dest.llil.size * 8)
+    def STORE(cpu, dest_expr, src_expr):
+        cpu.write_int(dest_expr.read(),
+                      src_expr.read(),
+                      dest_expr.llil.size * 8)
 
     def SUB(cpu, left, right):
         size = left.llil.size * 8
@@ -846,7 +923,7 @@ class BinjaCpu(Cpu):
 
         res = (left_v - right_v) & ((1 << size) - 1)
 
-        cpu.x86_calculate_cmp_flags(size, res, left_v, right_v)
+        x86_calculate_cmp_flags(cpu, size, res, left_v, right_v)
         return res
 
     def SX(cpu, expr):
@@ -862,11 +939,11 @@ class BinjaCpu(Cpu):
         cpu.write_register('r11', x86_get_eflags(cpu, 'RFLAGS'))
         raise Syscall()
 
-    def TEST_BIT(cpu):
+    def TEST_BIT(cpu, left_expr, right_expr):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def TRAP(cpu):
+    def TRAP(cpu, vector_int):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
@@ -900,6 +977,8 @@ class BinjaCpu(Cpu):
             return
         elif disasm.startswith("cmpxchg"):
             x86_cmpxch(cpu, disasm)
+        elif disasm.startswith("xchg"):
+            x86_xchg(cpu, disasm)
         else:
             print disasm
             print hex(cpu.disasm.current_pc)
@@ -939,33 +1018,60 @@ def x86_bsf(cpu, disasm):
                                            cpu.regfile.read(dest),
                                            res))
 
+def x86_xchg(cpu, disasm):
+    left, right = disasm.rstrip().split(",")
+    dest = left.split(' ')[1:]
+    src = right.lstrip().rstrip()
+    if len(dest) > 1:
+        # memory
+        assert dest[-1][0] == '[' or dest[-1][-1] == ']'
+        dest_reg = dest[-1][1:-1]
+        tmp = cpu.read_int(cpu.regfile.read(dest_reg),
+                            cpu.view.arch.regs[dest_reg].size * 8)
+        cpu.write_int(cpu.regfile.read(dest_reg),
+                      cpu.regfile.read(src),
+                      cpu.view.arch.regs[dest_reg].size * 8)
+        cpu.regfile.write(src, tmp)
+    else:
+        raise NotImplementedError
+
 def x86_cmpxch(cpu, disasm):
     left, right = disasm.rstrip().split(",")
     dest = left.split(' ')[1:]
-    src = right
-    print disasm
-    print "DEST: " + str(dest)
+    src = right.lstrip().rstrip()
+    sval = cpu.regfile.read(src)
+    size = cpu.view.arch.regs[src].size * 8
+    dest_is_memory = False
     # destination is register or memory
     if len(dest) == 2:
-        # memory
-        size = dest[0]
         assert dest[1][0] == '[' or dest[1][-1] == ']'
         dest_reg = dest[1][1:-1]
-        dval = cpu.regfile.read(dest)
+        dest_addr = cpu.regfile.read(dest_reg)
+        dval = cpu.read_int(dest_addr, size)
+        dest_is_memory = True
+    elif len(dest) == 3:
+        # e.g., ['dword', '[rel', '0x6cc570]']
+        dest_addr = int(dest[-1][:-1], 16)
+        dval = cpu.read_int(dest_addr, size)
+        dest_is_memory = True
     else:
+        print disasm
+        print hex(cpu.disasm.current_pc)
         print dest
         raise NotImplementedError
-    print "SRC: " + str(src)
-    size = cpu.view.arch.regs[dest_reg].size
-    reg_name = {8:'al', 16:'ax', 32:'eax', 64:'rax'}[size]
-    accumulator = cpu.regfile.read(reg_name)
-    sval = cpu.regfile.read(src)
 
-    cpu.write_register(reg_name, dval)
-    dest_val = Operators.ITEBV(size, accumulator == dval, sval, dval)
+    accumulator_reg = {8:'al', 16:'ax', 32:'eax', 64:'rax'}[size]
+    accumulator = cpu.regfile.read(accumulator_reg)
 
-    #Affected Flags o..szapc
-    cpu._calculate_CMP_flags(size, accumulator - dval, accumulator, dval)
+    # FIXME buggy ?
+    cpu.write_register(accumulator_reg, dval)
+    if dest_is_memory:
+        cpu.write_int(dest_addr,
+                      Operators.ITEBV(size, accumulator == dval, sval, dval),
+                      size)
+    else:
+        raise NotImplementedError
+    x86_calculate_cmp_flags(cpu, size, accumulator - dval, accumulator, dval)
 
 def x86_get_eflags(cpu, reg):
     def make_symbolic(flag_expr):

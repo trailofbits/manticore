@@ -1901,7 +1901,8 @@ class X86Cpu(Cpu):
                                         16: ('AX','DX'),
                                         32: ('EAX','EDX'),
                                         64: ('RAX','RDX')}[size]
-        res = ( Operators.ZEXTEND(cpu.read_register(reg_name_low), 256)) * Operators.ZEXTEND(src.read(), 256)
+        res = (Operators.ZEXTEND(cpu.read_register(reg_name_low), 256) *
+               Operators.ZEXTEND(src.read(), 256))
         cpu.write_register(reg_name_low, Operators.EXTRACT(res, 0, size))
         cpu.write_register(reg_name_high, Operators.EXTRACT(res, size, size))
         cpu.OF = Operators.EXTRACT(res, size, size) != 0
