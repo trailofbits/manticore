@@ -437,8 +437,8 @@ class ManticoreOutput(object):
         self.save_fds(state)
         self._store.save_state(state, self._named_key('pkl'))
 
-    def save_stream(self, *rest, **kwargs):
-        return self._store.save_stream(*rest, **kwargs)
+    def save_stream(self, key, *rest, **kwargs):
+        return self._store.save_stream(key, *rest, **kwargs)
 
     @contextmanager
     def _named_stream(self, name):
