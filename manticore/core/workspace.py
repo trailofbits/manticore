@@ -94,7 +94,7 @@ class Store(object):
             return s.read()
 
     @contextmanager
-    def save_stream(self, key):
+    def save_stream(self, key, *rest, **kwargs):
         """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
@@ -437,8 +437,8 @@ class ManticoreOutput(object):
         self.save_fds(state)
         self._store.save_state(state, self._named_key('pkl'))
 
-    def save_stream(self, *rest):
-        return self._store.save_stream(*rest)
+    def save_stream(self, key, *rest, **kwargs):
+        return self._store.save_stream(key, *rest, **kwargs)
 
     @contextmanager
     def _named_stream(self, name):
