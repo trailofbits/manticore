@@ -409,12 +409,12 @@ class EVM(Eventful):
         self.pc = 0
         self.stack = []
         self.gas = 0
-        self.world = world
+        self.global_storage = world
         self.allocated = 0
 
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
-        state['world'] = self.world
+        state['global_storage'] = self.global_storage
         state['constraints'] = self.constraints
         state['last_exception'] = self.last_exception
         state['memory'] = self.memory
@@ -436,7 +436,7 @@ class EVM(Eventful):
 
     def __setstate__(self, state):
         super(EVM, self).__setstate__(state)
-        self.world = state['world']
+        self.global_storage = state['global_storage']
         self.constraints = state['constraints']
         self.last_exception = state['last_exception']
         self.memory = state['memory']
@@ -817,12 +817,12 @@ class EVM(Eventful):
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
         #FIXME
-        return len(self.world[account & TT256M1]['code'])
+        return len(self.global_storage[account & TT256M1]['code'])
 
     def EXTCODECOPY(self, account, address, offset, size): 
         '''Copy an account's code to memory'''
         #FIXME STOP! if not enough data
-        extbytecode = self.world[account& TT256M1]['code']
+        extbytecode = self.global_storage[account& TT256M1]['code']
         for i in range(size):
             self._store(address+i, extbytecode[offset+i])
 
@@ -881,12 +881,12 @@ class EVM(Eventful):
     def SLOAD(self, address):
         '''Load word from storage'''
         #FIXME implement system?
-        return self.storage.get(address,0)
+        return self.global_storage[self.address]['storage'].get(address,0)
 
     def SSTORE(self, address, value):
         '''Save word to storage'''
         #FIXME implement system?
-        self.storage[address] = value
+        self.global_storage[self.address]['storage'][address] = value
 
     def JUMP(self, dest):
         '''Alter the program counter'''
@@ -896,7 +896,7 @@ class EVM(Eventful):
     def JUMPI(self, dest, cond):
         '''Conditionally alter the program counter'''
         self.pc = Operators.ITEBV(256, cond!=0, dest, self.pc + self.instruction.size)
-        #TODO check for JUMPDEST on next iter?
+        assert self.bytecode[dest] == 0x5b, "Must be jmpdest instruction" #fixme what if dest == self.pc + self.instruction.size?
 
     def GETPC(self):
         '''Get the value of the program counter prior to the increment'''
@@ -980,9 +980,9 @@ class EVM(Eventful):
     def REVERT(self, offset, size):
         raise Revert(offset, size)
 
-    def SELFDESTRUCT(self):
+    def SELFDESTRUCT(self, to):
         '''Halt execution and register account for later deletion'''
-        raise SelfDestruct(offset, size)
+        raise SelfDestruct(to)
 
     def __str__(self):
         result = '\n'
@@ -1053,9 +1053,7 @@ class EVMWorld(Platform):
     def _pop(self, rollback=False):
         vm = self._callstack.pop()
         if not rollback:
-            print "REPLACING storage"
             self.storage = vm.global_storage
-        self.forward_events_from(self.current)
         return vm
 
     @property
@@ -1083,7 +1081,7 @@ class EVMWorld(Platform):
         except Revert as ex:
             self.REVERT()
         except SelfDestruct as ex:
-            self.SELFDESTRUCT(ex.recipient)
+            self.SELFDESTRUCT(ex.to)
         except Sha3 as ex:
             self.HASH(ex.offset, ex.size)
         except EVMException as e:
@@ -1091,7 +1089,6 @@ class EVMWorld(Platform):
 
     def run(self):
         while True:
-            print self, self.current
             self.execute()
 
     def create_account(self, address=None, balance=0, code='', storage=None):
@@ -1118,7 +1115,7 @@ class EVMWorld(Platform):
 
     def transaction(self, address, origin, price, data, caller, value, header):
         bytecode = self.storage[address]['code']
-        new_vm = EVM(address, origin, price, "", caller, value, bytecode, header, depth)
+        new_vm = EVM(self._constraints, address, origin, price, "", caller, value, bytecode, header, world=self)
         self._push(new_vm)
 
 
@@ -1128,9 +1125,8 @@ class EVMWorld(Platform):
         origin = self.current.origin
         caller = self.current.address
         price = self.current.price
-        depth = self.depth+1
         header = {'timestamp': 100}
-        new_vm = EVM(self._constraints, address, origin, price, "", caller, value, bytecode, header, depth)
+        new_vm = EVM(self._constraints, address, origin, price, "", caller, value, bytecode, header)
         self._push(new_vm)
         self.storage[address] = {}
 
@@ -1143,20 +1139,15 @@ class EVMWorld(Platform):
         depth = self.depth+1
         bytecode = self.storage[to]['code']
         header = {'timestamp' :1}
-        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, depth)
+        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header)
         self._push(new_vm)
 
     def RETURN(self, offset, size):
-        print "RETURN", self.depth
-        print self
         data = self.current.read_buffer(offset, size)
-
         if self.depth == 1:
             self.last_return=data
             raise TerminateState("RETURN", testcase=True)
         prev_vm = self._pop() #current VM changed!
-        print "prev_vm.address", prev_vm.address
-        print self
 
         last_ex = self.current.last_exception
         assert isinstance(last_ex, (Call, Create))
@@ -1174,9 +1165,9 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def STOP(self):
-        if self.depth == 1:
-            raise TerminateState("STOP", testcase=True)
         self._pop(rollback=False)
+        if self.depth == 0:
+            raise TerminateState("STOP", testcase=True)
         self.current.push(1)
 
     def THROW(self):
