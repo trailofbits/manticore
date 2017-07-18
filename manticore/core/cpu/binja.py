@@ -1,7 +1,10 @@
 import ctypes
+from functools import wraps
 import logging
 import re
 from collections import defaultdict
+
+from .x86 import AMD64Operand
 
 from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
 from .cpufactory import CpuFactory
@@ -15,10 +18,6 @@ logger = logging.getLogger("CPU")
 class BinjaRegisterFile(RegisterFile):
 
     def __init__(self, view, platform_regs):
-        '''
-        ARM Register file abstraction. GPRs use ints for read/write. APSR
-        flags allow writes of bool/{1, 0} but always read bools.
-        '''
         # XXX we do not use view as part of the class, because then
         # we need to do a lot more work to pickle the object
         self.arch = self._get_arch(view)
@@ -241,7 +240,7 @@ def binja_platform_regmap(binja_arch_regs, binja_arch_flags, binja_arch_aliases,
 
     # map flag registers
     for f in binja_arch_flags:
-        x86_to_binja[f.upper() + "F"] = f + 'f'
+        x86_to_binja[f.upper()] = f
     x86_to_binja['IF'] = None
 
     x86_to_binja['RSP'] = binja_arch_aliases['STACK']
@@ -289,6 +288,7 @@ class BinjaCpu(Cpu):
     disasm = None
     view = None
 
+    platform_cpu = None
     # FIXME are these used?
     instr_ptr = None
     stack_ptr = None
@@ -300,13 +300,18 @@ class BinjaCpu(Cpu):
         Builds a CPU model.
         :param view: BinaryNinja view.
         '''
+        # get a platform specific CPU
         platform_cpu = CpuFactory.get_cpu(memory, 'amd64')
+        # and mark it as virtual so as to not increment the PC in the
+        # @instruction decorator
+        platform_cpu.real_cpu = False
+        self.__class__.platform_cpu = platform_cpu
         platform_regs = platform_cpu.all_registers
 
         self.__class__.max_instr_width = view.arch.max_instr_length
         self.__class__.address_bit_size = 8 * view.arch.address_size
-        self.__class__.machine = platform_cpu.machine
-        self.__class__.mode = platform_cpu.mode
+        self.__class__.machine = self.platform_cpu.machine
+        self.__class__.mode = self.platform_cpu.mode
         self.__class__.arch = view.arch
         self.__class__.disasm = BinjaILDisasm(view)
         self.__class__.view = view
@@ -333,10 +338,11 @@ class BinjaCpu(Cpu):
         self._segments = state['segments']
         super(BinjaCpu, self).__setstate__(state)
 
-    # FIXME (theo) that should no longer be necessary once we move everything
-    # to using manticore Instruction()
     def canonicalize_instruction_name(self, insn):
-        return insn.name
+        if isinstance(insn, BinjaILDisasm.BinjaILInstruction):
+            return insn.name
+        # fallback
+        return self.platform_cpu.canonicalize_instruction_name(insn)
 
     def set_descriptor(self, selector, base, limit, perms):
         assert selector > 0 and selector < 0xffff
@@ -348,7 +354,17 @@ class BinjaCpu(Cpu):
         return self._segments.setdefault(selector, (0, 0xfffff000, 'rwx'))
 
     def _wrap_operands(self, operands):
-        return [BinjaOperand(self, self.disasm.disasm_il, op) for op in operands]
+        import binaryninja.enums as enums
+
+        # if we don't support this, fallback to default platform :( :(
+        # we will be using capstone anyhow, as we need to move on..
+        o = self.disasm.disasm_il.operation
+        if (o == enums.LowLevelILOperation.LLIL_UNIMPL or
+                o == enums.LowLevelILOperation.LLIL_UNIMPL_MEM):
+            return [AMD64Operand(self.platform_cpu, op) for op in operands]
+
+        return [BinjaOperand(self, self.disasm.disasm_il, op)
+                for op in operands]
 
     # XXX this is currently not active because a bunch of flag-setting
     # LLIL are not implemented by Binja :(
@@ -952,37 +968,12 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def UNIMPL(cpu):
-        # FIXME invoke platform-specific CPU here
-        disasm = cpu.view.get_disassembly(cpu.disasm.current_pc)
-        # FIXME logging
-        if "xmm" in disasm:
-            return
-        if disasm == "rdtsc":
-            x86_rdtsc(cpu)
-        elif disasm == "cpuid":
-            x86_cpuid(cpu)
-        elif disasm == "xgetbv":
-            x86_xgetbv(cpu)
-        elif disasm.startswith("bsf"):
-            x86_bsf(cpu, disasm)
-        else:
-            print disasm
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
+        print hex(cpu.disasm.current_pc)
+        raise NotImplementedError
 
     def UNIMPL_MEM(cpu, expr):
-        disasm = cpu.view.get_disassembly(cpu.disasm.current_pc)
-        # FIXME logging
-        if "xmm" in disasm:
-            return
-        elif disasm.startswith("cmpxchg"):
-            x86_cmpxch(cpu, disasm)
-        elif disasm.startswith("xchg"):
-            x86_xchg(cpu, disasm)
-        else:
-            print disasm
-            print hex(cpu.disasm.current_pc)
-            raise NotImplementedError
+        print hex(cpu.disasm.current_pc)
+        raise NotImplementedError
 
     def XOR(cpu, left, right):
         res = left.read() ^ right.read()
@@ -992,86 +983,30 @@ class BinjaCpu(Cpu):
     def ZX(cpu, expr):
         return Operators.ZEXTEND(expr.read(), expr.llil.size * 8)
 
+
+    def FALLBACK(cpu, name, *operands):
+        """Fallback for unimplemented instructions
+        """
+        logger.debug('%s: Fallback to concrete cpu for instruction %s',
+                     hex(cpu.disasm.current_pc),
+                     name)
+        for pl_reg, binja_reg in cpu.regfile.pl2b_map.items():
+            if isinstance(binja_reg, tuple) or binja_reg is None: continue
+            cpu.platform_cpu.write_register(pl_reg, cpu.regfile.read(binja_reg))
+
+        # do the actual call
+        implementation = getattr(cpu.platform_cpu, name)
+        implementation(*operands)
+
+        # restore registers to BinjaCpu
+        for pl_reg, binja_reg in cpu.regfile.pl2b_map.items():
+            if isinstance(binja_reg, tuple) or binja_reg is None: continue
+            cpu.regfile.write(binja_reg, cpu.platform_cpu.read_register(pl_reg))
 #
 #
 # ARCH-SPECIFIC INSNS
 #
 #
-
-def x86_bsf(cpu, disasm):
-    left, right = disasm.rstrip().split(",")
-    dest = re.split('\s+', left)[1]
-    src = right.split()[0]
-    dest_info = cpu.view.arch.regs[dest]
-    src_info = cpu.view.arch.regs[src]
-    value = cpu.regfile.read(src)
-    flag = Operators.EXTRACT(value, 0, 1) == 1
-    res = 0
-    for pos in xrange(1, src_info.size * 8):
-        res = Operators.ITEBV(dest_info.size * 8, flag, res, pos)
-        flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
-
-        cpu.ZF = value == 0
-        cpu.write_register(dest,
-                           Operators.ITEBV(dest_info.size * 8,
-                                           cpu.ZF,
-                                           cpu.regfile.read(dest),
-                                           res))
-
-def x86_xchg(cpu, disasm):
-    left, right = disasm.rstrip().split(",")
-    dest = left.split(' ')[1:]
-    src = right.lstrip().rstrip()
-    if len(dest) > 1:
-        # memory
-        assert dest[-1][0] == '[' or dest[-1][-1] == ']'
-        dest_reg = dest[-1][1:-1]
-        tmp = cpu.read_int(cpu.regfile.read(dest_reg),
-                            cpu.view.arch.regs[dest_reg].size * 8)
-        cpu.write_int(cpu.regfile.read(dest_reg),
-                      cpu.regfile.read(src),
-                      cpu.view.arch.regs[dest_reg].size * 8)
-        cpu.regfile.write(src, tmp)
-    else:
-        raise NotImplementedError
-
-def x86_cmpxch(cpu, disasm):
-    left, right = disasm.rstrip().split(",")
-    dest = left.split(' ')[1:]
-    src = right.lstrip().rstrip()
-    sval = cpu.regfile.read(src)
-    size = cpu.view.arch.regs[src].size * 8
-    dest_is_memory = False
-    # destination is register or memory
-    if len(dest) == 2:
-        assert dest[1][0] == '[' or dest[1][-1] == ']'
-        dest_reg = dest[1][1:-1]
-        dest_addr = cpu.regfile.read(dest_reg)
-        dval = cpu.read_int(dest_addr, size)
-        dest_is_memory = True
-    elif len(dest) == 3:
-        # e.g., ['dword', '[rel', '0x6cc570]']
-        dest_addr = int(dest[-1][:-1], 16)
-        dval = cpu.read_int(dest_addr, size)
-        dest_is_memory = True
-    else:
-        print disasm
-        print hex(cpu.disasm.current_pc)
-        print dest
-        raise NotImplementedError
-
-    accumulator_reg = {8:'al', 16:'ax', 32:'eax', 64:'rax'}[size]
-    accumulator = cpu.regfile.read(accumulator_reg)
-
-    # FIXME buggy ?
-    cpu.write_register(accumulator_reg, dval)
-    if dest_is_memory:
-        cpu.write_int(dest_addr,
-                      Operators.ITEBV(size, accumulator == dval, sval, dval),
-                      size)
-    else:
-        raise NotImplementedError
-    x86_calculate_cmp_flags(cpu, size, accumulator - dval, accumulator, dval)
 
 def x86_get_eflags(cpu, reg):
     def make_symbolic(flag_expr):
@@ -1102,10 +1037,6 @@ def x86_get_eflags(cpu, reg):
         for flag, offset in flags:
             res += flag << offset
     return res
-
-def x86_xgetbv(cpu):
-    cpu.write_register('eax', 7)
-    cpu.write_register('edx', 0)
 
 def x86_calculate_cmp_flags(cpu, size, res, left_v, right_v):
     f = cpu.disasm.current_func
@@ -1175,73 +1106,3 @@ def x86_add(cpu, dest, src, carry=False):
     }
     cpu.update_flags(flags)
     return res
-
-
-def x86_rdtsc(cpu):
-    val = cpu.icount
-    cpu.regfile.write('rax', val & 0xffffffff)
-    cpu.regfile.write('rdx', (val >> 32) & 0xffffffff)
-
-def x86_cpuid(cpu):
-    '''
-    CPUID instruction.
-
-    The ID flag (bit 21) in the EFLAGS register indicates support for the
-    CPUID instruction.  If a software procedure can set and clear this
-    flag, the processor executing the procedure supports the CPUID
-    instruction. This instruction operates the same in non-64-bit modes and
-    64-bit mode.  CPUID returns processor identification and feature
-    information in the EAX, EBX, ECX, and EDX registers.
-
-    The instruction's output is dependent on the contents of the EAX
-    register upon execution.
-
-    :param cpu: current CPU.
-    '''
-    conf = {   0x0:        (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
-               0x1:        (0x000306c3, 0x05100800, 0x7ffafbff, 0xbfebfbff),
-               0x2:        (0x76035a01, 0x00f0b5ff, 0x00000000, 0x00c10000),
-               0x4: { 0x0: (0x1c004121, 0x01c0003f, 0x0000003f, 0x00000000),
-                      0x1: (0x1c004122, 0x01c0003f, 0x0000003f, 0x00000000),
-                      0x2: (0x1c004143, 0x01c0003f, 0x000001ff, 0x00000000),
-                      0x3: (0x1c03c163, 0x03c0003f, 0x00000fff, 0x00000006)},
-               0x7:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
-               0x8:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
-               0xb: { 0x0: (0x00000001, 0x00000002, 0x00000100, 0x00000005),
-                      0x1: (0x00000004, 0x00000004, 0x00000201, 0x00000003)},
-               0xd: { 0x0: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
-                      0x1: (0x00000000, 0x00000000, 0x00000000, 0x00000000)},
-              }
-
-    if cpu.regfile.read('eax') not in conf:
-        logger.warning('CPUID with EAX=%x not implemented @ %x',
-                       cpu.regfile.read('rax'), cpu.__class__.PC)
-        cpu.write_register('eax', 0)
-        cpu.write_register('ebx', 0)
-        cpu.write_register('ecx', 0)
-        cpu.write_register('edx', 0)
-        return
-
-    if isinstance(conf[cpu.regfile.read('eax')], tuple):
-        v = conf[cpu.regfile.read('rax')]
-        cpu.write_register('eax', v[0])
-        cpu.write_register('ebx', v[1])
-        cpu.write_register('ecx', v[2])
-        cpu.write_register('edx', v[3])
-        return
-
-    if cpu.regfile.read('ecx') not in conf[cpu.regfile.read('eax')]:
-        logger.warning('CPUID with EAX=%x ECX=%x not implemented',
-                       cpu.regfile.read('rax'),
-                       cpu.regfile.read('rcx'))
-        cpu.write_register('eax', 0)
-        cpu.write_register('ebx', 0)
-        cpu.write_register('ecx', 0)
-        cpu.write_register('edx', 0)
-        return
-
-    v = conf[cpu.regfile.read('eax')][cpu.regfile.read('ecx')]
-    cpu.write_register('eax', v[0])
-    cpu.write_register('ebx', v[1])
-    cpu.write_register('ecx', v[2])
-    cpu.write_register('edx', v[3])

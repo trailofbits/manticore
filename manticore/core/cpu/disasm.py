@@ -81,10 +81,14 @@ class BinjaILDisasm(Disasm):
         # queue of il instructions at current PC. If we get called again from
         # the same PC, we will pop from the queue
         self.il_queue = []
-
+        # current il
         self.disasm_il = None
 
         self.insn_size = None
+
+        # for all UNIMPL insn and other hard times
+        # FIXME generalize for other archs
+        self.fallback_disasm = CapstoneDisasm(cs.CS_ARCH_X86, cs.CS_MODE_64)
 
         super(BinjaILDisasm, self).__init__(view)
 
@@ -131,12 +135,14 @@ class BinjaILDisasm(Disasm):
         return il
 
 
-    def disassemble_instruction(self, _, pc):
+    def disassemble_instruction(self, code, pc):
         """Get next instruction based on Capstone disassembler
 
         :param code: disassembled code
         :param pc: program counter
         """
+        import binaryninja.enums as enums
+
         pc = self._fix_addr(pc)
         blocks = self.view.get_basic_blocks_at(pc)
         if not blocks:
@@ -151,6 +157,11 @@ class BinjaILDisasm(Disasm):
         self.insn_size = il.size
         self.current_pc = pc
         self.disasm_il = il
+
+        o = il.operation
+        if (o == enums.LowLevelILOperation.LLIL_UNIMPL or
+                o == enums.LowLevelILOperation.LLIL_UNIMPL_MEM):
+            return self.fallback_disasm.disassemble_instruction(code, pc)
         return self.BinjaILInstruction(self.view,
                                        il,
                                        self.entry_point_diff,

@@ -7,14 +7,14 @@ import types
 from functools import wraps
 from itertools import islice, imap
 from abc import abstractmethod
-from functools import wraps
-from itertools import islice, imap
 
 import capstone as cs
 
 from .disasm import init_disassembler, BinjaILDisasm
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
-from ..memory import ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
+from ..memory import (
+    ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
+)
 from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Signal
@@ -710,6 +710,8 @@ class Cpu(object):
         #Check that the decoded intruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
+            import traceback
+            traceback.print_stack()
             raise InvalidMemoryAccess(pc, 'x')
 
         insn.operands = self._wrap_operands(insn.operands)
@@ -769,14 +771,21 @@ class Cpu(object):
 
             self.did_emulate_instruction(insn)
 
-        implementation = getattr(self, name, fallback_to_emulate)
-
         if logger.level == logging.DEBUG :
             logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        implementation(*insn.operands)
+        if (isinstance(self.__class__.disasm, BinjaILDisasm) and
+                isinstance(insn, cs.CsInsn)):
+            # if we got a capstone instruction using BinjaILDisasm, it means
+            # this instruction is not implemented. Fallback to Capstone
+            implementation = getattr(self, "FALLBACK")
+            implementation(name, *insn.operands)
+        else:
+            implementation = getattr(self, name, fallback_to_emulate)
+            implementation(*insn.operands)
+
         # In case we are executing IL instructions, we could iteratively
         # invoke multiple instructions due to the tree form, thus we only
         # want to increment the PC once, based on its previous position
@@ -784,7 +793,7 @@ class Cpu(object):
         # and self.instruction.size is 0 because we compute the size from
         # the address of the next instruction
         if (isinstance(self.__class__.disasm, BinjaILDisasm) and
-                not insn.sets_pc):
+                not (hasattr(insn, "sets_pc") and insn.sets_pc)):
             self.__class__.PC = self._last_pc + insn.size
 
         if self.PC != self._last_pc:
@@ -812,7 +821,7 @@ class Cpu(object):
     def render_instruction(self, insn=None):
         try:
             if (insn is None or
-                    not isinstance(self.__class__.disasm, BinjaILDisasm)):
+                    not isinstance(insn, BinjaILDisasm.BinjaILInstruction)):
                 insn = self.instruction
                 return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
                                                           insn.mnemonic,
@@ -868,7 +877,11 @@ def instruction(old_method):
     #This should decorate every instruction implementation
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
-        cpu.PC += cpu.instruction.size
+        if not hasattr(cpu, 'real_cpu'):
+            cpu.PC += cpu.instruction.size
+        else:
+            if cpu.real_cpu:
+                cpu.PC += cpu.instruction.size
         return old_method(cpu, *args, **kw_args)
     new_method.old_method = old_method
     return new_method

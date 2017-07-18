@@ -686,6 +686,7 @@ class X86Cpu(Cpu):
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
         '''
+        self.real_cpu = True
         super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
         #Segments ('base', 'limit', 'perms', 'gatetype')
         self._segments = {}
@@ -1269,25 +1270,27 @@ class X86Cpu(Cpu):
         '''
         Compares and exchanges.
 
-        Compares the value in the AL, AX, EAX or RAX register (depending on the size of the
-        operand) with the first operand (destination operand). If the two values are equal,
-        the second operand (source operand) is loaded into the destination operand. Otherwise,
-        the destination operand is loaded into the AL, AX, EAX or RAX register.
+        Compares the value in the AL, AX, EAX or RAX register (depending on the
+        size of the operand) with the first operand (destination operand). If
+        the two values are equal, the second operand (source operand) is loaded
+        into the destination operand. Otherwise, the destination operand is
+        loaded into the AL, AX, EAX or RAX register.
 
-        The ZF flag is set if the values in the destination operand and register AL, AX, or EAX
-        are equal; otherwise it is cleared. The CF, PF, AF, SF, and OF flags are set according to
-        the results of the comparison operation::
+        The ZF flag is set if the values in the destination operand and
+        register AL, AX, or EAX are equal; otherwise it is cleared. The CF, PF,
+        AF, SF, and OF flags are set according to the results of the comparison
+        operation::
 
-                (* accumulator  =  AL, AX, EAX or RAX,  depending on whether *)
-                (* a byte, word, a doubleword or a 64bit comparison is being performed*)
-                IF accumulator  ==  DEST
-                THEN
-                    ZF  =  1
-                    DEST  =  SRC
-                ELSE
-                    ZF  =  0
-                    accumulator  =  DEST
-                FI;
+        (* accumulator  =  AL, AX, EAX or RAX,  depending on whether *)
+        (* a byte, word, a doubleword or a 64bit comparison is being performed*)
+        IF accumulator  ==  DEST
+        THEN
+            ZF  =  1
+            DEST  =  SRC
+        ELSE
+            ZF  =  0
+            accumulator  =  DEST
+        FI;
 
         :param cpu: current CPU.
         :param dest: destination operand.
@@ -1303,17 +1306,18 @@ class X86Cpu(Cpu):
         dest.write(Operators.ITEBV(size, accumulator == dval, sval, dval))
 
         #Affected Flags o..szapc
-        cpu._calculate_CMP_flags(size, accumulator-dval, accumulator, dval)
+        cpu._calculate_CMP_flags(size, accumulator - dval, accumulator, dval)
 
     @instruction
     def CMPXCHG8B(cpu, dest):
         '''
         Compares and exchanges bytes.
 
-        Compares the 64-bit value in EDX:EAX (or 128-bit value in RDX:RAX if operand size is
-        128 bits) with the operand (destination operand). If the values are equal, the 64-bit
-        value in ECX:EBX (or 128-bit value in RCX:RBX) is stored in the destination operand.
-        Otherwise, the value in the destination operand is loaded into EDX:EAX (or RDX:RAX)::
+        Compares the 64-bit value in EDX:EAX (or 128-bit value in RDX:RAX if
+        operand size is 128 bits) with the operand (destination operand). If
+        the values are equal, the 64-bit value in ECX:EBX (or 128-bit value in
+        RCX:RBX) is stored in the destination operand.  Otherwise, the value in
+        the destination operand is loaded into EDX:EAX (or RDX:RAX)::
 
                 IF (64-Bit Mode and OperandSize = 64)
                 THEN
