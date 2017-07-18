@@ -531,16 +531,21 @@ class Armv7Cpu(Cpu):
         op2 = op.read()
         result = 0
         overflow = 0
+        sums = list()
+        carries = list()
         for i in range(4):
-            byte = ((op1 >> (8*i)) & 0xFF) + ((op2 >> (8*i)) & 0xFF)
-            result |= (byte & 0xFF) << (8*i)
-            if byte > 0xFF:
-                overflow |= 1<<i
-        dest.write(result)
-        #TODO: this flag is set and updated independantly of the CVZN flags; this approach
+            uo1 = UInt(Operators.ZEXTEND(Operators.EXTRACT(op1, (8*i), 8), 9), 9)
+            uo2 = UInt(Operators.ZEXTEND(Operators.EXTRACT(op2, (8*i), 8), 9), 9)
+            byte = uo1 + uo2
+            carry = Operators.EXTRACT(byte, 8, 1)
+            sums.append(Operators.EXTRACT(byte, 0, 8))
+            carries.append(carry)
+        dest.write(Operators.CONCAT(32, *reversed(sums)))
+        #TODO: this flag is set and updated independently of the CVZN flags; this approach
         #      works, but in incongruent with all the other flag handling. How to make this
         #      better? -GR, 2017-07-13
-        cpu.regfile.write('APSR_GE', overflow)
+        #      Additional Note: capstone does not mark this instruction as one that updates flags.
+        cpu.regfile.write('APSR_GE', Operators.CONCAT(4, *reversed(carries)))
 
     @instruction
     def SEL(cpu, dest, op1, op2):
@@ -783,8 +788,11 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
-    def ADD(cpu, dest, src, add):
-        result, carry, overflow = cpu._ADD(src.read(), add.read())
+    def ADD(cpu, dest, src, *add):
+        if len(add):
+            result, carry, overflow = cpu._ADD(src.read(), add[0].read())
+        else:
+            result, carry, overflow = cpu._ADD(dest.read(), src.read())
         dest.write(result)
         return result, carry, overflow
 
@@ -832,6 +840,11 @@ class Armv7Cpu(Cpu):
     def BLE(cpu, dest):
         cpu.PC = Operators.ITEBV(cpu.address_bit_size,
                        cpu.regfile.read('APSR_Z'), dest.read(), cpu.PC)
+
+    @instruction
+    def CBNZ(cpu, op, dest):
+        if op.read() != 0:
+            cpu.PC = dest.read()
 
     @instruction
     def BL(cpu, label):
@@ -893,6 +906,19 @@ class Armv7Cpu(Cpu):
     @instruction
     def NOP(cpu):
         pass
+
+    @instruction
+    def REV(cpu, dest, op):
+        opval = op.read()
+        _bytes = list()
+        for i in range(4):
+            _bytes.append(Operators.EXTRACT(opval, i*8, 8))
+        dest.write(Operators.CONCAT(32, *_bytes))
+
+    @instruction
+    def SXTH(cpu, dest, op):
+        _op = op.read()
+        dest.write(Operators.SEXTEND(Operators.EXTRACT(_op, 0, 16), 16, 32))
 
     def _LDM(cpu, insn_id, base, regs):
         '''

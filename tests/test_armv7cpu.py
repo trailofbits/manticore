@@ -152,6 +152,20 @@ def itest_thumb(asm):
 
     return instr_dec
 
+def itest_multiple(asms):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
+        def wrapper(self):
+            self._setupCpu(asms, mode=CS_MODE_ARM, multiple_insts=True)
+            for i in range(len(asms)):
+                self.cpu.execute()
+            assertions_func(self)
+
+        return wrapper
+
+    return instr_dec
+
+
 def itest_thumb_multiple(asms):
     def instr_dec(assertions_func):
         @wraps(assertions_func)
@@ -672,10 +686,10 @@ class Armv7CpuInstructions(unittest.TestCase):
 
     # UADD8
 
-    @itest_setregs("R2=0x00FF00FF", "R3=0x00010001")
+    @itest_setregs("R2=0x00FF00FF", "R3=0x00010002")
     @itest_thumb("uadd8 r2, r2, r3")
     def test_uadd8(self):
-        self.assertEqual(self.rf.read('R2'), 0)
+        self.assertEqual(self.rf.read('R2'), 1)
         self.assertEqual(self.rf.read('APSR_GE'), 5)
 
     # LDR imm
@@ -1544,4 +1558,14 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R1'), 0x00FFFF00)
         self.assertEqual(self.rf.read('R4'), 0x01020201)
 
+    @itest_setregs("R2=0","R1=0x01020304")
+    @itest("rev r2, r1")
+    def test_rev(self):
+        self.assertEqual(self.rf.read('R1'), 0x01020304)
+        self.assertEqual(self.rf.read('R2'), 0x04030201)
 
+    @itest_setregs("R1=0x01020304","R2=0x05060708", "R3=0","R4=0xF001")
+    @itest_multiple(["sxth r1, r2", "sxth r3, r4"])
+    def test_sxth(self):
+        self.assertEqual(self.rf.read('R1'), 0x0708)
+        self.assertEqual(self.rf.read('R3'), 0xFFFFF001)
