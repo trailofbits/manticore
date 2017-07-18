@@ -117,7 +117,8 @@ nosetests --processes=8 --process-timeout=120 tests/test_binaries.py
 ### Redis
 
 If you'd like to use redis for state serialization (instead of disk), install
-redis using your host package manager, then run
+redis using your host package manager, then install manticore as above, but
+with `[redis]` appended to the name of the package, e.g.
 
 ```
 pip install manticore[redis]

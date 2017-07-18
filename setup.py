@@ -19,6 +19,7 @@ setup(
             'coverage',
             'nose',
             'Sphinx',
+            'redis',
         ],
         'redis': [
             'redis',
