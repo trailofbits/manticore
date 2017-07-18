@@ -113,7 +113,7 @@ class SymbolicFile(File):
         :param constraints: the SMT constraints
         :param str path: the pathname of the symbolic file
         :param str mode: the access permissions of the symbolic file
-        :param max_size: Maximun amount of bytes of the symbolic file
+        :param max_size: Maximum amount of bytes of the symbolic file
         :param str wildcard: Wildcard to be used in symbolic file
         '''
         super(SymbolicFile, self).__init__(path, mode)
@@ -170,14 +170,30 @@ class SymbolicFile(File):
         '''
         return self.pos
 
-    def seek(self, pos):
+    def seek(self, offset, whence = os.SEEK_SET):
         '''
-        Returns the read/write file offset
+        Repositions the file C{offset} according to C{whence}.
+        Returns the resulting offset or -1 in case of error.
         :rtype: int
-        :return: the read/write file offset.
+        :return: the file offset.
         '''
-        assert isinstance(pos, (int, long))
-        self.pos = pos
+        assert isinstance(offset, (int, long))
+        assert whence in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END)
+
+        new_position = 0
+        if whence == os.SEEK_SET:
+            new_position = offset
+        elif whence == os.SEEK_CUR:
+            new_position = self.pos + offset
+        elif whence == os.SEEK_END:
+            new_position = self.max_size + offset
+
+        if new_position < 0:
+            return -1
+
+        self.pos = new_position
+
+        return self.pos
 
     def read(self, count):
         '''
