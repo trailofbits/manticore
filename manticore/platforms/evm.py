@@ -686,8 +686,8 @@ class EVM(Eventful):
         testbit = size * 8 + 7
         result1 = (value | (TT256 - (1 << testbit)))
         result2 = (value & ((1 << testbit) - 1))
-        result = Operators.ITEBV(256, (b & (1 << testbit)) != 0, result1, result2)
-        return Operators.ITEBV(256, size<=31, result, b)
+        result = Operators.ITEBV(256, (value & (1 << testbit)) != 0, result1, result2)
+        return Operators.ITEBV(256, size<=31, result, value)
 
     ##########################################################################
     ##Comparison & Bitwise Logic Operations
