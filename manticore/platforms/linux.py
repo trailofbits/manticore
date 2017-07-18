@@ -172,23 +172,28 @@ class SymbolicFile(File):
 
     def seek(self, offset, whence = os.SEEK_SET):
         '''
-        Returns the read/write file offset
+        Repositions the file C{offset} according to C{whence}.
+        Returns the resulting offset or -1 in case of error.
         :rtype: int
-        :return: the read/write file offset.
+        :return: the file offset.
         '''
         assert isinstance(offset, (int, long))
-        assert isinstance(whence, (int, long))
+        assert whence in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END)
 
-        # horribly simplified (omits mode checks, error handling)
+        new_position = 0
         if whence == os.SEEK_SET:
-            self.pos = offset
+            new_position = offset
         elif whence == os.SEEK_CUR:
-            self.pos += offset
+            new_position = self.pos + offset
         elif whence == os.SEEK_END:
-            self.max_size += offset
-        # SEEK_DATA, SEEK_HOLE niy
-        else:
-            logger.warning("Symbolic seek: whence %d is not implemented yet", whence)
+            new_position = self.max_size + offset
+
+        if new_position < 0:
+            return -1
+
+        self.pos = new_position
+
+        return self.pos
 
     def read(self, count):
         '''
