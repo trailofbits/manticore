@@ -19,6 +19,9 @@ setup(
             'coverage',
             'nose',
             'Sphinx',
+        ],
+        'redis': [
+            'redis',
         ]
     },
     entry_points={
