@@ -114,6 +114,18 @@ period via the --process-timeout flag. E.g.,
 nosetests --processes=8 --process-timeout=120 tests/test_binaries.py
 ```
 
+### Redis
+
+If you'd like to use redis for state serialization (instead of disk), install
+redis using your host package manager, then run
+
+```
+pip install manticore[redis]
+```
+
+Note that this does not make manticore use redis automatically, and you'll still
+have to manually set the workspace to the redis URI.
+
 ## Usage
 
 ```
