@@ -28,15 +28,15 @@ from .utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger('MANTICORE')
 
 
-def makeDecree(args):
+def makeDecree(program, concrete_data=''):
     constraints = ConstraintSet()
-    platform = decree.SDecree(constraints, ','.join(args.programs))
+    platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
-    logger.info('Loading program %s', args.programs)
+    logger.info('Loading program %s', program)
 
-    #if args.data != '':
-    #    logger.info('Starting with concrete input: {}'.format(args.data))
-    platform.input.transmit(args.data)
+    if concrete_data != '':
+        logger.info('Starting with concrete input: {}'.format(concrete_data))
+    platform.input.transmit(concrete_data)
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
@@ -390,7 +390,7 @@ class Manticore(object):
             state = makeWindows(self._args)
         elif self._binary_type == 'DECREE':
             # Decree
-            state = makeDecree(self._args)
+            state = makeDecree(self._binary, self._concrete_data)
         else:
             raise NotImplementedError("Binary {} not supported.".format(path))
 

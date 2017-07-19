@@ -74,6 +74,9 @@ def main():
     m.policy = args.policy
     m.args = args
 
+    if args.data:
+        m.concrete_data = args.data
+
     if args.workspace:
         m.workspace = args.workspace
 
