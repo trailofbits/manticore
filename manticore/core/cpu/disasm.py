@@ -112,7 +112,8 @@ class BinjaILDisasm(Disasm):
                 return self.il_queue.pop(0)[1]
             else:
                 # somehow we have a queue but we are now at a different pc,
-                # clear the queue
+                # clear the queue (we might be here because of a CALL etc.)
+                # FIXME assert that this is legitimate
                 del self.il_queue[:]
 
         # get current il

@@ -25,7 +25,7 @@ class TerminateState(StateException):
 
 
 class Concretize(StateException):
-    ''' Base class for all exceptions that trigger the concretization 
+    ''' Base class for all exceptions that trigger the concretization
         of a symbolic expression
 
         This will fork the state using a pre-set concretization policy
@@ -44,11 +44,11 @@ class Concretize(StateException):
 
 
 class ForkState(Concretize):
-    ''' Specialized concretization class for Bool expressions. 
+    ''' Specialized concretization class for Bool expressions.
         It tries True and False as concrete solutions. /
 
-        Note: as setstate is None the concrete value is not written back 
-        to the state. So the expression could still by symbolic(but constrained) 
+        Note: as setstate is None the concrete value is not written back
+        to the state. So the expression could still by symbolic(but constrained)
         in forked states.
     '''
     def __init__(self, message, expression, **kwargs):
@@ -62,7 +62,7 @@ class State(object):
     '''
     Representation of a unique program state/path.
 
-    :param ConstraintSet constraints: Initial constraints 
+    :param ConstraintSet constraints: Initial constraints
     :param Platform platform: Initial operating system state
     :ivar dict context: Local context for arbitrary data storage
     '''
@@ -106,7 +106,7 @@ class State(object):
         new_state.input_symbols = self.input_symbols
         new_state.context = copy.deepcopy(self.context)
         self._child = new_state
-        
+
         #fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
         return new_state
 
@@ -118,15 +118,15 @@ class State(object):
         try:
             result = self.platform.execute()
 
-        #Instead of State importing SymbolicRegisterException and SymbolicMemoryException 
-        # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ?? 
+        #Instead of State importing SymbolicRegisterException and SymbolicMemoryException
+        # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ??
         # We are forcing State to have abstractcpu
         except ConcretizeRegister as e:
             expression = self.cpu.read_register(e.reg_name)
             def setstate(state, value):
                 state.cpu.write_register(e.reg_name, value)
             raise Concretize(e.message,
-                                expression=expression, 
+                                expression=expression,
                                 setstate=setstate,
                                 policy=e.policy)
         except ConcretizeMemory as e:
@@ -134,7 +134,7 @@ class State(object):
             def setstate(state, value):
                 state.cpu.write_int(e.reg_name, value, e.size)
             raise Concretize(e.message,
-                                expression=expression, 
+                                expression=expression,
                                 setstate=setstate,
                                 policy=e.policy)
         except MemoryException as e:
@@ -234,7 +234,7 @@ class State(object):
 
     def concretize(self, symbolic, policy, maxcount=100):
         ''' This finds a set of solutions for symbolic using policy.
-            This raises TooManySolutions if more solutions than maxcount 
+            This raises TooManySolutions if more solutions than maxcount
         '''
         vals = []
         if policy == 'MINMAX':

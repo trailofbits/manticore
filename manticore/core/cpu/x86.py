@@ -686,7 +686,6 @@ class X86Cpu(Cpu):
         :param regfile: regfile object for this CPU.
         :param memory: memory object for this CPU.
         '''
-        self.real_cpu = True
         super(X86Cpu, self).__init__(regfile, memory, *args, **kwargs)
         #Segments ('base', 'limit', 'perms', 'gatetype')
         self._segments = {}
@@ -1492,11 +1491,12 @@ class X86Cpu(Cpu):
         '''
         Decrements by 1.
 
-        Subtracts 1 from the destination operand, while preserving the state of the CF flag. The destination
-        operand can be a register or a memory location. This instruction allows a loop counter to be updated
-        without disturbing the CF flag. (To perform a decrement operation that updates the CF flag, use a SUB
-        instruction with an immediate operand of 1.)
-        The instruction's 64-bit mode default operation size is 32 bits.
+        Subtracts 1 from the destination operand, while preserving the state of
+        the CF flag. The destination operand can be a register or a memory
+        location. This instruction allows a loop counter to be updated without
+        disturbing the CF flag. (To perform a decrement operation that updates
+        the CF flag, use a SUB instruction with an immediate operand of 1.) The
+        instruction's 64-bit mode default operation size is 32 bits.
 
         The OF, SF, ZF, AF, and PF flags are set according to the result::
 
@@ -1506,13 +1506,13 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         '''
         arg0 = dest.read()
-        res = dest.write(arg0-1)
+        res = dest.write(arg0 - 1)
         #Affected Flags o..szapc
-        res &= (1<<dest.size)-1
-        SIGN_MASK = 1<<(dest.size-1)
+        res &= (1 << dest.size) - 1
+        SIGN_MASK = 1 << (dest.size - 1)
         cpu.AF = ((arg0 ^ 1) ^ res) & 0x10 != 0
         cpu.ZF = res == 0
-        cpu.SF = (res & SIGN_MASK)!=0
+        cpu.SF = (res & SIGN_MASK) != 0
         cpu.OF = res == SIGN_MASK
         cpu.PF = cpu._calculate_parity_flag(res)
 
@@ -1609,47 +1609,49 @@ class X86Cpu(Cpu):
         '''
         Signed divide.
 
-        Divides (signed) the value in the AL, AX, or EAX register by the source operand and stores the result
-        in the AX, DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory
+        Divides (signed) the value in the AL, AX, or EAX register by the source
+        operand and stores the result in the AX, DX:AX, or EDX:EAX registers.
+        The source operand can be a general-purpose register or a memory
         location. The action of this instruction depends on the operand size.::
 
-                IF SRC  =  0
-                THEN #DE; (* divide error *)
-                FI;
-                IF OpernadSize  =  8 (* word/byte operation *)
-                THEN
-                    temp  =  AX / SRC; (* signed division *)
-                    IF (temp > 7FH) Operators.OR(temp < 80H)
-                    (* if a positive result is greater than 7FH or a negative result is less than 80H *)
-                    THEN #DE; (* divide error *) ;
-                    ELSE
-                        AL  =  temp;
-                        AH  =  AX SignedModulus SRC;
-                    FI;
+        IF SRC  =  0
+        THEN #DE; (* divide error *)
+        FI;
+        IF OpernadSize  =  8 (* word/byte operation *)
+        THEN
+            temp  =  AX / SRC; (* signed division *)
+            IF (temp > 7FH) Operators.OR(temp < 80H)
+            (* if a positive result is greater than 7FH or a negative result is
+            less than 80H *)
+            THEN #DE; (* divide error *) ;
+            ELSE
+                AL  =  temp;
+                AH  =  AX SignedModulus SRC;
+            FI;
+        ELSE
+            IF OpernadSize  =  16 (* doubleword/word operation *)
+            THEN
+                temp  =  DX:AX / SRC; (* signed division *)
+                IF (temp > 7FFFH) Operators.OR(temp < 8000H)
+                (* if a positive result is greater than 7FFFH *)
+                (* or a negative result is less than 8000H *)
+                THEN #DE; (* divide error *) ;
                 ELSE
-                    IF OpernadSize  =  16 (* doubleword/word operation *)
-                    THEN
-                        temp  =  DX:AX / SRC; (* signed division *)
-                        IF (temp > 7FFFH) Operators.OR(temp < 8000H)
-                        (* if a positive result is greater than 7FFFH *)
-                        (* or a negative result is less than 8000H *)
-                        THEN #DE; (* divide error *) ;
-                        ELSE
-                            AX  =  temp;
-                            DX  =  DX:AX SignedModulus SRC;
-                        FI;
-                    ELSE (* quadword/doubleword operation *)
-                        temp  =  EDX:EAX / SRC; (* signed division *)
-                        IF (temp > 7FFFFFFFH) Operators.OR(temp < 80000000H)
-                        (* if a positive result is greater than 7FFFFFFFH *)
-                        (* or a negative result is less than 80000000H *)
-                        THEN #DE; (* divide error *) ;
-                        ELSE
-                            EAX  =  temp;
-                            EDX  =  EDX:EAX SignedModulus SRC;
-                        FI;
-                    FI;
+                    AX  =  temp;
+                    DX  =  DX:AX SignedModulus SRC;
                 FI;
+            ELSE (* quadword/doubleword operation *)
+                temp  =  EDX:EAX / SRC; (* signed division *)
+                IF (temp > 7FFFFFFFH) Operators.OR(temp < 80000000H)
+                (* if a positive result is greater than 7FFFFFFFH *)
+                (* or a negative result is less than 80000000H *)
+                THEN #DE; (* divide error *) ;
+                ELSE
+                    EAX  =  temp;
+                    EDX  =  EDX:EAX SignedModulus SRC;
+                FI;
+            FI;
+        FI;
 
         :param cpu: current CPU.
         :param src: source operand.
@@ -1658,34 +1660,36 @@ class X86Cpu(Cpu):
         reg_name_h = { 8: 'AH', 16: 'DX', 32:'EDX', 64:'RDX'}[src.size]
         reg_name_l = { 8: 'AL', 16: 'AX', 32:'EAX', 64:'RAX'}[src.size]
 
-        dividend = Operators.CONCAT(src.size * 2, cpu.read_register(reg_name_h), cpu.read_register(reg_name_l))
-
+        dividend = Operators.CONCAT(src.size * 2,
+                                    cpu.read_register(reg_name_h),
+                                    cpu.read_register(reg_name_l))
 
         divisor = src.read()
-        if isinstance(divisor, (int,long)) and divisor == 0:
+        if isinstance(divisor, (int, long)) and divisor == 0:
             raise DivideError()
 
         dst_size = src.size * 2
 
         divisor = Operators.SEXTEND(divisor, src.size, dst_size)
-        mask = (1 << dst_size)-1
-        sign_mask = 1<<(dst_size-1)
+        mask = (1 << dst_size) - 1
+        sign_mask = 1 << (dst_size - 1)
 
-        dividend_sign = (dividend & sign_mask ) != 0
+        dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
         if isinstance(divisor, (int,long)):
             if divisor_sign:
-                divisor = ( (~divisor)+1) & mask
+                divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
 
-        if isinstance(dividend, (int,long)):
+        if isinstance(dividend, (int, long)):
             if dividend_sign:
-                dividend = ( (~dividend)+1) & mask
+                dividend = ((~dividend) + 1) & mask
                 dividend = -dividend
 
         quotient = Operators.SDIV(dividend, divisor)
-        if isinstance(dividend, (int,long)) and isinstance(dividend, (int,long)):
+        if (isinstance(dividend, (int, long)) and
+                isinstance(dividend, (int,long))):
             # handle the concrete case
             remainder = dividend - (quotient * divisor)
         else:
@@ -5038,17 +5042,18 @@ class X86Cpu(Cpu):
         '''
         Reads time-stamp counter.
 
-        Loads the current value of the processor's time-stamp counter into the EDX:EAX registers.
-        The time-stamp counter is contained in a 64-bit MSR. The high-order 32 bits of the MSR are
-        loaded into the EDX register, and the low-order 32 bits are loaded into the EAX register.
-        The processor increments the time-stamp counter MSR every clock cycle and resets it to 0 whenever
-        the processor is reset.
+        Loads the current value of the processor's time-stamp counter into the
+        EDX:EAX registers.  The time-stamp counter is contained in a 64-bit
+        MSR. The high-order 32 bits of the MSR are loaded into the EDX
+        register, and the low-order 32 bits are loaded into the EAX register.
+        The processor increments the time-stamp counter MSR every clock cycle
+        and resets it to 0 whenever the processor is reset.
 
         :param cpu: current CPU.
         '''
         val = cpu.icount
-        cpu.RAX = val&0xffffffff
-        cpu.RDX = (val>>32)&0xffffffff
+        cpu.RAX = val & 0xffffffff
+        cpu.RDX = (val >> 32) & 0xffffffff
 
 
     #AVX

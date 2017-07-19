@@ -423,7 +423,10 @@ class BinjaCpu(Cpu):
         mod_flags = f.get_flags_written_by_lifted_il_instruction(i.instr_index)
         if not mod_flags or not flags:
             return
-        for f, val in flags.items():
+
+        common = set(mod_flags).intersection(set(flags.keys()))
+        to_update = {f: flags[f] for f in common}
+        for f, val in to_update.items():
             cpu.regfile.write(f + "f", val)
 
     def push(cpu, value, size):
@@ -537,13 +540,38 @@ class BinjaCpu(Cpu):
     def CONST_PTR(cpu, const_int):
         return const_int.op + cpu.disasm.entry_point_diff
 
-    def DIVS(cpu, left_expr, right_expr):
+    def DIVS(cpu, dividend_h, dividend_l, divisor):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def DIVS_DP(cpu, left_expr, right_expr):
-        print hex(cpu.disasm.current_pc)
-        raise NotImplementedError
+    def DIVS_DP(cpu, dividend_h, dividend_l, divisor):
+        size = divisor.size * 8
+        dividend = Operators.CONCAT(size * 2,
+                                    dividend_h.read(),
+                                    dividend_l.read())
+
+        divisor = divisor.read()
+        dst_size = size * 2
+
+        divisor = Operators.SEXTEND(divisor, size, dst_size)
+        mask = (1 << dst_size) - 1
+        sign_mask = 1 << (dst_size - 1)
+
+        dividend_sign = (dividend & sign_mask) != 0
+        divisor_sign = (divisor & sign_mask) != 0
+
+        if isinstance(divisor, (int, long)):
+            if divisor_sign:
+                divisor = ((~divisor) + 1) & mask
+                divisor = -divisor
+
+        if isinstance(dividend, (int, long)):
+            if dividend_sign:
+                dividend = ((~dividend) + 1) & mask
+                dividend = -dividend
+
+        quotient = Operators.SDIV(dividend, divisor)
+        return Operators.EXTRACT(quotient, 0, size)
 
     def DIVU(cpu, left_expr, right_expr):
         print hex(cpu.disasm.current_pc)
@@ -577,6 +605,7 @@ class BinjaCpu(Cpu):
         else:
             raise NotImplementedError
         cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
+        cpu.regfile.write('PC', cpu.__class__.PC)
         # return a value since this will be used by an IF ending in a GOTO
         return cpu.__class__.PC
 
@@ -603,6 +632,7 @@ class BinjaCpu(Cpu):
         next_il = cpu.disasm.current_func.lifted_il[idx]
         if next_il.address != cpu.disasm.current_pc:
             cpu.__class__.PC = next_il.address + cpu.disasm.entry_point_diff
+            cpu.regfile.write('PC', cpu.__class__.PC)
             return
 
         # The next IL instruction has the same PC. Probably a real assembly
@@ -628,11 +658,13 @@ class BinjaCpu(Cpu):
             next_il = cpu.disasm.current_func.lifted_il[idx]
         assert goto_addr is not None
         cpu.__class__.PC = goto_addr
+        cpu.regfile.write('PC', cpu.__class__.PC)
 
     def JUMP(cpu, expr):
         addr = expr.read()
         cpu.regfile.write('PC', addr)
         cpu.__class__.PC = addr
+        cpu.regfile.write('PC', cpu.__class__.PC)
 
     def JUMP_TO(cpu, expr, target_indexes):
         """ Jump table construct handling
@@ -640,6 +672,7 @@ class BinjaCpu(Cpu):
         addr = expr.read()
         cpu.regfile.write('PC', addr)
         cpu.__class__.PC = addr
+        cpu.regfile.write('PC', cpu.__class__.PC)
 
     def LOAD(cpu, src_expr):
         # FIXME hack until push qword is fixed in binja
@@ -732,9 +765,40 @@ class BinjaCpu(Cpu):
         print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
-    def MODS_DP(cpu, hi_expr, lo_expr, right_expr):
-        print hex(cpu.disasm.current_pc)
-        raise NotImplementedError
+    def MODS_DP(cpu, dividend_h, dividend_l, divisor):
+        size = divisor.size * 8
+        dividend = Operators.CONCAT(size * 2,
+                                    dividend_h.read(),
+                                    dividend_l.read())
+
+        divisor = divisor.read()
+        dst_size = size * 2
+
+        divisor = Operators.SEXTEND(divisor, size, dst_size)
+        mask = (1 << dst_size) - 1
+        sign_mask = 1 << (dst_size - 1)
+
+        dividend_sign = (dividend & sign_mask) != 0
+        divisor_sign = (divisor & sign_mask) != 0
+
+        if isinstance(divisor, (int,long)):
+            if divisor_sign:
+                divisor = ((~divisor) + 1) & mask
+                divisor = -divisor
+
+        if isinstance(dividend, (int, long)):
+            if dividend_sign:
+                dividend = ((~dividend) + 1) & mask
+                dividend = -dividend
+
+        quotient = Operators.SDIV(dividend, divisor)
+        if (isinstance(dividend, (int, long)) and
+                isinstance(dividend, (int,long))):
+            remainder = dividend - (quotient * divisor)
+        else:
+            remainder = Operators.SREM(dividend, divisor)
+        remainder = Operators.SREM(dividend, divisor)
+        return Operators.EXTRACT(remainder, 0, size)
 
     def MODU(cpu, left_expr, right_expr):
         print hex(cpu.disasm.current_pc)
@@ -810,7 +874,8 @@ class BinjaCpu(Cpu):
         return not expr.read()
 
     def OR(cpu, left, right):
-        res = left.read() | right.read()
+        mask = (1 << left.size * 8) - 1
+        res = (left.read() | right.read()) & mask
         x86_update_logic_flags(cpu, res, left.llil.size * 8)
         return res
 
@@ -831,6 +896,7 @@ class BinjaCpu(Cpu):
 
     def RET(cpu, expr):
         cpu.__class__.PC = cpu.pop(cpu.address_bit_size)
+        cpu.regfile.write('PC', cpu.__class__.PC)
 
     def RLC(cpu, left_expr, right_expr, carry_expr):
         print hex(cpu.disasm.current_pc)
@@ -918,11 +984,13 @@ class BinjaCpu(Cpu):
 
     def SET_REG_SPLIT(cpu, high_reg, low_reg, src_expr):
         res = src_expr.read()
-        size = src_expr.llil.size
+        size = src_expr.llil.size * 8
         cpu.regfile.write(str(low_reg.op), Operators.EXTRACT(res, 0, size))
         cpu.regfile.write(str(high_reg.op), Operators.EXTRACT(res, size, size))
 
     def STORE(cpu, dest_expr, src_expr):
+        if hex(dest_expr.read()) == "0x6cc570L":
+            print hex(cpu.disasm.current_pc) + ": STORING AT 0x6cc570L: " + hex(src_expr.read())
         cpu.write_int(dest_expr.read(),
                       src_expr.read(),
                       dest_expr.llil.size * 8)
@@ -936,7 +1004,6 @@ class BinjaCpu(Cpu):
                                         left.llil.size * 8)
         else:
             right_v = right.read()
-
         res = (left_v - right_v) & ((1 << size) - 1)
 
         x86_calculate_cmp_flags(cpu, size, res, left_v, right_v)
@@ -987,13 +1054,21 @@ class BinjaCpu(Cpu):
     def FALLBACK(cpu, name, *operands):
         """Fallback for unimplemented instructions
         """
-        logger.debug('%s: Fallback to concrete cpu for instruction %s',
-                     hex(cpu.disasm.current_pc),
-                     name)
+        logger.warning('%s: Fallback to concrete cpu for instruction %s',
+                       hex(cpu.disasm.current_pc),
+                       name)
+        # update registers
         for pl_reg, binja_reg in cpu.regfile.pl2b_map.items():
             if isinstance(binja_reg, tuple) or binja_reg is None: continue
             cpu.platform_cpu.write_register(pl_reg, cpu.regfile.read(binja_reg))
 
+        # as well as all the required attributes
+        # FIXME
+        if name == "RDTSC":
+            # properly get extra insn
+            cpu.platform_cpu._icount = cpu.icount - 3
+
+        #  print sorted(cpu.platform_cpu._regfile._registers.items())
         # do the actual call
         implementation = getattr(cpu.platform_cpu, name)
         implementation(*operands)
@@ -1004,7 +1079,7 @@ class BinjaCpu(Cpu):
             cpu.regfile.write(binja_reg, cpu.platform_cpu.read_register(pl_reg))
 #
 #
-# ARCH-SPECIFIC INSNS
+# ARCH-SPECIFIC INSNs
 #
 #
 

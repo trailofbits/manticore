@@ -334,6 +334,11 @@ class Executor(object):
         logger.debug("Removing state %s from storage", state_id)
         os.remove(filename)
 
+        # FIXME (theo) where should we serialize memory so that this does
+        # not occur? REMOVE THIS
+        if hasattr(loaded_state.cpu, "platform_cpu"):
+            loaded_state.cpu.platform_cpu._memory = loaded_state.cpu._memory
+
         #Broadcast event
         self.will_load_state(loaded_state, state_id)
         return loaded_state
@@ -438,7 +443,6 @@ class Executor(object):
                 try:
                     #select a suitable state to analyze
                     if current_state is None:
-
                         with self._lock:
                             #notify siblings we are about to stop this run
                             self._stop_run()

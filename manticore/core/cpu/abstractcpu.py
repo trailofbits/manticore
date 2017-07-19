@@ -706,13 +706,22 @@ class Cpu(object):
         except StopIteration as e:
             raise DecodeException(pc, code)
 
-
         #Check that the decoded intruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             import traceback
             traceback.print_stack()
             raise InvalidMemoryAccess(pc, 'x')
+
+        # if we are executing Binja-IL but need to fallback to capstone,
+        # bring all registers up to state, because they might be needed
+        # during the creation of operands in wrap_operands
+        if (isinstance(self.__class__.disasm, BinjaILDisasm) and
+                isinstance(insn, cs.CsInsn)):
+            for pl_reg, binja_reg in self.regfile.pl2b_map.items():
+                if isinstance(binja_reg, tuple) or binja_reg is None: continue
+                self.platform_cpu.write_register(pl_reg,
+                                                 self.regfile.read(binja_reg))
 
         insn.operands = self._wrap_operands(insn.operands)
         self._instruction_cache[pc] = insn
@@ -737,10 +746,6 @@ class Cpu(object):
         '''
         Decode, and execute one instruction pointed by register PC
         '''
-        # FIXME (theo) Debugging Aid
-        #  if hex(self.PC) == "0x44423eL":
-            #  raise NotImplementedError
-
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
@@ -757,6 +762,13 @@ class Cpu(object):
         # FIXME why is this the case?
         if insn.address != self.PC:
             return
+
+        #  # FIXME (theo) Debugging Aid
+        #  if hex(self.PC) == "0x40eb63L":
+            #  print self.render_instruction(insn)
+            #  for l in self.render_registers():
+                #  print l
+            #  raise NotImplementedError
 
         name = self.canonicalize_instruction_name(insn)
 
@@ -795,6 +807,7 @@ class Cpu(object):
         if (isinstance(self.__class__.disasm, BinjaILDisasm) and
                 not (hasattr(insn, "sets_pc") and insn.sets_pc)):
             self.__class__.PC = self._last_pc + insn.size
+            self.regfile.write('PC', self.__class__.PC)
 
         if self.PC != self._last_pc:
             self._icount += 1
@@ -843,6 +856,9 @@ class Cpu(object):
             return None
         if reg_name == "FSBASE":
             reg_name = "FS"
+        # substitute XMM with YMM to be consistent with x86 at printing
+        if reg_name.startswith("XMM"):
+            reg_name = "Y" + reg_name[1:]
         if issymbolic(value):
             aux = "%3s: "%reg_name +"%16s"%value
             result += aux
@@ -877,11 +893,7 @@ def instruction(old_method):
     #This should decorate every instruction implementation
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
-        if not hasattr(cpu, 'real_cpu'):
-            cpu.PC += cpu.instruction.size
-        else:
-            if cpu.real_cpu:
-                cpu.PC += cpu.instruction.size
+        cpu.PC += cpu.instruction.size
         return old_method(cpu, *args, **kw_args)
     new_method.old_method = old_method
     return new_method
