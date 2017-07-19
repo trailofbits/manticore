@@ -1560,10 +1560,9 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R3'), 1)
         self.assertEqual(self.rf.read('R4'), 0)
 
-    @itest_setregs("R1=0","R2=0xFFFFFFFF","R3=0x01000001","R4=0","R5=0x01010101","R6=0x02020202")
-    @itest_thumb_multiple(["uadd8 r1, r2, r3","sel r4, r5, r6"])
+    @itest_setregs("APSR_GE=9","R4=0","R5=0x01010101","R6=0x02020202")
+    @itest_thumb("sel r4, r5, r6")
     def test_sel(self):
-        self.assertEqual(self.rf.read('R1'), 0x00FFFF00)
         self.assertEqual(self.rf.read('R4'), 0x01020201)
 
     @itest_setregs("R2=0","R1=0x01020304")

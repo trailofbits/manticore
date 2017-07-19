@@ -529,8 +529,6 @@ class Armv7Cpu(Cpu):
     def UADD8(cpu, dest, src, op):
         op1 = src.read()
         op2 = op.read()
-        result = 0
-        overflow = 0
         sums = list()
         carries = list()
         for i in range(4):
@@ -792,6 +790,7 @@ class Armv7Cpu(Cpu):
         if len(add):
             result, carry, overflow = cpu._ADD(src.read(), add[0].read())
         else:
+            #support for the `add r2, #4` form
             result, carry, overflow = cpu._ADD(dest.read(), src.read())
         dest.write(result)
         return result, carry, overflow
