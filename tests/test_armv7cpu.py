@@ -1552,6 +1552,14 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R3'), 0x0)
         self.assertEqual(self.rf.read('R4'), 0x4141)
 
+    @itest_setregs("R1=0","R2=0","R3=0","R4=0")
+    @itest_thumb_multiple(["cmp r1, #1", "itete ne", "mov r1, #1", "mov r2, #1", "mov r3, #1", "mov r4, #4"])
+    def test_itete_exec(self):
+        self.assertEqual(self.rf.read('R1'), 1)
+        self.assertEqual(self.rf.read('R2'), 0)
+        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read('R4'), 0)
+
     @itest_setregs("R1=0","R2=0xFFFFFFFF","R3=0x01000001","R4=0","R5=0x01010101","R6=0x02020202")
     @itest_thumb_multiple(["uadd8 r1, r2, r3","sel r4, r5, r6"])
     def test_sel(self):
