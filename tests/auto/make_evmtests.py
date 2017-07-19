@@ -53,7 +53,7 @@ def i(x):
     assert isinstance(x, (str, unicode))
     if not x.startswith('0x'):
         x = '0x' + x
-    return int(x, 0)
+    return long(x, 0)
 def gen_test(testcase, testname, skip):
     output = ''
     if skip:
@@ -135,20 +135,20 @@ def gen_test(testcase, testname, skip):
                                         pp(contract['code'],width=60, indent=37), 
                                         pp(contract['storage'],width=80, indent=40))
 
-        output += '''        
+    output += '''        
         address = %s
         origin = %s
         price = %s
         data = %s
         caller = %s
         value = %s''' % (
-        pp(transaction['address']),
-        pp(transaction['origin']),
-        pp(transaction['price']),
-        pp(transaction['data']),
-        pp(transaction['caller']),
-        pp(transaction['value']) )
-        output += '''        
+    pp(transaction['address']),
+    pp(transaction['origin']),
+    pp(transaction['price']),
+    pp(transaction['data']),
+    pp(transaction['caller']),
+    pp(transaction['value']) )
+    output += '''        
         platform.transaction(address, origin, price, data, caller, value, header)
         
         throw = False
@@ -162,7 +162,7 @@ def gen_test(testcase, testname, skip):
             self.assertTrue(throw)
         else:
             self.assertEqual( pos_world, platform.storage)
-    '''
+'''
 
     
     return output
@@ -185,17 +185,17 @@ import os
 
 class EVMTest_%s(unittest.TestCase):
     _multiprocess_can_split_ = True
-
+    maxDiff=None 
 '''%sys.argv[1][:-5]
 
     js = file(filename).read()
     tests = dict(json.loads(js))
 
-    print "#processed ", len(tests.keys()), tests.keys()
+    #print "#processed ", len(tests.keys()), tests.keys()
     count = 0
     for test_name, testcase in tests.items():
         count +=1
-        print "#count", count , test_name, '0c423e4e26c7938c2a82ce40d05a549d617b32303a824ba5a93cb2fb0b037dfd'
+        #print "#count", count , test_name, '0c423e4e26c7938c2a82ce40d05a549d617b32303a824ba5a93cb2fb0b037dfd'
         skip = False
         if test_name in ('BlockNumberDynamicJump0_foreverOutOfGas','jump0_foreverOutOfGas', '01a5cf9db140969b2a2410361164fc41c64c070805b82116d217240d4e304f6f', '08d5011d0a278a4d86298cf5a49d99df2662e279100f62fcdbd994df3fe58fbe','3a537f4a02067e6c5a8cf348bdffdb4e6b25475055503a8a5c16690cd51d1060',
 '4341c8f00034ada5203fad4bccf429d2cec28a58dc83e53f4a957694d653dbd4','5340ec41425169e8d8771356443a0a312d3e3c809059eb092b0e2a2f8efb0921', '607ba70d1799c9345e522410e3313582cb9a3e8aecfcb00b3d510e7bbcae522b', '5fc1b8e024dc710ad40a90f6fc18938a90ef020751e3370572d2d4b407e43e63',
@@ -220,7 +220,7 @@ class EVMTest_%s(unittest.TestCase):
 'da5e09e2db0ad1cf1d68bd8f0b780cbd2f26f454f37d887bdac9e9fd42e2b1a1', 'e434a52cc9af21ef1204b5cdb333b376900fc5c2ece63b9d34fa4902908a455e',
 'e434a52cc9af21ef1204b5cdb333b376900fc5c2ece63b9d34fa4902908a455e', 'e7c8c8665467646d68964497d222df12d6db05efbc5d5de1bf27c471023c1932',
 'f76b7c41b0a7d2879851037f8eea928fc7302bd60fd6af4b6e4030a3a24436b4','f8660436772f63f5cd6bb20e12150cdc66f5238f78d872196f49bc9bf7b5d68d',
-'fa78200fce12b17e9c320d743ddd7d32094326376fe9f6bf9964b285a9350a7e', 'DynamicJump0_foreverOutOfGas', 'JDfromStorageDynamicJump0_foreverOutOfGas'):
+'fa78200fce12b17e9c320d743ddd7d32094326376fe9f6bf9964b285a9350a7e', 'DynamicJump0_foreverOutOfGas', 'JDfromStorageDynamicJump0_foreverOutOfGas', 'ABAcalls1', 'ABAcalls3', 'CallToNameRegistratorTooMuchMemory1','callcodeToNameRegistrator0'):
             skip = True
         #print filename, test_name, tests[test_name]    
         name = 'test_%s_%s'%(filename[:-5],test_name)

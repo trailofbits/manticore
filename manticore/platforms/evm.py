@@ -587,11 +587,6 @@ class EVM(Eventful):
             self.last_exception = e
             raise
         except Exception as e:
-            print "Exception in user code:"
-            print '-'*60
-            import traceback, sys
-            traceback.print_exc(file=sys.stdout)
-            print '-'*60
             raise TerminateState("Exception executing %s (%r)"%(current.semantics, e), testcase=True)
 
         self.publish('did_execute_instruction', self, current)
@@ -682,8 +677,7 @@ class EVM(Eventful):
     def SIGNEXTEND(self, size, value): 
         '''Extend length of two's complement signed integer'''
         #FIXME maybe use Operators.SEXTEND
-        
-        testbit = size * 8 + 7
+        testbit = Operators.ITEBV(256, size<=31, 256 - (size + 1) * 8, 257)
         result1 = (value | (TT256 - (1 << testbit)))
         result2 = (value & ((1 << testbit) - 1))
         result = Operators.ITEBV(256, (value & (1 << testbit)) != 0, result1, result2)
@@ -748,7 +742,7 @@ class EVM(Eventful):
 
     ##########################################################################
     ##Environmental Information
-    def ADDRESS(self, a,b): 
+    def ADDRESS(self): 
         '''Get address of currently executing account     '''
         return self.address
 
@@ -832,6 +826,7 @@ class EVM(Eventful):
     def BLOCKHASH(self, a):
         '''Get the hash of one of the 256 most recent complete blocks'''
         #FIXME SHOULD query self.header structure
+        #90743482286830539503240959006302832933333810038750515972785732718729991261126L,
         return 0
 
     def COINBASE(self):
@@ -887,6 +882,8 @@ class EVM(Eventful):
         '''Save word to storage'''
         #FIXME implement system?
         self.global_storage[self.address]['storage'][address] = value
+        if value == 0:
+            del self.global_storage[self.address]['storage'][address]
 
     def JUMP(self, dest):
         '''Alter the program counter'''
@@ -1049,6 +1046,10 @@ class EVMWorld(Platform):
         self._callstack.append(vm)
         self.current.depth = self.depth
         self.forward_events_from(self.current)
+        if self.depth > 1024:
+            while self.depth >0:
+                self._pop(rollback=True)
+            raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
     def _pop(self, rollback=False):
         vm = self._callstack.pop()
@@ -1088,8 +1089,11 @@ class EVMWorld(Platform):
             self.THROW()
 
     def run(self):
-        while True:
-            self.execute()
+        try:
+            while True:
+                self.execute()
+        except Exception as e:
+            raise TerminateState("Generic exception (%r)"%e, testcase=True)
 
     def create_account(self, address=None, balance=0, code='', storage=None):
         ''' code is the runtime code '''
@@ -1098,7 +1102,7 @@ class EVMWorld(Platform):
             address = self._new_address()
         assert address not in self.storage.keys(), 'The account already exists'
         self.storage[address] = {}
-        self.storage[address]['nonce'] = 0
+        self.storage[address]['nonce'] = 0L
         self.storage[address]['balance'] = balance
         self.storage[address]['storage'] = {} if storage is None else storage
         self.storage[address]['code'] = code
