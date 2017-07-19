@@ -113,7 +113,7 @@ class SymbolicFile(File):
         :param constraints: the SMT constraints
         :param str path: the pathname of the symbolic file
         :param str mode: the access permissions of the symbolic file
-        :param max_size: Maximun amount of bytes of the symbolic file
+        :param max_size: Maximum amount of bytes of the symbolic file
         :param str wildcard: Wildcard to be used in symbolic file
         '''
         super(SymbolicFile, self).__init__(path, mode)
@@ -170,14 +170,30 @@ class SymbolicFile(File):
         '''
         return self.pos
 
-    def seek(self, pos):
+    def seek(self, offset, whence = os.SEEK_SET):
         '''
-        Returns the read/write file offset
+        Repositions the file C{offset} according to C{whence}.
+        Returns the resulting offset or -1 in case of error.
         :rtype: int
-        :return: the read/write file offset.
+        :return: the file offset.
         '''
-        assert isinstance(pos, (int, long))
-        self.pos = pos
+        assert isinstance(offset, (int, long))
+        assert whence in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END)
+
+        new_position = 0
+        if whence == os.SEEK_SET:
+            new_position = offset
+        elif whence == os.SEEK_CUR:
+            new_position = self.pos + offset
+        elif whence == os.SEEK_END:
+            new_position = self.max_size + offset
+
+        if new_position < 0:
+            return -1
+
+        self.pos = new_position
+
+        return self.pos
 
     def read(self, count):
         '''
@@ -1604,7 +1620,7 @@ class Linux(Platform):
         #self.procs[procid] = None
         logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
-            raise TerminateState("ProcessExit %r"%error_code, testcase=True)
+            raise TerminateState("Program finished with exit status: %r" % error_code, testcase=True)
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
@@ -1822,9 +1838,14 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         '''
-        stat = self.files[fd].stat()
+
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
+            return -errno.EBADF
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -1864,9 +1885,14 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         '''
-        stat = self.files[fd].stat()
+
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
+            return -errno.EBADF
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -1903,10 +1929,15 @@ class Linux(Platform):
         :rtype: int
         :param fd: the file descriptor of the file that is being inquired.
         :param buf: a buffer where data about the file will be stored.
-        :return: C{0} on success.
+        :return: C{0} on success, EBADF when called with bad fd
         :todo: Fix device number.
         '''
-        stat = self.files[fd].stat()
+
+        try:
+            stat = self._get_fd(fd).stat()
+        except BadFd:
+            logger.info("Calling fstat with invalid fd, returning EBADF")
+            return -errno.EBADF
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -2067,29 +2098,29 @@ class SLinux(Linux):
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
-            raise ConcretizeArgumet(self, 0)
+            raise ConcretizeArgument(self, 0)
 
         if issymbolic(buf):
             logger.debug("Ask to read to a symbolic buffer")
-            raise ConcretizeArgumet(self, 1)
+            raise ConcretizeArgument(self, 1)
 
         if issymbolic(count):
             logger.debug("Ask to read a symbolic number of bytes ")
-            raise ConcretizeArgumet(self, 2)
+            raise ConcretizeArgument(self, 2)
 
         return super(SLinux, self).sys_read(fd, buf, count)
 
     def sys_write(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to write to a symbolic file descriptor!!")
-            raise ConcretizeArgumet(self, 0)
+            raise ConcretizeArgument(self, 0)
 
         if issymbolic(buf):
             logger.debug("Ask to write to a symbolic buffer")
-            raise ConcretizeArgumet(self, 1)
+            raise ConcretizeArgument(self, 1)
 
         if issymbolic(count):
             logger.debug("Ask to write a symbolic number of bytes ")
-            raise ConcretizeArgumet(self, 2)
+            raise ConcretizeArgument(self, 2)
 
         return super(SLinux, self).sys_write(fd, buf, count)

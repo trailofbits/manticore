@@ -10,7 +10,6 @@ from ..core.smtlib import *
 from ..core.executor import TerminateState
 from ..utils.helpers import issymbolic
 from ..binary import CGCElf
-from ..binary import CGCGrr
 from contextlib import closing
 import StringIO
 import logging
@@ -224,39 +223,6 @@ class Decree(object):
 
 
     def load(self, filename):
-        magic = file(filename).read(4)
-        if magic == '\x7fCGC':
-            return self._load_cgc(filename)
-        else:
-            assert magic == 'GRRS'
-            return self._load_grr(filename)
-
-    def _load_grr(self, filename):
-        ''' 
-        Loads a GRR CGC snapshot in memory and restores the CPU state.
-
-        :param filename: pathname of the file to be executed.
-        '''
-        grr = CGCGrr(filename) 
-        logger.info("Loading %s grr snapshot", filename)
-
-        #make cpu and memory (Only 1 thread in Grr)
-        cpu = self._mk_proc()
-        for (vaddr, memsz, perms, name, offset, filesz) in grr.maps():
-            addr = cpu.memory.mmapFile(vaddr, memsz, perms, name, offset)
-            assert addr == vaddr, "Overlapping maps!?"
-        #Only one thread in Decree
-        status, thread = next(grr.threads())
-        assert status == 'Running'
-
-        logger.info("Restoring cpu state from snapshot")
-        #set initial CPU state
-        for reg in thread:
-            cpu.write_register(reg, thread[reg])
-        return [cpu]
-
-
-    def _load_cgc(self, filename):
         ''' 
         Loads a CGC-ELF program in memory and prepares the initial CPU state
         and the stack.
@@ -1086,15 +1052,15 @@ class DecreeEmu(object):
         import cgcrandom
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
-            raise ConcretizeArgumet(platform.current, 0)
+            raise ConcretizeArgument(platform.current, 0)
 
         if issymbolic(count):
             logger.info("Ask to read a symbolic number of random bytes ")
-            raise ConcretizeArgumet(platform.current, 1)
+            raise ConcretizeArgument(platform.current, 1)
 
         if issymbolic(rnd_bytes):
             logger.info("Ask to return rnd size to a symbolic address ")
-            raise ConcretizeArgumet(platform.current, 2)
+            raise ConcretizeArgument(platform.current, 2)
 
         data = []
         for i in xrange(count):

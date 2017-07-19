@@ -1,5 +1,6 @@
 import os
 import copy
+import logging
 from collections import OrderedDict
 
 from .smtlib import solver
@@ -9,20 +10,21 @@ from ..utils.event import Signal, forward_signals
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
-from .memory import ConcretizeMemory
+from .memory import ConcretizeMemory, MemoryException
 from ..platforms.platform import *
+
+logger = logging.getLogger("STATE")
 
 class StateException(Exception):
     ''' All state related exceptions '''
-    def __init__(self, *args, **kwargs):
-        super(StateException, self).__init__(*args)
-        
+    pass
+
 
 class TerminateState(StateException):
     ''' Terminates current state exploration '''
-    def __init__(self, *args, **kwargs):
-        super(TerminateState, self).__init__(*args, **kwargs)
-        self.testcase = kwargs.get('testcase', False)
+    def __init__(self, message, testcase=False):
+        super(TerminateState, self).__init__(message)
+        self.testcase = testcase
 
 
 class Concretize(StateException):
@@ -59,13 +61,14 @@ class ForkState(Concretize):
 
 from ..utils.event import Signal
 
+
 class State(object):
     '''
     Representation of a unique program state/path.
 
     :param ConstraintSet constraints: Initial constraints 
-    :param platform: Initial operating system state
-    :type platform: Decree or Linux or Windows
+    :param Platform platform: Initial operating system state
+    :ivar dict context: Local context for arbitrary data storage
     '''
 
     def __init__(self, constraints, platform):
@@ -138,6 +141,8 @@ class State(object):
                                 expression=expression, 
                                 setstate=setstate,
                                 policy=e.policy)
+        except MemoryException as e:
+            raise TerminateState(e.message, testcase=True)
 
         #Remove when code gets stable?
         assert self.platform.constraints is self.constraints
@@ -354,6 +359,8 @@ class State(object):
         function, the following arguments correspond to the arguments of the C function
         being modeled. If the `model` models a variadic function, the following argument
         is a generator object, which can be used to access function arguments dynamically.
+        The `model` callable should simply return the value that should be returned by the
+        native function being modeled.
 
         :param callable model: Model to invoke
         '''

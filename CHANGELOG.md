@@ -2,7 +2,26 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.2...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.3...HEAD)
+
+## 0.1.3 - 2017-07-14
+
+### Added
+
+- Support for Redis as a storage backend, plus an API for user-defined serializers and storage backends
+- "Events" which work as global signals for communication across manticore
+- Support for using Binary Ninja for visualization
+- Executor now provides a global shared context
+- State now provides a local context
+
+### Changed
+
+- Refactored Executor and everything it talks to significantly
+- Some older APIs may be broken or removed by the above refactor (`state.co` is no more, for instance)
+
+### Fixed
+
+- Numerous bugfixes and stability improvements in logging, Windows, x86, Linux
 
 ## 0.1.2 - 2017-06-14
 
