@@ -763,13 +763,6 @@ class Cpu(object):
         if insn.address != self.PC:
             return
 
-        #  # FIXME (theo) Debugging Aid
-        #  if hex(self.PC) == "0x40eb63L":
-            #  print self.render_instruction(insn)
-            #  for l in self.render_registers():
-                #  print l
-            #  raise NotImplementedError
-
         name = self.canonicalize_instruction_name(insn)
 
         def fallback_to_emulate(*operands):
@@ -809,7 +802,11 @@ class Cpu(object):
             self.__class__.PC = self._last_pc + insn.size
             self.regfile.write('PC', self.__class__.PC)
 
-        if self.PC != self._last_pc:
+        # only increment instruction count if we have real insn
+        if (isinstance(self.__class__.disasm, BinjaILDisasm) and
+                self.PC != self._last_pc):
+            self._icount += 1
+        else:
             self._icount += 1
 
         self.did_execute_instruction(insn)

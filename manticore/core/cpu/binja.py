@@ -638,8 +638,10 @@ class BinjaCpu(Cpu):
         # The next IL instruction has the same PC. Probably a real assembly
         # instruction was resolved into multiple IL instructions. Clear the
         # queue and execute them here
-        assert (cpu.disasm.il_queue[-1][1].operation ==
-                enums.LowLevelILOperation.LLIL_GOTO)
+        last_op_in_queue = cpu.disasm.il_queue[-1][1].operation
+        assert (last_op_in_queue == enums.LowLevelILOperation.LLIL_GOTO or
+                last_op_in_queue == enums.LowLevelILOperation.LLIL_JUMP or
+                last_op_in_queue == enums.LowLevelILOperation.LLIL_JUMP_TO)
         del cpu.disasm.il_queue[:]
 
         # the sequence of instructions sharing the same PC includes both the
@@ -665,6 +667,7 @@ class BinjaCpu(Cpu):
         cpu.regfile.write('PC', addr)
         cpu.__class__.PC = addr
         cpu.regfile.write('PC', cpu.__class__.PC)
+        return addr
 
     def JUMP_TO(cpu, expr, target_indexes):
         """ Jump table construct handling
@@ -673,6 +676,7 @@ class BinjaCpu(Cpu):
         cpu.regfile.write('PC', addr)
         cpu.__class__.PC = addr
         cpu.regfile.write('PC', cpu.__class__.PC)
+        return addr
 
     def LOAD(cpu, src_expr):
         # FIXME hack until push qword is fixed in binja
@@ -874,8 +878,12 @@ class BinjaCpu(Cpu):
         return not expr.read()
 
     def OR(cpu, left, right):
-        mask = (1 << left.size * 8) - 1
-        res = (left.read() | right.read()) & mask
+        if left.llil.operands[0].operands[0].type == "flag":
+            # don't apply a mask if this is used for flag computation
+            res = left.read() | right.read()
+        else:
+            mask = (1 << left.llil.size * 8) - 1
+            res = (left.read() | right.read()) & mask
         x86_update_logic_flags(cpu, res, left.llil.size * 8)
         return res
 
@@ -989,8 +997,6 @@ class BinjaCpu(Cpu):
         cpu.regfile.write(str(high_reg.op), Operators.EXTRACT(res, size, size))
 
     def STORE(cpu, dest_expr, src_expr):
-        if hex(dest_expr.read()) == "0x6cc570L":
-            print hex(cpu.disasm.current_pc) + ": STORING AT 0x6cc570L: " + hex(src_expr.read())
         cpu.write_int(dest_expr.read(),
                       src_expr.read(),
                       dest_expr.llil.size * 8)
@@ -1043,7 +1049,12 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def XOR(cpu, left, right):
-        res = left.read() ^ right.read()
+        if left.llil.operands[0].operands[0].type == "flag":
+            # don't apply a mask if this is used for flag computation
+            res = left.read() | right.read()
+        else:
+            mask = (1 << left.llil.size * 8) - 1
+            res = (left.read() ^ right.read()) & mask
         x86_update_logic_flags(cpu, res, left.llil.size * 8)
         return res
 
@@ -1063,10 +1074,7 @@ class BinjaCpu(Cpu):
             cpu.platform_cpu.write_register(pl_reg, cpu.regfile.read(binja_reg))
 
         # as well as all the required attributes
-        # FIXME
-        if name == "RDTSC":
-            # properly get extra insn
-            cpu.platform_cpu._icount = cpu.icount - 3
+        cpu.platform_cpu._icount = cpu._icount
 
         #  print sorted(cpu.platform_cpu._regfile._registers.items())
         # do the actual call
@@ -1077,6 +1085,7 @@ class BinjaCpu(Cpu):
         for pl_reg, binja_reg in cpu.regfile.pl2b_map.items():
             if isinstance(binja_reg, tuple) or binja_reg is None: continue
             cpu.regfile.write(binja_reg, cpu.platform_cpu.read_register(pl_reg))
+
 #
 #
 # ARCH-SPECIFIC INSNs
