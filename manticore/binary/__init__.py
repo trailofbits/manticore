@@ -112,9 +112,6 @@ class Elf(Binary):
 
     def maps(self):
         for elf_segment in self.segments():
-            if elf_segment.header.p_type not in ['PT_LOAD', 'PT_NULL', 'PT_PHDR']:
-                raise Exception("Not Supported Section")
-
             if elf_segment.header.p_type != 'PT_LOAD' or elf_segment.header.p_memsz == 0:
                 continue
 
