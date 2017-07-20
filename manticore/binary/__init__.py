@@ -110,6 +110,25 @@ class Elf(Binary):
     def getInterpreter(self):
         return self.interpreter
 
+    def maps(self):
+        for elf_segment in self.segments():
+            if elf_segment.header.p_type not in ['PT_LOAD', 'PT_NULL', 'PT_PHDR']:
+                raise Exception("Not Supported Section")
+
+            if elf_segment.header.p_type != 'PT_LOAD' or elf_segment.header.p_memsz == 0:
+                continue
+
+            flags = elf_segment.header.p_flags
+            perms = ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][flags&7]
+            if 'r' not in perms:
+                raise Exception("Not readable map from elf not supported")
+
+            assert elf_segment.header.p_filesz != 0 or elf_segment.header.p_memsz != 0 
+            yield((elf_segment.header.p_vaddr,
+                  elf_segment.header.p_memsz,
+                  perms, 
+                  elf_segment.stream.name, elf_segment.header.p_offset, elf_segment.header.p_filesz))
+
     def threads(self):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
 
