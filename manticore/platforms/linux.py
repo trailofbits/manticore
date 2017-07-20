@@ -6,11 +6,9 @@ import random
 import struct
 import ctypes
 
-#Remove in favor of binary.py
-from elftools.elf.elffile import ELFFile
-
 from ..utils.event import Signal, forward_signals
 from ..utils.helpers import issymbolic
+from ..binary import Elf
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
@@ -301,10 +299,9 @@ class Linux(Platform):
         self.syscall_trace = []
 
         if program != None:
-            self.elf = ELFFile(file(program))
-            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
+            self.elf = Elf(program)
 
-            self._init_cpu(self.arch)
+            self._init_cpu(self.elf.arch)
             self._init_std_fds()
             self._execve(program, argv, envp)
 
@@ -361,7 +358,7 @@ class Linux(Platform):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
-        logger.debug("Loading {} as a {} elf".format(program,self.arch))
+        logger.debug("Loading {} as a {} elf".format(program,self.elf.arch))
 
         self.load(program)
         self._arch_specific_init()
@@ -718,28 +715,16 @@ class Linux(Platform):
         #read the ELF object file
         cpu = self.current
         elf = self.elf
-        arch = self.arch
-        addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
+        arch = elf.arch
+        addressbitsize = {'i386':32, 'amd64':64, 'armv7': 32}[arch]
         logger.debug("Loading %s as a %s elf"%(filename, arch))
 
-        assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
-
         #Get interpreter elf
-        interpreter = None
-        for elf_segment in elf.iter_segments():
-            if elf_segment.header.p_type != 'PT_INTERP':
-                continue
-            interpreter_filename = elf_segment.data()[:-1]
-            logger.info('Interpreter filename: %s', interpreter_filename)
-            interpreter = ELFFile(file(interpreter_filename))
-            break
-        if not interpreter is None:
-            assert interpreter.get_machine_arch() == elf.get_machine_arch()
-            assert interpreter.header.e_type in ['ET_DYN', 'ET_EXEC']
+        interpreter = elf.interpreter
 
         #Stack Executability
         executable_stack = False
-        for elf_segment in elf.iter_segments():
+        for elf_segment in elf.segments():
             if elf_segment.header.p_type != 'PT_GNU_STACK':
                 continue
             if elf_segment.header.p_flags & 0x01:
@@ -755,7 +740,7 @@ class Linux(Platform):
         elf_brk = 0
         load_addr = 0
 
-        for elf_segment in elf.iter_segments():
+        for elf_segment in elf.segments():
             if elf_segment.header.p_type != 'PT_LOAD':
                 continue
 
@@ -849,7 +834,7 @@ class Linux(Platform):
             end_data = 0
             elf_brk = 0
             entry = interpreter.header.e_entry
-            for elf_segment in interpreter.iter_segments():
+            for elf_segment in interpreter.segments():
                 if elf_segment.header.p_type != 'PT_LOAD':
                     continue
                 align = 0x1000#elf_segment.header.p_align
@@ -1998,18 +1983,18 @@ class Linux(Platform):
         return ret
 
     def _arch_specific_init(self):
-        assert self.arch in {'i386', 'amd64', 'armv7'}
+        assert self.elf.arch in {'i386', 'amd64', 'armv7'}
 
-        if self.arch == 'i386':
+        if self.elf.arch == 'i386':
             self._uname_machine = 'i386'
-        elif self.arch == 'amd64':
+        elif self.elf.arch == 'amd64':
             self._uname_machine = 'x86_64'
-        elif self.arch == 'armv7':
+        elif self.elf.arch == 'armv7':
             self._uname_machine = 'armv71'
             self._init_arm_kernel_helpers()
 
         # Establish segment registers for x86 architectures
-        if self.arch in {'i386', 'amd64'}:
+        if self.elf.arch in {'i386', 'amd64'}:
             x86_defaults = {'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b}
             for reg, val in x86_defaults.iteritems():
                 self.current.regfile.write(reg, val)
@@ -2023,7 +2008,7 @@ class Linux(Platform):
         :return: total load size of interpreter, not aligned
         :rtype: int
         '''
-        load_segs = filter(lambda x: x.header.p_type == 'PT_LOAD', interp.iter_segments())
+        load_segs = filter(lambda x: x.header.p_type == 'PT_LOAD', interp.segments())
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
 
