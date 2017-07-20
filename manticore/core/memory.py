@@ -954,6 +954,7 @@ class SMemory(Memory):
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition )
+                from .state import ForkState
                 raise ForkState(condition)
 
             #So here we have all potential solutions to address
