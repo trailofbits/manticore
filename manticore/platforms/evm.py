@@ -641,30 +641,49 @@ class EVM(Eventful):
         return Operators.ITEBV(256, b==0, 0, result)
 
     def SDIV(self, a, b):
-        '''Signed integer division operation (truncated)'''
-        
+        '''Signed integer division operation (truncated)'''        
         s0, s1 = to_signed(a), to_signed(b)
-        result = (abs(s0) // abs(s1) * (-1 if s0 * s1 < 0 else 1))
+        try:
+            result = (abs(s0) // abs(s1) * (-1 if s0 * s1 < 0 else 1))
+        except ZeroDivisionError:
+            result = 0
         return Operators.ITEBV(256, b == 0, 0, result)
 
     def MOD(self, a,b):
         '''Modulo remainder operation'''
-        return Operators.ITEBV(256, b==0, 0, a%b)
+        try:
+            result = Operators.ITEBV(256, b==0, 0, a%b)
+        except ZeroDivisionError:
+            result = 0
+        return result
 
     def SMOD(self, a, b):
         '''Signed modulo remainder operation'''
         s0, s1 = to_signed(a), to_signed(b)
         sign = Operators.ITEBV(256,  s0 < 0, -1, 1)
-        result =  abs(s0) % abs(s1) * sign 
+        try:
+            result =  abs(s0) % abs(s1) * sign 
+        except ZeroDivisionError:
+            result = 0
+
         return Operators.ITEBV(256, s1==0, 0, result) 
 
     def ADDMOD(self, a, b, c):
         '''Modulo addition operation'''
-        return Operators.ITEBV(256, c==0, 0, (a+b)%c)
+        try:
+            result = Operators.ITEBV(256, c==0, 0, (a+b)%c)
+        except ZeroDivisionError:
+            result = 0
+        return result 
 
     def MULMOD(self, a, b, c):
         '''Modulo addition operation'''
-        return Operators.ITEBV(256, c==0, 0, (a*b)%c)
+        try:
+            result = Operators.ITEBV(256, c==0, 0, (a*b)%c)
+        except ZeroDivisionError:
+            result = 0
+        return result 
+
 
     def EXP(self, base, exponent):
         '''
@@ -677,7 +696,7 @@ class EVM(Eventful):
     def SIGNEXTEND(self, size, value): 
         '''Extend length of two's complement signed integer'''
         #FIXME maybe use Operators.SEXTEND
-        testbit = Operators.ITEBV(256, size<=31, 256 - (size + 1) * 8, 257)
+        testbit = Operators.ITEBV(256, size<=31, size * 8 +7, 257)
         result1 = (value | (TT256 - (1 << testbit)))
         result2 = (value & ((1 << testbit) - 1))
         result = Operators.ITEBV(256, (value & (1 << testbit)) != 0, result1, result2)
@@ -731,7 +750,7 @@ class EVM(Eventful):
 
     def BYTE(self, offset, value):
         '''Retrieve single byte from word'''
-        return (value >> offset)&0xff 
+        return (value >> (31-offset)*8)&0xff 
 
     def SHA3(self, start, end):
         '''Compute Keccak-256 hash'''
