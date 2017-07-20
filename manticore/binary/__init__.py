@@ -110,6 +110,9 @@ class Elf(Binary):
     def getInterpreter(self):
         return self.interpreter
 
+    def threads(self):
+        yield(('Running', {'EIP': self.elf.header.e_entry}))
+
 class Minidump(Binary):
     def __init__(self, filename):
         self.md = minidump.MiniDump(path)
