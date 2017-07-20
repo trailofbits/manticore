@@ -3,7 +3,7 @@ import copy
 import logging
 from collections import OrderedDict
 
-from .smtlib import solver
+from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
 from ..utils.event import Signal, forward_signals
 
