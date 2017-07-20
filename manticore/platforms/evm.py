@@ -398,6 +398,7 @@ class EVM(Eventful):
         self.value = value
         self.depth = depth
         self.bytecode = code
+        self.suicide = set()
 
         #FIXME parse decode and mark invalid instructions
         #self.invalid = set()
@@ -431,6 +432,7 @@ class EVM(Eventful):
         state['stack'] = self.stack
         state['gas'] = self.gas
         state['allocated'] = self.allocated
+        state['suicide'] = self.suicide
 
         return state
 
@@ -453,6 +455,7 @@ class EVM(Eventful):
         self.stack = state['stack']
         self.gas = state['gas']
         self.allocated = state['allocated']
+        self.suicide = state['suicide']
 
     #Memory related
     def _allocate(self, address):
@@ -1047,6 +1050,10 @@ class EVMWorld(Platform):
         return self._callstack[-1]
 
     @property
+    def suicide(self):
+        return self.current.suicide
+
+    @property
     def storage(self):
         if self.depth:
             return self.current.global_storage
@@ -1074,6 +1081,7 @@ class EVMWorld(Platform):
         vm = self._callstack.pop()
         if not rollback:
             self.storage = vm.global_storage
+            self.suicide += vm.suicide
         return vm
 
     @property
@@ -1116,7 +1124,6 @@ class EVMWorld(Platform):
 
     def create_account(self, address=None, balance=0, code='', storage=None):
         ''' code is the runtime code '''
-        assert self.depth == 0  #External access
         if address is None:
             address = self._new_address()
         assert address not in self.storage.keys(), 'The account already exists'
@@ -1167,10 +1174,13 @@ class EVMWorld(Platform):
 
     def RETURN(self, offset, size):
         data = self.current.read_buffer(offset, size)
-        if self.depth == 1:
-            self.last_return=data
-            raise TerminateState("RETURN", testcase=True)
         prev_vm = self._pop() #current VM changed!
+
+        if self.depth == 0:
+            self.last_return=data
+            for address in self.suicide:
+                del self.storage[address]
+            raise TerminateState("RETURN", testcase=True)
 
         last_ex = self.current.last_exception
         assert isinstance(last_ex, (Call, Create))
@@ -1190,6 +1200,8 @@ class EVMWorld(Platform):
     def STOP(self):
         self._pop(rollback=False)
         if self.depth == 0:
+            for address in self.suicide:
+                del self.storage[address]
             raise TerminateState("STOP", testcase=True)
         self.current.push(1)
 
@@ -1203,12 +1215,21 @@ class EVMWorld(Platform):
         raise NotImplemented
 
     def SELFDESTRUCT(self, recipient):
+        #This may create a user account
         recipient = Operators.EXTRACT(recipient, 0, 160)
         address = self.current.address
+        if recipient not in self.storage.keys():
+            self.create_account(address=recipient, balance=0, code='', storage=None)
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
-        self._pop(rollback=False)
-        
+        self.suicide.add(address)
+        if self.depth == 1:
+            for address in self.suicide:
+                del self.storage[address]
+            raise TerminateState("SELFDESTRUCT", testcase=True)
+        else:
+            self._pop(rollback=False)
+
     def HASH(self, offset, size):
         data = self.current.read_buffer(offset, size)
         value = self.constraints.new_bitvec(256, 'HASH')
