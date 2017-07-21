@@ -373,8 +373,8 @@ class Executor(object):
 
                     except SolverException as e:
                         import traceback
-                        print "*** print_exc:"
-                        traceback.print_exc()
+                        trace = traceback.format_exc()
+                        logger.error("Exception: %s\n%s", str(e), trace)
 
                         #Notify this state is done
                         self.will_terminate_state(current_state, current_state_id, e)
