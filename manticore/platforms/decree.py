@@ -589,7 +589,7 @@ class Decree(object):
         self.running.remove(procid)
         #self.procs[procid] = None #let it there so we can report?
         if issymbolic(error_code):
-           logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(constraints, error_code))
+           logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(self.constraints, error_code))
         else:
             logger.info("TERMINATE PROC_%02d %x", procid, error_code)
         if len(self.running) == 0 :
