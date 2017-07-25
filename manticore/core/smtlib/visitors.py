@@ -309,6 +309,9 @@ class ArithmeticSimplifier(Visitor):
         arity = len(operands)
         return any( operands[i] is not expression.operands[i] for i in range(arity))
 
+    def visit_Constant(self, expression, *operands):
+        return expression
+
     def visit_Operation(self, expression, *operands):
         ''' constant folding, if all operands of an expression are a Constant do the math '''
         if all( isinstance(o, Constant) for o in operands) :
