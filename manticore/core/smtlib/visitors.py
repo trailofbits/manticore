@@ -1,11 +1,8 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
 from expression import *
 import logging
 logger = logging.getLogger("VISITOR")
 
-
 class Visitor(object):
-    __metaclass__ = ABCMeta
     ''' Class/Type Visitor
 
        Inherit your class visitor from this one and get called on a different
@@ -28,10 +25,10 @@ class Visitor(object):
         vistit_Array()
 
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, cache=None, **kwargs):
         super(Visitor, self).__init__()
         self._stack = []
-        self._cache = {}
+        self._cache = {} if cache is None else cache
 
     def push(self, value):
         assert value is not None
@@ -47,10 +44,11 @@ class Visitor(object):
     @property
     def result(self):
         assert len(self._stack) == 1
-        return self.pop()
+        return self._stack[-1]
 
     def _method(self, expression, *args):
         assert expression.__class__.__mro__[-1] is object 
+
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = 'visit_%s' % sort
@@ -79,7 +77,7 @@ class Visitor(object):
         stack.append(node)
         while stack:
             node = stack.pop()
- 
+
             if node in cache:
                 self.push(cache[node])
             elif isinstance(node, Operation):
@@ -223,10 +221,11 @@ class PrettyPrinter(Visitor):
 
 
 def pretty_print(expression, **kwargs):
+    if not isinstance(expression, Expression):
+        return str(expression)
     pp = PrettyPrinter(**kwargs)
     pp.visit(expression)
     return pp.result
-
 
 class ConstantFolderSimplifier(Visitor):
     def __init__(self, **kw):
@@ -451,27 +450,26 @@ class ArithmeticSimplifier(Visitor):
         '''
         arr = expression.array
         index = expression.index
-        if isinstance(index, BitVecConstant):
-            index = index.value
-            prev_arr = arr
-            while isinstance(arr, ArrayStore):
-               prev_arr = arr
-               index_store = arr.index
-               if isinstance(index_store, BitVecConstant):
-                   if index_store.value == index:
-                       return arr.byte
-                   arr = arr.array
-               else:
-                    break
 
+        if isinstance(index, BitVecConstant) \
+            and isinstance(arr, ArrayStore) \
+            and isinstance(arr.index, BitVecConstant):
+            if arr.index.value == index.value:
+                return arr.byte
+            else:
+                return arr.array.select(index)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
         assert not isinstance(expression, Operation)
         return expression
         
+
+#FIXME this should forget old expressions lru?
+arithmetic_simplifier_cache = {}
 def arithmetic_simplifier(expression):
-    simp = ArithmeticSimplifier()
+    global arithmetic_simplifier_cache    
+    simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
@@ -593,3 +591,5 @@ def translate_to_smtlib(expression, **kwargs):
     translator = TranslatorSmtlib(**kwargs)
     translator.visit(expression)
     return translator.result
+
+

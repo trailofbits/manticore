@@ -28,8 +28,6 @@ from .utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger('MANTICORE')
 
 
-
-
 def makeEVM(args):
     constraints = ConstraintSet()
     import ast

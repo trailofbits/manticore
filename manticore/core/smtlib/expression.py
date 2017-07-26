@@ -622,8 +622,6 @@ class ArrayProxy(ArrayVariable):
 
     def store(self, index, value):
         auxiliar = self._array.store(index, value)
-        self._array.store = None
-        self._array.select = None
         self._array = auxiliar
         return auxiliar
 

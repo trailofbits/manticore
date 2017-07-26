@@ -858,7 +858,7 @@ class SMemory(Memory):
     '''
     def __init__(self, constraints, symbols=None, *args, **kwargs):
         '''
-        Builds a map of memory.
+        Builds a memory.
 
         :param constraints:  a set of constraints
         :param symbols: Symbolic chunks

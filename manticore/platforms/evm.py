@@ -6,7 +6,7 @@ https://ethereum.github.io/browser-solidity/#version=soljson-latest.js
 '''
 import random, copy
 from ..platforms.platform import *
-from ..core.smtlib import Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant
+from ..core.smtlib import Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
@@ -27,6 +27,187 @@ TT255 = 2 ** 255
 
 def to_signed(i):
     return i if i < TT255 else i - TT256
+
+
+
+class EVMMemory(object):
+    '''
+    The EVM symbolic memory manager.
+    '''
+    def __init__(self, constraints, symbols=None, *args, **kwargs):
+        '''
+        Builds a memory.
+
+        :param constraints:  a set of constraints
+        :param symbols: Symbolic chunks
+        '''
+        assert isinstance(constraints, ConstraintSet)
+        self._constraints = constraints
+        self._allocated = 0
+        if symbols is None:
+            self._symbols = {}
+        else:
+            self._symbols = dict(symbols)
+        self._memory = {}
+
+    def __reduce__(self):
+        return (self.__class__, (self.constraints, self._symbols, self._maps, ), {'_allocated':self._allocated, '_memory':self._memory } )
+
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+
+    def _get_size(self, size):
+        if isinstance(size, BitVec):
+            size = arithmetic_simplifier(size)
+        else:
+            size = BitVecConstant(256, size)
+        assert isinstance(size, BitVecConstant)
+        return size.value
+
+
+    def allocate(self, address):
+        '''
+            Allocate more memory
+        '''
+        new_max = address % 32
+        self._allocated = Operators.ITEBV(256, self._allocated < new_max, new_max, self._allocated)
+
+    def _concrete_read(self, address):
+        return self._memory.get(address, '\x00')
+    def _concrete_write(self, address, value):
+        assert not issymbolic(address) 
+        assert not issymbolic(value)
+        self._memory[address] = value
+
+    def read(self, address, size):
+        '''
+        Read a stream of potentially symbolic bytes from a potentially symbolic
+        address
+
+        :param address: Where to read from
+        :param size: How many bytes
+        :rtype: list
+        '''
+        size = self._get_size(size)
+        assert not issymbolic(size)
+
+        if issymbolic(address):
+            assert solver.check(self.constraints)
+            logger.debug('Reading %d bytes from symbolic address %s', size, address)
+            try:
+                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
+            except TooManySolutions as e:
+                m, M = solver.minmax(self.constraints, address)
+                logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
+
+                crashing_condition = True
+                for start, end, perms, offset, name  in self.mappings():
+                    if start <= M+size and end >= m :
+                        if 'r' in perms:
+                            crashing_condition = Operators.AND(Operators.OR( (address+size).ult(start), address.uge(end) ), crashing_condition)
+
+                if solver.can_be_true(self.constraints, crashing_condition):
+                    raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
+
+
+                #INCOMPLETE Result! We could also fork once for every map
+                logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
+                condition = False
+                for base in e.solutions:
+                    condition = Operators.OR(address == base, condition )
+                raise ForkState(condition)
+
+            #So here we have all potential solutions to address
+            assert len(solutions) > 0
+            
+
+            crashing_condition = False
+            for base in solutions:
+                if any(not self.access_ok(i, 'r') for i in xrange(base, base + size, self.page_size)):
+                    crashing_condition = Operators.OR(address == base, crashing_condition)
+
+            if solver.can_be_true(self.constraints, crashing_condition):
+                raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
+
+            condition = False
+            for base in solutions:
+                condition = Operators.OR(address == base, condition )
+
+            result = []
+            #consider size ==1 to read following code
+            for offset in range(size):
+                #Given ALL solutions for the symbolic address
+                for base in solutions:
+                    addr_value = base + offset
+                    byte = Operators.ORD(self._concrete_read(addr_value))
+                    if addr_value in self._symbols:
+                        for condition, value in self._symbols[addr_value]:
+                            byte = Operators.ITEBV(8, condition, Operators.ORD(value), byte)
+                    if len(result) > offset:
+                        result[offset] = Operators.ITEBV(8, address == base, byte, result[offset])
+                    else:
+                        result.append(byte)
+                    assert len(result) == offset+1
+            return map(Operators.CHR, result)
+        else:
+            result = []
+            for i in range(size):
+                result.append(self._concrete_read(address+i))
+            for offset in range(size):
+                if address+offset in self._symbols:
+                    for condition, value in self._symbols[address+offset]:
+                        if condition is True:
+                            result[offset] = Operators.ORD(value)
+                        else:
+                            result[offset] = Operators.ITEBV(8, condition, Operators.ORD(value), result[offset])
+            return map(Operators.CHR, result)
+
+    def write(self, address, value):
+        '''
+        Write a value at address.
+        :param address: The address at which to write
+        :type address: int or long or Expression
+        :param value: Bytes to write
+        :type value: str or list
+        '''
+        size = len(value)
+        #FIXME consider calling self.allocate?
+        if issymbolic(address):
+
+            solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
+
+            crashing_condition = False
+            for base in solutions:
+                if any(not self.access_ok(i, 'w') for i in xrange(base, base + size, self.page_size)):
+                    crashing_condition = Operators.OR(address == base, crashing_condition)
+
+            if solver.can_be_true(self.constraints, crashing_condition):
+                raise InvalidSymbolicMemoryAccess(address, 'w', size, crashing_condition)
+
+            for offset in xrange(size):
+                for base in solutions:
+                    condition = base == address
+                    self._symbols.setdefault(base+offset, []).append((condition, value[offset]))
+
+        else:
+
+            for offset in xrange(size):
+                if issymbolic(value[offset]):
+                    self._symbols[address+offset] = [(True, value[offset])]
+                else:
+                    # overwrite all previous items
+                    if address+offset in self._symbols:
+                        del self._symbols[address+offset]
+                    self._concrete_write(address+offset, value[offset])
+
+
+
+
 
 class EVMInstruction(object):
     '''This represents an EVM instruction '''
@@ -330,6 +511,8 @@ class Create(Call):
     def __init__(self, value, offset, size):
         super(Create, self).__init__(gas=None, to=None, value=value, in_offset=offset, in_size=size)
 
+class DelegateCall(Call):
+    pass
 
 class Stop(EVMException):
     ''' Program reached a STOP instruction '''
@@ -388,7 +571,8 @@ class EVM(Eventful):
         super(EVM, self).__init__(**kwargs)
         self.constraints = constraints
         self.last_exception = None
-        self.memory = self.constraints.new_array(256, 'MEM_%x_%d'%(address,depth))
+        self.memory = EVMMemory(constraints)
+        #self.constraints.new_array(256, 'MEM_%x_%d'%(address,depth))
         self.address = address
         self.origin = origin # always an account with empty associated code
         self.caller = caller # address of the account that is directly responsible for this execution
@@ -459,18 +643,23 @@ class EVM(Eventful):
 
     #Memory related
     def _allocate(self, address):
-        new_max = address % 32
-        self.allocated = Operators.ITEBV(256, self.allocated < new_max, new_max, self.allocated)
+        #print pretty_print (address)
+        #if address > 100000:
+        #    raise NotEnoughGas()
+        self.memory.allocate(address)
 
     def _store(self, address, value):
         #CHECK ADDRESS IS A 256 BIT INT OR BITVEC
         #CHECK VALUE IS A 256 BIT INT OR BITVEC
+        if address > 100000:
+            raise NotEnoughGas()
         self._allocate(address)
-        self.memory[address] = value
+        self.memory.write(address, [Operators.CHR(value)])
 
     def _load(self, address):
         self._allocate(address+32)
-        value = self.memory[address]
+        value = Operators.ORD(self.memory.read(address,1)[0])
+        from manticore.core.smtlib.expression import *
         #print pretty_print(value)
         value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
@@ -589,8 +778,6 @@ class EVM(Eventful):
         except EVMException as e:
             self.last_exception = e
             raise
-        except Exception as e:
-            raise TerminateState("Exception executing %s (%r)"%(current.semantics, e), testcase=True)
 
         self.publish('did_execute_instruction', self, current)
 
@@ -753,7 +940,9 @@ class EVM(Eventful):
 
     def BYTE(self, offset, value):
         '''Retrieve single byte from word'''
-        return (value >> (31-offset)*8)&0xff 
+        offset = Operators.ITEBV(256, offset<32, (31-offset)*8, 256) 
+        return Operators.EXTRACT(value, offset, 8)
+
 
     def SHA3(self, start, end):
         '''Compute Keccak-256 hash'''
@@ -770,7 +959,7 @@ class EVM(Eventful):
 
     def BALANCE(self, account):
         '''Get balance of the given account'''
-        value = self.storage[account & TT256M1 ]['balance']
+        value = self.global_storage[account & TT256M1 ]['balance']
         if value is None:
             return 0
         return value
@@ -810,18 +999,24 @@ class EVM(Eventful):
             raise ConcretizeStack(3, expression=size)
         
         for i in range(size):
-            if (data_offset+i >= len(self.data)):
-                raise Stop()
-            self._store(mem_offset+i, self.data[data_offset+i])
+            if data_offset+i < len(self.data):
+                c = self.data[data_offset+i]
+            else:
+                c = '\x00'
+            self._store(mem_offset+i, c)
+
 
     def CODESIZE(self):
         '''Get size of code running in current environment'''
         return len(self.bytecode)
 
-    def CODECOPY(self, mem_offset, code_offset, size): 
+    def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
+        if issymbolic(size):
+            raise ConcretizeStack(3, expression=size)
+        print "CODECOPY(self, ", mem_offset, code_offset, size
         for i in range(size):
-            if (code_offset+i >= len(self.bytecode)):
+            if (code_offset+i > len(self.bytecode)):
                 self._store(mem_offset+i, 0)
             else:
                 self._store(mem_offset+i, ord(self.bytecode[code_offset+i]))
@@ -840,8 +1035,10 @@ class EVM(Eventful):
         #FIXME STOP! if not enough data
         extbytecode = self.global_storage[account& TT256M1]['code']
         for i in range(size):
-            self._store(address+i, extbytecode[offset+i])
-
+            if offset + i < len(extbytecode):
+                self._store(address+i, extbytecode[offset+i])
+            else:
+                self._store(address+i, 0)
 
     ##########################################################################
     ##Block Information
@@ -915,7 +1112,7 @@ class EVM(Eventful):
     def JUMPI(self, dest, cond):
         '''Conditionally alter the program counter'''
         self.pc = Operators.ITEBV(256, cond!=0, dest, self.pc + self.instruction.size)
-        assert self.bytecode[dest] == 0x5b, "Must be jmpdest instruction" #fixme what if dest == self.pc + self.instruction.size?
+        assert self.bytecode[dest] == '\x5b', "Must be jmpdest instruction" #fixme what if dest == self.pc + self.instruction.size?
 
     def GETPC(self):
         '''Get the value of the program counter prior to the increment'''
@@ -965,6 +1162,7 @@ class EVM(Eventful):
     ##########################################################################
     ##System operations
     def read_buffer(self, offset, size):
+        
         buf = []
         for i in range(size):
             buf.append(Operators.CHR(self._load(offset+i)))
@@ -992,9 +1190,10 @@ class EVM(Eventful):
         '''Halt execution returning output data'''
         raise Return(offset, size)
 
-    def DELEGATECALL(self, a, b):
+    def DELEGATECALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code'''
-        raise NotImplemented
+        value = 0
+        raise Call(gas, self.address, value, in_offset, in_size, out_offset, out_size)
 
     def REVERT(self, offset, size):
         raise Revert(offset, size)
@@ -1025,6 +1224,7 @@ class EVMWorld(Platform):
         self._constraints = constraints
         self._callstack = [] 
         self._deleted_address = set()
+        self._suicide = set()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1079,9 +1279,14 @@ class EVMWorld(Platform):
 
     def _pop(self, rollback=False):
         vm = self._callstack.pop()
+
         if not rollback:
             self.storage = vm.global_storage
-            self.suicide += vm.suicide
+            if self.depth:
+                self._suicide = self.suicide.union(vm.suicide)
+            else: 
+                for address in vm.suicide:
+                    del self.storage[address]
         return vm
 
     @property
@@ -1119,8 +1324,15 @@ class EVMWorld(Platform):
         try:
             while True:
                 self.execute()
-        except Exception as e:
-            raise TerminateState("Generic exception (%r)"%e, testcase=True)
+        except TerminateState as e:
+            if self.depth == 0 and e.message == 'RETURN':
+                return self.last_return
+            '''import traceback
+            print "Exception in user code:"
+            print '-'*60
+            traceback.print_exc(file=sys.stdout)
+            print '-'*60'''
+            raise e
 
     def create_account(self, address=None, balance=0, code='', storage=None):
         ''' code is the runtime code '''
@@ -1134,20 +1346,30 @@ class EVMWorld(Platform):
         self.storage[address]['code'] = code
         return address
 
-    def create_contract(self, origin, price, address=None, balance=0, init=''):
+    def create_contract(self, origin, price, address=None, balance=0, init='', run=False):
         assert len(init) > 0
         address = self.create_account(address, balance)
-        header = {'timestamp' : 0}
+        header = {'timestamp' : 0,
+                  'number': 0,}
         new_vm = EVM(self._constraints, address, origin, price, init, origin, value=balance, code=init, header=header)
         new_vm.last_exception = Create(None, None, None)
         self._push(new_vm)
+        if run:
+            #run initialization code
+            #Assert everything is concrete?
+            runtime = self.run()
+            self.storage[address]['code'] = ''.join(runtime)
 
+        return address
 
-    def transaction(self, address, origin, price, data, caller, value, header):
+    def transaction(self, address, origin, price, data, caller, value, header, run=False):
         bytecode = self.storage[address]['code']
         new_vm = EVM(self._constraints, address, origin, price, "", caller, value, bytecode, header, world=self)
         self._push(new_vm)
-
+        if run:
+            #run contract
+            #Assert everything is concrete?
+            return self.run()
 
     def CREATE(self, value, offset, size):
         bytecode = self.current.read_buffer(offset, size)
@@ -1178,8 +1400,6 @@ class EVMWorld(Platform):
 
         if self.depth == 0:
             self.last_return=data
-            for address in self.suicide:
-                del self.storage[address]
             raise TerminateState("RETURN", testcase=True)
 
         last_ex = self.current.last_exception
@@ -1200,16 +1420,19 @@ class EVMWorld(Platform):
     def STOP(self):
         self._pop(rollback=False)
         if self.depth == 0:
-            for address in self.suicide:
-                del self.storage[address]
             raise TerminateState("STOP", testcase=True)
-        self.current.push(1)
+        self.current._push(1)
+
+        #we are still on the CALL/CREATE
+        self.current.pc += self.current.instruction.size
 
     def THROW(self):
         if self.depth == 1:
             raise TerminateState("INVALID", testcase=True)
         self._pop(rollback=True)
-        self.current.push(0)
+        self.current._push(0)
+        #we are still on the CALL/CREATE
+        self.current.pc += self.current.instruction.size
 
     def REVERT(self):
         raise NotImplemented
@@ -1232,8 +1455,12 @@ class EVMWorld(Platform):
 
     def HASH(self, offset, size):
         data = self.current.read_buffer(offset, size)
-        value = self.constraints.new_bitvec(256, 'HASH')
-        self.current._push(value)  
+        if any(map(issymbolic, data)):
+            value = self._constraints.new_bitvec(256, 'HASH')
+        else:
+            value = sha3.keccak_256(''.join(data)).hexdigest()
+            value = int('0x'+value,0)
+        self.current._push(value)
         self.current.pc += self.current.instruction.size
         
 
