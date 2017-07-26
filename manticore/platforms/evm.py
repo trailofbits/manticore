@@ -47,8 +47,10 @@ class EVMMemory(object):
         self._symbols = {}
         self._memory = {}
 
+    
+
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._maps, ), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory } )
+        return (self.__class__, (self.constraints, ), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory } )
 
     @property
     def constraints(self):
@@ -66,6 +68,12 @@ class EVMMemory(object):
         assert isinstance(size, BitVecConstant)
         return size.value
 
+    def __str__(self):
+        m = []
+        if len(self._memory.keys()):
+            for i in range(max([0] + self._memory.keys())+1):
+                m.append(self.read(i,1)[0])
+        return ''.join(m)
 
     def allocate(self, address):
         '''
@@ -1202,17 +1210,42 @@ class EVM(Eventful):
         raise SelfDestruct(to)
 
     def __str__(self):
-        result = '\n'
-        sp =0        
-        for i in reversed(self.stack):
-            if issymbolic(i):
-                result += '%s %r\n'%(sp==0 and 'top> ' or '     ', i)
-            else:
-                result += '%s 0x%064x\n'%(sp==0 and 'top> ' or '     ', i)
+        def hexdump(src, length=16):
+            FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
+            lines = []
+            for c in xrange(0, len(src), length):
+                chars = src[c:c+length]
+                hex = ' '.join(["%02x" % ord(x) for x in chars])
+                printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or '.') for x in chars])
+                lines.append("%04x  %-*s  %s" % (c, length*3, hex, printable))
+            return lines
 
+        hd = hexdump(str(self.memory))
+        result = ['Stack                                                                      Memory']
+        sp =0        
+        for i in list(reversed(self.stack))[:10]:
+            r = ''
+            if issymbolic(i):
+                r = '%s %r'%(sp==0 and 'top> ' or '     ', i)
+            else:
+                r = '%s 0x%064x'%(sp==0 and 'top> ' or '     ', i)
             sp+=1
-        result += '0x%04x: %s %s %s\n'%(self.pc, self.instruction.name, self.instruction.has_operand and '0x%x'%self.instruction.operand or '', self.instruction.description)
-        return result
+
+            h = ''
+            try:
+                h = hd[sp]
+            except:
+                pass
+            r +=  ' '*(75-len(r)) + h
+            result.append(r)
+
+        for i in range(sp,len(hd)):
+            r =  ' '*75 + hd[i]
+            result.append(r)
+
+        result.append( '0x%04x: %s %s %s\n'%(self.pc, self.instruction.name, self.instruction.has_operand and '0x%x'%self.instruction.operand or '', self.instruction.description))
+        result.append( '-'*147)
+        return '\n'.join(result)
 
 
 
@@ -1323,7 +1356,6 @@ class EVMWorld(Platform):
         try:
             while True:
                 self.execute()
-                print self
         except TerminateState as e:
             if self.depth == 0 and e.message == 'RETURN':
                 return self.last_return
@@ -1348,10 +1380,19 @@ class EVMWorld(Platform):
 
     def create_contract(self, origin, price, address=None, balance=0, init='', run=False):
         assert len(init) > 0
+        '''
+        The way that the Solidity compiler expects the constructor arguments to 
+        be passed is by appending the arguments to the byte code produced by the
+        Solidity compiler. The arguments are formatted as defined in the Ethereum
+        ABI2. The arguments are then copied from the init byte array to the EVM 
+        memory through the CODECOPY opcode with appropriate values on the stack.
+        This is done when the byte code in the init byte array is actually run 
+        on the network.
+        '''
         address = self.create_account(address, balance)
         header = {'timestamp' : 0,
                   'number': 0,}
-        new_vm = EVM(self._constraints, address, origin, price, init, origin, value=balance, code=init, header=header)
+        new_vm = EVM(self._constraints, address, origin, price, '', origin, value=balance, code=init, header=header)
         new_vm.last_exception = Create(None, None, None)
         self._push(new_vm)
         if run:
@@ -1364,12 +1405,16 @@ class EVMWorld(Platform):
 
     def transaction(self, address, origin, price, data, caller, value, header, run=False):
         bytecode = self.storage[address]['code']
-        new_vm = EVM(self._constraints, address, origin, price, "", caller, value, bytecode, header, world=self)
+        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self)
         self._push(new_vm)
         if run:
             #run contract
             #Assert everything is concrete?
-            return self.run()
+            try:
+                return self.run()
+            except TerminateState:
+                #FIXME better use of exceptions!
+                pass
 
     def CREATE(self, value, offset, size):
         bytecode = self.current.read_buffer(offset, size)
