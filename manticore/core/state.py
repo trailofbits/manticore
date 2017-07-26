@@ -176,7 +176,8 @@ class State(object):
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
         name = options.get('name', 'buffer')
-        expr = self.constraints.new_array(name=name, index_max=nbytes)
+        taint = options.get('taint', frozenset())
+        expr = self.constraints.new_array(name=name, index_max=nbytes, taint=taint)
         self.input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -201,7 +202,7 @@ class State(object):
         self.input_symbols.append(expr)
         return expr
 
-    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False):
+    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
         '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
         :param str data: The string to symbolicate. If no wildcard bytes are provided,
@@ -216,7 +217,7 @@ class State(object):
         '''
         if wildcard in data:
             size = len(data)
-            symb = self.constraints.new_array(name=label, index_max=size)
+            symb = self.constraints.new_array(name=label, index_max=size, taint=taint)
             self.input_symbols.append(symb)
 
             tmp = []
