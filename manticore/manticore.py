@@ -27,8 +27,69 @@ from .utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger('MANTICORE')
 
+def loggerSetState(logger, stateid):
+    logger.filters[0].stateid = stateid
 
-def makeDecree(program, concrete_data=''):
+class ContextFilter(logging.Filter):
+    '''
+    This is a filter which injects contextual information into the log.
+    '''
+    def filter(self, record):
+        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
+            record.stateid = '[%d]' % self.stateid
+        else:
+            record.stateid = ''
+        return True
+
+ctxfilter = ContextFilter()
+
+logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout, level=logging.ERROR)
+loggers = ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM']
+for loggername in loggers:
+    logging.getLogger(loggername).addFilter(ctxfilter)
+    logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
+    logging.getLogger(loggername).setLevel(logging.CRITICAL)
+
+manticore_verbosity=''
+
+def set_verbosity(setting):
+    global manticore_verbosity
+    global loggers
+
+    if isinstance(setting, (int, long)):
+        #10             20            30               40             50
+        #logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL
+        levels = ['',
+                  'MMMEEE',
+                  'MMMEEEPPPP',
+                  'MMMMEEECCCCPPPP',
+                  'MMMMEEECCCCRRRRPPPP',
+                  'MMMMEEECCCCRRRRSSSSPPPP',]
+        # Takes a value and ensures it's in a certain range
+        def clamp(val, minimum, maximum):
+            return sorted((minimum, val, maximum))[1]
+
+        clamped = clamp(setting, 0, len(levels) - 1)
+        if clamped != setting:
+            logger.debug("%s not between 0 and %d, forcing to %d", setting, len(levels) - 1, clamped)
+
+        setting = levels[clamped]
+
+    assert isinstance(setting, str)
+    initials = dict([ (x[0],x) for x in loggers])
+    assert all( c in initials.keys() for c in setting )
+
+    #Reset loggers to high (40)
+    for c in setting:
+        loggername = initials[c]
+        level = logging.getLogger(loggername).getEffectiveLevel() -10
+        level = logging.DEBUG if level < logging.DEBUG else level
+        logging.getLogger(loggername).setLevel(level)
+    
+    manticore_verbosity = setting
+
+
+def make_decree(program, concrete_data=''):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
@@ -40,11 +101,15 @@ def makeDecree(program, concrete_data=''):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
+def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start = ''):
+    env = {} if env is None else env
+    argv = [] if argv is None else argv
+    env = ['%s=%s'%(k,v) for k,v in env.items()]
+
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-
+    print program, argv
     platform = linux.SLinux(program, argv=argv, envp=env,
                             symbolic_files=symbolic_files)
     initial_state = State(constraints, platform)
@@ -71,7 +136,7 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     return initial_state 
 
 
-def makeWindows(args):
+def make_windows(args):
     assert args.size is not None, "Need to specify buffer size"
     assert args.buffer is not None, "Need to specify buffer base address"
     logger.debug('Loading program %s', args.programs)
@@ -113,23 +178,22 @@ def makeWindows(args):
 
     return State(constraints, platform)
 
-def binary_type(path):
-    '''
-    Given a path to a binary, return a string representation of its type.
-      i.e. ELF, PE, DECREE, QNX
-    '''
-    magic = None
-    with open(path) as f:
-        magic = f.read(4)
-
+def make_initial_state(binary_path, *args, **kwargs):
+    magic = file(binary_path).read(4)
     if magic == '\x7fELF':
-        return 'ELF'
-    elif magic == 'MDMP':
-        return 'PE'
+        # Linux
+        state = make_linux(binary_path, *args, **kwargs)
+    elif magic == 'PE':
+        # Windows
+        state = make_windows(self._args)
     elif magic == '\x7fCGC':
-        return 'DECREE'
+        # Decree
+        state = make_decree(self._binary, self._concrete_data)
     else:
-        raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
+        raise NotImplementedError("Binary {} not supported.".format(path))
+
+    return state
+        
 
 class Manticore(object):
     '''
@@ -142,46 +206,42 @@ class Manticore(object):
     '''
 
 
-    def __init__(self, binary_path, args=None):
-        assert os.path.isfile(binary_path)
+    def __init__(self, binary_path=None, *args, **kwargs):
+        
+        workspace_url = kwargs.get( 'workspace')
+        if isinstance(workspace_url, str):
+            if ':' not in workspace_url:
+                ws_path = 'fs:' + workspace_url
+            else:
+                ws_path = workspace_url
+        else:
+            ws_path = None
 
-        args = [] if args is None else args
+        self._output = ManticoreOutput(ws_path)
 
-        self._binary = binary_path
-        self._binary_type = binary_type(binary_path)
-        self._argv = args # args.programs[1:]
-        self._env = {}
         # Will be set to a temporary directory if not set before running start()
-        self._policy = 'random'
         self._coverage_file = None
-        self._memory_errors = None
         self._should_profile = False
         self._workers = []
-        # XXX(yan) '_args' will be removed soon; exists currently to ease porting
-        self._args = args
-        self._time_started = 0
-        self._begun_trace = False
         self._assertions = {}
         self._model_hooks = {}
-        self._hooks = {}
-        self._running = False
-        self._arch = None
-        self._concrete_data = ''
-        self._dumpafter = 0
-        self._maxstates = 0
-        self._maxstorage = 0
-        self._verbosity = 0
-        self._symbolic_files = [] # list of string
-        self._executor = None
-        #Executor wide shared context
-        self._context = {}
+        self._hooks = {} 
+        self._executor = Executor(workspace=ws_path)
+        
+        #Link Executor events to default callbacks in manticore object
+        self._executor.subscribe('did_read_register', self._read_register_callback)
+        self._executor.subscribe('will_write_register', self._write_register_callback)
+        self._executor.subscribe('did_read_memory', self._read_memory_callback)
+        self._executor.subscribe('will_write_memory', self._write_memory_callback)
+        self._executor.subscribe('will_execute_instruction', self._execute_instruction_callback)
+        self._executor.subscribe('will_decode_instruction', self._decode_instruction_callback)
+        self._executor.subscribe('will_store_state', self._store_state_callback)
+        self._executor.subscribe('will_load_state', self._load_state_callback)
+        self._executor.subscribe('will_fork_state', self._fork_state_callback)
+        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
+        self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
-        # XXX(yan) This is a bit obtuse; once PE support is updated this should
-        # be refactored out
-        if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(file(self._binary))
 
-        self._init_logging()
 
     @property
     def context(self):
@@ -220,40 +280,6 @@ class Manticore(object):
                 yield ctx
                 context[key] = ctx
 
-    def _init_logging(self): 
-
-        def loggerSetState(logger, stateid):
-            logger.filters[0].stateid = stateid
-
-        class ContextFilter(logging.Filter):
-            '''
-            This is a filter which injects contextual information into the log.
-            '''
-            def filter(self, record):
-                if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-                    record.stateid = '[%d]' % self.stateid
-                else:
-                    record.stateid = ''
-                return True
-
-        ctxfilter = ContextFilter()
-
-        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout, level=logging.ERROR)
-
-        for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM']:
-            logging.getLogger(loggername).addFilter(ctxfilter)
-            logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
-
-    # XXX(yan): args is a temporary hack to include while we continue moving
-    # non-Linux platforms to new-style arg handling.
-    @property
-    def args(self):
-        return self._args
-
-    @args.setter
-    def args(self, args):
-        self._args = args
-
     @property
     def should_profile(self):
         return self._should_profile
@@ -263,206 +289,37 @@ class Manticore(object):
         self._should_profile = enable_profiling
 
     @property
-    def concrete_data(self):
-        return self._concrete_data
+    def coverage_file(self):
+        return self._coverage_file
 
-    @concrete_data.setter
-    def concrete_data(self, data):
-        self._concrete_data = data
+    @coverage_file.setter
+    def coverage_file(self, path):
+        assert not self.running, "Can't set coverage file if Manticore is running."
+        self._coverage_file = path
 
-    @property
-    def maxstates(self):
-        return self._maxstates
 
-    @maxstates.setter
-    def maxstates(self, max_states):
-        self._maxstates = max_states
 
     @property
-    def dumpafter(self):
-        return self._dumpafter
+    def running(self):
+        return self._executor._running.value
 
-    @dumpafter.setter
-    def dumpafter(self, dump_after):
-        self._dumpafter = dump_after
-
-    @property
-    def maxstorage(self):
-        return self._maxstorage
-
-    @maxstorage.setter
-    def maxstorage(self, max_storage):
-        self._maxstorage = max_storage
-
-    @property
-    def verbosity(self):
-        '''
-        Convenience interface for setting logging verbosity to one of several predefined
-        logging presets. Valid values: 0-5
-        '''
-        return self._verbosity
-
-    @verbosity.setter
-    def verbosity(self, setting):
-        zero = map(lambda x: (x, logging.ERROR),
-                   ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM'])
-        levels = [zero,
-                  [('MANTICORE', logging.INFO), ('EXECUTOR', logging.INFO)],
-                  [('PLATFORM', logging.DEBUG)],
-                  [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('REGISTERS', logging.DEBUG)],
-                  [('SMT', logging.DEBUG)]]
-
-        # Takes a value and ensures it's in a certain range
-        def clamp(val, minimum, maximum):
-            return sorted((minimum, val, maximum))[1]
-
-        clamped = clamp(setting, 0, len(levels) - 1)
-        if clamped != setting:
-            logger.debug("%s not between 0 and %d, forcing to %d", setting, len(levels) - 1, clamped)
-        for level in range(clamped + 1):
-            for log_type, log_level in levels[level]:
-                logging.getLogger(log_type).setLevel(log_level)
-        self._verbosity = clamped
-
-    def hook(self, pc):
-        '''
-        A decorator used to register a hook function for a given instruction address.
-        Equivalent to calling :func:`~add_hook`.
-
-        :param pc: Address of instruction to hook
-        :type pc: int or None
-        '''
-        def decorator(f):
-            self.add_hook(pc, f)
-            return f
-        return decorator
-
-    def add_hook(self, pc, callback):
-        '''
-        Add a callback to be invoked on executing a program counter. Pass `None`
-        for pc to invoke callback on every instruction. `callback` should be a callable
-        that takes one :class:`~manticore.core.state.State` argument.
-
-        :param pc: Address of instruction to hook
-        :type pc: int or None
-        :param callable callback: Hook function
-        '''
-        if not (isinstance(pc, (int, long)) or pc is None):
-            raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
-        else:
-            self._hooks.setdefault(pc, set()).add(callback)
-
-    def add_symbolic_file(self, symbolic_file):
-        '''
-        Add a symbolic file. Each '+' in the file will be considered
-        as symbolic, other char are concretized.
-        Symbolic files must have been defined before the call to `run()`.
-
-        :param str symbolic_file: the name of the symbolic file
-        '''
-        self._symbolic_files.append(symbolic_file)
-
-    def _get_symbol_address(self, symbol):
-        '''
-        Return the address of |symbol| within the binary
-        '''
-        if self._binary_obj is None:
-            return NotImplementedError("Symbols aren't supported")
-
-        for section in self._binary_obj.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
-
-            symbols = section.get_symbol_by_name(symbol)
-            if len(symbols) == 0:
-                continue
-
-            return symbols[0].entry['st_value']
-
-    def _make_state(self, path):
-        if self._binary_type == 'ELF':
-            # Linux
-            env = ['%s=%s'%(k,v) for k,v in self._env.items()]
-            state = makeLinux(self._binary, self._argv, env, self._symbolic_files, self._concrete_data)
-        elif self._binary_type == 'PE':
-            # Windows
-            state = makeWindows(self._args)
-        elif self._binary_type == 'DECREE':
-            # Decree
-            state = makeDecree(self._binary, self._concrete_data)
-        else:
-            raise NotImplementedError("Binary {} not supported.".format(path))
-
-        return state
-        
-
+    
     @property
     def policy(self):
         return self._policy
 
     @policy.setter
     def policy(self, policy):
-        assert not self._running, "Can't set policy if Manticore is running."
+        assert not self.running, "Can't set policy if Manticore is running."
         self._policy = policy
 
-    @property
-    def coverage_file(self):
-        return self._coverage_file
+    def add(self, state):
+        assert not self.running, "Can't add state where running. Can we?"
+        self._executor.add(state)
 
-    @coverage_file.setter
-    def coverage_file(self, path):
-        assert not self._running, "Can't set coverage file if Manticore is running."
-        self._coverage_file = path
-
-    @property
-    def memory_errors_file(self):
-        return self._memory_errors
-
-    @memory_errors_file.setter
-    def memory_errors_file(self, path):
-        assert not self._running, "Can't set memory errors if Manticore is running."
-        self._memory_errors = path
-
-    @property
-    def env(self):
-        return self._env
-
-    @env.setter
-    def env(self, env):
-        '''
-        Update environment variables from |env|. Use repeated '+' chars for
-        symbolic values.
-        '''
-        assert isinstance(env, dict)
-        assert not self._running, "Can't set process env if Manticore is running."
-
-        self._env.update(env)
-        return self._env
-
-    def env_add(self, key, value, overwrite=True):
-        if key in self._env:
-            if overwrite:
-                self._env[key] = value
-        else:
-            self._env[key] = value
-
-    @property
-    def arch(self):
-        assert self._binary is not None
-
-        if self._arch is not None:
-            return self._arch
-
-        arch = self._binary_obj.get_machine_arch()
-        if   arch == 'x86': self._arch = 'i386'
-        elif arch == 'x64': self._arch = 'x86_64'
-        elif arch == 'ARM': self._arch = 'arm'
-        else: raise "Unsupported architecture: %s"%(arch, )
-
-        return self._arch
-        
-
+    ###########################################################################
+    # Workers                                                                 #
+    ###########################################################################
     def _start_workers(self, num_processes, profiling=False):
         assert num_processes > 0, "Must have more than 0 worker processes"
 
@@ -496,6 +353,59 @@ class Manticore(object):
             while len(self._workers) > 0:
                 w = self._workers.pop().join()
 
+    ############################################################################
+    # Common hooks + callback
+    ############################################################################
+    def hook(self, pc):
+        '''
+        A decorator used to register a hook function for a given instruction address.
+        Equivalent to calling :func:`~add_hook`.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
+        '''
+        def decorator(f):
+            self.add_hook(pc, f)
+            return f
+        return decorator
+
+    def add_hook(self, pc, callback):
+        '''
+        Add a callback to be invoked on executing a program counter. Pass `None`
+        for pc to invoke callback on every instruction. `callback` should be a callable
+        that takes one :class:`~manticore.core.state.State` argument.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
+        :param callable callback: Hook function
+        '''
+        if not (isinstance(pc, (int, long)) or pc is None):
+            raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
+        else:
+            self._hooks.setdefault(pc, set()).add(callback)
+            if self._hooks:
+                self._executor.subscribe('will_execute_instruction', self._hook_callback)
+
+    def _hook_callback(self, state, instruction):
+        pc = state.cpu.PC
+        'Invoke all registered generic hooks'
+
+        # Ignore symbolic pc.
+        # TODO(yan): Should we ask the solver if any of the hooks are possible,
+        # and execute those that are?
+        if not isinstance(pc, (int, long)):
+            return
+
+        # Invoke all pc-specific hooks
+        for cb in self._hooks.get(pc, []):
+            cb(state)
+
+        # Invoke all pc-agnostic hooks
+        for cb in self._hooks.get(None, []):
+            cb(state)
+
+
+
 
     ############################################################################
     # Model hooks + callback
@@ -522,6 +432,8 @@ class Manticore(object):
                 def cb_function(state):
                     state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
                 self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
+                self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
+
 
     def _model_hook_callback(self, state, instruction):
         pc = state.cpu.PC
@@ -543,6 +455,33 @@ class Manticore(object):
                 if pc in self._assertions:
                     logger.debug("Repeated PC in assertions file %s", path)
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
+                self._executor.subscribe('will_execute_instruction', self._assertions_callback)
+
+    def _assertions_callback(self, state, instruction):
+        pc = state.cpu.PC
+        if pc not in self._assertions:
+            return
+
+        from core.parser import parse
+
+        program = self._assertions[pc]
+
+        #This will interpret the buffer specification written in INTEL ASM.
+        # (It may dereference pointers)
+        assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
+        if not solver.can_be_true(state.constraints, assertion):
+            logger.info(str(state.cpu))
+            logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
+                    state.cpu.pc, program)
+            raise TerminateState()
+
+        #Everything is good add it.
+        state.constraints.add(assertion)
+
+
+
+    ##########################################################################
+    #Some are Place holders Remove 
 
     def _store_state_callback(self, state, state_id):
         logger.debug("store state %r", state_id)
@@ -642,7 +581,7 @@ class Manticore(object):
                     marshal.dump(ps.stats, s)
 
 
-    def finish_run(self):
+    def _finish_run(self):
         if self.should_profile:
             self._produce_profiling_data()
 
@@ -684,58 +623,8 @@ class Manticore(object):
         :param int procs: Number of parallel worker processes
         :param timeout: Analysis timeout, in seconds
         '''
-        assert not self._running, "Manticore is already running."
-        args = self._args
-
-        replay=None
-        if hasattr(args, 'replay') and args.replay is not None:
-            with open(args.replay, 'r') as freplay:
-                replay = map(lambda x: int(x, 16), freplay.readlines())
-
-        initial_state = self._make_state(self._binary)
-
-        if args is not None and hasattr(args, 'workspace') and isinstance(args.workspace, str):
-            if ':' not in args.workspace:
-                ws_path = 'fs:' + args.workspace
-            else:
-                ws_path = args.workspace
-        else:
-            ws_path = None
-
-        self._output = ManticoreOutput(ws_path)
-
-        self._executor = Executor(initial_state,
-                                  workspace=ws_path,
-                                  policy=self._policy, 
-                                  context=self.context)
-        
-
-
-        #Link Executor events to default callbacks in manticore object
-        self._executor.subscribe('did_read_register', self._read_register_callback)
-        self._executor.subscribe('will_write_register', self._write_register_callback)
-        self._executor.subscribe('did_read_memory', self._read_memory_callback)
-        self._executor.subscribe('will_write_memory', self._write_memory_callback)
-        self._executor.subscribe('will_execute_instruction', self._execute_instruction_callback)
-        self._executor.subscribe('will_decode_instruction', self._decode_instruction_callback)
-        self._executor.subscribe('will_store_state', self._store_state_callback)
-        self._executor.subscribe('will_load_state', self._load_state_callback)
-        self._executor.subscribe('will_fork_state', self._fork_state_callback)
-        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
-        self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
-
-        if self._hooks:
-            self._executor.subscribe('will_execute_instruction', self._hook_callback)
-
-        if self._model_hooks:
-            self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
-
-        if self._assertions:
-            self._executor.subscribe('will_execute_instruction', self._assertions_callback)
-
+        assert not self.running, "Manticore is already running."
         self._time_started = time.time()
-
-        self._running = True
 
         if timeout > 0:
             t = Timer(timeout, self.terminate)
@@ -745,13 +634,11 @@ class Manticore(object):
 
             self._join_workers()
         finally:
-            self._running = False
             if timeout > 0:
                 t.cancel()
         #Copy back the shared conext
         self._context = dict(self._executor._shared_context)
-        self.finish_run()
-        self._executor = None
+        self._finish_run()
 
 
     def terminate(self):
@@ -761,43 +648,42 @@ class Manticore(object):
         '''
         self._executor.shutdown()
 
-    def _assertions_callback(self, state, instruction):
-        pc = state.cpu.PC
-        if pc not in self._assertions:
-            return
 
-        from core.parser import parse
+    #############################################################################
+    #############################################################################
+    #############################################################################
+    # MOve all the following elsewhere
+    def add_symbolic_file(self, symbolic_file):
+        '''
+        Add a symbolic file. Each '+' in the file will be considered
+        as symbolic, other char are concretized.
+        Symbolic files must have been defined before the call to `run()`.
 
-        program = self._assertions[pc]
+        :param str symbolic_file: the name of the symbolic file
+        '''
+        self._symbolic_files.append(symbolic_file)
 
-        #This will interpret the buffer specification written in INTEL ASM.
-        # (It may dereference pointers)
-        assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
-        if not solver.can_be_true(state.constraints, assertion):
-            logger.info(str(state.cpu))
-            logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                    state.cpu.pc, program)
-            raise TerminateState()
+    def _get_symbol_address(self, symbol):
+        '''
+        Return the address of |symbol| within the binary
+        '''
 
-        #Everything is good add it.
-        state.constraints.add(assertion)
+        # XXX(yan) This is a bit obtuse; once PE support is updated this should
+        # be refactored out
+        if self._binary_type == 'ELF':
+            self._binary_obj = ELFFile(file(self._binary))
 
-    def _hook_callback(self, state, instruction):
-        pc = state.cpu.PC
-        'Invoke all registered generic hooks'
 
-        # Ignore symbolic pc.
-        # TODO(yan): Should we ask the solver if any of the hooks are possible,
-        # and execute those that are?
-        if not isinstance(pc, (int, long)):
-            return
+        if self._binary_obj is None:
+            return NotImplementedError("Symbols aren't supported")
 
-        # Invoke all pc-specific hooks
-        for cb in self._hooks.get(pc, []):
-            cb(state)
+        for section in self._binary_obj.iter_sections():
+            if not isinstance(section, SymbolTableSection):
+                continue
 
-        # Invoke all pc-agnostic hooks
-        for cb in self._hooks.get(None, []):
-            cb(state)
+            symbols = section.get_symbol_by_name(symbol)
+            if len(symbols) == 0:
+                continue
 
+            return symbols[0].entry['st_value']
 

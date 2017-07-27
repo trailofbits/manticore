@@ -8,7 +8,7 @@ import cPickle
 from multiprocessing import Manager, Pool, Process
 from threading import Timer
 from core.smtlib import Expression
-from manticore import Manticore
+from manticore import Manticore, make_initial_state, set_verbosity
 try:
     import psutil
 except ImportError:
@@ -69,7 +69,9 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    m = Manticore(args.programs[0], args.programs[1:])
+    set_verbosity(args.v)
+
+    m = Manticore(workspace=args.workspace)
 
     m.policy = args.policy
     m.args = args
@@ -110,11 +112,12 @@ def main():
     if args.assertions:
         m.load_assertions(args.assertions)
 
-    m.verbosity = args.v
+    print args.programs
+
+    initial_state = make_initial_state(args.programs[0], argv=args.programs[1:] )
+    m.add(initial_state)
 
     m.run(args.procs, args.timeout)
-
-    #m.dump_stats()
 
 if __name__ == '__main__':
     main()
