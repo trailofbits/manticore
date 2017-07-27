@@ -189,7 +189,8 @@ class Manticore(object):
         if self._executor is None:
             return self._context
         else:
-            logger.warning("Using shared context without a lock")
+            if self._running and len(self._workers) > 1:
+                logger.warning("Using shared context without a lock")
             return self._executor._shared_context
         
 
