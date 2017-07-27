@@ -72,7 +72,10 @@ class EVMMemory(object):
         m = []
         if len(self._memory.keys()):
             for i in range(max([0] + self._memory.keys())+1):
-                m.append(self.read(i,1)[0])
+                c = self.read(i,1)[0]
+                if issymbolic(c):
+                    c = '?'
+                m.append(c)
         return ''.join(m)
 
     def allocate(self, address):
@@ -511,6 +514,9 @@ class Call(EVMException):
         self.in_size = in_size
         self.out_offset = out_offset
         self.out_size = out_size
+
+    def __reduce__(self):
+        return (self.__class__, (self.gas,self.to,self.value,self.in_offset,self.in_size,self.out_offset,self.out_size,) )
 
 
 class Create(Call):
@@ -1108,7 +1114,7 @@ class EVM(Eventful):
         '''Save word to storage'''
         #FIXME implement system?
         self.global_storage[self.address]['storage'][address] = value
-        if value == 0:
+        if value is 0:
             del self.global_storage[self.address]['storage'][address]
 
     def JUMP(self, dest):
@@ -1215,12 +1221,29 @@ class EVM(Eventful):
             lines = []
             for c in xrange(0, len(src), length):
                 chars = src[c:c+length]
-                hex = ' '.join(["%02x" % ord(x) for x in chars])
-                printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or '.') for x in chars])
+                def p (x):
+                    if issymbolic(x):
+                        return '??'
+                    else:
+                        return "%02x" % ord(x) 
+                hex = ' '.join([p(x) for x in chars])
+                def p1 (x):
+                    if issymbolic(x):
+                        return '.'
+                    else:
+                        return "%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or '.') 
+
+                printable = ''.join([p1(x) for x in chars])
                 lines.append("%04x  %-*s  %s" % (c, length*3, hex, printable))
             return lines
 
-        hd = hexdump(str(self.memory))
+        m = []
+        if len(self.memory._memory.keys()):
+            for i in range(max([0] + self.memory._memory.keys())+1):
+                c = self.memory.read(i,1)[0]
+                m.append(c)
+
+        hd = hexdump(m)
         result = ['Stack                                                                      Memory']
         sp =0        
         for i in list(reversed(self.stack))[:10]:
@@ -1243,7 +1266,11 @@ class EVM(Eventful):
             r =  ' '*75 + hd[i]
             result.append(r)
 
-        result.append( '0x%04x: %s %s %s\n'%(self.pc, self.instruction.name, self.instruction.has_operand and '0x%x'%self.instruction.operand or '', self.instruction.description))
+        if issymbolic(self.pc):
+            result.append( '<Symbolic PC>')
+
+        else:
+            result.append( '0x%04x: %s %s %s\n'%(self.pc, self.instruction.name, self.instruction.has_operand and '0x%x'%self.instruction.operand or '', self.instruction.description))
         result.append( '-'*147)
         return '\n'.join(result)
 
@@ -1448,6 +1475,8 @@ class EVMWorld(Platform):
             raise TerminateState("RETURN", testcase=True)
 
         last_ex = self.current.last_exception
+        self.current.last_exception = None
+
         assert isinstance(last_ex, (Call, Create))
 
         if isinstance(last_ex, Create):
@@ -1458,7 +1487,6 @@ class EVMWorld(Platform):
             size = min(last_ex.out_size, size)
             self.current.write_buffer(last_ex.out_offset, data[:size])
             self.current._push(1)
-
         #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 
@@ -1466,6 +1494,7 @@ class EVMWorld(Platform):
         self._pop(rollback=False)
         if self.depth == 0:
             raise TerminateState("STOP", testcase=True)
+        self.current.last_exception = None
         self.current._push(1)
 
         #we are still on the CALL/CREATE
@@ -1475,12 +1504,18 @@ class EVMWorld(Platform):
         if self.depth == 1:
             raise TerminateState("INVALID", testcase=True)
         self._pop(rollback=True)
+        self.current.last_exception = None
         self.current._push(0)
         #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 
     def REVERT(self):
-        raise NotImplemented
+        if self.depth == 1:
+            raise TerminateState("INVALID", testcase=True)
+        self._pop(rollback=True)
+        self.current.last_exception = None
+        #we are still on the CALL/CREATE
+        self.current.pc += self.current.instruction.size
 
     def SELFDESTRUCT(self, recipient):
         #This may create a user account

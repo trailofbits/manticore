@@ -26,6 +26,7 @@ logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(lev
 for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
     logging.getLogger(loggername).addFilter(ctxfilter)
     logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
+    logging.getLogger('SMT').setLevel(logging.DEBUG)
 
 logging.getLogger('SMT').setLevel(logging.INFO)
 logging.getLogger('MEMORY').setLevel(logging.INFO)
