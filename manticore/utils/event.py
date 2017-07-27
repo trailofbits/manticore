@@ -4,22 +4,22 @@ from types import MethodType
 
 class Eventful(object):
     ''' 
-        Abstract class for objects emiting and recieving events
+        Abstract class for objects emitting and receiving events
         An eventful object can:
-          - publish an event with arbitrary arguments to ist subscribers
-          - let foreign objects subcribe their methods to events emited here
+          - publish an event with arbitrary arguments to its subscribers
+          - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
     '''
     def __init__(self, *args, **kwargs):
         # A dictionary from "event name" -> callback methods  
-        # Note that several methods can be asociated with the same object
+        # Note that several methods can be associated with the same object
         self._signals = dict()
-        # a set of sink eventul objects (see forward_events_from())
+        # a set of sink eventful objects (see forward_events_from())
         self._forwards = WeakKeyDictionary()
         super(Eventful, self).__init__(*args, **kwargs)
 
     def __setstate__(self, state):
-        ''' It wont get serialized by design, user is responsable to reconnect'''
+        ''' It wont get serialized by design, user is responsible to reconnect'''
         self._signals = dict()
         self._forwards = WeakKeyDictionary()
         return True
@@ -28,10 +28,10 @@ class Eventful(object):
         return {}
 
     def _unref(self, robj):
-        # this is called when an object that has subscribed to events emited 
+        # this is called when an object that has subscribed to events emitted 
         # here has recently been garbage collected
         # This simply removes all callback methods associated with that object
-        # Also if no more callbacks at all for an event name it delets the event entry
+        # Also if no more callbacks at all for an event name it deletes the event entry
         remove = set()
         for name, bucket in self._signals.items():
             if robj in bucket:
