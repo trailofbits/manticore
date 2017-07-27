@@ -66,7 +66,7 @@ class Windows(Platform):
         '''
         Builds a Windows OS platform
         '''
-        super(Windows, self).__init__(**kwargs)
+        super(Windows, self).__init__(path,**kwargs)
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []
@@ -190,7 +190,7 @@ class Windows(Platform):
         return self.procs[self._current]
 
     def __getstate__(self):
-        state = {}
+        state = super(Windows, self).__getstate__()
         state['clocks'] = self.clocks
         state['procs'] = self.procs
         state['current'] = self._current
@@ -206,6 +206,7 @@ class Windows(Platform):
         :todo: some asserts
         :todo: fix deps? (last line)
         """
+        super(Windows, self).__setstate__(state)
         self.procs = state['procs']
         self._current = state['current']
         self.running = state['running']
@@ -216,7 +217,7 @@ class Windows(Platform):
 
         #Install event forwarders
         for proc in self.procs:
-            forward_signals(self, proc)
+            self.forward_events_from(proc)
 
     def _read_string(self, cpu, buf):
         """

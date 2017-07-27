@@ -33,7 +33,7 @@ class Eventful(object):
         # This simply removes all callback methods associated with that object
         # Also if no more callbacks at all for an event name it deletes the event entry
         remove = set()
-        for name, bucket in self._signals.items():
+        for name, bucket in self._signals.iteritems():
             if robj in bucket:
                 del bucket[robj]
             if len(bucket) == 0:
@@ -48,9 +48,9 @@ class Eventful(object):
 
     def publish(self, name, *args, **kwargs):   
         bucket = self._get_signal_bucket(name)
-        for obj, methods in bucket.items():
+        for robj, methods in bucket.items():
             for callback in methods:
-                callback(obj(), *args, **kwargs)
+                callback(robj(), *args, **kwargs)
 
         #The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to 
@@ -61,17 +61,20 @@ class Eventful(object):
                 sink.publish(name, *args, **kwargs)
 
     def subscribe(self, name, method):
-        assert inspect.ismethod(method)
+        if not inspect.ismethod(method):
+            raise TypeError
         obj, callback = method.__self__, method.__func__
         bucket = self._get_signal_bucket(name)
         robj = ref(obj, self._unref)  #see unref() for explanation
         bucket.setdefault(robj, set()).add(callback)
 
     def forward_events_from(self, source, include_source=False):
-        if isinstance(source, Eventful):
-            source.forward_events_to(self, include_source=include_source)
+        if not isinstance(source, Eventful):
+            raise TypeError
+        source.forward_events_to(self, include_source=include_source)
 
     def forward_events_to(self, sink, include_source=False):
         ''' This forwards signal to sink '''
-        assert isinstance(sink, Eventful)
+        if not isinstance(sink, Eventful):
+            raise TypeError
         self._forwards[sink] = include_source

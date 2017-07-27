@@ -72,7 +72,7 @@ class Policy(object):
     def choice(self, state_ids):
         ''' Select a state id from states_id.
             self.context has a dict mapping state_ids -> prepare(state)'''
-        raise NotImplemented
+        raise NotImplementedError
 
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
@@ -421,7 +421,6 @@ class Executor(Eventful):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
-                    print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
                     #Notify this worker is done
                     self.publish('will_terminate_state', current_state, current_state_id, 'Exception')
@@ -434,6 +433,6 @@ class Executor(Eventful):
             self._stop_run()
 
             #Notify this worker is done (not sure it's needed)
-            self.publish('will_finish_run', )
+            self.publish('will_finish_run')
 
 
