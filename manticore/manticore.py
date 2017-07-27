@@ -755,8 +755,8 @@ class Manticore(object):
                 t.cancel()
         #Copy back the shared conext
         self._context = dict(self._executor._shared_context)
-        self.finish_run()
         self._executor = None
+        self.finish_run()
 
 
     def terminate(self):
