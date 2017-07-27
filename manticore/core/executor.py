@@ -189,7 +189,6 @@ class Executor(Eventful):
         '''
         #save the state to secondary storage
         state_id = self._workspace.save_state(state)
-        self.will_store_state(state, state_id)
         self.put(state_id)
         self.publish('did_add_state', state_id, state)
         return state_id
@@ -270,17 +269,6 @@ class Executor(Eventful):
         del  self._states[self._states.index(state_id)]
         return state_id
 
-    ###############################################################
-    # File Storage 
-    def load(self, state_id):
-        ''' Brings a state from storage selected by state_id'''
-        if state_id is None:
-            return None
-        loaded_state self._workspace.load_state(current_state_id)
-        #Broadcast event
-        self.publish('will_load_state', loaded_state, state_id)
-        return loaded_state 
-
     def list(self):
         ''' Returns the list of states ids currently queued '''
         return list(self._states)
@@ -296,7 +284,7 @@ class Executor(Eventful):
 
         #broadcast test generation. This is the time for other modules
         #to output whatever helps to understand this testcase
-        self.publish('will_generate_testcase', state, testcase_id, message)
+        self.publish('will_generate_testcase', state)
 
 
 
@@ -376,7 +364,7 @@ class Executor(Eventful):
                             #load selected state from secondary storage
                             if current_state_id is not None:
                                 current_state = self._workspace.load_state(current_state_id)
-                                self.will_load_state(current_state, current_state_id)
+                                self.publish('will_load_state', current_state, current_state_id)
                                 #notify siblings we have a state to play with
                             self._start_run()
 
