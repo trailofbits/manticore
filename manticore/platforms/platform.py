@@ -40,9 +40,3 @@ class Platform(Eventful):
         state = super(Platform, self).__getstate__()
         state['path'] = self._path
         return state
-
-
-    #def __reduce__(self):
-    #    return (self.__class__, (self._path,) )
-
-

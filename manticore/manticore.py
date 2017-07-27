@@ -686,4 +686,3 @@ class Manticore(object):
                 continue
 
             return symbols[0].entry['st_value']
-

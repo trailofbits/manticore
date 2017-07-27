@@ -72,7 +72,7 @@ class Policy(object):
     def choice(self, state_ids):
         ''' Select a state id from states_id.
             self.context has a dict mapping state_ids -> prepare(state)'''
-        raise NotImplemented
+        raise NotImplementedError
 
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
@@ -364,9 +364,8 @@ class Executor(Eventful):
                             if current_state_id is not None:
                                 current_state = self._workspace.load_state(current_state_id)
                                 self.forward_events_from(current_state, True)
-
                                 self.publish('will_load_state', current_state, current_state_id)
-                                #notify siblings we have a state to play with
+                            #notify siblings we have a state to play with
                             self._start_run()
 
                         #If current_state is still None. We are done.
@@ -435,6 +434,6 @@ class Executor(Eventful):
             self._stop_run()
 
             #Notify this worker is done (not sure it's needed)
-            self.publish('will_finish_run', )
+            self.publish('will_finish_run')
 
 
