@@ -62,10 +62,11 @@ class Windows(Platform):
     def _mk_memory(self):
         return Memory32()
 
-    def __init__(self, path, additional_context = None, snapshot_folder=None):
+    def __init__(self, path, additional_context = None, snapshot_folder=None, **kwargs):
         '''
         Builds a Windows OS platform
         '''
+        super(Windows, self).__init__(**kwargs)
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []
