@@ -1,6 +1,7 @@
 # Manticore
 
 [![Build Status](https://travis-ci.org/trailofbits/manticore.svg?branch=master)](https://travis-ci.org/trailofbits/manticore)
+[![PyPI version](https://badge.fury.io/py/manticore.svg)](https://badge.fury.io/py/manticore)
 [![Slack Status](https://empireslacking.herokuapp.com/badge.svg)](https://empireslacking.herokuapp.com)
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
 [![Bountysource](https://img.shields.io/bountysource/team/trailofbits/activity.svg)](https://www.bountysource.com/teams/trailofbits)
@@ -112,6 +113,19 @@ period via the --process-timeout flag. E.g.,
 ```
 nosetests --processes=8 --process-timeout=120 tests/test_binaries.py
 ```
+
+### Redis
+
+If you'd like to use redis for state serialization (instead of disk), install
+redis using your host package manager, then install manticore as above, but
+with `[redis]` appended to the name of the package, e.g.
+
+```
+pip install manticore[redis]
+```
+
+Note that this does not make manticore use redis automatically, and you'll still
+have to manually set the workspace to the redis URI.
 
 ## Usage
 

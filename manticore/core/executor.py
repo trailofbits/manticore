@@ -1,27 +1,19 @@
-import sys
 import time
 import os
-import copy
 import cPickle
 import random
 import logging
-import pstats
-import traceback
 import signal
-import weakref
 try:
     import cStringIO as StringIO
 except:
     import StringIO
-from math import ceil, log
 
 from ..utils.nointerrupt import WithKeyboardInterruptAs
-from .cpu.abstractcpu import DecodeException, ConcretizeRegister
-from .memory import ConcretizeMemory
-from .smtlib import solver, Expression, Operators, SolverException, Array, BitVec, Bool, ConstraintSet
 from ..utils.event import Eventful
-from ..utils.helpers import issymbolic
+from .smtlib import solver, Expression, SolverException
 from .state import Concretize, TerminateState
+from workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
@@ -31,7 +23,6 @@ def mgr_init():
 manager = SyncManager()
 manager.start(mgr_init)
 
-#module wide logger
 logger = logging.getLogger("EXECUTOR")
 
 
@@ -125,14 +116,10 @@ class Executor(Eventful):
     def __init__(self, initial=None, workspace=None, policy='random', context=None, **kwargs):
         super(Executor, self).__init__(**kwargs)
 
-        assert os.path.isdir(workspace), 'Workspace must be a directory'
-        self.workspace = workspace
-        logger.debug("Workspace set: %s", self.workspace)
 
         # Signals / Callbacks handlers will be invoked potentially at different 
         # worker processes. State provides a local context to save data.
 
-        #Be sure every state will forward us their signals
         self.subscribe('will_load_state', self._register_state_callbacks)
 
         #The main executor lock. Acquire this for accessing shared objects
@@ -147,11 +134,7 @@ class Executor(Eventful):
         #Number of currently running workers. Initially no runnign workers
         self._running = manager.Value('i', 0 )
 
-        #Number of generated testcases
-        self._test_count = manager.Value('i', 0 )
-
-        #Number of total intermediate states
-        self._state_count = manager.Value('i', 0 )
+        self._workspace = Workspace(self._lock, workspace)
 
         #Executor wide shared context
         if context is None:
@@ -173,8 +156,6 @@ class Executor(Eventful):
         else:
             if initial is not None:
                 self.add(initial)
-                ##FIXME PUBSUB  We need to forward signals here so they get declared
-                ##forward signals from initial state so they are declared here
                 self.forward_events_from(initial, True)
 
     @contextmanager
@@ -207,8 +188,8 @@ class Executor(Eventful):
             priority queue
         '''
         #save the state to secondary storage
-        state_id = self.store(state)
-        #add the state to the list of pending states
+        state_id = self._workspace.save_state(state)
+        self.will_store_state(state, state_id)
         self.put(state_id)
         self.publish('did_add_state', state_id, state)
         return state_id
@@ -216,65 +197,14 @@ class Executor(Eventful):
     def load_workspace(self):
         #Browse and load states in a workspace in case we are trying to 
         # continue from paused run
-        saved_states = []
-        for filename in os.listdir(self.workspace):
-            if filename.startswith('state_') and filename.endswith('.pkl'):
-                saved_states.append(self._workspace_filename(filename)) 
-        
-        #We didn't find any saved intermediate states in the workspace
-        if not saved_states:
+        loaded_state_ids = self._workspace.try_loading_workspace()
+        if not loaded_state_ids:
             return False
 
-        #search finalized testcases
-        saved_testcases = []
-        for filename in os.listdir(self.workspace):
-            if filename.startswith('test_') and filename.endswith('.pkl'):
-                saved_testcases.append(self._workspace_filename(filename)) 
+        for id in loaded_state_ids:
+            self._states.append(id)
 
-
-        #Load saved states into the queue
-        for filename in saved_states:
-            state_id = int(filename[6:-4])
-            self._states.append(state_id)
-
-        #reset test and states counter 
-        for filename in saved_states:
-            state_id = int(filename[6:-4])
-            self._state_count.value = max(self._state_counter.value, state_id)
-
-        for filename in saved_testcases:
-            state_id = int(filename[6:-4])
-            self._test_count.value = max(self._test_counter.value, state_id)
-
-        #Return True if we have loaded some sates to continue from
-        return len(saved_states)>0
-
-    ################################################
-    # Workspace filenames 
-    def _workspace_filename(self, filename):
-        return os.path.join(self.workspace, filename)
-
-    def _state_filename(self, state_id):
-        filename = 'state_%06d.pkl'%state_id
-        return self._workspace_filename(filename)
-
-    def _testcase_filename(self, state_id):
-        filename = 'test_%06d.pkl'%state_id
-        return self._workspace_filename(filename)
-
-    ################################################
-    #Shared counters 
-    @sync
-    def _new_state_id(self):
-        ''' This gets an uniq shared id for a new state '''
-        self._state_count.value += 1
-        return self._state_count.value
-
-    @sync
-    def _new_testcase_id(self):
-        ''' This gets an uniq shared id for a new testcase '''
-        self._test_count.value += 1
-        return self._test_count.value
+        return True
 
     ###############################################
     # Synchronization helpers
@@ -342,40 +272,11 @@ class Executor(Eventful):
 
     ###############################################################
     # File Storage 
-    def store(self, state):
-        ''' Put state in secondary storage and retuns an state_id for it'''
-        state_id = self._new_state_id()
-        state_filename = self._state_filename(state_id)
-        logger.debug("Saving state %d to file %s", state_id, state_filename)
-        with open(state_filename, 'w+') as f:
-            try:
-                f.write(cPickle.dumps(state, 2))
-            except RuntimeError:
-                # there recursion limit exceeded problem, 
-                # try a slower, iterative solution
-                from ..utils import iterpickle
-                logger.warning("Using iterpickle to dump state")
-                f.write(iterpickle.dumps(state, 2))
-
-            f.flush()
-
-        #broadcast event
-        self.publish('will_store_state', state, state_id)
-        return state_id
-
     def load(self, state_id):
         ''' Brings a state from storage selected by state_id'''
         if state_id is None:
             return None
-        filename = self._state_filename(state_id)
-        logger.debug("Restoring state: %s from %s", state_id, filename )
-
-        with open(filename, 'rb') as f:
-            loaded_state = cPickle.loads(f.read())
-
-        logger.debug("Removing state %s from storage", state_id)
-        os.remove(filename)
-
+        loaded_state self._workspace.load_state(current_state_id)
         #Broadcast event
         self.publish('will_load_state', loaded_state, state_id)
         return loaded_state 
@@ -386,32 +287,17 @@ class Executor(Eventful):
 
     def generate_testcase(self, state, message='Testcase generated'):
         '''
-        Create a serialized description of a given state.
+        Simply announce that we're going to generate a testcase. Actual generation
+        should be handled by the driver class (such as :class:`~manticore.Manticore`)
 
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        testcase_id = self._new_testcase_id()
-        logger.info("Generating testcase No. %d - %s", testcase_id, message)
 
-        #broadcast test generation. This is the time for other modules 
+        #broadcast test generation. This is the time for other modules
         #to output whatever helps to understand this testcase
         self.publish('will_generate_testcase', state, testcase_id, message)
 
-        # Save state
-        start = time.time()
-        filename = self._testcase_filename(testcase_id)
-        with open(filename, 'wb') as f:
-            try:
-                f.write(cPickle.dumps(state, 2))
-            except RuntimeError:
-                # there recursion limit exceeded problem, 
-                # try a slower, iterative solution
-                from ..utils import iterpickle
-                logger.debug("WARNING: using iterpickle to dump state")
-                f.write(iterpickle.dumps(state, 2))
-            f.flush()
-        logger.debug("saved in %d seconds", time.time() - start)
 
 
     def fork(self, state, expression, policy='ALL', setstate=None):
@@ -488,15 +374,17 @@ class Executor(Eventful):
                             #Select a single state_id
                             current_state_id = self.get()
                             #load selected state from secondary storage
-                            current_state = self.load(current_state_id)
-                            #notify siblings we have a state to play with
+                            if current_state_id is not None:
+                                current_state = self._workspace.load_state(current_state_id)
+                                self.will_load_state(current_state, current_state_id)
+                                #notify siblings we have a state to play with
                             self._start_run()
 
                         #If current_state is still None. We are done.
                         if current_state is None:
                             logger.debug("No more states in the queue, byte bye!")
                             break
-                        
+
                         assert current_state is not None
 
                     try:
@@ -532,9 +420,8 @@ class Executor(Eventful):
 
                     except SolverException as e:
                         import traceback
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
-                        print "*** print_exc:"
-                        traceback.print_exc()
+                        trace = traceback.format_exc()
+                        logger.error("Exception: %s\n%s", str(e), trace)
 
                         #Notify this state is done
                         self.publish('will_terminate_state', current_state, current_state_id, e)

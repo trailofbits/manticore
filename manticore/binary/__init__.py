@@ -130,53 +130,6 @@ class Elf(Binary):
     def threads(self):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
 
-from grr.snapshot import Grr
-class CGCGrr(Binary):
-    def __init__(self, filename):
-        HEADERSIZE = 16384
-        self.grr = Grr.from_buf(file(filename).read(HEADERSIZE))
-        self.arch = 'i386'
-        assert ''.join(self.grr.magic) == 'GRRS'
-        assert self.grr.exe_num <= 16
-        assert self.grr.ranges[0].fd_offs == 16384
-        #TODO more asserts
-        super(CGCGrr, self).__init__(filename)
-
-    def maps(self):
-        for r in self.grr.ranges:
-            assert r.end>=r.begin
-            assert (r.end-r.begin)&0xfff == 0
-            assert r.fd_offs&0xfff == 0
-            if r.end-r.begin == 0:
-                continue
-            perms = ''
-            perms += r.is_r and 'r'or' '
-            perms += r.is_w and 'w'or' '
-            perms += r.is_x and 'x'or' '
-            if 'r' not in perms:
-                raise Exception("Not readable map from grr snapshot elf not supported")
-
-            yield((r.begin, r.end-r.begin, perms, self.path, r.fd_offs, r.end-r.begin))
-
-    def threads(self):
-        #Basic
-        regs = ['r15','r14','r13','r12','rbp','rbx','r11','r10','r9','r8','rax',
-                'rcx','rdx','rsi','rdi','rip','cs','eflags','rsp','ss','ds','es','fs','gs']
-        registers = dict([(name.upper(), getattr(self.grr.gregs, name)) for name in regs])
-
-        #XMM
-        for name in ['xmm0', 'xmm1', 'xmm2', 'xmm3', 'xmm4', 'xmm5', 'xmm6', 'xmm7', 'xmm8', 
-                     'xmm9', 'xmm10', 'xmm11', 'xmm12', 'xmm13', 'xmm14', 'xmm15' ]:
-            registers[name.upper()] = getattr(self.grr.fpregs.xmm_space, name).high << 64 | \
-                                      getattr(self.grr.fpregs.xmm_space, name).low
-
-        #FPU
-        for i in xrange(8):
-            registers['FP%d'%i] = ( getattr(self.grr.fpregs.st_space,'st%d'%i).mantissa, 
-                                        getattr(self.grr.fpregs.st_space,'st%d'%i).exponent )
-
-        yield ('Running', registers)
-
 class Minidump(Binary):
     def __init__(self, filename):
         self.md = minidump.MiniDump(path)
@@ -235,7 +188,6 @@ class Minidump(Binary):
 
 Binary.magics= { '\x7fCGC': CGCElf,
                  '\x7fELF': Elf,
-                 'GRRS': CGCGrr,
                  'MDMP': Minidump}
 
 

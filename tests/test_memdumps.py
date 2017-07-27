@@ -69,6 +69,8 @@ class IntegrationTest(unittest.TestCase):
 
         args = ['python', '-m', 'manticore', '--timeout', '400', '--workspace', workspace, dumpfile]
 
+        os.mkdir(workspace)
+
         for k,v in params.iteritems():
             if k.startswith("--"):
                 args.extend([k, v.format(dumpdir=dumpdir, workspace=workspace)])
@@ -80,17 +82,14 @@ class IntegrationTest(unittest.TestCase):
         afile = os.path.join(workspace, params['actual'])
         actual = self._loadVisitedSet(afile)
 
-        self.assertEqual(actual, expected)
+        self.assertGreaterEqual(actual, expected)
 
-    @unittest.skip('TODO')
     def testSimpleParse(self):
         self._runManticore("simple_parse")
 
-    @unittest.skip('TODO')
     def testSimpleDeref(self):
         self._runManticore("simple_bad_deref")
 
-    @unittest.skip('TODO')
     def testSimpleBufferOverflow(self):
         self._runManticore("simple_buffer_overflow")
 
@@ -103,7 +102,6 @@ class IntegrationTest(unittest.TestCase):
     def testWin32API(self):
         self._runManticore("win32_api_test")
 
-    @unittest.skip('TODO')
     def testAPIInterception(self):
         self._runManticore("api_interception")
 

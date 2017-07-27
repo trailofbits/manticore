@@ -5,7 +5,7 @@ setup(
     description='Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.',
     url='https://github.com/trailofbits/manticore',
     author='Trail of Bits',
-    version='0.1.2',
+    version='0.1.3',
     packages=find_packages(),
     install_requires=[
         'capstone>=3.0.5rc2',
@@ -19,6 +19,10 @@ setup(
             'coverage',
             'nose',
             'Sphinx',
+            'redis',
+        ],
+        'redis': [
+            'redis',
         ]
     },
     entry_points={
