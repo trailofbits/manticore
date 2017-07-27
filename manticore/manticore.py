@@ -189,8 +189,7 @@ class Manticore(object):
         if self._executor is None:
             return self._context
         else:
-            if self._running and len(self._workers) > 1:
-                logger.warning("Using shared context without a lock")
+            logger.warning("Using shared context without a lock")
             return self._executor._shared_context
         
 
@@ -756,8 +755,8 @@ class Manticore(object):
                 t.cancel()
         #Copy back the shared conext
         self._context = dict(self._executor._shared_context)
-        self.finish_run()
         self._executor = None
+        self.finish_run()
 
 
     def terminate(self):
