@@ -172,6 +172,8 @@ class State(object):
         :param str name: (keyword arg only) The name to assign to the buffer
         :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
                  (i.e. no \0 bytes, except for the last byte). (bool)
+        :param taint: Taint identifier of the new buffer
+        :type taint: tuple or frozenset
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
@@ -210,6 +212,8 @@ class State(object):
         :param str label: The label to assign to the value
         :param str wildcard: The byte that is considered a wildcard
         :param bool string: Ensure bytes returned can not be \0
+        :param taint: Taint identifier of the symbolicated data
+        :type taint: tuple or frozenset
 
         :return: If data does not contain any wildcard bytes, data itself. Otherwise,
             a list of values derived from data. Non-wildcard bytes are kept as
