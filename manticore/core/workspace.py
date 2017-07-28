@@ -138,6 +138,10 @@ class Store(object):
         """
         with self.load_stream(key) as f:
             state = self._serializer.deserialize(f)
+            # FIXME (theo) remove this from here and properly handle
+            # serialization for the platform CPU
+            if hasattr(state.cpu, "platform_cpu"):
+                state.cpu.platform_cpu._memory = state.cpu._memory
             self.rm(key)
             return state
 
@@ -222,7 +226,7 @@ class MemoryStore(Store):
     """
     An in-memory (dict) Manticore workspace.
 
-    NOTE: This is mostly used for experimentation and testing funcionality. 
+    NOTE: This is mostly used for experimentation and testing funcionality.
     Can not be used with multiple workers!
     """
 
