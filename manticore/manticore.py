@@ -89,7 +89,7 @@ def set_verbosity(setting):
     manticore_verbosity = setting
 
 
-def make_decree(program, concrete_data=''):
+def make_decree(program, concrete_data='', **kwargs):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
@@ -109,7 +109,6 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-    print program, argv
     platform = linux.SLinux(program, argv=argv, envp=env,
                             symbolic_files=symbolic_files)
     initial_state = State(constraints, platform)
@@ -136,7 +135,7 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
     return initial_state 
 
 
-def make_windows(args):
+def make_windows(args, programs, context, data, offset, maxsymb, workspace, size=None, buffer=None, **kwargs):
     assert args.size is not None, "Need to specify buffer size"
     assert args.buffer is not None, "Need to specify buffer base address"
     logger.debug('Loading program %s', args.programs)
@@ -183,14 +182,15 @@ def make_initial_state(binary_path, *args, **kwargs):
     if magic == '\x7fELF':
         # Linux
         state = make_linux(binary_path, *args, **kwargs)
-    elif magic == 'PE':
+    elif magic == 'MDMP':
         # Windows
-        state = make_windows(self._args)
+        raise NotImplementedError("Binary {} not supported.".format(binary_path))
+        state = make_windows(binary_path, *args, **kwargs)
     elif magic == '\x7fCGC':
         # Decree
-        state = make_decree(self._binary, self._concrete_data)
+        state = make_decree(binary_path, *args, **kwargs)
     else:
-        raise NotImplementedError("Binary {} not supported.".format(path))
+        raise NotImplementedError("Binary {} not supported.".format(binary_path))
 
     return state
         
@@ -218,6 +218,7 @@ class Manticore(object):
             ws_path = None
 
         self._output = ManticoreOutput(ws_path)
+        self._context = {}
 
         # Will be set to a temporary directory if not set before running start()
         self._coverage_file = None
@@ -241,12 +242,14 @@ class Manticore(object):
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
-
+        if binary_path is not None:
+            initial_state = make_initial_state(binary_path, *args, **kwargs)
+            self.add(initial_state)
 
     @property
     def context(self):
         ''' Convenient access to shared context '''
-        if self._executor is None:
+        if not self.running:
             return self._context
         else:
             logger.warning("Using shared context without a lock")
@@ -265,7 +268,7 @@ class Manticore(object):
         '''
         @contextmanager
         def _real_context():
-            if self._executor is None:
+            if not self.running :
                 yield self._context
             else:
                 with self._executor.locked_context() as context:
@@ -581,12 +584,20 @@ class Manticore(object):
                     marshal.dump(ps.stats, s)
 
 
+    def _start_run(self):
+        assert not self.running
+        #Copy the local main context to the shared conext
+        self._executor._shared_context.update(self._context)
+
     def _finish_run(self):
+        assert not self.running
+        #Copy back the shared context
+        self._context = dict(self._executor._shared_context)
+
         if self.should_profile:
             self._produce_profiling_data()
 
-        _shared_context = self.context
-        executor_visited = _shared_context.get('visited', set())
+        executor_visited = self.context.get('visited', set())
 
         #Fixme this is duplicated?
         if self.coverage_file is not None:
@@ -606,7 +617,7 @@ class Manticore(object):
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
 
-        instructions_count = _shared_context.get('instructions_count',0)
+        instructions_count = self.context.get('instructions_count',0)
         elapsed = time.time()-self._time_started
         logger.info('Results in %s', self._output.uri)
         logger.info('Instructions executed: %d', instructions_count)
@@ -624,8 +635,8 @@ class Manticore(object):
         :param timeout: Analysis timeout, in seconds
         '''
         assert not self.running, "Manticore is already running."
+        self._start_run()
         self._time_started = time.time()
-
         if timeout > 0:
             t = Timer(timeout, self.terminate)
             t.start()
@@ -636,8 +647,6 @@ class Manticore(object):
         finally:
             if timeout > 0:
                 t.cancel()
-        #Copy back the shared conext
-        self._context = dict(self._executor._shared_context)
         self._finish_run()
 
 
