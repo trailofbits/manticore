@@ -7,8 +7,6 @@ from .manticore import Manticore
 
 sys.setrecursionlimit(10000)
 
-logger = logging.getLogger('MAIN')
-
 def parse_arguments():
     ###########################################################################
     # parse arguments
@@ -33,6 +31,8 @@ def parse_arguments():
                         help='Specify symbolic environment variable VARNAME=++++++')
     parser.add_argument('--errorfile', type=str, default=None,
                         help='where to write the memory error locations')
+    parser.add_argument('--file', type=str, action='append', dest='files',
+                        help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--maxstorage', type=int, default=0,
                         help='Storage use cap in megabytes.')
     parser.add_argument('--maxstates', type=int, default=0,
@@ -97,6 +97,9 @@ def main():
     m.policy = args.policy
     m.args = args
 
+    if args.data:
+        m.concrete_data = args.data
+
     if args.workspace:
         m.workspace = args.workspace
 
@@ -122,6 +125,10 @@ def main():
         for entry in args.env:
             name, val = entry[0].split('=')
             m.env_add(name, val)
+
+    if args.files:
+        for file in args.files:
+            m.add_symbolic_file(file)
 
     if args.assertions:
         m.load_assertions(args.assertions)

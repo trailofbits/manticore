@@ -1,16 +1,18 @@
 import os
 import copy
+import logging
 from collections import OrderedDict
 
-from .smtlib import solver
+from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
-from ..utils.event import Signal, forward_signals
-
+from ..utils.event import Eventful
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
 from .memory import ConcretizeMemory, MemoryException
 from ..platforms.platform import *
+
+logger = logging.getLogger("STATE")
 
 class StateException(Exception):
     ''' All state related exceptions '''
@@ -56,9 +58,8 @@ class ForkState(Concretize):
         super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
 
 
-from ..utils.event import Signal
+class State(Eventful):
 
-class State(object):
     '''
     Representation of a unique program state/path.
 
@@ -67,7 +68,8 @@ class State(object):
     :ivar dict context: Local context for arbitrary data storage
     '''
 
-    def __init__(self, constraints, platform):
+    def __init__(self, constraints, platform, **kwargs):
+        super(State, self).__init__(**kwargs)
         self.platform = platform
         self.forks = 0
         self.constraints = constraints
@@ -82,7 +84,7 @@ class State(object):
         #self.will_add_constraint = Signal()
 
         #Import all signals from platform
-        forward_signals(self, platform)
+        self.forward_events_from(platform)
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.platform),
@@ -355,6 +357,8 @@ class State(object):
         function, the following arguments correspond to the arguments of the C function
         being modeled. If the `model` models a variadic function, the following argument
         is a generator object, which can be used to access function arguments dynamically.
+        The `model` callable should simply return the value that should be returned by the
+        native function being modeled.
 
         :param callable model: Model to invoke
         '''

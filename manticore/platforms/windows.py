@@ -4,12 +4,11 @@ import sys, os, struct
 from ..core.memory import Memory, MemoryException, SMemory32, Memory32
 from ..core.smtlib import Expression, Operators, solver
 # TODO use cpu factory
-from ..core.cpu.x86 import I386Cpu, Syscall
+from ..core.cpu.x86 import I386Cpu, I386StdcallAbi, Syscall
 from ..core.cpu.abstractcpu import Interruption, Syscall
 from ..core.state import ForkState, TerminateState
 from ..utils.helpers import issymbolic
 from ..platforms.platform import *
-from ..utils.event import Signal, forward_signals
 
 from ..binary.pe import minidump
 
@@ -63,10 +62,11 @@ class Windows(Platform):
     def _mk_memory(self):
         return Memory32()
 
-    def __init__(self, path, additional_context = None, snapshot_folder=None):
+    def __init__(self, path, additional_context = None, snapshot_folder=None, **kwargs):
         '''
         Builds a Windows OS platform
         '''
+        super(Windows, self).__init__(path,**kwargs)
         self.clocks = 0
         self.files = [] 
         self.syscall_trace = []
@@ -175,19 +175,22 @@ class Windows(Platform):
         assert nprocs > 0
         assert len(self.running) == 1, "For now lets consider only one thread running"
         self._current = self.running[0]
-        self._function_abi = I386StdcallAbi(self.procs[0])
 
         #Install event forwarders
         for proc in self.procs:
-            forward_signals(self, proc)
+            self.forward_events_from(proc)
         
+
+    @property
+    def _function_abi(self):
+        return I386StdcallAbi(self.procs[0])
 
     @property
     def current(self):
         return self.procs[self._current]
 
     def __getstate__(self):
-        state = {}
+        state = super(Windows, self).__getstate__()
         state['clocks'] = self.clocks
         state['procs'] = self.procs
         state['current'] = self._current
@@ -203,6 +206,7 @@ class Windows(Platform):
         :todo: some asserts
         :todo: fix deps? (last line)
         """
+        super(Windows, self).__setstate__(state)
         self.procs = state['procs']
         self._current = state['current']
         self.running = state['running']
@@ -213,7 +217,7 @@ class Windows(Platform):
 
         #Install event forwarders
         for proc in self.procs:
-            forward_signals(self, proc)
+            self.forward_events_from(proc)
 
     def _read_string(self, cpu, buf):
         """

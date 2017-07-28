@@ -1,7 +1,6 @@
-import cgcrandom    
+import cgcrandom
 import weakref
 import sys, os, struct
-from ..utils.event import Signal, forward_signals
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
@@ -10,7 +9,7 @@ from ..core.smtlib import *
 from ..core.executor import TerminateState
 from ..utils.helpers import issymbolic
 from ..binary import CGCElf
-from ..binary import CGCGrr
+from ..platforms.platform import Platform
 from contextlib import closing
 import StringIO
 import logging
@@ -74,7 +73,7 @@ class Socket(object):
         return len(buf)
 
 
-class Decree(object):
+class Decree(Platform):
     '''
     A simple Decree Operating System.
     This class emulates the most common Decree system calls
@@ -89,7 +88,7 @@ class Decree(object):
     CGC_SIZE_MAX=4294967295
     CGC_FD_SETSIZE=32
 
-    def __init__(self, programs):
+    def __init__(self, programs, **kwargs):
         '''
         Builds a Decree OS
         :param cpus: CPU for this platform
@@ -98,6 +97,7 @@ class Decree(object):
         :todo: fix deps?
         '''
         programs = programs.split(",")
+        super(Decree, self).__init__(path=programs[0], **kwargs)
         self.clocks = 0
         self.files = []
         self.syscall_trace = []
@@ -145,7 +145,7 @@ class Decree(object):
 
         #Install event forwarders
         for proc in self.procs:
-            forward_signals(self, proc)
+            self.forward_events_from(proc)
 
 
     def _mk_proc(self):
@@ -156,7 +156,7 @@ class Decree(object):
         return self.procs[self._current]
 
     def __getstate__(self):
-        state = {}
+        state = super(Decree, self).__getstate__()
         state['clocks'] = self.clocks
         state['input'] = self.input.buffer
         state['output'] = self.output.buffer
@@ -167,7 +167,6 @@ class Decree(object):
         state['rwait'] = self.rwait
         state['twait'] = self.twait
         state['timers'] = self.timers
-
         state['syscall_trace'] = self.syscall_trace
         return state
 
@@ -176,6 +175,7 @@ class Decree(object):
         :todo: some asserts
         :todo: fix deps? (last line)
         """
+        super(Decree, self).__setstate__(state)
         self.input = Socket()
         self.input.buffer = state['input']
         self.output = Socket()
@@ -207,7 +207,7 @@ class Decree(object):
 
         #Install event forwarders
         for proc in self.procs:
-            forward_signals(self, proc)
+            self.forward_events_from(proc)
 
     def _read_string(self, cpu, buf):
         """
@@ -224,39 +224,6 @@ class Decree(object):
 
 
     def load(self, filename):
-        magic = file(filename).read(4)
-        if magic == '\x7fCGC':
-            return self._load_cgc(filename)
-        else:
-            assert magic == 'GRRS'
-            return self._load_grr(filename)
-
-    def _load_grr(self, filename):
-        '''
-        Loads a GRR CGC snapshot in memory and restores the CPU state.
-
-        :param filename: pathname of the file to be executed.
-        '''
-        grr = CGCGrr(filename)
-        logger.info("Loading %s grr snapshot", filename)
-
-        #make cpu and memory (Only 1 thread in Grr)
-        cpu = self._mk_proc()
-        for (vaddr, memsz, perms, name, offset, filesz) in grr.maps():
-            addr = cpu.memory.mmapFile(vaddr, memsz, perms, name, offset)
-            assert addr == vaddr, "Overlapping maps!?"
-        #Only one thread in Decree
-        status, thread = next(grr.threads())
-        assert status == 'Running'
-
-        logger.info("Restoring cpu state from snapshot")
-        #set initial CPU state
-        for reg in thread:
-            cpu.write_register(reg, thread[reg])
-        return [cpu]
-
-
-    def _load_cgc(self, filename):
         '''
         Loads a CGC-ELF program in memory and prepares the initial CPU state
         and the stack.
@@ -623,7 +590,7 @@ class Decree(object):
         self.running.remove(procid)
         #self.procs[procid] = None #let it there so we can report?
         if issymbolic(error_code):
-           logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(constraints, error_code))
+           logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(self.constraints, error_code))
         else:
             logger.info("TERMINATE PROC_%02d %x", procid, error_code)
         if len(self.running) == 0 :
