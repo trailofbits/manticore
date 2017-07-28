@@ -285,7 +285,7 @@ class Linux(Platform):
     This class emulates the most common Linux system calls
     '''
 
-    def __init__(self, program, argv=None, envp=None, disasm='capstone'):
+    def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
         '''
         Builds a Linux OS platform
         :param string program: The path to ELF binary

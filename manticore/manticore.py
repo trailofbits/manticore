@@ -687,8 +687,8 @@ class Manticore(object):
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
 
-        instructions_count = _shared_context.get('instructions_count',0)
-        elapsed = time.time()-self._time_started
+        instructions_count = _shared_context.get('instructions_count', 0)
+        elapsed = time.time() - self._time_startd
         logger.info('Results in %s', self._output.uri)
         logger.info('Instructions executed: %d', instructions_count)
         logger.info('Coverage: %d different instructions executed', len(executor_visited))

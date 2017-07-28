@@ -639,8 +639,8 @@ class Cpu(Eventful):
 
         :param int pc: address of the instruction
         '''
-        #No dynamic code!!! #TODO!
-        #Check if instruction was already decoded
+        # No dynamic code!!! #TODO!
+        # Check if instruction was already decoded
         if (pc in self._instruction_cache and
                 not isinstance(self.__class__.disasm, BinjaILDisasm)):
             return self._instruction_cache[pc]
@@ -672,16 +672,16 @@ class Cpu(Eventful):
 
         code = text.ljust(self.max_instr_width, '\x00')
 
-        #decode the instructtion from code
-        # XXX this should never be the case, unless the CPU gets created
-        # directly and without going through a platform. This only happens
-        # in testcases
         if not self.disasm:
+            # XXX this should never be the case, unless the CPU gets created
+            # directly and without going through a platform. This only happens
+            # in testcases
             self.__class__.disasm = init_disassembler('capstone',
                                                       self.arch,
                                                       self.mode,
                                                       None)
         try:
+            # decode the instruction from code
             insn = self.disasm.disassemble_instruction(code, pc)
         except StopIteration as e:
             raise DecodeException(pc, code)
