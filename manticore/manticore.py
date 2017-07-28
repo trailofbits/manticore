@@ -688,7 +688,7 @@ class Manticore(object):
             f.write(' '.join(sys.argv))
 
         instructions_count = _shared_context.get('instructions_count', 0)
-        elapsed = time.time() - self._time_startd
+        elapsed = time.time() - self._time_started
         logger.info('Results in %s', self._output.uri)
         logger.info('Instructions executed: %d', instructions_count)
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
