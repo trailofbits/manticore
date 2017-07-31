@@ -2,37 +2,9 @@ from manticore import *
 from manticore.core.smtlib import ConstraintSet
 from manticore.platforms import evm
 from manticore.core.state import State
-from manticore.core.executor import Executor
-import logging,sys,types
 
-def loggerSetState(logger, stateid):
-    logger.filters[0].stateid = stateid
 
-class ContextFilter(logging.Filter):
-    '''
-    This is a filter which injects contextual information into the log.
-    '''
-    def filter(self, record):
-        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-            record.stateid = '[%d]' % self.stateid
-        else:
-            record.stateid = ''
-        return True
-
-ctxfilter = ContextFilter()
-
-logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
-
-for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
-    logging.getLogger(loggername).addFilter(ctxfilter)
-    logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
-    logging.getLogger('SMT').setLevel(logging.DEBUG)
-
-logging.getLogger('SMT').setLevel(logging.INFO)
-logging.getLogger('MEMORY').setLevel(logging.INFO)
-logging.getLogger('LIBC').setLevel(logging.INFO)
-logging.getLogger('MANTICORE').setLevel(logging.INFO)
-
+set_verbosity('EEEEMMMMCCCC')
 
 
 constraints = ConstraintSet()
@@ -58,20 +30,12 @@ assert walletLibrary_account == 0x1adc84c24f17a32f9d89fc70ce3de6aee52428efL
 wallet_bytecode = "6060604052341561000f57600080fd5b6040516105d03803806105d0833981016040528080518201919060200180519060200190919080519060200190919050505b600080600080600060405180807f696e697457616c6c657428616464726573735b5d2c75696e743235362c75696e81526020017f7432353629000000000000000000000000000000000000000000000000000000815250602501905060405180910390209450731adc84c24f17a32f9d89fc70ce3de6aee52428ef935087516002019250602083600201029150600090508460005281823803600439600080600484016000876127105a03f490505b50505050505050505b6104c8806101086000396000f3006060604052361561008c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632f54bf6e1461018b5780634123cb6b146101dc5780635237509314610205578063659010e71461022e578063746c917114610257578063c2cf732614610280578063c41a360a146102de578063f1736d8614610341575b6101895b6000341115610109577fe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c3334604051808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060405180910390a1610186565b600080369050111561018557731adc84c24f17a32f9d89fc70ce3de6aee52428ef73ffffffffffffffffffffffffffffffffffffffff1660003660006040516020015260405180838380828437820191505092505050602060405180830381856102c65a03f4151561017a57600080fd5b505060405180519050505b5b5b565b005b341561019657600080fd5b6101c2600480803573ffffffffffffffffffffffffffffffffffffffff1690602001909190505061036a565b604051808215151515815260200191505060405180910390f35b34156101e757600080fd5b6101ef6103e2565b6040518082815260200191505060405180910390f35b341561021057600080fd5b6102186103e8565b6040518082815260200191505060405180910390f35b341561023957600080fd5b6102416103ee565b6040518082815260200191505060405180910390f35b341561026257600080fd5b61026a6103f4565b6040518082815260200191505060405180910390f35b341561028b57600080fd5b6102c460048080356000191690602001909190803573ffffffffffffffffffffffffffffffffffffffff169060200190919050506103fa565b604051808215151515815260200191505060405180910390f35b34156102e957600080fd5b6102ff6004808035906020019091905050610473565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561034c57600080fd5b610354610496565b6040518082815260200191505060405180910390f35b6000731adc84c24f17a32f9d89fc70ce3de6aee52428ef73ffffffffffffffffffffffffffffffffffffffff1660003660006040516020015260405180838380828437820191505092505050602060405180830381856102c65a03f415156103d157600080fd5b50506040518051905090505b919050565b60015481565b60045481565b60035481565b60005481565b6000731adc84c24f17a32f9d89fc70ce3de6aee52428ef73ffffffffffffffffffffffffffffffffffffffff1660003660006040516020015260405180838380828437820191505092505050602060405180830381856102c65a03f4151561046157600080fd5b50506040518051905090505b92915050565b60006005600183016101008110151561048857fe5b0160005b505490505b919050565b600254815600a165627a7a72305820e04a8bae4a46459a4757afb97ea01bd45817b4c09c7495e496f2caace0f835a60029".decode('hex')
 #print evm.EVMDecoder.disassemble(wallet_bytecode)
 
-def pack(i, size=32):
-    assert size >=1
-    o = [0] * size
-    for x in range(size):
-        o[(size-1) - x] = i & 0xff
-        i >>= 8
-    return ''.join(map(chr,o))
 
-
-arguments = pack(2, size=2)              #owners
-arguments +=  pack(user1_account) 
-arguments +=  pack(user2_account) 
-arguments +=  pack(1)                   #required
-arguments +=  pack(2)                   #daylimit
+arguments =   evm.pack(2, size=2)              #owners
+arguments +=  evm.pack(user1_account) 
+arguments +=  evm.pack(user2_account) 
+arguments +=  evm.pack(1)                   #required
+arguments +=  evm.pack(2)                   #daylimit
 
 wallet_account = world.create_contract(origin=user1_account, 
                                               price=0, 
@@ -91,29 +55,67 @@ print world
 world.transaction(address=wallet_account,
                     origin=user1_account,
                     price=0,
-                    data="Deposit",
+                    data="Deposit", #by default it'll deposit the value (I think)
                     caller=user1_account,
                     value=100,
                     header={'timestamp':1},
                     run=True)
 
-#start the attack
-symbolic_data = constraints.new_array(256, name='DATA', index_max=256)
-world.transaction(address=wallet_account,
-                    origin=attacker_account,
-                    price=0,
-                    data=symbolic_data,
-                    caller=attacker_account,
-                    value=0,
-                    header={'timestamp':1})
+
+
+
+def terminate_transaction_callback(m, state, *args):
+    world = state.platform
+    constraints = state.constraints
+    print "TERMINATE", state.context
+    step = 0 # state.context['step']
+
+    if step == 0:
+        print "First transaction"
+
+        #start the attack - first transaction (change owners)
+        symbolic_data = constraints.new_array(256, name='DATA1', index_max=100)
+        state.input_symbols.append(symbolic_data)
+        world.transaction(address=wallet_account,
+                            origin=attacker_account,
+                            price=0,
+                            data=symbolic_data,
+                            caller=attacker_account,
+                            value=0,
+                            header={'timestamp':1})
+        m.add(state)
+
+    elif step == 1:
+        print "Second transaction"
+        #start the attack - first transaction (change owners)
+        symbolic_data = constraints.new_array(256, name='DATA2', index_max=100)
+        state.input_symbols.append(symbolic_data)
+        world.transaction(address=wallet_account,
+                            origin=attacker_account,
+                            price=0,
+                            data=symbolic_data,
+                            caller=attacker_account,
+                            value=0,
+                            header={'timestamp':2})
+        m.add(state)
+
+
+    state.context['step'] = step+1
+
+
 
 #symbols introduced we need manticore Executor
 initial_state = State(constraints, world)
-initial_state.input_symbols.append(symbolic_data)
+#initial_state.context['step'] = 0
+print "MAIN", initial_state.context
+m = Manticore()
+m.add(initial_state)
 
-executor = Executor(initial_state, workspace="./workspace")
+#now when this transaction ends
+m.subscribe('will_terminate_state', terminate_transaction_callback)
 
-executor.run()
+m.run()
+
 
 #explore resulted states for one with funds in the attacker_account
 

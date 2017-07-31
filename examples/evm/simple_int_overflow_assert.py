@@ -2,43 +2,9 @@ from manticore import *
 from manticore.core.smtlib import ConstraintSet
 from manticore.platforms import evm
 from manticore.core.state import State
-from manticore.core.executor import Executor
-import logging,sys,types
 
-def loggerSetState(logger, stateid):
-    logger.filters[0].stateid = stateid
 
-class ContextFilter(logging.Filter):
-    '''
-    This is a filter which injects contextual information into the log.
-    '''
-    def filter(self, record):
-        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-            record.stateid = '[%d]' % self.stateid
-        else:
-            record.stateid = ''
-        return True
-
-ctxfilter = ContextFilter()
-
-logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout)
-
-for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'MAIN', 'PLATFORM']:
-    logging.getLogger(loggername).addFilter(ctxfilter)
-    logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
-    logging.getLogger('SMT').setLevel(logging.DEBUG)
-
-logging.getLogger('SMT').setLevel(logging.INFO)
-logging.getLogger('MEMORY').setLevel(logging.INFO)
-logging.getLogger('LIBC').setLevel(logging.INFO)
-logging.getLogger('MANTICORE').setLevel(logging.INFO)
-def pack(i, size=32):
-    assert size >=1
-    o = [0] * size
-    for x in range(size):
-        o[(size-1) - x] = i & 0xff
-        i >>= 8
-    return ''.join(map(chr,o))
+set_verbosity('EEEEMMMMCCCC')
 
 
 
@@ -80,28 +46,60 @@ contract_account = world.create_contract(origin=user_account,
                                               price=0, 
                                               address=None, 
                                               balance=0, 
-                                              init=bytecote + pack(50),
+                                              init=bytecote + evm.pack(0),
                                               run=True)
 
 #This is how the world looks like now...
 print world
 
-#Start the attack, this is a symbolic transaction. It should generate several world states.
-symbolic_data = constraints.new_array(256, name='DATA', index_max=256)
-world.transaction(address=contract_account,
-                    origin=user_account,
-                    price=0,
-                    data=symbolic_data,
-                    caller=user_account,
-                    value=0,
-                    header={'timestamp':1})
 
+
+
+def terminate_transaction_callback(m, state, *args):
+    world = state.platform
+    constraints = state.constraints
+    step = initial_state.context['step']
+
+    if step == 0:
+        #Start the attack, this is a symbolic transaction. It should generate several world states.
+        symbolic_data = constraints.new_array(256, name='TRANS1', index_max=256)
+        world.transaction(address=contract_account,
+                            origin=user_account,
+                            price=0,
+                            data=symbolic_data,
+                            caller=user_account,
+                            value=0,
+                            header={'timestamp':1})
+        state.input_symbols.append(symbolic_data)
+        m.add(state)
+    elif step == 1:
+        #Start the attack, this is a symbolic transaction. It should generate several world states.
+        symbolic_data = constraints.new_array(256, name='TRANS2', index_max=256)
+        world.transaction(address=contract_account,
+                            origin=user_account,
+                            price=0,
+                            data=symbolic_data,
+                            caller=user_account,
+                            value=0,
+                            header={'timestamp':1})
+        state.input_symbols.append(symbolic_data)
+        state.input_symbols.append(symbolic_data)
+        m.add(state)
+
+    state.context['step'] = step+1
+
+
+#Let's start with the symbols
 initial_state = State(constraints, world)
-initial_state.input_symbols.append(symbolic_data)
+initial_state.context['step'] = 0
 
-executor = Executor(initial_state, workspace="./workspace")
+m = Manticore()
+m.add(initial_state)
 
-executor.run()
+#now when this transaction ends
+m.subscribe('will_terminate_state', terminate_transaction_callback)
+
+m.run()
 
 #explore resulted states for one with funds in the attacker_account or whatever
 # in ./workspace

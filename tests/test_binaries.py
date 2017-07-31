@@ -55,7 +55,7 @@ class IntegrationTest(unittest.TestCase):
         workspace = '%s/workspace'%self.test_dir
         t = time.time()
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
-            po = subprocess.check_call(['python', '-m', 'manticore',
+            subprocess.check_call(['python', '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--timeout', '1',
                                 '--procs', '4',

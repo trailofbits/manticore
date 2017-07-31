@@ -1,8 +1,9 @@
 import os
 import copy
+import logging
 from collections import OrderedDict
 
-from .smtlib import solver
+from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 
@@ -10,6 +11,8 @@ from ..utils.event import Eventful
 from .cpu.abstractcpu import ConcretizeRegister
 from .memory import ConcretizeMemory, MemoryException
 from ..platforms.platform import *
+
+logger = logging.getLogger("STATE")
 
 class StateException(Exception):
     ''' All state related exceptions '''
@@ -56,6 +59,7 @@ class ForkState(Concretize):
 
 
 class State(Eventful):
+
     '''
     Representation of a unique program state/path.
 
@@ -352,6 +356,8 @@ class State(Eventful):
         function, the following arguments correspond to the arguments of the C function
         being modeled. If the `model` models a variadic function, the following argument
         is a generator object, which can be used to access function arguments dynamically.
+        The `model` callable should simply return the value that should be returned by the
+        native function being modeled.
 
         :param callable model: Model to invoke
         '''

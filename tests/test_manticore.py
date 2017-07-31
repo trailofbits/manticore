@@ -42,10 +42,10 @@ class ManticoreTest(unittest.TestCase):
         import os, struct
         self.m = Manticore('tests/binaries/basic_linux_amd64')
         self.m.run()
-        workspace = os.path.join(os.getcwd(), self.m.workspace)
-        with open(os.path.join(workspace, 'test_00000001.stdin')) as f:
+        workspace = self.m._output.uri# os.path.join(os.getcwd(), self.m.workspace)
+        with open(os.path.join(workspace, 'test_00000000.stdin')) as f:
             a = struct.unpack('<I', f.read())[0]
-        with open(os.path.join(workspace, 'test_00000002.stdin')) as f:
+        with open(os.path.join(workspace, 'test_00000001.stdin')) as f:
             b = struct.unpack('<I', f.read())[0]
         if a > 0x41:
             self.assertTrue(a > 0x41)

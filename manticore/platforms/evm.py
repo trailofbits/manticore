@@ -7,6 +7,8 @@ https://ethereum.github.io/browser-solidity/#version=soljson-latest.js
 import random, copy
 from ..platforms.platform import *
 from ..core.smtlib import Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet
+from ..core.smtlib.expression import *
+
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
@@ -28,7 +30,13 @@ TT255 = 2 ** 255
 def to_signed(i):
     return i if i < TT255 else i - TT256
 
-
+def pack(i, size=32):
+    assert size >=1
+    o = [0] * size
+    for x in range(size):
+        o[(size-1) - x] = i & 0xff
+        i >>= 8
+    return ''.join(map(chr,o))
 
 class EVMMemory(object):
     '''
@@ -541,6 +549,8 @@ class Revert(EVMException):
     def __init__(self, offset, size):
         self.offset = offset
         self.size = size
+    def __reduce__(self):
+        return (self.__class__, (self.offset,self.size) )
 
 class SelfDestruct(EVMException):
     ''' Program reached a RETURN instruction '''
@@ -671,7 +681,6 @@ class EVM(Eventful):
     def _load(self, address):
         self._allocate(address+32)
         value = Operators.ORD(self.memory.read(address,1)[0])
-        from manticore.core.smtlib.expression import *
         #print pretty_print(value)
         value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
@@ -745,7 +754,6 @@ class EVM(Eventful):
 
     #Execute an instruction from current pc
     def execute(self):  
-        print self
         if issymbolic(self.pc):
             expression = self.pc
             def setstate(state, value):
@@ -1299,14 +1307,18 @@ class EVMWorld(Platform):
         self._constraints = state['constraints']
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
-        self.forward_events_from(self.current)
+        if self.current is not None:
+            self.forward_events_from(self.current)
 
     def __str__(self):
         return "WORLD:" + str(self._global_storage)
         
     @property
     def current(self):
-        return self._callstack[-1]
+        try:
+            return self._callstack[-1]
+        except IndexError:
+            return None
 
     @property
     def suicide(self):
@@ -1361,6 +1373,9 @@ class EVMWorld(Platform):
 
     def execute(self):
         try:
+            if self.current is None:
+                raise TerminateState("No transaction", testcase=False)
+
             self.current.execute()
         except Create as ex:
             self.CREATE(ex.value, ex.in_offset, ex.in_size)
@@ -1431,9 +1446,11 @@ class EVMWorld(Platform):
         return address
 
     def transaction(self, address, origin, price, data, caller, value, header, run=False):
+        assert self.depth == 0
         bytecode = self.storage[address]['code']
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self)
         self._push(new_vm)
+        self.current.last_exception = Call(None,None,None,None,None,None,None)
         if run:
             #run contract
             #Assert everything is concrete?
@@ -1476,7 +1493,6 @@ class EVMWorld(Platform):
 
         last_ex = self.current.last_exception
         self.current.last_exception = None
-
         assert isinstance(last_ex, (Call, Create))
 
         if isinstance(last_ex, Create):
@@ -1501,18 +1517,18 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def THROW(self):
-        if self.depth == 1:
-            raise TerminateState("INVALID", testcase=True)
         self._pop(rollback=True)
+        if self.depth == 0:
+            raise TerminateState("THROW", testcase=True)
         self.current.last_exception = None
         self.current._push(0)
         #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 
     def REVERT(self):
-        if self.depth == 1:
-            raise TerminateState("INVALID", testcase=True)
         self._pop(rollback=True)
+        if self.depth == 0:
+            raise TerminateState("REVERT", testcase=True)
         self.current.last_exception = None
         #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
@@ -1526,12 +1542,11 @@ class EVMWorld(Platform):
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
         self.suicide.add(address)
-        if self.depth == 1:
+        self._pop(rollback=False)
+        if self.depth == 0:
             for address in self.suicide:
                 del self.storage[address]
             raise TerminateState("SELFDESTRUCT", testcase=True)
-        else:
-            self._pop(rollback=False)
 
     def HASH(self, offset, size):
         data = self.current.read_buffer(offset, size)

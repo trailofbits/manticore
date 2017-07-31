@@ -139,6 +139,19 @@ class Map(object):
         '''
         return '<%s 0x%016x-0x%016x %s>'%(self.__class__.__name__, self.start, self.end, self.perms)
 
+    def __cmp__(self, other):
+        result = cmp(self.start, other.start)
+        if result != 0:
+            return result
+        result = cmp(self.end, other.end)
+        if result != 0:
+            return result
+        # go by each char permission 
+        result = cmp(self.perms, other.perms)
+        if result != 0:
+            return result
+        return cmp(self.name, other.name)
+
     def _in_range(self, index):
         ''' Returns True if index is in range '''
         if isinstance(index, slice):
@@ -941,7 +954,8 @@ class SMemory(Memory):
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition )
-                raise ForkState(condition)
+                from .state import ForkState
+                raise ForkState("Forking state on incomplete result", condition)
 
             #So here we have all potential solutions to address
             assert len(solutions) > 0

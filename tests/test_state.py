@@ -1,5 +1,5 @@
 import unittest
-
+from manticore.utils.event import Eventful
 from manticore.platforms import linux
 from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
@@ -24,8 +24,9 @@ class FakeCpu(object):
     def memory(self):
         return self._memory
 
-class FakePlatform(object):
+class FakePlatform(Eventful):
     def __init__(self):
+        super(FakePlatform, self).__init__()
         self._constraints = None
         self.procs = [FakeCpu()]
 
