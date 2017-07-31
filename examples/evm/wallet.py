@@ -68,7 +68,7 @@ def terminate_transaction_callback(m, state, *args):
     world = state.platform
     constraints = state.constraints
     print "TERMINATE", state.context
-    step = 0 # state.context['step']
+    step = state.context['step']
 
     if step == 0:
         print "First transaction"
@@ -83,6 +83,8 @@ def terminate_transaction_callback(m, state, *args):
                             caller=attacker_account,
                             value=0,
                             header={'timestamp':1})
+        state.context['step'] = step+1
+
         m.add(state)
 
     elif step == 1:
@@ -97,16 +99,16 @@ def terminate_transaction_callback(m, state, *args):
                             caller=attacker_account,
                             value=0,
                             header={'timestamp':2})
+        state.context['step'] = step+1
         m.add(state)
 
 
-    state.context['step'] = step+1
 
 
 
 #symbols introduced we need manticore Executor
 initial_state = State(constraints, world)
-#initial_state.context['step'] = 0
+initial_state.context['step'] = 0
 print "MAIN", initial_state.context
 m = Manticore()
 m.add(initial_state)
