@@ -70,50 +70,49 @@ class State(Eventful):
 
     def __init__(self, constraints, platform, **kwargs):
         super(State, self).__init__(**kwargs)
-        self.platform = platform
-        self.forks = 0
-        self.constraints = constraints
-        self.platform.constraints = constraints
-
-        self.input_symbols = list()
+        self._platform = platform
+        self._constraints = constraints
+        self._platform.constraints = constraints
+        self._input_symbols = list()
         self._child = None
-
-        self.context = dict()
+        self._context = dict()
         ##################################################################33
-        # Signals are lost in serialization and fork !!
-        #self.will_add_constraint = Signal()
-
-        #Import all signals from platform
+        # Events are lost in serialization and fork !!
         self.forward_events_from(platform)
 
-    def __reduce__(self):
-        return (self.__class__, (self.constraints, self.platform),
-                {'context': self.context, '_child': self._child, 'input_symbols': self.input_symbols})
+    def __getstate__(self):
+        state = super(State, self).__getstate__()
+        state['platform'] = self._platform
+        state['constraints'] = self._constraints
+        state['input_symbols'] = self._input_symbols
+        state['child'] = self._child
+        state['context'] = self._context
+        return state
 
-    @staticmethod
-    def state_count():
-        return State._state_count.value
+    def __setstate__(self, state):
+        super(State, self).__setstate__(state)
+        self._platform = state['platform']
+        self._constraints = state['constraints']
+        self._input_symbols = state['input_symbols']
+        self._child = state['child']
+        self._context = state['context']
+        ##################################################################33
+        # Events are lost in serialization and fork !!
+        self.forward_events_from(self._platform)
 
-    @property
-    def cpu(self):
-        return self.platform.current
-
-    @property
-    def mem(self):
-        return self.platform.current.memory
-
+    #Fixme(felipe) change for with state.cow_copy() as st_temp:.
     def __enter__(self):
         assert self._child is None
         new_state = State(self.constraints.__enter__(), self.platform)
-        new_state.input_symbols = self.input_symbols
-        new_state.context = copy.deepcopy(self.context)
+        new_state._input_symbols = self.input_symbols
+        new_state._context = copy.deepcopy(self.context)
         self._child = new_state
         
         #fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
         return new_state
 
     def __exit__(self, ty, value, traceback):
-        self.constraints.__exit__(ty, value, traceback)
+        self._constraints.__exit__(ty, value, traceback)
         self._child = None
 
     def execute(self):
@@ -146,6 +145,27 @@ class State(Eventful):
         assert self.platform.constraints is self.constraints
         assert self.mem.constraints is self.constraints
         return result
+
+    @property
+    def input_symbols(self):
+        return self._input_symbols
+
+    @property
+    def context(self):
+        return self._context
+
+    @property
+    def platform(self):
+        return self._platform
+
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constrains(self, constraints):
+        self._constraints = constraints
+        self.platform.constraints = constraints
 
     def constrain(self, constraint):
         '''Constrain state.
@@ -309,14 +329,28 @@ class State(Eventful):
                 temp_cs.add(c == result[-1])
         return result
 
-    def record_branches(self, targets):
-        _, branch = self.last_pc
-        for target in targets:
-            key = (branch, target)
-            try:
-                self.branches[key] += 1
-            except KeyError:
-                self.branches[key] = 1
+    def invoke_model(self, model):
+        '''
+        Invoke a `model`. A `model` is a callable whose first argument is a
+        :class:`~manticore.core.state.State`. If the `model` models a normal (non-variadic)
+        function, the following arguments correspond to the arguments of the C function
+        being modeled. If the `model` models a variadic function, the following argument
+        is a generator object, which can be used to access function arguments dynamically.
+        The `model` callable should simply return the value that should be returned by the
+        native function being modeled.
+
+        :param callable model: Model to invoke
+        '''
+        self.platform.invoke_model(model, prefix_args=(self,))
+
+    #The following should be moved to specific class StatePosix?
+    @property
+    def cpu(self):
+        return self.platform.current
+
+    @property
+    def mem(self):
+        return self.platform.current.memory
 
     def generate_inputs(self, workspace, generate_files=False):
         '''
@@ -355,17 +389,4 @@ class State(Eventful):
                             f.write("{:s}".format(buf))
 
 
-    def invoke_model(self, model):
-        '''
-        Invoke a `model`. A `model` is a callable whose first argument is a
-        :class:`~manticore.core.state.State`. If the `model` models a normal (non-variadic)
-        function, the following arguments correspond to the arguments of the C function
-        being modeled. If the `model` models a variadic function, the following argument
-        is a generator object, which can be used to access function arguments dynamically.
-        The `model` callable should simply return the value that should be returned by the
-        native function being modeled.
-
-        :param callable model: Model to invoke
-        '''
-        self.platform.invoke_model(model, prefix_args=(self,))
 

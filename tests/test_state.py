@@ -30,6 +30,19 @@ class FakePlatform(Eventful):
         self._constraints = None
         self.procs = [FakeCpu()]
 
+
+    
+    def __getstate__(self):
+        state = super(FakePlatform, self).__getstate__()
+        state['cons'] = self._constraints
+        state['procs'] = self.procs
+        return state
+    def __setstate__(self, state):
+        super(FakePlatform, self).__setstate__(state)
+        self._constraints = state['cons']
+        self.procs = state['procs']
+
+
     @property
     def current(self):
         return self.procs[0]
@@ -147,3 +160,58 @@ class StateTest(unittest.TestCase):
         self.assertEqual(self.state.branches[(branch, target)], 2)
         self.assertEqual(self.state.branches[(branch, fallthrough)], 2)
 
+
+    def testContextSerialization(self):
+        import cPickle as pickle
+        initial_file = ''
+        new_file = ''
+        new_new_file = ''
+        constraints = ConstraintSet()
+        initial_state = State(constraints, FakePlatform())
+        initial_state.context['step'] = 10
+        initial_file = pickle.dumps(initial_state)
+        with initial_state as new_state:
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 10)
+
+            new_state.context['step'] = 20 
+
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 20)
+            new_file = pickle.dumps(new_state)
+
+            with new_state as new_new_state:
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 20)
+
+                new_new_state.context['step'] += 10 
+
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 30)
+
+                new_new_file = pickle.dumps(new_new_state)
+
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 30)
+
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 20)
+
+        self.assertEqual( initial_state.context['step'], 10)
+
+        del initial_state
+        del new_state
+        del new_new_state
+
+
+
+        initial_state = pickle.loads(initial_file)
+        self.assertEqual( initial_state.context['step'], 10)
+        new_state = pickle.loads(new_file)
+        self.assertEqual( new_state.context['step'], 20)
+        new_new_state = pickle.loads(new_new_file)
+        self.assertEqual( new_new_state.context['step'], 30)
+        
