@@ -175,10 +175,10 @@ class Armv7RegisterFile(RegisterFile):
         ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         '''
-        super(Armv7RegisterFile, self).__init__({  'SB':'R9', 
-                                                   'SL':'R10', 
-                                                   'FP':'R11', 
-                                                   'IP': 'R12',  
+        super(Armv7RegisterFile, self).__init__({  'SB':'R9',
+                                                   'SL':'R10',
+                                                   'FP':'R11',
+                                                   'IP': 'R12',
                                                    'STACK': 'R13',
                                                    'SP': 'R13',
                                                    'LR': 'R14',
@@ -189,7 +189,7 @@ class Armv7RegisterFile(RegisterFile):
                           'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15' ):
             self._regs[reg_name] = Register(32)
         #64 bit registers
-        for reg_name in  ( 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 
+        for reg_name in  ( 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8',
                            'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15', 'D16',
                            'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24',
                            'D25', 'D26', 'D27', 'D28', 'D29', 'D30', 'D31'):
@@ -198,7 +198,7 @@ class Armv7RegisterFile(RegisterFile):
         self._regs['APSR_N'] = Register(1)
         self._regs['APSR_Z'] = Register(1)
         self._regs['APSR_C'] = Register(1)
-        self._regs['APSR_V'] = Register(1) 
+        self._regs['APSR_V'] = Register(1)
         self._regs['APSR_GE'] = Register(4)
 
         #MMU Coprocessor  -- to support MCR/MRC for TLS
@@ -226,7 +226,7 @@ class Armv7RegisterFile(RegisterFile):
             if Z: apsr |= 1 << 30
             if C: apsr |= 1 << 29
             if V: apsr |= 1 << 28
-        return apsr 
+        return apsr
 
 
     def _write_APSR(self, apsr):
@@ -318,10 +318,9 @@ class Armv7Cpu(Cpu):
     arch = CS_ARCH_ARM
     mode = CS_MODE_ARM
 
-    _it_conditional = list()
-
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
+        self._it_conditional = list()
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = False
 
@@ -329,12 +328,14 @@ class Armv7Cpu(Cpu):
         state = super(Armv7Cpu, self).__getstate__()
         state['_last_flags'] = self._last_flags
         state['at_symbolic_conditional'] = self._at_symbolic_conditional
+        state['_it_conditional'] = self._it_conditional
         return state
 
     def __setstate__(self, state):
         super(Armv7Cpu, self).__setstate__(state)
         self._last_flags = state['_last_flags']
-        self._at_symbolic_conditional = state['at_symbolic_conditional'] 
+        self._at_symbolic_conditional = state['at_symbolic_conditional']
+        self._it_conditional = state['_it_conditional']
 
     def _set_mode(self, new_mode):
         assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
@@ -396,7 +397,7 @@ class Armv7Cpu(Cpu):
             return value, carry
 
         width = cpu.address_bit_size
-        
+
         if   _type in (ARM_SFT_ASR, ARM_SFT_ASR_REG):
             return ASR_C(value, amount, width)
         elif _type in (ARM_SFT_LSL, ARM_SFT_LSL_REG):
@@ -466,6 +467,10 @@ class Armv7Cpu(Cpu):
         return [Armv7Operand(self, op) for op in ops]
 
     def shouldCommitFlags(cpu):
+        #workaround for a capstone bug;
+        #the bug has been fixed the 'master' and 'next' branches of capstone as of 2017-07-31
+        if cpu.instruction.id == ARM_INS_UADD8: return True
+
         return cpu.instruction.update_flags
 
     def shouldExecuteConditional(cpu):
@@ -474,13 +479,11 @@ class Armv7Cpu(Cpu):
         if cpu.instruction.id == ARM_INS_IT:
             return True
 
-        cc = cpu.instruction.cc
-        ret = False
-
         #support for the it[x[y[z]]] <op> instructions
-        if len(cpu._it_conditional):
+        if cpu._it_conditional:
             return cpu._it_conditional.pop(0)
 
+        cc = cpu.instruction.cc
         return cpu._evaluate_conditional(cc)
 
     def _evaluate_conditional(cpu, cc):
@@ -499,7 +502,7 @@ class Armv7Cpu(Cpu):
         elif cc == ARM_CC_VS: ret = V
         elif cc == ARM_CC_VC: ret = Operators.NOT(V)
         elif cc == ARM_CC_HI:
-            ret = Operators.AND(C, Operators.NOT(Z)) 
+            ret = Operators.AND(C, Operators.NOT(Z))
         elif cc == ARM_CC_LS:
             ret = Operators.OR(Operators.NOT(C), Z)
         elif cc == ARM_CC_GE: ret = N == V
@@ -539,24 +542,18 @@ class Armv7Cpu(Cpu):
             sums.append(Operators.EXTRACT(byte, 0, 8))
             carries.append(carry)
         dest.write(Operators.CONCAT(32, *reversed(sums)))
-        #TODO: this flag is set and updated independently of the CVZN flags; this approach
-        #      works, but in incongruent with all the other flag handling. How to make this
-        #      better? -GR, 2017-07-13
-        #      Additional Note: capstone does not mark this instruction as one that updates flags.
-        cpu.regfile.write('APSR_GE', Operators.CONCAT(4, *reversed(carries)))
+        cpu.setFlags(GE=Operators.CONCAT(4, *reversed(carries)))
 
     @instruction
     def SEL(cpu, dest, op1, op2):
         op1val = op1.read()
         op2val = op2.read()
-        result = 0
+        result = list()
         GE = cpu.regfile.read('APSR_GE')
         for i in range(4):
-            if GE & (1 << i):
-                result |= op1val & (0xFF << (8*i))
-            else:
-                result |= op2val & (0xFF << (8*i))
-        dest.write(result)
+            bit = Operators.EXTRACT(GE, i, 1)
+            result.append(Operators.ITEBV(8, bit, Operators.EXTRACT(op1val, i*8, 8), Operators.EXTRACT(op2val, i*8, 8)))
+        dest.write(Operators.CONCAT(32, *reversed(result)))
 
     @instruction
     def MOV(cpu, dest, src):
@@ -760,7 +757,7 @@ class Armv7Cpu(Cpu):
         uo1 = UInt(_op1, W*2)
         uo2 = UInt(_op2, W*2)
         c   = UInt(carry, W*2)
-        unsigned_sum = uo1 + uo2 + c 
+        unsigned_sum = uo1 + uo2 + c
 
         so1 = SInt(Operators.SEXTEND(_op1, W, W*2), W*2)
         so2 = SInt(Operators.SEXTEND(_op2, W, W*2), W*2)
@@ -768,7 +765,7 @@ class Armv7Cpu(Cpu):
 
         result = GetNBits(unsigned_sum, W)
 
-        carry_out = UInt(result, W*2) != unsigned_sum 
+        carry_out = UInt(result, W*2) != unsigned_sum
         overflow  = SInt(Operators.SEXTEND(result,W,W*2), W*2) != signed_sum
 
         cpu.setFlags(C=carry_out,
@@ -786,11 +783,11 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
-    def ADD(cpu, dest, src, *add):
-        if len(add):
-            result, carry, overflow = cpu._ADD(src.read(), add[0].read())
+    def ADD(cpu, dest, src, add=None):
+        if add:
+            result, carry, overflow = cpu._ADD(src.read(), add.read())
         else:
-            #support for the `add r2, #4` form
+            '''support for the thumb mode version of adds <dest>, <immediate>'''
             result, carry, overflow = cpu._ADD(dest.read(), src.read())
         dest.write(result)
         return result, carry, overflow
