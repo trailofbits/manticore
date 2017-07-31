@@ -116,7 +116,7 @@ m.add(initial_state)
 #now when this transaction ends
 m.subscribe('will_terminate_state', terminate_transaction_callback)
 
-m.run()
+m.run(procs=8)
 
 
 #explore resulted states for one with funds in the attacker_account

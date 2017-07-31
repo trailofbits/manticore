@@ -133,6 +133,16 @@ class StateTest(unittest.TestCase):
         with self.assertRaises(Exception):
             expr = self.state.new_symbolic_value(length)
 
+    def test_tainted_symbolic_buffer(self):
+        taint = ('TEST_TAINT', )
+        expr = self.state.new_symbolic_buffer(64, taint=taint)       
+        self.assertEqual(expr.taint, frozenset(taint))
+
+    def test_tainted_symbolic_value(self):
+        taint = ('TEST_TAINT', )
+        expr = self.state.new_symbolic_value(64, taint=taint)
+        self.assertEqual(expr.taint, frozenset(taint))
+
     @unittest.skip('Record branches not a part of state anymore')
     def test_record_branches(self):
         branch = 0x80488bb

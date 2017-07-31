@@ -103,9 +103,9 @@ class State(Eventful):
     #Fixme(felipe) change for with state.cow_copy() as st_temp:.
     def __enter__(self):
         assert self._child is None
-        new_state = State(self.constraints.__enter__(), self.platform)
-        new_state._input_symbols = self.input_symbols
-        new_state._context = copy.deepcopy(self.context)
+        new_state = State(self._constraints.__enter__(), self._platform)
+        new_state._input_symbols = self._input_symbols
+        new_state._context = copy.deepcopy(self._context)
         self._child = new_state
         
         #fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
@@ -117,7 +117,7 @@ class State(Eventful):
 
     def execute(self):
         try:
-            result = self.platform.execute()
+            result = self._platform.execute()
 
         #Instead of State importing SymbolicRegisterException and SymbolicMemoryException 
         # from cpu/memory shouldn't we import Concretize from linux, cpu, memory ?? 
@@ -162,16 +162,16 @@ class State(Eventful):
         return self._constraints
 
     @constraints.setter
-    def constrains(self, constraints):
+    def constraints(self, constraints):
         self._constraints = constraints
-        self.platform.constraints = constraints
+        self._platform._constraints = constraints
 
     def constrain(self, constraint):
         '''Constrain state.
 
         :param manticore.core.smtlib.Bool constraint: Constraint to add
         '''
-        self.constraints.add(constraint)
+        self._constraints.add(constraint)
 
     def abandon(self):
         '''Abandon the currently-active state.
@@ -189,16 +189,19 @@ class State(Eventful):
         :param str name: (keyword arg only) The name to assign to the buffer
         :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
                  (i.e. no \0 bytes, except for the last byte). (bool)
+        :param taint: Taint identifier of the new buffer
+        :type taint: tuple or frozenset
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
         name = options.get('name', 'buffer')
-        expr = self.constraints.new_array(name=name, index_max=nbytes)
-        self.input_symbols.append(expr)
+        taint = options.get('taint', frozenset())
+        expr = self._constraints.new_array(name=name, index_max=nbytes, taint=taint)
+        self._input_symbols.append(expr)
 
         if options.get('cstring', False):
             for i in range(nbytes - 1):
-                self.constraints.add(expr[i] != 0)
+                self._constraints.add(expr[i] != 0)
 
         return expr
 
@@ -214,11 +217,11 @@ class State(Eventful):
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the value
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
-        expr = self.constraints.new_bitvec(nbits, name=label, taint=taint)
-        self.input_symbols.append(expr)
+        expr = self._constraints.new_bitvec(nbits, name=label, taint=taint)
+        self._input_symbols.append(expr)
         return expr
 
-    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False):
+    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
         '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
         :param str data: The string to symbolicate. If no wildcard bytes are provided,
@@ -226,6 +229,8 @@ class State(Eventful):
         :param str label: The label to assign to the value
         :param str wildcard: The byte that is considered a wildcard
         :param bool string: Ensure bytes returned can not be \0
+        :param taint: Taint identifier of the symbolicated data
+        :type taint: tuple or frozenset
 
         :return: If data does not contain any wildcard bytes, data itself. Otherwise,
             a list of values derived from data. Non-wildcard bytes are kept as
@@ -233,8 +238,8 @@ class State(Eventful):
         '''
         if wildcard in data:
             size = len(data)
-            symb = self.constraints.new_array(name=label, index_max=size)
-            self.input_symbols.append(symb)
+            symb = self._constraints.new_array(name=label, index_max=size, taint=taint)
+            self._input_symbols.append(symb)
 
             tmp = []
             for i in xrange(size):
@@ -248,7 +253,7 @@ class State(Eventful):
         if string:
             for b in data:
                 if issymbolic(b):
-                    self.constraints.add(b != 0)
+                    self._constraints.add(b != 0)
                 else:
                     assert b != 0
         return data
@@ -259,21 +264,21 @@ class State(Eventful):
         '''
         vals = []
         if policy == 'MINMAX':
-            vals = self._solver.minmax(self.constraints, symbolic)
+            vals = self._solver.minmax(self._constraints, symbolic)
         elif policy == 'SAMPLED':
-            m, M = self._solver.minmax(self.constraints, symbolic)
+            m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
             if M - m > 3:
-                if self._solver.can_be_true(self.constraints, symbolic == (m + M) / 2):
+                if self._solver.can_be_true(self._constraints, symbolic == (m + M) / 2):
                     vals.append((m + M) / 2)
             if M - m > 100:
-                vals += self._solver.get_all_values(self.constraints, symbolic,
+                vals += self._solver.get_all_values(self._constraints, symbolic,
                                                     maxcnt=maxcount, silent=True)
         elif policy == 'ONE':
-            vals = [self._solver.get_value(self.constraints, symbolic)]
+            vals = [self._solver.get_value(self._constraints, symbolic)]
         else:
             assert policy == 'ALL'
-            vals = solver.get_all_values(self.constraints, symbolic, maxcnt=maxcount,
+            vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount,
                                          silent=False)
 
         return list(set(vals))
@@ -292,7 +297,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: int
         '''
-        return self._solver.get_value(self.constraints, expr)
+        return self._solver.get_value(self._constraints, expr)
 
     def solve_n(self, expr, nsolves, policy='minmax'):
         '''
@@ -303,7 +308,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
-        return self._solver.get_all_values(self.constraints, expr, nsolves, silent=True)
+        return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
 
     def solve_buffer(self, addr, nbytes):
         '''
@@ -317,7 +322,7 @@ class State(Eventful):
         '''
         buffer = self.cpu.read_bytes(addr, nbytes)
         result = []
-        with self.constraints as temp_cs:
+        with self._constraints as temp_cs:
             for c in buffer:
                 result.append(self._solver.get_value(temp_cs, c))
                 temp_cs.add(c == result[-1])
@@ -335,52 +340,14 @@ class State(Eventful):
 
         :param callable model: Model to invoke
         '''
-        self.platform.invoke_model(model, prefix_args=(self,))
+        self._platform.invoke_model(model, prefix_args=(self,))
 
+    ################################################################################################
     #The following should be moved to specific class StatePosix?
     @property
     def cpu(self):
-        return self.platform.current
+        return self._platform.current
 
     @property
     def mem(self):
-        return self.platform.current.memory
-
-    def generate_inputs(self, workspace, generate_files=False):
-        '''
-        Save the inputs of the state
-
-        :param str workspace: the working directory
-        :param bool generate_files: true if symbolic files are also generated
-        '''
-
-        # Save constraints formula
-        smtfile = 'state_{:08x}.smt'.format(self.co)
-        with open(os.path.join(workspace, smtfile), 'wb') as f:
-            f.write(str(self.constraints))
-
-        # check that the state is sat
-        assert solver.check(self.constraints)
-
-        # save the inputs
-        for symbol in self.input_symbols:
-            buf = solver.get_value(self.constraints, symbol)
-            filename = os.path.join(workspace, 'state_{:08x}.txt'.format(self.co))
-            open(filename, 'a').write("{:s}: {:s}\n".format(symbol.name, repr(buf)))
-
-        # save the symbolic files
-        if generate_files:
-            files = getattr(self.platform, 'files', None)
-            if files is not None:
-                for f in files:
-                    array = getattr(f, 'array', None)
-                    if array is not None:
-                        buf = solver.get_value(self.constraints, array)
-                        filename = os.path.basename(array.name)
-                        filename = 'state_{:08x}.{:s}'.format(self.co, filename)
-                        filename = os.path.join(workspace, filename)
-                        with open(filename, 'a') as f:
-                            f.write("{:s}".format(buf))
-
-
-
+        return self._platform.current.memory
