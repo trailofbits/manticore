@@ -163,7 +163,7 @@ class State(Eventful):
         return self._constraints
 
     @constraints.setter
-    def constrains(self, constraints):
+    def constraints(self, constraints):
         self._constraints = constraints
         self.platform.constraints = constraints
 
