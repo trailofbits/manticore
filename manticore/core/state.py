@@ -72,7 +72,7 @@ class State(Eventful):
         super(State, self).__init__(**kwargs)
         self._platform = platform
         self._constraints = constraints
-        self._platform._constraints = constraints
+        self._platform.constraints = constraints
         self._input_symbols = list()
         self._child = None
         self._context = dict()
