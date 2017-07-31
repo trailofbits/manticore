@@ -684,6 +684,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R3'), 2 ** 32 - 1)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
+    @itest_setregs("R0=0")
+    @itest_thumb("adds r0, #4")
+    def test_adds_thumb_two_op(self):
+        self.assertEqual(self.rf.read('R0'), 4)
+
     # UADD8
 
     @itest_setregs("R2=0x00FF00FF", "R3=0x00010002")
@@ -1560,10 +1565,10 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R3'), 1)
         self.assertEqual(self.rf.read('R4'), 0)
 
-    @itest_setregs("APSR_GE=9","R4=0","R5=0x01010101","R6=0x02020202")
+    @itest_setregs("APSR_GE=3","R4=0","R5=0x01020304","R6=0x05060708")
     @itest_thumb("sel r4, r5, r6")
     def test_sel(self):
-        self.assertEqual(self.rf.read('R4'), 0x01020201)
+        self.assertEqual(self.rf.read('R4'), 0x05060304)
 
     @itest_setregs("R2=0","R1=0x01020304")
     @itest("rev r2, r1")
@@ -1572,7 +1577,8 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R2'), 0x04030201)
 
     @itest_setregs("R1=0x01020304","R2=0x05060708", "R3=0","R4=0xF001")
-    @itest_multiple(["sxth r1, r2", "sxth r3, r4"])
+    @itest_multiple(["sxth r1, r2", "sxth r3, r4", "sxth r5, r4, ROR #8"])
     def test_sxth(self):
         self.assertEqual(self.rf.read('R1'), 0x0708)
         self.assertEqual(self.rf.read('R3'), 0xFFFFF001)
+        self.assertEqual(self.rf.read('R5'), 0xF0)

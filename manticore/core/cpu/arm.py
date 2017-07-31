@@ -839,8 +839,8 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def CBNZ(cpu, op, dest):
-        if op.read() != 0:
-            cpu.PC = dest.read()
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
+                                 op.read(), dest.read(), cpu.PC)
 
     @instruction
     def BL(cpu, label):
