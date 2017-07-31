@@ -87,7 +87,6 @@ def set_verbosity(setting):
         loggername = initials[c]
         level = logging.getLogger(loggername).getEffectiveLevel() -10
         level = logging.DEBUG if level < logging.DEBUG else level
-        print loggername, level
         logging.getLogger(loggername).setLevel(level)
     
     manticore_verbosity = setting

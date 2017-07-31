@@ -58,8 +58,7 @@ print world
 def terminate_transaction_callback(m, state, *args):
     world = state.platform
     constraints = state.constraints
-    step = initial_state.context['step']
-
+    step = state.context['step']
     if step == 0:
         #Start the attack, this is a symbolic transaction. It should generate several world states.
         symbolic_data = constraints.new_array(256, name='TRANS1', index_max=256)
@@ -71,6 +70,7 @@ def terminate_transaction_callback(m, state, *args):
                             value=0,
                             header={'timestamp':1})
         state.input_symbols.append(symbolic_data)
+        state.context['step'] = step+1
         m.add(state)
     elif step == 1:
         #Start the attack, this is a symbolic transaction. It should generate several world states.
@@ -83,10 +83,9 @@ def terminate_transaction_callback(m, state, *args):
                             value=0,
                             header={'timestamp':1})
         state.input_symbols.append(symbolic_data)
-        state.input_symbols.append(symbolic_data)
+        state.context['step'] = step+1
         m.add(state)
-
-    state.context['step'] = step+1
+    
 
 
 #Let's start with the symbols

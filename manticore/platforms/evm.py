@@ -643,7 +643,6 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
-        super(EVM, self).__setstate__(state)
         self.global_storage = state['global_storage']
         self.constraints = state['constraints']
         self.last_exception = state['last_exception']
@@ -662,6 +661,7 @@ class EVM(Eventful):
         self.gas = state['gas']
         self.allocated = state['allocated']
         self.suicide = state['suicide']
+        super(EVM, self).__setstate__(state)
 
     #Memory related
     def _allocate(self, address):
@@ -1313,6 +1313,15 @@ class EVMWorld(Platform):
     def __str__(self):
         return "WORLD:" + str(self._global_storage)
         
+
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+
     @property
     def current(self):
         try:
