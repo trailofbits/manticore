@@ -170,11 +170,14 @@ class State(Eventful):
         :param str name: (keyword arg only) The name to assign to the buffer
         :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
                  (i.e. no \0 bytes, except for the last byte). (bool)
+        :param taint: Taint identifier of the new buffer
+        :type taint: tuple or frozenset
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
         name = options.get('name', 'buffer')
-        expr = self.constraints.new_array(name=name, index_max=nbytes)
+        taint = options.get('taint', frozenset())
+        expr = self.constraints.new_array(name=name, index_max=nbytes, taint=taint)
         self.input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -199,7 +202,7 @@ class State(Eventful):
         self.input_symbols.append(expr)
         return expr
 
-    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False):
+    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
         '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
         :param str data: The string to symbolicate. If no wildcard bytes are provided,
@@ -207,6 +210,8 @@ class State(Eventful):
         :param str label: The label to assign to the value
         :param str wildcard: The byte that is considered a wildcard
         :param bool string: Ensure bytes returned can not be \0
+        :param taint: Taint identifier of the symbolicated data
+        :type taint: tuple or frozenset
 
         :return: If data does not contain any wildcard bytes, data itself. Otherwise,
             a list of values derived from data. Non-wildcard bytes are kept as
@@ -214,7 +219,7 @@ class State(Eventful):
         '''
         if wildcard in data:
             size = len(data)
-            symb = self.constraints.new_array(name=label, index_max=size)
+            symb = self.constraints.new_array(name=label, index_max=size, taint=taint)
             self.input_symbols.append(symb)
 
             tmp = []
