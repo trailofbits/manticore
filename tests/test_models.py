@@ -25,7 +25,7 @@ class ModelTest(unittest.TestCase):
     stack_top = state.cpu.RSP
 
     def _clear_constraints(self):
-        self.state.constraints = ConstraintSet()
+        self.state._constraints = ConstraintSet()
 
     def tearDown(self):
         self._clear_constraints()
