@@ -104,8 +104,8 @@ class State(Eventful):
     def __enter__(self):
         assert self._child is None
         new_state = State(self._constraints.__enter__(), self._platform)
-        new_state._input_symbols = self.input_symbols
-        new_state._context = copy.deepcopy(self.context)
+        new_state._input_symbols = self._input_symbols
+        new_state._context = copy.deepcopy(self._context)
         self._child = new_state
         
         #fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
@@ -198,7 +198,7 @@ class State(Eventful):
         name = options.get('name', 'buffer')
         taint = options.get('taint', frozenset())
         expr = self._constraints.new_array(name=name, index_max=nbytes, taint=taint)
-        self.input_symbols.append(expr)
+        self._input_symbols.append(expr)
 
         if options.get('cstring', False):
             for i in range(nbytes - 1):
@@ -219,7 +219,7 @@ class State(Eventful):
         '''
         assert nbits in (1, 4, 8, 16, 32, 64, 128, 256)
         expr = self._constraints.new_bitvec(nbits, name=label, taint=taint)
-        self.input_symbols.append(expr)
+        self._input_symbols.append(expr)
         return expr
 
     def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
@@ -240,7 +240,7 @@ class State(Eventful):
         if wildcard in data:
             size = len(data)
             symb = self._constraints.new_array(name=label, index_max=size, taint=taint)
-            self.input_symbols.append(symb)
+            self._input_symbols.append(symb)
 
             tmp = []
             for i in xrange(size):
