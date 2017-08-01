@@ -215,6 +215,17 @@ class SymbolicFile(File):
         for i in xrange(self.pos, self.pos + size):
             self.array[i] = data[i - self.pos]
 
+
+class SocketDesc(object):
+    '''
+    Represents a socket descriptor (i.e. value returned by socket(2)
+    '''
+    def __init__(self, domain=None, socket_type=None, protocol=None):
+        self.domain = domain
+        self.socket_type = socket_type
+        self.protocol = protocol
+
+
 class Socket(object):
     def stat(self):
         from collections import namedtuple
