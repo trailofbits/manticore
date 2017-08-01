@@ -1701,6 +1701,28 @@ class Linux(Platform):
         fd = Socket()
         return self._open(fd)
 
+    def sys_recv(self, sockfd, buf, count, flags):
+        try:
+            sock = self.files[sockfd]
+            if not isinstance(sock, Socket):
+                return -errno.ENOTSOCK
+
+            data = sock.read(count)
+            self.current.write_bytes(buf, data)
+            self.syscall_trace.append(("_recv", sockfd, data))
+
+            logger.debug("RECV(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
+                         sockfd,
+                         buf,
+                         count,
+                         len(data),
+                         repr(data)[:min(count,10)],
+                         len(data))
+
+            return len(data)
+
+        except IndexError:
+            return -errno.EINVAL
 
     #Distpatchers...
     def syscall(self):
@@ -2173,3 +2195,22 @@ class SLinux(Linux):
             raise ConcretizeArgument(self, 2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
+
+    def sys_recv(self, sockfd, buf, count, flags):
+        if issymbolic(sockfd):
+            logger.debug("Ask to read from a symbolic file descriptor!!")
+            raise ConcretizeArgument(self, 0)
+
+        if issymbolic(buf):
+            logger.debug("Ask to read to a symbolic buffer")
+            raise ConcretizeArgument(self, 1)
+
+        if issymbolic(count):
+            logger.debug("Ask to read a symbolic number of bytes ")
+            raise ConcretizeArgument(self, 2)
+
+        if issymbolic(flags):
+            logger.debug("Submitted a symbolic flags")
+            raise ConcretizeArgument(self, 3)
+
+        return super(SLinux, self).sys_recv(sockfd, buf, count, flags)
