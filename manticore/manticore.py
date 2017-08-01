@@ -22,7 +22,7 @@ from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
 from .platforms import linux, decree, windows
-from .utils.helpers import issymbolic
+from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 logger = logging.getLogger('MANTICORE')
 
@@ -162,6 +162,7 @@ class Manticore(object):
 
         args = [] if args is None else args
 
+        self._check_disassembler_present(disasm)
         self._disasm = disasm
         self._binary = binary_path
         self._binary_type = binary_type(binary_path)
@@ -817,3 +818,14 @@ class Manticore(object):
         # Invoke all pc-agnostic hooks
         for cb in self._hooks.get(None, []):
             cb(state)
+
+    def _check_disassembler_present(self, disasm):
+        if is_binja_disassembler(disasm):
+            try:
+                import binaryninja
+            except ImportError:
+                err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
+                       " that supports GUI-less processing for this option"
+                       " to work. Please configure your PYTHONPATH appropriately or"
+                       " select a different disassembler")
+                raise SystemExit(err)

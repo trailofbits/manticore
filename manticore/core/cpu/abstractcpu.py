@@ -791,7 +791,7 @@ class Cpu(Eventful):
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
 
-        :param insn: The instruction object to emulate
+        :param capstone.CsInsn instruction: The instruction object to emulate
         '''
 
         emu = UnicornEmulator(self)
