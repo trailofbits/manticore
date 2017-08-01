@@ -62,53 +62,45 @@ world.transaction(address=wallet_account,
                     run=True)
 
 
-
-
+transactions = []
 def terminate_transaction_callback(m, state, *args):
-    world = state.platform
-    constraints = state.constraints
-    print "TERMINATE", state.context
-    step = state.context['step']
-
-    if step == 0:
-        print "First transaction"
-
-        #start the attack - first transaction (change owners)
-        symbolic_data = constraints.new_array(256, name='DATA1', index_max=100)
-        state.input_symbols.append(symbolic_data)
-        world.transaction(address=wallet_account,
-                            origin=attacker_account,
-                            price=0,
-                            data=symbolic_data,
-                            caller=attacker_account,
-                            value=0,
-                            header={'timestamp':1})
-        state.context['step'] = step+1
-
+    step = state.context.get('step', 0)
+    state.context['step'] = step + 1
+    if step < len(transactions):
+        transactions[step](m, state.platform, state)
         m.add(state)
 
-    elif step == 1:
-        print "Second transaction"
-        #start the attack - first transaction (change owners)
-        symbolic_data = constraints.new_array(256, name='DATA2', index_max=100)
-        state.input_symbols.append(symbolic_data)
-        world.transaction(address=wallet_account,
-                            origin=attacker_account,
-                            price=0,
-                            data=symbolic_data,
-                            caller=attacker_account,
-                            value=0,
-                            header={'timestamp':2})
-        state.context['step'] = step+1
-        m.add(state)
+def transaction_1(m, world, state):
+    print "First transaction"
+    #start the attack - first transaction (change owners)
+    symbolic_data = state.new_symbolic_buffer(nbytes=256)
+    world.transaction(address=wallet_account,
+                        origin=attacker_account,
+                        price=0,
+                        data=symbolic_data,
+                        caller=attacker_account,
+                        value=0,
+                        header={'timestamp':1})
 
+def transaction_2(m, world, state):
+    print "Second transaction"
+    #start the attack - first transaction (change owners)
+    symbolic_data = state.new_symbolic_buffer(nbytes=256)
+    world.transaction(address=wallet_account,
+                        origin=attacker_account,
+                        price=0,
+                        data=symbolic_data,
+                        caller=attacker_account,
+                        value=0,
+                        header={'timestamp':2})
 
+transactions.append(transaction_1)
+transactions.append(transaction_2)
 
 
 
 #symbols introduced we need manticore Executor
 initial_state = State(constraints, world)
-initial_state.context['step'] = 0
 print "MAIN", initial_state.context
 m = Manticore()
 m.add(initial_state)

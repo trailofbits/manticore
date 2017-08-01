@@ -53,13 +53,14 @@ contract_account = world.create_contract(origin=user_account,
 print world
 
 
-attacks = []
+transactions = []
 def terminate_transaction_callback(m, state, *args):
     step = state.context['step']
     state.context['step'] = step + 1
-    if step < len(attacks):
-        attacks[step](m, state.platform, state)
+    if step < len(transactions):
+        transactions[step](m, state.platform, state)
         m.add(state)
+
 
 def attack_1(m, world, state):
     #Start the attack, this is a symbolic transaction. It should generate several world states.
@@ -84,8 +85,8 @@ def attack_2(m, world, state):
                         value=0,
                         header={'timestamp':1})
     
-attacks.append(attack_1)
-attacks.append(attack_2)
+transactions.append(attack_1)
+transactions.append(attack_2)
 
 #Let's start with the symbols
 initial_state = State(constraints, world)
