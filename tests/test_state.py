@@ -143,24 +143,6 @@ class StateTest(unittest.TestCase):
         expr = self.state.new_symbolic_value(64, taint=taint)
         self.assertEqual(expr.taint, frozenset(taint))
 
-    @unittest.skip('Record branches not a part of state anymore')
-    def test_record_branches(self):
-        branch = 0x80488bb
-        target = 0x8048997
-        fallthrough = 0x80488c1
-        self.state.last_pc = (0, branch)
-
-        self.state.record_branches([target, fallthrough])
-
-        self.assertEqual(self.state.branches[(branch, target)], 1)
-        self.assertEqual(self.state.branches[(branch, fallthrough)], 1)
-
-        self.state.record_branches([target, fallthrough])
-
-        self.assertEqual(self.state.branches[(branch, target)], 2)
-        self.assertEqual(self.state.branches[(branch, fallthrough)], 2)
-
-
     def testContextSerialization(self):
         import cPickle as pickle
         initial_file = ''
