@@ -1676,7 +1676,9 @@ class Linux(Platform):
             return -errno.EINVAL
 
         f = SocketDesc(domain, socket_type, protocol)
-        return self._open(f)
+        fd = self._open(f)
+        logger.debug("socket(%d, %d, %d) -> %d", domain, socket_type, protocol, fd)
+        return fd
 
     def _is_sockfd(self, sockfd):
         try:
@@ -1688,9 +1690,11 @@ class Linux(Platform):
             return -errno.EBADF
 
     def sys_bind(self, sockfd, address, address_len):
+        logger.debug("bind(%d, %x, %d)", sockfd, address, address_len)
         return self._is_sockfd(sockfd)
 
     def sys_listen(self, sockfd, backlog):
+        logger.debug("listen(%d, %d)", sockfd, backlog)
         return self._is_sockfd(sockfd)
 
     def sys_accept(self, sockfd, addr, addrlen, flags):
@@ -1698,8 +1702,10 @@ class Linux(Platform):
         if ret != 0:
             return ret
 
-        fd = Socket()
-        return self._open(fd)
+        sock = Socket()
+        fd = self._open(sock)
+        logger.debug('accept(%d, %x, %d, %d) -> %d', sockfd, addr, addrlen, flags, fd)
+        return fd
 
     def sys_recv(self, sockfd, buf, count, flags):
         try:
@@ -1711,12 +1717,8 @@ class Linux(Platform):
             self.current.write_bytes(buf, data)
             self.syscall_trace.append(("_recv", sockfd, data))
 
-            logger.debug("RECV(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
-                         sockfd,
-                         buf,
-                         count,
-                         len(data),
-                         repr(data)[:min(count,10)],
+            logger.debug("recv(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
+                         sockfd, buf, count, len(data), repr(data)[:min(count,10)],
                          len(data))
 
             return len(data)
@@ -2214,3 +2216,18 @@ class SLinux(Linux):
             raise ConcretizeArgument(self, 3)
 
         return super(SLinux, self).sys_recv(sockfd, buf, count, flags)
+
+    def sys_accept(self, sockfd, addr, addrlen, flags):
+        #TODO(yan): Transmit some symbolic bytes as soon as we start. 
+        # Remove this hack once no longer needed.
+
+        fd = super(SLinux, self).sys_accept(sockfd, addr, addrlen, flags)
+        if fd < 0:
+            return fd
+        sock = self._get_fd(fd)
+        nbytes = 16
+        symb = self.constraints.new_array(name='socker', index_max=nbytes)
+        for i in range(nbytes):
+            sock.buffer.append(symb[i])
+        return fd
+
