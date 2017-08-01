@@ -379,7 +379,7 @@ class Cpu(Eventful):
         assert 'PC' in self._regfile
 
     def __getstate__(self):
-        state = {}
+        state = super(Cpu, self).__getstate__()
         state['regfile'] = self._regfile
         state['memory'] = self._memory
         state['icount'] = self._icount
@@ -390,8 +390,7 @@ class Cpu(Eventful):
         Cpu.__init__(self, state['regfile'], state['memory'])
         self._icount = state['icount']
         self._last_pc = state['last_pc']
-
-        return
+        super(Cpu, self).__setstate__(state)
 
     @property
     def icount(self):
