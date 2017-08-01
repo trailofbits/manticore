@@ -5,6 +5,7 @@ import os
 import random
 import struct
 import ctypes
+import socket
 
 #Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
@@ -1663,6 +1664,28 @@ class Linux(Platform):
     def sys_gettimeofday(self, tv, tz):
         logger.debug("sys_gettimeofday(%x, %x) -> 0", tv, tz)
         return 0
+
+    def sys_socket(self, domain, socket_type, protocol):
+        if domain != socket.AF_INET:
+            return -errno.EINVAL
+
+        if socket_type != socket.SOCK_STREAM:
+            return -errno.EINVAL
+
+        if protocol != 0:
+            return -errno.EINVAL
+
+        f = SocketDesc(domain, socket_type, protocol)
+        return self._open(f)
+
+    def sys_bind(self, s, address, address_len):
+        try:
+            fd = self.files[s]
+            if not isinstance(fd, SocketDesc):
+                return -errno.ENOTSOCK
+            return 0
+        except IndexError:
+            return -errno.EBADF
 
     #Distpatchers...
     def syscall(self):
