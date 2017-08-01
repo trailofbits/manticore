@@ -1678,14 +1678,29 @@ class Linux(Platform):
         f = SocketDesc(domain, socket_type, protocol)
         return self._open(f)
 
-    def sys_bind(self, s, address, address_len):
+    def _is_sockfd(self, sockfd):
         try:
-            fd = self.files[s]
+            fd = self.files[sockfd]
             if not isinstance(fd, SocketDesc):
                 return -errno.ENOTSOCK
             return 0
         except IndexError:
             return -errno.EBADF
+
+    def sys_bind(self, sockfd, address, address_len):
+        return self._is_sockfd(sockfd)
+
+    def sys_listen(self, sockfd, backlog):
+        return self._is_sockfd(sockfd)
+
+    def sys_accept(self, sockfd, addr, addrlen, flags):
+        ret = self._is_sockfd(sockfd)
+        if ret != 0:
+            return ret
+
+        fd = Socket()
+        return self._open(fd)
+
 
     #Distpatchers...
     def syscall(self):
