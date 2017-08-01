@@ -53,40 +53,39 @@ contract_account = world.create_contract(origin=user_account,
 print world
 
 
-
-
+attacks = []
 def terminate_transaction_callback(m, state, *args):
-    world = state.platform
-    constraints = state.constraints
     step = state.context['step']
-    if step == 0:
-        #Start the attack, this is a symbolic transaction. It should generate several world states.
-        symbolic_data = constraints.new_array(256, name='TRANS1', index_max=256)
-        world.transaction(address=contract_account,
-                            origin=user_account,
-                            price=0,
-                            data=symbolic_data,
-                            caller=user_account,
-                            value=0,
-                            header={'timestamp':1})
-        state.input_symbols.append(symbolic_data)
-        state.context['step'] = step+1
+    state.context['step'] = step + 1
+    if step < len(attacks):
+        attacks[step](m, state.platform, state)
         m.add(state)
-    elif step == 1:
-        #Start the attack, this is a symbolic transaction. It should generate several world states.
-        symbolic_data = constraints.new_array(256, name='TRANS2', index_max=256)
-        world.transaction(address=contract_account,
-                            origin=user_account,
-                            price=0,
-                            data=symbolic_data,
-                            caller=user_account,
-                            value=0,
-                            header={'timestamp':1})
-        state.input_symbols.append(symbolic_data)
-        state.context['step'] = step+1
-        m.add(state)
-    
 
+def attack_1(m, world, state):
+    #Start the attack, this is a symbolic transaction. It should generate several world states.
+    symbolic_data = state.new_symbolic_buffer(nbytes=256)
+    world.transaction(address=contract_account,
+                        origin=user_account,
+                        price=0,
+                        data=symbolic_data,
+                        caller=user_account,
+                        value=0,
+                        header={'timestamp':1})
+
+    
+def attack_2(m, world, state):
+    #Start the attack, this is a symbolic transaction. It should generate several world states.
+    symbolic_data = state.new_symbolic_buffer(nbytes=256)
+    world.transaction(address=contract_account,
+                        origin=user_account,
+                        price=0,
+                        data=symbolic_data,
+                        caller=user_account,
+                        value=0,
+                        header={'timestamp':1})
+    
+attacks.append(attack_1)
+attacks.append(attack_2)
 
 #Let's start with the symbols
 initial_state = State(constraints, world)
@@ -98,10 +97,6 @@ m.add(initial_state)
 #now when this transaction ends
 m.subscribe('will_terminate_state', terminate_transaction_callback)
 
-m.run()
-
-#explore resulted states for one with funds in the attacker_account or whatever
-# in ./workspace
-
+m.run(procs = 1)
 
 
