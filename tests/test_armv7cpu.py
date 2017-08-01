@@ -6,17 +6,24 @@ from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.memory import Memory32
 
 from capstone.arm import *
-from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM
+from capstone import CS_MODE_THUMB, CS_MODE_ARM
+from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
+ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
 
 import logging
 
 logger = logging.getLogger("ARM_TESTS")
 
 
-def assemble(asm):
-    ords = ks.asm(asm)[0]
+def assemble(asm, mode=CS_MODE_ARM):
+    if CS_MODE_ARM == mode:
+        ords = ks.asm(asm)[0]
+    elif CS_MODE_THUMB == mode:
+        ords = ks_thumb.asm(asm)[0]
+    else:
+        raise Exception('bad processor mode for assembly: {}'.format(mode))
     if not ords:
         raise Exception('bad assembly: {}'.format(asm))
     return ''.join(map(chr, ords))
@@ -133,6 +140,17 @@ def itest_custom(asm):
 
     return instr_dec
 
+def itest_custom_thumb(asm):
+    def instr_dec(custom_func):
+        @wraps(custom_func)
+        def wrapper(self):
+            self._setupCpu(asm, mode=CS_MODE_THUMB)
+            custom_func(self)
+
+        return wrapper
+
+    return instr_dec
+
 
 class Armv7CpuInstructions(unittest.TestCase):
     def setUp(self):
@@ -140,14 +158,15 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
-    def _setupCpu(self, asm):
+    def _setupCpu(self, asm, mode=CS_MODE_ARM):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
         start = self.code + 4
-        self.mem.write(start, assemble(asm))
+        self.mem.write(start, assemble(asm, mode))
         self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000)
+        self.cpu._set_mode(mode)
 
     def _checkFlagsNZCV(self, n, z, c, v):
         self.assertEqual(self.rf.read('APSR_N'), n)
@@ -764,6 +783,16 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R1'), 42)
         self.assertEqual(self.rf.read('SP'), pre_stack - 8)
 
+    @itest_custom("ldrd r2, [sp]")
+    def test_ldrd(self):
+        r2 = 0x41
+        r3 = 0x42
+        self.cpu.stack_push(r3)
+        self.cpu.stack_push(r2)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R2'), r2)
+        self.assertEqual(self.rf.read('R3'), r3)
+
     @itest_custom("pop {r1}")
     def test_pop_one_reg(self):
         self.cpu.stack_push(0x55)
@@ -854,6 +883,27 @@ class Armv7CpuInstructions(unittest.TestCase):
         # check writeback results
         new_r2 = self.rf.read('R2')
         self.assertEqual(new_r2, r2 + 3)
+
+    @itest_custom("strd R2, [R1]")
+    @itest_setregs("R1=0xD000", "R2=34", "R3=35")
+    def test_strd(self):
+        r1 = self.rf.read('R1')
+        r2 = self.rf.read('R2')
+        r3 = self.rf.read('R3')
+        self.cpu.execute()
+        dr2 = self.cpu.read_int(r1, self.cpu.address_bit_size)
+        dr3 = self.cpu.read_int(r1+4, self.cpu.address_bit_size)
+        self.assertEqual(dr2, r2)
+        self.assertEqual(dr3, r3)
+
+    @itest_custom("str R2, [R1]")
+    @itest_setregs("R1=0xD000", "R2=34")
+    def test_str(self):
+        r1 = self.rf.read('R1')
+        r2 = self.rf.read('R2')
+        self.cpu.execute()
+        dr2 = self.cpu.read_int(r1, self.cpu.address_bit_size)
+        self.assertEqual(dr2, r2)
 
     # BL
 
@@ -1014,6 +1064,7 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_bx_basic(self):
         self.cpu.execute()
         self.assertEqual(self.rf.read('PC'), 0x1008)
+        self.assertEqual(self.cpu.mode, CS_MODE_ARM)
 
     @itest_custom("bx r1")
     @itest_setregs("R1=0x1009")
@@ -1021,6 +1072,7 @@ class Armv7CpuInstructions(unittest.TestCase):
         pre_pc = self.rf.read('PC')
         self.cpu.execute()
         self.assertEqual(self.rf.read('PC'), pre_pc + 4)
+        self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
     # ORR
 
@@ -1245,6 +1297,13 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.cpu.R2, 0x1 << 31)
         self._checkFlagsNZCV(1, 0, 1, 0)
 
+    @itest_setregs("R5=1", "R6=2")
+    @itest_custom_thumb("lsl.w r5, r6, #3")
+    def test_lslw_thumb(self):
+        '''thumb mode specific behavior'''
+        self.cpu.execute()
+        self.assertEqual(self.cpu.R5, 0x2 << 3)
+
     # lsr
     @itest_setregs("R0=0x1000", "R2=3")
     @itest("lsr r0, r0, r2")
@@ -1255,6 +1314,18 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest("lsr r0, r0, #3")
     def test_lsr_reg_imm(self):
         self.assertEqual(self.rf.read('R0'), 0x1000 >> 3)
+
+    @itest_setregs("R5=0", "R6=16")
+    @itest_custom_thumb("lsr.w R5, R6, #3")
+    def test_lsrw_thumb(self):
+        self.cpu.execute()
+        self.assertEqual(self.cpu.R5, 16>>3)
+
+    @itest_setregs("R5=0", "R6=16")
+    @itest_custom_thumb("asr.w R5, R6, #3")
+    def test_asrw_thumb(self):
+        self.cpu.execute()
+        self.assertEqual(self.cpu.R5, 16>>3)
 
     @itest_setregs("R2=29")
     @itest("RSB r2, r2, #31")
@@ -1315,12 +1386,14 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_blx_reg(self):
         self.assertEqual(self.rf.read('PC'), 0x1008)
         self.assertEqual(self.rf.read('LR'), 0x1008)
+        self.assertEqual(self.cpu.mode, CS_MODE_ARM)
 
     @itest_setregs("R1=0x1009")
     @itest("BLX R1")
     def test_blx_reg_thumb(self):
         self.assertEqual(self.rf.read('PC'), 0x1008)
         self.assertEqual(self.rf.read('LR'), 0x1008)
+        self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
     @itest_setregs("R1=0xffffffff", "R2=2")
     @itest("UMULLS R1, R2, R1, R2")

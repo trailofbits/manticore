@@ -1,7 +1,6 @@
 import unittest
-
+from manticore.utils.event import Eventful
 from manticore.platforms import linux
-from manticore.utils.event import Signal
 from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
 
@@ -19,25 +18,15 @@ class FakeMemory(object):
 
 class FakeCpu(object):
     def __init__(self):
-        self.will_decode_instruction = Signal()
-        self.will_execute_instruction = Signal()
-        self.did_execute_instruction = Signal()
-        self.will_emulate_instruction = Signal()
-        self.did_emulate_instruction = Signal()
-
-        self.will_read_register = Signal()
-        self.will_write_register = Signal()
-        self.will_read_memory = Signal()
-        self.will_write_memory = Signal()
-
         self._memory = FakeMemory()
 
     @property
     def memory(self):
         return self._memory
 
-class FakePlatform(object):
+class FakePlatform(Eventful):
     def __init__(self):
+        super(FakePlatform, self).__init__()
         self._constraints = None
         self.procs = [FakeCpu()]
 
@@ -130,6 +119,16 @@ class StateTest(unittest.TestCase):
         length = 62
         with self.assertRaises(Exception):
             expr = self.state.new_symbolic_value(length)
+
+    def test_tainted_symbolic_buffer(self):
+        taint = ('TEST_TAINT', )
+        expr = self.state.new_symbolic_buffer(64, taint=taint)       
+        self.assertEqual(expr.taint, frozenset(taint))
+
+    def test_tainted_symbolic_value(self):
+        taint = ('TEST_TAINT', )
+        expr = self.state.new_symbolic_value(64, taint=taint)
+        self.assertEqual(expr.taint, frozenset(taint))
 
     @unittest.skip('Record branches not a part of state anymore')
     def test_record_branches(self):

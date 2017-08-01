@@ -15,8 +15,6 @@ except ImportError:
     pass
 sys.setrecursionlimit(10000)
 
-logger = logging.getLogger('MAIN')
-
 def parse_arguments():
     ###########################################################################
     # parse arguments
@@ -34,6 +32,8 @@ def parse_arguments():
                         help='Initial concrete concrete_data for the input symbolic buffer')
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Specify symbolic environment variable VARNAME=++++++')
+    parser.add_argument('--file', type=str, action='append', dest='files',
+                        help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--policy', type=str, default='random',
                         help='Search policy. random|adhoc|uncovered|dicount|icount|syscount|depth.'\
                              ' (use + (max) or - (min) to specify order. e.g. +random)')
@@ -74,6 +74,9 @@ def main():
     m.policy = args.policy
     m.args = args
 
+    if args.data:
+        m.concrete_data = args.data
+
     if args.workspace:
         m.workspace = args.workspace
 
@@ -99,6 +102,10 @@ def main():
         for entry in args.env:
             name, val = entry[0].split('=')
             m.env_add(name, val)
+
+    if args.files:
+        for file in args.files:
+            m.add_symbolic_file(file)
 
     if args.assertions:
         m.load_assertions(args.assertions)

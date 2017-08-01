@@ -8,38 +8,25 @@ from ..utils.helpers import issymbolic
 
 logger = logging.getLogger('MEMORY')
 
+
 class MemoryException(Exception):
     '''
     Memory exceptions
     '''
-    def __init__(self, cause, address):
+    def __init__(self, message, address=None):
         '''
         Builds a memory exception.
 
-        :param cause: exception message.
+        :param message: exception message.
         :param address: memory address where the exception occurred.
         '''
-        super(MemoryException, self, ).__init__('{} <{}>'.format(cause, address))
-        self.cause = cause
         self.address = address
+        self.message = message
+        if address is not None and not issymbolic(address):
+            self.message += ' <{:x}>'.format(address)
 
     def __str__(self):
-        return '%s <%s>'%(self.cause, '%08x'%self.address)
-
-class InvalidMemoryAccess(MemoryException):
-    def __init__(self, address, mode):
-        self.mode = mode
-        super(InvalidMemoryAccess, self, ).__init__('Invalid mode trying to access memory in mode {}'.format(mode), address)
-
-class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
-    def __init__(self, cause, address, size, constraint):
-        super(InvalidSymbolicMemoryAccess, self, ).__init__(cause, address)
-        #the crashing constraint you need to assert 
-        self.constraint = constraint 
-        self.size = size
-
-    def __str__(self):
-        return '%s <%s>'%(self.cause, repr(self.address))
+        return self.message
 
 
 class ConcretizeMemory(MemoryException):
@@ -52,6 +39,28 @@ class ConcretizeMemory(MemoryException):
         self.address = address
         self.size = size
         self.policy = policy
+
+
+class InvalidMemoryAccess(MemoryException):
+    _message = 'Invalid memory access'
+
+    def __init__(self, address, mode):
+        assert mode in 'rwx'
+        suffix = ' (mode:{})'.format(mode)
+        message = self._message + suffix
+        super(InvalidMemoryAccess, self, ).__init__(message, address)
+        self.mode = mode
+
+
+class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
+    _message = 'Invalid symbolic memory access'
+
+    def __init__(self, address, mode, size, constraint):
+        super(InvalidSymbolicMemoryAccess, self, ).__init__(address, mode)
+        #the crashing constraint you need to assert 
+        self.constraint = constraint 
+        self.size = size
+
 
 class Map(object):
     '''
@@ -129,6 +138,19 @@ class Map(object):
         :rtype: str
         '''
         return '<%s 0x%016x-0x%016x %s>'%(self.__class__.__name__, self.start, self.end, self.perms)
+
+    def __cmp__(self, other):
+        result = cmp(self.start, other.start)
+        if result != 0:
+            return result
+        result = cmp(self.end, other.end)
+        if result != 0:
+            return result
+        # go by each char permission 
+        result = cmp(self.perms, other.perms)
+        if result != 0:
+            return result
+        return cmp(self.name, other.name)
 
     def _in_range(self, index):
         ''' Returns True if index is in range '''
@@ -501,7 +523,7 @@ class Memory(object):
                 return p << self.page_bit_size
             counter+=1
             if counter >= self.memory_size/self.page_size:
-                raise MemoryException('Not enough memory', 0)
+                raise MemoryException('Not enough memory')
 
         return self._search( size, self.memory_size-size, counter  )
 
@@ -752,7 +774,7 @@ class Memory(object):
     #write and read potentially symbolic bytes at symbolic indexes
     def read(self, addr, size):
         if not self.access_ok(slice(addr, addr+size), 'r'):
-            raise MemoryException('No access reading', addr)
+            raise InvalidMemoryAccess(addr, 'r')
 
         assert size > 0
         result = []
@@ -806,7 +828,7 @@ class Memory(object):
     def write(self, addr, buf):
         size = len(buf)
         if not self.access_ok(slice(addr, addr + size), 'w'):
-            raise MemoryException('No access writing', addr)
+            raise InvalidMemoryAccess(addr, 'w')
         assert size > 0
         stop = addr + size
         start = addr
@@ -913,10 +935,9 @@ class SMemory(Memory):
             logger.debug('Reading %d bytes from symbolic address %s', size, address)
             try:
                 solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
-            except TooManySolutions, e:
+            except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
-                logger.info('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
-                logger.info('Memory:%s',  self)
+                logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
 
                 crashing_condition = True
                 for start, end, perms, offset, name  in self.mappings():
@@ -925,7 +946,7 @@ class SMemory(Memory):
                             crashing_condition = Operators.AND(Operators.OR( (address+size).ult(start), address.uge(end) ), crashing_condition)
 
                 if solver.can_be_true(self.constraints, crashing_condition):
-                    raise InvalidSymbolicMemoryAccess('No access reading symbolic', address, size, crashing_condition)
+                    raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
 
 
                 #INCOMPLETE Result! We could also fork once for every map
@@ -933,7 +954,8 @@ class SMemory(Memory):
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition )
-                raise ForkState(condition)
+                from .state import ForkState
+                raise ForkState("Forking state on incomplete result", condition)
 
             #So here we have all potential solutions to address
             assert len(solutions) > 0
@@ -945,7 +967,7 @@ class SMemory(Memory):
                     crashing_condition = Operators.OR(address == base, crashing_condition)
 
             if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess('No access reading symbolic', address, size, crashing_condition)
+                raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
 
             condition = False
             for base in solutions:
@@ -997,7 +1019,7 @@ class SMemory(Memory):
                     crashing_condition = Operators.OR(address == base, crashing_condition)
 
             if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess('No access writing symbolic', address, size, crashing_condition)
+                raise InvalidSymbolicMemoryAccess(address, 'w', size, crashing_condition)
 
             for offset in xrange(size):
                 for base in solutions:
@@ -1009,7 +1031,7 @@ class SMemory(Memory):
             for offset in xrange(size):
                 if issymbolic(value[offset]):
                     if not self.access_ok(address+offset, 'w'):
-                        raise MemoryException('No access writing', address+offset)
+                        raise InvalidMemoryAccess(address+offset, 'w')
                     self._symbols[address+offset] = [(True, value[offset])]
                 else:
                     # overwrite all previous items

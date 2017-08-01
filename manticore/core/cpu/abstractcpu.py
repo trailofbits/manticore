@@ -8,7 +8,7 @@ from ...utils.emulate import UnicornEmulator
 import sys
 from functools import wraps
 from itertools import islice, imap
-from ...utils.event import Signal
+from ...utils.event import Eventful
 import inspect
 import types
 import logging
@@ -345,7 +345,7 @@ class SyscallAbi(Abi):
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
-class Cpu(object):
+class Cpu(Eventful):
     '''
     Base class for all Cpu architectures. Functionality common to all
     architectures (and expected from users of a Cpu) should be here. Commonly
@@ -361,9 +361,9 @@ class Cpu(object):
     - stack_alias
     '''
 
-    def __init__(self, regfile, memory):
+    def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
-        super(Cpu, self).__init__()
+        super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
@@ -373,24 +373,6 @@ class Cpu(object):
         self._md = Cs(self.arch, self.mode)
         self._md.detail = True
         self._md.syntax = 0
-
-        #####################################################
-        # Signals
-        # signal handlers must have this signature:
-        # handler(cpu, *args, **kwargs)
-        self.will_decode_instruction = Signal()
-        self.will_execute_instruction = Signal()
-        self.did_execute_instruction = Signal()
-        self.will_emulate_instruction = Signal()
-        self.did_emulate_instruction = Signal()
-        self.will_read_register = Signal()
-        self.did_read_register = Signal()
-        self.will_write_register = Signal()
-        self.did_write_register = Signal()
-        self.will_read_memory = Signal()
-        self.will_write_memory = Signal()
-        self.did_read_memory = Signal()
-        self.did_write_memory = Signal()
 
         # Ensure that regfile created STACK/PC aliases
         assert 'STACK' in self._regfile
@@ -452,9 +434,9 @@ class Cpu(object):
         :param value: register value
         :type value: int or long or Expression
         '''
-        self.will_write_register(register, value)
+        self.publish('will_write_register', register, value)
         value = self._regfile.write(register, value)
-        self.did_write_register(register, value)
+        self.publish('did_write_register', register, value)
         return value
 
     def read_register(self, register):
@@ -465,9 +447,9 @@ class Cpu(object):
         :return: register value
         :rtype: int or long or Expression
         '''
-        self.will_read_register(register)
+        self.publish('will_read_register', register)
         value = self._regfile.read(register)
-        self.did_read_register(register, value)
+        self.publish('did_read_register', register, value)
         return value
 
     # Pythonic access to registers and aliases
@@ -513,11 +495,11 @@ class Cpu(object):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self.will_write_memory(where, expression, size)
+        self.publish('will_write_memory', where, expression, size)
 
         self.memory[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in xrange(0, size, 8)]
 
-        self.did_write_memory(where, expression, size)
+        self.publish('did_write_memory', where, expression, size)
 
 
     def read_int(self, where, size=None):
@@ -532,13 +514,13 @@ class Cpu(object):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self.will_read_memory(where, size)
+        self.publish('will_read_memory', where, size)
 
         data = self.memory[where:where+size/8]
         assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
-        self.did_read_memory(where, value, size)
+        self.publish('did_read_memory', where, value, size)
         return value
 
 
@@ -657,7 +639,6 @@ class Cpu(object):
         #No dynamic code!!! #TODO! 
         #Check if instruction was already decoded 
         if pc in self._instruction_cache:
-            logger.debug("Intruction cache hit at %x", pc)
             return self._instruction_cache[pc]
 
         text = ''
@@ -728,12 +709,12 @@ class Cpu(object):
         if not self.memory.access_ok(self.PC,'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
-        self.will_decode_instruction()
+        self.publish('will_decode_instruction', self.PC)
 
         instruction = self.decode_instruction(self.PC)
         self._last_pc=self.PC
 
-        self.will_execute_instruction(instruction)
+        self.publish('will_execute_instruction', instruction)
 
         if instruction.address != self.PC:
             return 
@@ -746,11 +727,11 @@ class Cpu(object):
                     instruction.address, text_bytes, instruction.mnemonic,
                     instruction.op_str)
 
-            self.will_emulate_instruction(instruction)
+            self.publish('will_emulate_instruction', instruction)
 
             self.emulate(instruction)
 
-            self.did_emulate_instruction(instruction)
+            self.publish('did_emulate_instruction', instruction)
 
         implementation = getattr(self, name, fallback_to_emulate)
 
@@ -762,7 +743,7 @@ class Cpu(object):
         implementation(*instruction.operands)
         self._icount+=1
 
-        self.did_execute_instruction(instruction)
+        self.publish('did_execute_instruction', instruction)
 
 
     def emulate(self, instruction):
