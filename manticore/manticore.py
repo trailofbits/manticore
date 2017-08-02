@@ -552,7 +552,7 @@ class Manticore(object):
 
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
-        logger.debug("Terminate state %r %r ", state, state_id)
+        logger.info("Terminate state %r %r ", state, state_id)
         if state is None:
             return
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -571,7 +571,8 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
-        logger.debug("About to store state %r %r %r", state, expression, values, policy)
+        logger.info("Forking, about to store. (policy: %s, values: %s)", policy,
+                ', '.join('0x{:x}'.format(pc) for pc in values))
 
     def _read_register_callback(self, state, reg_name, value): 
         logger.debug("Read Register %r %r", reg_name, value)
@@ -587,7 +588,6 @@ class Manticore(object):
 
     def _decode_instruction_callback(self, state, pc):
         logger.debug("Decoding stuff instruction not available")
-
 
     def _emulate_instruction_callback(self, state, instruction):
         logger.debug("About to emulate instruction")
