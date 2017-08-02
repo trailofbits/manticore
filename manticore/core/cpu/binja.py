@@ -277,14 +277,8 @@ class BinjaCpu(Cpu):
     machine = None
     arch = None
     mode = None
-    disasm = None
 
     platform_cpu = None
-    # FIXME are these used?
-    instr_ptr = None
-    stack_ptr = None
-    # Keep a virtual stack
-    stack = []
 
     def __init__(self, memory):
         '''
@@ -305,13 +299,15 @@ class BinjaCpu(Cpu):
         self.__class__.address_bit_size = 8 * arch.address_size
         self.__class__.machine = self.platform_cpu.machine
         self.__class__.mode = self.platform_cpu.mode
-        self.__class__.arch = architecture
-        self.__class__.disasm = BinjaILDisasm(architecture)
-        self.__class__.arch = arch
+        self.__class__.arch = view.arch
+        # FIXME
+        self.__class__.disasm = BinjaILDisasm(view)
+        self.view = view
         self._segments = {}
 
         # initialize the memory and register files
-        super(BinjaCpu, self).__init__(BinjaRegisterFile(architecture, platform_regs),
+        # FIXME
+        super(BinjaCpu, self).__init__(BinjaRegisterFile('x86_64', platform_regs),
                                        memory)
 
     @property
@@ -410,8 +406,7 @@ class BinjaCpu(Cpu):
             print res
 
     def update_flags(cpu, flags=None):
-        il = cpu.disasm.disasm_il
-        mod_flags = cpu.arch.flags_written_by_flag_write_type.get(il.flags)
+        mod_flags = insn_flags(cpu)
         if not mod_flags or not flags:
             return
 
@@ -473,16 +468,23 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def CALL(cpu, expr):
+        import binaryninja.enums as enums
         f = cpu.disasm.current_llil_func
         il = cpu.disasm.disasm_il
         next_addr = cpu.disasm.current_pc + cpu.disasm.disasm_insn_size
-
+        #  next_il = f.lifted_il[il.instr_index + 1]
+        #  if next_il.operation == enums.LowLevelILOperation.LLIL_GOTO:
+            #  next_addr = f.lifted_il[next_il.operands[0]].address
+        #  else:
+            #  next_addr = next_il.address
 
         # push next PC into the stack
+        #  cpu.push(cpu.PC + next_addr - il.address,
+                 #  cpu.address_bit_size)
         cpu.push(next_addr, cpu.address_bit_size)
         # go for it
         new_pc = expr.read() + cpu.disasm.entry_point_diff
-        #  cpu.__class__.PC = new_pc
+        cpu.PC = new_pc
         cpu.regfile.write('PC', new_pc)
 
     def CMP_E(cpu, left, right):
@@ -585,19 +587,19 @@ class BinjaCpu(Cpu):
         return condition.op
 
     def GOTO(cpu, expr):
+        # FIXME
         try:
-            # FIXME
             if isinstance(expr.op, long):
                 addr = cpu.disasm.current_llil_func[expr.op].address
             else:
                 raise NotImplementedError
         except IndexError:
             addr = cpu.disasm.current_pc + cpu.disasm.disasm_insn_size
-        #  cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
-        #  cpu.regfile.write('PC', cpu.__class__.PC)
-        cpu.regfile.write('PC', addr + cpu.disasm.entry_point_diff)
+
+        cpu.PC = addr + cpu.disasm.entry_point_diff
+        cpu.regfile.write('PC', cpu.PC)
         # return a value since this will be used by an IF ending in a GOTO
-        return addr + cpu.disasm.entry_point_diff
+        return cpu.PC
 
     def IF(cpu, condition, true, false):
         import binaryninja.enums as enums
@@ -607,7 +609,8 @@ class BinjaCpu(Cpu):
         cond = condition.op.operands[0].op
         exp = cpu.arch.get_default_flag_condition_low_level_il(cond,
                                                                il.function)
-        cond_il = LowLevelILInstruction(cpu.disasm.current_llil_func, exp.index)
+        cond_il = LowLevelILInstruction(cpu.disasm.current_llil_func,
+                                        exp.index)
         implementation = getattr(cpu, cond_il.operation.name[len("LLIL_"):])
         cond_il.operands = [BinjaOperand(cpu, cond_il, x)
                             for x in cond_il.operands]
@@ -615,14 +618,23 @@ class BinjaCpu(Cpu):
         idx = true.op if res else false.op
         assert isinstance(idx, long)
 
+        try:
+            next_il = cpu.disasm.current_llil_func[idx]
+        except IndexError as e:
+            # If we got an index error this means that we have the true
+            # branch executing one insn followed by a GOTO, and the false
+            # branch is outside the current_llil_func and is a JUMP
+            # FIXME verify that this is true
+            cpu.PC += cpu.disasm.disasm_insn_size
+            cpu.regfile.write('PC', cpu.PC)
+            return
+
         # if we have a (real) instruction from the IF family, the next
         # instruction should have an address different than the current PC
-        next_il = cpu.disasm.current_llil_func[idx]
         if next_il.address != cpu.disasm.current_pc:
-            goto_addr = next_il.address + cpu.disasm.entry_point_diff
-            cpu.regfile.write('PC', goto_addr)
-            #  cpu.__class__.PC = next_il.address + cpu.disasm.entry_point_diff
-            #  cpu.regfile.write('PC', cpu.__class__.PC)
+            cpu.PC = next_il.address + cpu.disasm.entry_point_diff
+            # FIXME do we need both?
+            cpu.regfile.write('PC', cpu.PC)
             return
 
         # The next IL instruction has the same PC. Probably a real assembly
@@ -646,21 +658,20 @@ class BinjaCpu(Cpu):
                                 for x in next_il.operands]
             cpu.disasm.insn_size = next_il.size
             goto_addr = implementation(*next_il.operands)
-            idx += 1
             try:
+                idx += 1
                 next_il = cpu.disasm.current_llil_func[idx]
-            except IndexError:
+            except IndexError as e:
                 break
         assert goto_addr is not None
-        #  cpu.__class__.PC = goto_addr
-        #  cpu.regfile.write('PC', cpu.__class__.PC)
-        cpu.regfile.write('PC', goto_addr)
+        cpu.PC = goto_addr
+        cpu.regfile.write('PC', cpu.PC)
 
     def JUMP(cpu, expr):
         addr = expr.read()
         cpu.regfile.write('PC', addr)
-        #  cpu.__class__.PC = addr
-        #  cpu.regfile.write('PC', cpu.__class__.PC)
+        cpu.PC = addr
+        cpu.regfile.write('PC', cpu.PC)
         return addr
 
     def JUMP_TO(cpu, expr, target_indexes):
@@ -668,8 +679,8 @@ class BinjaCpu(Cpu):
         """
         addr = expr.read()
         cpu.regfile.write('PC', addr)
-        #  cpu.__class__.PC = addr
-        #  cpu.regfile.write('PC', cpu.__class__.PC)
+        cpu.PC = addr
+        cpu.regfile.write('PC', cpu.PC)
         return addr
 
     def LOAD(cpu, src_expr):
@@ -855,7 +866,8 @@ class BinjaCpu(Cpu):
 
     def NEG(cpu, expr):
         src = expr.read()
-        res = -1 * src
+        mask = (1 << expr.llil.size * 8) - 1
+        res = -src & mask
         x86_update_logic_flags(cpu, res, expr.llil.size * 8)
         cpu.regfile.write('cf', src != 0)
         cpu.regfile.write('af', (res & 0x0f) != 0x0)
@@ -897,9 +909,8 @@ class BinjaCpu(Cpu):
         return reg
 
     def RET(cpu, expr):
-        #  cpu.__class__.PC = cpu.pop(cpu.address_bit_size)
-        #  cpu.regfile.write('PC', cpu.__class__.PC)
-        cpu.regfile.write('PC', cpu.pop(cpu.address_bit_size))
+        cpu.PC = cpu.pop(cpu.address_bit_size)
+        cpu.regfile.write('PC', cpu.PC)
 
     def RLC(cpu, left_expr, right_expr, carry_expr):
         print hex(cpu.disasm.current_pc)
@@ -1019,8 +1030,6 @@ class BinjaCpu(Cpu):
         cpu.PC += 2
 
         cpu.write_register('PC', cpu.PC)
-        # FIXME FIXME should we be using write_register everywhere?
-        #  cpu.write_register('PC', cpu.regfile.read('PC') + 2)
         cpu.write_register('rcx', cpu.regfile.registers['rip'])
         cpu.write_register('r11', x86_get_eflags(cpu, 'RFLAGS'))
         raise Syscall()
@@ -1119,9 +1128,19 @@ def x86_get_eflags(cpu, reg):
             res += flag << offset
     return res
 
+def insn_flags(cpu):
+    # FIXME temporary hack due to binja issue with flags
+    f = cpu.disasm.current_func
+    il = cpu.disasm.current_func.get_lifted_il_at(cpu.disasm.disasm_il.address)
+    mod_flags = f.get_flags_written_by_lifted_il_instruction(il.instr_index)
+    #  il2 = cpu.disasm.disasm_il
+    #  mod_flags2 = cpu.arch.flags_written_by_flag_write_type.get(il.flags)
+    #  if mod_flags2 != mod_flags:
+        #  print il
+    return mod_flags
+
 def x86_calculate_cmp_flags(cpu, size, res, left_v, right_v):
-    il = cpu.disasm.disasm_il
-    mod_flags = cpu.arch.flags_written_by_flag_write_type.get(il.flags)
+    mod_flags = insn_flags(cpu)
     if not mod_flags:
         return
 
@@ -1136,11 +1155,9 @@ def x86_calculate_cmp_flags(cpu, size, res, left_v, right_v):
     cpu.update_flags(flags)
 
 def x86_update_logic_flags(cpu, result, size):
-    il = cpu.disasm.disasm_il
-    mod_flags = cpu.arch.flags_written_by_flag_write_type.get(il.flags)
+    mod_flags = insn_flags(cpu)
     if not mod_flags:
         return
-
     flags = {
         'c': False,
         'p': _parity_flag(result),

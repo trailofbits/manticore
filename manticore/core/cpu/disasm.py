@@ -84,9 +84,9 @@ class BinjaILDisasm(Disasm):
         self.il_queue = []
         # current il
         self.disasm_il = None
-        # real size of the instruction (how many bytes it is)
+        # real size of the instruction
         self.disasm_insn_size = None
-        # LLIL size (aka size of the registers involved)
+        # Binja LLIL size (size of operands)
         self.insn_size = None
 
         # for all UNIMPL insn and other hard times
@@ -122,6 +122,14 @@ class BinjaILDisasm(Disasm):
 
         from binaryninja import Architecture, LowLevelILFunction
 
+        func = LowLevelILFunction(self.view.arch)
+        func.current_address = pc
+        self.disasm_insn_size = (self.view.arch.
+                                 get_instruction_low_level_il(code, pc, func))
+        self.current_llil_func = func
+        self.il_queue = [(i, func[i]) for i in xrange(len(func))]
+        return self.il_queue.pop(0)[1]
+
         func = LowLevelILFunction(Architecture[self.arch])
         func.current_address = pc
         self.disasm_insn_size = (Architecture[self.arch].
@@ -139,15 +147,30 @@ class BinjaILDisasm(Disasm):
         import binaryninja.enums as enums
 
         pc = self._fix_addr(pc)
+
+        # FIXME will be removed
+        ##################
+        blocks = self.view.get_basic_blocks_at(pc)
+        if not blocks:
+            # Looks like Binja did not know about this PC..
+            self.view.create_user_function(pc)
+            self.view.update_analysis_and_wait()
+            self.current_func = self.view.get_function_at(pc)
+        else:
+            self.current_func = blocks[0].function
+        ##################
+
         il = self._pop_from_il_queue(code, pc)
         self.insn_size = il.size
         self.current_pc = pc
         self.disasm_il = il
 
+        # create an instruction from the fallback disassembler if Binja can't
         o = il.operation
         if (o == enums.LowLevelILOperation.LLIL_UNIMPL or
                 o == enums.LowLevelILOperation.LLIL_UNIMPL_MEM):
             return self.fallback_disasm.disassemble_instruction(code, pc)
+
         return self.BinjaILInstruction(il,
                                        self.entry_point_diff,
                                        self.disasm_insn_size,
@@ -157,9 +180,9 @@ class BinjaILDisasm(Disasm):
     class BinjaILInstruction(Instruction):
         def __init__(self, llil, offset, size, function):
             self.llil = llil
-            self.function = function
-            self._size = size
             self.offset = offset
+            self._size = size
+            self.function = function
             super(BinjaILDisasm.BinjaILInstruction, self).__init__()
 
         def _fix_addr(self, addr):
@@ -217,7 +240,46 @@ class BinjaILDisasm(Disasm):
                                           self.llil.operation.name,
                                           self.llil.address)
 
-def init_disassembler(disassembler, arch, mode):
+class BinjaDisasm(Disasm):
+
+    def __init__(self, view):
+        self.view = view
+        super(BinjaDisasm, self).__init__(view)
+
+    def disassemble_instruction(self, _, pc):
+        """Get next instruction based on Capstone disassembler
+
+        :param code: disassembled code
+        :param pc: program counter
+        """
+        return self.view.get_disassembly(pc)
+
+    class BinjaInstruction(Instruction):
+        def __init__(self, insn):
+            self.insn = insn
+            super(BinjaDisasm.BinjaInstruction, self).__init__()
+
+        @property
+        def size(self):
+            pass
+
+        @property
+        def operands(self):
+            return self._operands
+
+        @operands.setter
+        def operands(self, value):
+            self._operands = value
+
+        @property
+        def insn_name(self):
+            pass
+
+        @property
+        def name(self):
+            pass
+
+def init_disassembler(disassembler, arch, mode, view=None):
     if disassembler == "capstone":
         return CapstoneDisasm(arch, mode)
     elif disassembler == "binja-il":

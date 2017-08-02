@@ -369,9 +369,7 @@ class Cpu(Eventful):
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
-        disasm = kwargs.get("disasm", None)
-        if disasm is not None:
-            kwargs.pop("disasm")
+        disasm = kwargs.pop("disasm", None)
         super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
@@ -379,9 +377,7 @@ class Cpu(Eventful):
         self._icount = 0
         self._last_pc = None
         if not hasattr(self, "disasm") or self.disasm is None:
-            disasm = init_disassembler('capstone', self.arch, self.mode)
-            self.disasm = disasm
-
+            self.disasm = init_disassembler('capstone', self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
         assert 'STACK' in self._regfile
         assert 'PC' in self._regfile
@@ -743,6 +739,16 @@ class Cpu(Eventful):
         if insn.address != self.PC:
             return
 
+        if logger.level == logging.DEBUG :
+            logger.debug(self.render_instruction(insn))
+            for l in self.render_registers():
+                register_logger.debug(l)
+
+        self._insn_implementation(insn)
+        self._icount += 1
+        self.publish('did_execute_instruction', instruction)
+
+    def _insn_implementation(self, insn):
         name = self.canonicalize_instruction_name(insn)
 
         def fallback_to_emulate(*operands):
@@ -755,13 +761,6 @@ class Cpu(Eventful):
 
             self.publish('did_emulate_instruction', insn)
 
-        implementation = getattr(self, name, fallback_to_emulate)
-
-        if logger.level == logging.DEBUG :
-            logger.debug(self.render_instruction(insn))
-            for l in self.render_registers():
-                register_logger.debug(l)
-
         if (isinstance(self.disasm, BinjaILDisasm) and
                 isinstance(insn, cs.CsInsn)):
             # if we got a capstone instruction using BinjaILDisasm, it means
@@ -772,19 +771,29 @@ class Cpu(Eventful):
             implementation = getattr(self, name, fallback_to_emulate)
             implementation(*insn.operands)
 
+        self._update_pc_if_binja(insn)
+
+    def _update_pc_if_binja(self, insn):
         # In case we are executing IL instructions, we could iteratively
         # invoke multiple instructions due to the tree form, thus we only
         # want to increment the PC once, based on its previous position
         # for CALLS and JUMPS the PC should have been set automatically
-        # and self.instruction.size is 0 because we compute the size from
-        # the address of the next instruction
-        if (isinstance(self.disasm, BinjaILDisasm) and
-                not (hasattr(insn, "sets_pc") and insn.sets_pc)):
-            self.__class__.PC = self._last_pc + insn.size
-            self.regfile.write('PC', self.__class__.PC)
+        # so no need to do anything. Also, if there are pending instruction
+        if not isinstance(self.disasm, BinjaILDisasm):
+            return
 
-        self._icount += 1
-        self.publish('did_execute_instruction', instruction)
+        # don't bump the PC if we are in an LLIL that has set it,
+        # or if there are pending IL insn in the queue. This is because
+        # for cases where we have other il instructions in the queue,
+        # such as when we get a divu insn, the PC + size will point
+        # to the next assembly instruction and not the next LLIL
+        #
+        # we might be executing a Capstone instruction at this point
+        # if we context-switched, so check the sets_pc attr
+        if not (hasattr(insn, "sets_pc") and
+                (insn.sets_pc or self.disasm.il_queue)):
+            self.PC = self._last_pc + insn.size
+            self.regfile.write('PC', self.PC)
 
     def emulate(self, insn):
         '''
