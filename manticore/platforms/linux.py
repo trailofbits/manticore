@@ -2095,33 +2095,33 @@ class SLinux(Linux):
 
         #  FIXME (theo) this will be replaced by a function that simply
         #  loads the IL from a file
-        #  def init_bv():
-            #  """
-            #  Reads a binary and returns a binary vieww
-            #  """
-            #  import binaryninja as bn
-            #  from binaryninja import BinaryView as bview
+        def init_bv():
+            """
+            Reads a binary and returns a binary vieww
+            """
+            import binaryninja as bn
+            from binaryninja import BinaryView as bview
 
-            #  # see if we have cached the db
-            #  db_name = "." + os.path.basename(self.program) + ".bnfm"
-            #  dbpath = os.path.join(os.path.dirname(self.program), db_name)
-            #  if not os.path.isfile(dbpath):
-                #  bv = bn.binaryview.BinaryViewType.get_view_of_file(self.program)
-                #  bv.update_analysis_and_wait()
-                #  # cache for later
-                #  bv.create_database(dbpath)
-                #  return bv
-            #  else:
-                #  fm = bn.FileMetadata()
-                #  db = fm.open_existing_database(dbpath)
-                #  vtypes = filter(lambda x: x.name != "Raw",
-                                #  bview.open(self.program).available_view_types)
-                #  bv = db.get_view_of_type(vtypes[0].name)
-                #  bv.update_analysis_and_wait()
-                #  return bv
+            # see if we have cached the db
+            db_name = "." + os.path.basename(self.program) + ".bnfm"
+            dbpath = os.path.join(os.path.dirname(self.program), db_name)
+            if not os.path.isfile(dbpath):
+                bv = bn.binaryview.BinaryViewType.get_view_of_file(self.program)
+                bv.update_analysis_and_wait()
+                # cache for later
+                bv.create_database(dbpath)
+                return bv
+            else:
+                fm = bn.FileMetadata()
+                db = fm.open_existing_database(dbpath)
+                vtypes = filter(lambda x: x.name != "Raw",
+                                bview.open(self.program).available_view_types)
+                bv = db.get_view_of_type(vtypes[0].name)
+                bv.update_analysis_and_wait()
+                return bv
 
-        #  bv = init_bv()
-        cpu = BinjaCpu(memory)
+        bv = init_bv()
+        cpu = BinjaCpu(bv, memory)
         return cpu
 
 

@@ -1,4 +1,3 @@
-import sys
 from abc import abstractproperty, abstractmethod
 
 import capstone as cs
@@ -67,14 +66,16 @@ class CapstoneDisasm(Disasm):
 
 class BinjaILDisasm(Disasm):
 
-    def __init__(self, arch):
-        self.arch = arch
+    def __init__(self, view):
+        self.view = view
         # dictionary with llil for each function. This will be consumed
         # using an iterator, so that we don't repeat ourselves whenever
         # we ask for the next IL
         self.func_llil = {}
         # offset to account for section vs segment view of the binary
         self.entry_point_diff = None
+        # current function
+        self.current_func = None
         # current LowLevelILFunction
         self.current_llil_func = None
         # current pc
@@ -93,7 +94,7 @@ class BinjaILDisasm(Disasm):
         # FIXME generalize for other archs
         self.fallback_disasm = CapstoneDisasm(cs.CS_ARCH_X86, cs.CS_MODE_64)
 
-        super(BinjaILDisasm, self).__init__(arch)
+        super(BinjaILDisasm, self).__init__(view)
 
     def _fix_addr(self, addr):
         # FIXME how to deal with discrepancies of binja vs real program
@@ -125,14 +126,6 @@ class BinjaILDisasm(Disasm):
         func = LowLevelILFunction(self.view.arch)
         func.current_address = pc
         self.disasm_insn_size = (self.view.arch.
-                                 get_instruction_low_level_il(code, pc, func))
-        self.current_llil_func = func
-        self.il_queue = [(i, func[i]) for i in xrange(len(func))]
-        return self.il_queue.pop(0)[1]
-
-        func = LowLevelILFunction(Architecture[self.arch])
-        func.current_address = pc
-        self.disasm_insn_size = (Architecture[self.arch].
                                  get_instruction_low_level_il(code, pc, func))
         self.current_llil_func = func
         self.il_queue = [(i, func[i]) for i in xrange(len(func))]
@@ -283,6 +276,6 @@ def init_disassembler(disassembler, arch, mode, view=None):
     if disassembler == "capstone":
         return CapstoneDisasm(arch, mode)
     elif disassembler == "binja-il":
-        return BinjaILDisasm(arch)
+        return BinjaILDisasm(view)
     else:
         raise NotImplementedError("Disassembler not implemented")

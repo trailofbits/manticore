@@ -280,7 +280,7 @@ class BinjaCpu(Cpu):
 
     platform_cpu = None
 
-    def __init__(self, memory):
+    def __init__(self, view, memory):
         '''
         Builds a CPU model.
         :param arch: BinaryNinja arch.
@@ -293,10 +293,8 @@ class BinjaCpu(Cpu):
         self.__class__.platform_cpu = platform_cpu
         platform_regs = platform_cpu.all_registers
         from binaryninja import Architecture
-        architecture = 'x86_64'
-        arch = Architecture[architecture]
-        self.__class__.max_instr_width = arch.max_instr_length
-        self.__class__.address_bit_size = 8 * arch.address_size
+        self.__class__.max_instr_width = view.arch.max_instr_length
+        self.__class__.address_bit_size = 8 * view.arch.address_size
         self.__class__.machine = self.platform_cpu.machine
         self.__class__.mode = self.platform_cpu.mode
         self.__class__.arch = view.arch
@@ -471,21 +469,13 @@ class BinjaCpu(Cpu):
         import binaryninja.enums as enums
         f = cpu.disasm.current_llil_func
         il = cpu.disasm.disasm_il
-        next_addr = cpu.disasm.current_pc + cpu.disasm.disasm_insn_size
-        #  next_il = f.lifted_il[il.instr_index + 1]
-        #  if next_il.operation == enums.LowLevelILOperation.LLIL_GOTO:
-            #  next_addr = f.lifted_il[next_il.operands[0]].address
-        #  else:
-            #  next_addr = next_il.address
 
-        # push next PC into the stack
-        #  cpu.push(cpu.PC + next_addr - il.address,
-                 #  cpu.address_bit_size)
+        next_addr = cpu.disasm.current_pc + cpu.disasm.disasm_insn_size
         cpu.push(next_addr, cpu.address_bit_size)
+
         # go for it
         new_pc = expr.read() + cpu.disasm.entry_point_diff
         cpu.PC = new_pc
-        cpu.regfile.write('PC', new_pc)
 
     def CMP_E(cpu, left, right):
         return left.read() == right.read()
@@ -597,7 +587,6 @@ class BinjaCpu(Cpu):
             addr = cpu.disasm.current_pc + cpu.disasm.disasm_insn_size
 
         cpu.PC = addr + cpu.disasm.entry_point_diff
-        cpu.regfile.write('PC', cpu.PC)
         # return a value since this will be used by an IF ending in a GOTO
         return cpu.PC
 
@@ -626,15 +615,12 @@ class BinjaCpu(Cpu):
             # branch is outside the current_llil_func and is a JUMP
             # FIXME verify that this is true
             cpu.PC += cpu.disasm.disasm_insn_size
-            cpu.regfile.write('PC', cpu.PC)
             return
 
         # if we have a (real) instruction from the IF family, the next
         # instruction should have an address different than the current PC
         if next_il.address != cpu.disasm.current_pc:
             cpu.PC = next_il.address + cpu.disasm.entry_point_diff
-            # FIXME do we need both?
-            cpu.regfile.write('PC', cpu.PC)
             return
 
         # The next IL instruction has the same PC. Probably a real assembly
@@ -665,22 +651,17 @@ class BinjaCpu(Cpu):
                 break
         assert goto_addr is not None
         cpu.PC = goto_addr
-        cpu.regfile.write('PC', cpu.PC)
 
     def JUMP(cpu, expr):
         addr = expr.read()
-        cpu.regfile.write('PC', addr)
         cpu.PC = addr
-        cpu.regfile.write('PC', cpu.PC)
         return addr
 
     def JUMP_TO(cpu, expr, target_indexes):
         """ Jump table construct handling
         """
         addr = expr.read()
-        cpu.regfile.write('PC', addr)
         cpu.PC = addr
-        cpu.regfile.write('PC', cpu.PC)
         return addr
 
     def LOAD(cpu, src_expr):
@@ -910,7 +891,6 @@ class BinjaCpu(Cpu):
 
     def RET(cpu, expr):
         cpu.PC = cpu.pop(cpu.address_bit_size)
-        cpu.regfile.write('PC', cpu.PC)
 
     def RLC(cpu, left_expr, right_expr, carry_expr):
         print hex(cpu.disasm.current_pc)

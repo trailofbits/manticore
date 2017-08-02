@@ -793,7 +793,6 @@ class Cpu(Eventful):
         if not (hasattr(insn, "sets_pc") and
                 (insn.sets_pc or self.disasm.il_queue)):
             self.PC = self._last_pc + insn.size
-            self.regfile.write('PC', self.PC)
 
     def emulate(self, insn):
         '''
