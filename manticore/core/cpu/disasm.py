@@ -240,9 +240,50 @@ class BinjaILDisasm(Disasm):
                                           self.llil.operation.name,
                                           self.llil.address)
 
+class BinjaDisasm(Disasm):
+
+    def __init__(self, view):
+        self.view = view
+        super(BinjaDisasm, self).__init__(view)
+
+    def disassemble_instruction(self, _, pc):
+        """Get next instruction based on Capstone disassembler
+
+        :param code: disassembled code
+        :param pc: program counter
+        """
+        return self.view.get_disassembly(pc)
+
+    class BinjaInstruction(Instruction):
+        def __init__(self, insn):
+            self.insn = insn
+            super(BinjaDisasm.BinjaInstruction, self).__init__()
+
+        @property
+        def size(self):
+            pass
+
+        @property
+        def operands(self):
+            return self._operands
+
+        @operands.setter
+        def operands(self, value):
+            self._operands = value
+
+        @property
+        def insn_name(self):
+            pass
+
+        @property
+        def name(self):
+            pass
+
 def init_disassembler(disassembler, arch, mode, view=None):
     if disassembler == "capstone":
         return CapstoneDisasm(arch, mode)
+    elif disassembler == "binja":
+        return BinjaDisasm(view)
     elif disassembler == "binja-il":
         return BinjaILDisasm(view)
     else:

@@ -278,15 +278,9 @@ class BinjaCpu(Cpu):
     machine = None
     arch = None
     mode = None
-    disasm = None
-    view = None
+    #  view = None
 
     platform_cpu = None
-    # FIXME are these used?
-    instr_ptr = None
-    stack_ptr = None
-    # Keep a virtual stack
-    stack = []
 
     def __init__(self, view, memory):
         '''
@@ -306,8 +300,9 @@ class BinjaCpu(Cpu):
         self.__class__.machine = self.platform_cpu.machine
         self.__class__.mode = self.platform_cpu.mode
         self.__class__.arch = view.arch
+        # FIXME
         self.__class__.disasm = BinjaILDisasm(view)
-        self.__class__.view = view
+        self.view = view
         self._segments = {}
 
         # initialize the memory and register files
@@ -364,7 +359,7 @@ class BinjaCpu(Cpu):
     # LLIL are not implemented by Binja :(
     def update_flags_from_il(cpu, il):
         from binaryninja.lowlevelil import LowLevelILInstruction
-        flags = cpu.view.arch.flags_written_by_flag_write_type.get(il.flags)
+        flags = cpu.arch.flags_written_by_flag_write_type.get(il.flags)
         if flags is None:
             return
         func = cpu.disasm.current_func
@@ -372,7 +367,7 @@ class BinjaCpu(Cpu):
         # FIXME normally we would pass il.operands but binja has a bug here
         operands = [i for i, _ in enumerate(il.operands)]
         for f in flags:
-            expr = cpu.view.arch.get_flag_write_low_level_il(il.operation,
+            expr = cpu.arch.get_flag_write_low_level_il(il.operation,
                                                              il.size,
                                                              il.flags,
                                                              f,
@@ -610,7 +605,7 @@ class BinjaCpu(Cpu):
         # FIXME get this from condition.op?
         il = cpu.disasm.disasm_il
         cond = il.operands[0].operands[0].op
-        exp = cpu.view.arch.get_default_flag_condition_low_level_il(cond,
+        exp = cpu.arch.get_default_flag_condition_low_level_il(cond,
                                                                     il.function)
         cond_il = LowLevelILInstruction(cpu.disasm.current_func.lifted_il,
                                         exp.index)
@@ -855,7 +850,8 @@ class BinjaCpu(Cpu):
 
     def NEG(cpu, expr):
         src = expr.read()
-        res = -1 * src
+        mask = (1 << expr.llil.size * 8) - 1
+        res = -src & mask
         x86_update_logic_flags(cpu, res, expr.llil.size * 8)
         cpu.regfile.write('cf', src != 0)
         cpu.regfile.write('af', (res & 0x0f) != 0x0)

@@ -5806,7 +5806,6 @@ class AMD64Cpu(X86Cpu):
     machine = 'amd64'
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_64
-    disasm = None
 
     def __init__(self, memory, *args, **kwargs):
         '''
@@ -5919,7 +5918,6 @@ class I386Cpu(X86Cpu):
     machine = 'i386'
     arch = cs.CS_ARCH_X86
     mode = cs.CS_MODE_32
-    disasm = None
 
     def __init__(self, memory, *args, **kwargs):
         '''
