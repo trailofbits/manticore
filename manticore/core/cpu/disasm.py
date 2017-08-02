@@ -83,7 +83,9 @@ class BinjaILDisasm(Disasm):
         self.il_queue = []
         # current il
         self.disasm_il = None
-
+        # real size of the instruction
+        self.disasm_insn_size = None
+        # Binja LLIL size (size of operands)
         self.insn_size = None
 
         # for all UNIMPL insn and other hard times
@@ -103,7 +105,7 @@ class BinjaILDisasm(Disasm):
 
         return addr - self.entry_point_diff
 
-    def _pop_from_il_queue(self, pc):
+    def _pop_from_il_queue(self, code, pc):
         # queue contains tuples of the form (idx, il_insn)
         if self.il_queue != []:
             # if we have multiple ils for the same pc
@@ -115,6 +117,12 @@ class BinjaILDisasm(Disasm):
                 # clear the queue (we might be here because of a CALL etc.)
                 # FIXME assert that this is legitimate
                 del self.il_queue[:]
+
+        from binaryninja import Architecture, LowLevelILFunction
+        func = LowLevelILFunction(self.view.arch)
+        func.current_address = pc
+        self.disasm_insn_size = (self.view.arch.
+                                 get_instruction_low_level_il(code, pc, func))
 
         # get current il
         il = self.current_func.get_lifted_il_at(pc)
@@ -154,7 +162,7 @@ class BinjaILDisasm(Disasm):
         else:
             self.current_func = blocks[0].function
 
-        il = self._pop_from_il_queue(pc)
+        il = self._pop_from_il_queue(code, pc)
         self.insn_size = il.size
         self.current_pc = pc
         self.disasm_il = il
@@ -163,18 +171,18 @@ class BinjaILDisasm(Disasm):
         if (o == enums.LowLevelILOperation.LLIL_UNIMPL or
                 o == enums.LowLevelILOperation.LLIL_UNIMPL_MEM):
             return self.fallback_disasm.disassemble_instruction(code, pc)
-        return self.BinjaILInstruction(self.view,
-                                       il,
+        return self.BinjaILInstruction(il,
                                        self.entry_point_diff,
+                                       self.disasm_insn_size,
                                        self.current_func)
 
 
     class BinjaILInstruction(Instruction):
-        def __init__(self, view, llil, offset, function):
-            self.view = view
+        def __init__(self, llil, offset, size, function):
             self.llil = llil
-            self.function = function
             self.offset = offset
+            self._size = size
+            self.function = function
             super(BinjaILDisasm.BinjaILInstruction, self).__init__()
 
         def _fix_addr(self, addr):
@@ -182,24 +190,7 @@ class BinjaILDisasm(Disasm):
 
         @property
         def size(self):
-            import binaryninja.enums as enums
-            assert self.llil.instr_index < len(self.llil.function)
-            try:
-                if self.sets_pc:
-                    return 0
-                else:
-                    next_il = self.function.lifted_il[self.llil.instr_index + 1]
-                    next_addr = next_il.address
-                assert next_addr >= self.llil.address
-                return next_addr - self.llil.address
-            except IndexError:
-                if str(self.llil) == "noreturn":
-                    return 0
-                else:
-                    raise NotImplementedError
-            except AssertionError:
-                print "ASSERTION ERROR FOR SIZE " + str(self.llil)
-                raise AssertionError
+            return self._size
 
         @property
         def mnemonic(self):
@@ -249,50 +240,9 @@ class BinjaILDisasm(Disasm):
                                           self.llil.operation.name,
                                           self.llil.address)
 
-class BinjaDisasm(Disasm):
-
-    def __init__(self, view):
-        self.view = view
-        super(BinjaDisasm, self).__init__(view)
-
-    def disassemble_instruction(self, _, pc):
-        """Get next instruction based on Capstone disassembler
-
-        :param code: disassembled code
-        :param pc: program counter
-        """
-        return self.view.get_disassembly(pc)
-
-    class BinjaInstruction(Instruction):
-        def __init__(self, insn):
-            self.insn = insn
-            super(BinjaDisasm.BinjaInstruction, self).__init__()
-
-        @property
-        def size(self):
-            pass
-
-        @property
-        def operands(self):
-            return self._operands
-
-        @operands.setter
-        def operands(self, value):
-            self._operands = value
-
-        @property
-        def insn_name(self):
-            pass
-
-        @property
-        def name(self):
-            pass
-
 def init_disassembler(disassembler, arch, mode, view=None):
     if disassembler == "capstone":
         return CapstoneDisasm(arch, mode)
-    elif disassembler == "binja":
-        return BinjaDisasm(view)
     elif disassembler == "binja-il":
         return BinjaILDisasm(view)
     else:
