@@ -1718,7 +1718,7 @@ class Linux(Platform):
             self.syscall_trace.append(("_recv", sockfd, data))
 
             logger.debug("recv(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
-                         sockfd, buf, count, len(data), repr(data)[:min(count,10)],
+                         sockfd, buf, count, len(data), repr(data)[:min(count,32)],
                          len(data))
 
             return len(data)
@@ -2225,9 +2225,28 @@ class SLinux(Linux):
         if fd < 0:
             return fd
         sock = self._get_fd(fd)
-        nbytes = 16
-        symb = self.constraints.new_array(name='socker', index_max=nbytes)
+        nbytes = 32
+        symb = self.constraints.new_array(name='socket', index_max=nbytes)
         for i in range(nbytes):
             sock.buffer.append(symb[i])
         return fd
+
+    def sys_open(self, buf, flags, mode):
+        '''
+        :param buf: address of zero-terminated pathname
+        :param flags: file access bits
+        :param mode: file permission mode
+        '''
+        offset = 0
+        while True:
+            c = self.current.read_int(buf+offset, 8)
+            if issymbolic(c):
+                raise TerminateState("Tried to open a symbolic buffer as file")
+            if c == 0:
+                break
+            if offset > 1024:
+                break
+            offset += 1
+
+        return super(SLinux, self).sys_open(buf, flags, mode)
 
