@@ -12,7 +12,6 @@ from elftools.elf.elffile import ELFFile
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.cpu.binja import BinjaCpu
-from ..core.cpu.disasm import init_disassembler
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
 from ..core.cpu.arm import *
@@ -158,10 +157,6 @@ class SymbolicFile(File):
         self.pos = state['pos']
         self.max_size = state['max_size']
         self.array = state['array']
-
-    #@property
-    #def constraints(self):
-    #    return self._constraints
 
     def tell(self):
         '''
@@ -402,7 +397,6 @@ class Linux(Platform):
             'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
         }
         arch, mode = arch_map[arch]
-        cpu.__class__.disasm = init_disassembler(self.disasm, arch, mode, self.programs)
         return cpu
 
 
@@ -2094,10 +2088,6 @@ class SLinux(Linux):
             'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
         }
         arch, mode = arch_map[arch]
-        cpu.__class__.disasm = init_disassembler(self.disasm,
-                                                 arch,
-                                                 mode,
-                                                 self.programs)
         return cpu
 
     def _init_binja_cpu(self, memory):
@@ -2105,33 +2095,33 @@ class SLinux(Linux):
 
         #  FIXME (theo) this will be replaced by a function that simply
         #  loads the IL from a file
-        def init_bv():
-            """
-            Reads a binary and returns a binary vieww
-            """
-            import binaryninja as bn
-            from binaryninja import BinaryView as bview
+        #  def init_bv():
+            #  """
+            #  Reads a binary and returns a binary vieww
+            #  """
+            #  import binaryninja as bn
+            #  from binaryninja import BinaryView as bview
 
-            # see if we have cached the db
-            db_name = "." + os.path.basename(self.program) + ".bnfm"
-            dbpath = os.path.join(os.path.dirname(self.program), db_name)
-            if not os.path.isfile(dbpath):
-                bv = bn.binaryview.BinaryViewType.get_view_of_file(self.program)
-                bv.update_analysis_and_wait()
-                # cache for later
-                bv.create_database(dbpath)
-                return bv
-            else:
-                fm = bn.FileMetadata()
-                db = fm.open_existing_database(dbpath)
-                vtypes = filter(lambda x: x.name != "Raw",
-                                bview.open(self.program).available_view_types)
-                bv = db.get_view_of_type(vtypes[0].name)
-                bv.update_analysis_and_wait()
-                return bv
+            #  # see if we have cached the db
+            #  db_name = "." + os.path.basename(self.program) + ".bnfm"
+            #  dbpath = os.path.join(os.path.dirname(self.program), db_name)
+            #  if not os.path.isfile(dbpath):
+                #  bv = bn.binaryview.BinaryViewType.get_view_of_file(self.program)
+                #  bv.update_analysis_and_wait()
+                #  # cache for later
+                #  bv.create_database(dbpath)
+                #  return bv
+            #  else:
+                #  fm = bn.FileMetadata()
+                #  db = fm.open_existing_database(dbpath)
+                #  vtypes = filter(lambda x: x.name != "Raw",
+                                #  bview.open(self.program).available_view_types)
+                #  bv = db.get_view_of_type(vtypes[0].name)
+                #  bv.update_analysis_and_wait()
+                #  return bv
 
-        bv = init_bv()
-        cpu = BinjaCpu(bv, memory)
+        #  bv = init_bv()
+        cpu = BinjaCpu(memory)
         return cpu
 
 
