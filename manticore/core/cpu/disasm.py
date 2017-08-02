@@ -123,25 +123,27 @@ class BinjaILDisasm(Disasm):
         func.current_address = pc
         self.disasm_insn_size = (self.view.arch.
                                  get_instruction_low_level_il(code, pc, func))
+        self.current_llil_func = func
+        self.il_queue = [(i, func[i]) for i in xrange(len(func))]
+        return self.il_queue.pop(0)[1]
+        #  # get current il
+        #  il = self.current_func.get_lifted_il_at(pc)
 
-        # get current il
-        il = self.current_func.get_lifted_il_at(pc)
+        #  # add all other instructions with same address to the queue
+        #  next_idx = il.instr_index + 1
+        #  next_il = self.current_func.lifted_il[next_idx]
+        #  if next_il is None:
+            #  return il
+        #  while next_il.address == pc:
+            #  self.il_queue.append((next_idx, next_il))
+            #  next_idx += 1
+            #  try:
+                #  next_il = self.current_func.lifted_il[next_idx]
+            #  except IndexError:
+                #  break
 
-        # add all other instructions with same address to the queue
-        next_idx = il.instr_index + 1
-        next_il = self.current_func.lifted_il[next_idx]
-        if next_il is None:
-            return il
-        while next_il.address == pc:
-            self.il_queue.append((next_idx, next_il))
-            next_idx += 1
-            try:
-                next_il = self.current_func.lifted_il[next_idx]
-            except IndexError:
-                break
-
-        # return the current instruction
-        return il
+        #  # return the current instruction
+        #  return il
 
 
     def disassemble_instruction(self, code, pc):
@@ -153,6 +155,9 @@ class BinjaILDisasm(Disasm):
         import binaryninja.enums as enums
 
         pc = self._fix_addr(pc)
+
+        # FIXME will be removed
+        ##################
         blocks = self.view.get_basic_blocks_at(pc)
         if not blocks:
             # Looks like Binja did not know about this PC..
@@ -161,20 +166,23 @@ class BinjaILDisasm(Disasm):
             self.current_func = self.view.get_function_at(pc)
         else:
             self.current_func = blocks[0].function
+        ##################
 
         il = self._pop_from_il_queue(code, pc)
         self.insn_size = il.size
         self.current_pc = pc
         self.disasm_il = il
 
+        # create an instruction from the fallback disassembler if Binja can't
         o = il.operation
         if (o == enums.LowLevelILOperation.LLIL_UNIMPL or
                 o == enums.LowLevelILOperation.LLIL_UNIMPL_MEM):
             return self.fallback_disasm.disassemble_instruction(code, pc)
+
         return self.BinjaILInstruction(il,
                                        self.entry_point_diff,
                                        self.disasm_insn_size,
-                                       self.current_func)
+                                       self.current_llil_func)
 
 
     class BinjaILInstruction(Instruction):
