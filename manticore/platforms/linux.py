@@ -12,7 +12,6 @@ from elftools.elf.elffile import ELFFile
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.cpu.binja import BinjaCpu
-from ..core.cpu.disasm import init_disassembler
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
 from ..core.cpu.arm import *
@@ -158,10 +157,6 @@ class SymbolicFile(File):
         self.pos = state['pos']
         self.max_size = state['max_size']
         self.array = state['array']
-
-    #@property
-    #def constraints(self):
-    #    return self._constraints
 
     def tell(self):
         '''
@@ -402,7 +397,6 @@ class Linux(Platform):
             'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
         }
         arch, mode = arch_map[arch]
-        cpu.__class__.disasm = init_disassembler(self.disasm, arch, mode, self.programs)
         return cpu
 
 
@@ -2094,10 +2088,6 @@ class SLinux(Linux):
             'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
         }
         arch, mode = arch_map[arch]
-        cpu.__class__.disasm = init_disassembler(self.disasm,
-                                                 arch,
-                                                 mode,
-                                                 self.programs)
         return cpu
 
     def _init_binja_cpu(self, memory):

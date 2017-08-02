@@ -12,7 +12,6 @@ from .abstractcpu import (
 )
 
 from .abstractcpu import instruction as abstract_instruction
-from .disasm import init_disassembler
 
 from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant
@@ -322,7 +321,6 @@ class Armv7Cpu(Cpu):
     machine = 'armv7'
     arch = cs.CS_ARCH_ARM
     mode = cs.CS_MODE_ARM
-    disasm = None
 
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
@@ -343,11 +341,6 @@ class Armv7Cpu(Cpu):
     def _set_mode(self, new_mode):
         assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
         self.mode = new_mode
-
-        # FIXME (theo) should never happen, hack for the tests to pass
-        if not self.disasm:
-            self.disasm = init_disassembler('capstone', cs.CS_ARCH_ARM, new_mode, None)
-
         self.disasm.disasm.mode = new_mode
 
     def _swap_mode(self):

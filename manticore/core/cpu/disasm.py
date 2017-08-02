@@ -288,7 +288,7 @@ class BinjaDisasm(Disasm):
         def name(self):
             pass
 
-def init_disassembler(disassembler, arch, mode, view):
+def init_disassembler(disassembler, arch, mode, view=None):
     if disassembler == "capstone":
         return CapstoneDisasm(arch, mode)
     elif disassembler == "binja":

@@ -369,13 +369,15 @@ class Cpu(Eventful):
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
+        disasm = kwargs.pop("disasm", None)
         super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
         self._last_pc = None
-
+        if not hasattr(self, "disasm") or self.disasm is None:
+            self.disasm = init_disassembler('capstone', self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
         assert 'STACK' in self._regfile
         assert 'PC' in self._regfile
@@ -386,6 +388,8 @@ class Cpu(Eventful):
         state['memory'] = self._memory
         state['icount'] = self._icount
         state['last_pc'] = self._last_pc
+        # FIXME
+        state['disassembler'] = "capstone"
         return state
 
     def __setstate__(self, state):
@@ -642,7 +646,7 @@ class Cpu(Eventful):
         # No dynamic code!!! #TODO!
         # Check if instruction was already decoded
         if (pc in self._instruction_cache and
-                not isinstance(self.__class__.disasm, BinjaILDisasm)):
+                not isinstance(self.disasm, BinjaILDisasm)):
             return self._instruction_cache[pc]
 
         text = ''
@@ -672,14 +676,6 @@ class Cpu(Eventful):
 
         code = text.ljust(self.max_instr_width, '\x00')
 
-        if not self.disasm:
-            # XXX this should never be the case, unless the CPU gets created
-            # directly and without going through a platform. This only happens
-            # in testcases
-            self.__class__.disasm = init_disassembler('capstone',
-                                                      self.arch,
-                                                      self.mode,
-                                                      None)
         try:
             # decode the instruction from code
             insn = self.disasm.disassemble_instruction(code, pc)
@@ -696,7 +692,7 @@ class Cpu(Eventful):
         # if we are executing Binja-IL but need to fallback to capstone,
         # bring all registers up to state, because they might be needed
         # during the creation of operands in wrap_operands
-        if (isinstance(self.__class__.disasm, BinjaILDisasm) and
+        if (isinstance(self.disasm, BinjaILDisasm) and
                 isinstance(insn, cs.CsInsn)):
             for pl_reg, binja_reg in self.regfile.pl2b_map.items():
                 if isinstance(binja_reg, tuple) or binja_reg is None: continue
@@ -762,7 +758,7 @@ class Cpu(Eventful):
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        if (isinstance(self.__class__.disasm, BinjaILDisasm) and
+        if (isinstance(self.disasm, BinjaILDisasm) and
                 isinstance(insn, cs.CsInsn)):
             # if we got a capstone instruction using BinjaILDisasm, it means
             # this instruction is not implemented. Fallback to Capstone
@@ -778,10 +774,10 @@ class Cpu(Eventful):
         # for CALLS and JUMPS the PC should have been set automatically
         # and self.instruction.size is 0 because we compute the size from
         # the address of the next instruction
-        if (isinstance(self.__class__.disasm, BinjaILDisasm) and
+        if (isinstance(self.disasm, BinjaILDisasm) and
                 not (hasattr(insn, "sets_pc") and insn.sets_pc)):
-            self.__class__.PC = self._last_pc + insn.size
-            self.regfile.write('PC', self.__class__.PC)
+            self.PC = self._last_pc + insn.size
+            self.regfile.write('PC', self.PC)
 
         self._icount += 1
         self.publish('did_execute_instruction', instruction)

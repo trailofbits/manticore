@@ -17,22 +17,24 @@ logger = logging.getLogger("CPU")
 
 class BinjaRegisterFile(RegisterFile):
 
-    def __init__(self, view, platform_regs):
+    def __init__(self, arch, platform_regs):
+        from binaryninja import Architecture
         # XXX we do not use view as part of the class, because then
         # we need to do a lot more work to pickle the object
-        self.arch = self._get_arch(view)
+        self.arch = arch
+        arch = Architecture[arch]
         self.reg_aliases = {
-            'STACK' : str(view.arch.stack_pointer),
+            'STACK' : str(arch.stack_pointer),
             'PC' : self.get_pc(),
         }
         super(BinjaRegisterFile, self).__init__(aliases=self.reg_aliases)
 
         # Get "dummy" registers for flags. We append 'F' for consistency
         # with the X86 CPU
-        f_regs = [f + "f" for f in view.arch.flags]
+        f_regs = [f + "f" for f in arch.flags]
         # get (full width) architecture registers
-        arch_regs = list(set([view.arch.regs[r].full_width_reg
-                              for r in view.arch.regs.keys()]))
+        arch_regs = list(set([arch.regs[r].full_width_reg
+                              for r in arch.regs.keys()]))
 
         self.pl2b_map, self.b2pl_map = binja_platform_regmap(arch_regs,
                                                              f_regs,
@@ -96,6 +98,7 @@ class BinjaRegisterFile(RegisterFile):
             raise NotImplementedError
 
         self.registers[ilreg.full_width_reg] = full_width_reg_value
+        # FIXME masks here and in read instead of inside insn
         return full_width_reg_value
 
     def read(self, reg):
@@ -131,16 +134,6 @@ class BinjaRegisterFile(RegisterFile):
             return 'eip'
         elif self.arch == 'x86_64':
             return 'rip'
-        else:
-            raise NotImplementedError
-
-    def _get_arch(self, view):
-        from binaryninja import Architecture
-
-        if view.arch == Architecture['x86']:
-            return 'x86'
-        elif view.arch == Architecture['x86_64']:
-            return 'x86_64'
         else:
             raise NotImplementedError
 
@@ -318,7 +311,8 @@ class BinjaCpu(Cpu):
         self._segments = {}
 
         # initialize the memory and register files
-        super(BinjaCpu, self).__init__(BinjaRegisterFile(view, platform_regs),
+        # FIXME
+        super(BinjaCpu, self).__init__(BinjaRegisterFile('x86_64', platform_regs),
                                        memory)
 
     @property
@@ -493,11 +487,11 @@ class BinjaCpu(Cpu):
             next_addr = next_il.address
 
         # push next PC into the stack
-        cpu.push(cpu.__class__.PC + next_addr - il.address,
+        cpu.push(cpu.PC + next_addr - il.address,
                  cpu.address_bit_size)
         # go for it
         new_pc = expr.read() + cpu.disasm.entry_point_diff
-        cpu.__class__.PC = new_pc
+        cpu.PC = new_pc
         cpu.regfile.write('PC', new_pc)
 
     def CMP_E(cpu, left, right):
@@ -604,10 +598,10 @@ class BinjaCpu(Cpu):
             addr = cpu.disasm.current_func.lifted_il[expr.op].address
         else:
             raise NotImplementedError
-        cpu.__class__.PC = addr + cpu.disasm.entry_point_diff
-        cpu.regfile.write('PC', cpu.__class__.PC)
+        cpu.PC = addr + cpu.disasm.entry_point_diff
+        cpu.regfile.write('PC', cpu.PC)
         # return a value since this will be used by an IF ending in a GOTO
-        return cpu.__class__.PC
+        return cpu.PC
 
     def IF(cpu, condition, true, false):
         import binaryninja.enums as enums
@@ -631,8 +625,8 @@ class BinjaCpu(Cpu):
         # instruction should have an address different than the current PC
         next_il = cpu.disasm.current_func.lifted_il[idx]
         if next_il.address != cpu.disasm.current_pc:
-            cpu.__class__.PC = next_il.address + cpu.disasm.entry_point_diff
-            cpu.regfile.write('PC', cpu.__class__.PC)
+            cpu.PC = next_il.address + cpu.disasm.entry_point_diff
+            cpu.regfile.write('PC', cpu.PC)
             return
 
         # The next IL instruction has the same PC. Probably a real assembly
@@ -659,14 +653,14 @@ class BinjaCpu(Cpu):
             idx += 1
             next_il = cpu.disasm.current_func.lifted_il[idx]
         assert goto_addr is not None
-        cpu.__class__.PC = goto_addr
-        cpu.regfile.write('PC', cpu.__class__.PC)
+        cpu.PC = goto_addr
+        cpu.regfile.write('PC', cpu.PC)
 
     def JUMP(cpu, expr):
         addr = expr.read()
         cpu.regfile.write('PC', addr)
-        cpu.__class__.PC = addr
-        cpu.regfile.write('PC', cpu.__class__.PC)
+        cpu.PC = addr
+        cpu.regfile.write('PC', cpu.PC)
         return addr
 
     def JUMP_TO(cpu, expr, target_indexes):
@@ -674,8 +668,8 @@ class BinjaCpu(Cpu):
         """
         addr = expr.read()
         cpu.regfile.write('PC', addr)
-        cpu.__class__.PC = addr
-        cpu.regfile.write('PC', cpu.__class__.PC)
+        cpu.PC = addr
+        cpu.regfile.write('PC', cpu.PC)
         return addr
 
     def LOAD(cpu, src_expr):
@@ -903,8 +897,8 @@ class BinjaCpu(Cpu):
         return reg
 
     def RET(cpu, expr):
-        cpu.__class__.PC = cpu.pop(cpu.address_bit_size)
-        cpu.regfile.write('PC', cpu.__class__.PC)
+        cpu.PC = cpu.pop(cpu.address_bit_size)
+        cpu.regfile.write('PC', cpu.PC)
 
     def RLC(cpu, left_expr, right_expr, carry_expr):
         print hex(cpu.disasm.current_pc)
@@ -1021,9 +1015,9 @@ class BinjaCpu(Cpu):
     def SYSCALL(cpu):
         # FIXME arch-specific. for AMD64, 2 'syscall' is 2 bytes
         # bump the PC to the next instruction
-        cpu.__class__.PC += 2
+        cpu.PC += 2
 
-        cpu.write_register('PC', cpu.__class__.PC)
+        cpu.write_register('PC', cpu.PC)
         cpu.write_register('rcx', cpu.regfile.registers['rip'])
         cpu.write_register('r11', x86_get_eflags(cpu, 'RFLAGS'))
         raise Syscall()
