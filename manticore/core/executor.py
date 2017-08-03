@@ -330,7 +330,7 @@ class Executor(Eventful):
                 setstate(new_state, new_value)
 
                 with self._lock:
-                    self.publish('fork_state', new_state, expression, new_value, policy)
+                    self.publish('forking_state', new_state, expression, new_value, policy)
 
                 #enqueue new_state
                 state_id = self.add(new_state)

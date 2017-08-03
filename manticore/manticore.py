@@ -562,7 +562,10 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
 
             manticore_instructions_count = manticore_context.get('instructions_count', 0)
-            manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count 
+            manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
+
+    def _forking_state_callback(self, state, expression, value, policy):
+        state.record_branch(value)
 
     def _fork_state_callback(self, state, expression, values, policy):
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -721,6 +724,7 @@ class Manticore(object):
         self._executor.subscribe('will_store_state', self._store_state_callback)
         self._executor.subscribe('will_load_state', self._load_state_callback)
         self._executor.subscribe('will_fork_state', self._fork_state_callback)
+        self._executor.subscribe('forking_state', self._forking_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
 

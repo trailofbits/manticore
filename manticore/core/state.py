@@ -76,9 +76,18 @@ class State(Eventful):
         self._input_symbols = list()
         self._child = None
         self._context = dict()
+        self._init_context()
         ##################################################################33
         # Events are lost in serialization and fork !!
         self.forward_events_from(platform)
+
+    def record_branch(self, target):
+        branches = self.context['branches']
+        branch = (self.cpu._last_pc, target)
+        if branch in branches:
+            branches[branch] += 1
+        else:
+            branches[branch] = 1
 
     def __getstate__(self):
         state = super(State, self).__getstate__()
@@ -352,3 +361,6 @@ class State(Eventful):
     @property
     def mem(self):
         return self._platform.current.memory
+
+    def _init_context(self):
+        self.context['branches'] = dict()
