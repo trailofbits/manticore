@@ -323,15 +323,20 @@ class Executor(Eventful):
         children = []
         for new_value in solutions:
             with state as new_state:
-                new_state.constrain(expression == new_value) #We already know it's sat
+                new_state.constrain(expression == new_value)
+
                 #and set the PC of the new state to the concrete pc-dest
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value)
-                #enqueue new_state 
+
+                with self._lock:
+                    self.publish('fork_state', new_state, expression, new_value, policy)
+
+                #enqueue new_state
                 state_id = self.add(new_state)
                 #maintain a list of childres for logging purpose
                 children.append(state_id)
-        
+
         logger.debug("Forking current state into states %r",children)
         return None
 
