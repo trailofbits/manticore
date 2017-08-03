@@ -315,9 +315,7 @@ class Executor(Eventful):
         #Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
-        #We are about to fork current_state
-        with self._lock:
-            self.publish('will_fork_state', state, expression, solutions, policy)
+        self.publish('will_fork_state', state, expression, solutions, policy)
 
         #Build and enqueue a state for each solution 
         children = []
@@ -329,8 +327,7 @@ class Executor(Eventful):
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value)
 
-                with self._lock:
-                    self.publish('forking_state', new_state, expression, new_value, policy)
+                self.publish('forking_state', new_state, expression, new_value, policy)
 
                 #enqueue new_state
                 state_id = self.add(new_state)
