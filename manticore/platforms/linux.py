@@ -1710,21 +1710,51 @@ class Linux(Platform):
     def sys_recv(self, sockfd, buf, count, flags):
         try:
             sock = self.files[sockfd]
-            if not isinstance(sock, Socket):
-                return -errno.ENOTSOCK
-
-            data = sock.read(count)
-            self.current.write_bytes(buf, data)
-            self.syscall_trace.append(("_recv", sockfd, data))
-
-            logger.debug("recv(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
-                         sockfd, buf, count, len(data), repr(data)[:min(count,32)],
-                         len(data))
-
-            return len(data)
-
         except IndexError:
             return -errno.EINVAL
+
+        if not isinstance(sock, Socket):
+            return -errno.ENOTSOCK
+
+        data = sock.read(count)
+        self.current.write_bytes(buf, data)
+        self.syscall_trace.append(("_recv", sockfd, data))
+
+        logger.debug("recv(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
+                     sockfd, buf, count, len(data), repr(data)[:min(count,32)],
+                     len(data))
+
+        return len(data)
+
+
+    def sys_send(self, sockfd, buf, count, flags):
+        try:
+            sock = self.files[sockfd]
+        except IndexError:
+            return -errno.EINVAL
+
+        if not isinstance(sock, Socket):
+            return -errno.ENOTSOCK
+
+        #XXX(yan): send(2) is currently a nop; we don't communicate yet
+
+        return count
+
+    def sys_sendfile(self, out_fd, in_fd, offset_p, count):
+        if offset_p != 0:
+            offset = self.current.read_int(offset_p, self.count.address_bit_size)
+        else:
+            offset = 0
+
+        try:
+            out_sock = self.files[out_fd]
+            in_sock = self.files[in_fd]
+        except IndexError:
+            return -errno.EINVAL
+
+        #XXX(yan): sendfile(2) is currently a nop; we don't communicate yet
+
+        return count
 
     #Distpatchers...
     def syscall(self):
@@ -2238,15 +2268,23 @@ class SLinux(Linux):
         :param mode: file permission mode
         '''
         offset = 0
-        while True:
-            c = self.current.read_int(buf+offset, 8)
-            if issymbolic(c):
-                raise TerminateState("Tried to open a symbolic buffer as file")
-            if c == 0:
-                break
-            if offset > 1024:
-                break
-            offset += 1
+        symbolic_path = False
+        if issymbolic(self.current.read_int(buf, 8)):
+            import tempfile
+            fd, path = tempfile.mkstemp()
+            with open(path, 'wb+') as f:
+                f.write('+'*64)
+            self.symbolic_files.append(path)
+            symbolic_path = True
+            path_addr = self.current.memory.mmap(None, 1024, 'rw ')
+            self.current.write_bytes(path_addr, path)
+            buf = path_addr
 
-        return super(SLinux, self).sys_open(buf, flags, mode)
+        rv = super(SLinux, self).sys_open(buf, flags, mode)
+
+        if symbolic_path:
+            self.current.memory.munmap(path_addr, 1024)
+
+
+        return rv
 
