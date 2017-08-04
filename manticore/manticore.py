@@ -727,6 +727,7 @@ class Manticore(object):
         self._executor.subscribe('forking_state', self._forking_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
+        self._executor.subscribe('state_generate_inputs', self._generate_testcase_callback)
 
         if self._hooks:
             self._executor.subscribe('will_execute_instruction', self._hook_callback)
