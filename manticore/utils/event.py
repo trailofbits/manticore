@@ -46,8 +46,9 @@ class Eventful(object):
         #A bucket is a dictionary obj -> set(method1, method2...)
         return self._signals.setdefault(name,  dict())
 
-    def publish(self, name, *args, **kwargs):   
-        bucket = self._get_signal_bucket(name)
+    # The underscore _name is to avoid naming collisions with callback params
+    def publish(self, _name, *args, **kwargs):
+        bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.items():
             for callback in methods:
                 callback(robj(), *args, **kwargs)
@@ -56,9 +57,9 @@ class Eventful(object):
         # the callback signature. This is set on forward_events_from/to 
         for sink, include_source in self._forwards.items():
             if include_source:
-                sink.publish(name, self, *args, **kwargs)
+                sink.publish(_name, self, *args, **kwargs)
             else:
-                sink.publish(name, *args, **kwargs)
+                sink.publish(_name, *args, **kwargs)
 
     def subscribe(self, name, method):
         if not inspect.ismethod(method):
