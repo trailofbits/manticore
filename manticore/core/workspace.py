@@ -436,6 +436,7 @@ class ManticoreOutput(object):
         self.save_syscall_trace(state)
         self.save_fds(state)
         self._store.save_state(state, self._named_key('pkl'))
+        return self._last_id
 
     def save_stream(self, key, *rest, **kwargs):
         return self._store.save_stream(key, *rest, **kwargs)

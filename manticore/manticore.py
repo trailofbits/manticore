@@ -614,7 +614,7 @@ class Manticore(object):
         :param message: Accompanying message
         '''
         testcase_id = self._output.save_testcase(state, message)
-        logger.debug("Generated testcase No. %d - %s", testcase_id, message)
+        logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
 
     def _produce_profiling_data(self):
         class PstatsFormatted:
