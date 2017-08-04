@@ -284,7 +284,7 @@ class Executor(Eventful):
 
         #broadcast test generation. This is the time for other modules
         #to output whatever helps to understand this testcase
-        self.publish('will_generate_testcase', state)
+        self.publish('will_generate_testcase', state, message)
 
 
 
