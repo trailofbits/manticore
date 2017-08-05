@@ -428,7 +428,7 @@ class ManticoreOutput(object):
         :return: A state id representing the saved state
         """
 
-        self._named_key_prefix = self._prepare_named_key(prefix)
+        self._named_key_prefix = prefix
         self._increment_id()
 
         self.save_summary(state, message)
@@ -517,7 +517,3 @@ class ManticoreOutput(object):
                                     _in.write(chr(solver.get_value(state.constraints, c)))
                             except SolverException:
                                 _in.write('{SolverException}')
-
-    def _prepare_named_key(self, prefix):
-        return ''.join(['_' if str.isspace(c) else c for c in prefix])
-
