@@ -309,7 +309,7 @@ def _create_store(desc):
     elif type_ == 'mem':
         return MemoryStore()
     else:
-        raise NotImplementedError("Storage type '%s' not supported.", type)
+        raise NotImplementedError("Storage type '{0}' not supported.".format(type_))
 
 
 # This is copied from Executor to not create a dependency on the naming of the lock field
