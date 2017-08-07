@@ -1,28 +1,29 @@
 import os
 import copy
+import logging
 from collections import OrderedDict
 
-from .smtlib import solver
+from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
-from ..utils.event import Signal, forward_signals
-
+from ..utils.event import Eventful
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
-from .memory import ConcretizeMemory
+from .memory import ConcretizeMemory, MemoryException
 from ..platforms.platform import *
+
+logger = logging.getLogger("STATE")
 
 class StateException(Exception):
     ''' All state related exceptions '''
-    def __init__(self, *args, **kwargs):
-        super(StateException, self).__init__(*args)
-        
+    pass
+
 
 class TerminateState(StateException):
     ''' Terminates current state exploration '''
-    def __init__(self, *args, **kwargs):
-        super(TerminateState, self).__init__(*args, **kwargs)
-        self.testcase = kwargs.get('testcase', False)
+    def __init__(self, message, testcase=False):
+        super(TerminateState, self).__init__(message)
+        self.testcase = testcase
 
 
 class Concretize(StateException):
@@ -57,18 +58,18 @@ class ForkState(Concretize):
         super(ForkState, self).__init__(message, expression, policy='ALL', **kwargs)
 
 
-from ..utils.event import Signal
+class State(Eventful):
 
-class State(object):
     '''
     Representation of a unique program state/path.
 
     :param ConstraintSet constraints: Initial constraints 
-    :param platform: Initial operating system state
-    :type platform: Decree or Linux or Windows
+    :param Platform platform: Initial operating system state
+    :ivar dict context: Local context for arbitrary data storage
     '''
 
-    def __init__(self, constraints, platform):
+    def __init__(self, constraints, platform, **kwargs):
+        super(State, self).__init__(**kwargs)
         self.platform = platform
         self.forks = 0
         self.constraints = constraints
@@ -83,7 +84,7 @@ class State(object):
         #self.will_add_constraint = Signal()
 
         #Import all signals from platform
-        forward_signals(self, platform)
+        self.forward_events_from(platform)
 
     def __reduce__(self):
         return (self.__class__, (self.constraints, self.platform),
@@ -138,6 +139,8 @@ class State(object):
                                 expression=expression, 
                                 setstate=setstate,
                                 policy=e.policy)
+        except MemoryException as e:
+            raise TerminateState(e.message, testcase=True)
 
         #Remove when code gets stable?
         assert self.platform.constraints is self.constraints
@@ -167,11 +170,14 @@ class State(object):
         :param str name: (keyword arg only) The name to assign to the buffer
         :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
                  (i.e. no \0 bytes, except for the last byte). (bool)
+        :param taint: Taint identifier of the new buffer
+        :type taint: tuple or frozenset
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
         name = options.get('name', 'buffer')
-        expr = self.constraints.new_array(name=name, index_max=nbytes)
+        taint = options.get('taint', frozenset())
+        expr = self.constraints.new_array(name=name, index_max=nbytes, taint=taint)
         self.input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -196,7 +202,7 @@ class State(object):
         self.input_symbols.append(expr)
         return expr
 
-    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False):
+    def symbolicate_buffer(self, data, label='INPUT', wildcard='+', string=False, taint=frozenset()):
         '''Mark parts of a buffer as symbolic (demarked by the wildcard byte)
 
         :param str data: The string to symbolicate. If no wildcard bytes are provided,
@@ -204,6 +210,8 @@ class State(object):
         :param str label: The label to assign to the value
         :param str wildcard: The byte that is considered a wildcard
         :param bool string: Ensure bytes returned can not be \0
+        :param taint: Taint identifier of the symbolicated data
+        :type taint: tuple or frozenset
 
         :return: If data does not contain any wildcard bytes, data itself. Otherwise,
             a list of values derived from data. Non-wildcard bytes are kept as
@@ -211,7 +219,7 @@ class State(object):
         '''
         if wildcard in data:
             size = len(data)
-            symb = self.constraints.new_array(name=label, index_max=size)
+            symb = self.constraints.new_array(name=label, index_max=size, taint=taint)
             self.input_symbols.append(symb)
 
             tmp = []
@@ -354,6 +362,8 @@ class State(object):
         function, the following arguments correspond to the arguments of the C function
         being modeled. If the `model` models a variadic function, the following argument
         is a generator object, which can be used to access function arguments dynamically.
+        The `model` callable should simply return the value that should be returned by the
+        native function being modeled.
 
         :param callable model: Model to invoke
         '''
