@@ -545,14 +545,14 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
     def _store_state_callback(self, state, state_id):
-        logger.debug("store state %r", state_id)
+        logger.info("store state %r", state_id)
 
     def _load_state_callback(self, state, state_id):
-        logger.debug("load state %r", state_id)
+        logger.info("load state %r", state_id)
 
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
-        logger.debug("Terminate state %r %r ", state, state_id)
+        logger.info("Terminate state %r %r ", state, state_id)
         if state is None:
             return
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -571,7 +571,7 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
-        logger.debug("About to store state %r %r %r", state, expression, values, policy)
+        logger.info("About to store state %r %r %r", state, values, policy)
 
     def _read_register_callback(self, state, reg_name, value): 
         logger.debug("Read Register %r %r", reg_name, value)
