@@ -120,11 +120,11 @@ class Uncovered(Policy):
 class BranchLimited(Policy):
     def __init__(self, executor, *args, **kwargs):
         super(BranchLimited, self).__init__(executor, *args, **kwargs)
-        self._executor.will_load_state += self._register
+        self._executor.subscribe('will_load_state', self._register)
         self._limit = kwargs.get('limit', 5)
 
     def _register(self, *args):
-        self.executor.will_execute_instruction += self._visited_callback
+        self.executor.subscribe('will_execute_instruction', self._visited_callback)
 
     def _visited_callback(self, state, instr):
         ''' Maintain our own copy of the visited set
