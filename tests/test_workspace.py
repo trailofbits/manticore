@@ -97,7 +97,7 @@ class StateTest(unittest.TestCase):
             if 'messages' in name:
                 self.assertTrue(message in data)
 
-        keys = [x.split('.')[1] for x in out._store._data.keys()]
+        keys = [x.split('.')[1] for x in workspace.keys()]
 
         # Make sure we log everything we should be logging
         self.assertIn('smt', keys)
