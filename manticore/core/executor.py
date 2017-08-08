@@ -216,9 +216,7 @@ class Executor(Eventful):
     def _stop_run(self):
         #notify siblings we are about to stop this run()
         self._running.value -= 1
-        try:
-            assert self._running.value >= 0
-        except AssertionError:
+        if self._running.value < 0:
             raise SystemExit
         self._lock.notify_all()
 

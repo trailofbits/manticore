@@ -141,10 +141,6 @@ def binary_type(path):
         return 'PE'
     elif magic == '\x7fCGC':
         return 'DECREE'
-    # FIXME (theo) magic for file containing Binja IL.
-    # For now we just load the binary, this is to be implemented
-    elif magic == 'BNJA':
-        return 'BinaryNinjaIL'
     else:
         raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
 

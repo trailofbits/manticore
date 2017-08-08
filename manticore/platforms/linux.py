@@ -390,13 +390,6 @@ class Linux(Platform):
     def _mk_proc(self, arch):
         mem = Memory32() if arch in {'i386', 'armv7'} else Memory64()
         cpu = CpuFactory.get_cpu(mem, arch)
-        # FIXME
-        arch_map = {
-            'i386': (cs.CS_ARCH_X86, cs.CS_MODE_32),
-            'amd64': (cs.CS_ARCH_X86, cs.CS_MODE_64),
-            'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
-        }
-        arch, mode = arch_map[arch]
         return cpu
 
 
@@ -2021,10 +2014,7 @@ class Linux(Platform):
 
         # Establish segment registers for x86 architectures
         if self.arch in {'i386', 'amd64'}:
-            if is_binja_disassembler(self.disasm):
-                x86_defaults = {'cs': 0x23, 'ss': 0x2b, 'ds': 0x2b, 'es': 0x2b}
-            else:
-                x86_defaults = {'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b}
+            x86_defaults = {'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b}
             for reg, val in x86_defaults.iteritems():
                 self.current.regfile.write(reg, val)
 
@@ -2080,14 +2070,6 @@ class SLinux(Linux):
             return self._init_binja_cpu(mem)
 
         cpu = CpuFactory.get_cpu(mem, arch)
-
-        # FIXME
-        arch_map = {
-            'i386': (cs.CS_ARCH_X86, cs.CS_MODE_32),
-            'amd64': (cs.CS_ARCH_X86, cs.CS_MODE_64),
-            'armv7': (cs.CS_ARCH_ARM, cs.CS_MODE_ARM)
-        }
-        arch, mode = arch_map[arch]
         return cpu
 
     def _init_binja_cpu(self, memory):

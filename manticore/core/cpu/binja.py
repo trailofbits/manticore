@@ -24,6 +24,10 @@ class BinjaRegisterFile(RegisterFile):
         self.reg_aliases = {
             'STACK' : str(arch.stack_pointer),
             'PC' : self.get_pc(),
+            'CS' : 'cs',
+            'SS' : 'ss',
+            'DS' : 'ds',
+            'ES' : 'es'
         }
         super(BinjaRegisterFile, self).__init__(aliases=self.reg_aliases)
 

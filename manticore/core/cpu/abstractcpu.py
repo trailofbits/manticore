@@ -369,7 +369,8 @@ class Cpu(Eventful):
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
-        disasm = kwargs.pop("disasm", None)
+        # FIXME (theo) initialize disassembler based on the argument passed
+        kwargs.pop("disasm", None)
         super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
@@ -685,8 +686,6 @@ class Cpu(Eventful):
         #Check that the decoded intruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
-            import traceback
-            traceback.print_stack()
             raise InvalidMemoryAccess(pc, 'x')
 
         # if we are executing Binja-IL but need to fallback to capstone,
@@ -765,8 +764,7 @@ class Cpu(Eventful):
                 isinstance(insn, cs.CsInsn)):
             # if we got a capstone instruction using BinjaILDisasm, it means
             # this instruction is not implemented. Fallback to Capstone
-            implementation = getattr(self, "FALLBACK")
-            implementation(name, *insn.operands)
+            self.FALLBACK(name, *insn.operands)
         else:
             implementation = getattr(self, name, fallback_to_emulate)
             implementation(*insn.operands)

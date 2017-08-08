@@ -2,7 +2,7 @@ import sys
 import argparse
 import logging
 
-from .manticore import Manticore
+from manticore import Manticore
 
 sys.setrecursionlimit(10000)
 
@@ -21,7 +21,7 @@ def parse_arguments():
     parser.add_argument('--data', type=str, default='',
                         help='Initial concrete concrete_data for the input symbolic buffer')
     # FIXME (theo) similarly to policy, add documentation here.
-    disas = ['capstone', 'binja', 'binja-il']
+    disas = ['capstone', 'binja-il']
     parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
                         help='Disassembler to be used to lift binaries')
     parser.add_argument('--dumpafter', type=int, default=0,
