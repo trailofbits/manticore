@@ -562,7 +562,10 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
 
             manticore_instructions_count = manticore_context.get('instructions_count', 0)
-            manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count 
+            manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
+
+    def _forking_state_callback(self, state, expression, value, policy):
+        state.record_branch(value)
 
     def _fork_state_callback(self, state, expression, values, policy):
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -571,7 +574,8 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
-        logger.info("About to store state %r %r %r", state, values, policy)
+        logger.info("Forking, about to store. (policy: %s, values: %s)", policy,
+                ', '.join('0x{:x}'.format(pc) for pc in values))
 
     def _read_register_callback(self, state, reg_name, value): 
         logger.debug("Read Register %r %r", reg_name, value)
@@ -588,7 +592,6 @@ class Manticore(object):
     def _decode_instruction_callback(self, state, pc):
         logger.debug("Decoding stuff instruction not available")
 
-
     def _emulate_instruction_callback(self, state, instruction):
         logger.debug("About to emulate instruction")
 
@@ -604,14 +607,14 @@ class Manticore(object):
             state.context['instructions_count'] = count + 1
 
 
-    def _generate_testcase_callback(self, state, message = 'Testcase generated'):
+    def _generate_testcase_callback(self, state, name, message):
         '''
         Create a serialized description of a given state.
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        testcase_id = self._output.save_testcase(state, message)
-        logger.debug("Generated testcase No. %d - %s", testcase_id, message)
+        testcase_id = self._output.save_testcase(state, name, message)
+        logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
 
     def _produce_profiling_data(self):
         class PstatsFormatted:
@@ -721,6 +724,7 @@ class Manticore(object):
         self._executor.subscribe('will_store_state', self._store_state_callback)
         self._executor.subscribe('will_load_state', self._load_state_callback)
         self._executor.subscribe('will_fork_state', self._fork_state_callback)
+        self._executor.subscribe('forking_state', self._forking_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
 
