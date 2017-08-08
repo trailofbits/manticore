@@ -25,7 +25,7 @@ class ModelTest(unittest.TestCase):
     stack_top = state.cpu.RSP
 
     def _clear_constraints(self):
-        self.state.constraints = ConstraintSet()
+        self.state._constraints = ConstraintSet()
 
     def tearDown(self):
         self._clear_constraints()
@@ -139,7 +139,6 @@ class StrlenTest(ModelTest):
         s = self._push_string(sy)
 
         ret = strlen(self.state, s)
-        print solver.get_all_values(self.state.constraints, ret)
         self.assertItemsEqual(range(4), solver.get_all_values(self.state.constraints, ret))
 
         self.state.constrain(sy[0] == 0)

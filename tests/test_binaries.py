@@ -61,6 +61,7 @@ class IntegrationTest(unittest.TestCase):
                                 '--procs', '4',
                                 filename,
                                 '+++++++++'], stdout=output)
+            
         self.assertTrue(time.time()-t < 20)
 
     def test_cli_verbosity(self):

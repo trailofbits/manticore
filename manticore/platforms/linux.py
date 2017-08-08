@@ -282,7 +282,7 @@ class Linux(Platform):
     This class emulates the most common Linux system calls
     '''
 
-    def __init__(self, program, argv=None, envp=None):
+    def __init__(self, program, argv=None, envp=None, **kwargs):
         '''
         Builds a Linux OS platform
         :param string program: The path to ELF binary
@@ -291,7 +291,7 @@ class Linux(Platform):
         :ivar files: List of active file descriptors
         :type files: list[Socket] or list[File]
         '''
-        super(Linux, self).__init__(program)
+        super(Linux, self).__init__(path=program, **kwargs)
 
         self.program = program
         self.clocks = 0
@@ -379,7 +379,7 @@ class Linux(Platform):
 
         #Install event forwarders
         for proc in self.procs:
-            forward_signals(self, proc)
+            self.forward_events_from(proc)
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
@@ -393,7 +393,7 @@ class Linux(Platform):
         return self.procs[self._current]
 
     def __getstate__(self):
-        state = {}
+        state = super(Linux, self).__getstate__()
         state['clocks'] = self.clocks
         state['input'] = self.input.buffer
         state['output'] = self.output.buffer
@@ -434,6 +434,8 @@ class Linux(Platform):
         :todo: some asserts
         :todo: fix deps? (last line)
         """
+        super(Linux, self).__setstate__(state)
+
         self.input = Socket()
         self.input.buffer = state['input']
         self.output = Socket()
@@ -478,7 +480,7 @@ class Linux(Platform):
             
         #Install event forwarders
         for proc in self.procs:
-            forward_signals(self, proc)
+            self.forward_events_from(proc)
 
     def _init_arm_kernel_helpers(self):
         '''
