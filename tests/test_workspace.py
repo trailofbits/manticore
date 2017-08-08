@@ -86,8 +86,8 @@ class StateTest(unittest.TestCase):
 
     def test_output(self):
         out = ManticoreOutput('mem:')
-        out.save_testcase(self.state, 'saving state')
-        keys = [x[14:] for x in out._store._data.keys()]
+        out.save_testcase(self.state, 'test')
+        keys = [x.split('.')[1] for x in out._store._data.keys()]
 
         # Make sure we log everything we should be logging
         self.assertIn('smt', keys)
