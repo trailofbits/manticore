@@ -1736,7 +1736,9 @@ class Linux(Platform):
         if not isinstance(sock, Socket):
             return -errno.ENOTSOCK
 
+        data = self.current.read_bytes(buf, count)
         #XXX(yan): send(2) is currently a nop; we don't communicate yet
+        self.syscall_trace.append(("_send", sockfd, data))
 
         return count
 
