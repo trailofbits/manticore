@@ -366,4 +366,4 @@ class State(Eventful):
         self.context['branches'] = dict()
 
     def generate_testcase(self, name, message='State generated testcase'):
-        self.publish('state_generate_inputs', message=message, name=name)
+        self.publish('state_generate_inputs', name, message)
