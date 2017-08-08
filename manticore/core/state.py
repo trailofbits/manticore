@@ -364,3 +364,12 @@ class State(Eventful):
 
     def _init_context(self):
         self.context['branches'] = dict()
+
+    def generate_testcase(self, name, message='State generated testcase'):
+        """
+        Generate a testcase for this state and place in the analysis workspace.
+
+        :param str name: Short string identifying this testcase used to prefix workspace entries.
+        :param str message: Longer description
+        """
+        self.publish('will_generate_inputs', name, message)

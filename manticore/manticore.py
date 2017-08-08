@@ -607,13 +607,13 @@ class Manticore(object):
             state.context['instructions_count'] = count + 1
 
 
-    def _generate_testcase_callback(self, state, message):
+    def _generate_testcase_callback(self, state, name, message):
         '''
         Create a serialized description of a given state.
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        testcase_id = self._output.save_testcase(state, message)
+        testcase_id = self._output.save_testcase(state, name, message)
         logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
 
     def _produce_profiling_data(self):

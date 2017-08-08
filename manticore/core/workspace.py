@@ -400,6 +400,7 @@ class ManticoreOutput(object):
 
         :param desc: A descriptor ('type:uri') of where to write output.
         """
+        self._named_key_prefix = 'test'
         self._store = _create_store(desc)
         self._last_id = 0
         self._id_gen = manager.Value('i', self._last_id)
@@ -415,9 +416,9 @@ class ManticoreOutput(object):
         self._id_gen.value += 1
 
     def _named_key(self, suffix):
-        return 'test_{:08x}.{}'.format(self._last_id, suffix)
+        return '{}_{:08x}.{}'.format(self._named_key_prefix, self._last_id, suffix)
 
-    def save_testcase(self, state, message=''):
+    def save_testcase(self, state, prefix, message=''):
         """
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
@@ -427,6 +428,7 @@ class ManticoreOutput(object):
         :return: A state id representing the saved state
         """
 
+        self._named_key_prefix = prefix
         self._increment_id()
 
         self.save_summary(state, message)
