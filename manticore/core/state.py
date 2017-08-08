@@ -372,4 +372,4 @@ class State(Eventful):
         :param str name: Short string identifying this testcase used to prefix workspace entries.
         :param str message: Longer description
         """
-        self.publish('state_generate_inputs', name, message)
+        self.publish('will_generate_inputs', name, message)
