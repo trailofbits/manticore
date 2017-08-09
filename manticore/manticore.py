@@ -27,7 +27,6 @@ from .utils.nointerrupt import WithKeyboardInterruptAs
 
 logger = logging.getLogger('MANTICORE')
 
-
 def makeDecree(program, concrete_data=''):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
@@ -68,7 +67,7 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     #set stdin input...
     platform.input.write(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
-    return initial_state 
+    return initial_state
 
 
 def makeWindows(args):
@@ -92,7 +91,7 @@ def makeWindows(args):
     buf_str = "".join(platform.current.read_bytes(data_ptr, data_size))
     logger.debug('Original buffer: %s', buf_str.encode('hex'))
 
-    offset = args.offset 
+    offset = args.offset
     concrete_data = args.data.decode('hex')
     assert data_size >= offset + len(concrete_data)
     size = min(args.maxsymb, data_size - offset - len(concrete_data))
@@ -191,11 +190,11 @@ class Manticore(object):
         else:
             logger.warning("Using shared context without a lock")
             return self._executor._shared_context
-        
+
 
     @contextmanager
     def locked_context(self, key=None, default=list):
-        ''' It refers to the manticore shared context 
+        ''' It refers to the manticore shared context
             It needs a lock. Its used like this:
 
             with m.context() as context:
@@ -220,7 +219,7 @@ class Manticore(object):
                 yield ctx
                 context[key] = ctx
 
-    def _init_logging(self): 
+    def _init_logging(self):
 
         def loggerSetState(logger, stateid):
             logger.filters[0].stateid = stateid
@@ -306,12 +305,32 @@ class Manticore(object):
     def verbosity(self, setting):
         zero = map(lambda x: (x, logging.ERROR),
                    ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM'])
-        levels = [zero,
-                  [('MANTICORE', logging.INFO), ('EXECUTOR', logging.INFO)],
-                  [('PLATFORM', logging.DEBUG)],
-                  [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('REGISTERS', logging.DEBUG)],
-                  [('SMT', logging.DEBUG)]]
+        levels = [
+            # 0
+            [
+                ('MANTICORE', logging.INFO)
+            ],
+            # 1 (-v)
+            [
+                ('EXECUTOR', logging.INFO),
+                ('PLATFORM', logging.DEBUG)
+            ],
+            # 2 (-vv)
+            [
+                ('CPU', logging.DEBUG)
+            ],
+            # 3 (-vvv)
+            [
+                ('MEMORY', logging.DEBUG),
+                ('CPU', logging.DEBUG),
+                ('REGISTERS', logging.DEBUG)
+            ],
+            # 4 (-vvvv)
+            [
+                ('MANTICORE', logging.DEBUG),
+                ('SMT', logging.DEBUG)
+             ]
+        ]
 
         # Takes a value and ensures it's in a certain range
         def clamp(val, minimum, maximum):
@@ -395,7 +414,7 @@ class Manticore(object):
             raise NotImplementedError("Binary {} not supported.".format(path))
 
         return state
-        
+
 
     @property
     def policy(self):
@@ -461,7 +480,7 @@ class Manticore(object):
         else: raise "Unsupported architecture: %s"%(arch, )
 
         return self._arch
-        
+
 
     def _start_workers(self, num_processes, profiling=False):
         assert num_processes > 0, "Must have more than 0 worker processes"
@@ -492,7 +511,7 @@ class Manticore(object):
             p.start()
 
     def _join_workers(self):
-        with WithKeyboardInterruptAs(self._executor.shutdown):    
+        with WithKeyboardInterruptAs(self._executor.shutdown):
             while len(self._workers) > 0:
                 w = self._workers.pop().join()
 
@@ -552,7 +571,7 @@ class Manticore(object):
 
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
-        logger.info("Terminate state %r %r ", state, state_id)
+        logger.debug("Terminate state %r %r ", state, state_id)
         if state is None:
             return
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -574,10 +593,11 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
-        logger.info("Forking, about to store. (policy: %s, values: %s)", policy,
-                ', '.join('0x{:x}'.format(pc) for pc in values))
+        logger.debug("Forking, about to store. (policy: %s, values: %s)",
+                     policy,
+                     ', '.join('0x{:x}'.format(pc) for pc in values))
 
-    def _read_register_callback(self, state, reg_name, value): 
+    def _read_register_callback(self, state, reg_name, value):
         logger.debug("Read Register %r %r", reg_name, value)
 
     def _write_register_callback(self, state, reg_name, value):
@@ -709,9 +729,9 @@ class Manticore(object):
 
         self._executor = Executor(initial_state,
                                   workspace=ws_path,
-                                  policy=self._policy, 
+                                  policy=self._policy,
                                   context=self.context)
-        
+
 
 
         #Link Executor events to default callbacks in manticore object
