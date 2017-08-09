@@ -954,7 +954,8 @@ class SMemory(Memory):
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition )
-                raise ForkState(condition)
+                from .state import ForkState
+                raise ForkState("Forking state on incomplete result", condition)
 
             #So here we have all potential solutions to address
             assert len(solutions) > 0

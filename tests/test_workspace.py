@@ -4,10 +4,10 @@ import unittest
 from multiprocessing.managers import SyncManager
 
 from manticore.platforms import linux
-from manticore.utils.event import Signal
 from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
 from manticore.core.workspace import *
+from manticore.utils.event import Eventful
 
 manager = SyncManager()
 manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
@@ -24,18 +24,9 @@ class FakeMemory(object):
     def constraints(self, constraints):
         self._constraints = constraints
 
-class FakeCpu(object):
+class FakeCpu(Eventful):
     def __init__(self):
-        self.will_decode_instruction = Signal()
-        self.will_execute_instruction = Signal()
-        self.did_execute_instruction = Signal()
-        self.will_emulate_instruction = Signal()
-        self.did_emulate_instruction = Signal()
-
-        self.will_read_register = Signal()
-        self.will_write_register = Signal()
-        self.will_read_memory = Signal()
-        self.will_write_memory = Signal()
+        super(FakeCpu, self).__init__()
 
         self._memory = FakeMemory()
 

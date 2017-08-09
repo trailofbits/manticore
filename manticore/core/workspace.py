@@ -309,7 +309,7 @@ def _create_store(desc):
     elif type_ == 'mem':
         return MemoryStore()
     else:
-        raise NotImplementedError("Storage type '%s' not supported.", type)
+        raise NotImplementedError("Storage type '{0}' not supported.".format(type_))
 
 
 # This is copied from Executor to not create a dependency on the naming of the lock field
@@ -436,6 +436,7 @@ class ManticoreOutput(object):
         self.save_syscall_trace(state)
         self.save_fds(state)
         self._store.save_state(state, self._named_key('pkl'))
+        return self._last_id
 
     def save_stream(self, key, *rest, **kwargs):
         return self._store.save_stream(key, *rest, **kwargs)
