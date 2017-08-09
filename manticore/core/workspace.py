@@ -424,7 +424,7 @@ class ManticoreOutput(object):
         :rtype: str
         """
         if self._descriptor is None:
-            self._descriptor = ':'.join([self._store.store_type, self._store.uri])
+            self._descriptor = '{}:{}'.format(self._store.store_type, self._store.uri)
 
         return self._descriptor
 
