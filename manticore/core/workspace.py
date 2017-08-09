@@ -423,7 +423,10 @@ class ManticoreOutput(object):
 
         :rtype: str
         """
-        return ':'.join([self._store.store_type, self._store.uri])
+        if self._descriptor is None:
+            self._descriptor = ':'.join([self._store.store_type, self._store.uri])
+
+        return self._descriptor
 
     @sync
     def _increment_id(self):
