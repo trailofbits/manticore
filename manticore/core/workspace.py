@@ -63,7 +63,7 @@ class Store(object):
         raise NotImplementedError("Store subclass must define store_type() class method")
 
     @classmethod
-    def create_store(cls, desc):
+    def fromdescriptor(cls, desc):
 	"""
 	Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
 
@@ -339,7 +339,7 @@ class Workspace(object):
     """
 
     def __init__(self, lock, desc=None):
-        self._store = Store.create_store(desc)
+        self._store = Store.fromdescriptor(desc)
         self._serializer = PickleSerializer()
         self._last_id = manager.Value('i', 0)
         self._lock = lock
@@ -411,7 +411,7 @@ class ManticoreOutput(object):
         """
         self._named_key_prefix = 'test'
         self._descriptor = desc
-        self._store = Store.create_store(desc)
+        self._store = Store.fromdescriptor(desc)
         self._last_id = 0
         self._id_gen = manager.Value('i', self._last_id)
         self._lock = manager.Condition(manager.RLock())
