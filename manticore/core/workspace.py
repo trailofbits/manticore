@@ -58,9 +58,6 @@ class Store(object):
 
     Implement either save_value/load_value in subclasses, or save_stream/load_stream, or both.
     """
-    @classmethod
-    def store_type(cls):
-        raise NotImplementedError("Store subclass must define store_type() class method")
 
     @classmethod
     def fromdescriptor(cls, desc):
@@ -68,16 +65,18 @@ class Store(object):
 	Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
 
 	Valid descriptors:
-	  fs:<path>
-	  redis:<hostname>:<port>
-	  mem:
+	  * fs:<path>
+	  * redis:<hostname>:<port>
+	  * mem:
 
 	:param str desc: Store descriptor
 	:return: Store instance
 	"""
         type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
         for subclass in cls.__subclasses__():
-            if subclass.store_type() == type_:
+            if not hasattr(subclass, 'store_type'):
+                raise NotImplementedError("Store subclasses must define store_type class attribute")
+            if subclass.store_type == type_:
                 return subclass(uri)
         raise NotImplementedError("Storage type '{0}' not supported.".format(type_))
 
@@ -184,9 +183,7 @@ class FilesystemStore(Store):
     """
     A directory-backed Manticore workspace
     """
-    @classmethod
-    def store_type(cls):
-        return 'fs'
+    store_type = 'fs'
 
     def __init__(self, uri=None):
         """
@@ -251,9 +248,7 @@ class MemoryStore(Store):
     NOTE: This is mostly used for experimentation and testing funcionality. 
     Can not be used with multiple workers!
     """
-    @classmethod
-    def store_type(cls):
-        return 'mem'
+    store_type = 'mem'
 
     #TODO(yan): Once we get a global config store, check it to make sure
     # we're executing in a single-worker or test environment.
@@ -278,9 +273,7 @@ class RedisStore(Store):
     """
     A redis-backed Manticore workspace
     """
-    @classmethod
-    def store_type(cls):
-        return 'redis'
+    store_type = 'redis'
 
     def __init__(self, uri=None):
         """
@@ -430,7 +423,7 @@ class ManticoreOutput(object):
 
         :rtype: str
         """
-        return ':'.join([self._store.store_type(), self._store.uri])
+        return ':'.join([self._store.store_type, self._store.uri])
 
     @sync
     def _increment_id(self):
