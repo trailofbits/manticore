@@ -6,7 +6,6 @@ import random
 import struct
 import ctypes
 
-from ..utils.event import Signal, forward_signals
 from ..utils.helpers import issymbolic
 from ..binary import Elf
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
