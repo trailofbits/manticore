@@ -7,6 +7,7 @@ from binaryninja import PluginCommand, HighlightStandardColor
 from binaryninja.interaction import (
     get_open_filename_input, get_directory_name_input, get_choice_input
 )
+import binaryninja.enums as enums
 
 blue = HighlightStandardColor.BlueHighlightColor
 black = HighlightStandardColor.BlackHighlightColor
@@ -28,7 +29,10 @@ class TraceVisualizer(object):
         self.view = view
         self.workspace = workspace
         self.base = base
+        # highlighted addresses
         self.highlighted = set()
+        # covered basic blocks
+        self.cov_bb = set()
         self.current_function = None
         self.live_update = live
 
@@ -48,6 +52,7 @@ class TraceVisualizer(object):
         while True:
             time.sleep(interval)
             self.highlight_trace(tracefile)
+            self.compute_coverage()
             if not self.live_update:
                 break
 
@@ -57,6 +62,7 @@ class TraceVisualizer(object):
             for f in os.listdir(workspace_dir):
                 if f.endswith('trace'):
                     self.highlight_trace(os.path.join(workspace_dir, f))
+            self.compute_coverage()
             if not self.live_update:
                 break
 
@@ -80,6 +86,7 @@ class TraceVisualizer(object):
                 self.current_function = blocks[0].function
                 self.view.file.navigate(self.view.file.view, blocks[0].start)
             self.highlighted.add(addr)
+            self.cov_bb.add(blocks[0].start)
             if self.live_update:
                 blocks[0].function.set_auto_instr_highlight(addr, white)
                 time.sleep(0.1)
@@ -89,6 +96,59 @@ class TraceVisualizer(object):
         blocks = self.view.get_basic_blocks_at(addr)
         for b in blocks:
             b.set_user_highlight(hl)
+
+    def compute_coverage(self):
+        # function cumulative bb coverage
+        # key: function address
+        # values: [total basic blocks covered, xrefs to function]
+        fun_cov = {f.start : [0, 0] for f in self.view.functions}
+        fun_xrefs = sorted([(f, self.view.get_code_refs(f.start))
+                            for f in self.view.functions],
+                           key=lambda x: len(x[1]))
+
+        for f, xrefs in fun_xrefs:
+            if not f.basic_blocks:
+                continue
+            cov = (len(
+                (set([b.start for b in f.basic_blocks])
+                 .intersection(self.cov_bb))
+            ) / float(len(set(f.basic_blocks))))
+            fun_cov[f.start][0] += cov
+            for xref_f in xrefs:
+                fun_cov[xref_f.function.start][0] += cov
+                fun_cov[xref_f.function.start][1] += 1
+
+        for f, xrefs in fun_xrefs:
+            cov = str((fun_cov[f.start][0] * 100.0) / (fun_cov[f.start][1] + 1))
+            cov += "% cumulative BB coverage"
+            f.set_comment(f.start, "Function Stats: \n" + cov)
+            for xref in xrefs:
+                op = xref.function.get_lifted_il_at(xref.address).operation
+                if not (op == enums.LowLevelILOperation.LLIL_CALL or
+                        op == enums.LowLevelILOperation.LLIL_JUMP or
+                        op == enums.LowLevelILOperation.LLIL_JUMP_TO or
+                        op == enums.LowLevelILOperation.LLIL_SYSCALL or
+                        op == enums.LowLevelILOperation.LLIL_GOTO):
+                    continue
+                xref.function.set_comment_at(xref.address, cov)
+
+    def clear_stats(self):
+        self.highlighted.clear()
+        self.cov_bb.clear()
+        fun_xrefs = sorted([(f, self.view.get_code_refs(f.start))
+                            for f in self.view.functions],
+                           key=lambda x: len(x[1]))
+        for f, xrefs in fun_xrefs:
+            f.set_comment(f.start, None)
+            for xref in xrefs:
+                op = xref.function.get_lifted_il_at(xref.address).operation
+                if not (op == enums.LowLevelILOperation.LLIL_CALL or
+                        op == enums.LowLevelILOperation.LLIL_JUMP or
+                        op == enums.LowLevelILOperation.LLIL_JUMP_TO or
+                        op == enums.LowLevelILOperation.LLIL_SYSCALL or
+                        op == enums.LowLevelILOperation.LLIL_GOTO):
+                    continue
+                xref.function.set_comment_at(xref.address, None)
 
 def get_workspace():
     choice = get_choice_input("Select Trace Type",
@@ -125,7 +185,7 @@ def clear_all(view):
     for addr in tv.highlighted:
         tv.highlight_block(addr, clear)
     tv.live_update = False
-    tv.highlighted.clear()
+    tv.clear_stats()
 
 PluginCommand.register("ManticoreTrace: Highlight",
                        "Highlight Manticore Execution Trace",
