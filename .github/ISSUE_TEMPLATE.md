@@ -1,6 +1,8 @@
 ### OS / Environment
 <!--- lsb_release -a --->
 
+### Manticore version
+<!--- pip list | grep -i manticore --->
 
 ### Python version
 <!--- python --version --->
