@@ -9,7 +9,7 @@ from multiprocessing import Manager, Pool, Process
 from threading import Timer
 from core.smtlib import Expression
 from manticore import Manticore
-from .utils.logging import set_verbosity
+from .utils.log import set_verbosity
 try:
     import psutil
 except ImportError:

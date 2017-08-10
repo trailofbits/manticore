@@ -24,7 +24,7 @@ from .core.smtlib import solver, ConstraintSet
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
-from .utils.logging import set_verbosity as set_logging_verbosity
+from .utils.log import set_verbosity as set_logging_verbosity
 
 logger = logging.getLogger('MANTICORE')
 
