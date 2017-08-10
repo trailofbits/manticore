@@ -53,10 +53,14 @@ class PickleSerializer(StateSerializer):
 
 class Store(object):
     """
-    A Store can save arbitrary keys/values (including states) and file streams. Used for generating
-    output, and state saving and loading.
+    A `Store` can save arbitrary keys/values (including states) and file streams.
+    Used for generating output, state saving and state loading.
 
-    Implement either save_value/load_value in subclasses, or save_stream/load_stream, or both.
+    In subclasses:
+
+     * Implement either save_value/load_value, or save_stream/load_stream, or both.
+     * Define a `store_type` class variable of type str.
+       * This is used as a prefix for a store descriptor
     """
 
     @classmethod
