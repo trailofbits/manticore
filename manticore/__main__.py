@@ -9,6 +9,7 @@ from multiprocessing import Manager, Pool, Process
 from threading import Timer
 from core.smtlib import Expression
 from manticore import Manticore
+from utils.mlogging import set_verbosity
 try:
     import psutil
 except ImportError:
@@ -71,6 +72,7 @@ def main():
 
     m = Manticore(args.programs[0], args.programs[1:])
 
+    set_verbosity(args.v)
     m.policy = args.policy
     m.args = args
 
@@ -110,7 +112,6 @@ def main():
     if args.assertions:
         m.load_assertions(args.assertions)
 
-    m.verbosity = args.v
 
     m.run(args.procs, args.timeout)
 

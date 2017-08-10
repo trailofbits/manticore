@@ -130,6 +130,7 @@ def binary_type(path):
     else:
         raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
 
+
 class Manticore(object):
     '''
     The central analysis object.
@@ -169,7 +170,6 @@ class Manticore(object):
         self._dumpafter = 0
         self._maxstates = 0
         self._maxstorage = 0
-        self._verbosity = 0
         self._symbolic_files = [] # list of string
         self._executor = None
         #Executor wide shared context
@@ -179,8 +179,6 @@ class Manticore(object):
         # be refactored out
         if self._binary_type == 'ELF':
             self._binary_obj = ELFFile(file(self._binary))
-
-        self._init_logging()
 
     @property
     def context(self):
@@ -218,30 +216,6 @@ class Manticore(object):
                 ctx = context.get(key, default())
                 yield ctx
                 context[key] = ctx
-
-    def _init_logging(self):
-
-        def loggerSetState(logger, stateid):
-            logger.filters[0].stateid = stateid
-
-        class ContextFilter(logging.Filter):
-            '''
-            This is a filter which injects contextual information into the log.
-            '''
-            def filter(self, record):
-                if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-                    record.stateid = '[%d]' % self.stateid
-                else:
-                    record.stateid = ''
-                return True
-
-        ctxfilter = ContextFilter()
-
-        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout, level=logging.ERROR)
-
-        for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM']:
-            logging.getLogger(loggername).addFilter(ctxfilter)
-            logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
 
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
@@ -292,57 +266,6 @@ class Manticore(object):
     @maxstorage.setter
     def maxstorage(self, max_storage):
         self._maxstorage = max_storage
-
-    @property
-    def verbosity(self):
-        '''
-        Convenience interface for setting logging verbosity to one of several predefined
-        logging presets. Valid values: 0-5
-        '''
-        return self._verbosity
-
-    @verbosity.setter
-    def verbosity(self, setting):
-        zero = map(lambda x: (x, logging.ERROR),
-                   ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM'])
-        levels = [
-            # 0
-            [
-                ('MANTICORE', logging.INFO)
-            ],
-            # 1 (-v)
-            [
-                ('EXECUTOR', logging.INFO),
-                ('PLATFORM', logging.DEBUG)
-            ],
-            # 2 (-vv)
-            [
-                ('CPU', logging.DEBUG)
-            ],
-            # 3 (-vvv)
-            [
-                ('MEMORY', logging.DEBUG),
-                ('CPU', logging.DEBUG),
-                ('REGISTERS', logging.DEBUG)
-            ],
-            # 4 (-vvvv)
-            [
-                ('MANTICORE', logging.DEBUG),
-                ('SMT', logging.DEBUG)
-             ]
-        ]
-
-        # Takes a value and ensures it's in a certain range
-        def clamp(val, minimum, maximum):
-            return sorted((minimum, val, maximum))[1]
-
-        clamped = clamp(setting, 0, len(levels) - 1)
-        if clamped != setting:
-            logger.debug("%s not between 0 and %d, forcing to %d", setting, len(levels) - 1, clamped)
-        for level in range(clamped + 1):
-            for log_type, log_level in levels[level]:
-                logging.getLogger(log_type).setLevel(log_level)
-        self._verbosity = clamped
 
     def hook(self, pc):
         '''
