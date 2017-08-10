@@ -74,8 +74,6 @@ class Store(object):
 	"""
         type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
         for subclass in cls.__subclasses__():
-            if not hasattr(subclass, 'store_type'):
-                raise NotImplementedError("Store subclasses must define store_type class attribute")
             if subclass.store_type == type_:
                 return subclass(uri)
         raise NotImplementedError("Storage type '{0}' not supported.".format(type_))
