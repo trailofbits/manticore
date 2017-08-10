@@ -607,11 +607,13 @@ class ArrayStore(ArrayOperation):
     def byte(self):
         return self.operands[2]
 
-class ArrayProxy(ArrayVariable):
+class ArrayProxy(Array):
     def __init__(self, array):
         assert isinstance(array, ArrayVariable)
-        super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.name)
+        super(ArrayProxy, self).__init__(array.index_bits, array.index_max)
         self._array = array
+        self.name = array.name
+
 
     @property
     def operands(self):

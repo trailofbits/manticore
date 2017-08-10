@@ -4,8 +4,7 @@ from manticore.platforms import evm
 from manticore.core.state import State
 
 
-set_verbosity('EEEEMMMMCCCC')
-
+set_verbosity('')
 
 
 #Make the constraint store
@@ -54,12 +53,14 @@ print world
 
 
 transactions = []
-def terminate_transaction_callback(m, state, *args):
-    step = state.context['step']
+def terminate_transaction_callback(m, state, state_id, e):
+    step = state.context.get('step',0)
     state.context['step'] = step + 1
     if step < len(transactions):
         transactions[step](m, state.platform, state)
         m.add(state)
+        e.testcase = False
+
 
 
 def attack_1(m, world, state):
@@ -85,12 +86,22 @@ def attack_2(m, world, state):
                         value=0,
                         header={'timestamp':1})
     
+
+def report(m, world, state):
+    print "="*20
+    print "REPORT:"
+    print world
+    #print state.platform.current
+    #print state.constraints
+    for expr in state.input_symbols:
+        print expr.name,  state.solve_one(expr).encode('hex')
+
 transactions.append(attack_1)
 transactions.append(attack_2)
+transactions.append(report)
 
 #Let's start with the symbols
 initial_state = State(constraints, world)
-initial_state.context['step'] = 0
 
 m = Manticore()
 m.add(initial_state)

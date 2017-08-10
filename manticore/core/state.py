@@ -2,8 +2,9 @@ import os
 import copy
 import logging
 from collections import OrderedDict
+from weakref import WeakSet
 
-from .smtlib import solver, Bool
+from .smtlib import solver, Bool, ArrayProxy, Array
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 
@@ -84,7 +85,13 @@ class State(Eventful):
         state = super(State, self).__getstate__()
         state['platform'] = self._platform
         state['constraints'] = self._constraints
-        state['input_symbols'] = self._input_symbols
+        x = []
+        for a in self._input_symbols:
+            if isinstance(a, ArrayProxy):
+                x.append(a._array)
+            else:
+                x.append(a)
+        state['input_symbols'] = x
         state['child'] = self._child
         state['context'] = self._context
         return state
@@ -93,7 +100,14 @@ class State(Eventful):
         super(State, self).__setstate__(state)
         self._platform = state['platform']
         self._constraints = state['constraints']
-        self._input_symbols = state['input_symbols']
+        self._input_symbols = []
+        x = state['input_symbols']
+        for a in x:
+            if isinstance(a, Array):
+                self._input_symbols.append(ArrayProxy(a))
+            else:
+                self._input_symbols.append(a)
+
         self._child = state['child']
         self._context = state['context']
         ##################################################################33
@@ -104,7 +118,7 @@ class State(Eventful):
     def __enter__(self):
         assert self._child is None
         new_state = State(self._constraints.__enter__(), self._platform)
-        new_state._input_symbols = self._input_symbols
+        new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.deepcopy(self._context)
         self._child = new_state
         

@@ -42,7 +42,7 @@ class EVMMemory(object):
     '''
     The EVM symbolic memory manager.
     '''
-    def __init__(self, constraints, *args, **kwargs):
+    def __init__(self, constraints, address_size=256, value_size=8, *args, **kwargs):
         '''
         Builds a memory.
 
@@ -54,11 +54,19 @@ class EVMMemory(object):
         self._allocated = 0
         self._symbols = {}
         self._memory = {}
+        self._address_size=address_size
+        self._value_size=value_size
 
-    
+    def __copy__(self):
+        new_mem = EVMMemory(self.constraints, self._address_size,  self._value_size)
+        new_mem._allocated = self._allocated
+        new_mem._memory = dict(self._memory)
+        new_mem._symbols = dict(self._symbols)
+        return new_mem
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, ), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory } )
+        return (self.__class__, (self.constraints, ), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory, '_address_size':self._address_size, 
+        '_value_size':self._value_size } )
 
     @property
     def constraints(self):
@@ -68,13 +76,34 @@ class EVMMemory(object):
     def constraints(self, constraints):
         self._constraints = constraints
 
-    def _get_size(self, size):
+    def _get_size(self, index):
+        size = index.stop - index.start
         if isinstance(size, BitVec):
             size = arithmetic_simplifier(size)
         else:
-            size = BitVecConstant(256, size)
+            size = BitVecConstant(self._array.index_bits, size)
         assert isinstance(size, BitVecConstant)
         return size.value
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            size = self._get_size(index)
+            return self.read(index, size)
+        else:
+            return self.read(index, 1)[0]
+
+    def __setitem__(self, index, value):
+        if isinstance(index, slice):
+            size = self._get_size(index)
+            assert len(value) == size
+            for i in xrange(size):
+                self.write(index.start+i, [value[i]])
+        else:
+            self.write(index, [value])
+
+    def __len__(self):
+        return self._allocated
+
 
     def __str__(self):
         m = []
@@ -94,12 +123,12 @@ class EVMMemory(object):
         self._allocated = Operators.ITEBV(256, self._allocated < new_max, new_max, self._allocated)
 
     def _concrete_read(self, address):
-        return self._memory.get(address, '\x00')
+        return self._memory.get(address, 0)
 
     def _concrete_write(self, address, value):
         assert not issymbolic(address) 
         assert not issymbolic(value)
-        assert (ord(value) & (~0xff)) == 0 , "Not a byte"
+        assert value & ~(pow(2,self._value_size)-1) == 0 , "Not the correct size sor a value"
         self._memory[address] = value
 
     def read(self, address, size):
@@ -111,7 +140,7 @@ class EVMMemory(object):
         :param size: How many bytes
         :rtype: list
         '''
-        size = self._get_size(size)
+        #size = self._get_size(size)
         assert not issymbolic(size)
 
         if issymbolic(address):
@@ -162,16 +191,16 @@ class EVMMemory(object):
                 #Given ALL solutions for the symbolic address
                 for base in solutions:
                     addr_value = base + offset
-                    byte = Operators.ORD(self._concrete_read(addr_value))
+                    item = self._concrete_read(addr_value)
                     if addr_value in self._symbols:
                         for condition, value in self._symbols[addr_value]:
-                            byte = Operators.ITEBV(8, condition, Operators.ORD(value), byte)
+                            item = Operators.ITEBV(self._value_size, condition, value, item)
                     if len(result) > offset:
-                        result[offset] = Operators.ITEBV(8, address == base, byte, result[offset])
+                        result[offset] = Operators.ITEBV(self._value_size, address == base, item, result[offset])
                     else:
-                        result.append(byte)
+                        result.append(item)
                     assert len(result) == offset+1
-            return map(Operators.CHR, result)
+            return result
         else:
             result = []
             for i in range(size):
@@ -180,10 +209,10 @@ class EVMMemory(object):
                 if address+offset in self._symbols:
                     for condition, value in self._symbols[address+offset]:
                         if condition is True:
-                            result[offset] = Operators.ORD(value)
+                            result[offset] = value
                         else:
-                            result[offset] = Operators.ITEBV(8, condition, Operators.ORD(value), result[offset])
-            return map(Operators.CHR, result)
+                            result[offset] = Operators.ITEBV(self._value_size, condition, value, result[offset])
+            return result
 
     def write(self, address, value):
         '''
@@ -676,11 +705,11 @@ class EVM(Eventful):
         if address > 100000:
             raise NotEnoughGas()
         self._allocate(address)
-        self.memory.write(address, [Operators.CHR(value)])
+        self.memory.write(address, [value])
 
     def _load(self, address):
         self._allocate(address+32)
-        value = Operators.ORD(self.memory.read(address,1)[0])
+        value = self.memory.read(address,1)[0]
         #print pretty_print(value)
         value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
@@ -753,7 +782,7 @@ class EVM(Eventful):
         return self
 
     #Execute an instruction from current pc
-    def execute(self):  
+    def execute(self):
         if issymbolic(self.pc):
             expression = self.pc
             def setstate(state, value):
@@ -1035,7 +1064,6 @@ class EVM(Eventful):
         '''Copy code running in current environment to memory'''
         if issymbolic(size):
             raise ConcretizeStack(3, expression=size)
-        print "CODECOPY(self, ", mem_offset, code_offset, size
         for i in range(size):
             if (code_offset+i > len(self.bytecode)):
                 self._store(mem_offset+i, 0)
@@ -1115,12 +1143,10 @@ class EVM(Eventful):
 
     def SLOAD(self, address):
         '''Load word from storage'''
-        #FIXME implement system?
-        return self.global_storage[self.address]['storage'].get(address,0)
+        return self.global_storage[self.address]['storage'][address]
 
     def SSTORE(self, address, value):
         '''Save word to storage'''
-        #FIXME implement system?
         self.global_storage[self.address]['storage'][address] = value
         if value is 0:
             del self.global_storage[self.address]['storage'][address]
@@ -1233,13 +1259,13 @@ class EVM(Eventful):
                     if issymbolic(x):
                         return '??'
                     else:
-                        return "%02x" % ord(x) 
+                        return "%02x" % x 
                 hex = ' '.join([p(x) for x in chars])
                 def p1 (x):
                     if issymbolic(x):
                         return '.'
                     else:
-                        return "%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or '.') 
+                        return "%s" % ((x <= 127 and FILTER[x]) or '.') 
 
                 printable = ''.join([p1(x) for x in chars])
                 lines.append("%04x  %-*s  %s" % (c, length*3, hex, printable))
@@ -1281,7 +1307,6 @@ class EVM(Eventful):
             result.append( '0x%04x: %s %s %s\n'%(self.pc, self.instruction.name, self.instruction.has_operand and '0x%x'%self.instruction.operand or '', self.instruction.description))
         result.append( '-'*147)
         return '\n'.join(result)
-
 
 
 class EVMWorld(Platform):
@@ -1348,7 +1373,11 @@ class EVMWorld(Platform):
             self._global_storage = value
 
     def _push(self, vm):
-        vm.global_storage = copy.deepcopy(self.storage)
+        #Storage address ->  account(value, local_storage)
+        vm.global_storage = dict(self.storage)
+        vm.global_storage[vm.address]['storage'] = copy.copy(self.storage[vm.address]['storage'])
+
+        #MAKE A DEEP COPY OF THE SPECIFIC ACCOUNT
         self._callstack.append(vm)
         self.current.depth = self.depth
         self.forward_events_from(self.current)
@@ -1419,13 +1448,17 @@ class EVMWorld(Platform):
 
     def create_account(self, address=None, balance=0, code='', storage=None):
         ''' code is the runtime code '''
+        storage = {} if storage is None else storage
+        symbolic_storage = EVMMemory(self.constraints, 256, 256)
+        for key, value in storage.iteritems():
+            symbolic_storage[key] = value
         if address is None:
             address = self._new_address()
         assert address not in self.storage.keys(), 'The account already exists'
         self.storage[address] = {}
         self.storage[address]['nonce'] = 0L
         self.storage[address]['balance'] = balance
-        self.storage[address]['storage'] = {} if storage is None else storage
+        self.storage[address]['storage'] = symbolic_storage
         self.storage[address]['code'] = code
         return address
 

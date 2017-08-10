@@ -466,10 +466,10 @@ class ArithmeticSimplifier(Visitor):
         
 
 #FIXME this should forget old expressions lru?
-arithmetic_simplifier_cache = {}
 def arithmetic_simplifier(expression):
+    arithmetic_simplifier_cache = {}
     global arithmetic_simplifier_cache    
-    simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
+    simp = ArithmeticSimplifier() #cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
