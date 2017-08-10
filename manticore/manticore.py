@@ -708,7 +708,7 @@ class Manticore(object):
         self._output = ManticoreOutput(ws_path)
 
         self._executor = Executor(initial_state,
-                                  workspace=ws_path,
+                                  workspace=self._output.descriptor,
                                   policy=self._policy, 
                                   context=self.context)
         
