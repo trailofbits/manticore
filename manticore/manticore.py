@@ -24,6 +24,7 @@ from .core.smtlib import solver, ConstraintSet
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
+from .utils.logging import set_verbosity as set_logging_verbosity
 
 logger = logging.getLogger('MANTICORE')
 
@@ -279,6 +280,12 @@ class Manticore(object):
             self.add_hook(pc, f)
             return f
         return decorator
+
+    def set_verbosity(self, level):
+        """A call used to modify the level of output verbosity
+        :param int level: the level of verbosity to be used
+        """
+        set_logging_verbosity(level)
 
     def add_hook(self, pc, callback):
         '''

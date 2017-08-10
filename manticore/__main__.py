@@ -9,7 +9,7 @@ from multiprocessing import Manager, Pool, Process
 from threading import Timer
 from core.smtlib import Expression
 from manticore import Manticore
-from utils.mlogging import set_verbosity
+from .utils.logging import set_verbosity
 try:
     import psutil
 except ImportError:
@@ -22,7 +22,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Symbolically analyze a program')
     parser.add_argument('--workspace', type=str, default=None,
                         help='A folder name for temporaries and results. (default mcore_?????)')
-    parser.add_argument('-v', action='count', default=0, help='Specify verbosity level from -v to -vvvv')
+    parser.add_argument('-v', action='count', default=1, help='Specify verbosity level from -v to -vvvv')
     parser.add_argument('--profile', action='store_true', help='Enable profiling mode.')
 
     parser.add_argument('--buffer', type=str, help='Specify buffer to make symbolic')
