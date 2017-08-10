@@ -2,7 +2,7 @@
 <!--- lsb_release -a --->
 
 ### Manticore version
-<!--- pip list | grep -i manticore --->
+<!--- pip show manticore | grep Version --->
 
 ### Python version
 <!--- python --version --->
