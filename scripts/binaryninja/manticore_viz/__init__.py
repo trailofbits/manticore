@@ -3,7 +3,7 @@ import os
 import time
 import threading
 
-from binaryninja import PluginCommand, HighlightStandardColor
+from binaryninja import PluginCommand, HighlightStandardColor, log
 from binaryninja.interaction import (
     get_open_filename_input, get_directory_name_input, get_choice_input
 )
@@ -14,7 +14,7 @@ black = HighlightStandardColor.BlackHighlightColor
 white = HighlightStandardColor.WhiteHighlightColor
 clear = HighlightStandardColor.NoHighlightColor
 # renew interval
-interval = 1
+interval = 1.5
 
 class Singleton(type):
     _instances = {}
@@ -97,6 +97,23 @@ class TraceVisualizer(object):
         for b in blocks:
             b.set_user_highlight(hl)
 
+    def set_comment_at_xref(self, xref, comment):
+        try:
+            op = xref.function.get_lifted_il_at(xref.address).operation
+        except IndexError:
+            w = "ManticoreTrace: Could not lookup " + hex(xref.address)
+            w += " address for funciton " + str(xref.function)
+            log.log_warn(w)
+            return
+        if not (op == enums.LowLevelILOperation.LLIL_CALL or
+                op == enums.LowLevelILOperation.LLIL_JUMP or
+                op == enums.LowLevelILOperation.LLIL_JUMP_TO or
+                op == enums.LowLevelILOperation.LLIL_SYSCALL or
+                op == enums.LowLevelILOperation.LLIL_GOTO):
+            return
+        xref.function.set_comment_at(xref.address, comment)
+
+
     def compute_coverage(self):
         # function cumulative bb coverage
         # key: function address
@@ -123,14 +140,7 @@ class TraceVisualizer(object):
             cov += "% cumulative BB coverage"
             f.set_comment(f.start, "Function Stats: \n" + cov)
             for xref in xrefs:
-                op = xref.function.get_lifted_il_at(xref.address).operation
-                if not (op == enums.LowLevelILOperation.LLIL_CALL or
-                        op == enums.LowLevelILOperation.LLIL_JUMP or
-                        op == enums.LowLevelILOperation.LLIL_JUMP_TO or
-                        op == enums.LowLevelILOperation.LLIL_SYSCALL or
-                        op == enums.LowLevelILOperation.LLIL_GOTO):
-                    continue
-                xref.function.set_comment_at(xref.address, cov)
+                self.set_comment_at_xref(xref, cov)
 
     def clear_stats(self):
         self.highlighted.clear()
@@ -141,14 +151,7 @@ class TraceVisualizer(object):
         for f, xrefs in fun_xrefs:
             f.set_comment(f.start, None)
             for xref in xrefs:
-                op = xref.function.get_lifted_il_at(xref.address).operation
-                if not (op == enums.LowLevelILOperation.LLIL_CALL or
-                        op == enums.LowLevelILOperation.LLIL_JUMP or
-                        op == enums.LowLevelILOperation.LLIL_JUMP_TO or
-                        op == enums.LowLevelILOperation.LLIL_SYSCALL or
-                        op == enums.LowLevelILOperation.LLIL_GOTO):
-                    continue
-                xref.function.set_comment_at(xref.address, None)
+                self.set_comment_at_xref(xref, None)
 
 def get_workspace():
     choice = get_choice_input("Select Trace Type",
