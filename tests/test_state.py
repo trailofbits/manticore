@@ -4,6 +4,10 @@ from manticore.platforms import linux
 from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
 
+class _CallbackExecuted(Exception):
+    pass
+
+
 class FakeMemory(object):
     def __init__(self):
         self._constraints = None
@@ -201,10 +205,9 @@ class StateTest(unittest.TestCase):
     def _test_state_gen_helper(self, name, msg):
         self.assertEqual(name, 'statename')
         self.assertEqual(msg, 'statemsg')
-        raise Exception('callback')
+        raise _CallbackExecuted
 
     def test_state_gen(self):
         self.state.subscribe('will_generate_testcase', self._test_state_gen_helper)
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(_CallbackExecuted):
             self.state.generate_testcase('statename', 'statemsg')
-        self.assertEqual(cm.exception.message, 'callback', 'callback did not execute correctly!')
