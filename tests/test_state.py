@@ -199,10 +199,12 @@ class StateTest(unittest.TestCase):
 
 
     def _test_state_gen_helper(self, name, msg):
-        self.assertEqual(name, self._tmp_name)
-        self.assertEqual(msg, self._tmp_msg)
+        self.assertEqual(name, 'statename')
+        self.assertEqual(msg, 'statemsg')
+        raise Exception('callback')
+
     def test_state_gen(self):
         self.state.subscribe('will_generate_testcase', self._test_state_gen_helper)
-        self._tmp_name = 'statename'
-        self._tmp_msg = 'statemsg'
-        self.state.generate_testcase(self._tmp_name, self._tmp_msg)
+        with self.assertRaises(Exception) as cm:
+            self.state.generate_testcase('statename', 'statemsg')
+        self.assertEqual(cm.exception.message, 'callback', 'callback did not execute correctly!')
