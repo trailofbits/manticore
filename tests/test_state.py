@@ -196,4 +196,13 @@ class StateTest(unittest.TestCase):
         self.assertEqual( new_state.context['step'], 20)
         new_new_state = pickle.loads(new_new_file)
         self.assertEqual( new_new_state.context['step'], 30)
-        
+
+
+    def _test_state_gen_helper(self, name, msg):
+        self.assertEqual(name, self._tmp_name)
+        self.assertEqual(msg, self._tmp_msg)
+    def test_state_gen(self):
+        self.state.subscribe('will_generate_testcase', self._test_state_gen_helper)
+        self._tmp_name = 'statename'
+        self._tmp_msg = 'statemsg'
+        self.state.generate_testcase(self._tmp_name, self._tmp_msg)
