@@ -276,7 +276,7 @@ class Manticore(object):
     @verbosity.setter
     def verbosity(self, setting):
         """A call used to modify the level of output verbosity
-        :param int level: the level of verbosity to be used
+        :param int setting: the level of verbosity to be used
         """
         log.set_verbosity(setting)
 
