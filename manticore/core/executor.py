@@ -43,7 +43,7 @@ class Policy(object):
         super(Policy, self).__init__(*args, **kwargs)
         self._executor = executor
         self._executor.subscribe('did_add_state', self._add_state_callback)
-        
+
     @contextmanager
     def locked_context(self):
         ''' Policy shared context dictionary '''
@@ -55,7 +55,7 @@ class Policy(object):
             ctx['policy'] = policy_context
 
     def _add_state_callback(self, state_id, state):
-        ''' Save prepare(state) on policy shared context before 
+        ''' Save prepare(state) on policy shared context before
             the state is stored
         '''
         with self.locked_context() as ctx:
@@ -84,7 +84,7 @@ class Random(Policy):
 class Uncovered(Policy):
     def __init__(self, executor, *args, **kwargs):
         super(Uncovered, self).__init__(executor, *args, **kwargs)
-        #hook on the necesary executor signals 
+        #hook on the necesary executor signals
         #on callbacks save data in executor.context['policy']
 
     def prepare(self, state):
@@ -94,7 +94,7 @@ class Uncovered(Policy):
     def choice(self, state_ids):
         # Use executor.context['uncovered'] = state_id -> stats
         # am
-        with self._executor.locked_context() as ctx: 
+        with self._executor.locked_context() as ctx:
             lastpc = ctx['policy']
             visited = ctx.get('visited', ())
             interesting = set()
@@ -109,7 +109,7 @@ class Uncovered(Policy):
 
 class Executor(Eventful):
     '''
-    The executor guides the execution of an initial state or a paused previous run. 
+    The executor guides the execution of an initial state or a paused previous run.
     It handles all exceptional conditions (system calls, memory faults, concretization, etc.)
     '''
 
@@ -117,7 +117,7 @@ class Executor(Eventful):
         super(Executor, self).__init__(**kwargs)
 
 
-        # Signals / Callbacks handlers will be invoked potentially at different 
+        # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
 
         self.subscribe('will_load_state', self._register_state_callbacks)
@@ -140,10 +140,10 @@ class Executor(Eventful):
         if context is None:
             context = {}
         self._shared_context = manager.dict(context)
-    
+
         #scheduling priority policy (wip)
         #Set policy
-        policies = {'random': Random, 
+        policies = {'random': Random,
                     'uncovered': Uncovered
                     }
         self._policy = policies[policy](self)
@@ -160,7 +160,7 @@ class Executor(Eventful):
 
     @contextmanager
     def locked_context(self):
-        ''' Executor context is a shared memory object. All workers share this. 
+        ''' Executor context is a shared memory object. All workers share this.
             It needs a lock. Its used like this:
 
             with executor.context() as context:
@@ -175,16 +175,16 @@ class Executor(Eventful):
 
     def _register_state_callbacks(self, state, state_id):
         '''
-            Install forwarding callbacks in state so the events can go up. 
+            Install forwarding callbacks in state so the events can go up.
             Going up, we prepend state in the arguments.
-        ''' 
+        '''
         #Forward all state signals
         self.forward_events_from(state, True)
 
     def add(self, state):
         '''
             Enqueue state.
-            Save state on storage, assigns an id to it, then add it to the 
+            Save state on storage, assigns an id to it, then add it to the
             priority queue
         '''
         #save the state to secondary storage
@@ -194,7 +194,7 @@ class Executor(Eventful):
         return state_id
 
     def load_workspace(self):
-        #Browse and load states in a workspace in case we are trying to 
+        #Browse and load states in a workspace in case we are trying to
         # continue from paused run
         loaded_state_ids = self._workspace.try_loading_workspace()
         if not loaded_state_ids:
@@ -237,7 +237,7 @@ class Executor(Eventful):
 
 
     ###############################################
-    # Priority queue 
+    # Priority queue
     @sync
     def put(self, state_id):
         ''' Enqueue it for processing '''
@@ -264,7 +264,7 @@ class Executor(Eventful):
             #if there is actually some workers running wait for state forks
             logger.debug("Waiting for available states")
             self._lock.wait()
-            
+
         state_id = self._policy.choice(list(self._states))
         del  self._states[self._states.index(state_id)]
         return state_id
@@ -292,20 +292,20 @@ class Executor(Eventful):
         '''
         Fork state on expression concretizations.
         Using policy build a list of solutions for expression.
-        For the state on each solution setting the new state with setstate 
+        For the state on each solution setting the new state with setstate
 
         For example if expression is a Bool it may have 2 solutions. True or False.
-    
-                                 Parent  
+
+                                 Parent
                             (expression = ??)
-       
+
                    Child1                         Child2
             (expression = True)             (expression = True)
                setstate(True)                   setstate(False)
 
-        The optional setstate() function is supposed to set the concrete value 
+        The optional setstate() function is supposed to set the concrete value
         in the child state.
-        
+
         '''
         assert isinstance(expression, Expression)
 
@@ -315,9 +315,13 @@ class Executor(Eventful):
         #Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
+        logger.info("Forking, about to store. (policy: %s, values: %s)",
+                    policy,
+                    ', '.join('0x{:x}'.format(sol) for sol in solutions))
+
         self.publish('will_fork_state', state, expression, solutions, policy)
 
-        #Build and enqueue a state for each solution 
+        #Build and enqueue a state for each solution
         children = []
         for new_value in solutions:
             with state as new_state:
@@ -334,7 +338,7 @@ class Executor(Eventful):
                 #maintain a list of childres for logging purpose
                 children.append(state_id)
 
-        logger.debug("Forking current state into states %r",children)
+        logger.debug("Forking current state into states %r", children)
         return None
 
     def run(self):
@@ -428,7 +432,7 @@ class Executor(Eventful):
                     self.publish('will_terminate_state', current_state, current_state_id, 'Exception')
                     current_state = None
                     logger.setState(None)
-    
+
             assert current_state is None
 
             #notify siblings we are about to stop this run

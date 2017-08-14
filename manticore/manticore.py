@@ -24,9 +24,9 @@ from .core.smtlib import solver, ConstraintSet
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
+from .utils import log
 
 logger = logging.getLogger('MANTICORE')
-
 
 def makeDecree(program, concrete_data=''):
     constraints = ConstraintSet()
@@ -68,7 +68,7 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     #set stdin input...
     platform.input.write(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
 
-    return initial_state 
+    return initial_state
 
 
 def makeWindows(args):
@@ -92,7 +92,7 @@ def makeWindows(args):
     buf_str = "".join(platform.current.read_bytes(data_ptr, data_size))
     logger.debug('Original buffer: %s', buf_str.encode('hex'))
 
-    offset = args.offset 
+    offset = args.offset
     concrete_data = args.data.decode('hex')
     assert data_size >= offset + len(concrete_data)
     size = min(args.maxsymb, data_size - offset - len(concrete_data))
@@ -130,6 +130,7 @@ def binary_type(path):
         return 'DECREE'
     else:
         raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
+
 
 class Manticore(object):
     '''
@@ -170,7 +171,6 @@ class Manticore(object):
         self._dumpafter = 0
         self._maxstates = 0
         self._maxstorage = 0
-        self._verbosity = 0
         self._symbolic_files = [] # list of string
         self._executor = None
         #Executor wide shared context
@@ -181,7 +181,7 @@ class Manticore(object):
         if self._binary_type == 'ELF':
             self._binary_obj = ELFFile(file(self._binary))
 
-        self._init_logging()
+        log.init_logging()
 
     @property
     def context(self):
@@ -191,11 +191,11 @@ class Manticore(object):
         else:
             logger.warning("Using shared context without a lock")
             return self._executor._shared_context
-        
+
 
     @contextmanager
     def locked_context(self, key=None, default=list):
-        ''' It refers to the manticore shared context 
+        ''' It refers to the manticore shared context
             It needs a lock. Its used like this:
 
             with m.context() as context:
@@ -219,30 +219,6 @@ class Manticore(object):
                 ctx = context.get(key, default())
                 yield ctx
                 context[key] = ctx
-
-    def _init_logging(self): 
-
-        def loggerSetState(logger, stateid):
-            logger.filters[0].stateid = stateid
-
-        class ContextFilter(logging.Filter):
-            '''
-            This is a filter which injects contextual information into the log.
-            '''
-            def filter(self, record):
-                if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-                    record.stateid = '[%d]' % self.stateid
-                else:
-                    record.stateid = ''
-                return True
-
-        ctxfilter = ContextFilter()
-
-        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout, level=logging.ERROR)
-
-        for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM']:
-            logging.getLogger(loggername).addFilter(ctxfilter)
-            logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
 
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
@@ -290,40 +266,23 @@ class Manticore(object):
     def maxstorage(self):
         return self._maxstorage
 
-    @maxstorage.setter
-    def maxstorage(self, max_storage):
-        self._maxstorage = max_storage
-
     @property
     def verbosity(self):
-        '''
-        Convenience interface for setting logging verbosity to one of several predefined
-        logging presets. Valid values: 0-5
-        '''
-        return self._verbosity
+        """Convenience interface for setting logging verbosity to one of
+        several predefined logging presets. Valid values: 0-5.
+        """
+        return log.manticore_verbosity
 
     @verbosity.setter
     def verbosity(self, setting):
-        zero = map(lambda x: (x, logging.ERROR),
-                   ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM'])
-        levels = [zero,
-                  [('MANTICORE', logging.INFO), ('EXECUTOR', logging.INFO)],
-                  [('PLATFORM', logging.DEBUG)],
-                  [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('REGISTERS', logging.DEBUG)],
-                  [('SMT', logging.DEBUG)]]
+        """A call used to modify the level of output verbosity
+        :param int setting: the level of verbosity to be used
+        """
+        log.set_verbosity(setting)
 
-        # Takes a value and ensures it's in a certain range
-        def clamp(val, minimum, maximum):
-            return sorted((minimum, val, maximum))[1]
-
-        clamped = clamp(setting, 0, len(levels) - 1)
-        if clamped != setting:
-            logger.debug("%s not between 0 and %d, forcing to %d", setting, len(levels) - 1, clamped)
-        for level in range(clamped + 1):
-            for log_type, log_level in levels[level]:
-                logging.getLogger(log_type).setLevel(log_level)
-        self._verbosity = clamped
+    @maxstorage.setter
+    def maxstorage(self, max_storage):
+        self._maxstorage = max_storage
 
     def hook(self, pc):
         '''
@@ -395,7 +354,7 @@ class Manticore(object):
             raise NotImplementedError("Binary {} not supported.".format(path))
 
         return state
-        
+
 
     @property
     def policy(self):
@@ -461,7 +420,7 @@ class Manticore(object):
         else: raise "Unsupported architecture: %s"%(arch, )
 
         return self._arch
-        
+
 
     def _start_workers(self, num_processes, profiling=False):
         assert num_processes > 0, "Must have more than 0 worker processes"
@@ -492,7 +451,7 @@ class Manticore(object):
             p.start()
 
     def _join_workers(self):
-        with WithKeyboardInterruptAs(self._executor.shutdown):    
+        with WithKeyboardInterruptAs(self._executor.shutdown):
             while len(self._workers) > 0:
                 w = self._workers.pop().join()
 
@@ -552,7 +511,7 @@ class Manticore(object):
 
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
-        logger.info("Terminate state %r %r ", state, state_id)
+        logger.debug("Terminate state %r %r ", state, state_id)
         if state is None:
             return
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -574,10 +533,7 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
-        logger.info("Forking, about to store. (policy: %s, values: %s)", policy,
-                ', '.join('0x{:x}'.format(pc) for pc in values))
-
-    def _read_register_callback(self, state, reg_name, value): 
+    def _read_register_callback(self, state, reg_name, value):
         logger.debug("Read Register %r %r", reg_name, value)
 
     def _write_register_callback(self, state, reg_name, value):
@@ -706,12 +662,11 @@ class Manticore(object):
             ws_path = None
 
         self._output = ManticoreOutput(ws_path)
-
         self._executor = Executor(initial_state,
                                   workspace=self._output.descriptor,
-                                  policy=self._policy, 
+                                  policy=self._policy,
                                   context=self.context)
-        
+
 
 
         #Link Executor events to default callbacks in manticore object
