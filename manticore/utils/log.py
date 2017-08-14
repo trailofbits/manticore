@@ -35,31 +35,33 @@ for l in loggers:
     logging.getLogger(l).setState = types.MethodType(loggerSetState,
                                                      logging.getLogger(l))
 
-manticore_verbosity = 1
+manticore_verbosity = 0
 def set_verbosity(setting):
     global manticore_verbosity
     zero = map(lambda x: (x, logging.ERROR), loggers)
     levels = [
         # 0
+        zero,
+        # 1
         [
             ('MANTICORE', logging.INFO)
         ],
-        # 1 (-v)
+        # 2 (-v)
         [
             ('EXECUTOR', logging.INFO),
             ('PLATFORM', logging.DEBUG)
         ],
-        # 2 (-vv)
+        # 3 (-vv)
         [
             ('CPU', logging.DEBUG)
         ],
-        # 3 (-vvv)
+        # 4 (-vvv)
         [
             ('MEMORY', logging.DEBUG),
             ('CPU', logging.DEBUG),
             ('REGISTERS', logging.DEBUG)
         ],
-        # 4 (-vvvv)
+        # 5 (-vvvv)
         [
             ('MANTICORE', logging.DEBUG),
             ('SMT', logging.DEBUG)
@@ -71,11 +73,6 @@ def set_verbosity(setting):
         return sorted((minimum, val, maximum))[1]
 
     clamped = clamp(setting, 0, len(levels) - 1)
-    if clamped != setting:
-        logger.debug("%s not between 0 and %d, forcing to %d",
-                     setting,
-                     len(levels) - 1,
-                     clamped)
     for level in range(clamped + 1):
         for log_type, log_level in levels[level]:
             logging.getLogger(log_type).setLevel(log_level)
