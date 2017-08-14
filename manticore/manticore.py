@@ -24,7 +24,7 @@ from .core.smtlib import solver, ConstraintSet
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
-from .utils.log import set_verbosity as set_logging_verbosity
+import utils.log
 
 logger = logging.getLogger('MANTICORE')
 
@@ -264,6 +264,17 @@ class Manticore(object):
     def maxstorage(self):
         return self._maxstorage
 
+    @property
+    def verbosity(self):
+        return utils.log.manticore_verbosity
+
+    @verbosity.setter
+    def verbosity(self, setting):
+        """A call used to modify the level of output verbosity
+        :param int level: the level of verbosity to be used
+        """
+        utils.log.set_verbosity(setting)
+
     @maxstorage.setter
     def maxstorage(self, max_storage):
         self._maxstorage = max_storage
@@ -280,12 +291,6 @@ class Manticore(object):
             self.add_hook(pc, f)
             return f
         return decorator
-
-    def set_verbosity(self, level):
-        """A call used to modify the level of output verbosity
-        :param int level: the level of verbosity to be used
-        """
-        set_logging_verbosity(level)
 
     def add_hook(self, pc, callback):
         '''

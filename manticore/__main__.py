@@ -71,8 +71,6 @@ def main():
     args = parse_arguments()
 
     m = Manticore(args.programs[0], args.programs[1:])
-
-    set_verbosity(args.v)
     m.policy = args.policy
     m.args = args
 
@@ -112,6 +110,7 @@ def main():
     if args.assertions:
         m.load_assertions(args.assertions)
 
+    m.verbosity = args.v
 
     m.run(args.procs, args.timeout)
 

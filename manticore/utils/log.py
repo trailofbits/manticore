@@ -35,7 +35,9 @@ for l in loggers:
     logging.getLogger(l).setState = types.MethodType(loggerSetState,
                                                      logging.getLogger(l))
 
+manticore_verbosity = 1
 def set_verbosity(setting):
+    global manticore_verbosity
     zero = map(lambda x: (x, logging.ERROR), loggers)
     levels = [
         # 0
@@ -77,5 +79,4 @@ def set_verbosity(setting):
     for level in range(clamped + 1):
         for log_type, log_level in levels[level]:
             logging.getLogger(log_type).setLevel(log_level)
-    # manticore_verbosity = clamped
-
+    manticore_verbosity = clamped
