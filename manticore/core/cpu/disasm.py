@@ -51,7 +51,12 @@ class Disasm(object):
 
 class CapstoneDisasm(Disasm):
     def __init__(self, arch, mode):
-        cap = cs.Cs(arch, mode)
+        try:
+            cap = cs.Cs(arch, mode)
+        except Exception as e:
+            print arch
+            print mode
+            raise e
         cap.detail = True
         cap.syntax = 0
         super(CapstoneDisasm, self).__init__(cap)

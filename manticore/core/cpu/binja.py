@@ -4,6 +4,8 @@ import logging
 import re
 from collections import defaultdict
 
+import capstone as cs
+
 from .x86 import AMD64Operand
 
 from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
@@ -113,7 +115,10 @@ class BinjaRegisterFile(RegisterFile):
 
         reg_info = arch.regs.get(r)
         if reg_info is None:
-            return None
+            # don't raise here because we could be reading from a
+            # temp register which won't be in the architecture registers
+            return 0
+
         full_reg_value = self.registers[reg_info.full_width_reg]
         mask = (1 << reg_info.size * 8) - 1
         reg_bits = mask << (reg_info.offset * 8)
@@ -143,7 +148,7 @@ class BinjaRegisterFile(RegisterFile):
 class BinjaOperand(Operand):
     def __init__(self, cpu, parent_il, op, **kwargs):
         self.llil = parent_il
-        if hasattr(op, "operands") and op.operands:
+        if hasattr(op, "operands"):
             op.operands = [BinjaOperand(cpu, op, x) for x in op.operands]
         super(BinjaOperand, self).__init__(cpu, op, **kwargs)
 
@@ -157,9 +162,9 @@ class BinjaOperand(Operand):
         }
 
         try:
-            t = type_map.get(type(self.op))
-        except Exception as e:
-            print "ERROR IN type lookup " + str(type(self.op))
+            t = type_map[type(self.op)]
+        except KeyError as e:
+            logger.error("ERROR IN type lookup " + str(type(self.op)))
             raise e
         return t
 
@@ -174,11 +179,10 @@ class BinjaOperand(Operand):
 
         cpu, op = self.cpu, self.op
         if self.type == 'register':
-            return cpu.read_register(op)
+            return cpu.regfile.red(op.name)
         if self.type == 'flag':
             return cpu.regfile.registers[op.name + 'f']
         elif self.type == 'instruction':
-            #  print "Calling " + op.operation.name
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             return implementation(*op.operands)
         else:
@@ -191,7 +195,6 @@ class BinjaOperand(Operand):
         if self.type == 'flag':
             return cpu.write_register(op.name + 'f', value)
         elif self.type == 'instruction':
-            #  print "Calling " + op.operation.name
             implementation = getattr(cpu, op.operation.name[len("LLIL_"):])
             return implementation(*op.operands)
         else:
@@ -259,7 +262,6 @@ def binja_platform_regmap(binja_arch_regs, binja_arch_flags, binja_arch_aliases,
     # still unmapped
     # x86_to_binja ['EIP', 'IP', 'FRAME', 'EFLAGS', 'RFLAGS', 'TOP']
     # binja_to_x86: ['fs', 'gs', 'mmXX', 'stXX']
-    #  print set(x86_cpu.all_registers) - set(x86_to_binja.keys())
     binja_to_x86 = dict()
     binja_to_x86["high_mappings"] = []
     for x86_reg, binja_reg in x86_to_binja.items():
@@ -274,16 +276,6 @@ class BinjaCpu(Cpu):
     '''
     A Virtual CPU model for Binary Ninja's IL
     '''
-
-    # Will be initialized based on the underlying Binja Architecture
-    max_instr_width = None
-    address_bit_size = None
-    machine = None
-    arch = None
-    mode = None
-
-    platform_cpu = None
-
     def __init__(self, view, memory):
         '''
         Builds a CPU model.
@@ -294,16 +286,15 @@ class BinjaCpu(Cpu):
         # and mark it as virtual so as to not increment the PC in the
         # @instruction decorator
         platform_cpu.real_cpu = False
-        self.__class__.platform_cpu = platform_cpu
+        Cpu.platform_cpu = platform_cpu
         platform_regs = platform_cpu.all_registers
         from binaryninja import Architecture
-        self.__class__.max_instr_width = view.arch.max_instr_length
-        self.__class__.address_bit_size = 8 * view.arch.address_size
-        self.__class__.machine = self.platform_cpu.machine
-        self.__class__.mode = self.platform_cpu.mode
-        self.__class__.arch = view.arch
-        # FIXME
-        self.__class__.disasm = BinjaILDisasm(view)
+        Cpu.max_instr_width = view.arch.max_instr_length
+        Cpu.address_bit_size = 8 * view.arch.address_size
+        Cpu.machine = self.platform_cpu.machine
+        Cpu.mode = self.platform_cpu.mode
+        Cpu.arch = view.arch
+        Cpu.disasm = BinjaILDisasm(view)
         self.view = view
         self._segments = {}
 
@@ -357,6 +348,37 @@ class BinjaCpu(Cpu):
         return [BinjaOperand(self, self.disasm.disasm_il, op)
                 for op in operands]
 
+    def fallback_to_emulate(self, *operands):
+        if (isinstance(self.disasm, BinjaILDisasm) and
+                isinstance(self.instruction, cs.CsInsn)):
+            # if we got a capstone instruction using BinjaILDisasm, it means
+            # this instruction is not implemented. Fallback to Capstone
+            name = self.canonicalize_instruction_name(self.instruction)
+            self.FALLBACK(name, *operands)
+        else:
+            super(BinjaCpu, self).fallback_to_emulate(*operands)
+
+    def update_pc(self):
+        # In case we are executing IL instructions, we could iteratively
+        # invoke multiple instructions due to the tree form, thus we only
+        # want to increment the PC once, based on its previous position
+        # for CALLS and JUMPS the PC should have been set automatically
+        # so no need to do anything. Also, if there are pending instruction
+        if not isinstance(self.disasm, BinjaILDisasm):
+            return
+
+        # don't bump the PC if we are in an LLIL that has set it,
+        # or if there are pending IL insn in the queue. This is because
+        # for cases where we have other il instructions in the queue,
+        # such as when we get a divu insn, the PC + size will point
+        # to the next assembly instruction and not the next LLIL
+        #
+        # we might be executing a Capstone instruction at this point
+        # if we context-switched, so check the sets_pc attr
+        if not (hasattr(self.instruction, "sets_pc") and
+                (self.instruction.sets_pc or self.disasm.il_queue)):
+            self.PC = self._last_pc + self.instruction.size
+
     # XXX this is currently not active because a bunch of flag-setting
     # LLIL are not implemented by Binja :(
     def update_flags_from_il(cpu, il):
@@ -371,20 +393,17 @@ class BinjaCpu(Cpu):
         operands = [i for i, _ in enumerate(il.operands)]
         for f in flags:
             expr = cpu.arch.get_flag_write_low_level_il(il.operation,
-                                                             il.size,
-                                                             il.flags,
-                                                             f,
-                                                             operands,
-                                                             func.low_level_il)
+                                                        il.size,
+                                                        il.flags,
+                                                        f,
+                                                        operands,
+                                                        func.low_level_il)
             flag_il = LowLevelILInstruction(func, expr.index)
             # FIXME properly invoke the implementation
             op_name = str(flag_il.operation).split(".")[1][len("LLIL_"):]
             if op_name == "UNIMPL":
                 continue
-            print f + ":" + str(flag_il)
             implementation = getattr(cpu, op_name)
-
-            print flag_il.operands
             # flag_il.operands have indexes, involving the original operands.
             # E.g., for xor.d{*}(eax, eax), invoking `print flag_il.operands`
             # we get [<il: 0 ^ 1>, <il: 0>]
@@ -392,20 +411,13 @@ class BinjaCpu(Cpu):
             # 'eax'. 'eax'
             flop = []
             for i, o in enumerate(flag_il.operands):
-                print "--" + str(o)
-                print "\t" + str(o.operands)
                 for j, x in enumerate(o.operands):
                     x = il.operands[int(str(x))].op
                     o.operands[j] = x
-                print "\t" + str(o.operands)
-                print "--" + str(o.prefix_operands)
-                print "--" + str(o.prefix_operands)
                 flop.append(o)
-            print flop
             flag_il.operands = [BinjaOperand(cpu, flag_il, x)
                                 for x in flag_il.operands]
             res = implementation(*flag_il.operands)
-            print res
 
     def update_flags(cpu, flags=None):
         mod_flags = insn_flags(cpu)
@@ -462,11 +474,9 @@ class BinjaCpu(Cpu):
         return reg.read() >> shift.read()
 
     def BOOL_TO_INT(cpu, src_expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def BP(cpu):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def CALL(cpu, expr):
@@ -522,7 +532,6 @@ class BinjaCpu(Cpu):
         return const_int.op + cpu.disasm.entry_point_diff
 
     def DIVS(cpu, dividend_h, dividend_l, divisor):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def DIVS_DP(cpu, dividend_h, dividend_l, divisor):
@@ -555,7 +564,6 @@ class BinjaCpu(Cpu):
         return Operators.EXTRACT(quotient, 0, size)
 
     def DIVU(cpu, left_expr, right_expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def DIVU_DP(cpu, dividend_h, dividend_l, divisor):
@@ -574,7 +582,6 @@ class BinjaCpu(Cpu):
         return src_flag.read()
 
     def FLAG_BIT(cpu, src_flag, bit_int):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def FLAG_COND(cpu, condition):
@@ -756,7 +763,6 @@ class BinjaCpu(Cpu):
         return res
 
     def MODS(cpu, left_expr, right_expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def MODS_DP(cpu, dividend_h, dividend_l, divisor):
@@ -795,7 +801,6 @@ class BinjaCpu(Cpu):
         return Operators.EXTRACT(remainder, 0, size)
 
     def MODU(cpu, left_expr, right_expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def MODU_DP(cpu, dividend_h, dividend_l, divisor):
@@ -862,7 +867,6 @@ class BinjaCpu(Cpu):
         return
 
     def NORET(cpu):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def NOT(cpu, expr):
@@ -897,7 +901,6 @@ class BinjaCpu(Cpu):
         cpu.PC = cpu.pop(cpu.address_bit_size)
 
     def RLC(cpu, left_expr, right_expr, carry_expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def ROL(cpu, left_expr, right_expr):
@@ -951,7 +954,6 @@ class BinjaCpu(Cpu):
         return res
 
     def RRC(cpu, left_expr, right_expr, carry_expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def SBB(cpu, left_expr, right_expr, carry_expr):
@@ -974,7 +976,6 @@ class BinjaCpu(Cpu):
         return res
 
     def SET_FLAG(cpu, dest_flag, src_expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def SET_REG(cpu, dest_reg, src_expr):
@@ -1019,23 +1020,18 @@ class BinjaCpu(Cpu):
         raise Syscall()
 
     def TEST_BIT(cpu, left_expr, right_expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def TRAP(cpu, vector_int):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def UNDEF(cpu):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def UNIMPL(cpu):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def UNIMPL_MEM(cpu, expr):
-        print hex(cpu.disasm.current_pc)
         raise NotImplementedError
 
     def XOR(cpu, left, right):
@@ -1066,7 +1062,6 @@ class BinjaCpu(Cpu):
         # as well as all the required attributes
         cpu.platform_cpu._icount = cpu._icount
 
-        #  print sorted(cpu.platform_cpu._regfile._registers.items())
         # do the actual call
         implementation = getattr(cpu.platform_cpu, name)
         implementation(*operands)
@@ -1119,8 +1114,7 @@ def insn_flags(cpu):
     mod_flags = f.get_flags_written_by_lifted_il_instruction(il.instr_index)
     #  il2 = cpu.disasm.disasm_il
     #  mod_flags2 = cpu.arch.flags_written_by_flag_write_type.get(il.flags)
-    #  if mod_flags2 != mod_flags:
-        #  print il
+    #  assert mod_flags2 == mod_flags
     return mod_flags
 
 def x86_calculate_cmp_flags(cpu, size, res, left_v, right_v):

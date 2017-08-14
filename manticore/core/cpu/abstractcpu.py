@@ -112,10 +112,6 @@ class Operand(object):
         :type op: X86Op or ArmOp
         '''
         assert isinstance(cpu, Cpu)
-        # Check against the list of supported operands
-        # FIXME (theo) don't check here as here we are agnostic to the
-        # disassembler
-        #  assert isinstance(op, (cs.x86.X86Op, cs.arm.ArmOp))
         self.cpu = cpu
         self.op = op
         self.mem = Operand.MemSpec(self)
@@ -369,8 +365,7 @@ class Cpu(Eventful):
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
-        # FIXME (theo) initialize disassembler based on the argument passed
-        kwargs.pop("disasm", None)
+        disasm = kwargs.pop("disasm", 'capstone')
         super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
@@ -378,7 +373,7 @@ class Cpu(Eventful):
         self._icount = 0
         self._last_pc = None
         if not hasattr(self, "disasm") or self.disasm is None:
-            self.disasm = init_disassembler('capstone', self.arch, self.mode)
+            self.disasm = init_disassembler(disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
         assert 'STACK' in self._regfile
         assert 'PC' in self._regfile
@@ -747,50 +742,27 @@ class Cpu(Eventful):
         self._icount += 1
         self.publish('did_execute_instruction', instruction)
 
+    def fallback_to_emulate(self, *operands):
+        insn = self.instruction
+        text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+        logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                insn.address, text_bytes, insn.mnemonic, insn.op_str)
+
+        self.publish('will_emulate_instruction', insn)
+        self.emulate(insn)
+
+        self.publish('did_emulate_instruction', insn)
+
     def _insn_implementation(self, insn):
         name = self.canonicalize_instruction_name(insn)
 
-        def fallback_to_emulate(*operands):
-            text_bytes = ' '.join('%02x'%x for x in insn.bytes)
-            logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                    insn.address, text_bytes, insn.mnemonic, insn.op_str)
+        implementation = getattr(self, name, self.fallback_to_emulate)
+        implementation(*insn.operands)
+        self.update_pc()
 
-            self.publish('will_emulate_instruction', insn)
-            self.emulate(insn)
-
-            self.publish('did_emulate_instruction', insn)
-
-        if (isinstance(self.disasm, BinjaILDisasm) and
-                isinstance(insn, cs.CsInsn)):
-            # if we got a capstone instruction using BinjaILDisasm, it means
-            # this instruction is not implemented. Fallback to Capstone
-            self.FALLBACK(name, *insn.operands)
-        else:
-            implementation = getattr(self, name, fallback_to_emulate)
-            implementation(*insn.operands)
-
-        self._update_pc_if_binja(insn)
-
-    def _update_pc_if_binja(self, insn):
-        # In case we are executing IL instructions, we could iteratively
-        # invoke multiple instructions due to the tree form, thus we only
-        # want to increment the PC once, based on its previous position
-        # for CALLS and JUMPS the PC should have been set automatically
-        # so no need to do anything. Also, if there are pending instruction
-        if not isinstance(self.disasm, BinjaILDisasm):
-            return
-
-        # don't bump the PC if we are in an LLIL that has set it,
-        # or if there are pending IL insn in the queue. This is because
-        # for cases where we have other il instructions in the queue,
-        # such as when we get a divu insn, the PC + size will point
-        # to the next assembly instruction and not the next LLIL
-        #
-        # we might be executing a Capstone instruction at this point
-        # if we context-switched, so check the sets_pc attr
-        if not (hasattr(insn, "sets_pc") and
-                (insn.sets_pc or self.disasm.il_queue)):
-            self.PC = self._last_pc + insn.size
+    # to be overriden if needed
+    def update_pc(self):
+        pass
 
     def emulate(self, insn):
         '''
