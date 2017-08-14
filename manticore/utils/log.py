@@ -34,11 +34,12 @@ for l in loggers:
     logging.getLogger(l).addFilter(ctxfilter)
     logging.getLogger(l).setState = types.MethodType(loggerSetState,
                                                      logging.getLogger(l))
+    logging.getLogger(l).setLevel(logging.WARNING)
 
 manticore_verbosity = 0
 def set_verbosity(setting):
     global manticore_verbosity
-    zero = map(lambda x: (x, logging.ERROR), loggers)
+    zero = map(lambda x: (x, logging.WARNING), loggers)
     levels = [
         # 0
         zero,
@@ -75,5 +76,6 @@ def set_verbosity(setting):
     clamped = clamp(setting, 0, len(levels) - 1)
     for level in range(clamped + 1):
         for log_type, log_level in levels[level]:
+            print "setting level " + str(log_level)
             logging.getLogger(log_type).setLevel(log_level)
     manticore_verbosity = clamped

@@ -73,6 +73,12 @@ class IntegrationTest(unittest.TestCase):
         filename = os.path.join(dirname, 'binaries/basic_linux_amd64')
         output = subprocess.check_output(['python', '-m', 'manticore', filename])
         self.assertLessEqual(len(output.splitlines()), 60)
+        output = subprocess.check_output(['python', '-m', 'manticore', filename, "-v"])
+        self.assertLessEqual(len(output.splitlines()), 80)
+        output = subprocess.check_output(['python', '-m', 'manticore', filename, "-vvv"])
+        self.assertGreaterEqual(len(output.splitlines()), 435000)
+        output = subprocess.check_output(['python', '-m', 'manticore', filename, "-vvvv"])
+        self.assertGreaterEqual(len(output.splitlines()), 950000)
 
     def testArgumentsAssertions(self):
         dirname = os.path.dirname(__file__)
