@@ -268,8 +268,8 @@ class Manticore(object):
 
     @property
     def verbosity(self):
-        """Interface for getting Manticore logging verbosity.
-        Values: 0-5
+        """Convenience interface for setting logging verbosity to one of
+        several predefined logging presets. Valid values: 0-5.
         """
         return log.manticore_verbosity
 
