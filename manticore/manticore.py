@@ -601,6 +601,7 @@ class Manticore(object):
     def _execute_instruction_callback(self, state, instruction):
         address = state.cpu.PC
         if not issymbolic(address):
+            state.context.setdefault('trace', list()).append(address)
             state.context.setdefault('visited_since_last_fork', set()).add(address)
             state.context.setdefault('visited', set()).add(address)
             count = state.context.get('instructions_count', 0)
