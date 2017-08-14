@@ -3,7 +3,9 @@ import os
 import time
 import threading
 
-from binaryninja import PluginCommand, HighlightStandardColor, log
+from binaryninja import (
+    PluginCommand, HighlightStandardColor, log, BackgroundTaskThread
+)
 from binaryninja.interaction import (
     get_open_filename_input, get_directory_name_input, get_choice_input
 )
@@ -14,7 +16,7 @@ black = HighlightStandardColor.BlackHighlightColor
 white = HighlightStandardColor.WhiteHighlightColor
 clear = HighlightStandardColor.NoHighlightColor
 # renew interval
-interval = 1.5
+interval = 3
 
 class Singleton(type):
     _instances = {}
@@ -33,6 +35,8 @@ class TraceVisualizer(object):
         self.highlighted = set()
         # covered basic blocks
         self.cov_bb = set()
+        # comments inserted
+        self.cov_comments = set()
         self.current_function = None
         self.live_update = live
 
@@ -50,33 +54,28 @@ class TraceVisualizer(object):
 
     def highlight_from_file(self, tracefile):
         while True:
-            time.sleep(interval)
-            self.highlight_trace(tracefile)
-            self.compute_coverage()
+            self.process_trace(tracefile)
             if not self.live_update:
                 break
+            time.sleep(interval)
 
     def highlight_from_dir(self, workspace_dir):
         while True:
-            time.sleep(interval)
             for f in os.listdir(workspace_dir):
                 if f.endswith('trace'):
-                    self.highlight_trace(os.path.join(workspace_dir, f))
-            self.compute_coverage()
+                    self.process_trace(os.path.join(workspace_dir, f))
             if not self.live_update:
                 break
+            time.sleep(interval)
 
-    def highlight_trace(self, tracefile):
-        f = open(tracefile, "r")
-        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    def process_trace(self, tracefile):
         trace_addr = set()
-        for line in f:
-            trace_addr.add(int(line.strip(), 0) - self.base)
+        with open(tracefile, "r") as f:
+            for line in f:
+                trace_addr.add(int(line.strip(), 0) - self.base)
 
-        for addr in trace_addr - self.highlighted:
-            self.highlight_addr(addr, blue)
-        fcntl.flock(f, fcntl.LOCK_UN)
-        f.close()
+            for addr in trace_addr - self.highlighted:
+                self.highlight_addr(addr, blue)
 
     def highlight_addr(self, addr, hl):
         blocks = self.view.get_basic_blocks_at(addr)
@@ -111,10 +110,22 @@ class TraceVisualizer(object):
                 op == enums.LowLevelILOperation.LLIL_SYSCALL or
                 op == enums.LowLevelILOperation.LLIL_GOTO):
             return
+        self.cov_comments.add((xref.function, xref.address))
         xref.function.set_comment_at(xref.address, comment)
 
+    def clear_stats(self):
+        self.highlighted.clear()
+        self.cov_bb.clear()
+        for fun, addr in self.cov_comments:
+            fun.set_comment_at(addr, None)
 
-    def compute_coverage(self):
+class CoverageHelper(BackgroundTaskThread):
+    def __init__(self, view, tv):
+        self.tv = tv
+        self.view = view
+        BackgroundTaskThread.__init__(self, "Calculating Coverage", True)
+
+    def run(self):
         # function cumulative bb coverage
         # key: function address
         # values: [total basic blocks covered, xrefs to function]
@@ -128,7 +139,7 @@ class TraceVisualizer(object):
                 continue
             cov = (len(
                 (set([b.start for b in f.basic_blocks])
-                 .intersection(self.cov_bb))
+                 .intersection(self.tv.cov_bb))
             ) / float(len(set(f.basic_blocks))))
             fun_cov[f.start][0] += cov
             for xref_f in xrefs:
@@ -140,18 +151,7 @@ class TraceVisualizer(object):
             cov += "% cumulative BB coverage"
             f.set_comment(f.start, "Function Stats: \n" + cov)
             for xref in xrefs:
-                self.set_comment_at_xref(xref, cov)
-
-    def clear_stats(self):
-        self.highlighted.clear()
-        self.cov_bb.clear()
-        fun_xrefs = sorted([(f, self.view.get_code_refs(f.start))
-                            for f in self.view.functions],
-                           key=lambda x: len(x[1]))
-        for f, xrefs in fun_xrefs:
-            f.set_comment(f.start, None)
-            for xref in xrefs:
-                self.set_comment_at_xref(xref, None)
+                self.tv.set_comment_at_xref(xref, cov)
 
 def get_workspace():
     choice = get_choice_input("Select Trace Type",
@@ -183,16 +183,28 @@ def viz_live_trace(view):
     tv.live_update = True
     tv.visualize()
 
+def get_coverage(view):
+    tv = TraceVisualizer(view, None, live=False)
+    if tv.workspace is None:
+        tv.workspace = get_workspace()
+    tv.visualize()
+    c = CoverageHelper(view, tv)
+    c.start()
+
 def clear_all(view):
     tv = TraceVisualizer(view, None)
     for addr in tv.highlighted:
         tv.highlight_block(addr, clear)
-    tv.live_update = False
     tv.clear_stats()
+    tv.workspace = None
+    tv.live_update = False
 
 PluginCommand.register("ManticoreTrace: Highlight",
                        "Highlight Manticore Execution Trace",
                        viz_trace)
+PluginCommand.register("ManticoreTrace: BB Coverage",
+                       "Compute cumulative BB coverage for each function ",
+                       get_coverage)
 PluginCommand.register("ManticoreTrace: Live Highlight",
                        "Highlight Manticore Execution Trace at Real-Time",
                        viz_live_trace)
