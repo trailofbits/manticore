@@ -76,6 +76,5 @@ def set_verbosity(setting):
     clamped = clamp(setting, 0, len(levels) - 1)
     for level in range(clamped + 1):
         for log_type, log_level in levels[level]:
-            print "setting level " + str(log_level)
             logging.getLogger(log_type).setLevel(log_level)
     manticore_verbosity = clamped
