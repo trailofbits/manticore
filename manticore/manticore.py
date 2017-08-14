@@ -24,7 +24,7 @@ from .core.smtlib import solver, ConstraintSet
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
-import utils.log
+from .utils import log
 
 logger = logging.getLogger('MANTICORE')
 
@@ -181,6 +181,8 @@ class Manticore(object):
         if self._binary_type == 'ELF':
             self._binary_obj = ELFFile(file(self._binary))
 
+        log.init_logging()
+
     @property
     def context(self):
         ''' Convenient access to shared context '''
@@ -266,14 +268,17 @@ class Manticore(object):
 
     @property
     def verbosity(self):
-        return utils.log.manticore_verbosity
+        """Interface for getting Manticore logging verbosity.
+        Values: 0-5
+        """
+        return log.manticore_verbosity
 
     @verbosity.setter
     def verbosity(self, setting):
         """A call used to modify the level of output verbosity
         :param int level: the level of verbosity to be used
         """
-        utils.log.set_verbosity(setting)
+        log.set_verbosity(setting)
 
     @maxstorage.setter
     def maxstorage(self, max_storage):
@@ -527,10 +532,6 @@ class Manticore(object):
             manticore_visited = manticore_context.get('visited', set())
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
-
-        logger.debug("Forking, about to store. (policy: %s, values: %s)",
-                     policy,
-                     ', '.join('0x{:x}'.format(pc) for pc in values))
 
     def _read_register_callback(self, state, reg_name, value):
         logger.debug("Read Register %r %r", reg_name, value)

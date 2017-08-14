@@ -21,22 +21,22 @@ loggers = ['MANTICORE',
            'SMT',
            'MEMORY',
            'PLATFORM']
+manticore_verbosity = 0
 
-ctxfilter = ContextFilter()
-logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
-          " %(message)s")
-logging.basicConfig(format=logfmt, stream=sys.stdout, level=logging.ERROR)
+def init_logging():
+    ctxfilter = ContextFilter()
+    logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
+              " %(message)s")
+    logging.basicConfig(format=logfmt, stream=sys.stdout, level=logging.ERROR)
+    for l in loggers:
+        logging.getLogger(l).setLevel(logging.WARNING)
+        logging.getLogger(l).addFilter(ctxfilter)
+        logging.getLogger(l).setState = types.MethodType(loggerSetState,
+                                                         logging.getLogger(l))
 
 def loggerSetState(logger, stateid):
     logger.filters[0].stateid = stateid
 
-for l in loggers:
-    logging.getLogger(l).addFilter(ctxfilter)
-    logging.getLogger(l).setState = types.MethodType(loggerSetState,
-                                                     logging.getLogger(l))
-    logging.getLogger(l).setLevel(logging.WARNING)
-
-manticore_verbosity = 0
 def set_verbosity(setting):
     global manticore_verbosity
     zero = map(lambda x: (x, logging.WARNING), loggers)
