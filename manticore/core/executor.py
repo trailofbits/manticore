@@ -285,7 +285,7 @@ class Executor(Eventful):
 
         #broadcast test generation. This is the time for other modules
         #to output whatever helps to understand this testcase
-        self.publish('will_generate_testcase', state)
+        self.publish('will_generate_testcase', state, 'test', message)
 
     def fork(self, state, expression, policy='ALL', setstate=None):
         '''
@@ -304,6 +304,7 @@ class Executor(Eventful):
 
         The optional setstate() function is supposed to set the concrete value
         in the child state.
+
         '''
         assert isinstance(expression, Expression)
 
@@ -313,24 +314,30 @@ class Executor(Eventful):
         #Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
-        #We are about to fork current_state
-        with self._lock:
-            self.publish('will_fork_state', state, expression, solutions, policy)
+        logger.info("Forking, about to store. (policy: %s, values: %s)",
+                    policy,
+                    ', '.join('0x{:x}'.format(sol) for sol in solutions))
+
+        self.publish('will_fork_state', state, expression, solutions, policy)
 
         #Build and enqueue a state for each solution
         children = []
         for new_value in solutions:
             with state as new_state:
-                new_state.constrain(expression == new_value) #We already know it's sat
+                new_state.constrain(expression == new_value)
+
                 #and set the PC of the new state to the concrete pc-dest
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value)
+
+                self.publish('forking_state', new_state, expression, new_value, policy)
+
                 #enqueue new_state
                 state_id = self.add(new_state)
                 #maintain a list of childres for logging purpose
                 children.append(state_id)
 
-        logger.debug("Forking current state into states %r",children)
+        logger.debug("Forking current state into states %r", children)
         return None
 
     def run(self):

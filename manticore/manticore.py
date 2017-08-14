@@ -24,6 +24,8 @@ from .core.workspace import ManticoreOutput
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
+from .utils import log
+
 logger = logging.getLogger('MANTICORE')
 
 def makeBinja(program, disasm, argv, env, symbolic_files, concrete_start=''):
@@ -144,6 +146,7 @@ def binary_type(path):
     else:
         raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
 
+
 class Manticore(object):
     '''
     The central analysis object.
@@ -184,7 +187,6 @@ class Manticore(object):
         self._dumpafter = 0
         self._maxstates = 0
         self._maxstorage = 0
-        self._verbosity = 0
         self._symbolic_files = [] # list of string
         self._executor = None
         #Executor wide shared context
@@ -195,7 +197,7 @@ class Manticore(object):
         if self._binary_type == 'ELF':
             self._binary_obj = ELFFile(file(self._binary))
 
-        self._init_logging()
+        log.init_logging()
 
     @property
     def context(self):
@@ -234,6 +236,7 @@ class Manticore(object):
                 yield ctx
                 context[key] = ctx
 
+<<<<<<< HEAD
     def _init_logging(self):
         def loggerSetState(logger, stateid):
             logger.filters[0].stateid = stateid
@@ -257,6 +260,8 @@ class Manticore(object):
             logging.getLogger(loggername).addFilter(ctxfilter)
             logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
 
+=======
+>>>>>>> master
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
     @property
@@ -303,40 +308,23 @@ class Manticore(object):
     def maxstorage(self):
         return self._maxstorage
 
-    @maxstorage.setter
-    def maxstorage(self, max_storage):
-        self._maxstorage = max_storage
-
     @property
     def verbosity(self):
-        '''
-        Convenience interface for setting logging verbosity to one of several predefined
-        logging presets. Valid values: 0-5
-        '''
-        return self._verbosity
+        """Convenience interface for setting logging verbosity to one of
+        several predefined logging presets. Valid values: 0-5.
+        """
+        return log.manticore_verbosity
 
     @verbosity.setter
     def verbosity(self, setting):
-        zero = map(lambda x: (x, logging.ERROR),
-                   ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM'])
-        levels = [zero,
-                  [('MANTICORE', logging.INFO), ('EXECUTOR', logging.INFO)],
-                  [('PLATFORM', logging.DEBUG)],
-                  [('MEMORY', logging.DEBUG), ('CPU', logging.DEBUG)],
-                  [('REGISTERS', logging.DEBUG)],
-                  [('SMT', logging.DEBUG)]]
+        """A call used to modify the level of output verbosity
+        :param int setting: the level of verbosity to be used
+        """
+        log.set_verbosity(setting)
 
-        # Takes a value and ensures it's in a certain range
-        def clamp(val, minimum, maximum):
-            return sorted((minimum, val, maximum))[1]
-
-        clamped = clamp(setting, 0, len(levels) - 1)
-        if clamped != setting:
-            logger.debug("%s not between 0 and %d, forcing to %d", setting, len(levels) - 1, clamped)
-        for level in range(clamped + 1):
-            for log_type, log_level in levels[level]:
-                logging.getLogger(log_type).setLevel(log_level)
-        self._verbosity = clamped
+    @maxstorage.setter
+    def maxstorage(self, max_storage):
+        self._maxstorage = max_storage
 
     def hook(self, pc):
         '''
@@ -584,6 +572,12 @@ class Manticore(object):
 
             manticore_instructions_count = manticore_context.get('instructions_count', 0)
             manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
+<<<<<<< HEAD
+=======
+
+    def _forking_state_callback(self, state, expression, value, policy):
+        state.record_branch(value)
+>>>>>>> master
 
     def _fork_state_callback(self, state, expression, values, policy):
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -592,8 +586,11 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
+<<<<<<< HEAD
         logger.debug("About to store state %r %r %r", state, expression, values, policy)
 
+=======
+>>>>>>> master
     def _read_register_callback(self, state, reg_name, value):
         logger.debug("Read Register %r %r", reg_name, value)
 
@@ -608,7 +605,6 @@ class Manticore(object):
 
     def _decode_instruction_callback(self, state, pc):
         logger.debug("Decoding stuff instruction not available")
-
 
     def _emulate_instruction_callback(self, state, instruction):
         logger.debug("About to emulate instruction")
@@ -625,14 +621,14 @@ class Manticore(object):
             state.context['instructions_count'] = count + 1
 
 
-    def _generate_testcase_callback(self, state, message = 'Testcase generated'):
+    def _generate_testcase_callback(self, state, name, message):
         '''
         Create a serialized description of a given state.
         :param state: The state to generate information about
         :param message: Accompanying message
         '''
-        testcase_id = self._output.save_testcase(state, message)
-        logger.debug("Generated testcase No. %d - %s", testcase_id, message)
+        testcase_id = self._output.save_testcase(state, name, message)
+        logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
 
     def _produce_profiling_data(self):
         class PstatsFormatted:
@@ -720,11 +716,18 @@ class Manticore(object):
             ws_path = None
 
         self._output = ManticoreOutput(ws_path)
-
         self._executor = Executor(initial_state,
+<<<<<<< HEAD
                                   workspace=ws_path,
                                   policy=self._policy,
                                   context=self.context)
+=======
+                                  workspace=self._output.descriptor,
+                                  policy=self._policy,
+                                  context=self.context)
+
+
+>>>>>>> master
 
         #Link Executor events to default callbacks in manticore object
         self._executor.subscribe('did_read_register', self._read_register_callback)
@@ -736,6 +739,7 @@ class Manticore(object):
         self._executor.subscribe('will_store_state', self._store_state_callback)
         self._executor.subscribe('will_load_state', self._load_state_callback)
         self._executor.subscribe('will_fork_state', self._fork_state_callback)
+        self._executor.subscribe('forking_state', self._forking_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
 

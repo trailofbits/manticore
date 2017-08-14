@@ -86,8 +86,18 @@ class StateTest(unittest.TestCase):
 
     def test_output(self):
         out = ManticoreOutput('mem:')
-        out.save_testcase(self.state, 'saving state')
-        keys = [x[14:] for x in out._store._data.keys()]
+        name = 'mytest'
+        message = 'custom message'
+        out.save_testcase(self.state, name, message)
+        workspace = out._store._data
+
+        # Make sure names are constructed correctly
+        for name, data in workspace.items():
+            self.assertTrue(name.startswith(name))
+            if 'messages' in name:
+                self.assertTrue(message in data)
+
+        keys = [x.split('.')[1] for x in workspace.keys()]
 
         # Make sure we log everything we should be logging
         self.assertIn('smt', keys)
