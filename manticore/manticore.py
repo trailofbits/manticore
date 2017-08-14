@@ -236,32 +236,6 @@ class Manticore(object):
                 yield ctx
                 context[key] = ctx
 
-<<<<<<< HEAD
-    def _init_logging(self):
-        def loggerSetState(logger, stateid):
-            logger.filters[0].stateid = stateid
-
-        class ContextFilter(logging.Filter):
-            '''
-            This is a filter which injects contextual information into the log.
-            '''
-            def filter(self, record):
-                if hasattr(self, 'stateid') and isinstance(self.stateid, int):
-                    record.stateid = '[%d]' % self.stateid
-                else:
-                    record.stateid = ''
-                return True
-
-        ctxfilter = ContextFilter()
-
-        logging.basicConfig(format='%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s: %(message)s', stream=sys.stdout, level=logging.ERROR)
-
-        for loggername in ['MANTICORE', 'VISITOR', 'EXECUTOR', 'CPU', 'REGISTERS', 'SMT', 'MEMORY', 'PLATFORM']:
-            logging.getLogger(loggername).addFilter(ctxfilter)
-            logging.getLogger(loggername).setState = types.MethodType(loggerSetState, logging.getLogger(loggername))
-
-=======
->>>>>>> master
     # XXX(yan): args is a temporary hack to include while we continue moving
     # non-Linux platforms to new-style arg handling.
     @property
@@ -572,12 +546,9 @@ class Manticore(object):
 
             manticore_instructions_count = manticore_context.get('instructions_count', 0)
             manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
-<<<<<<< HEAD
-=======
 
     def _forking_state_callback(self, state, expression, value, policy):
         state.record_branch(value)
->>>>>>> master
 
     def _fork_state_callback(self, state, expression, values, policy):
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -586,11 +557,6 @@ class Manticore(object):
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
-<<<<<<< HEAD
-        logger.debug("About to store state %r %r %r", state, expression, values, policy)
-
-=======
->>>>>>> master
     def _read_register_callback(self, state, reg_name, value):
         logger.debug("Read Register %r %r", reg_name, value)
 
@@ -717,17 +683,11 @@ class Manticore(object):
 
         self._output = ManticoreOutput(ws_path)
         self._executor = Executor(initial_state,
-<<<<<<< HEAD
-                                  workspace=ws_path,
-                                  policy=self._policy,
-                                  context=self.context)
-=======
                                   workspace=self._output.descriptor,
                                   policy=self._policy,
                                   context=self.context)
 
 
->>>>>>> master
 
         #Link Executor events to default callbacks in manticore object
         self._executor.subscribe('did_read_register', self._read_register_callback)

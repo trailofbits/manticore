@@ -46,14 +46,9 @@ class Eventful(object):
         #A bucket is a dictionary obj -> set(method1, method2...)
         return self._signals.setdefault(name,  dict())
 
-<<<<<<< HEAD
-    def publish(self, name, *args, **kwargs):
-        bucket = self._get_signal_bucket(name)
-=======
     # The underscore _name is to avoid naming collisions with callback params
     def publish(self, _name, *args, **kwargs):
         bucket = self._get_signal_bucket(_name)
->>>>>>> master
         for robj, methods in bucket.items():
             for callback in methods:
                 callback(robj(), *args, **kwargs)
