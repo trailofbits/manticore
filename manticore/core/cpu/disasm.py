@@ -54,8 +54,6 @@ class CapstoneDisasm(Disasm):
         try:
             cap = cs.Cs(arch, mode)
         except Exception as e:
-            print arch
-            print mode
             raise e
         cap.detail = True
         cap.syntax = 0
