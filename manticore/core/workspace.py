@@ -499,9 +499,9 @@ class ManticoreOutput(object):
 
     def save_trace(self, state):
         with self._named_stream('trace') as f:
-            if 'visited' not in state.context:
+            if 'trace' not in state.context:
                 return
-            for pc in state.context['visited']:
+            for pc in state.context['trace']:
                 f.write('0x{:08x}\n'.format(pc))
 
     def save_constraints(self, state):
