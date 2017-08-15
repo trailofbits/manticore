@@ -467,9 +467,10 @@ class Armv7Cpu(Cpu):
         return [Armv7Operand(self, op) for op in ops]
 
     def shouldCommitFlags(cpu):
-        #workaround for a capstone bug;
+        #workaround for a capstone bug (issue #980);
         #the bug has been fixed the 'master' and 'next' branches of capstone as of 2017-07-31
-        if cpu.instruction.id == ARM_INS_UADD8: return True
+        if cpu.instruction.id == ARM_INS_UADD8:
+            return True
 
         return cpu.instruction.update_flags
 
@@ -787,7 +788,7 @@ class Armv7Cpu(Cpu):
         if add:
             result, carry, overflow = cpu._ADD(src.read(), add.read())
         else:
-            '''support for the thumb mode version of adds <dest>, <immediate>'''
+            #support for the thumb mode version of adds <dest>, <immediate>
             result, carry, overflow = cpu._ADD(dest.read(), src.read())
         dest.write(result)
         return result, carry, overflow
