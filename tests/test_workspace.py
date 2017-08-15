@@ -4,10 +4,10 @@ import unittest
 from multiprocessing.managers import SyncManager
 
 from manticore.platforms import linux
-from manticore.utils.event import Signal
 from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
 from manticore.core.workspace import *
+from manticore.utils.event import Eventful
 
 manager = SyncManager()
 manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
@@ -24,18 +24,9 @@ class FakeMemory(object):
     def constraints(self, constraints):
         self._constraints = constraints
 
-class FakeCpu(object):
+class FakeCpu(Eventful):
     def __init__(self):
-        self.will_decode_instruction = Signal()
-        self.will_execute_instruction = Signal()
-        self.did_execute_instruction = Signal()
-        self.will_emulate_instruction = Signal()
-        self.did_emulate_instruction = Signal()
-
-        self.will_read_register = Signal()
-        self.will_write_register = Signal()
-        self.will_read_memory = Signal()
-        self.will_write_memory = Signal()
+        super(FakeCpu, self).__init__()
 
         self._memory = FakeMemory()
 
@@ -95,8 +86,18 @@ class StateTest(unittest.TestCase):
 
     def test_output(self):
         out = ManticoreOutput('mem:')
-        out.save_testcase(self.state, 'saving state')
-        keys = [x[14:] for x in out._store._data.keys()]
+        name = 'mytest'
+        message = 'custom message'
+        out.save_testcase(self.state, name, message)
+        workspace = out._store._data
+
+        # Make sure names are constructed correctly
+        for name, data in workspace.items():
+            self.assertTrue(name.startswith(name))
+            if 'messages' in name:
+                self.assertTrue(message in data)
+
+        keys = [x.split('.')[1] for x in workspace.keys()]
 
         # Make sure we log everything we should be logging
         self.assertIn('smt', keys)
