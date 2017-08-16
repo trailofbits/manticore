@@ -281,13 +281,13 @@ class BinjaCpu(Cpu):
 
         # FIXME implement a generic architecture selector
         arch = Architecture['x86_64']
-        # get a platform specific CPU
-        platform_cpu = CpuFactory.get_cpu(memory, 'amd64')
-        # and mark it as non-virtual so as to not increment the PC in the
-        # @instruction decorator
-        platform_cpu.real_cpu = False
-        Cpu.platform_cpu = platform_cpu
-        platform_regs = platform_cpu.all_registers
+        if not hasattr(self, "platform_cpu"):
+            # get a platform specific CPU
+            # and mark it as non-virtual so as to not increment the PC in the
+            # @instruction decorator
+            self.platform_cpu = CpuFactory.get_cpu(memory, 'amd64')
+            self.platform_cpu.real_cpu = False
+        platform_regs = self.platform_cpu.all_registers
         self.max_instr_width = arch.max_instr_length
         self.address_bit_size = 8 * arch.address_size
         self.machine = self.platform_cpu.machine
@@ -381,14 +381,17 @@ class BinjaCpu(Cpu):
         # during the creation of operands in wrap_operands
         if (isinstance(self.disasm, BinjaILDisasm) and
                 isinstance(insn, cs.CsInsn)):
-            for pl_reg, binja_reg in self.regfile.pl2b_map.items():
-                if isinstance(binja_reg, tuple) or binja_reg is None: continue
-                self.platform_cpu.write_register(pl_reg,
-                                                 self.regfile.read(binja_reg))
+            self.update_platform_cpu_regs()
 
         insn.operands = self._wrap_operands(insn.operands)
         self._instruction_cache[pc] = insn
         return insn
+
+    def update_platform_cpu_regs(self):
+        for pl_reg, binja_reg in self.regfile.pl2b_map.items():
+            if isinstance(binja_reg, tuple) or binja_reg is None: continue
+            self.platform_cpu.write_register(pl_reg,
+                                             self.regfile.read(binja_reg))
 
     def render_instruction(self, insn=None):
         try:
@@ -415,10 +418,12 @@ class BinjaCpu(Cpu):
         state = super(BinjaCpu, self).__getstate__()
         state['segments'] = self._segments
         state['view_program_path'] = self.program_path
+
         state['max_instr_width'] = self.max_instr_width
         state['address_bit_size'] = self.address_bit_size
+        state['machine'] = self.machine
         state['mode'] = self.mode
-        # FIXME]
+        # FIXME
         state['arch'] = 'x86_64'
         return state
 
@@ -428,10 +433,13 @@ class BinjaCpu(Cpu):
         self._segments = state['segments']
         self.max_instr_width = state['max_instr_width']
         self.address_bit_size = state['address_bit_size']
+        self.machine = state['machine']
         self.mode = state['mode']
         self.arch = Architecture[state['arch']]
         self.initialize_disassembler(state['view_program_path'])
 
+        self.platform_cpu = CpuFactory.get_cpu(state['memory'], 'amd64')
+        self.platform_cpu.real_cpu = False
         super(BinjaCpu, self).__setstate__(state)
 
     def canonicalize_instruction_name(self, insn):
