@@ -365,15 +365,15 @@ class Cpu(Eventful):
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
-        disasm = kwargs.pop("disasm", 'capstone')
         super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
         self._last_pc = None
-        if not hasattr(self, "disasm") or self.disasm is None:
-            self.disasm = init_disassembler(disasm, self.arch, self.mode)
+        self._disasm = kwargs.pop("disasm", 'capstone')
+        if not hasattr(self, "disasm"):
+            self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
         assert 'STACK' in self._regfile
         assert 'PC' in self._regfile
@@ -384,14 +384,16 @@ class Cpu(Eventful):
         state['memory'] = self._memory
         state['icount'] = self._icount
         state['last_pc'] = self._last_pc
-        # FIXME
-        state['disassembler'] = "capstone"
+        state['disassembler'] = self._disasm
         return state
 
     def __setstate__(self, state):
-        Cpu.__init__(self, state['regfile'], state['memory'])
+        Cpu.__init__(self, state['regfile'],
+                     state['memory'],
+                     disasm=state['disassembler'])
         self._icount = state['icount']
         self._last_pc = state['last_pc']
+        self._disasm = state['disassembler']
         super(Cpu, self).__setstate__(state)
 
     @property

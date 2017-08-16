@@ -16,7 +16,7 @@ class Eventful(object):
         self._signals = dict()
         # a set of sink eventful objects (see forward_events_from())
         self._forwards = WeakKeyDictionary()
-        super(Eventful, self).__init__(*args, **kwargs)
+        #super(Eventful, self).__init__(*args, **kwargs)
 
     def __setstate__(self, state):
         ''' It wont get serialized by design, user is responsible to reconnect'''

@@ -2018,6 +2018,9 @@ class Linux(Platform):
             for reg, val in x86_defaults.iteritems():
                 self.current.regfile.write(reg, val)
 
+        if is_binja_disassembler(self.disasm):
+            cpu = self.current.initialize_disassembler(self.program)
+
     @staticmethod
     def _interp_total_size(interp):
         '''
@@ -2067,45 +2070,11 @@ class SLinux(Linux):
             mem = SMemory64(self.constraints)
 
         if is_binja_disassembler(self.disasm):
-            return self._init_binja_cpu(mem)
+            from ..core.cpu.binja import BinjaCpu
+            return BinjaCpu(mem)
 
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
-
-    def _init_binja_cpu(self, memory):
-        from ..core.cpu.binja import BinjaCpu
-
-        #  FIXME (theo) this will be replaced by a function that simply
-        #  loads the IL from a file
-        def init_bv():
-            """
-            Reads a binary and returns a binary vieww
-            """
-            import binaryninja as bn
-            from binaryninja import BinaryView as bview
-
-            # see if we have cached the db
-            db_name = "." + os.path.basename(self.program) + ".bnfm"
-            dbpath = os.path.join(os.path.dirname(self.program), db_name)
-            if not os.path.isfile(dbpath):
-                bv = bn.binaryview.BinaryViewType.get_view_of_file(self.program)
-                bv.update_analysis_and_wait()
-                # cache for later
-                bv.create_database(dbpath)
-                return bv
-            else:
-                fm = bn.FileMetadata()
-                db = fm.open_existing_database(dbpath)
-                vtypes = filter(lambda x: x.name != "Raw",
-                                bview.open(self.program).available_view_types)
-                bv = db.get_view_of_type(vtypes[0].name)
-                bv.update_analysis_and_wait()
-                return bv
-
-        bv = init_bv()
-        cpu = BinjaCpu(bv, memory)
-        return cpu
-
 
     @property
     def constraints(self):

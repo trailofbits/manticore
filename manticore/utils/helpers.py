@@ -43,4 +43,4 @@ class memoized(object):
 
 
 def is_binja_disassembler(disasm):
-    return disasm == "binja" or disasm == "binja-il"
+    return disasm == "binja-il"

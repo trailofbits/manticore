@@ -23,7 +23,7 @@ def parse_arguments():
     # FIXME (theo) similarly to policy, add documentation here.
     disas = ['capstone', 'binja-il']
     parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
-                        help='Disassembler to be used to lift binaries')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--dumpafter', type=int, default=0,
                         help='Dump state after every N instructions; 0 to disable')
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',

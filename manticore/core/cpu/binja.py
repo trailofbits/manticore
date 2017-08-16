@@ -1,8 +1,10 @@
 import ctypes
-from functools import wraps
 import logging
+import os
 import re
+
 from collections import defaultdict
+from functools import wraps
 
 import capstone as cs
 
@@ -270,32 +272,59 @@ class BinjaCpu(Cpu):
     '''
     A Virtual CPU model for Binary Ninja's IL
     '''
-    def __init__(self, view, memory):
+    def __init__(self, memory):
         '''
         Builds a CPU model.
         :param arch: BinaryNinja arch.
         '''
+        from binaryninja import Architecture
+
+        # FIXME implement a generic architecture selector
+        arch = Architecture['x86_64']
         # get a platform specific CPU
         platform_cpu = CpuFactory.get_cpu(memory, 'amd64')
-        # and mark it as virtual so as to not increment the PC in the
+        # and mark it as non-virtual so as to not increment the PC in the
         # @instruction decorator
         platform_cpu.real_cpu = False
         Cpu.platform_cpu = platform_cpu
         platform_regs = platform_cpu.all_registers
-        from binaryninja import Architecture
-        Cpu.max_instr_width = view.arch.max_instr_length
-        Cpu.address_bit_size = 8 * view.arch.address_size
-        Cpu.machine = self.platform_cpu.machine
-        Cpu.mode = self.platform_cpu.mode
-        Cpu.arch = view.arch
-        Cpu.disasm = BinjaILDisasm(view)
-        self.view = view
+        self.max_instr_width = arch.max_instr_length
+        self.address_bit_size = 8 * arch.address_size
+        self.machine = self.platform_cpu.machine
+        self.mode = self.platform_cpu.mode
+        self.arch = arch
+        self.program_path = None
+        self.view = None
         self._segments = {}
 
         # initialize the memory and register files
-        # FIXME
-        super(BinjaCpu, self).__init__(BinjaRegisterFile('x86_64', platform_regs),
-                                       memory)
+        super(BinjaCpu, self).__init__(BinjaRegisterFile('x86_64',
+                                                         platform_regs),
+                                       memory,
+                                       disasm="binja-il")
+
+    def initialize_disassembler(self, program_path):
+        import binaryninja as bn
+        from binaryninja import BinaryView as bview
+        from .disasm import BinjaILDisasm
+        # see if we have cached the db
+        db_name = "." + os.path.basename(program_path) + ".bnfm"
+        dbpath = os.path.join(os.path.dirname(program_path), db_name)
+        if not os.path.isfile(dbpath):
+            bv = bn.binaryview.BinaryViewType.get_view_of_file(program_path)
+            bv.update_analysis_and_wait()
+            # cache for later
+            bv.create_database(dbpath)
+        else:
+            fm = bn.FileMetadata()
+            db = fm.open_existing_database(dbpath)
+            vtypes = filter(lambda x: x.name != "Raw",
+                            bview.open(program_path).available_view_types)
+            bv = db.get_view_of_type(vtypes[0].name)
+            bv.update_analysis_and_wait()
+        self.program_path = program_path
+        self.view = bv
+        self.disasm = BinjaILDisasm(bv)
 
     @property
     def function_hooks(self):
@@ -308,10 +337,24 @@ class BinjaCpu(Cpu):
     def __getstate__(self):
         state = super(BinjaCpu, self).__getstate__()
         state['segments'] = self._segments
+        state['view_program_path'] = self.program_path
+        state['max_instr_width'] = self.max_instr_width
+        state['address_bit_size'] = self.address_bit_size
+        state['mode'] = self.mode
+        # FIXME]
+        state['arch'] = 'x86_64'
         return state
 
     def __setstate__(self, state):
+        from binaryninja import Architecture
+
         self._segments = state['segments']
+        self.max_instr_width = state['max_instr_width']
+        self.address_bit_size = state['address_bit_size']
+        self.mode = state['mode']
+        self.arch = Architecture[state['arch']]
+        self.initialize_disassembler(state['view_program_path'])
+
         super(BinjaCpu, self).__setstate__(state)
 
     def canonicalize_instruction_name(self, insn):
