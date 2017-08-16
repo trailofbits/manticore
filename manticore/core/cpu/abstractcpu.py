@@ -9,7 +9,7 @@ from itertools import islice, imap
 
 import capstone as cs
 
-from .disasm import init_disassembler, BinjaILDisasm
+from .disasm import init_disassembler
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
 from ..memory import (
     ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
@@ -365,13 +365,13 @@ class Cpu(Eventful):
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
+        self._disasm = kwargs.pop("disasm", 'capstone')
         super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
         self._last_pc = None
-        self._disasm = kwargs.pop("disasm", 'capstone')
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
@@ -642,8 +642,7 @@ class Cpu(Eventful):
         '''
         # No dynamic code!!! #TODO!
         # Check if instruction was already decoded
-        if (pc in self._instruction_cache and
-                not isinstance(self.disasm, BinjaILDisasm)):
+        if pc in self._instruction_cache:
             return self._instruction_cache[pc]
 
         text = ''
@@ -683,16 +682,6 @@ class Cpu(Eventful):
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
-
-        # if we are executing Binja-IL but need to fallback to capstone,
-        # bring all registers up to state, because they might be needed
-        # during the creation of operands in wrap_operands
-        if (isinstance(self.disasm, BinjaILDisasm) and
-                isinstance(insn, cs.CsInsn)):
-            for pl_reg, binja_reg in self.regfile.pl2b_map.items():
-                if isinstance(binja_reg, tuple) or binja_reg is None: continue
-                self.platform_cpu.write_register(pl_reg,
-                                                 self.regfile.read(binja_reg))
 
         insn.operands = self._wrap_operands(insn.operands)
         self._instruction_cache[pc] = insn
@@ -784,14 +773,10 @@ class Cpu(Eventful):
 
     def render_instruction(self, insn=None):
         try:
-            if (insn is None or
-                    not isinstance(insn, BinjaILDisasm.BinjaILInstruction)):
-                insn = self.instruction
-                return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
-                                                          insn.mnemonic,
-                                                          insn.op_str)
-            else:
-                return str(insn)
+            insn = self.instruction
+            return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
+                                                      insn.mnemonic,
+                                                      insn.op_str)
         except Exception as e:
             return "{can't decode instruction}"
 

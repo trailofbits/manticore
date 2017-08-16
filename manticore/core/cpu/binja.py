@@ -326,6 +326,83 @@ class BinjaCpu(Cpu):
         self.view = bv
         self.disasm = BinjaILDisasm(bv)
 
+    def decode_instruction(self, pc):
+        '''
+        This will decode an instruction from memory pointed by `pc`
+
+        :param int pc: address of the instruction
+        '''
+        # No dynamic code!!! #TODO!
+        # Check if instruction was already decoded
+        if (pc in self._instruction_cache and
+                not isinstance(self.disasm, BinjaILDisasm)):
+            return self._instruction_cache[pc]
+
+        text = ''
+        # Read Instruction from memory
+        for address in xrange(pc, pc+self.max_instr_width):
+            #This reads a byte from memory ignoring permissions
+            #and concretize it if symbolic
+            if not self.memory.access_ok(address, 'x'):
+                break
+
+            c = self.memory[address]
+
+            if issymbolic(c):
+                assert isinstance(c, BitVec) and  c.size == 8
+                if isinstance(c, Constant):
+                    c = chr(c.value)
+                else:
+                    logger.error('Concretize executable memory %r %r', c, text)
+                    raise ConcretizeMemory(self.memory,
+                                           address=pc,
+                                           size=8 * self.max_instr_width,
+                                           policy='INSTRUCTION')
+            text += c
+
+
+        #Pad potentially incomplete intruction with zeroes
+
+        code = text.ljust(self.max_instr_width, '\x00')
+
+        try:
+            # decode the instruction from code
+            insn = self.disasm.disassemble_instruction(code, pc)
+        except StopIteration as e:
+            raise DecodeException(pc, code)
+
+        #Check that the decoded intruction is contained in executable memory
+        if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
+            logger.info("Trying to execute instructions from non-executable memory")
+            raise InvalidMemoryAccess(pc, 'x')
+
+        # if we are executing Binja-IL but need to fallback to capstone,
+        # bring all registers up to state, because they might be needed
+        # during the creation of operands in wrap_operands
+        if (isinstance(self.disasm, BinjaILDisasm) and
+                isinstance(insn, cs.CsInsn)):
+            for pl_reg, binja_reg in self.regfile.pl2b_map.items():
+                if isinstance(binja_reg, tuple) or binja_reg is None: continue
+                self.platform_cpu.write_register(pl_reg,
+                                                 self.regfile.read(binja_reg))
+
+        insn.operands = self._wrap_operands(insn.operands)
+        self._instruction_cache[pc] = insn
+        return insn
+
+    def render_instruction(self, insn=None):
+        try:
+            if (insn is None or
+                    not isinstance(insn, BinjaILDisasm.BinjaILInstruction)):
+                insn = self.instruction
+                return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
+                                                          insn.mnemonic,
+                                                          insn.op_str)
+            else:
+                return str(insn)
+        except Exception as e:
+            return "{can't decode instruction}"
+
     @property
     def function_hooks(self):
         return dict(self._function_hooks)
