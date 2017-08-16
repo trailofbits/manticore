@@ -45,7 +45,6 @@ class BinjaRegisterFile(RegisterFile):
                                                              self.reg_aliases,
                                                              platform_regs)
 
-        # FIXME FIX tuples
         new_aliases = filter(lambda x: (x[0] not in self.reg_aliases.keys() and
                                         x[1] is not None and
                                         not isinstance(x[1], tuple)),
@@ -170,8 +169,6 @@ class BinjaOperand(Operand):
 
     @property
     def size(self):
-        # FIXME (does this assert need to be here? we could be reading memory)
-        #  assert self.type == 'register'
         return self.op.info.size
 
     def read(self):
@@ -216,9 +213,6 @@ def _sign_flag(res, size):
     mask = 1 << (size - 1)
     return (res & mask) != 0
 
-def _direction_flag(args):
-    pass
-
 def _parity_flag(v):
     return (v ^ v >> 1 ^ v >> 2 ^ v >> 3 ^ v >> 4 ^ v >> 5 ^ v >> 6 ^ v >> 7) & 1 == 0
 
@@ -260,7 +254,7 @@ def binja_platform_regmap(binja_arch_regs, binja_arch_flags, binja_arch_aliases,
             x86_to_binja[f.upper()] = f.upper()
 
     # still unmapped
-    # x86_to_binja ['EIP', 'IP', 'FRAME', 'EFLAGS', 'RFLAGS', 'TOP']
+    # x86_to_binja: ['EIP', 'IP', 'FRAME', 'EFLAGS', 'RFLAGS', 'TOP']
     # binja_to_x86: ['fs', 'gs', 'mmXX', 'stXX']
     binja_to_x86 = dict()
     binja_to_x86["high_mappings"] = []
@@ -1110,10 +1104,10 @@ def x86_get_eflags(cpu, reg):
 def insn_flags(cpu):
     # FIXME temporary hack due to binja issue with flags
     f = cpu.disasm.current_func
-    il = cpu.disasm.current_func.get_lifted_il_at(cpu.disasm.disasm_il.address)
+    il = f.get_lifted_il_at(cpu.disasm.disasm_il.address)
     mod_flags = f.get_flags_written_by_lifted_il_instruction(il.instr_index)
     #  il2 = cpu.disasm.disasm_il
-    #  mod_flags2 = cpu.arch.flags_written_by_flag_write_type.get(il.flags)
+    #  mod_flags2 = cpu.arch.flags_written_by_flag_write_type.get(il2.flags)
     #  assert mod_flags2 == mod_flags
     return mod_flags
 

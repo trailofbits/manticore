@@ -5911,7 +5911,6 @@ class AMD64Cpu(X86Cpu):
 
 
 class I386Cpu(X86Cpu):
-    # FIXME (theo) should we wrap these in a cpuinfo dictionary?
     # Config
     max_instr_width = 15
     address_bit_size = 32

@@ -44,8 +44,8 @@ class Disasm(object):
     def disassemble_instruction(self, code, pc):
         """Get next instruction based on the disassembler in use
 
-        :param code: disassembled code
-        :param pc: program counter
+        :param str code: binary blob to be disassembled
+        :param long pc: program counter
         """
         pass
 
@@ -60,10 +60,10 @@ class CapstoneDisasm(Disasm):
         super(CapstoneDisasm, self).__init__(cap)
 
     def disassemble_instruction(self, code, pc):
-        """Get next instruction based on Capstone disassembler
+        """Get next instruction using the Capstone disassembler
 
-        :param code: disassembled code
-        :param pc: program counter
+        :param str code: binary blob to be disassembled
+        :param long pc: program counter
         """
         return next(self.disasm.disasm(code, pc))
 
@@ -100,10 +100,7 @@ class BinjaILDisasm(Disasm):
         super(BinjaILDisasm, self).__init__(view)
 
     def _fix_addr(self, addr):
-        # FIXME how to deal with discrepancies of binja vs real program
-        # entry point addresses? We need to lookup the symbols and
-        # we should make sure all offsets are appropriate
-
+        # FIXME offset computations
         if self.entry_point_diff is None:
             # assume that the first time we are called, this is the entry point
             # self.entry_point_diff = addr - self.view.entry_point
@@ -120,8 +117,7 @@ class BinjaILDisasm(Disasm):
                 return self.il_queue.pop(0)[1]
             else:
                 # somehow we have a queue but we are now at a different pc,
-                # clear the queue (we might be here because of a CALL etc.)
-                # FIXME assert that this is legitimate
+                # clear the queue (e.g., we might be here because of a CALL)
                 del self.il_queue[:]
 
         from binaryninja import Architecture, LowLevelILFunction
@@ -135,15 +131,14 @@ class BinjaILDisasm(Disasm):
         return self.il_queue.pop(0)[1]
 
     def disassemble_instruction(self, code, pc):
-        """Get next instruction based on Capstone disassembler
+        """Get next instruction's Binja IL
 
-        :param code: disassembled code
-        :param pc: program counter
+        :param str code: binary blob to be disassembled
+        :param long pc: program counter
         """
         import binaryninja.enums as enums
 
         pc = self._fix_addr(pc)
-
         # FIXME will be removed
         ##################
         blocks = self.view.get_basic_blocks_at(pc)
