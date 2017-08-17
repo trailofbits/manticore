@@ -145,6 +145,7 @@ class BinjaILDisasm(Disasm):
         :param long pc: program counter
         """
         pc = self._fix_addr(pc)
+
         # FIXME will be removed
         ##################
         blocks = self.view.get_basic_blocks_at(pc)
@@ -163,10 +164,10 @@ class BinjaILDisasm(Disasm):
         self.disasm_il = il
 
         # create an instruction from the fallback disassembler if Binja can't
-        for idx, il in [(0, il)] + self.il_queue:
+        for idx, qil in [(0, il)] + self.il_queue:
             if (any((self.unimplemented(op)
-                    for op in il.operands if hasattr(il, "operands"))) or
-                    self.unimplemented(il)):
+                    for op in qil.operands if hasattr(qil, "operands"))) or
+                    self.unimplemented(qil)):
                 # clear queue and return from fallback disassembler
                 del self.il_queue[:]
                 return self.fallback_disasm.disassemble_instruction(code, pc)
