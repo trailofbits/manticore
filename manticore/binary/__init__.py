@@ -90,7 +90,9 @@ class Elf(Binary):
     def __init__(self, filename):
         super(Elf, self).__init__(filename)
         self.elf = ELFFile(file(filename)) 
-        self.arch = {'x86':'i386','x64':'amd64'}[self.elf.get_machine_arch()]
+        self.arch = {'x86':'i386','x64':'amd64', 'ARM':'armv7'}[self.elf.get_machine_arch()]
+        self.header = self.elf.header
+        self.segments = self.elf.iter_segments
         assert self.elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
 
@@ -105,27 +107,24 @@ class Elf(Binary):
             assert self.interpreter.arch == self.arch
             assert self.interpreter.elf.header.e_type in ['ET_DYN', 'ET_EXEC']
 
+    def getInterpreter(self):
+        return self.interpreter
 
     def maps(self):
-        for elf_segment in self.elf.iter_segments():
+        for elf_segment in self.segments():
             if elf_segment.header.p_type != 'PT_LOAD' or elf_segment.header.p_memsz == 0:
                 continue
 
             flags = elf_segment.header.p_flags
-            #PF_X 0x1 Execute - PF_W 0x2 Write - PF_R 0x4 Read
             perms = ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][flags&7]
             if 'r' not in perms:
-                raise Exception("Not readable map from cgc elf not supported")
+                raise Exception("Not readable map from elf not supported")
 
-            #CGCMAP--
             assert elf_segment.header.p_filesz != 0 or elf_segment.header.p_memsz != 0 
             yield((elf_segment.header.p_vaddr,
                   elf_segment.header.p_memsz,
                   perms, 
                   elf_segment.stream.name, elf_segment.header.p_offset, elf_segment.header.p_filesz))
-
-    def getInterpreter(self):
-        return self.interpreter
 
     def threads(self):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
