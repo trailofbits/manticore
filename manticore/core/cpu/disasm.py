@@ -93,6 +93,9 @@ class BinjaILDisasm(Disasm):
         # Binja LLIL size (size of operands)
         self.insn_size = None
 
+        self.unimpl_cache = set()
+        self.func_cache = dict()
+
         # for all UNIMPL insn and other hard times
         # FIXME generalize for other archs
         self.fallback_disasm = CapstoneDisasm(cs.CS_ARCH_X86, cs.CS_MODE_64)
@@ -109,6 +112,7 @@ class BinjaILDisasm(Disasm):
         return addr - self.entry_point_diff
 
     def _pop_from_il_queue(self, code, pc):
+
         # queue contains tuples of the form (idx, il_insn)
         if self.il_queue != []:
             # if we have multiple ils for the same pc
@@ -137,6 +141,21 @@ class BinjaILDisasm(Disasm):
         return (il.operation == enums.LowLevelILOperation.LLIL_UNIMPL or
                 il.operation == enums.LowLevelILOperation.LLIL_UNIMPL_MEM)
 
+    # XXX will be removed once we no longer rely on view
+    def _get_current_func(self, pc):
+        if pc in self.func_cache:
+            return self.func_cache[pc]
+
+        blocks = self.view.get_basic_blocks_at(pc)
+        if not blocks:
+            # Looks like Binja did not know about this PC..
+            self.view.create_user_function(pc)
+            self.view.update_analysis_and_wait()
+            current_func = self.view.get_function_at(pc)
+        else:
+            current_func = blocks[0].function
+        self.func_cache[pc] = current_func
+        return current_func
 
     def disassemble_instruction(self, code, pc):
         """Get next instruction's Binja IL
@@ -146,30 +165,22 @@ class BinjaILDisasm(Disasm):
         """
         pc = self._fix_addr(pc)
 
-        # FIXME will be removed
-        ##################
-        blocks = self.view.get_basic_blocks_at(pc)
-        if not blocks:
-            # Looks like Binja did not know about this PC..
-            self.view.create_user_function(pc)
-            self.view.update_analysis_and_wait()
-            self.current_func = self.view.get_function_at(pc)
-        else:
-            self.current_func = blocks[0].function
-        ##################
-
+        self.current_func = self._get_current_func(pc)
         il = self._pop_from_il_queue(code, pc)
         self.insn_size = il.size
         self.current_pc = pc
         self.disasm_il = il
 
         # create an instruction from the fallback disassembler if Binja can't
+        if pc in self.unimpl_cache:
+            return self.fallback_disasm.disassemble_instruction(code, pc)
         for idx, qil in [(0, il)] + self.il_queue:
             if (any((self.unimplemented(op)
                     for op in qil.operands if hasattr(qil, "operands"))) or
                     self.unimplemented(qil)):
                 # clear queue and return from fallback disassembler
                 del self.il_queue[:]
+                self.unimpl_cache.add(pc)
                 return self.fallback_disasm.disassemble_instruction(code, pc)
 
         return self.BinjaILInstruction(il,

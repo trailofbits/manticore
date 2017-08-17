@@ -178,7 +178,7 @@ class BinjaOperand(Operand):
 
         cpu, op = self.cpu, self.op
         if self.type == 'register':
-            return cpu.regfile.red(op.name)
+            return cpu.regfile.read(op.name)
         if self.type == 'flag':
             return cpu.regfile.registers[op.name + 'f']
         elif self.type == 'instruction':
@@ -332,12 +332,6 @@ class BinjaCpu(Cpu):
 
         :param int pc: address of the instruction
         '''
-        # No dynamic code!!! #TODO!
-        # Check if instruction was already decoded
-        if (pc in self._instruction_cache and
-                not isinstance(self.disasm, BinjaILDisasm)):
-            return self._instruction_cache[pc]
-
         text = ''
         # Read Instruction from memory
         for address in xrange(pc, pc+self.max_instr_width):
@@ -361,7 +355,7 @@ class BinjaCpu(Cpu):
             text += c
 
 
-        #Pad potentially incomplete intruction with zeroes
+        #Pad potentially incomplete instruction with zeroes
 
         code = text.ljust(self.max_instr_width, '\x00')
 
@@ -371,7 +365,7 @@ class BinjaCpu(Cpu):
         except StopIteration as e:
             raise DecodeException(pc, code)
 
-        #Check that the decoded intruction is contained in executable memory
+        #Check that the decoded instruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
@@ -384,7 +378,6 @@ class BinjaCpu(Cpu):
             self.update_platform_cpu_regs()
 
         insn.operands = self._wrap_operands(insn.operands)
-        self._instruction_cache[pc] = insn
         return insn
 
     def update_platform_cpu_regs(self):

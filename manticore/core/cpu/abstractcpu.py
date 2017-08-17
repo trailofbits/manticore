@@ -668,7 +668,7 @@ class Cpu(Eventful):
             text += c
 
 
-        #Pad potentially incomplete intruction with zeroes
+        #Pad potentially incomplete instruction with zeroes
 
         code = text.ljust(self.max_instr_width, '\x00')
 
@@ -678,7 +678,7 @@ class Cpu(Eventful):
         except StopIteration as e:
             raise DecodeException(pc, code)
 
-        #Check that the decoded intruction is contained in executable memory
+        #Check that the decoded instruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
