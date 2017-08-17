@@ -130,14 +130,20 @@ class BinjaILDisasm(Disasm):
         self.il_queue = [(i, func[i]) for i in xrange(len(func))]
         return self.il_queue.pop(0)[1]
 
+    def unimplemented(self, il):
+        if not hasattr(il, "operation"):
+            return False
+        import binaryninja.enums as enums
+        return (il.operation == enums.LowLevelILOperation.LLIL_UNIMPL or
+                il.operation == enums.LowLevelILOperation.LLIL_UNIMPL_MEM)
+
+
     def disassemble_instruction(self, code, pc):
         """Get next instruction's Binja IL
 
         :param str code: binary blob to be disassembled
         :param long pc: program counter
         """
-        import binaryninja.enums as enums
-
         pc = self._fix_addr(pc)
         # FIXME will be removed
         ##################
@@ -157,10 +163,13 @@ class BinjaILDisasm(Disasm):
         self.disasm_il = il
 
         # create an instruction from the fallback disassembler if Binja can't
-        o = il.operation
-        if (o == enums.LowLevelILOperation.LLIL_UNIMPL or
-                o == enums.LowLevelILOperation.LLIL_UNIMPL_MEM):
-            return self.fallback_disasm.disassemble_instruction(code, pc)
+        for idx, il in [(0, il)] + self.il_queue:
+            if (any((self.unimplemented(op)
+                    for op in il.operands if hasattr(il, "operands"))) or
+                    self.unimplemented(il)):
+                # clear queue and return from fallback disassembler
+                del self.il_queue[:]
+                return self.fallback_disasm.disassemble_instruction(code, pc)
 
         return self.BinjaILInstruction(il,
                                        self.entry_point_diff,
