@@ -175,10 +175,10 @@ class Armv7RegisterFile(RegisterFile):
         ARM Register file abstraction. GPRs use ints for read/write. APSR
         flags allow writes of bool/{1, 0} but always read bools.
         '''
-        super(Armv7RegisterFile, self).__init__({  'SB':'R9', 
-                                                   'SL':'R10', 
-                                                   'FP':'R11', 
-                                                   'IP': 'R12',  
+        super(Armv7RegisterFile, self).__init__({  'SB':'R9',
+                                                   'SL':'R10',
+                                                   'FP':'R11',
+                                                   'IP': 'R12',
                                                    'STACK': 'R13',
                                                    'SP': 'R13',
                                                    'LR': 'R14',
@@ -189,7 +189,7 @@ class Armv7RegisterFile(RegisterFile):
                           'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15' ):
             self._regs[reg_name] = Register(32)
         #64 bit registers
-        for reg_name in  ( 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 
+        for reg_name in  ( 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8',
                            'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15', 'D16',
                            'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24',
                            'D25', 'D26', 'D27', 'D28', 'D29', 'D30', 'D31'):
@@ -198,7 +198,8 @@ class Armv7RegisterFile(RegisterFile):
         self._regs['APSR_N'] = Register(1)
         self._regs['APSR_Z'] = Register(1)
         self._regs['APSR_C'] = Register(1)
-        self._regs['APSR_V'] = Register(1) 
+        self._regs['APSR_V'] = Register(1)
+        self._regs['APSR_GE'] = Register(4)
 
         #MMU Coprocessor  -- to support MCR/MRC for TLS
         self._regs['P15_C13'] = Register(32)
@@ -225,7 +226,7 @@ class Armv7RegisterFile(RegisterFile):
             if Z: apsr |= 1 << 30
             if C: apsr |= 1 << 29
             if V: apsr |= 1 << 28
-        return apsr 
+        return apsr
 
 
     def _write_APSR(self, apsr):
@@ -259,7 +260,7 @@ class Armv7RegisterFile(RegisterFile):
         return super(Armv7RegisterFile, self).all_registers + \
                 ('R0','R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','D0','D1','D2',
                 'D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14','D15','D16','D17','D18','D19','D20',
-                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V',
+                'D21','D22','D23','D24','D25','D26','D27','D28','D29','D30','D31','APSR','APSR_N','APSR_Z','APSR_C','APSR_V','APSR_GE',
                 'P15_C13')
 
     @property
@@ -317,22 +318,24 @@ class Armv7Cpu(Cpu):
     arch = CS_ARCH_ARM
     mode = CS_MODE_ARM
 
-
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
-        self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0}
+        self._it_conditional = list()
+        self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = False
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()
         state['_last_flags'] = self._last_flags
         state['at_symbolic_conditional'] = self._at_symbolic_conditional
+        state['_it_conditional'] = self._it_conditional
         return state
 
     def __setstate__(self, state):
         super(Armv7Cpu, self).__setstate__(state)
         self._last_flags = state['_last_flags']
-        self._at_symbolic_conditional = state['at_symbolic_conditional'] 
+        self._at_symbolic_conditional = state['at_symbolic_conditional']
+        self._it_conditional = state['_it_conditional']
 
     def _set_mode(self, new_mode):
         assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
@@ -394,7 +397,7 @@ class Armv7Cpu(Cpu):
             return value, carry
 
         width = cpu.address_bit_size
-        
+
         if   _type in (ARM_SFT_ASR, ARM_SFT_ASR_REG):
             return ASR_C(value, amount, width)
         elif _type in (ARM_SFT_LSL, ARM_SFT_LSL_REG):
@@ -464,12 +467,27 @@ class Armv7Cpu(Cpu):
         return [Armv7Operand(self, op) for op in ops]
 
     def shouldCommitFlags(cpu):
+        #workaround for a capstone bug (issue #980);
+        #the bug has been fixed the 'master' and 'next' branches of capstone as of 2017-07-31
+        if cpu.instruction.id == ARM_INS_UADD8:
+            return True
+
         return cpu.instruction.update_flags
 
     def shouldExecuteConditional(cpu):
-        cc = cpu.instruction.cc
-        ret = False
+        #for the IT instuction, the cc applies to the subsequent instructions,
+        #so the IT instruction should be executed regardless of its cc
+        if cpu.instruction.id == ARM_INS_IT:
+            return True
 
+        #support for the it[x[y[z]]] <op> instructions
+        if cpu._it_conditional:
+            return cpu._it_conditional.pop(0)
+
+        cc = cpu.instruction.cc
+        return cpu._evaluate_conditional(cc)
+
+    def _evaluate_conditional(cpu, cc):
         C = cpu.regfile.read('APSR_C')
         N = cpu.regfile.read('APSR_N')
         V = cpu.regfile.read('APSR_V')
@@ -485,7 +503,7 @@ class Armv7Cpu(Cpu):
         elif cc == ARM_CC_VS: ret = V
         elif cc == ARM_CC_VC: ret = Operators.NOT(V)
         elif cc == ARM_CC_HI:
-            ret = Operators.AND(C, Operators.NOT(Z)) 
+            ret = Operators.AND(C, Operators.NOT(Z))
         elif cc == ARM_CC_LS:
             ret = Operators.OR(Operators.NOT(C), Z)
         elif cc == ARM_CC_GE: ret = N == V
@@ -498,6 +516,45 @@ class Armv7Cpu(Cpu):
             raise NotImplementedError("Bad conditional tag")
 
         return ret
+
+    @instruction
+    def IT(cpu):
+        cc = cpu.instruction.cc
+        true_case = cpu._evaluate_conditional(cc)
+        #this is incredibly hacky--how else does capstone expose this?
+        #TODO: find a better way than string parsing the mnemonic -GR, 2017-07-13
+        for c in cpu.instruction.mnemonic[1:]:
+            if c == 't':
+                cpu._it_conditional.append(true_case)
+            elif c == 'e':
+                cpu._it_conditional.append(not true_case)
+
+    @instruction
+    def UADD8(cpu, dest, src, op):
+        op1 = src.read()
+        op2 = op.read()
+        sums = list()
+        carries = list()
+        for i in range(4):
+            uo1 = UInt(Operators.ZEXTEND(Operators.EXTRACT(op1, (8*i), 8), 9), 9)
+            uo2 = UInt(Operators.ZEXTEND(Operators.EXTRACT(op2, (8*i), 8), 9), 9)
+            byte = uo1 + uo2
+            carry = Operators.EXTRACT(byte, 8, 1)
+            sums.append(Operators.EXTRACT(byte, 0, 8))
+            carries.append(carry)
+        dest.write(Operators.CONCAT(32, *reversed(sums)))
+        cpu.setFlags(GE=Operators.CONCAT(4, *reversed(carries)))
+
+    @instruction
+    def SEL(cpu, dest, op1, op2):
+        op1val = op1.read()
+        op2val = op2.read()
+        result = list()
+        GE = cpu.regfile.read('APSR_GE')
+        for i in range(4):
+            bit = Operators.EXTRACT(GE, i, 1)
+            result.append(Operators.ITEBV(8, bit, Operators.EXTRACT(op1val, i*8, 8), Operators.EXTRACT(op2val, i*8, 8)))
+        dest.write(Operators.CONCAT(32, *reversed(result)))
 
     @instruction
     def MOV(cpu, dest, src):
@@ -701,7 +758,7 @@ class Armv7Cpu(Cpu):
         uo1 = UInt(_op1, W*2)
         uo2 = UInt(_op2, W*2)
         c   = UInt(carry, W*2)
-        unsigned_sum = uo1 + uo2 + c 
+        unsigned_sum = uo1 + uo2 + c
 
         so1 = SInt(Operators.SEXTEND(_op1, W, W*2), W*2)
         so2 = SInt(Operators.SEXTEND(_op2, W, W*2), W*2)
@@ -709,7 +766,7 @@ class Armv7Cpu(Cpu):
 
         result = GetNBits(unsigned_sum, W)
 
-        carry_out = UInt(result, W*2) != unsigned_sum 
+        carry_out = UInt(result, W*2) != unsigned_sum
         overflow  = SInt(Operators.SEXTEND(result,W,W*2), W*2) != signed_sum
 
         cpu.setFlags(C=carry_out,
@@ -727,8 +784,12 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
-    def ADD(cpu, dest, src, add):
-        result, carry, overflow = cpu._ADD(src.read(), add.read())
+    def ADD(cpu, dest, src, add=None):
+        if add:
+            result, carry, overflow = cpu._ADD(src.read(), add.read())
+        else:
+            #support for the thumb mode version of adds <dest>, <immediate>
+            result, carry, overflow = cpu._ADD(dest.read(), src.read())
         dest.write(result)
         return result, carry, overflow
 
@@ -776,6 +837,11 @@ class Armv7Cpu(Cpu):
     def BLE(cpu, dest):
         cpu.PC = Operators.ITEBV(cpu.address_bit_size,
                        cpu.regfile.read('APSR_Z'), dest.read(), cpu.PC)
+
+    @instruction
+    def CBNZ(cpu, op, dest):
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size,
+                                 op.read(), dest.read(), cpu.PC)
 
     @instruction
     def BL(cpu, label):
@@ -837,6 +903,19 @@ class Armv7Cpu(Cpu):
     @instruction
     def NOP(cpu):
         pass
+
+    @instruction
+    def REV(cpu, dest, op):
+        opval = op.read()
+        _bytes = list()
+        for i in range(4):
+            _bytes.append(Operators.EXTRACT(opval, i*8, 8))
+        dest.write(Operators.CONCAT(32, *_bytes))
+
+    @instruction
+    def SXTH(cpu, dest, op):
+        _op = op.read()
+        dest.write(Operators.SEXTEND(Operators.EXTRACT(_op, 0, 16), 16, 32))
 
     def _LDM(cpu, insn_id, base, regs):
         '''
@@ -903,6 +982,10 @@ class Armv7Cpu(Cpu):
     @instruction
     def ORR(cpu, dest, op1, op2):
         cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
+
+    @instruction
+    def ORN(cpu, dest, op1, op2):
+        cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
 
     @instruction
     def EOR(cpu, dest, op1, op2):
