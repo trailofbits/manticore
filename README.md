@@ -19,12 +19,12 @@ Manticore supports binaries of the following formats, operating systems, and
 architectures. It has been primarily used on binaries compiled from C and C++.
 Examples of practical manticore usage are also [on github](https://github.com/trailofbits/manticore-examples).
 
-- OS/Formats: Linux ELF, Windows Minidump
+- OS/Formats: Linux ELF
 - Architectures: x86, x86_64, ARMv7
 
 ## Requirements
 
-Manticore is supported on Linux and requires Python 2.7, pip 7.1.0 or higher, and the [Z3 Theorem Prover](https://github.com/Z3Prover/z3/releases). Ubuntu 16.04 is strongly recommended.
+Manticore is supported on Linux, and requires Python 2.7 and the [Z3 Theorem Prover](https://github.com/Z3Prover/z3/releases). Ubuntu 16.04 is strongly recommended.
 
 ## Quick Start
 
