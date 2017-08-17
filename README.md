@@ -82,37 +82,7 @@ sudo pip install manticore
 
 Once installed, the `manticore` CLI tool and its Python API will be available.
 
-### For developers
-
-For a dev install that includes dependencies for tests, run:
-
-```
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-pip install --no-binary keystone-engine -e .[dev]
-```
-
-You can run the tests with the commands below:
-
-```
-cd manticore
-# all tests
-nosetests
-# just one file
-nosetests tests/test_armv7cpu.py
-# just one test class
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
-# just one test
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
-```
-
-Moreover, you can invoke multiprocess test invocation via the --processes
-flag. Note, however, that several tests (e.g., tests/test_memdumps.py) require
-longer execution times, thus you need to specify the appropriate timeout
-period via the --process-timeout flag. E.g.,
-
-```
-nosetests --processes=8 --process-timeout=120 tests/test_binaries.py
-```
+For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
 
 ### Redis
 
