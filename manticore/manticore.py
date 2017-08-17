@@ -16,17 +16,28 @@ from threading import Timer
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
-from .core.workspace import ManticoreOutput
 from .core.executor import Executor
-from .core.state import State, TerminateState
 from .core.parser import parse
+from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
+from .core.workspace import ManticoreOutput
 from .platforms import linux, decree, windows
-from .utils.helpers import issymbolic
+from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils import log
 
 logger = logging.getLogger('MANTICORE')
+
+def makeBinja(program, disasm, argv, env, symbolic_files, concrete_start=''):
+    constraints = ConstraintSet()
+    logger.info('Loading binary ninja IL from %s', program)
+    platform = linux.SLinux(program,
+                            argv=argv,
+                            envp=env,
+                            symbolic_files=symbolic_files,
+                            disasm=disasm)
+    initial_state = State(constraints, platform)
+    return initial_state
 
 def makeDecree(program, concrete_data=''):
     constraints = ConstraintSet()
@@ -40,17 +51,20 @@ def makeDecree(program, concrete_data=''):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
-    logger.info('Loading program %s', program)
+def makeLinux(program, disasm, argv, env, symbolic_files, concrete_start=''):
+    logger.info('Loading program %s (platform: Linux)', program)
 
     constraints = ConstraintSet()
 
-    platform = linux.SLinux(program, argv=argv, envp=env,
-                            symbolic_files=symbolic_files)
+    platform = linux.SLinux(program,
+                            argv=argv,
+                            envp=env,
+                            symbolic_files=symbolic_files,
+                            disasm=disasm)
     initial_state = State(constraints, platform)
 
     if concrete_start != '':
-        logger.info('Starting with concrete input: {}'.format(concrete_start))
+        logger.info('Starting with concrete input: %s', concrete_start)
 
     for i, arg in enumerate(argv):
         argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1))
@@ -66,7 +80,8 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
     platform.input.write(concrete_start)
 
     #set stdin input...
-    platform.input.write(initial_state.symbolicate_buffer('+'*256, label='STDIN'))
+    platform.input.write(initial_state.symbolicate_buffer('+' * 256,
+                                                          label='STDIN'))
 
     return initial_state
 
@@ -74,7 +89,7 @@ def makeLinux(program, argv, env, symbolic_files, concrete_start = ''):
 def makeWindows(args):
     assert args.size is not None, "Need to specify buffer size"
     assert args.buffer is not None, "Need to specify buffer base address"
-    logger.debug('Loading program %s', args.programs)
+    logger.debug('Loading program %s (platform: Windows)', args.programs)
     additional_context = None
     if args.context:
         with open(args.context, "r") as addl_context_file:
@@ -141,15 +156,16 @@ class Manticore(object):
     :type args: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
-
-
-    def __init__(self, binary_path, args=None):
+    def __init__(self, binary_path, args=None, disasm='capstone'):
         assert os.path.isfile(binary_path)
 
         args = [] if args is None else args
 
+        self._check_disassembler_present(disasm)
+        self._disasm = disasm
         self._binary = binary_path
         self._binary_type = binary_type(binary_path)
+        # yan's comment
         self._argv = args # args.programs[1:]
         self._env = {}
         # Will be set to a temporary directory if not set before running start()
@@ -355,10 +371,16 @@ class Manticore(object):
             return symbols[0].entry['st_value']
 
     def _make_state(self, path):
-        if self._binary_type == 'ELF':
+        if self._binary_type == 'BinaryNinjaIL' or self._disasm == "binja-il":
+            # Binary Ninja
+            env = ['%s=%s' % (k, v) for k, v in self._env.items()]
+            state = makeBinja(self._binary, self._disasm, self._argv, env,
+                              self._symbolic_files, self._concrete_data)
+        elif self._binary_type == 'ELF':
             # Linux
-            env = ['%s=%s'%(k,v) for k,v in self._env.items()]
-            state = makeLinux(self._binary, self._argv, env, self._symbolic_files, self._concrete_data)
+            env = ['%s=%s' % (k, v) for k, v in self._env.items()]
+            state = makeLinux(self._binary, self._disasm, self._argv, env,
+                              self._symbolic_files, self._concrete_data)
         elif self._binary_type == 'PE':
             # Windows
             state = makeWindows(self._args)
@@ -369,7 +391,6 @@ class Manticore(object):
             raise NotImplementedError("Binary {} not supported.".format(path))
 
         return state
-
 
     @property
     def policy(self):
@@ -460,10 +481,13 @@ class Manticore(object):
         else:
             target = self._executor.run
 
-        for _ in range(num_processes):
-            p = Process(target=target, args=())
-            self._workers.append(p)
-            p.start()
+        if self._disasm == 'binja-il':
+            target()
+        else:
+            for _ in range(num_processes):
+                p = Process(target=target, args=())
+                self._workers.append(p)
+                p.start()
 
     def _join_workers(self):
         with WithKeyboardInterruptAs(self._executor.shutdown):
@@ -635,15 +659,11 @@ class Manticore(object):
             for entry in sorted(executor_visited):
                 f.write('0:{:08x}\n'.format(entry))
 
-        #if self.coverage_file is not None:
-        #    import shutil
-        #    shutil.copyfile('visited.txt', self.coverage_file)
-
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
 
-        instructions_count = _shared_context.get('instructions_count',0)
-        elapsed = time.time()-self._time_started
+        instructions_count = _shared_context.get('instructions_count', 0)
+        elapsed = time.time() - self._time_started
         logger.info('Results in %s', self._output.uri)
         logger.info('Instructions executed: %d', instructions_count)
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
@@ -662,7 +682,7 @@ class Manticore(object):
         assert not self._running, "Manticore is already running."
         args = self._args
 
-        replay=None
+        replay = None
         if hasattr(args, 'replay') and args.replay is not None:
             with open(args.replay, 'r') as freplay:
                 replay = map(lambda x: int(x, 16), freplay.readlines())
@@ -775,4 +795,13 @@ class Manticore(object):
         for cb in self._hooks.get(None, []):
             cb(state)
 
-
+    def _check_disassembler_present(self, disasm):
+        if is_binja_disassembler(disasm):
+            try:
+                import binaryninja
+            except ImportError:
+                err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
+                       " that supports GUI-less processing for this option"
+                       " to work. Please configure your PYTHONPATH appropriately or"
+                       " select a different disassembler")
+                raise SystemExit(err)

@@ -8,14 +8,16 @@ import ctypes
 
 #Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
-from ..utils.helpers import issymbolic
+
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
+from ..core.cpu.binja import BinjaCpu
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet
-from ..platforms.platform import Platform
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
+from ..platforms.platform import Platform
+from ..utils.helpers import issymbolic, is_binja_disassembler
 from . import linux_syscalls
 
 logger = logging.getLogger("PLATFORM")
@@ -156,10 +158,6 @@ class SymbolicFile(File):
         self.max_size = state['max_size']
         self.array = state['array']
 
-    #@property
-    #def constraints(self):
-    #    return self._constraints
-
     def tell(self):
         '''
         Returns the read/write file offset
@@ -282,10 +280,11 @@ class Linux(Platform):
     This class emulates the most common Linux system calls
     '''
 
-    def __init__(self, program, argv=None, envp=None, **kwargs):
+    def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
         '''
         Builds a Linux OS platform
         :param string program: The path to ELF binary
+        :param string disasm: Disassembler to be used
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
         :ivar files: List of active file descriptors
@@ -297,9 +296,14 @@ class Linux(Platform):
         self.clocks = 0
         self.files = []
         self.syscall_trace = []
+        # Many programs to support SLinux
+        self.programs = program
+        self.disasm = disasm
 
         if program != None:
             self.elf = ELFFile(file(program))
+            # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
+            # make things consistent and perhaps utilize a global mapping for this
             self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
 
             self._init_cpu(self.arch)
@@ -342,6 +346,7 @@ class Linux(Platform):
         assert self._open(stderr) == 2
 
     def _init_cpu(self, arch):
+        # create memory and CPU
         cpu = self._mk_proc(arch)
         self.procs = [cpu]
         self._current = 0
@@ -359,7 +364,7 @@ class Linux(Platform):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
-        logger.debug("Loading {} as a {} elf".format(program,self.arch))
+        logger.debug("Loading %s as a %s elf", program, self.arch)
 
         self.load(program)
         self._arch_specific_init()
@@ -373,7 +378,7 @@ class Linux(Platform):
         self.running = range(nprocs)
 
         #Each process can wait for one timeout
-        self.timers = [ None ] * nprocs
+        self.timers = [None] * nprocs
         #each fd has a waitlist
         self.rwait = [set() for _ in xrange(nfiles)]
         self.twait = [set() for _ in xrange(nfiles)]
@@ -383,11 +388,10 @@ class Linux(Platform):
             self.forward_events_from(proc)
 
     def _mk_proc(self, arch):
-        if arch in {'i386', 'armv7'}:
-            mem = Memory32()
-        else:
-            mem = Memory64()
-        return CpuFactory.get_cpu(mem, arch)
+        mem = Memory32() if arch in {'i386', 'armv7'} else Memory64()
+        cpu = CpuFactory.get_cpu(mem, arch)
+        return cpu
+
 
     @property
     def current(self):
@@ -478,7 +482,7 @@ class Linux(Platform):
         self._uname_machine = state['uname_machine']
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory']
-            
+
         #Install event forwarders
         for proc in self.procs:
             self.forward_events_from(proc)
@@ -1236,7 +1240,7 @@ class Linux(Platform):
                 else:
                     logger.info("FIXME!")
             mode = {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[flags&7]
-            
+
             f = self._sys_open_get_file(filename, flags, mode)
             logger.debug("Opening file %s for %s real fd %d",
                          filename, mode, f.fileno())
@@ -2014,6 +2018,9 @@ class Linux(Platform):
             for reg, val in x86_defaults.iteritems():
                 self.current.regfile.write(reg, val)
 
+        if is_binja_disassembler(self.disasm):
+            cpu = self.current.initialize_disassembler(self.program)
+
     @staticmethod
     def _interp_total_size(interp):
         '''
@@ -2036,11 +2043,13 @@ class SLinux(Linux):
     Builds a symbolic extension of a Linux OS
 
     :param str programs: path to ELF binary
+    :param str disasm: disassembler to be used
     :param list argv: argv not including binary
     :param list envp: environment variables
     :param tuple[str] symbolic_files: files to consider symbolic
     """
-    def __init__(self, programs, argv=None, envp=None, symbolic_files=None):
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=None,
+                 disasm='capstone'):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
         symbolic_files = [] if symbolic_files is None else symbolic_files
@@ -2048,14 +2057,24 @@ class SLinux(Linux):
         self._constraints = ConstraintSet()
         self.random = 0
         self.symbolic_files = symbolic_files
-        super(SLinux, self).__init__(programs, argv, envp)
+        super(SLinux, self).__init__(programs,
+                                     argv=argv,
+                                     envp=envp,
+                                     disasm=disasm)
+
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
             mem = SMemory32(self.constraints)
         else:
             mem = SMemory64(self.constraints)
-        return CpuFactory.get_cpu(mem, arch)
+
+        if is_binja_disassembler(self.disasm):
+            from ..core.cpu.binja import BinjaCpu
+            return BinjaCpu(mem)
+
+        cpu = CpuFactory.get_cpu(mem, arch)
+        return cpu
 
     @property
     def constraints(self):

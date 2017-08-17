@@ -109,8 +109,9 @@ class Uncovered(Policy):
 
 class Executor(Eventful):
     '''
-    The executor guides the execution of an initial state or a paused previous run.
-    It handles all exceptional conditions (system calls, memory faults, concretization, etc.)
+    The executor guides the execution of a single state, handles state forking
+    and selection, maintains run statistics and handles all exceptional
+    conditions (system calls, memory faults, concretization, etc.)
     '''
 
     def __init__(self, initial=None, workspace=None, policy='random', context=None, **kwargs):
@@ -122,21 +123,21 @@ class Executor(Eventful):
 
         self.subscribe('will_load_state', self._register_state_callbacks)
 
-        #The main executor lock. Acquire this for accessing shared objects
+        # The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
 
-        #Shutdown Event
+        # Shutdown Event
         self._shutdown = manager.Event()
 
-        #States on storage. Shared dict state name ->  state stats
+        # States on storage. Shared dict state name ->  state stats
         self._states = manager.list()
 
-        #Number of currently running workers. Initially no runnign workers
+        # Number of currently running workers. Initially no running workers
         self._running = manager.Value('i', 0 )
 
         self._workspace = Workspace(self._lock, workspace)
 
-        #Executor wide shared context
+        # Executor wide shared context
         if context is None:
             context = {}
         self._shared_context = manager.dict(context)
@@ -148,7 +149,6 @@ class Executor(Eventful):
                     }
         self._policy = policies[policy](self)
         assert isinstance(self._policy, Policy)
-
 
         if self.load_workspace():
             if initial is not None:
@@ -210,13 +210,14 @@ class Executor(Eventful):
     @sync
     def _start_run(self):
         #notify siblings we are about to start a run()
-        self._running.value+=1
+        self._running.value += 1
 
     @sync
     def _stop_run(self):
         #notify siblings we are about to stop this run()
-        self._running.value-=1
-        assert self._running.value >=0
+        self._running.value -= 1
+        if self._running.value < 0:
+            raise SystemExit
         self._lock.notify_all()
 
 
@@ -285,8 +286,6 @@ class Executor(Eventful):
         #broadcast test generation. This is the time for other modules
         #to output whatever helps to understand this testcase
         self.publish('will_generate_testcase', state, 'test', message)
-
-
 
     def fork(self, state, expression, policy='ALL', setstate=None):
         '''
@@ -361,7 +360,6 @@ class Executor(Eventful):
                 try:
                     #select a suitable state to analyze
                     if current_state is None:
-
                         with self._lock:
                             #notify siblings we are about to stop this run
                             self._stop_run()
@@ -440,5 +438,3 @@ class Executor(Eventful):
 
             #Notify this worker is done (not sure it's needed)
             self.publish('will_finish_run')
-
-

@@ -138,8 +138,8 @@ def SEXTEND(x, size_src, size_dest):
 def ZEXTEND(x, size):
     if isinstance(x, (int, long)):
         return x & ((1 << size) - 1)
-    assert isinstance(x, BitVec) and size-x.size >= 0
-    if size-x.size > 0:
+    assert isinstance(x, BitVec) and size - x.size >= 0
+    if size - x.size > 0:
         return BitVecZeroExtend(size, x)
     else:
         return x
@@ -185,7 +185,7 @@ def ITEBV(size, cond, true_value, false_value):
         cond = cond.Bool()
     if isinstance(cond, (int, long)):
         cond = (cond != 0)
-    
+
     assert isinstance(cond, (Bool, bool))
     assert isinstance(true_value, (BitVec, int, long))
     assert isinstance(false_value, (BitVec, int, long))

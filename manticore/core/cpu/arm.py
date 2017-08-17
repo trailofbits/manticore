@@ -1,19 +1,23 @@
+import logging
 import struct
 import sys
-from .abstractcpu import Abi, SyscallAbi, Cpu, RegisterFile, Operand
-from .abstractcpu import Interruption
+
+from functools import wraps
+from bitwise import *
+
+import capstone as cs
+# FIXME (theo) wildcard import
+from capstone.arm import *
+
+from .abstractcpu import (
+    Abi, SyscallAbi, Cpu, RegisterFile, Operand, Interruption
+)
+
 from .abstractcpu import instruction as abstract_instruction
 from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant
 from ...utils.helpers import issymbolic
-# from ..smtlib import *
-from functools import wraps
-from bitwise import *
 
-from capstone import *
-from capstone.arm import *
-
-import logging
 logger = logging.getLogger("CPU")
 
 # map different instructions to a single impl here
@@ -59,18 +63,20 @@ class Armv7Operand(Operand):
 
     @property
     def type(self):
-        type_map = { ARM_OP_REG: 'register',
-                     ARM_OP_MEM: 'memory',
-                     ARM_OP_IMM: 'immediate',
-                     ARM_OP_PIMM:'coprocessor',
-                     ARM_OP_CIMM:'immediate'}
+        type_map = {
+            cs.arm.ARM_OP_REG: 'register',
+            cs.arm.ARM_OP_MEM: 'memory',
+            cs.arm.ARM_OP_IMM: 'immediate',
+            cs.arm.ARM_OP_PIMM:'coprocessor',
+            cs.arm.ARM_OP_CIMM:'immediate'
+        }
 
         return type_map[self.op.type]
 
     @property
     def size(self):
         assert self.type == 'register'
-        if self.op.reg >= ARM_REG_D0 and self.op.reg <= ARM_REG_D31:
+        if self.op.reg >= cs.arm.ARM_REG_D0 and self.op.reg <= cs.arm.ARM_REG_D31:
             return 64
         else:
             #FIXME check other types of operand sizes
@@ -123,10 +129,11 @@ class Armv7Operand(Operand):
         elif self.type == 'memory':
             self.cpu.regfile.write(self.mem.base, value)
         else:
-            raise NotImplementedError("writeback Operand unknown type", self.op.type)
+            raise NotImplementedError("writeback Operand unknown type",
+                                      self.op.type)
 
     def is_shifted(self):
-        return self.op.shift.type != ARM_SFT_INVALID
+        return self.op.shift.type != cs.arm.ARM_SFT_INVALID
 
     def address(self):
         assert self.type == 'memory'
@@ -165,7 +172,7 @@ class Armv7Operand(Operand):
         insn = struct.unpack('<I', self.cpu.instruction.bytes)[0]
         unrotated = insn & Mask(8)
         shift = Operators.EXTRACT(insn, 8, 4)
-        _, carry = self.cpu._Shift(unrotated, ARM_SFT_ROR, 2*shift, carryIn)
+        _, carry = self.cpu._Shift(unrotated, cs.arm.ARM_SFT_ROR, 2 * shift, carryIn)
         return carry
 
 
@@ -311,12 +318,11 @@ class Armv7Cpu(Cpu):
     instruction + 4. However, official spec defines PC to be address of
     current instruction + 8 (section A2.3).
     '''
-
     address_bit_size = 32
     max_instr_width = 4
     machine = 'armv7'
-    arch = CS_ARCH_ARM
-    mode = CS_MODE_ARM
+    arch = cs.CS_ARCH_ARM
+    mode = cs.CS_MODE_ARM
 
     def __init__(self, memory):
         super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
@@ -338,17 +344,17 @@ class Armv7Cpu(Cpu):
         self._it_conditional = state['_it_conditional']
 
     def _set_mode(self, new_mode):
-        assert new_mode in (CS_MODE_ARM, CS_MODE_THUMB)
+        assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
         self.mode = new_mode
-        self._md.mode = new_mode
+        self.disasm.disasm.mode = new_mode
 
     def _swap_mode(self):
         #swap from arm to thumb or back
-        assert self.mode in (CS_MODE_ARM, CS_MODE_THUMB)
-        if self.mode == CS_MODE_ARM:
-            self._set_mode(CS_MODE_THUMB)
+        assert self.mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
+        if self.mode == cs.CS_MODE_ARM:
+            self._set_mode(cs.CS_MODE_THUMB)
         else:
-            self._set_mode(CS_MODE_ARM)
+            self._set_mode(cs.CS_MODE_ARM)
 
 
     # Flags that are the result of arithmetic instructions. Unconditionally
@@ -382,14 +388,14 @@ class Armv7Cpu(Cpu):
 
 
     def _Shift(cpu, value, _type, amount, carry):
-        assert(_type > ARM_SFT_INVALID and _type <= ARM_SFT_RRX_REG)
+        assert(_type > cs.arm.ARM_SFT_INVALID and _type <= cs.arm.ARM_SFT_RRX_REG)
 
         # XXX: Capstone should set the value of an RRX shift to 1, which is
         # asserted in the manual, but it sets it to 0, so we have to check
-        if _type in (ARM_SFT_RRX, ARM_SFT_RRX_REG) and amount != 1:
+        if _type in (cs.arm.ARM_SFT_RRX, cs.arm.ARM_SFT_RRX_REG) and amount != 1:
             amount = 1
 
-        elif _type in range(ARM_SFT_ASR_REG, ARM_SFT_RRX_REG + 1):
+        elif _type in range(cs.arm.ARM_SFT_ASR_REG, cs.arm.ARM_SFT_RRX_REG + 1):
             amount = cpu.instruction.reg_name(amount).upper()
             amount = Operators.EXTRACT(cpu.regfile.read(amount), 0, 8)
 
@@ -398,15 +404,15 @@ class Armv7Cpu(Cpu):
 
         width = cpu.address_bit_size
 
-        if   _type in (ARM_SFT_ASR, ARM_SFT_ASR_REG):
+        if   _type in (cs.arm.ARM_SFT_ASR, cs.arm.ARM_SFT_ASR_REG):
             return ASR_C(value, amount, width)
-        elif _type in (ARM_SFT_LSL, ARM_SFT_LSL_REG):
+        elif _type in (cs.arm.ARM_SFT_LSL, cs.arm.ARM_SFT_LSL_REG):
             return LSL_C(value, amount, width)
-        elif _type in (ARM_SFT_LSR, ARM_SFT_LSR_REG):
+        elif _type in (cs.arm.ARM_SFT_LSR, cs.arm.ARM_SFT_LSR_REG):
             return LSR_C(value, amount, width)
-        elif _type in (ARM_SFT_ROR, ARM_SFT_ROR_REG):
+        elif _type in (cs.arm.ARM_SFT_ROR, cs.arm.ARM_SFT_ROR_REG):
             return ROR_C(value, amount, width)
-        elif _type in (ARM_SFT_RRX, ARM_SFT_RRX_REG):
+        elif _type in (cs.arm.ARM_SFT_RRX, cs.arm.ARM_SFT_RRX_REG):
             return RRX_C(value, carry, width)
 
         raise NotImplementedError("Bad shift value")
@@ -493,24 +499,24 @@ class Armv7Cpu(Cpu):
         V = cpu.regfile.read('APSR_V')
         Z = cpu.regfile.read('APSR_Z')
 
-        if   cc == ARM_CC_AL: ret = True
-        elif cc == ARM_CC_EQ: ret = Z
-        elif cc == ARM_CC_NE: ret = Operators.NOT(Z)
-        elif cc == ARM_CC_HS: ret = C
-        elif cc == ARM_CC_LO: ret = Operators.NOT(C)
-        elif cc == ARM_CC_MI: ret = N
-        elif cc == ARM_CC_PL: ret = Operators.NOT(N)
-        elif cc == ARM_CC_VS: ret = V
-        elif cc == ARM_CC_VC: ret = Operators.NOT(V)
-        elif cc == ARM_CC_HI:
+        if cc == cs.arm.ARM_CC_AL: ret = True
+        elif cc == cs.arm.ARM_CC_EQ: ret = Z
+        elif cc == cs.arm.ARM_CC_NE: ret = Operators.NOT(Z)
+        elif cc == cs.arm.ARM_CC_HS: ret = C
+        elif cc == cs.arm.ARM_CC_LO: ret = Operators.NOT(C)
+        elif cc == cs.arm.ARM_CC_MI: ret = N
+        elif cc == cs.arm.ARM_CC_PL: ret = Operators.NOT(N)
+        elif cc == cs.arm.ARM_CC_VS: ret = V
+        elif cc == cs.arm.ARM_CC_VC: ret = Operators.NOT(V)
+        elif cc == cs.arm.ARM_CC_HI:
             ret = Operators.AND(C, Operators.NOT(Z))
-        elif cc == ARM_CC_LS:
+        elif cc == cs.arm.ARM_CC_LS:
             ret = Operators.OR(Operators.NOT(C), Z)
-        elif cc == ARM_CC_GE: ret = N == V
-        elif cc == ARM_CC_LT: ret = N != V
-        elif cc == ARM_CC_GT:
+        elif cc == cs.arm.ARM_CC_GE: ret = N == V
+        elif cc == cs.arm.ARM_CC_LT: ret = N != V
+        elif cc == cs.arm.ARM_CC_GT:
             ret = Operators.AND(Operators.NOT(Z), N == V)
-        elif cc == ARM_CC_LE:
+        elif cc == cs.arm.ARM_CC_LE:
             ret = Operators.OR(Z, N != V)
         else:
             raise NotImplementedError("Bad conditional tag")
@@ -828,15 +834,17 @@ class Armv7Cpu(Cpu):
     @instruction
     def BX(cpu, dest):
         if dest.read() & 0x1:
-            cpu._set_mode(CS_MODE_THUMB)
+            cpu._set_mode(cs.CS_MODE_THUMB)
         else:
-            cpu._set_mode(CS_MODE_ARM)
+            cpu._set_mode(cs.CS_MODE_ARM)
         cpu.PC = dest.read() & ~1
 
     @instruction
     def BLE(cpu, dest):
         cpu.PC = Operators.ITEBV(cpu.address_bit_size,
-                       cpu.regfile.read('APSR_Z'), dest.read(), cpu.PC)
+                                 cpu.regfile.read('APSR_Z'),
+                                 dest.read(),
+                                 cpu.PC)
 
     @instruction
     def CBNZ(cpu, op, dest):
@@ -864,13 +872,13 @@ class Armv7Cpu(Cpu):
             cpu._swap_mode()
         elif dest.type=='register':
             if dest.read() & 0x1:
-                cpu._set_mode(CS_MODE_THUMB)
+                cpu._set_mode(cs.CS_MODE_THUMB)
             else:
-                cpu._set_mode(CS_MODE_ARM)
+                cpu._set_mode(cs.CS_MODE_ARM)
 
     @instruction
-    def CMP(cpu, reg, cmp):
-        notcmp = ~cmp.read() & Mask(cpu.address_bit_size)
+    def CMP(cpu, reg, compare):
+        notcmp = ~compare.read() & Mask(cpu.address_bit_size)
         cpu._ADD(reg.read(), notcmp, 1)
 
     @instruction
@@ -923,14 +931,14 @@ class Armv7Cpu(Cpu):
         but we let it slide.
         '''
         address = base.read()
-        if insn_id == ARM_INS_LDMIB:
+        if insn_id == cs.arm.ARM_INS_LDMIB:
             address += cpu.address_bit_size/8
 
         for reg in regs:
             reg.write(cpu.read_int(address, cpu.address_bit_size))
             address += reg.size/8
 
-        if insn_id == ARM_INS_LDMIB:
+        if insn_id == cs.arm.ARM_INS_LDMIB:
             address -= reg.size/8
 
         if cpu.instruction.writeback:
@@ -938,15 +946,15 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def LDM(cpu, base, *regs):
-        cpu._LDM(ARM_INS_LDM, base, regs)
+        cpu._LDM(cs.arm.ARM_INS_LDM, base, regs)
 
     @instruction
     def LDMIB(cpu, base, *regs):
-        cpu._LDM(ARM_INS_LDMIB, base, regs)
+        cpu._LDM(cs.arm.ARM_INS_LDMIB, base, regs)
 
     def _STM(cpu, insn_id, base, regs):
         address = base.read()
-        if insn_id == ARM_INS_STMIB:
+        if insn_id == cs.arm.ARM_INS_STMIB:
             address += 4
 
         for reg in regs:
@@ -954,7 +962,7 @@ class Armv7Cpu(Cpu):
             address += 4
 
         # Undo the last addition if we're in STMIB
-        if insn_id == ARM_INS_STMIB:
+        if insn_id == cs.arm.ARM_INS_STMIB:
             address -= 4
 
         if cpu.instruction.writeback:
@@ -962,11 +970,11 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def STM(cpu, base, *regs):
-        cpu._STM(ARM_INS_STM, base, regs)
+        cpu._STM(cs.arm.ARM_INS_STM, base, regs)
 
     @instruction
     def STMIB(cpu, base, *regs):
-        cpu._STM(ARM_INS_STMIB, base, regs)
+        cpu._STM(cs.arm.ARM_INS_STMIB, base, regs)
 
     def _bitwise_instruction(cpu, operation, dest, op1, *op2):
         if op2:
@@ -1020,23 +1028,23 @@ class Armv7Cpu(Cpu):
     def _SR(cpu, insn_id, dest, op, *rest):
         '''In ARM mode, _SR reg has @rest, but _SR imm does not, its baked into @op.
         '''
-        assert insn_id in (ARM_INS_ASR, ARM_INS_LSL, ARM_INS_LSR)
+        assert insn_id in (cs.arm.ARM_INS_ASR, cs.arm.ARM_INS_LSL, cs.arm.ARM_INS_LSR)
 
-        if insn_id == ARM_INS_ASR:
+        if insn_id == cs.arm.ARM_INS_ASR:
             if rest and rest[0].type == 'immediate':
-                srtype = ARM_SFT_ASR
+                srtype = cs.arm.ARM_SFT_ASR
             else:
-                srtype = ARM_SFT_ASR_REG
-        elif insn_id == ARM_INS_LSL:
+                srtype = cs.arm.ARM_SFT_ASR_REG
+        elif insn_id == cs.arm.ARM_INS_LSL:
             if rest and rest[0].type == 'immediate':
-                srtype = ARM_SFT_LSL
+                srtype = cs.arm.ARM_SFT_LSL
             else:
-                srtype = ARM_SFT_LSL_REG
-        elif insn_id == ARM_INS_LSR:
+                srtype = cs.arm.ARM_SFT_LSL_REG
+        elif insn_id == cs.arm.ARM_INS_LSR:
             if rest and rest[0].type == 'immediate':
-                srtype = ARM_SFT_LSR
+                srtype = cs.arm.ARM_SFT_LSR
             else:
-                srtype = ARM_SFT_LSR_REG
+                srtype = cs.arm.ARM_SFT_LSR_REG
 
         carry = cpu.regfile.read('APSR_C')
         if rest and rest[0].type=='register':
@@ -1053,15 +1061,15 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def ASR(cpu, dest, op, *rest):
-        cpu._SR(ARM_INS_ASR, dest, op, *rest)
+        cpu._SR(cs.arm.ARM_INS_ASR, dest, op, *rest)
 
     @instruction
     def LSL(cpu, dest, op, *rest):
-        cpu._SR(ARM_INS_LSL, dest, op, *rest)
+        cpu._SR(cs.arm.ARM_INS_LSL, dest, op, *rest)
 
     @instruction
     def LSR(cpu, dest, op, *rest):
-        cpu._SR(ARM_INS_LSR, dest, op, *rest)
+        cpu._SR(cs.arm.ARM_INS_LSR, dest, op, *rest)
 
     @instruction
     def UMULL(cpu, rdlo, rdhi, rn, rm):
@@ -1122,7 +1130,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def VLDMIA(cpu, base, *regs):
-        cpu._LDM(ARM_INS_VLDMIA, base, regs)
+        cpu._LDM(cs.arm.ARM_INS_VLDMIA, base, regs)
 
     @instruction
     def STCL(cpu, *operands):

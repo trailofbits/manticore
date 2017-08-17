@@ -1,18 +1,22 @@
-from capstone import *
-from capstone.arm import *
-from capstone.x86 import *
-from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
-from ..memory import ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
-from ...utils.helpers import issymbolic
-from ...utils.emulate import UnicornEmulator
-import sys
-from functools import wraps
-from itertools import islice, imap
-from ...utils.event import Eventful
 import inspect
-import types
 import logging
 import StringIO
+import sys
+import types
+
+from functools import wraps
+from itertools import islice, imap
+
+import capstone as cs
+
+from .disasm import init_disassembler
+from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
+from ..memory import (
+    ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
+)
+from ...utils.helpers import issymbolic
+from ...utils.emulate import UnicornEmulator
+from ...utils.event import Eventful
 
 logger = logging.getLogger("CPU")
 register_logger = logging.getLogger("REGISTERS")
@@ -24,7 +28,7 @@ class CpuException(Exception):
     pass
 
 class DecodeException(CpuException):
-    ''' 
+    '''
     Raised when trying to decode an unknown or invalid instruction '''
     def __init__(self, pc, bytes):
         super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
@@ -60,7 +64,7 @@ class ConcretizeRegister(CpuException):
     '''
     def __init__(self, cpu, reg_name, message=None, policy='MINMAX'):
         self.message = message if message else "Concretizing {}".format(reg_name)
-            
+
         self.cpu = cpu
         self.reg_name = reg_name
         self.policy = policy
@@ -77,9 +81,10 @@ class ConcretizeArgument(CpuException):
 
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
-# This encapsulates how to access operands (regs/mem/immediates) for different CPUs
 class Operand(object):
-
+    """This class encapsulates how to access operands (regs/mem/immediates) for
+    different CPUs
+    """
     class MemSpec(object):
         '''
         Auxiliary class wraps capstone operand 'mem' attribute. This will
@@ -87,35 +92,34 @@ class Operand(object):
         '''
         def __init__(self, parent):
             self.parent = parent
-        segment = property( lambda self: self.parent._reg_name(self.parent.op.mem.segment) )
-        base = property( lambda self: self.parent._reg_name(self.parent.op.mem.base) )
-        index = property( lambda self: self.parent._reg_name(self.parent.op.mem.index) )
-        scale = property( lambda self: self.parent.op.mem.scale )
-        disp = property( lambda self: self.parent.op.mem.disp )
+        segment = property(lambda self: self.parent._reg_name(self.parent.op.mem.segment))
+        base = property(lambda self: self.parent._reg_name(self.parent.op.mem.base))
+        index = property(lambda self: self.parent._reg_name(self.parent.op.mem.index))
+        scale = property(lambda self: self.parent.op.mem.scale)
+        disp = property(lambda self: self.parent.op.mem.disp)
 
     def __init__(self, cpu, op):
         '''
         This encapsulates the arch-independent way to access instruction
-        operands and immediates based on a capstone operand descriptor. This
-        class knows how to browse a capstone operand and get the details of
-        operand.
+        operands and immediates based on the dissasembler operand descriptor in
+        use. This class knows how to browse an operand and get its details.
 
         It also knows how to access the specific Cpu to get the actual values
         from memory and registers.
 
         :param Cpu cpu: A Cpu instance
-        :param op: A Capstone operand
+        :param Operand op: An wrapped Instruction Operand
         :type op: X86Op or ArmOp
         '''
         assert isinstance(cpu, Cpu)
-        assert isinstance(op, (X86Op, ArmOp))
         self.cpu = cpu
         self.op = op
         self.mem = Operand.MemSpec(self)
 
     def _reg_name(self, reg_id):
         '''
-        Translates a capstone register ID into the register name
+        Translates a register ID from the disassembler object into the
+        register name based on manticore's alias in the register file
 
         :param int reg_id: Register ID
         '''
@@ -129,7 +133,7 @@ class Operand(object):
 
     @property
     def type(self):
-        ''' This property encapsulate the operand type.
+        ''' This property encapsulates the operand type.
             It may be one of the following:
                 register
                 memory
@@ -158,15 +162,13 @@ class Operand(object):
         ''' It writes the value of specific type to the registers or memory '''
         raise NotImplementedError
 
-# Basic register file structure not actually need to abstract as it's used only from the cpu implementation
+#  Basic register file structure not actually need to abstract as it's used
+#  only from the cpu implementation
 class RegisterFile(object):
-
     def __init__(self, aliases=None):
-        if aliases is None:
-            aliases = {}
         # dict mapping from alias register name ('PC') to actual register
         # name ('RIP')
-        self._aliases = aliases
+        self._aliases = aliases if aliases is not None else {}
 
     def _alias(self, register):
         '''
@@ -185,7 +187,7 @@ class RegisterFile(object):
         :type value: int or long or Expression
         :return: the value actually written to the register
         '''
-        pass
+        raise NotImplementedError
 
     def read(self, register):
         '''
@@ -194,7 +196,7 @@ class RegisterFile(object):
         :param str register: a register name. Must be listed on all_registers
         :return: the register value
         '''
-        pass
+        raise NotImplementedError
 
     @property
     def all_registers(self):
@@ -204,7 +206,7 @@ class RegisterFile(object):
     @property
     def canonical_registers(self):
         ''' List the minimal most beautiful set of registers needed '''
-        pass
+        raise NotImplementedError
 
     def __contains__(self, register):
         '''
@@ -363,17 +365,15 @@ class Cpu(Eventful):
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
+        self._disasm = kwargs.pop("disasm", 'capstone')
         super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
         self._instruction_cache = {}
         self._icount = 0
         self._last_pc = None
-
-        self._md = Cs(self.arch, self.mode)
-        self._md.detail = True
-        self._md.syntax = 0
-
+        if not hasattr(self, "disasm"):
+            self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
         assert 'STACK' in self._regfile
         assert 'PC' in self._regfile
@@ -384,12 +384,16 @@ class Cpu(Eventful):
         state['memory'] = self._memory
         state['icount'] = self._icount
         state['last_pc'] = self._last_pc
+        state['disassembler'] = self._disasm
         return state
 
     def __setstate__(self, state):
-        Cpu.__init__(self, state['regfile'], state['memory'])
+        Cpu.__init__(self, state['regfile'],
+                     state['memory'],
+                     disasm=state['disassembler'])
         self._icount = state['icount']
         self._last_pc = state['last_pc']
+        self._disasm = state['disassembler']
         super(Cpu, self).__setstate__(state)
 
     @property
@@ -515,7 +519,7 @@ class Cpu(Eventful):
         assert size in SANE_SIZES
         self.publish('will_read_memory', where, size)
 
-        data = self.memory[where:where+size/8]
+        data = self.memory[where:where + size / 8]
         assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
@@ -532,7 +536,7 @@ class Cpu(Eventful):
         :type data: str or list
         '''
         for i in xrange(len(data)):
-            self.write_int( where+i, Operators.ORD(data[i]), 8)
+            self.write_int(where + i, Operators.ORD(data[i]), 8)
 
     def read_bytes(self, where, size):
         '''
@@ -545,7 +549,7 @@ class Cpu(Eventful):
         '''
         result = []
         for i in xrange(size):
-            result.append(Operators.CHR(self.read_int( where+i, 8)))
+            result.append(Operators.CHR(self.read_int(where + i, 8)))
         return result
 
     def read_string(self, where, max_length=None):
@@ -624,8 +628,9 @@ class Cpu(Eventful):
     # Decoder
     def _wrap_operands(self, operands):
         '''
-        Private method to decorate a capstone Operand to our needs. See Operand
-        class
+        Private method to decorate an Operand to our needs based on the
+        underlying architecture.
+        See :class:`~manticore.core.cpu.abstractcpu.Operand` class
         '''
         raise NotImplementedError
 
@@ -635,8 +640,8 @@ class Cpu(Eventful):
 
         :param int pc: address of the instruction
         '''
-        #No dynamic code!!! #TODO! 
-        #Check if instruction was already decoded 
+        # No dynamic code!!! #TODO!
+        # Check if instruction was already decoded
         if pc in self._instruction_cache:
             return self._instruction_cache[pc]
 
@@ -655,33 +660,32 @@ class Cpu(Eventful):
                 if isinstance(c, Constant):
                     c = chr(c.value)
                 else:
-                    logger.error('Concretize executable memory %r %r', c, text )
-                    raise ConcretizeMemory(self.memory, address = pc,
-                                            size = 8 * self.max_instr_width, 
-                                            policy = 'INSTRUCTION' )
+                    logger.error('Concretize executable memory %r %r', c, text)
+                    raise ConcretizeMemory(self.memory,
+                                           address=pc,
+                                           size=8 * self.max_instr_width,
+                                           policy='INSTRUCTION')
             text += c
 
 
-        #Pad potentially incomplete intruction with zeroes
+        #Pad potentially incomplete instruction with zeroes
 
         code = text.ljust(self.max_instr_width, '\x00')
 
-        #decode the instructtion from code 
         try:
-            instruction = next(self._md.disasm(code, pc))
+            # decode the instruction from code
+            insn = self.disasm.disassemble_instruction(code, pc)
         except StopIteration as e:
-            raise DecodeException(pc, code) 
+            raise DecodeException(pc, code)
 
-
-        #Check that the decoded intruction is contained in executable memory
-        if not self.memory.access_ok(slice(pc, pc+instruction.size), 'x'):
+        #Check that the decoded instruction is contained in executable memory
+        if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
 
-        instruction.operands = self._wrap_operands(instruction.operands)
-
-        self._instruction_cache[pc] = instruction
-        return instruction
+        insn.operands = self._wrap_operands(insn.operands)
+        self._instruction_cache[pc] = insn
+        return insn
 
     @property
     def instruction(self):
@@ -705,47 +709,52 @@ class Cpu(Eventful):
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
-        if not self.memory.access_ok(self.PC,'x'):
+        if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
         self.publish('will_decode_instruction', self.PC)
 
-        instruction = self.decode_instruction(self.PC)
-        self._last_pc=self.PC
+        insn = self.decode_instruction(self.PC)
+        self._last_pc = self.PC
 
-        self.publish('will_execute_instruction', instruction)
+        self.publish('will_execute_instruction', insn)
 
-        if instruction.address != self.PC:
-            return 
-
-        name = self.canonicalize_instruction_name(instruction)
-
-        def fallback_to_emulate(*operands):
-            text_bytes = ' '.join('%02x'%x for x in instruction.bytes)
-            logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                    instruction.address, text_bytes, instruction.mnemonic,
-                    instruction.op_str)
-
-            self.publish('will_emulate_instruction', instruction)
-
-            self.emulate(instruction)
-
-            self.publish('did_emulate_instruction', instruction)
-
-        implementation = getattr(self, name, fallback_to_emulate)
+        # FIXME (theo) why just return here?
+        if insn.address != self.PC:
+            return
 
         if logger.level == logging.DEBUG :
-            logger.debug(self.render_instruction())
+            logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
-        
-        implementation(*instruction.operands)
-        self._icount+=1
 
+        self._insn_implementation(insn)
+        self._icount += 1
         self.publish('did_execute_instruction', instruction)
 
+    def fallback_to_emulate(self, *operands):
+        insn = self.instruction
+        text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+        logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                insn.address, text_bytes, insn.mnemonic, insn.op_str)
 
-    def emulate(self, instruction):
+        self.publish('will_emulate_instruction', insn)
+        self.emulate(insn)
+
+        self.publish('did_emulate_instruction', insn)
+
+    def _insn_implementation(self, insn):
+        name = self.canonicalize_instruction_name(insn)
+
+        implementation = getattr(self, name, self.fallback_to_emulate)
+        implementation(*insn.operands)
+        self.update_pc()
+
+    # to be overriden if needed
+    def update_pc(self):
+        pass
+
+    def emulate(self, insn):
         '''
         If we could not handle emulating an instruction, use Unicorn to emulate
         it.
@@ -754,7 +763,7 @@ class Cpu(Eventful):
         '''
 
         emu = UnicornEmulator(self)
-        emu.emulate(instruction)
+        emu.emulate(insn)
 
 
         # We have been seeing occasional Unicorn issues with it not clearing
@@ -762,12 +771,14 @@ class Cpu(Eventful):
         # line present.
         del emu
 
-    def render_instruction(self):
+    def render_instruction(self, insn=None):
         try:
-            instruction = self.instruction
-            return "INSTRUCTION: 0x%016x:\t%s\t%s"%( instruction.address, instruction.mnemonic, instruction.op_str)
-        except:
-            return "{can't decode instruction }"
+            insn = self.instruction
+            return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
+                                                      insn.mnemonic,
+                                                      insn.op_str)
+        except Exception as e:
+            return "{can't decode instruction}"
 
     def render_register(self, reg_name):
         result = ""
@@ -778,9 +789,9 @@ class Cpu(Eventful):
             aux = "%3s: "%reg_name +"%16s"%value
             result += aux
         elif isinstance(value, (int, long)):
-            result += "%3s: 0x%016x"%(reg_name, value)
+            result += "%3s: 0x%016x" % (reg_name, value)
         else:
-            result += "%3s: %r"%(reg_name, value)
+            result += "%3s: %r" % (reg_name, value)
         return result
 
     def render_registers(self):
@@ -788,7 +799,8 @@ class Cpu(Eventful):
         # backup, null, use, then restore the list.
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
-        return map(self.render_register, self._regfile.canonical_registers)
+        return map(self.render_register,
+                   sorted(self._regfile.canonical_registers))
 
     #Generic string representation
     def __str__(self):
@@ -798,7 +810,7 @@ class Cpu(Eventful):
         :rtype: str
         :return: name and current value for all the registers.
         '''
-        result =  self.render_instruction() + "\n"
+        result = self.render_instruction() + "\n"
         result += '\n'.join(self.render_registers())
         return result
 
@@ -808,6 +820,6 @@ def instruction(old_method):
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         cpu.PC += cpu.instruction.size
-        return old_method(cpu,*args,**kw_args)
-    new_method.old_method=old_method
+        return old_method(cpu, *args, **kw_args)
+    new_method.old_method = old_method
     return new_method
