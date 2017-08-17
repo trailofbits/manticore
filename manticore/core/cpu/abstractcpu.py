@@ -784,20 +784,7 @@ class Cpu(Eventful):
         result = ""
 
         value = self.read_register(reg_name)
-        reg_name = reg_name.upper()
-        try:
-            if (value == 0 or
-                    value == (0, 0) or
-                    reg_name.startswith("TEMP") or
-                    reg_name in ["CS", "DS", "ES", "SS"]):
-                return None
-        except Exception as e:
-            return None
-        if reg_name == "FSBASE":
-            reg_name = "FS"
-        # substitute XMM with YMM to be consistent with x86 at printing
-        if reg_name.startswith("XMM"):
-            reg_name = "Y" + reg_name[1:]
+
         if issymbolic(value):
             aux = "%3s: "%reg_name +"%16s"%value
             result += aux
@@ -812,8 +799,8 @@ class Cpu(Eventful):
         # backup, null, use, then restore the list.
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
-        return filter(None, map(self.render_register,
-                                sorted(self._regfile.canonical_registers)))
+        return map(self.render_register,
+                   sorted(self._regfile.canonical_registers))
 
     #Generic string representation
     def __str__(self):
