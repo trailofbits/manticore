@@ -61,7 +61,7 @@ class IntegrationTest(unittest.TestCase):
                                 '--procs', '4',
                                 filename,
                                 '+++++++++'], stdout=output)
-            
+
         self.assertTrue(time.time()-t < 20)
 
     def test_cli_verbosity(self):
@@ -72,7 +72,13 @@ class IntegrationTest(unittest.TestCase):
         dirname = os.path.dirname(__file__)
         filename = os.path.join(dirname, 'binaries/basic_linux_amd64')
         output = subprocess.check_output(['python', '-m', 'manticore', filename])
-        self.assertLessEqual(len(output.splitlines()), 25)
+        self.assertLessEqual(len(output.splitlines()), 60)
+        output = subprocess.check_output(['python', '-m', 'manticore', filename, "-v"])
+        self.assertLessEqual(len(output.splitlines()), 80)
+        output = subprocess.check_output(['python', '-m', 'manticore', filename, "-vvv"])
+        self.assertGreaterEqual(len(output.splitlines()), 435000)
+        output = subprocess.check_output(['python', '-m', 'manticore', filename, "-vvvv"])
+        self.assertGreaterEqual(len(output.splitlines()), 950000)
 
     def testArgumentsAssertions(self):
         dirname = os.path.dirname(__file__)
