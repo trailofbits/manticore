@@ -140,12 +140,40 @@ def itest_custom(asm):
 
     return instr_dec
 
-def itest_custom_thumb(asm):
-    def instr_dec(custom_func):
-        @wraps(custom_func)
+def itest_thumb(asm):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
         def wrapper(self):
             self._setupCpu(asm, mode=CS_MODE_THUMB)
-            custom_func(self)
+            self.cpu.execute()
+            assertions_func(self)
+
+        return wrapper
+
+    return instr_dec
+
+def itest_multiple(asms):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
+        def wrapper(self):
+            self._setupCpu(asms, mode=CS_MODE_ARM, multiple_insts=True)
+            for i in range(len(asms)):
+                self.cpu.execute()
+            assertions_func(self)
+
+        return wrapper
+
+    return instr_dec
+
+
+def itest_thumb_multiple(asms):
+    def instr_dec(assertions_func):
+        @wraps(assertions_func)
+        def wrapper(self):
+            self._setupCpu(asms, mode=CS_MODE_THUMB, multiple_insts=True)
+            for i in range(len(asms)):
+                self.cpu.execute()
+            assertions_func(self)
 
         return wrapper
 
@@ -158,12 +186,19 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
-    def _setupCpu(self, asm, mode=CS_MODE_ARM):
+    def _setupCpu(self, asm, mode=CS_MODE_ARM, multiple_insts=False):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
         self.data = self.mem.mmap(0xd000, 0x1000, 'rw')
         self.stack = self.mem.mmap(0xf000, 0x1000, 'rw')
         start = self.code + 4
-        self.mem.write(start, assemble(asm, mode))
+        if multiple_insts:
+            offset = 0
+            for asm_single in asm:
+                asm_inst = assemble(asm_single, mode)
+                self.mem.write(start+offset, asm_inst)
+                offset += len(asm_inst)
+        else:
+            self.mem.write(start, assemble(asm, mode))
         self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000)
         self.cpu._set_mode(mode)
@@ -649,6 +684,19 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R3'), 2 ** 32 - 1)
         self._checkFlagsNZCV(1, 0, 0, 0)
 
+    @itest_setregs("R0=0")
+    @itest_thumb("adds r0, #4")
+    def test_adds_thumb_two_op(self):
+        self.assertEqual(self.rf.read('R0'), 4)
+
+    # UADD8
+
+    @itest_setregs("R2=0x00FF00FF", "R3=0x00010002")
+    @itest_thumb("uadd8 r2, r2, r3")
+    def test_uadd8(self):
+        self.assertEqual(self.rf.read('R2'), 1)
+        self.assertEqual(self.rf.read('APSR_GE'), 5)
+
     # LDR imm
 
     @itest_custom("ldr r1, [sp]")
@@ -1109,6 +1157,12 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R2'), 0xF5)
 
+    # ORN
+    @itest_setregs("R2=0x0", "R5=0xFFFFFFFA")
+    @itest_thumb("orn r2, r2, r5")
+    def test_orn(self):
+        self.assertEqual(self.rf.read('R2'), 0x5)
+
     # EOR
 
     @itest_custom("eor r2, r3, #5")
@@ -1298,10 +1352,9 @@ class Armv7CpuInstructions(unittest.TestCase):
         self._checkFlagsNZCV(1, 0, 1, 0)
 
     @itest_setregs("R5=1", "R6=2")
-    @itest_custom_thumb("lsl.w r5, r6, #3")
+    @itest_thumb("lsl.w r5, r6, #3")
     def test_lslw_thumb(self):
         '''thumb mode specific behavior'''
-        self.cpu.execute()
         self.assertEqual(self.cpu.R5, 0x2 << 3)
 
     # lsr
@@ -1316,15 +1369,13 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R0'), 0x1000 >> 3)
 
     @itest_setregs("R5=0", "R6=16")
-    @itest_custom_thumb("lsr.w R5, R6, #3")
+    @itest_thumb("lsr.w R5, R6, #3")
     def test_lsrw_thumb(self):
-        self.cpu.execute()
         self.assertEqual(self.cpu.R5, 16>>3)
 
     @itest_setregs("R5=0", "R6=16")
-    @itest_custom_thumb("asr.w R5, R6, #3")
+    @itest_thumb("asr.w R5, R6, #3")
     def test_asrw_thumb(self):
-        self.cpu.execute()
         self.assertEqual(self.cpu.R5, 16>>3)
 
     @itest_setregs("R2=29")
@@ -1483,3 +1534,51 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_uxtb(self):
         self.assertEqual(self.cpu.R2, 0x55555555)
         self.assertEqual(self.cpu.R1, 0x55)
+
+    @itest_setregs("R1=1","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_thumb_multiple(["cmp r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
+    def test_itt_ne_noexec(self):
+        self.assertEqual(self.rf.read('R2'), 0)
+        self.assertEqual(self.rf.read('R3'), 0)
+        self.assertEqual(self.rf.read('R4'), 0x4141)
+
+
+    @itest_setregs("R1=0","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_thumb_multiple(["cmp r1, #1", "itt ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
+    def test_itt_ne_exec(self):
+        self.assertEqual(self.rf.read('R2'), 0x4141)
+        self.assertEqual(self.rf.read('R3'), 0x4141)
+        self.assertEqual(self.rf.read('R4'), 0x4141)
+
+    @itest_setregs("R1=0","R2=0","R3=0","R4=0","R12=0x4141")
+    @itest_thumb_multiple(["cmp r1, #1", "ite ne", "mov r2, r12", "mov r3, r12", "mov r4, r12"])
+    def test_ite_ne_exec(self):
+        self.assertEqual(self.rf.read('R2'), 0x4141)
+        self.assertEqual(self.rf.read('R3'), 0x0)
+        self.assertEqual(self.rf.read('R4'), 0x4141)
+
+    @itest_setregs("R1=0","R2=0","R3=0","R4=0")
+    @itest_thumb_multiple(["cmp r1, #1", "itete ne", "mov r1, #1", "mov r2, #1", "mov r3, #1", "mov r4, #4"])
+    def test_itete_exec(self):
+        self.assertEqual(self.rf.read('R1'), 1)
+        self.assertEqual(self.rf.read('R2'), 0)
+        self.assertEqual(self.rf.read('R3'), 1)
+        self.assertEqual(self.rf.read('R4'), 0)
+
+    @itest_setregs("APSR_GE=3","R4=0","R5=0x01020304","R6=0x05060708")
+    @itest_thumb("sel r4, r5, r6")
+    def test_sel(self):
+        self.assertEqual(self.rf.read('R4'), 0x05060304)
+
+    @itest_setregs("R2=0","R1=0x01020304")
+    @itest("rev r2, r1")
+    def test_rev(self):
+        self.assertEqual(self.rf.read('R1'), 0x01020304)
+        self.assertEqual(self.rf.read('R2'), 0x04030201)
+
+    @itest_setregs("R1=0x01020304","R2=0x05060708", "R3=0","R4=0xF001")
+    @itest_multiple(["sxth r1, r2", "sxth r3, r4", "sxth r5, r4, ROR #8"])
+    def test_sxth(self):
+        self.assertEqual(self.rf.read('R1'), 0x0708)
+        self.assertEqual(self.rf.read('R3'), 0xFFFFF001)
+        self.assertEqual(self.rf.read('R5'), 0xF0)

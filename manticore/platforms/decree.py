@@ -1,4 +1,4 @@
-import cgcrandom    
+import cgcrandom
 import weakref
 import sys, os, struct
 # TODO use cpu factory
@@ -25,7 +25,7 @@ class SymbolicSyscallArgument(ConcretizeRegister):
         reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][number]
         super(SymbolicSyscallArgument, self).__init__(cpu, reg_name, message, policy)
 
-class Socket(object): 
+class Socket(object):
     @staticmethod
     def pair():
         a = Socket()
@@ -99,7 +99,7 @@ class Decree(Platform):
         programs = programs.split(",")
         super(Decree, self).__init__(path=programs[0], **kwargs)
         self.clocks = 0
-        self.files = [] 
+        self.files = []
         self.syscall_trace = []
 
         self.files = []
@@ -212,7 +212,7 @@ class Decree(Platform):
     def _read_string(self, cpu, buf):
         """
         Reads a null terminated concrete buffer form memory
-        :todo: FIX. move to cpu or memory 
+        :todo: FIX. move to cpu or memory
         """
         filename = ""
         for i in xrange(0,1024):
@@ -224,10 +224,10 @@ class Decree(Platform):
 
 
     def load(self, filename):
-        ''' 
+        '''
         Loads a CGC-ELF program in memory and prepares the initial CPU state
         and the stack.
-        
+
         :param filename: pathname of the file to be executed.
         '''
         CGC_MIN_PAGE_SIZE   = 4096
@@ -245,7 +245,7 @@ class Decree(Platform):
 
         #load elf See https://github.com/CyberdyneNYC/linux-source-3.13.2-cgc/blob/master/fs/binfmt_cgc.c
         #read the ELF object file
-        cgc = CGCElf(filename) 
+        cgc = CGCElf(filename)
         logger.info("Loading %s as a %s elf"%(filename, cgc.arch))
         #make cpu and memory (Only 1 thread in Decree)
         cpu = self._mk_proc()
@@ -281,7 +281,7 @@ class Decree(Platform):
                 hi = CGC_PAGEALIGN(vaddr + memsz)
 
 
-            #map anon pages for the rest (no prefault) 
+            #map anon pages for the rest (no prefault)
             if hi - lo > 0:
                 zaddr = cpu.memory.mmap(lo, hi-lo,perms)
                 assert not BAD_ADDR(zaddr)
@@ -369,7 +369,7 @@ class Decree(Platform):
         Closes a file descriptor
         :rtype: int
         :param fd: the file descriptor to close.
-        :return: C{0} on success.  
+        :return: C{0} on success.
         '''
         self.files[fd] = None
 
@@ -378,7 +378,7 @@ class Decree(Platform):
         Duplicates a file descriptor
         :rtype: int
         :param fd: the file descriptor to close.
-        :return: C{0} on success.  
+        :return: C{0} on success.
         '''
         return self._open(self.files[fd])
 
@@ -392,17 +392,17 @@ class Decree(Platform):
            space of the calling process.  The length argument specifies the length of
            the allocation in bytes which will be rounded up to the hardware page size.
 
-           The kernel chooses the address at which to create the allocation; the 
+           The kernel chooses the address at which to create the allocation; the
            address of the new allocation is returned in *addr as the result of the call.
 
-           All newly allocated memory is readable and writeable. In addition, the 
+           All newly allocated memory is readable and writeable. In addition, the
            is_X argument is a boolean that allows newly allocated memory to be marked
            as executable (non-zero) or non-executable (zero).
 
            The allocate function is invoked through system call number 5.
-           
+
            :param cpu: current CPU
-           :param length: the length of the allocation in bytes 
+           :param length: the length of the allocation in bytes
            :param isX: boolean that allows newly allocated memory to be marked as executable
            :param addr: the address of the new allocation is returned in *addr
 
@@ -433,7 +433,7 @@ class Decree(Platform):
     def sys_random(self, cpu, buf, count, rnd_bytes):
         ''' random - fill a buffer with random data
 
-           The  random  system call populates the buffer referenced by buf with up to 
+           The  random  system call populates the buffer referenced by buf with up to
            count bytes of random data. If count is zero, random returns 0 and optionallyi
            sets *rx_bytes to zero. If count is greater than SSIZE_MAX, the result is unspecified.
 
@@ -442,7 +442,7 @@ class Decree(Platform):
            :param count: max number of bytes to receive
            :param rnd_bytes: if valid, points to the actual number of random bytes
 
-           :return:  0        On success 
+           :return:  0        On success
                      EINVAL   count is invalid.
                      EFAULT   buf or rnd_bytes points to an invalid address.
         '''
@@ -450,8 +450,8 @@ class Decree(Platform):
         ret = 0
         if count != 0:
             if count > Decree.CGC_SSIZE_MAX or count < 0:
-                ret = Decree.CGC_EINVAL 
-            else:  
+                ret = Decree.CGC_EINVAL
+            else:
                 # TODO check count bytes from buf
                 if buf not in cpu.memory or (buf+count) not in cpu.memory:
                     logger.info("RANDOM: buf points to invalid address. Returning EFAULT")
@@ -472,9 +472,9 @@ class Decree(Platform):
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
         ''' receive - receive bytes from a file descriptor
-            
+
             The receive system call reads up to count bytes from file descriptor fd to the
-            buffer pointed to by buf. If count is zero, receive returns 0 and optionally 
+            buffer pointed to by buf. If count is zero, receive returns 0 and optionally
             dets *rx_bytes to zero.
 
             :param cpu: current CPU.
@@ -504,7 +504,7 @@ class Decree(Platform):
                 self.wait([fd], [], None)
                 raise RestartSyscall()
 
-            #get some potential delay 
+            #get some potential delay
             #if random.randint(5) == 0 and count > 1:
             #    count = count/2
 
@@ -535,7 +535,7 @@ class Decree(Platform):
           :param cpu           current CPU
           :param fd            a valid file descripor
           :param buf           a memory buffer
-          :param count         number of bytes to send 
+          :param count         number of bytes to send
           :param tx_bytes      if valid, points to the actual number of bytes transmitted
           :return: 0            Success
                    EBADF        fd is not a valid file descriptor or is not open.
@@ -601,11 +601,11 @@ class Decree(Platform):
         ''' deallocate - remove allocations
         The  deallocate  system call deletes the allocations for the specified
         address range, and causes further references to the addresses within the
-        range to generate invalid memory accesses. The region is also 
+        range to generate invalid memory accesses. The region is also
         automatically deallocated when the process is terminated.
 
         The address addr must be a multiple of the page size.  The length parameter
-        specifies the size of the region to be deallocated in bytes.  All pages 
+        specifies the size of the region to be deallocated in bytes.  All pages
         containing a part of the indicated range are deallocated, and subsequent
         references will terminate the process.  It is not an error if the indicated
         range does not contain any allocated pages.
@@ -622,7 +622,7 @@ class Decree(Platform):
                          address range of the process.
 
         :param cpu: current CPU.
-        :return: C{0} on success.  
+        :return: C{0} on success.
         '''
         logger.info("DEALLOCATE(0x%08x, %d)"%(addr, size))
 
@@ -700,7 +700,7 @@ class Decree(Platform):
 
             cpu.PC -= cpu.instruction.size
             self.wait(readfds_wait, writefds_wait, to)
-            raise RestartSyscall() #When comming back from a timeout remember 
+            raise RestartSyscall() #When comming back from a timeout remember
             #not to backtrack instruction and set EAX to 0! :( uglyness alert!
 
         if readfds:
@@ -722,17 +722,17 @@ class Decree(Platform):
         return 0
 
     def int80(self, cpu):
-        ''' 
+        '''
         32 bit dispatcher.
         :param cpu: current CPU.
         _terminate, transmit, receive, fdwait, allocate, deallocate and random
         '''
-        syscalls = { 0x00000001: self.sys_terminate, 
-                     0x00000002: self.sys_transmit, 
+        syscalls = { 0x00000001: self.sys_terminate,
+                     0x00000002: self.sys_transmit,
                      0x00000003: self.sys_receive,
                      0x00000004: self.sys_fdwait,
                      0x00000005: self.sys_allocate,
-                     0x00000006: self.sys_deallocate, 
+                     0x00000006: self.sys_deallocate,
                      0x00000007: self.sys_random,
                     }
         if cpu.EAX not in syscalls.keys():
@@ -777,7 +777,7 @@ class Decree(Platform):
 
     def wait(self, readfds, writefds, timeout):
         ''' Wait for filedescriptors or timout.
-            Adds the current proceess in the correspondant wainting list and  
+            Adds the current proceess in the correspondant wainting list and
             yield the cpu to another running process.
         '''
         logger.info("WAIT:")
@@ -794,7 +794,7 @@ class Decree(Platform):
         for fd in writefds:
             self.twait[fd].add(self._current)
         if timeout is not None:
-            self.timers[self._current] = self.clocks + timeout 
+            self.timers[self._current] = self.clocks + timeout
         else:
             self.timers[self._current] = None
         procid = self._current
@@ -863,7 +863,7 @@ class Decree(Platform):
         Execute one cpu instruction in the current thread (only one suported).
         :rtype: bool
         :return: C{True}
-        
+
         :todo: This is where we could implement a simple schedule.
         """
         try:
@@ -874,7 +874,7 @@ class Decree(Platform):
                 self.sched()
         except Interruption, e:
             if e.N != 0x80:
-                raise 
+                raise
             try:
                 self.int80(self.current)
             except RestartSyscall:
