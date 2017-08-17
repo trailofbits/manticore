@@ -14,7 +14,7 @@ Manticore
 ---------
 
 .. autoclass:: manticore.Manticore
-   :members: add_hook, hook, run, terminate, verbosity
+   :members: add_hook, hook, run, terminate, verbosity, locked_context
 
 State
 -----
