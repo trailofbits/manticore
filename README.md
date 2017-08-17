@@ -20,7 +20,7 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 Examples of practical manticore usage are also [on github](https://github.com/trailofbits/manticore-examples).
 
 - OS/Formats: Linux ELF, Windows Minidump
-- Architectures: x86, x86_64, ARMv7 (partial)
+- Architectures: x86, x86_64, ARMv7
 
 ## Requirements
 
