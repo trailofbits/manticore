@@ -194,15 +194,30 @@ class Manticore(object):
 
 
     @contextmanager
-    def locked_context(self, key=None, default=list):
-        ''' It refers to the manticore shared context
-            It needs a lock. Its used like this:
+    def locked_context(self, key=None, value_type=list):
+        """
+        A context manager that provides safe parallel access to the global Manticore context.
+        This should be used to access the global Manticore context
+        when parallel analysis is activated. Code within the `with` block is executed
+        atomically, so access of shared variables should occur within.
 
-            with m.context() as context:
-                vsited = context['visited']
+        Example use::
+
+            with m.locked_context() as context:
+                visited = context['visited']
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
-        '''
+
+        Optionally, parameters can specify a key and type for the object paired to this key.::
+
+            with m.locked_context('feature_list', list) as feature_list:
+                feature_list.append(1)
+
+        :param object key: Storage key
+        :param value_type: type of value associated with key
+        :type value_type: list or dict or set
+        """
+
         @contextmanager
         def _real_context():
             if self._executor is None:
@@ -215,8 +230,8 @@ class Manticore(object):
             if key is None:
                 yield context
             else:
-                assert default in (list, dict, set)
-                ctx = context.get(key, default())
+                assert value_type in (list, dict, set)
+                ctx = context.get(key, value_type())
                 yield ctx
                 context[key] = ctx
 
