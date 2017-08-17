@@ -6,6 +6,8 @@ from functools import wraps
 from bitwise import *
 
 import capstone as cs
+# FIXME (theo) wildcard import
+from capstone.arm import *
 
 from .abstractcpu import (
     Abi, SyscallAbi, Cpu, RegisterFile, Operand, Interruption
