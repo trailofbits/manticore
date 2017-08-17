@@ -16,7 +16,7 @@ Manticore's built in support for parallel analysis and use of the `multiprocessi
 Context locking
 ---------------
 
-Manticore natively supports parallel analysis; if this is activated, client code should be careful to properly lock the global context when accessing it.
+Manticore natively supports parallel analysis; if this is activated, client code should always be careful to properly lock the global context when accessing it.
 
 An example of a global context race condition, when modifying two context entries.::
 
