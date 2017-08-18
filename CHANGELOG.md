@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - Taint parameters added to `State.new_symbolic_buffer()` and `State.symbolicate_buffer()`
 - Improved support for ARM binaries
+- `Manticore.verbosity` logging preset levels
 
 ### Fixed
 
