@@ -2,7 +2,27 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.3...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.4...HEAD)
+
+## 0.1.4 - 2017-08-18
+
+### Added
+
+- `Manticore.locked_context` (safe parallel context access)
+- `State.generate_testcase` (arbitrary testcase generation from hooks)
+- Documentation on [gotchas](http://manticore.readthedocs.io/en/latest/gotchas.html)
+- Command line interface support for symbolic files (`--file`)
+- [Experimental] Support for emulation of [Binary Ninja](https://binary.ninja) IL
+
+### Changed
+
+- Taint parameters added to `State.new_symbolic_buffer` and `State.symbolicate_buffer`
+- Improved support for ARM binaries
+
+### Fixed
+
+- Numerous bugfixes
+- Fixed double workspace bug
 
 ## 0.1.3 - 2017-07-14
 
@@ -31,6 +51,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - `strcmp` and `strlen` models
 - `state.solve_buffer`
 - Additional `state` APIs
+- Support for ARMv7 Thumb mode
 
 ### Changed
 
