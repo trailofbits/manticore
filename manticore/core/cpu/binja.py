@@ -365,6 +365,14 @@ class BinjaCpu(Cpu):
         except StopIteration as e:
             raise DecodeException(pc, code)
 
+        if pc in self._instruction_cache and not self.disasm.il_queue:
+            insn = self._instruction_cache[pc]
+            if (isinstance(self.disasm, BinjaILDisasm) and
+                    isinstance(insn, cs.CsInsn)):
+                self.update_platform_cpu_regs()
+            return insn
+
+
         #Check that the decoded instruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
@@ -378,6 +386,9 @@ class BinjaCpu(Cpu):
             self.update_platform_cpu_regs()
 
         insn.operands = self._wrap_operands(insn.operands)
+        if not self.disasm.il_queue:
+            self._instruction_cache[pc] = insn
+
         return insn
 
     def update_platform_cpu_regs(self):
