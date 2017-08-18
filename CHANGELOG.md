@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - `State.generate_testcase` (arbitrary testcase generation from hooks)
 - Documentation on [gotchas](http://manticore.readthedocs.io/en/latest/gotchas.html)
 - Command line interface support for symbolic files (`--file`)
+- [Experimental] `State.context['branches']` (States track symbolic branches)
 - [Experimental] Support for emulation of [Binary Ninja](https://binary.ninja) IL
 
 ### Changed
@@ -23,6 +24,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 - Numerous bugfixes
 - Fixed double workspace bug
+
+### Removed
+
+- [Experimental] `State.generate_inputs` (superseded by `State.generate_testcase`)
 
 ## 0.1.3 - 2017-07-14
 
