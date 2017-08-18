@@ -8,8 +8,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- `Manticore.locked_context` (safe parallel context access)
-- `State.generate_testcase` (arbitrary testcase generation from hooks)
+- `Manticore.locked_context()` (safe parallel context access)
+- `State.generate_testcase()` (arbitrary testcase generation from hooks)
 - Documentation on [gotchas](http://manticore.readthedocs.io/en/latest/gotchas.html)
 - Command line interface support for symbolic files (`--file`)
 - [Experimental] `State.context['branches']` (States track symbolic branches)
@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 
-- Taint parameters added to `State.new_symbolic_buffer` and `State.symbolicate_buffer`
+- Taint parameters added to `State.new_symbolic_buffer()` and `State.symbolicate_buffer()`
 - Improved support for ARM binaries
 
 ### Fixed
@@ -27,7 +27,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Removed
 
-- [Experimental] `State.generate_inputs` (superseded by `State.generate_testcase`)
+- [Experimental] `State.generate_inputs()` (superseded by `State.generate_testcase()`)
 
 ## 0.1.3 - 2017-07-14
 
@@ -52,16 +52,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- Function modeling API (`state.invoke_model`, `manticore.variadic`)
+- Function modeling API (`state.invoke_model()`, `manticore.variadic`)
 - `strcmp` and `strlen` models
-- `state.solve_buffer`
+- `state.solve_buffer()`
 - Additional `state` APIs
 - Support for ARMv7 Thumb mode
 
 ### Changed
 
 - Parallel processing API (`m.run(procs)`)
-- `state.solve_n`
+- `state.solve_n()`
 
 ### Fixed
 
