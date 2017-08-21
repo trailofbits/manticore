@@ -30,4 +30,7 @@ Client code should use the :meth:`~manticore.Manticore.locked_context` API::
         global_context['flag1'] += ['a']
         global_context['flag2'] += ['b']
 
+"Random" Policy
+---------------
 
+The `random` policy, which is the manticore default, is not actually random and is instead deterministically seeded. This means that running the same analysis twice should return the same results (and get stuck in the same places).
