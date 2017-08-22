@@ -427,8 +427,9 @@ class BinjaCpu(Cpu):
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        assert ((hasattr(insn, "sets_pc") and insn.sets_pc) or
-                self.PC == self._last_pc)
+        assert (self.PC == self._last_pc or
+                (isinstance(insn, BinjaILDisasm.BinjaILInstruction) and
+                 insn.sets_pc))
 
         implementation(*insn.operands)
 
@@ -448,7 +449,7 @@ class BinjaCpu(Cpu):
         #
         # we might be executing a Capstone instruction at this point
         # if we context-switched, so check the sets_pc attr
-        if not (hasattr(insn, "sets_pc") and
+        if not (isinstance(insn, BinjaILDisasm.BinjaILInstruction) and
                 (insn.sets_pc or self.disasm.il_queue)):
             self.PC = self._last_pc + insn.size
 
