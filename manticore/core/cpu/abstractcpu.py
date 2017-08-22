@@ -730,7 +730,7 @@ class Cpu(Eventful):
 
         self._insn_implementation(insn)
         self._icount += 1
-        self.publish('did_execute_instruction', instruction)
+        self.publish('did_execute_instruction', insn)
 
     def fallback_to_emulate(self, *operands):
         insn = self.instruction
