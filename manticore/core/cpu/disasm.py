@@ -125,7 +125,7 @@ class BinjaILDisasm(Disasm):
                 # clear the queue (e.g., we might be here because of a CALL)
                 del self.il_queue[:]
 
-        func, size = self._get_current_llil_func(code, pc)
+        func, size = self._llil_func_info(code, pc)
         self.current_llil_func = func
         self.disasm_insn_size = size
         self.il_queue = [(i, func[i]) for i in xrange(len(func))]
@@ -138,7 +138,7 @@ class BinjaILDisasm(Disasm):
         return (il.operation == enums.LowLevelILOperation.LLIL_UNIMPL or
                 il.operation == enums.LowLevelILOperation.LLIL_UNIMPL_MEM)
 
-    def _get_current_llil_func(self, code, pc):
+    def _llil_func_info(self, code, pc):
         if pc in self.llil_func_cache:
             return self.llil_func_cache[pc]
 

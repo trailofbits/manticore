@@ -418,6 +418,7 @@ class BinjaCpu(Cpu):
 
                 self.publish('will_emulate_instruction', insn)
                 self.emulate(insn)
+                self.publish('did_emulate_instruction', insn)
 
         implementation = getattr(self, name, fallback_to_emulate)
 
@@ -1268,11 +1269,6 @@ def x86_get_eflags(cpu, reg):
 def insn_flags(cpu):
     # FIXME temporary hack due to binja issue with flags
     f = cpu.disasm.current_func
-    #  print "------"
-    #  print hex(cpu.PC)
-    #  print f
-    #  print cpu.disasm.disasm_il
-    #  print hex(cpu.disasm.disasm_il.address)
     il = f.get_lifted_il_at(cpu.disasm.disasm_il.address)
     mod_flags = f.get_flags_written_by_lifted_il_instruction(il.instr_index)
     #  il2 = cpu.disasm.disasm_il
