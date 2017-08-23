@@ -20,7 +20,7 @@ from .core.executor import Executor
 from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
-from .core.workspace import ManticoreOutput
+from .core.workspace import ManticoreOutput, Workspace
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
@@ -187,8 +187,30 @@ class Manticore(object):
         self._dumpafter = 0
         self._maxstates = 0
         self._maxstorage = 0
+        self._workspace = getattr(args, 'workspace', None)
         self._symbolic_files = [] # list of string
-        self._executor = None
+
+        if isinstance(self._workspace, str):
+            if ':' not in self._workspace:
+                self._workspace = 'fs:' + self._workspace
+
+        self._output = ManticoreOutput(self._workspace)
+        self._executor = Executor(workspace=self._output.descriptor)
+
+        #Link Executor events to default callbacks in manticore object
+        self._executor.subscribe('did_read_register', self._read_register_callback)
+        self._executor.subscribe('will_write_register', self._write_register_callback)
+        self._executor.subscribe('did_read_memory', self._read_memory_callback)
+        self._executor.subscribe('will_write_memory', self._write_memory_callback)
+        self._executor.subscribe('will_execute_instruction', self._execute_instruction_callback)
+        self._executor.subscribe('will_decode_instruction', self._decode_instruction_callback)
+        self._executor.subscribe('will_store_state', self._store_state_callback)
+        self._executor.subscribe('will_load_state', self._load_state_callback)
+        self._executor.subscribe('will_fork_state', self._fork_state_callback)
+        self._executor.subscribe('forking_state', self._forking_state_callback)
+        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
+        self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
+
         #Executor wide shared context
         self._context = {}
 
@@ -314,6 +336,18 @@ class Manticore(object):
     @maxstorage.setter
     def maxstorage(self, max_storage):
         self._maxstorage = max_storage
+
+    @property
+    def workspace(self):
+        return self._workspace
+
+    @workspace.setter
+    def workspace(self, ws):
+        assert not self._running, "Can't set workspace if Manticore is running."
+        if ':' not in ws:
+            ws = "fs:" + ws
+        self._output = ManticoreOutput(ws)
+        self._executor._workspace = Workspace(self._executor._lock, self._output._descriptor)
 
     def hook(self, pc):
         '''
@@ -688,36 +722,8 @@ class Manticore(object):
                 replay = map(lambda x: int(x, 16), freplay.readlines())
 
         initial_state = self._make_state(self._binary)
-
-        if args is not None and hasattr(args, 'workspace') and isinstance(args.workspace, str):
-            if ':' not in args.workspace:
-                ws_path = 'fs:' + args.workspace
-            else:
-                ws_path = args.workspace
-        else:
-            ws_path = None
-
-        self._output = ManticoreOutput(ws_path)
-        self._executor = Executor(initial_state,
-                                  workspace=self._output.descriptor,
-                                  policy=self._policy,
-                                  context=self.context)
-
-
-
-        #Link Executor events to default callbacks in manticore object
-        self._executor.subscribe('did_read_register', self._read_register_callback)
-        self._executor.subscribe('will_write_register', self._write_register_callback)
-        self._executor.subscribe('did_read_memory', self._read_memory_callback)
-        self._executor.subscribe('will_write_memory', self._write_memory_callback)
-        self._executor.subscribe('will_execute_instruction', self._execute_instruction_callback)
-        self._executor.subscribe('will_decode_instruction', self._decode_instruction_callback)
-        self._executor.subscribe('will_store_state', self._store_state_callback)
-        self._executor.subscribe('will_load_state', self._load_state_callback)
-        self._executor.subscribe('will_fork_state', self._fork_state_callback)
-        self._executor.subscribe('forking_state', self._forking_state_callback)
-        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
-        self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
+        self._executor.policy = self.policy
+        self._executor.add(initial_state)
 
         if self._hooks:
             self._executor.subscribe('will_execute_instruction', self._hook_callback)
