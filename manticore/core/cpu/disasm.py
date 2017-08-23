@@ -95,6 +95,7 @@ class BinjaILDisasm(Disasm):
 
         self.unimpl_cache = set()
         self.func_cache = dict()
+        self.llil_func_cache = dict()
 
         # for all UNIMPL insn and other hard times
         # FIXME generalize for other archs
@@ -124,13 +125,9 @@ class BinjaILDisasm(Disasm):
                 # clear the queue (e.g., we might be here because of a CALL)
                 del self.il_queue[:]
 
-        from binaryninja import Architecture, LowLevelILFunction
-
-        func = LowLevelILFunction(self.view.arch)
-        func.current_address = pc
-        self.disasm_insn_size = (self.view.arch.
-                                 get_instruction_low_level_il(code, pc, func))
+        func, size = self._llil_func_info(code, pc)
         self.current_llil_func = func
+        self.disasm_insn_size = size
         self.il_queue = [(i, func[i]) for i in xrange(len(func))]
         return self.il_queue.pop(0)[1]
 
@@ -140,6 +137,18 @@ class BinjaILDisasm(Disasm):
         import binaryninja.enums as enums
         return (il.operation == enums.LowLevelILOperation.LLIL_UNIMPL or
                 il.operation == enums.LowLevelILOperation.LLIL_UNIMPL_MEM)
+
+    def _llil_func_info(self, code, pc):
+        if pc in self.llil_func_cache:
+            return self.llil_func_cache[pc]
+
+        from binaryninja import Architecture, LowLevelILFunction
+        # FIXME
+        func = LowLevelILFunction(Architecture['x86_64'])
+        func.current_address = pc
+        size = self.view.arch.get_instruction_low_level_il(code, pc, func)
+        self.llil_func_cache[pc] = (func, size)
+        return func, size
 
     # XXX will be removed once we no longer rely on view
     def _get_current_func(self, pc):
