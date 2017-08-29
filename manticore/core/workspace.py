@@ -526,18 +526,25 @@ class ManticoreOutput(object):
             f.write(repr(state.platform.syscall_trace))
 
     def save_fds(self, state):
+        def solve_to_fd(data, fd):
+            try:
+                for c in data:
+                    fd.write(chr(solver.get_value(state.constraints, c)))
+            except SolverException:
+                fd.write('{SolverException}')
+
         with self._named_stream('stdout') as _out:
             with self._named_stream('stdout') as _err:
                 with self._named_stream('stdin') as _in:
-                    for name, fd, data in state.platform.syscall_trace:
-                        if name in ('_transmit', '_write'):
-                            if fd == 1:
-                                _out.write(''.join(str(c) for c in data))
-                            elif fd == 2:
-                                _err.write(''.join(str(c) for c in data))
-                        if name in ('_receive', '_read') and fd == 0:
-                            try:
-                                for c in data:
-                                    _in.write(chr(solver.get_value(state.constraints, c)))
-                            except SolverException:
-                                _in.write('{SolverException}')
+                    with self._named_stream('net') as _net:
+                        for name, fd, data in state.platform.syscall_trace:
+                            s = ''.join(str(c) for c in data)
+                            if name in ('_transmit', '_write'):
+                                if fd == 1:
+                                    _out.write(s)
+                                elif fd == 2:
+                                    _err.write(s)
+                            if name in ('_recv'):
+                                solve_to_fd(data, _net)
+                            if name in ('_receive', '_read') and fd == 0:
+                                solve_to_fd(data, _in)

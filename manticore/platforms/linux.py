@@ -5,6 +5,7 @@ import os
 import random
 import struct
 import ctypes
+import socket
 
 #Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
@@ -212,6 +213,17 @@ class SymbolicFile(File):
         size = min(len(data), self.max_size - self.pos)
         for i in xrange(self.pos, self.pos + size):
             self.array[i] = data[i - self.pos]
+
+
+class SocketDesc(object):
+    '''
+    Represents a socket descriptor (i.e. value returned by socket(2)
+    '''
+    def __init__(self, domain=None, socket_type=None, protocol=None):
+        self.domain = domain
+        self.socket_type = socket_type
+        self.protocol = protocol
+
 
 class Socket(object):
     def stat(self):
@@ -1657,6 +1669,99 @@ class Linux(Platform):
         logger.debug("sys_gettimeofday(%x, %x) -> 0", tv, tz)
         return 0
 
+    def sys_socket(self, domain, socket_type, protocol):
+        if domain != socket.AF_INET:
+            return -errno.EINVAL
+
+        if socket_type != socket.SOCK_STREAM:
+            return -errno.EINVAL
+
+        if protocol != 0:
+            return -errno.EINVAL
+
+        f = SocketDesc(domain, socket_type, protocol)
+        fd = self._open(f)
+        logger.debug("socket(%d, %d, %d) -> %d", domain, socket_type, protocol, fd)
+        return fd
+
+    def _is_sockfd(self, sockfd):
+        try:
+            fd = self.files[sockfd]
+            if not isinstance(fd, SocketDesc):
+                return -errno.ENOTSOCK
+            return 0
+        except IndexError:
+            return -errno.EBADF
+
+    def sys_bind(self, sockfd, address, address_len):
+        logger.debug("bind(%d, %x, %d)", sockfd, address, address_len)
+        return self._is_sockfd(sockfd)
+
+    def sys_listen(self, sockfd, backlog):
+        logger.debug("listen(%d, %d)", sockfd, backlog)
+        return self._is_sockfd(sockfd)
+
+    def sys_accept(self, sockfd, addr, addrlen, flags):
+        ret = self._is_sockfd(sockfd)
+        if ret != 0:
+            return ret
+
+        sock = Socket()
+        fd = self._open(sock)
+        logger.debug('accept(%d, %x, %d, %d) -> %d', sockfd, addr, addrlen, flags, fd)
+        return fd
+
+    def sys_recv(self, sockfd, buf, count, flags):
+        try:
+            sock = self.files[sockfd]
+        except IndexError:
+            return -errno.EINVAL
+
+        if not isinstance(sock, Socket):
+            return -errno.ENOTSOCK
+
+        data = sock.read(count)
+        self.current.write_bytes(buf, data)
+        self.syscall_trace.append(("_recv", sockfd, data))
+
+        logger.debug("recv(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
+                     sockfd, buf, count, len(data), repr(data)[:min(count,32)],
+                     len(data))
+
+        return len(data)
+
+
+    def sys_send(self, sockfd, buf, count, flags):
+        try:
+            sock = self.files[sockfd]
+        except IndexError:
+            return -errno.EINVAL
+
+        if not isinstance(sock, Socket):
+            return -errno.ENOTSOCK
+
+        data = self.current.read_bytes(buf, count)
+        #XXX(yan): send(2) is currently a nop; we don't communicate yet
+        self.syscall_trace.append(("_send", sockfd, data))
+
+        return count
+
+    def sys_sendfile(self, out_fd, in_fd, offset_p, count):
+        if offset_p != 0:
+            offset = self.current.read_int(offset_p, self.count.address_bit_size)
+        else:
+            offset = 0
+
+        try:
+            out_sock = self.files[out_fd]
+            in_sock = self.files[in_fd]
+        except IndexError:
+            return -errno.EINVAL
+
+        #XXX(yan): sendfile(2) is currently a nop; we don't communicate yet
+
+        return count
+
     #Distpatchers...
     def syscall(self):
         '''
@@ -2143,3 +2248,64 @@ class SLinux(Linux):
             raise ConcretizeArgument(self, 2)
 
         return super(SLinux, self).sys_write(fd, buf, count)
+
+    def sys_recv(self, sockfd, buf, count, flags):
+        if issymbolic(sockfd):
+            logger.debug("Ask to read from a symbolic file descriptor!!")
+            raise ConcretizeArgument(self, 0)
+
+        if issymbolic(buf):
+            logger.debug("Ask to read to a symbolic buffer")
+            raise ConcretizeArgument(self, 1)
+
+        if issymbolic(count):
+            logger.debug("Ask to read a symbolic number of bytes ")
+            raise ConcretizeArgument(self, 2)
+
+        if issymbolic(flags):
+            logger.debug("Submitted a symbolic flags")
+            raise ConcretizeArgument(self, 3)
+
+        return super(SLinux, self).sys_recv(sockfd, buf, count, flags)
+
+    def sys_accept(self, sockfd, addr, addrlen, flags):
+        #TODO(yan): Transmit some symbolic bytes as soon as we start. 
+        # Remove this hack once no longer needed.
+
+        fd = super(SLinux, self).sys_accept(sockfd, addr, addrlen, flags)
+        if fd < 0:
+            return fd
+        sock = self._get_fd(fd)
+        nbytes = 32
+        symb = self.constraints.new_array(name='socket', index_max=nbytes)
+        for i in range(nbytes):
+            sock.buffer.append(symb[i])
+        return fd
+
+    def sys_open(self, buf, flags, mode):
+        '''
+        A version of open(2) that includes a special case for a symbolic path.
+        When given a symbolic path, it will create a temporary file with 
+        64 bytes of symbolic bytes as contents and return that instead.
+
+        :param buf: address of zero-terminated pathname
+        :param flags: file access bits
+        :param mode: file permission mode
+        '''
+        offset = 0
+        symbolic_path = issymbolic(self.current.read_int(buf, 8))
+        if symbolic_path:
+            import tempfile
+            fd, path = tempfile.mkstemp()
+            with open(path, 'wb+') as f:
+                f.write('+'*64)
+            self.symbolic_files.append(path)
+            buf = self.current.memory.mmap(None, 1024, 'rw ', data_init=path)
+
+        rv = super(SLinux, self).sys_open(buf, flags, mode)
+
+        if symbolic_path:
+            self.current.memory.munmap(buf, 1024)
+
+        return rv
+
