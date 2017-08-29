@@ -17,6 +17,7 @@ from ..smtlib import Operators, BitVecConstant, operator
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger("CPU")
+register_logger = logging.getLogger("REGISTERS")
 
 
 class BinjaRegisterFile(RegisterFile):
@@ -343,7 +344,7 @@ class BinjaCpu(Cpu):
             c = self.memory[address]
 
             if issymbolic(c):
-                assert isinstance(c, BitVec) and  c.size == 8
+                assert isinstance(c, BitVec) and c.size == 8
                 if isinstance(c, Constant):
                     c = chr(c.value)
                 else:
@@ -379,6 +380,81 @@ class BinjaCpu(Cpu):
 
         insn.operands = self._wrap_operands(insn.operands)
         return insn
+
+    def execute(self):
+        '''
+        Decode, and execute one instruction pointed by register PC
+        '''
+        if issymbolic(self.PC):
+            raise ConcretizeRegister(self, 'PC', policy='ALL')
+
+        if not self.memory.access_ok(self.PC, 'x'):
+            raise InvalidMemoryAccess(self.PC, 'x')
+
+        self.publish('will_decode_instruction', self.PC)
+
+        insn = self.decode_instruction(self.PC)
+        self._last_pc = self.PC
+
+        self.publish('will_execute_instruction', insn)
+
+        # FIXME (theo) why just return here?
+        if insn.address != self.PC:
+            return
+
+        name = self.canonicalize_instruction_name(insn)
+        def fallback_to_emulate(*operands):
+            if (isinstance(self.disasm, BinjaILDisasm) and
+                    isinstance(insn, cs.CsInsn)):
+                # if we got a capstone instruction using BinjaILDisasm, it means
+                # this instruction is not implemented. Fallback to Capstone
+                self.FALLBACK(name, *operands)
+                # XXX after this point self.PC != self._last_pc but that is
+                # OK because we will update the PC  properly
+            else:
+                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                            insn.address, text_bytes, insn.mnemonic, insn.op_str)
+
+                self.publish('will_emulate_instruction', insn)
+                self.emulate(insn)
+                self.publish('did_emulate_instruction', insn)
+
+        implementation = getattr(self, name, fallback_to_emulate)
+
+        if logger.level == logging.DEBUG :
+            logger.debug(self.render_instruction(insn))
+            for l in self.render_registers():
+                register_logger.debug(l)
+
+        assert (self.PC == self._last_pc or
+                (isinstance(insn, BinjaILDisasm.BinjaILInstruction) and
+                 insn.sets_pc))
+
+        implementation(*insn.operands)
+
+        # In case we are executing IL instructions, we could iteratively
+        # invoke multiple instructions due to the tree form, thus we only
+        # want to increment the PC once, based on its previous position
+        # for CALLS and JUMPS the PC should have been set automatically
+        # so no need to do anything. Also, if there are pending instruction
+        if not isinstance(self.disasm, BinjaILDisasm):
+            return
+
+        # don't bump the PC if we are in an LLIL that has set it,
+        # or if there are pending IL insn in the queue. This is because
+        # for cases where we have other il instructions in the queue,
+        # such as when we get a divu insn, the PC + size will point
+        # to the next assembly instruction and not the next LLIL
+        #
+        # we might be executing a Capstone instruction at this point
+        # if we context-switched, so check the sets_pc attr
+        if not (isinstance(insn, BinjaILDisasm.BinjaILInstruction) and
+                (insn.sets_pc or self.disasm.il_queue)):
+            self.PC = self._last_pc + insn.size
+
+        self._icount += 1
+        self.publish('did_execute_instruction', insn)
 
     def update_platform_cpu_regs(self):
         for pl_reg, binja_reg in self.regfile.pl2b_map.items():
@@ -462,37 +538,6 @@ class BinjaCpu(Cpu):
 
         return [BinjaOperand(self, self.disasm.disasm_il, op)
                 for op in operands]
-
-    def fallback_to_emulate(self, *operands):
-        if (isinstance(self.disasm, BinjaILDisasm) and
-                isinstance(self.instruction, cs.CsInsn)):
-            # if we got a capstone instruction using BinjaILDisasm, it means
-            # this instruction is not implemented. Fallback to Capstone
-            name = self.canonicalize_instruction_name(self.instruction)
-            self.FALLBACK(name, *operands)
-        else:
-            super(BinjaCpu, self).fallback_to_emulate(*operands)
-
-    def update_pc(self):
-        # In case we are executing IL instructions, we could iteratively
-        # invoke multiple instructions due to the tree form, thus we only
-        # want to increment the PC once, based on its previous position
-        # for CALLS and JUMPS the PC should have been set automatically
-        # so no need to do anything. Also, if there are pending instruction
-        if not isinstance(self.disasm, BinjaILDisasm):
-            return
-
-        # don't bump the PC if we are in an LLIL that has set it,
-        # or if there are pending IL insn in the queue. This is because
-        # for cases where we have other il instructions in the queue,
-        # such as when we get a divu insn, the PC + size will point
-        # to the next assembly instruction and not the next LLIL
-        #
-        # we might be executing a Capstone instruction at this point
-        # if we context-switched, so check the sets_pc attr
-        if not (hasattr(self.instruction, "sets_pc") and
-                (self.instruction.sets_pc or self.disasm.il_queue)):
-            self.PC = self._last_pc + self.instruction.size
 
     # XXX this is currently not active because a bunch of flag-setting
     # LLIL are not implemented by Binja :(
@@ -1245,6 +1290,7 @@ def x86_calculate_cmp_flags(cpu, size, res, left_v, right_v):
         's': _sign_flag(res, size),
         'o': _overflow_flag(res, right_v, left_v, size)
     }
+
     cpu.update_flags(flags)
 
 def x86_update_logic_flags(cpu, result, size):

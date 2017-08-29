@@ -5,19 +5,19 @@
 Example:
 
 ```
-$ ln -s $PWD/viz.py ~/Library/Application\ Support/Binary\ Ninja/plugins/
+## Installation:
+Copy and paste the `manticore_viz` directoru to the binary ninja [plugin folder](https://github.com/Vector35/binaryninja-api/tree/dev/python/examples#loading-plugins).
 
+
+Alternatively, you can create a symbolic link to the respective directories.
+E.g., in Mac OS X
+```
+cd ~/Library/Application\ Support/Binary\ Ninja
+ln -s <manticore_root>/scripts/binaryninja/manticore_viz .
 ```
 
 ## Usage
 
 - Run manticore on a binary
-- Open the binary in Binary Ninja
-- `import` it from the Binary Ninja Script Console, and call desired functions
-
-Example:
-
-```
->>> import viz
->>> viz.viz(bv, '/mnt/hgfs/code/manticore/examples/linux/mcore_1vCAKM')
-```
+- Open the same binary in Binary Ninja
+- Select "Highlight Trace"

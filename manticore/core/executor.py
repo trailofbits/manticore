@@ -77,6 +77,7 @@ class Policy(object):
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
         super(Random, self).__init__(executor, *args, **kwargs)
+        random.seed(1337) # For repeatable results
 
     def choice(self, state_ids):
         return random.choice(state_ids)

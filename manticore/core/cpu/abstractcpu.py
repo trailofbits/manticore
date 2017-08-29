@@ -723,36 +723,28 @@ class Cpu(Eventful):
         if insn.address != self.PC:
             return
 
+        name = self.canonicalize_instruction_name(insn)
+
+        def fallback_to_emulate(*operands):
+            text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+            logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                        insn.address, text_bytes, insn.mnemonic, insn.op_str)
+
+            self.publish('will_emulate_instruction', insn)
+            self.emulate(insn)
+            self.publish('did_emulate_instruction', insn)
+
+        implementation = getattr(self, name, fallback_to_emulate)
+
         if logger.level == logging.DEBUG :
             logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        self._insn_implementation(insn)
-        self._icount += 1
-        self.publish('did_execute_instruction', instruction)
-
-    def fallback_to_emulate(self, *operands):
-        insn = self.instruction
-        text_bytes = ' '.join('%02x'%x for x in insn.bytes)
-        logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                insn.address, text_bytes, insn.mnemonic, insn.op_str)
-
-        self.publish('will_emulate_instruction', insn)
-        self.emulate(insn)
-
-        self.publish('did_emulate_instruction', insn)
-
-    def _insn_implementation(self, insn):
-        name = self.canonicalize_instruction_name(insn)
-
-        implementation = getattr(self, name, self.fallback_to_emulate)
         implementation(*insn.operands)
-        self.update_pc()
+        self._icount += 1
 
-    # to be overriden if needed
-    def update_pc(self):
-        pass
+        self.publish('did_execute_instruction', insn)
 
     def emulate(self, insn):
         '''
