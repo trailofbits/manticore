@@ -31,3 +31,7 @@ Client code should use the :meth:`~manticore.Manticore.locked_context` API::
         global_context['flag2'] += ['b']
 
 
+Symbolic Socket Support
+-----------------------
+
+The current implementation of the socket family of system calls is very barebones and is deemed to be experimental. All created sockets are assumed to contain 64 bytes of symbolic input.
