@@ -32,7 +32,6 @@ contract Test {
 
         sellerBalance += value; // possible overflow
         assert(sellerBalance >= value); // auditor assert
-
     } 
 
 }

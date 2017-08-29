@@ -634,6 +634,7 @@ class EVM(Eventful):
         self.depth = depth
         self.bytecode = code
         self.suicide = set()
+        self.logs = []
 
         #FIXME parse decode and mark invalid instructions
         #self.invalid = set()
@@ -668,10 +669,12 @@ class EVM(Eventful):
         state['gas'] = self.gas
         state['allocated'] = self.allocated
         state['suicide'] = self.suicide
+        state['logs'] = self.logs
 
         return state
 
     def __setstate__(self, state):
+        self.logs = state['logs'] 
         self.global_storage = state['global_storage']
         self.constraints = state['constraints']
         self.last_exception = state['last_exception']
@@ -1204,8 +1207,9 @@ class EVM(Eventful):
         memlog = []
         for i in range(size):
             memlog.append(self._load(address+i))
+        self.logs.append((self.address, memlog, topics))
         logger.info('LOG %r %r', memlog, topics)
-    
+
     ##########################################################################
     ##System operations
     def read_buffer(self, offset, size):
@@ -1316,10 +1320,11 @@ class EVMWorld(Platform):
         self._constraints = constraints
         self._callstack = [] 
         self._deleted_address = set()
-        self._suicide = set()
+        self._logs = list()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
+        state['logs'] = self._logs
         state['storage'] = self._global_storage
         state['constraints'] = self._constraints
         state['callstack'] = self._callstack
@@ -1328,6 +1333,7 @@ class EVMWorld(Platform):
 
     def __setstate__(self, state):
         super(EVMWorld, self).__setstate__(state)
+        self._logs = state['logs'] 
         self._global_storage = state['storage']
         self._constraints = state['constraints']
         self._callstack = state['callstack']
@@ -1338,6 +1344,9 @@ class EVMWorld(Platform):
     def __str__(self):
         return "WORLD:" + str(self._global_storage)
         
+    @property
+    def logs(self):
+        return self._logs
 
     @property
     def constraints(self):
@@ -1391,10 +1400,10 @@ class EVMWorld(Platform):
 
         if not rollback:
             self.storage = vm.global_storage
-            if self.depth:
-                self._suicide = self.suicide.union(vm.suicide)
-            else: 
-                for address in vm.suicide:
+            self._deleted_address = self._deleted_address.union(vm.suicide)
+            self._logs += vm.logs
+            if not self.depth:
+                for address in self._deleted_address:
                     del self.storage[address]
         return vm
 
@@ -1413,7 +1422,6 @@ class EVMWorld(Platform):
         try:
             if self.current is None:
                 raise TerminateState("No transaction", testcase=False)
-
             self.current.execute()
         except Create as ex:
             self.CREATE(ex.value, ex.in_offset, ex.in_size)
