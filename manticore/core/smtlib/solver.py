@@ -332,6 +332,8 @@ class Z3Solver(Solver):
     #@memoized
     def get_all_values(self, constraints, expression, maxcnt=300, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
+        if not isinstance(expression, Expression):
+            return [expression]
         assert isinstance(constraints, ConstraintSet)
         assert isinstance(expression, Expression)
 

@@ -6,8 +6,10 @@ https://ethereum.github.io/browser-solidity/#version=soljson-latest.js
 '''
 import random, copy
 from ..platforms.platform import *
-from ..core.smtlib import Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet
-from ..core.smtlib.expression import *
+from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet
+from ..core.state import ForkState, TerminateState
+
+#from ..core.smtlib.expression import *
 
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
@@ -26,7 +28,7 @@ logger = logging.getLogger('PLATFORM')
 TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
-
+TOOHIGHMEM = 0x1000
 def to_signed(i):
     return i if i < TT255 else i - TT256
 
@@ -147,39 +149,44 @@ class EVMMemory(object):
             assert solver.check(self.constraints)
             logger.debug('Reading %d bytes from symbolic address %s', size, address)
             try:
-                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
+                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x100) #if more than 0x3000 exception
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
 
-                crashing_condition = True
-                for start, end, perms, offset, name  in self.mappings():
-                    if start <= M+size and end >= m :
-                        if 'r' in perms:
-                            crashing_condition = Operators.AND(Operators.OR( (address+size).ult(start), address.uge(end) ), crashing_condition)
+                #FIXME When we implement gas calculate the max index to exhaust gas 
+                if M >= TOOHIGHMEM:
+                    if m<TOOHIGHMEM:
+                        raise ForkState('address too high', address.ult(TOOHIGHMEM))
+                    else:
+                        raise NotEnoughGas("Accessing memory too high")
 
-                if solver.can_be_true(self.constraints, crashing_condition):
-                    raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
+                assert(M<TOOHIGHMEM)
 
-
-                #INCOMPLETE Result! We could also fork once for every map
+                #INCOMPLETE Result! Using the 0x100 values sampled before
                 logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
                 condition = False
                 for base in e.solutions:
                     condition = Operators.OR(address == base, condition )
-                raise ForkState(condition)
+                raise ForkState('address too high', condition)
 
-            #So here we have all potential solutions to address
-            assert len(solutions) > 0
-            
+            #So here we have all potential solutions of symbolic address (complete set)
+            assert len(solutions) > 0            
 
-            crashing_condition = False
+            outofgas_condition = False
             for base in solutions:
-                if any(not self.access_ok(i, 'r') for i in xrange(base, base + size, self.page_size)):
-                    crashing_condition = Operators.OR(address == base, crashing_condition)
+                if base + size > TOOHIGHMEM:
+                    outofgas_condition = Operators.OR(address == base, outofgas_condition)
 
-            if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
+            #FIXME: if we can out of gas we jump to it and wont explore the othe option
+            outofgas_solutions = set(solver.get_all_values(self.constraints, outofgas_condition))
+            if outofgas_solutions == set([True]):
+                raise NotEnoughGas("Accessing memory too high")
+    
+            elif outofgas_solutions == set([True, False]):
+                raise ForkState('address too high', outofgas_condition)
+
+            assert outofgas_solutions == set([False])
 
             condition = False
             for base in solutions:
@@ -493,7 +500,7 @@ class EVMDecoder(object):
         '''
         bytecode = iter(bytecode)
         opcode = ord(next(bytecode))
-        invalid = ('INVALID', 0, 0, 0, 'Unknown opcode')
+        invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
         name, operand_size, pops, pushes, gas, description = EVMDecoder._table.get(opcode, invalid)
 
         instruction = EVMInstruction(opcode, name, operand_size, pops, pushes, description)
@@ -594,6 +601,9 @@ class Sha3(EVMException):
     def __init__(self, offset, size):
         self.offset = offset
         self.size = size
+
+    def __reduce__(self):
+        return (self.__class__, (self.offset, self.size, ))
 
 
 class EVM(Eventful):
@@ -1023,7 +1033,7 @@ class EVM(Eventful):
 
     def CALLER(self): 
         '''Get caller address'''
-        return self.caller
+        return Operators.ZEXTEND(self.caller, 256)
 
     def CALLVALUE(self):
         '''Get deposited value by the instruction/transaction responsible for this execution'''
@@ -1072,6 +1082,7 @@ class EVM(Eventful):
                 self._store(mem_offset+i, 0)
             else:
                 self._store(mem_offset+i, ord(self.bytecode[code_offset+i]))
+        self.publish('did_read_code', code_offset, size)
 
     def GASPRICE(self):
         '''Get price of gas in current environment'''
@@ -1144,15 +1155,15 @@ class EVM(Eventful):
         '''Save byte to memory'''
         self._store(address, Operators.EXTRACT(value, 0, 8))
 
-    def SLOAD(self, address):
+    def SLOAD(self, offset):
         '''Load word from storage'''
-        return self.global_storage[self.address]['storage'][address]
+        return self.global_storage[self.address]['storage'][offset]
 
-    def SSTORE(self, address, value):
+    def SSTORE(self, offset, value):
         '''Save word to storage'''
-        self.global_storage[self.address]['storage'][address] = value
+        self.global_storage[self.address]['storage'][offset] = value
         if value is 0:
-            del self.global_storage[self.address]['storage'][address]
+            del self.global_storage[self.address]['storage'][offset]
 
     def JUMP(self, dest):
         '''Alter the program counter'''
@@ -1439,6 +1450,8 @@ class EVMWorld(Platform):
             self.HASH(ex.offset, ex.size)
         except EVMException as e:
             self.THROW()
+        except Exception:
+            raise
 
     def run(self):
         try:
@@ -1468,6 +1481,8 @@ class EVMWorld(Platform):
         self.storage[address]['balance'] = balance
         self.storage[address]['storage'] = symbolic_storage
         self.storage[address]['code'] = code
+
+        self.publish('did_create_account', address)
         return address
 
     def create_contract(self, origin, price, address=None, balance=0, init='', run=False):
@@ -1493,6 +1508,7 @@ class EVMWorld(Platform):
             runtime = self.run()
             self.storage[address]['code'] = ''.join(runtime)
 
+        self.publish('did_create_account', address)
         return address
 
     def transaction(self, address, origin, price, data, caller, value, header, run=False):
