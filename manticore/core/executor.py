@@ -44,10 +44,6 @@ class Policy(object):
         self._executor = executor
         self._executor.subscribe('did_add_state', self._add_state_callback)
 
-    @property        
-    def executor(self):
-        return self._executor
-
     @contextmanager
     def locked_context(self, key=None, default=dict):
         ''' Policy shared context dictionary '''
@@ -82,6 +78,7 @@ class Policy(object):
 class Random(Policy):
     def __init__(self, executor, *args, **kwargs):
         super(Random, self).__init__(executor, *args, **kwargs)
+        random.seed(1337) # For repeatable results
 
     def choice(self, state_ids):
         return random.choice(state_ids)
@@ -89,12 +86,12 @@ class Random(Policy):
 class Uncovered(Policy):
     def __init__(self, executor, *args, **kwargs):
         super(Uncovered, self).__init__(executor, *args, **kwargs)
-        #hook on the necesary executor signals 
+        #hook on the necesary executor signals
         #on callbacks save data in executor.context['policy']
         self._executor.subscribe('will_load_state', self._register)
 
     def _register(self, *args):
-        self.executor.subscribe('will_execute_instruction', self._visited_callback)
+        self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
     def _visited_callback(self, state, instr):
         ''' Maintain our own copy of the visited set
@@ -108,10 +105,12 @@ class Uncovered(Policy):
         return state.cpu.PC
 
     def choice(self, state_ids):
-        interesting = set()
-        with self.locked_context() as policy_ctx: 
-            visited = policy_ctx.get('visited', set())
-            lastpc = policy_ctx.get('summaries', dict())
+        # Use executor.context['uncovered'] = state_id -> stats
+        # am
+        with self._executor.locked_context() as ctx:
+            lastpc = ctx['policy']
+            visited = ctx.get('visited', ())
+            interesting = set()
             for _id in state_ids:
                 if lastpc.get(_id, None) not in visited:
                     interesting.add(_id)
@@ -124,7 +123,7 @@ class BranchLimited(Policy):
         self._limit = kwargs.get('limit', 5)
 
     def _register(self, *args):
-        self.executor.subscribe('will_execute_instruction', self._visited_callback)
+        self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
     def _visited_callback(self, state, instr):
         ''' Maintain our own copy of the visited set
@@ -159,38 +158,39 @@ class BranchLimited(Policy):
 
 class Executor(Eventful):
     '''
-    The executor guides the execution of an initial state or a paused previous run. 
-    It handles all exceptional conditions (system calls, memory faults, concretization, etc.)
+    The executor guides the execution of a single state, handles state forking
+    and selection, maintains run statistics and handles all exceptional
+    conditions (system calls, memory faults, concretization, etc.)
     '''
 
     def __init__(self, initial=None, workspace=None, policy='random', context=None, **kwargs):
         super(Executor, self).__init__(**kwargs)
 
 
-        # Signals / Callbacks handlers will be invoked potentially at different 
+        # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
 
         self.subscribe('will_load_state', self._register_state_callbacks)
 
-        #The main executor lock. Acquire this for accessing shared objects
+        # The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
 
-        #Shutdown Event
+        # Shutdown Event
         self._shutdown = manager.Event()
 
-        #States on storage. Shared dict state name ->  state stats
+        # States on storage. Shared dict state name ->  state stats
         self._states = manager.list()
 
-        #Number of currently running workers. Initially no runnign workers
+        # Number of currently running workers. Initially no running workers
         self._running = manager.Value('i', 0 )
 
         self._workspace = Workspace(self._lock, workspace)
 
-        #Executor wide shared context
+        # Executor wide shared context
         if context is None:
             context = {}
         self._shared_context = manager.dict(context)
-    
+
         #scheduling priority policy (wip)
         #Set policy
         policies = {'random': Random, 
@@ -199,7 +199,6 @@ class Executor(Eventful):
                     }
         self._policy = policies[policy](self)
         assert isinstance(self._policy, Policy)
-
 
         if self.load_workspace():
             if initial is not None:
@@ -242,16 +241,16 @@ class Executor(Eventful):
 
     def _register_state_callbacks(self, state, state_id):
         '''
-            Install forwarding callbacks in state so the events can go up. 
+            Install forwarding callbacks in state so the events can go up.
             Going up, we prepend state in the arguments.
-        ''' 
+        '''
         #Forward all state signals
         self.forward_events_from(state, True)
 
     def add(self, state):
         '''
             Enqueue state.
-            Save state on storage, assigns an id to it, then add it to the 
+            Save state on storage, assigns an id to it, then add it to the
             priority queue
         '''
         #save the state to secondary storage
@@ -261,7 +260,7 @@ class Executor(Eventful):
         return state_id
 
     def load_workspace(self):
-        #Browse and load states in a workspace in case we are trying to 
+        #Browse and load states in a workspace in case we are trying to
         # continue from paused run
         loaded_state_ids = self._workspace.try_loading_workspace()
         if not loaded_state_ids:
@@ -277,13 +276,14 @@ class Executor(Eventful):
     @sync
     def _start_run(self):
         #notify siblings we are about to start a run()
-        self._running.value+=1
+        self._running.value += 1
 
     @sync
     def _stop_run(self):
         #notify siblings we are about to stop this run()
-        self._running.value-=1
-        assert self._running.value >=0
+        self._running.value -= 1
+        if self._running.value < 0:
+            raise SystemExit
         self._lock.notify_all()
 
 
@@ -304,7 +304,7 @@ class Executor(Eventful):
 
 
     ###############################################
-    # Priority queue 
+    # Priority queue
     @sync
     def put(self, state_id):
         ''' Enqueue it for processing '''
@@ -331,7 +331,7 @@ class Executor(Eventful):
             #if there is actually some workers running wait for state forks
             logger.debug("Waiting for available states")
             self._lock.wait()
-            
+
         state_id = self._policy.choice(list(self._states))
         if state_id is None:
             return None
@@ -353,28 +353,26 @@ class Executor(Eventful):
 
         #broadcast test generation. This is the time for other modules
         #to output whatever helps to understand this testcase
-        self.publish('will_generate_testcase', state)
-
-
+        self.publish('will_generate_testcase', state, 'test', message)
 
     def fork(self, state, expression, policy='ALL', setstate=None):
         '''
         Fork state on expression concretizations.
         Using policy build a list of solutions for expression.
-        For the state on each solution setting the new state with setstate 
+        For the state on each solution setting the new state with setstate
 
         For example if expression is a Bool it may have 2 solutions. True or False.
-    
-                                 Parent  
+
+                                 Parent
                             (expression = ??)
-       
+
                    Child1                         Child2
             (expression = True)             (expression = True)
                setstate(True)                   setstate(False)
 
-        The optional setstate() function is supposed to set the concrete value 
+        The optional setstate() function is supposed to set the concrete value
         in the child state.
-        
+
         '''
         assert isinstance(expression, Expression)
 
@@ -384,24 +382,30 @@ class Executor(Eventful):
         #Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
-        #We are about to fork current_state
-        with self._lock:
-            self.publish('will_fork_state', state, expression, solutions, policy)
+        logger.info("Forking, about to store. (policy: %s, values: %s)",
+                    policy,
+                    ', '.join('0x{:x}'.format(sol) for sol in solutions))
 
-        #Build and enqueue a state for each solution 
+        self.publish('will_fork_state', state, expression, solutions, policy)
+
+        #Build and enqueue a state for each solution
         children = []
         for new_value in solutions:
             with state as new_state:
-                new_state.constrain(expression == new_value) #We already know it's sat
+                new_state.constrain(expression == new_value)
+
                 #and set the PC of the new state to the concrete pc-dest
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value)
-                #enqueue new_state 
+
+                self.publish('forking_state', new_state, expression, new_value, policy)
+
+                #enqueue new_state
                 state_id = self.add(new_state)
                 #maintain a list of childres for logging purpose
                 children.append(state_id)
-        
-        logger.debug("Forking current state into states %r",children)
+
+        logger.debug("Forking current state into states %r", children)
         return None
 
     def run(self):
@@ -424,7 +428,6 @@ class Executor(Eventful):
                 try:
                     #select a suitable state to analyze
                     if current_state is None:
-
                         with self._lock:
                             #notify siblings we are about to stop this run
                             self._stop_run()
@@ -495,7 +498,7 @@ class Executor(Eventful):
                     self.publish('will_terminate_state', current_state, current_state_id, 'Exception')
                     current_state = None
                     logger.setState(None)
-    
+
             assert current_state is None
 
             #notify siblings we are about to stop this run
@@ -503,5 +506,3 @@ class Executor(Eventful):
 
             #Notify this worker is done (not sure it's needed)
             self.publish('will_finish_run')
-
-

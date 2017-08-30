@@ -1,4 +1,3 @@
-
 import logging
 import inspect
 
@@ -31,7 +30,7 @@ class UnicornEmulator(object):
                 text.start: (len(text), UC_PROT_READ | UC_PROT_EXEC)
         }
 
-        # Keep track of all the memory Unicorn needs while executing this 
+        # Keep track of all the memory Unicorn needs while executing this
         # instruction
         self._should_be_written = {}
 
@@ -50,7 +49,7 @@ class UnicornEmulator(object):
                 return Uc(UC_ARCH_X86, UC_MODE_32)
             elif self._cpu.mode == CS_MODE_64:
                 return Uc(UC_ARCH_X86, UC_MODE_64)
-        
+
         raise RuntimeError("Unsupported architecture")
 
 
@@ -87,7 +86,7 @@ class UnicornEmulator(object):
                 return self._emu.reg_read(UC_X86_REG_EIP)
             elif self._cpu.mode == CS_MODE_64:
                 return self._emu.reg_read(UC_X86_REG_RIP)
-        
+
 
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
         '''
@@ -180,7 +179,7 @@ class UnicornEmulator(object):
                                                "Concretizing for emulation")
 
                 self._emu.mem_write(address, ''.join(values))
-            
+
             # Try emulation
             self._should_try_again = False
 
@@ -214,7 +213,7 @@ class UnicornEmulator(object):
             registers |= set(['XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'])
 
         # XXX(yan): This concretizes the entire register state. This is overly
-        # aggressive. Once capstone adds consistent support for accessing 
+        # aggressive. Once capstone adds consistent support for accessing
         # referred registers, make this only concretize those registers being
         # read from.
         for reg in registers:
@@ -222,7 +221,7 @@ class UnicornEmulator(object):
             if issymbolic(val):
                 from ..core.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
-                                         policy='ONE') 
+                                         policy='ONE')
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
         # Bring in the instruction itself
@@ -242,7 +241,7 @@ class UnicornEmulator(object):
         try:
             self._emu.emu_start(self._cpu.PC, self._cpu.PC+instruction.size, count=1)
         except UcError as e:
-            # We request re-execution by signaling error; if we we didn't set 
+            # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
             if not self._should_try_again:
                 raise
