@@ -45,33 +45,34 @@ class Policy(object):
         self._executor.subscribe('did_add_state', self._add_state_callback)
 
     @contextmanager
-    def locked_context(self):
+    def locked_context(self, key=None, default=dict):
         ''' Policy shared context dictionary '''
-        with self._executor.locked_context() as ctx:
-            policy_context = ctx.get('policy', None)
-            if policy_context is None:
-                policy_context = dict()
+        keys = ['policy']
+        if key is not None:
+            keys.append(key)
+        with self._executor.locked_context('.'.join(keys), default) as policy_context:
             yield policy_context
-            ctx['policy'] = policy_context
 
     def _add_state_callback(self, state_id, state):
-        ''' Save prepare(state) on policy shared context before
+        ''' Save summarize(state) on policy shared context before 
             the state is stored
         '''
-        with self.locked_context() as ctx:
-            metric = self.prepare(state)
-            if metric is not None:
-                ctx[state_id] = metric
+        summary = self.summarize(state)
+        if summary is None:
+            return
+        with self.locked_context('summaries', dict) as ctx:
+            ctx[state_id] = summary
 
-    def prepare(self, state):
-        ''' Process a state and keep enough data to later decide it's
-            priority #fixme rephrase
+    def summarize(self, state):
+        '''
+            Extract the relevant information from a state for later
+            prioritization
         '''
         return None
 
     def choice(self, state_ids):
-        ''' Select a state id from states_id.
-            self.context has a dict mapping state_ids -> prepare(state)'''
+        ''' Select a state id from state_ids.
+            self.context has a dict mapping state_ids -> summarize(state)'''
         raise NotImplementedError
 
 class Random(Policy):
@@ -87,9 +88,20 @@ class Uncovered(Policy):
         super(Uncovered, self).__init__(executor, *args, **kwargs)
         #hook on the necesary executor signals
         #on callbacks save data in executor.context['policy']
+        self._executor.subscribe('will_load_state', self._register)
 
-    def prepare(self, state):
-        ''' this is what we need to save for choosing later '''
+    def _register(self, *args):
+        self._executor.subscribe('will_execute_instruction', self._visited_callback)
+
+    def _visited_callback(self, state, instr):
+        ''' Maintain our own copy of the visited set
+        '''
+        pc = state.platform.current.PC
+        with self.locked_context('visited', set) as ctx:
+            ctx.add(pc)
+
+    def summarize(self, state):
+        ''' Save the last pc before storing the state '''
         return state.cpu.PC
 
     def choice(self, state_ids):
@@ -102,10 +114,46 @@ class Uncovered(Policy):
             for _id in state_ids:
                 if lastpc.get(_id, None) not in visited:
                     interesting.add(_id)
-            if len(interesting) > 0:
-                return random.choice(tuple(interesting))
-            else:
-                return random.choice(state_ids)
+        return random.choice(tuple(interesting))
+
+class BranchLimited(Policy):
+    def __init__(self, executor, *args, **kwargs):
+        super(BranchLimited, self).__init__(executor, *args, **kwargs)
+        self._executor.subscribe('will_load_state', self._register)
+        self._limit = kwargs.get('limit', 5)
+
+    def _register(self, *args):
+        self._executor.subscribe('will_execute_instruction', self._visited_callback)
+
+    def _visited_callback(self, state, instr):
+        ''' Maintain our own copy of the visited set
+        '''
+        pc = state.platform.current.PC
+        with self.locked_context('visited', dict) as ctx:
+            ctx[pc] = ctx.get(pc, 0) + 1
+
+    def summarize(self, state):
+        return state.cpu.PC
+
+    def choice(self, state_ids):
+        interesting = set(state_ids)
+        with self.locked_context() as policy_ctx: 
+            visited = policy_ctx.get('visited', dict())
+            summaries = policy_ctx.get('summaries', dict())
+            lst = []
+            for id_, pc in summaries.items():
+                cnt = visited.get(pc, 0)
+                if id_ not in state_ids:
+                    continue
+                if cnt <= self._limit:
+                    lst.append((id_, visited.get(pc, 0)))
+            lst = sorted(lst, key=lambda x: x[1])
+
+        if lst:
+            return lst[0][0]
+        else:
+            return None
+
 
 
 class Executor(Eventful):
@@ -145,8 +193,9 @@ class Executor(Eventful):
 
         #scheduling priority policy (wip)
         #Set policy
-        policies = {'random': Random,
-                    'uncovered': Uncovered
+        policies = {'random': Random, 
+                    'uncovered': Uncovered,
+                    'branchlimited': BranchLimited,
                     }
         self._policy = policies[policy](self)
         assert isinstance(self._policy, Policy)
@@ -156,8 +205,8 @@ class Executor(Eventful):
                 logger.error("Ignoring initial state")
 
     @contextmanager
-    def locked_context(self):
-        ''' Executor context is a shared memory object. All workers share this.
+    def locked_context(self, key=None, default=dict):
+        ''' Executor context is a shared memory object. All workers share this. 
             It needs a lock. Its used like this:
 
             with executor.context() as context:
@@ -165,8 +214,24 @@ class Executor(Eventful):
                 visited.append(state.cpu.PC)
                 context['visited'] = visited
         '''
+        assert default in (list, dict, set)
         with self._lock:
-            yield self._shared_context
+            if key is None:
+                yield self._shared_context
+            elif '.' in key:
+                keys = key.split('.')
+                with self.locked_context('.'.join(keys[:-1])) as sub_context:
+                    sub_sub_context = sub_context.get(keys[-1], None)
+                    if sub_sub_context is None:
+                        sub_sub_context = default()
+                    yield sub_sub_context
+                    sub_context[keys[-1]] = sub_sub_context
+            else:
+                sub_context = self._shared_context.get(key, None)
+                if sub_context is None:
+                    sub_context = default()
+                yield sub_context
+                self._shared_context[key] = sub_context
 
 
 
@@ -264,6 +329,8 @@ class Executor(Eventful):
             self._lock.wait()
 
         state_id = self._policy.choice(list(self._states))
+        if state_id is None:
+            return None
         del  self._states[self._states.index(state_id)]
         return state_id
 
