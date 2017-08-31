@@ -156,15 +156,21 @@ class Manticore(object):
     :type args: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
-    def __init__(self, binary_path, args=None, disasm='capstone'):
-        assert os.path.isfile(binary_path)
+    def __init__(self, path_or_state, args=None, disasm='capstone'):
 
         args = [] if args is None else args
 
+        if isinstance(path_or_state, str):
+            assert os.path.isfile(path_or_state)
+            self._binary = path_or_state
+            self._initial_state_type = binary_type(self._binary)
+        else:
+            assert isinstance(path_or_state, State), "Manticore must be intialized with either a state or a path to a binary"
+            self._binary = None
+            self._initial_state_type = 'MCORE'
+
         self._check_disassembler_present(disasm)
         self._disasm = disasm
-        self._binary = binary_path
-        self._binary_type = binary_type(binary_path)
         # yan's comment
         self._argv = args # args.programs[1:]
         self._env = {}
@@ -194,7 +200,7 @@ class Manticore(object):
 
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
-        if self._binary_type == 'ELF':
+        if self._initial_state_type == 'ELF':
             self._binary_obj = ELFFile(file(self._binary))
 
         log.init_logging()
@@ -371,22 +377,24 @@ class Manticore(object):
             return symbols[0].entry['st_value']
 
     def _make_state(self, path):
-        if self._binary_type == 'BinaryNinjaIL' or self._disasm == "binja-il":
+        if self._initial_state_type == 'BinaryNinjaIL' or self._disasm == "binja-il":
             # Binary Ninja
             env = ['%s=%s' % (k, v) for k, v in self._env.items()]
             state = makeBinja(self._binary, self._disasm, self._argv, env,
                               self._symbolic_files, self._concrete_data)
-        elif self._binary_type == 'ELF':
+        elif self._initial_state_type == 'ELF':
             # Linux
             env = ['%s=%s' % (k, v) for k, v in self._env.items()]
             state = makeLinux(self._binary, self._disasm, self._argv, env,
                               self._symbolic_files, self._concrete_data)
-        elif self._binary_type == 'PE':
+        elif self._initial_state_type == 'PE':
             # Windows
             state = makeWindows(self._args)
-        elif self._binary_type == 'DECREE':
+        elif self._initial_state_type == 'DECREE':
             # Decree
             state = makeDecree(self._binary, self._concrete_data)
+        elif self._initial_state_type == 'MCORE':
+            state = path_or_state
         else:
             raise NotImplementedError("Binary {} not supported.".format(path))
 
