@@ -154,10 +154,6 @@ class Executor(Eventful):
         if self.load_workspace():
             if initial is not None:
                 logger.error("Ignoring initial state")
-        else:
-            if initial is not None:
-                self.add(initial)
-                self.forward_events_from(initial, True)
 
     @contextmanager
     def locked_context(self):
@@ -369,6 +365,7 @@ class Executor(Eventful):
                             #load selected state from secondary storage
                             if current_state_id is not None:
                                 current_state = self._workspace.load_state(current_state_id)
+                                self.forward_events_from(current_state, True)
                                 self.publish('will_load_state', current_state, current_state_id)
                                 #notify siblings we have a state to play with
                             self._start_run()
