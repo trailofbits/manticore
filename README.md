@@ -44,8 +44,8 @@ make
 
 # Use the Manticore CLI
 manticore basic
+cat mcore_*/*0.stdin | ./basic
 cat mcore_*/*1.stdin | ./basic
-cat mcore_*/*2.stdin | ./basic
 
 # Use the Manticore API
 cd ../script
