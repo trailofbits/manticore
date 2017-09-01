@@ -35,6 +35,3 @@ if __name__ == '__main__':
     m.verbosity = 2
     m.run()
 
-    # Print high level statistics
-    m.dump_stats()
-
