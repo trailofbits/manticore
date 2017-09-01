@@ -151,7 +151,8 @@ class Manticore(object):
     '''
     The central analysis object.
 
-    :param str binary_path: Path to binary to analyze
+    :param path_or_state: Path to a binary to analyze or `State` object
+    :type path_or_state: str or State
     :param args: Arguments to provide to binary
     :type args: list[str]
     :ivar dict context: Global context for arbitrary data storage
