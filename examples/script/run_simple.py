@@ -12,7 +12,5 @@ if __name__ == '__main__':
     path = sys.argv[1]
     # Create a new Manticore object
     m = Manticore(path)
-    # Start path exploration. run() returns when Manticore
-    # finishes
     m.run()
 
