@@ -1535,6 +1535,8 @@ class EVMWorld(Platform):
         origin = self.current.origin
         caller = self.current.address
         price = self.current.price
+        assert self.storage[caller]['balance'] >= value
+        self.storage[caller]['balance'] -= value
         header = {'timestamp': 100}
         new_vm = EVM(self._constraints, address, origin, price, "", caller, value, bytecode, header)
         self._push(new_vm)
@@ -1548,8 +1550,8 @@ class EVMWorld(Platform):
         price = self.current.price
         depth = self.depth+1
         bytecode = self.storage[to]['code']
-        assert self.storage[to]['balance'] >= value
-        self.storage[to]['balance'] -= value
+        assert self.storage[caller]['balance'] >= value
+        self.storage[caller]['balance'] -= value
         header = {'timestamp' :1}
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header)
         self._push(new_vm)
