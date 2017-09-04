@@ -1,17 +1,16 @@
 pragma solidity ^0.4.13;
 
 contract Test {
-    mapping(address => uint) private balances;
-
-    function Test(){
-        balances[0x414141414141] = 0x1;
+    uint private sellerBalance=0;
+    
+    function Test(uint initialBalance){
+        sellerBalance += initialBalance;
     }
     
-    function target(address key) returns (bool){
-        if (balances[key] > 0)
-            return true;
-        else
-            return false;            
+    function target(uint value) returns (bool){
+
+        sellerBalance += value; // possible overflow
+        assert(sellerBalance >= value); // auditor assert
     } 
 
 }

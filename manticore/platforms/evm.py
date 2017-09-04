@@ -1514,6 +1514,9 @@ class EVMWorld(Platform):
     def transaction(self, address, origin, price, data, caller, value, header, run=False):
         assert self.depth == 0
         bytecode = self.storage[address]['code']
+        assert self.storage[caller]['balance'] >= value
+        self.storage[caller]['balance'] -= value
+
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self)
         self._push(new_vm)
         self.current.last_exception = Call(None,None,None,None,None,None,None)
@@ -1545,6 +1548,8 @@ class EVMWorld(Platform):
         price = self.current.price
         depth = self.depth+1
         bytecode = self.storage[to]['code']
+        assert self.storage[to]['balance'] >= value
+        self.storage[to]['balance'] -= value
         header = {'timestamp' :1}
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header)
         self._push(new_vm)
@@ -1552,10 +1557,13 @@ class EVMWorld(Platform):
     def RETURN(self, offset, size):
         data = self.current.read_buffer(offset, size)
         prev_vm = self._pop() #current VM changed!
+        #increment balance on CALL success
+        self.storage[prev_vm.address]['balance'] += prev_vm.value
 
         if self.depth == 0:
             self.last_return=data
             raise TerminateState("RETURN", testcase=True)
+
 
         last_ex = self.current.last_exception
         self.current.last_exception = None
@@ -1573,9 +1581,14 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def STOP(self):
-        self._pop(rollback=False)
+        prev_vm = self._pop(rollback=False)
+        #increment balance on CALL success
+        self.storage[prev_vm.address]['balance'] += prev_vm.value
+
         if self.depth == 0:
             raise TerminateState("STOP", testcase=True)
+
+
         self.current.last_exception = None
         self.current._push(1)
 
