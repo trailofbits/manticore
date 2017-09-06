@@ -52,8 +52,8 @@ def parse_arguments():
                         help='Enable profiling mode.')
     parser.add_argument('--procs', type=int, default=1,
                         help='Number of parallel processes to spawn')
-    parser.add_argument('programs', type=str, nargs='+', metavar='PROGRAM',
-                        help='Programs to analyze (arguments after ?)')
+    parser.add_argument('argv', type=str, nargs='+',
+                        help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
     parser.add_argument('--replay', type=str, default=None,
                         help='The trace filename to replay')
     parser.add_argument('--size', type=str, help='Specify buffer full size')
