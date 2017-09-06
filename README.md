@@ -101,8 +101,8 @@ have to manually set the workspace to the redis URI.
 
 ```
 $ manticore ./path/to/binary        # runs, and creates a mcore_* directory with analysis results
-$ manticore ./path/to/binary ab cd  # use concrete strings "ab", "cd" as argv
-$ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as argv
+$ manticore ./path/to/binary ab cd  # use concrete strings "ab", "cd" as program arguments
+$ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as program arguments
 ```
 
 or
