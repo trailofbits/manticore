@@ -89,7 +89,7 @@ def makeLinux(program, disasm, argv, env, symbolic_files, concrete_start=''):
 def makeWindows(args):
     assert args.size is not None, "Need to specify buffer size"
     assert args.buffer is not None, "Need to specify buffer base address"
-    logger.debug('Loading program %s (platform: Windows)', args.programs)
+    logger.debug('Loading program %s (platform: Windows)', args.argv)
     additional_context = None
     if args.context:
         with open(args.context, "r") as addl_context_file:
@@ -97,7 +97,7 @@ def makeWindows(args):
             logger.debug('Additional context loaded with contents {}'.format(additional_context)) #DEBUG
 
     constraints = ConstraintSet()
-    platform = windows.SWindows(constraints, args.programs[0], additional_context, snapshot_folder=args.workspace)
+    platform = windows.SWindows(constraints, args.argv[0], additional_context, snapshot_folder=args.workspace)
 
     #This will interpret the buffer specification written in INTEL ASM. (It may dereference pointers)
     data_size = parse(args.size, platform.current.read_bytes, platform.current.read_register)
@@ -173,7 +173,7 @@ class Manticore(object):
         self._check_disassembler_present(disasm)
         self._disasm = disasm
         # yan's comment
-        self._argv = args # args.programs[1:]
+        self._argv = args
         self._env = {}
         # Will be set to a temporary directory if not set before running start()
         self._policy = 'random'
