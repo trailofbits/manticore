@@ -586,10 +586,10 @@ class Manticore(object):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
 
     def _store_state_callback(self, state, state_id):
-        logger.info("store state %r", state_id)
+        pass
 
     def _load_state_callback(self, state, state_id):
-        logger.info("load state %r", state_id)
+        pass
 
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
