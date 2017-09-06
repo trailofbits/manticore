@@ -4,7 +4,7 @@ First, thanks for your interest in contributing to Manticore! We welcome and
 appreciate all contributions, including bug reports, feature suggestions,
 tutorials/blog posts, and code improvements.
 
-If you're unsure where to start, we recommend our `easy` and `help wanted`
+If you're unsure where to start, we recommend our [`easy`](https://github.com/trailofbits/manticore/issues?q=is%3Aissue+is%3Aopen+label%3Aeasy) and [`help wanted`](https://github.com/trailofbits/manticore/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 issue labels.
 
 ## Bug reports and feature suggestions
