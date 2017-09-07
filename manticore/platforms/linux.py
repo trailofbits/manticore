@@ -1038,35 +1038,28 @@ class Linux(Platform):
         '''
         
         try:
-            current_dir = os.getcwd()
-        
-            if not buf in self.current.memory: 
-                logger.info("GETCWD: buf points to invalid address.")
-                #errno.EFAULT
-                return 0
-            
-            if size == 0:
-                logger.info("GETCWD: size is equal to zero.")
-                #errno.EINVAL
-                return 0
-            
-            if size == 0:
-                logger.info("GETCWD: size is equal to zero.")
-                #errno.EINVAL
-                return 0
-            
-            if size > 0 and size < (len(current_dir) + 1):
+            current_dir = os.getcwd()          
+            length = len(current_dir) + 1
+                    
+            if not os.path.isdir(current_dir):
+                logger.info("GETCWD: Working directory does not exist. Returning ENOENT")
+                return -errno.ENOENT
+                      
+            if size > 0 and size < length:
                 logger.info("GETCWD: size is greater than 0, but is smaller than the length"  
-                            "of the +path + 1.")
-                #errno.ERANGE
-                return 0
-            
+                            "of the path + 1. Returning ERANGE")
+                return -errno.ERANGE
+        
+            if not (buf in self.current.memory and buf+length in self.current.memory):
+                logger.info("GETCWD: buf within invalid memory. Returning EFAULT")
+                return -errno.EFAULT
+                      
             self.current.write_string(buf, current_dir)
-            logger.debug("getcwd(0x%08x, %u) -> <%s> (Size %u)", buf, size, current_dir, size)
-            return buf
+            logger.debug("getcwd(0x%08x, %u) -> <%s> (Size %u)", buf, size, current_dir, length)
+            return length
         
         except OSError as e:
-            return 0
+            return -e.errno
 
     def sys_lseek(self, fd, offset, whence):
         '''
