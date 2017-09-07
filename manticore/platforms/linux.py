@@ -1034,32 +1034,39 @@ class Linux(Platform):
         getcwd - Get the current working directory
         :param int buf: Pointer to dest array
         :param size: size in bytes of the array pointed to by the buf 
+        :return: buf (Success), or 0
         '''
         
         try:
-            # Get current working directory.
             current_dir = os.getcwd()
         
-            # Check for size errors
+            if not buf in self.current.memory: 
+                logger.info("GETCWD: buf points to invalid address. Returning EFAULT")
+                #errno.EFAULT
+                return 0
+            
             if size == 0:
                 logger.info("GETCWD: size is equal to zero. Returning EINVAL")
-                return -errno.EINVAL
-        
+                #errno.EINVAL
+                return 0
+            
+            if size == 0:
+                logger.info("GETCWD: size is equal to zero. Returning EINVAL")
+                #errno.EINVAL
+                return 0
+            
             if size > 0 and size < (len(current_dir) + 1):
                 logger.info("GETCWD: size is greater than 0, but is smaller than the length"  
                             "of the +path + 1. Returning ERANGE")
-                return -errno.ERANGE
-        
-            # Write path to string
+                #errno.ERANGE
+                return 0
+            
             self.current.write_string(buf, current_dir)
-            
-            assert self.current.read_string(buf) == current_dir
-            
             logger.debug("getcwd(0x%08x, %u) -> <%s> (Size %u)", buf, size, current_dir, size)
-
-            return 0
+            return buf
+        
         except OSError as e:
-            return e.errno
+            return 0
 
     def sys_lseek(self, fd, offset, whence):
         '''
