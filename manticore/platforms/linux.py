@@ -1040,10 +1040,6 @@ class Linux(Platform):
         try:
             current_dir = os.getcwd()          
             length = len(current_dir) + 1
-                    
-            if not os.path.isdir(current_dir):
-                logger.info("GETCWD: Working directory does not exist. Returning ENOENT")
-                return -errno.ENOENT
                       
             if size > 0 and size < length:
                 logger.info("GETCWD: size is greater than 0, but is smaller than the length"  
