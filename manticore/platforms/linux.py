@@ -1046,7 +1046,7 @@ class Linux(Platform):
                             "of the path + 1. Returning ERANGE")
                 return -errno.ERANGE
         
-            if not (buf in self.current.memory and buf+length in self.current.memory):
+            if not self.current.memory.access_ok(slice(buf, buf+length), 'w'):
                 logger.info("GETCWD: buf within invalid memory. Returning EFAULT")
                 return -errno.EFAULT
                       
