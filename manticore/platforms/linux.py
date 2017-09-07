@@ -1055,7 +1055,7 @@ class Linux(Platform):
             
             assert self.current.read_string(buf) == current_dir
             
-            logger.debug("getcwd(0x%08x, 0x%08x) -> <%s> (Size %d)", buf, size, current_dir, buf)
+            logger.debug("getcwd(0x%08x, 0x%08x) -> <%s> (Size %d)", buf, size, current_dir, size)
 
             return 0
         except OSError as e:
