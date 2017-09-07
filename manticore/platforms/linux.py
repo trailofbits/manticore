@@ -1029,6 +1029,38 @@ class Linux(Platform):
         except OSError as e:
             return e.errno
 
+    def sys_getcwd(self, buf, size):
+        '''
+        getcwd - Get the current working directory
+        :param int buf: Pointer to dest array
+        :param size: size in bytes of the array pointed to by the buf 
+        '''
+        
+        try:
+            # Get current working directory.
+            current_dir = os.getcwd();
+        
+            # Check for size errors
+            if size == 0:
+                logger.info("GETCWD: size is equal to zero. Returning EINVAL")
+                return -errno.EINVAL
+        
+            if size > 0 and size < (len(current_dir) + 1):
+                logger.info("GETCWD: size is greater than 0, but is smaller than the length"  
+                            "of the +path + 1. Returning ERANGE")
+                return -errno.ERANGE
+        
+            # Write path to string
+            self.current.write_string(buf, current_dir)
+            
+            assert self.current.read_string(buf) == current_dir
+            
+            logger.debug("getcwd(0x%08x, 0x%08x) -> <%s> (Size %d)", buf, size, current_dir, buf)
+
+            return 0
+        except OSError as e:
+            return e.errno
+
     def sys_lseek(self, fd, offset, whence):
         '''
         lseek - reposition read/write file offset
