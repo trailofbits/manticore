@@ -552,6 +552,21 @@ class Cpu(Eventful):
             result.append(Operators.CHR(self.read_int(where + i, 8)))
         return result
 
+    def write_string(self, where, string, max_length=None):
+        '''
+        Writes a string to memory, appending a NULL-terminator at the end.
+        :param int where: Address to write the string to
+        :param str string: The string to write to memory
+        :param int max_length:
+            The size in bytes to cap the string at, or None [default] for no
+            limit. This includes the NULL terminator.
+        '''
+        
+        if max_length is not None:
+            string = string[:max_length-1]
+        
+        self.write_bytes(where, string + '\x00')
+        
     def read_string(self, where, max_length=None):
         '''
         Read a NUL-terminated concrete buffer from memory.
