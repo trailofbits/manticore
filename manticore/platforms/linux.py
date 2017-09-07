@@ -1038,7 +1038,7 @@ class Linux(Platform):
         
         try:
             # Get current working directory.
-            current_dir = os.getcwd();
+            current_dir = os.getcwd()
         
             # Check for size errors
             if size == 0:
