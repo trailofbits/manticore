@@ -567,7 +567,6 @@ class Cpu(Eventful):
         
         self.write_bytes(where, string + '\x00')
         
-
     def read_string(self, where, max_length=None):
         '''
         Read a NUL-terminated concrete buffer from memory.
