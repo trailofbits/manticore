@@ -1055,7 +1055,7 @@ class Linux(Platform):
                 return -errno.EFAULT
                       
             self.current.write_string(buf, current_dir)
-            logger.debug("getcwd(0x%08x, %u) -> <%s> (Size %u)", buf, size, current_dir, length)
+            logger.debug("getcwd(0x%08x, %u) -> <%s> (Size %d)", buf, size, current_dir, length)
             return length
         
         except OSError as e:
