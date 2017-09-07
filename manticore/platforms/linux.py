@@ -1041,23 +1041,23 @@ class Linux(Platform):
             current_dir = os.getcwd()
         
             if not buf in self.current.memory: 
-                logger.info("GETCWD: buf points to invalid address. Returning EFAULT")
+                logger.info("GETCWD: buf points to invalid address.")
                 #errno.EFAULT
                 return 0
             
             if size == 0:
-                logger.info("GETCWD: size is equal to zero. Returning EINVAL")
+                logger.info("GETCWD: size is equal to zero.")
                 #errno.EINVAL
                 return 0
             
             if size == 0:
-                logger.info("GETCWD: size is equal to zero. Returning EINVAL")
+                logger.info("GETCWD: size is equal to zero.")
                 #errno.EINVAL
                 return 0
             
             if size > 0 and size < (len(current_dir) + 1):
                 logger.info("GETCWD: size is greater than 0, but is smaller than the length"  
-                            "of the +path + 1. Returning ERANGE")
+                            "of the +path + 1.")
                 #errno.ERANGE
                 return 0
             
