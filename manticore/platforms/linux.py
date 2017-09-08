@@ -1337,7 +1337,7 @@ class Linux(Platform):
         Duplicates an open file descriptor
         :rtype: int
         :param fd: the open file descriptor to duplicate.
-        :return: the new file descriptor .
+        :return: the new file descriptor.
         '''
         
         if self.files[fd] is None:
