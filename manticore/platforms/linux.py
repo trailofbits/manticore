@@ -1331,7 +1331,43 @@ class Linux(Platform):
     def sys_sigprocmask(self, cpu, how, newset, oldset):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
         return 0
-
+    
+    def sys_dup(self, fd):
+        '''
+        Duplicates an open file descriptor
+        :rtype: int
+        :param fd: the open file descriptor to duplicate.
+        :return: the new file descriptor .
+        '''
+        
+        if self.files[fd] is None:
+            logger.info("DUP: Passed fd is not open. Returning EBADF")
+            return -errno.EBADF
+        
+        newfd = self._dup(fd)
+        logger.debug('sys_dup(%d) -> %d', fd, newfd)
+        return newfd
+        
+    def sys_dup2(self, fd, newfd):
+        '''
+        Duplicates an open fd to newfd. If newfd is open, it is first closed
+        :rtype: int
+        :param fd: the open file descriptor to duplicate.
+        :param newfd: the file descriptor to alias the file described by fd.
+        :return: newfd.
+        '''
+        
+        if self.files[fd] is None:
+            logger.info("DUP2: Passed fd is not open. Returning EBADF")
+            return -errno.EBADF
+            
+        if self.files[newfd] is not None:
+            self.sys_close[newfd]
+        
+        self.files[newfd] = self.files[fd]
+        logger.debug('sys_dup2(%d,%d)', fd, newfd)
+        return newfd
+    
     def sys_close(self, fd):
         '''
         Closes a file descriptor
