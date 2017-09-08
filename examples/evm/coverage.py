@@ -112,7 +112,7 @@ contract_account = seth.create_contract(origin=owner_account,
                                               run=True)
 
 runtime_bytecode = seth.temp_initial_state.platform.storage[contract_account]['code']
-
+print "back on main"
 #Potentially symbolic transactions. We can add an arbitrary number of transactions
 # that wil run in sequence one after the other. To maintain a state this function
 # can save private date into the state.context[].

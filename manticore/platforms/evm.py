@@ -802,33 +802,6 @@ class EVM(Eventful):
                                 expression=expression, 
                                 setstate=setstate,
                                 policy='ALL')
-        '''elif self.pc == 0:
-            #If executing the first instruction fix the balance
-            expression = self.global_storage[self.caller]['balance'] < self.value 
-            expression = expression & ( self.global_storage[self.caller]['balance'] >=0)
-            solutions = solver.get_all_values(self.constraints, expression)
-
-            solutions = solver.get_all_values(self.constraints, expression)
-            def setstate(state, value):
-                assert state.platform.constraints == state.constraints
-                print ":setstate"
-
-            if len(solutions) > 1:
-                print "CONCRETIZE", solutions
-
-                raise Concretize("Check funds",
-                                    expression=expression, 
-                                    setstate=setstate,
-                                    policy='ALL')
-
-            elif solutions[0]:
-                print "TERMINATE"
-                raise TerminateState("No enough funds")
-
-            print "KEEP GOING", solutions
-            self.global_storage[self.caller]['balance'] -= self.value
-            self.global_storage[self.address]['balance'] += self.value
-        '''
 
         self.publish('will_decode_instruction', self.pc)
         current = self.instruction
@@ -1369,6 +1342,7 @@ class EVMWorld(Platform):
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
+        state['pending_transaction'] = self._pending_transaction
         state['logs'] = self._logs
         state['storage'] = self._global_storage
         state['constraints'] = self._constraints
@@ -1378,6 +1352,7 @@ class EVMWorld(Platform):
 
     def __setstate__(self, state):
         super(EVMWorld, self).__setstate__(state)
+        self._pending_transaction = state['pending_transaction']
         self._logs = state['logs'] 
         self._global_storage = state['storage']
         self._constraints = state['constraints']
@@ -1464,6 +1439,7 @@ class EVMWorld(Platform):
         return new_address
 
     def execute(self):
+        self._process_pending_transaction()
         try:
             if self.current is None:
                 raise TerminateState("No transaction", testcase=False)
@@ -1486,6 +1462,7 @@ class EVMWorld(Platform):
             self.THROW()
         except Exception:
             raise
+
 
     def run(self):
         try:
@@ -1537,15 +1514,16 @@ class EVMWorld(Platform):
             header = {'timestamp' : 0,
                       'number': 0,}
 
-        new_vm = EVM(self._constraints, address, origin, price, '', origin, value=balance, code=init, header=header)
-        self._push(new_vm)
+        self._pending_transaction = ('Create', address, origin, price, '', origin, balance, init, header)
+
         if run:
             #run initialization code
             #Assert everything is concrete?
-            new_vm.last_exception = Create(None, None, None)
+            assert  not issymbolic(origin) 
+            assert  not issymbolic(address) 
+            assert self.storage[origin]['balance'] >= balance
             runtime = self.run()
             self.storage[address]['code'] = ''.join(runtime)
-
         self.publish('did_create_account', address)
         return address
 
@@ -1555,25 +1533,46 @@ class EVMWorld(Platform):
         price = self.current.price
         header = {'timestamp': 100}  #FIXME
         self.create_contract(origin, price, address=None, balance=value, init=bytecode, run=False)
+        self._process_pending_transaction()
 
 
     def transaction(self, address, origin, price, data, caller, value, header, run=False):
-        assert  not issymbolic(caller) 
-        assert  not issymbolic(address) 
-
         bytecode = self.storage[address]['code']
-        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self)
-        self._push(new_vm)
+        self._pending_transaction = ('Call', address, origin, price, data, caller, value, bytecode, header)
+
         if run:
             assert self.depth == 0
+            assert  not issymbolic(caller) 
+            assert  not issymbolic(address) 
+            assert self.storage[caller]['balance'] >= value
             #run contract
             #Assert everything is concrete?
-            self.current.last_exception = Call(None,None,None,None)
             try:
                 return self.run()
             except TerminateState:
                 #FIXME better use of exceptions!
                 pass
+        print "Adding transaction"
+
+    def _process_pending_transaction(self):
+        if self._pending_transaction is None:
+            return
+        assert self.current is None or self.current.last_exception is not None
+
+        ty, address, origin, price, data, caller, value, bytecode, header = self._pending_transaction
+        self.storage[caller]['balance'] -= value
+        self.storage[address]['balance'] += value
+
+        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self)
+        self._push(new_vm)
+        self._pending_transaction = None
+        if self.depth == 1:
+            #handle human transactions
+            if ty == 'Create':
+                self.current.last_exception = Create(None, None, None)
+            elif ty == 'Call':
+                self.current.last_exception = Call(None, None, None, None)
+
 
     def CALL(self, gas, to, value, data):
         address = to
@@ -1584,6 +1583,7 @@ class EVMWorld(Platform):
         bytecode = self.storage[to]['code']
         header = {'timestamp' :1}
         self.transaction(address, origin, price, data, caller, value, header)
+        self._process_pending_transaction()
 
 
     def RETURN(self, data):
