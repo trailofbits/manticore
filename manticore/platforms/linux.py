@@ -1362,7 +1362,7 @@ class Linux(Platform):
             return -errno.EBADF
             
         if self.files[newfd] is not None:
-            self.sys_close[newfd]
+            self.sys_close(newfd)
         
         self.files[newfd] = self.files[fd]
         logger.debug('sys_dup2(%d,%d)', fd, newfd)
