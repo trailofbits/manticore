@@ -28,7 +28,7 @@ logger = logging.getLogger('PLATFORM')
 TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
-TOOHIGHMEM = 0x1000
+TOOHIGHMEM = 0x100
 def to_signed(i):
     return i if i < TT255 else i - TT256
 
@@ -135,11 +135,11 @@ class EVMMemory(object):
 
     def read(self, address, size):
         '''
-        Read a stream of potentially symbolic bytes from a potentially symbolic
+        Read a stream of potentially symbolic items from a potentially symbolic
         address
 
         :param address: Where to read from
-        :param size: How many bytes
+        :param size: How many items
         :rtype: list
         '''
         #size = self._get_size(size)
@@ -147,7 +147,7 @@ class EVMMemory(object):
 
         if issymbolic(address):
             assert solver.check(self.constraints)
-            logger.debug('Reading %d bytes from symbolic address %s', size, address)
+            logger.debug('Reading %d items from symbolic offset %s', size, address)
             try:
                 solutions = solver.get_all_values(self.constraints, address, maxcnt=0x100) #if more than 0x3000 exception
             except TooManySolutions as e:
@@ -550,22 +550,21 @@ class InvalidOpcode(EVMException):
 
 
 class Call(EVMException):
-    def __init__(self, gas, to, value, in_offset, in_size, out_offset=0, out_size=0):
+    def __init__(self, gas, to, value, data, out_offset=None, out_size=None):
         self.gas = gas
         self.to = to
         self.value = value
-        self.in_offset = in_offset
-        self.in_size = in_size
+        self.data = data
         self.out_offset = out_offset
         self.out_size = out_size
 
     def __reduce__(self):
-        return (self.__class__, (self.gas,self.to,self.value,self.in_offset,self.in_size,self.out_offset,self.out_size,) )
+        return (self.__class__, (self.gas, self.to, self.value, self.data, self.out_offset, self.out_size) )
 
 
 class Create(Call):
     def __init__(self, value, offset, size):
-        super(Create, self).__init__(gas=None, to=None, value=value, in_offset=offset, in_size=size)
+        super(Create, self).__init__(gas=None, to=None, value=value, data='')
 
 class DelegateCall(Call):
     pass
@@ -576,17 +575,17 @@ class Stop(EVMException):
 
 class Return(EVMException):
     ''' Program reached a RETURN instruction '''
-    def __init__(self, offset, size):
-        self.offset = offset
-        self.size = size
+    def __init__(self, data):
+        self.data = data
+    def __reduce__(self):
+        return (self.__class__, (self.data) )
 
 class Revert(EVMException):
     ''' Program reached a RETURN instruction '''
-    def __init__(self, offset, size):
-        self.offset = offset
-        self.size = size
+    def __init__(self, data):
+        self.data = data
     def __reduce__(self):
-        return (self.__class__, (self.offset,self.size) )
+        return (self.__class__, (self.data) )
 
 class SelfDestruct(EVMException):
     ''' Program reached a RETURN instruction '''
@@ -598,12 +597,11 @@ class NotEnoughGas(EVMException):
     pass
 
 class Sha3(EVMException):
-    def __init__(self, offset, size):
-        self.offset = offset
-        self.size = size
+    def __init__(self, data):
+        self.data = data
 
     def __reduce__(self):
-        return (self.__class__, (self.offset, self.size, ))
+        return (self.__class__, (self.data, ))
 
 
 class EVM(Eventful):
@@ -633,7 +631,6 @@ class EVM(Eventful):
         self.constraints = constraints
         self.last_exception = None
         self.memory = EVMMemory(constraints)
-        #self.constraints.new_array(256, 'MEM_%x_%d'%(address,depth))
         self.address = address
         self.origin = origin # always an account with empty associated code
         self.caller = caller # address of the account that is directly responsible for this execution
@@ -720,6 +717,7 @@ class EVM(Eventful):
         self._allocate(address)
         self.memory.write(address, [value])
 
+
     def _load(self, address):
         self._allocate(address+32)
         value = self.memory.read(address,1)[0]
@@ -799,12 +797,38 @@ class EVM(Eventful):
         if issymbolic(self.pc):
             expression = self.pc
             def setstate(state, value):
-                self.pc = value
+                state.platform.current.pc = value
             raise Concretize("Concretice PC",
                                 expression=expression, 
                                 setstate=setstate,
                                 policy='ALL')
+        '''elif self.pc == 0:
+            #If executing the first instruction fix the balance
+            expression = self.global_storage[self.caller]['balance'] < self.value 
+            expression = expression & ( self.global_storage[self.caller]['balance'] >=0)
+            solutions = solver.get_all_values(self.constraints, expression)
 
+            solutions = solver.get_all_values(self.constraints, expression)
+            def setstate(state, value):
+                assert state.platform.constraints == state.constraints
+                print ":setstate"
+
+            if len(solutions) > 1:
+                print "CONCRETIZE", solutions
+
+                raise Concretize("Check funds",
+                                    expression=expression, 
+                                    setstate=setstate,
+                                    policy='ALL')
+
+            elif solutions[0]:
+                print "TERMINATE"
+                raise TerminateState("No enough funds")
+
+            print "KEEP GOING", solutions
+            self.global_storage[self.caller]['balance'] -= self.value
+            self.global_storage[self.address]['balance'] += self.value
+        '''
 
         self.publish('will_decode_instruction', self.pc)
         current = self.instruction
@@ -1012,7 +1036,8 @@ class EVM(Eventful):
         #read memory from start to end
         #calculate hash on it/ maybe remember in some structure where that hash came from
         #http://gavwood.com/paper.pdf
-        raise Sha3(start, end)
+        data = self.current.read_buffer(start, end)
+        raise Sha3(data)
 
     ##########################################################################
     ##Environmental Information
@@ -1238,27 +1263,33 @@ class EVM(Eventful):
 
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
-        raise Create(value, offset, size)
+        code = self.current.read_buffer(offset, size)
+        raise Create(value, code)
 
     def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
-        raise Call(gas, to, value, in_offset, in_size, out_offset, out_size)
+        data = self.current.read_buffer(ex.in_offset, ex.in_size, out_offset, out_size)
+        raise Call(gas, to, value, data)
 
     def CALLCODE(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
-        raise Call(gas, self.address, value, in_offset, in_size, out_offset, out_size)
+        data = self.current.read_buffer(in_offset, in_size)
+        raise Call(gas, self.address, value, data, out_offset, out_size)
 
     def RETURN(self, offset, size):
         '''Halt execution returning output data'''
-        raise Return(offset, size)
+        data = self.current.read_buffer(offset, size)
+        raise Return(data)
 
     def DELEGATECALL(self, gas, to, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code'''
         value = 0
-        raise Call(gas, self.address, value, in_offset, in_size, out_offset, out_size)
+        data = self.current.read_buffer(in_offset, in_size)
+        raise Call(gas, self.address, value, data, out_offset, out_size)
 
     def REVERT(self, offset, size):
-        raise Revert(offset, size)
+        data = self.current.read_buffer(offset, size)
+        raise Revert(data)
 
     def SELFDESTRUCT(self, to):
         '''Halt execution and register account for later deletion'''
@@ -1293,7 +1324,15 @@ class EVM(Eventful):
                 m.append(c)
 
         hd = hexdump(m)
-        result = ['Stack                                                                      Memory']
+        result = []
+        if issymbolic(self.pc):
+            result.append( '<Symbolic PC>')
+
+        else:
+            result.append( '0x%04x: %s %s %s\n'%(self.pc, self.instruction.name, self.instruction.has_operand and '0x%x'%self.instruction.operand or '', self.instruction.description))
+
+
+        result.append('Stack                                                                      Memory')
         sp =0        
         for i in list(reversed(self.stack))[:10]:
             r = ''
@@ -1305,7 +1344,7 @@ class EVM(Eventful):
 
             h = ''
             try:
-                h = hd[sp]
+                h = hd[sp-1]
             except:
                 pass
             r +=  ' '*(75-len(r)) + h
@@ -1315,11 +1354,6 @@ class EVM(Eventful):
             r =  ' '*75 + hd[i]
             result.append(r)
 
-        if issymbolic(self.pc):
-            result.append( '<Symbolic PC>')
-
-        else:
-            result.append( '0x%04x: %s %s %s\n'%(self.pc, self.instruction.name, self.instruction.has_operand and '0x%x'%self.instruction.operand or '', self.instruction.description))
         result.append( '-'*147)
         return '\n'.join(result)
 
@@ -1435,19 +1469,19 @@ class EVMWorld(Platform):
                 raise TerminateState("No transaction", testcase=False)
             self.current.execute()
         except Create as ex:
-            self.CREATE(ex.value, ex.in_offset, ex.in_size)
+            self.CREATE(ex.value, ex.data)
         except Call as ex:
-            self.CALL(ex.gas, ex.to, ex.value, ex.in_offset, ex.in_size, ex.out_offset, ex.out_size)
+            self.CALL(ex.gas, ex.to, ex.value, ex.data)
         except Stop as ex:
             self.STOP()
         except Return as ex:
-            self.RETURN(ex.offset, ex.size)
+            self.RETURN(ex.data)
         except Revert as ex:
             self.REVERT()
         except SelfDestruct as ex:
             self.SELFDESTRUCT(ex.to)
         except Sha3 as ex:
-            self.HASH(ex.offset, ex.size)
+            self.HASH(ex.data)
         except EVMException as e:
             self.THROW()
         except Exception:
@@ -1485,7 +1519,7 @@ class EVMWorld(Platform):
         self.publish('did_create_account', address)
         return address
 
-    def create_contract(self, origin, price, address=None, balance=0, init='', run=False):
+    def create_contract(self, origin, price, address=None, balance=0, init='', run=False, header=None):
         assert len(init) > 0
         '''
         The way that the Solidity compiler expects the constructor arguments to 
@@ -1496,70 +1530,64 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run 
         on the network.
         '''
-        address = self.create_account(address, balance)
-        header = {'timestamp' : 0,
-                  'number': 0,}
+        assert  not issymbolic(address) 
+        assert  not issymbolic(origin) 
+        address = self.create_account(address, 0)
+        if header is None:
+            header = {'timestamp' : 0,
+                      'number': 0,}
+
         new_vm = EVM(self._constraints, address, origin, price, '', origin, value=balance, code=init, header=header)
-        new_vm.last_exception = Create(None, None, None)
         self._push(new_vm)
         if run:
             #run initialization code
             #Assert everything is concrete?
+            new_vm.last_exception = Create(None, None, None)
             runtime = self.run()
             self.storage[address]['code'] = ''.join(runtime)
 
         self.publish('did_create_account', address)
         return address
 
-    def transaction(self, address, origin, price, data, caller, value, header, run=False):
-        assert self.depth == 0
-        bytecode = self.storage[address]['code']
-        assert self.storage[caller]['balance'] >= value
-        self.storage[caller]['balance'] -= value
+    def CREATE(self, value, bytecode):
+        origin = self.current.origin
+        caller = self.current.address
+        price = self.current.price
+        header = {'timestamp': 100}  #FIXME
+        self.create_contract(origin, price, address=None, balance=value, init=bytecode, run=False)
 
+
+    def transaction(self, address, origin, price, data, caller, value, header, run=False):
+        assert  not issymbolic(caller) 
+        assert  not issymbolic(address) 
+
+        bytecode = self.storage[address]['code']
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self)
         self._push(new_vm)
-        self.current.last_exception = Call(None,None,None,None,None,None,None)
         if run:
+            assert self.depth == 0
             #run contract
             #Assert everything is concrete?
+            self.current.last_exception = Call(None,None,None,None)
             try:
                 return self.run()
             except TerminateState:
                 #FIXME better use of exceptions!
                 pass
 
-    def CREATE(self, value, offset, size):
-        bytecode = self.current.read_buffer(offset, size)
-        address = self._new_address()
-        origin = self.current.origin
-        caller = self.current.address
-        price = self.current.price
-        header = {'timestamp': 100}
-        new_vm = EVM(self._constraints, address, origin, price, "", caller, value, bytecode, header)
-        self._push(new_vm)
-        self.storage[address] = {}
-
-    def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
-        data = self.current.read_buffer(in_offset, in_size)
+    def CALL(self, gas, to, value, data):
         address = to
         origin = self.current.origin
         caller = self.current.address
         price = self.current.price
         depth = self.depth+1
         bytecode = self.storage[to]['code']
-        assert self.storage[to]['balance'] >= value
-        self.storage[to]['balance'] -= value
         header = {'timestamp' :1}
-        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header)
-        self._push(new_vm)
+        self.transaction(address, origin, price, data, caller, value, header)
 
-    def RETURN(self, offset, size):
-        data = self.current.read_buffer(offset, size)
+
+    def RETURN(self, data):
         prev_vm = self._pop() #current VM changed!
-        #increment balance on CALL success
-        self.storage[prev_vm.address]['balance'] += prev_vm.value
-
         if self.depth == 0:
             self.last_return=data
             raise TerminateState("RETURN", testcase=True)
@@ -1582,13 +1610,8 @@ class EVMWorld(Platform):
 
     def STOP(self):
         prev_vm = self._pop(rollback=False)
-        #increment balance on CALL success
-        self.storage[prev_vm.address]['balance'] += prev_vm.value
-
         if self.depth == 0:
             raise TerminateState("STOP", testcase=True)
-
-
         self.current.last_exception = None
         self.current._push(1)
 
@@ -1596,18 +1619,28 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def THROW(self):
-        self._pop(rollback=True)
+        prev_vm = self._pop(rollback=True)
+        #revert balance on CALL fail
+        self.storage[prev_vm.caller]['balance'] += prev_vm.value
+        self.storage[prev_vm.address]['balance'] -= prev_vm.value
+
         if self.depth == 0:
             raise TerminateState("THROW", testcase=True)
+
         self.current.last_exception = None
         self.current._push(0)
         #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 
     def REVERT(self):
-        self._pop(rollback=True)
+        prev_vm = self._pop(rollback=True)
+        #revert balance on CALL fail
+        self.storage[prev_vm.caller]['balance'] += prev_vm.value
+        self.storage[prev_vm.address]['balance'] -= prev_vm.value
+
         if self.depth == 0:
             raise TerminateState("REVERT", testcase=True)
+
         self.current.last_exception = None
         #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
@@ -1627,12 +1660,12 @@ class EVMWorld(Platform):
                 del self.storage[address]
             raise TerminateState("SELFDESTRUCT", testcase=True)
 
-    def HASH(self, offset, size):
-        data = self.current.read_buffer(offset, size)
+    def HASH(self, data):
         if any(map(issymbolic, data)):
             value = self._constraints.new_bitvec(256, 'HASH')
         else:
-            value = sha3.keccak_256(''.join(data)).hexdigest()
+            buf = ''.join(data)
+            value = sha3.keccak_256(buf).hexdigest()
             value = int('0x'+value,0)
         self.current._push(value)
         self.current.pc += self.current.instruction.size

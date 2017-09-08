@@ -3,7 +3,7 @@ from manticore.core.smtlib import ConstraintSet, Operators, solver
 from manticore.platforms import evm
 from manticore.core.state import State
 
-set_verbosity('MMMMEEEEE')
+#set_verbosity('MMMMEEEEECCCCSSSS')
 
 class ManticoreEVM(Manticore):
     def transaction(self, transaction):
@@ -122,7 +122,7 @@ def tx_1(m, state, world):
     #It may generate several world states.
     symbolic_data = state.new_symbolic_buffer(nbytes=256)
     symbolic_value = state.new_symbolic_value(256, label='value')
-    user_account = m.all_user_accounts(state)
+    user_account = user1_account #m.all_user_accounts(state)
     world.transaction(address=contract_account,
                         origin=user_account,
                         price=0,
@@ -137,7 +137,7 @@ def tx_2(m, state, world):
     #It may generate several world states.
     symbolic_data = state.new_symbolic_buffer(nbytes=256)
     symvolic_value = state.new_symbolic_value(self, 256, label='value')
-    user_account = m.all_user_accounts(state)
+    user_account = user2_account #m.all_user_accounts(state)
     world.transaction(address=contract_account,
                         origin=user_account,
                         price=0,
