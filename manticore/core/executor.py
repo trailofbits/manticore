@@ -433,7 +433,7 @@ class Executor(Eventful):
                             if current_state_id is not None:
                                 current_state = self._workspace.load_state(current_state_id)
                                 self.forward_events_from(current_state, True)
-                                logger.info("load state %r", state_id)
+                                logger.info("load state %r", current_state_id)
                                 self.publish('will_load_state', current_state, current_state_id)
                                 #notify siblings we have a state to play with
                             self._start_run()
