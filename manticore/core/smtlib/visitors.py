@@ -104,6 +104,8 @@ class Visitor(object):
 
     @staticmethod
     def _rebuild(expression, operands):
+        if isinstance(expression, Constant):
+            return expression
         if isinstance(expression, Operation):
             import copy
             aux = copy.copy(expression)

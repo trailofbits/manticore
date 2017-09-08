@@ -8,7 +8,7 @@ contract Test {
     }
     
     function target(address key) returns (bool){
-        if (balances[key] > 0)
+        if (balances[key] == 0x42424242)
             return true;
         else
             return false;            

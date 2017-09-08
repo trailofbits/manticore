@@ -1667,17 +1667,27 @@ class EVMWorld(Platform):
             return cond
 
         if any(map(issymbolic, data)):
-            print id(self._sha3), "SHA3 Searching over %d known hashes", len(self._sha3)
-            print id(self._sha3), "SHA3 TODO save this state for future explorations with more known hashes"
+            logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
+            logger.info("SHA3 TODO save this state for future explorations with more known hashes")
             results = []
+            known_hashes = False
             for key, value in self._sha3.items():
                 cond = compare_buffers(key, data)
                 if solver.can_be_true(self._constraints, cond):
                     print id(self._sha3), "SHA3 Ok found a matching known hash", key, value
-                    
-                
+                    results.append((cond, value))  
+                    known_hashes = Operators.OR(cond, known_hashes)
 
-            value = self._constraints.new_bitvec(256, 'HASH', taint=('sha3',))
+            #handler for this 
+            self.publish('symbolic_sha3', data, known_hashes)
+
+            print "Simplification. We assume we know the hash", results
+            self._constraints.add(known_hashes)
+            value = 0
+            for cond, sha in results:
+                value = Operators.ITEBV(256, cond, sha, value)
+
+            #value = self._constraints.new_bitvec(256, 'HASH', taint=('sha3',))
         else:
             buf = ''.join(data)
             value = sha3.keccak_256(buf).hexdigest()
@@ -1685,7 +1695,10 @@ class EVMWorld(Platform):
             if buf in self._sha3:
                 assert self._sha3[buf] == value
             self._sha3[buf] = value
-            print id(self._sha3), "SHA3 new SHA3 example"
+            self.publish('concrete_sha3', buf, value)
+
+            logger.info("Found new SHA3 example %r -> %x", buf, value)
+
         self.current._push(value)
         self.current.pc += self.current.instruction.size
         
