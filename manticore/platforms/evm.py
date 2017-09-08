@@ -8,16 +8,10 @@ import random, copy
 from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet
 from ..core.state import ForkState, TerminateState
-
-#from ..core.smtlib.expression import *
-
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
 from ..core.state import Concretize,TerminateState
-from decimal import Decimal
-from itertools import starmap
-import types
 import logging
 import sys, hashlib
 if sys.version_info < (3, 6):
@@ -29,6 +23,7 @@ TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x100
+
 def to_signed(i):
     return i if i < TT255 else i - TT256
 
@@ -260,9 +255,6 @@ class EVMMemory(object):
                     self._concrete_write(address+offset, value[offset])
 
 
-
-
-
 class EVMInstruction(object):
     '''This represents an EVM instruction '''
     def __init__(self, opcode, name, operand_size, pops, pushes, description, operand=None):
@@ -344,6 +336,7 @@ class EVMInstruction(object):
             c = (self.operand >> offset*8 ) & 0xff 
             bytes.append(chr(c))
         return ''.join(bytes)
+
         
 class EVMDecoder(object):
     ''' 
@@ -788,9 +781,6 @@ class EVM(Eventful):
             raise StackUnderflow()
         return self.stack.pop()
         
-    @property
-    def current(self):
-        return self
 
     #Execute an instruction from current pc
     def execute(self):
@@ -1009,7 +999,7 @@ class EVM(Eventful):
         #read memory from start to end
         #calculate hash on it/ maybe remember in some structure where that hash came from
         #http://gavwood.com/paper.pdf
-        data = self.current.read_buffer(start, end)
+        data = self.read_buffer(start, end)
         raise Sha3(data)
 
     ##########################################################################
@@ -1246,22 +1236,22 @@ class EVM(Eventful):
 
     def CALLCODE(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
-        data = self.current.read_buffer(in_offset, in_size)
+        data = self.read_buffer(in_offset, in_size)
         raise Call(gas, self.address, value, data, out_offset, out_size)
 
     def RETURN(self, offset, size):
         '''Halt execution returning output data'''
-        data = self.current.read_buffer(offset, size)
+        data = self.read_buffer(offset, size)
         raise Return(data)
 
     def DELEGATECALL(self, gas, to, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code'''
         value = 0
-        data = self.current.read_buffer(in_offset, in_size)
+        data = self.read_buffer(in_offset, in_size)
         raise Call(gas, self.address, value, data, out_offset, out_size)
 
     def REVERT(self, offset, size):
-        data = self.current.read_buffer(offset, size)
+        data = self.read_buffer(offset, size)
         raise Revert(data)
 
     def SELFDESTRUCT(self, to):
@@ -1339,9 +1329,12 @@ class EVMWorld(Platform):
         self._callstack = [] 
         self._deleted_address = set()
         self._logs = list()
+        self._sha3 = {}
+        self._pending_transaction = None
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
+        state['sha3'] = self._sha3
         state['pending_transaction'] = self._pending_transaction
         state['logs'] = self._logs
         state['storage'] = self._global_storage
@@ -1352,6 +1345,7 @@ class EVMWorld(Platform):
 
     def __setstate__(self, state):
         super(EVMWorld, self).__setstate__(state)
+        self._sha3 = state['sha3']
         self._pending_transaction = state['pending_transaction']
         self._logs = state['logs'] 
         self._global_storage = state['storage']
@@ -1661,12 +1655,37 @@ class EVMWorld(Platform):
             raise TerminateState("SELFDESTRUCT", testcase=True)
 
     def HASH(self, data):
+
+        def compare_buffers(a, b):
+            if len(a) != len(b):
+                return False
+            cond = True
+            for i in range(len(a)):
+                cond = Operators.AND(a[i]==b[i], cond)
+                if cond is False:
+                    return False
+            return cond
+
         if any(map(issymbolic, data)):
-            value = self._constraints.new_bitvec(256, 'HASH')
+            print id(self._sha3), "SHA3 Searching over %d known hashes", len(self._sha3)
+            print id(self._sha3), "SHA3 TODO save this state for future explorations with more known hashes"
+            results = []
+            for key, value in self._sha3.items():
+                cond = compare_buffers(key, data)
+                if solver.can_be_true(self._constraints, cond):
+                    print id(self._sha3), "SHA3 Ok found a matching known hash", key, value
+                    
+                
+
+            value = self._constraints.new_bitvec(256, 'HASH', taint=('sha3',))
         else:
             buf = ''.join(data)
             value = sha3.keccak_256(buf).hexdigest()
             value = int('0x'+value,0)
+            if buf in self._sha3:
+                assert self._sha3[buf] == value
+            self._sha3[buf] = value
+            print id(self._sha3), "SHA3 new SHA3 example"
         self.current._push(value)
         self.current.pc += self.current.instruction.size
         

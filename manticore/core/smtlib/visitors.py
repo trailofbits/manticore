@@ -305,6 +305,8 @@ class ArithmeticSimplifier(Visitor):
 
     @staticmethod
     def _changed(expression, operands):
+        if isinstance(expression, Constant) and len(operands)>0:
+            return True
         arity = len(operands)
         return any( operands[i] is not expression.operands[i] for i in range(arity))
 

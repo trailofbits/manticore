@@ -4,7 +4,7 @@ contract Test {
     mapping(address => uint) private balances;
 
     function Test(){
-        balances[0x414141414141] = 0x42424242;
+        balances[0x41424344454647484950] = 0x42424242;
     }
     
     function target(address key) returns (bool){
