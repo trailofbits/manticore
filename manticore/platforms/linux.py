@@ -1001,8 +1001,15 @@ class Linux(Platform):
         '''
         return self._open(self.files[fd])
 
+    def _is_fd_open(self, fd):
+        '''
+        Determines if the fd is within range and in the file descr. list
+        :param fd: the file descriptor to check.
+        '''
+        return fd > 0 and fd < len(self.files) and self.files[fd] is not None
+
     def _get_fd(self, fd):
-        if fd < 0 or fd >= len(self.files) or self.files[fd] is None:
+        if not self._is_fd_open(fd):
             raise BadFd()
         else:
             return self.files[fd]
@@ -1010,7 +1017,6 @@ class Linux(Platform):
     def sys_umask(self, mask):
         '''
         umask - Set file creation mode mask
-
         :param int mask: New mask
         '''
         logger.debug("umask(%o)", mask)
@@ -1339,8 +1345,8 @@ class Linux(Platform):
         :param fd: the open file descriptor to duplicate.
         :return: the new file descriptor.
         '''
-        
-        if self.files[fd] is None:
+    
+        if not self._is_fd_open(fd):
             logger.info("DUP: Passed fd is not open. Returning EBADF")
             return -errno.EBADF
         
@@ -1357,14 +1363,20 @@ class Linux(Platform):
         :return: newfd.
         '''
         
-        if self.files[fd] is None:
+        try:
+            file = self._get_fd(fd)
+        except BadFd:
             logger.info("DUP2: Passed fd is not open. Returning EBADF")
             return -errno.EBADF
-            
-        if self.files[newfd] is not None:
+          
+        if  self._is_fd_open(newfd):
             self.sys_close(newfd)
         
+        for fd_index in range(len(self.files), newfd+1):
+            self.files[fd_index] = None
+        
         self.files[newfd] = self.files[fd]
+                    
         logger.debug('sys_dup2(%d,%d)', fd, newfd)
         return newfd
     
