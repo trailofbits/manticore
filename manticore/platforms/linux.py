@@ -1006,7 +1006,7 @@ class Linux(Platform):
         Determines if the fd is within range and in the file descr. list
         :param fd: the file descriptor to check.
         '''
-        return fd > 0 and fd < len(self.files) and self.files[fd] is not None
+        return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
 
     def _get_fd(self, fd):
         if not self._is_fd_open(fd):
