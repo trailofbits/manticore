@@ -10,9 +10,9 @@ issue labels.
 ## Bug reports and feature suggestions
 
 Bug reports and feature suggestions can be submitted to our [issue
-tracker](https://github.com/trailofbits/manticore/issues). For bugs, if you are
-able to also attach the binary that caused the bug, that would be really helpful
-for debugging and resolving the issue quickly. If you find a security
+tracker](https://github.com/trailofbits/manticore/issues). For bug reports,
+attaching the binary that caused the bug will help us in debugging and
+resolving the issue quickly. If you find a security
 vulnerability, do not open an issue; email opensource@trailofbits.com
 instead.
 
