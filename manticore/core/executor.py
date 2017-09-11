@@ -170,8 +170,6 @@ class Executor(Eventful):
         with self._lock:
             yield self._shared_context
 
-
-
     def _register_state_callbacks(self, state, state_id):
         '''
             Install forwarding callbacks in state so the events can go up. 

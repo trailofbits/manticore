@@ -1546,7 +1546,6 @@ class EVMWorld(Platform):
             except TerminateState:
                 #FIXME better use of exceptions!
                 pass
-        print "Adding transaction"
 
     def _process_pending_transaction(self):
         if self._pending_transaction is None:

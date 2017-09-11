@@ -637,7 +637,6 @@ class ArrayProxy(Array):
             import visitors
             from manticore.core.smtlib.visitors import pretty_print, arithmetic_simplifier
             size = arithmetic_simplifier(size)
-            #size = visitors.ArithmeticSimplifier(expression=size)
         else:
             size = BitVecConstant(self._array.index_bits, size)
         assert isinstance(size, BitVecConstant)
@@ -646,6 +645,7 @@ class ArrayProxy(Array):
     def __getitem__(self, index):
         if isinstance(index, slice):
             size = self._get_size(index)
+            size = min(size, self.index_max)
             return [self._array.select(index.start+i) for i in xrange(size)]
         else:
             return self._array.select(index)
