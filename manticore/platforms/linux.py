@@ -292,6 +292,9 @@ class Linux(Platform):
     This class emulates the most common Linux system calls
     '''
 
+    # from /usr/include/asm-generic/resource.h
+    RLIMIT_NOFILE = 7 #/* max number of open files */
+
     def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
         '''
         Builds a Linux OS platform
@@ -311,6 +314,11 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
+
+        # dict of [int -> (int, int)] where tuple is (soft, hard) limits
+        self.rlimits = {
+            self.RLIMIT_NOFILE: (256, 1024)
+        }
 
         if program != None:
             self.elf = ELFFile(file(program))
@@ -423,6 +431,7 @@ class Linux(Platform):
             else:
                 state_files.append(('File', fd))
         state['files'] = state_files
+        state['rlimits'] = self.rlimits
 
         state['procs'] = self.procs
         state['current'] = self._current
@@ -472,6 +481,7 @@ class Linux(Platform):
         self.files[1].peer = self.output
         self.files[2].peer = self.output
         self.input.peer = self.files[0]
+        self.rlimits = state['rlimits']
 
         self.procs = state['procs']
         self._current = state['current']
@@ -1716,8 +1726,16 @@ class Linux(Platform):
         logger.debug("sys_futex(...) -> -1")
         return -1
     def sys_getrlimit(self, resource, rlim):
-        logger.debug("sys_getrlimit(%x, %x) -> -1", resource, rlim)
-        return -1
+        ret = -1
+        if resource in self.rlimits:
+            rlimit_tup = self.rlimits[resource]
+            # 32 bit values on both 32 and 64 bit platforms. For more info,
+            # see the BUGS section in rlimit(2) man page.
+            self.current.write_bytes(rlim, struct.pack('<LL', *rlimit_tup))
+            ret = 0
+        logger.debug("sys_getrlimit(%x, %x) -> %d", resource, rlim, ret)
+        return ret
+
     def sys_fadvise64(self, fd, offset, length, advice):
         logger.debug("sys_fadvise64(%x, %x, %x, %x) -> 0", fd, offset, length, advice)
         return 0
