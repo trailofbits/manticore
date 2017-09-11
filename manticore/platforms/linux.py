@@ -316,7 +316,7 @@ class Linux(Platform):
         self.disasm = disasm
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
-        self.rlimits = {
+        self._rlimits = {
             self.RLIMIT_NOFILE: (256, 1024)
         }
 
@@ -431,7 +431,7 @@ class Linux(Platform):
             else:
                 state_files.append(('File', fd))
         state['files'] = state_files
-        state['rlimits'] = self.rlimits
+        state['rlimits'] = self._rlimits
 
         state['procs'] = self.procs
         state['current'] = self._current
@@ -481,7 +481,7 @@ class Linux(Platform):
         self.files[1].peer = self.output
         self.files[2].peer = self.output
         self.input.peer = self.files[0]
-        self.rlimits = state['rlimits']
+        self._rlimits = state['rlimits']
 
         self.procs = state['procs']
         self._current = state['current']
@@ -1372,18 +1372,14 @@ class Linux(Platform):
         :param newfd: the file descriptor to alias the file described by fd.
         :return: newfd.
         '''
-        #TODO(yan): Once getrlimit(2) is implemented for getdtablesize, move
-        # this to a platform instance var. 256 is a conservative size that gets
-        # returned if rlimit() errors.
-        MAX_DTABLE_SIZE = 256
-        
         try:
             file = self._get_fd(fd)
         except BadFd:
             logger.info("DUP2: Passed fd is not open. Returning EBADF")
             return -errno.EBADF
 
-        if newfd >= MAX_DTABLE_SIZE:
+        soft_max, hard_max = self._rlimits.get(self.RLIMIT_NOFILE, (256, 1024))
+        if newfd >= soft_max:
             logger.info("DUP2: newfd is above max descriptor table size")
             return -errno.EBADF
           
@@ -1727,8 +1723,8 @@ class Linux(Platform):
         return -1
     def sys_getrlimit(self, resource, rlim):
         ret = -1
-        if resource in self.rlimits:
-            rlimit_tup = self.rlimits[resource]
+        if resource in self._rlimits:
+            rlimit_tup = self._rlimits[resource]
             # 32 bit values on both 32 and 64 bit platforms. For more info,
             # see the BUGS section in rlimit(2) man page.
             self.current.write_bytes(rlim, struct.pack('<LL', *rlimit_tup))
