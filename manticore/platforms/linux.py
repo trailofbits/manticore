@@ -1362,22 +1362,30 @@ class Linux(Platform):
         :param newfd: the file descriptor to alias the file described by fd.
         :return: newfd.
         '''
+        #TODO(yan): Once getrlimit(2) is implemented for getdtablesize, move
+        # this to a platform instance var. 256 is a conservative size that gets
+        # returned if rlimit() errors.
+        MAX_DTABLE_SIZE = 256
         
         try:
             file = self._get_fd(fd)
         except BadFd:
             logger.info("DUP2: Passed fd is not open. Returning EBADF")
             return -errno.EBADF
+
+        if newfd >= MAX_DTABLE_SIZE:
+            logger.info("DUP2: newfd is above max descriptor table size")
+            return -errno.EBADF
           
         if  self._is_fd_open(newfd):
             self.sys_close(newfd)
         
-        for fd_index in range(len(self.files), newfd+1):
-            self.files[fd_index] = None
+        if newfd >= len(self.files):
+            self.files.extend([None]*(newfd+1-len(self.files)))
         
         self.files[newfd] = self.files[fd]
                     
-        logger.debug('sys_dup2(%d,%d)', fd, newfd)
+        logger.debug('sys_dup2(%d,%d) -> %d', fd, newfd, newfd)
         return newfd
     
     def sys_close(self, fd):
