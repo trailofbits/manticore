@@ -83,7 +83,7 @@ def main():
 
     #TODO 
     initial_state = make_initial_state(args.argv[0], argv=args.argv[1:],  disasm=args.disasm)
-    m = Manticore(initial_state, workspace=args.workspace,  policy=args.policy)
+    m = Manticore(initial_state, workspace_url=args.workspace,  policy=args.policy)
 
     #Fixme remove all this...
     m.coverage_file = args.coverage

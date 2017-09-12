@@ -173,9 +173,8 @@ class Manticore(object):
     :ivar dict context: Global context for arbitrary data storage
     '''
 
-    def __init__(self, path_or_state, workspace=None, policy='random', **kwargs):
+    def __init__(self, path_or_state, workspace_url=None, policy='random', **kwargs):
         
-        workspace_url = kwargs.get( 'workspace')
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
@@ -183,7 +182,6 @@ class Manticore(object):
                 ws_path = workspace_url
         else:
             ws_path = None
-
         self._output = ManticoreOutput(ws_path)
         self._context = {}
 
@@ -210,11 +208,14 @@ class Manticore(object):
 
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, *args, **kwargs)
+            self._initial_state = make_initial_state(path_or_state, **kwargs)
             self.add(initial_state)
         else:
             self._initial_state = path_or_state
         assert isinstance(self._initial_state, State), "Manticore must be intialized with either a state or a path to a binary"
+
+        #Move the folowwing into a plugin
+        self._assertions = {}
 
 
     @property
