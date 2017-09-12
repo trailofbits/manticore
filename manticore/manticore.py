@@ -151,10 +151,6 @@ def make_initial_state(binary_path, **kwargs):
     if magic == '\x7fELF':
         # Linux
         state = make_linux(binary_path, **kwargs)
-    elif magic == 'MDMP':
-        # Windows
-        raise NotImplementedError("Binary {} not supported.".format(binary_path))
-        state = make_windows(binary_path, **kwargs)
     elif magic == '\x7fCGC':
         # Decree
         state = make_decree(binary_path, **kwargs)
