@@ -24,7 +24,7 @@ Examples of practical manticore usage are also [on github](https://github.com/tr
 
 ## Requirements
 
-Manticore is supported on Linux, and requires Python 2.7 and the [Z3 Theorem Prover](https://github.com/Z3Prover/z3/releases). Ubuntu 16.04 is strongly recommended.
+Manticore is supported on Linux, and requires Python 2.7. Ubuntu 16.04 is strongly recommended.
 
 ## Quick Start
 
@@ -32,7 +32,7 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 
 ```
 # Install system dependencies
-sudo apt-get update && sudo apt-get install z3 python-pip -y
+sudo apt-get update && sudo apt-get install python-pip -y
 python -m pip install -U pip
 
 # Install manticore and its dependencies
@@ -53,8 +53,6 @@ python count_instructions.py ../linux/helloworld
 ```
 
 ## Installation
-
-Make sure that Z3 is installed and available on your `PATH`. On Ubuntu, this is as simple as `sudo apt-get install z3`.
 
 Option 1: Perform a user install (requires `~/.local/bin` in your `PATH`).
 
@@ -80,7 +78,7 @@ Option 3: Perform a system install.
 sudo pip install manticore
 ```
 
-Once installed, the `manticore` CLI tool and its Python API will be available.
+Once installed, the `manticore` CLI tool and Python API will be available.
 
 For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
 
@@ -119,7 +117,7 @@ m = Manticore('./path/to/binary')
 def hook(state):
   cpu = state.cpu
   print 'eax', cpu.EAX
-  print cpu.read_int(cpu.SP)
+  print cpu.read_int(cpu.ESP)
 
   m.terminate()  # tell Manticore to stop
 

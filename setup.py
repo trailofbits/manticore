@@ -12,6 +12,7 @@ setup(
         'pyelftools',
         'unicorn',
         'ply',
+        'z3-solver',
     ],
     extras_require={
         'dev': [
