@@ -183,7 +183,9 @@ class Manticore(object):
         self._coverage_file = None
 
         #sugar for 'will_execute_instruction"
-        self._hooks = {} 
+        self._hooks = {}
+
+        self._symbolic_files = []
 
         self._executor = Executor(workspace=ws_path, policy=policy)
         self._workers = []
