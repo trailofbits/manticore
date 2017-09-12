@@ -205,7 +205,7 @@ class Manticore(object):
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
             self._initial_state = make_initial_state(path_or_state, **kwargs)
-            self.enqueue(initial_state)
+            self.enqueue(self._initial_state)
         else:
             self._initial_state = path_or_state
         assert isinstance(self._initial_state, State), "Manticore must be intialized with either a state or a path to a binary"
