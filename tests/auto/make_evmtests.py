@@ -58,7 +58,8 @@ def gen_test(testcase, testname, skip):
     output = ''
     if skip:
         output += '''    @unittest.skip('Gas or performance related')\n'''
-    output += '    def test_%s(self):\n'% (testname.replace('-','_'))
+
+    output += '    def test_%s(self):\n'% (os.path.split(testname)[1].replace('-','_'))
     header = {}
     env = testcase['env']
     for key in env:
@@ -135,6 +136,17 @@ def gen_test(testcase, testname, skip):
                                         pp(contract['code'],width=60, indent=37), 
                                         pp(contract['storage'],width=80, indent=40))
 
+        output +='''           
+        platform.create_account(address=%s, 
+                                balance=%s, 
+                                code=%s, 
+                                storage=%s
+                                )''' % (pp(transaction['caller']),
+                                        pp(contract['balance']), 
+                                        pp(contract['code'],width=60, indent=37), 
+                                        pp(contract['storage'],width=80, indent=40))
+
+
     output += '''        
         address = %s
         origin = %s
@@ -186,7 +198,7 @@ import os
 class EVMTest_%s(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None 
-'''%sys.argv[1][:-5]
+'''%  os.path.split(sys.argv[1][:-5])[1] 
 
     js = file(filename).read()
     tests = dict(json.loads(js))

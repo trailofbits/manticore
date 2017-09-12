@@ -155,7 +155,6 @@ seth.run()
 
 seen = seth.context['coverage'].union( seth.context.get('code_data', set()))
 
-
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
