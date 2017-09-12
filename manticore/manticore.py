@@ -285,7 +285,8 @@ class Manticore(object):
     def running(self):
         return self._executor._running.value
 
-    def add(self, state):
+    def enqueue(self, state):
+        ''' Dynamically enqueue states. Users should typically not need to do this '''
         assert not self.running, "Can't add state where running. Can we?"
         self._executor.add(state)
 
@@ -473,7 +474,8 @@ class Manticore(object):
 
 
     ##########################################################################
-    #Some are Place holders Remove 
+    #Some are Place holders Remove
+    #Any platform specific callback should go to a plugin
 
     def _store_state_callback(self, state, state_id):
         logger.info("store state %r", state_id)
