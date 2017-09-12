@@ -734,10 +734,6 @@ class Cpu(Eventful):
 
         self.publish('will_execute_instruction', insn)
 
-        # FIXME (theo) why just return here?
-        if insn.address != self.PC:
-            return
-
         name = self.canonicalize_instruction_name(insn)
 
         def fallback_to_emulate(*operands):
