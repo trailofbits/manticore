@@ -211,7 +211,6 @@ class Manticore(object):
         self._executor.subscribe('will_write_memory', self._write_memory_callback)
         self._executor.subscribe('will_execute_instruction', self._execute_instruction_callback)
         self._executor.subscribe('will_decode_instruction', self._decode_instruction_callback)
-        self._executor.subscribe('will_load_state', self._load_state_callback)
         self._executor.subscribe('will_fork_state', self._fork_state_callback)
         self._executor.subscribe('forking_state', self._forking_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
@@ -583,9 +582,6 @@ class Manticore(object):
                 if pc in self._assertions:
                     logger.debug("Repeated PC in assertions file %s", path)
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
-
-    def _load_state_callback(self, state, state_id):
-        pass
 
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
