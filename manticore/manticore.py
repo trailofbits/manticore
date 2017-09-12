@@ -202,7 +202,7 @@ class Manticore(object):
         self._executor.subscribe('forking_state', self._forking_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
-        self._executor.subscribe('finish_run', self._finish_run_callback)
+        self._executor.subscribe('did_finish_run', self._finish_run_callback)
 
 
         if isinstance(path_or_state, str):
@@ -588,7 +588,7 @@ class Manticore(object):
         if profiling:
             self._produce_profiling_data()
         #FIXME this will be self.publish 
-        self._executor.publish('finish_run')
+        self._executor.publish('did_finish_run')
 
     def run(self, procs=1, timeout=0, should_profile=False):
         '''

@@ -23,20 +23,10 @@ def parse_arguments():
     disas = ['capstone', 'binja-il']
     parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
                         help=argparse.SUPPRESS)
-    parser.add_argument('--dumpafter', type=int, default=0,
-                        help='Dump state after every N instructions; 0 to disable')
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Specify symbolic environment variable VARNAME=++++++')
-    parser.add_argument('--errorfile', type=str, default=None,
-                        help='where to write the memory error locations')
     parser.add_argument('--file', type=str, action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
-    parser.add_argument('--maxstorage', type=int, default=0,
-                        help='Storage use cap in megabytes.')
-    parser.add_argument('--maxstates', type=int, default=0,
-                        help='Maximun number of states to mantain at the same time')
-    parser.add_argument('--maxsymb', type=int, default=512,
-                        help='Maximun number of symbolic bytes to inject')
     parser.add_argument('--names', type=str, default=None,
                         help=("File with function addresses to replace "
                               "with known models"))
@@ -78,38 +68,36 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    log.set_verbosity(args.v)
-
 
     #TODO 
     initial_state = make_initial_state(args.argv[0], argv=args.argv[1:],  disasm=args.disasm)
     m = Manticore(initial_state, workspace_url=args.workspace,  policy=args.policy)
 
-    #Fixme remove all this...
+    #This will affect global logging settings and not just logging from 'm'
+    m.verbosity = args.v
+
+    #Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
-
-    if args.data:
-        m.concrete_data = args.data
-
-    if args.profile:
-        m.should_profile = args.profile
 
     if args.names is not None:
         m.apply_model_hooks(args.names)
 
-    if args.env:
-        for entry in args.env:
-            name, val = entry[0].split('=')
-            m.initial_state.env_add(name, val)
-
-    if args.files:
-        for file in args.files:
-            m.initial_state.add_symbolic_file(file)
-
     if args.assertions:
         m.load_assertions(args.assertions)
 
-    m.run(procs=args.procs, timeout=args.timeout)
+    @m.init
+    def init(initial_state):
+        if args.env:
+            for entry in args.env:
+                name, val = entry[0].split('=')
+                initial_state.platform.env_add(name, val)
+
+        if args.files:
+            for file in args.files:
+                initial_state.platform.add_symbolic_file(file)
+
+
+    m.run(procs=args.procs, timeout=args.timeout, should_profile=args.profile)
 
 if __name__ == '__main__':
     main()
