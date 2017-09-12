@@ -1726,7 +1726,7 @@ class Linux(Platform):
         if resource in self._rlimits:
             rlimit_tup = self._rlimits[resource]
             # 32 bit values on both 32 and 64 bit platforms. For more info,
-            # see the BUGS section in rlimit(2) man page.
+            # see the BUGS section in getrlimit(2) man page.
             self.current.write_bytes(rlim, struct.pack('<LL', *rlimit_tup))
             ret = 0
         logger.debug("sys_getrlimit(%x, %x) -> %d", resource, rlim, ret)
