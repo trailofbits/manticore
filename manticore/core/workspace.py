@@ -53,11 +53,34 @@ class PickleSerializer(StateSerializer):
 
 class Store(object):
     """
-    A Store can save arbitrary keys/values (including states) and file streams. Used for generating
-    output, and state saving and loading.
+    A `Store` can save arbitrary keys/values (including states) and file streams.
+    Used for generating output, state saving and state loading.
 
-    Implement either save_value/load_value in subclasses, or save_stream/load_stream, or both.
+    In subclasses:
+
+     * Implement either save_value/load_value, or save_stream/load_stream, or both.
+     * Define a `store_type` class variable of type str.
+       * This is used as a prefix for a store descriptor
     """
+
+    @classmethod
+    def fromdescriptor(cls, desc):
+	"""
+	Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
+
+	Valid descriptors:
+	  * fs:<path>
+	  * redis:<hostname>:<port>
+	  * mem:
+
+	:param str desc: Store descriptor
+	:return: Store instance
+	"""
+        type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
+        for subclass in cls.__subclasses__():
+            if subclass.store_type == type_:
+                return subclass(uri)
+        raise NotImplementedError("Storage type '{0}' not supported.".format(type_))
 
     def __init__(self, uri, state_serialization_method='pickle'):
         assert self.__class__ != Store, "The Store class can not be instantiated (create a subclass)"
@@ -138,6 +161,10 @@ class Store(object):
         """
         with self.load_stream(key) as f:
             state = self._serializer.deserialize(f)
+            # FIXME (theo) remove this from here and properly handle
+            # serialization for the platform CPU
+            if hasattr(state.cpu, "platform_cpu"):
+                state.cpu.platform_cpu._memory = state.cpu._memory
             self.rm(key)
             return state
 
@@ -162,6 +189,8 @@ class FilesystemStore(Store):
     """
     A directory-backed Manticore workspace
     """
+    store_type = 'fs'
+
     def __init__(self, uri=None):
         """
         :param uri: The path to on-disk workspace, or None.
@@ -222,14 +251,15 @@ class MemoryStore(Store):
     """
     An in-memory (dict) Manticore workspace.
 
-    NOTE: This is mostly used for experimentation and testing funcionality. 
+    NOTE: This is mostly used for experimentation and testing funcionality.
     Can not be used with multiple workers!
     """
+    store_type = 'mem'
 
     #TODO(yan): Once we get a global config store, check it to make sure
     # we're executing in a single-worker or test environment.
 
-    def __init__(self):
+    def __init__(self, uri=None):
         self._data = {}
         super(MemoryStore, self).__init__(None)
 
@@ -249,6 +279,8 @@ class RedisStore(Store):
     """
     A redis-backed Manticore workspace
     """
+    store_type = 'redis'
+
     def __init__(self, uri=None):
         """
         :param uri: A url for redis
@@ -288,30 +320,6 @@ class RedisStore(Store):
         return self._client.keys(glob_str)
 
 
-def _create_store(desc):
-    """
-    Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
-
-    Valid descriptors:
-      fs:<path>
-      redis:<hostname>:<port>
-      mem:
-
-    :param str desc: Store descriptor
-    :return: Store instance
-    """
-    type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
-
-    if type_ == 'fs':
-        return FilesystemStore(uri)
-    elif type_ == 'redis':
-        return RedisStore(uri)
-    elif type_ == 'mem':
-        return MemoryStore()
-    else:
-        raise NotImplementedError("Storage type '%s' not supported.", type)
-
-
 # This is copied from Executor to not create a dependency on the naming of the lock field
 def sync(f):
     """ Synchronization decorator. """
@@ -330,7 +338,7 @@ class Workspace(object):
     """
 
     def __init__(self, lock, desc=None):
-        self._store = _create_store(desc)
+        self._store = Store.fromdescriptor(desc)
         self._serializer = PickleSerializer()
         self._last_id = manager.Value('i', 0)
         self._lock = lock
@@ -400,7 +408,9 @@ class ManticoreOutput(object):
 
         :param desc: A descriptor ('type:uri') of where to write output.
         """
-        self._store = _create_store(desc)
+        self._named_key_prefix = 'test'
+        self._descriptor = desc
+        self._store = Store.fromdescriptor(desc)
         self._last_id = 0
         self._id_gen = manager.Value('i', self._last_id)
         self._lock = manager.Condition(manager.RLock())
@@ -409,15 +419,30 @@ class ManticoreOutput(object):
     def uri(self):
         return self._store.uri
 
+    @property
+    def descriptor(self):
+        """
+        Return a descriptor that created this workspace. Descriptors are of the
+        format <type>:<uri>, where type signifies the medium. For example,
+          fs:/tmp/workspace
+          redis:127.0.0.1:6379
+
+        :rtype: str
+        """
+        if self._descriptor is None:
+            self._descriptor = '{}:{}'.format(self._store.store_type, self._store.uri)
+
+        return self._descriptor
+
     @sync
     def _increment_id(self):
         self._last_id = self._id_gen.value
         self._id_gen.value += 1
 
     def _named_key(self, suffix):
-        return 'test_{:08x}.{}'.format(self._last_id, suffix)
+        return '{}_{:08x}.{}'.format(self._named_key_prefix, self._last_id, suffix)
 
-    def save_testcase(self, state, message=''):
+    def save_testcase(self, state, prefix, message=''):
         """
         Save the environment from `state` to storage. Return a state id
         describing it, which should be an int or a string.
@@ -427,6 +452,7 @@ class ManticoreOutput(object):
         :return: A state id representing the saved state
         """
 
+        self._named_key_prefix = prefix
         self._increment_id()
 
         self.save_summary(state, message)
@@ -436,6 +462,7 @@ class ManticoreOutput(object):
         self.save_syscall_trace(state)
         self.save_fds(state)
         self._store.save_state(state, self._named_key('pkl'))
+        return self._last_id
 
     def save_stream(self, key, *rest, **kwargs):
         return self._store.save_stream(key, *rest, **kwargs)
@@ -476,9 +503,9 @@ class ManticoreOutput(object):
 
     def save_trace(self, state):
         with self._named_stream('trace') as f:
-            if 'visited' not in state.context:
+            if 'trace' not in state.context:
                 return
-            for pc in state.context['visited']:
+            for pc in state.context['trace']:
                 f.write('0x{:08x}\n'.format(pc))
 
     def save_constraints(self, state):
@@ -499,18 +526,24 @@ class ManticoreOutput(object):
             f.write(repr(state.platform.syscall_trace))
 
     def save_fds(self, state):
+        def solve_to_fd(data, fd):
+            try:
+                for c in data:
+                    fd.write(chr(solver.get_value(state.constraints, c)))
+            except SolverException:
+                fd.write('{SolverException}')
+
         with self._named_stream('stdout') as _out:
             with self._named_stream('stdout') as _err:
                 with self._named_stream('stdin') as _in:
-                    for name, fd, data in state.platform.syscall_trace:
-                        if name in ('_transmit', '_write'):
-                            if fd == 1:
-                                _out.write(''.join(str(c) for c in data))
-                            elif fd == 2:
-                                _err.write(''.join(str(c) for c in data))
-                        if name in ('_receive', '_read') and fd == 0:
-                            try:
-                                for c in data:
-                                    _in.write(chr(solver.get_value(state.constraints, c)))
-                            except SolverException:
-                                _in.write('{SolverException}')
+                    with self._named_stream('net') as _net:
+                        for name, fd, data in state.platform.syscall_trace:
+                            if name in ('_transmit', '_write'):
+                                if fd == 1:
+                                    solve_to_fd(data, _out)
+                                elif fd == 2:
+                                    solve_to_fd(data, _err)
+                            if name in ('_recv'):
+                                solve_to_fd(data, _net)
+                            if name in ('_receive', '_read') and fd == 0:
+                                solve_to_fd(data, _in)

@@ -612,6 +612,10 @@ class ArrayProxy(ArrayVariable):
     @property
     def operands(self):
         return self._array.operands
+    
+    @property
+    def taint(self):
+        return self._array.taint
 
     def select(self, index):
         return self._array.select(index)

@@ -1,0 +1,15 @@
+{
+	"plugin": {
+		"name": "ManticoreTrace",
+		"type": ["ui"],
+		"api": "python2",
+		"description": "Manticore Trace Visualization.",
+		"longdescription": "This plugin visualizes Manticore execution traces.\n",
+		"license": {
+			"name": "",
+			"text": ""
+		},
+		"version": "0.0",
+		"author": ""
+	}
+}

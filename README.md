@@ -19,12 +19,12 @@ Manticore supports binaries of the following formats, operating systems, and
 architectures. It has been primarily used on binaries compiled from C and C++.
 Examples of practical manticore usage are also [on github](https://github.com/trailofbits/manticore-examples).
 
-- OS/Formats: Linux ELF, Windows Minidump
-- Architectures: x86, x86_64, ARMv7 (partial)
+- OS/Formats: Linux ELF
+- Architectures: x86, x86_64, ARMv7
 
 ## Requirements
 
-Manticore is supported on Linux and requires Python 2.7, pip 7.1.0 or higher, and the [Z3 Theorem Prover](https://github.com/Z3Prover/z3/releases). Ubuntu 16.04 is strongly recommended.
+Manticore is supported on Linux, and requires Python 2.7 and the [Z3 Theorem Prover](https://github.com/Z3Prover/z3/releases). Ubuntu 16.04 is strongly recommended.
 
 ## Quick Start
 
@@ -44,8 +44,8 @@ make
 
 # Use the Manticore CLI
 manticore basic
+cat mcore_*/*0.stdin | ./basic
 cat mcore_*/*1.stdin | ./basic
-cat mcore_*/*2.stdin | ./basic
 
 # Use the Manticore API
 cd ../script
@@ -82,37 +82,7 @@ sudo pip install manticore
 
 Once installed, the `manticore` CLI tool and its Python API will be available.
 
-### For developers
-
-For a dev install that includes dependencies for tests, run:
-
-```
-git clone https://github.com/trailofbits/manticore.git && cd manticore
-pip install --no-binary keystone-engine -e .[dev]
-```
-
-You can run the tests with the commands below:
-
-```
-cd manticore
-# all tests
-nosetests
-# just one file
-nosetests tests/test_armv7cpu.py
-# just one test class
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions
-# just one test
-nosetests tests/test_armv7cpu.py:Armv7CpuInstructions.test_mov_imm_min
-```
-
-Moreover, you can invoke multiprocess test invocation via the --processes
-flag. Note, however, that several tests (e.g., tests/test_memdumps.py) require
-longer execution times, thus you need to specify the appropriate timeout
-period via the --process-timeout flag. E.g.,
-
-```
-nosetests --processes=8 --process-timeout=120 tests/test_binaries.py
-```
+For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
 
 ### Redis
 
@@ -130,7 +100,9 @@ have to manually set the workspace to the redis URI.
 ## Usage
 
 ```
-$ manticore ./path/to/binary  # runs, and creates a mcore_* directory with analysis results
+$ manticore ./path/to/binary        # runs, and creates a mcore_* directory with analysis results
+$ manticore ./path/to/binary ab cd  # use concrete strings "ab", "cd" as program arguments
+$ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as program arguments
 ```
 
 or

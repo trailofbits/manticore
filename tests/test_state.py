@@ -4,6 +4,10 @@ from manticore.platforms import linux
 from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
 
+class _CallbackExecuted(Exception):
+    pass
+
+
 class FakeMemory(object):
     def __init__(self):
         self._constraints = None
@@ -29,6 +33,19 @@ class FakePlatform(Eventful):
         super(FakePlatform, self).__init__()
         self._constraints = None
         self.procs = [FakeCpu()]
+
+
+    
+    def __getstate__(self):
+        state = super(FakePlatform, self).__getstate__()
+        state['cons'] = self._constraints
+        state['procs'] = self.procs
+        return state
+    def __setstate__(self, state):
+        super(FakePlatform, self).__setstate__(state)
+        self._constraints = state['cons']
+        self.procs = state['procs']
+
 
     @property
     def current(self):
@@ -120,20 +137,77 @@ class StateTest(unittest.TestCase):
         with self.assertRaises(Exception):
             expr = self.state.new_symbolic_value(length)
 
-    @unittest.skip('Record branches not a part of state anymore')
-    def test_record_branches(self):
-        branch = 0x80488bb
-        target = 0x8048997
-        fallthrough = 0x80488c1
-        self.state.last_pc = (0, branch)
+    def test_tainted_symbolic_buffer(self):
+        taint = ('TEST_TAINT', )
+        expr = self.state.new_symbolic_buffer(64, taint=taint)       
+        self.assertEqual(expr.taint, frozenset(taint))
 
-        self.state.record_branches([target, fallthrough])
+    def test_tainted_symbolic_value(self):
+        taint = ('TEST_TAINT', )
+        expr = self.state.new_symbolic_value(64, taint=taint)
+        self.assertEqual(expr.taint, frozenset(taint))
 
-        self.assertEqual(self.state.branches[(branch, target)], 1)
-        self.assertEqual(self.state.branches[(branch, fallthrough)], 1)
+    def testContextSerialization(self):
+        import cPickle as pickle
+        initial_file = ''
+        new_file = ''
+        new_new_file = ''
+        constraints = ConstraintSet()
+        initial_state = State(constraints, FakePlatform())
+        initial_state.context['step'] = 10
+        initial_file = pickle.dumps(initial_state)
+        with initial_state as new_state:
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 10)
 
-        self.state.record_branches([target, fallthrough])
+            new_state.context['step'] = 20 
 
-        self.assertEqual(self.state.branches[(branch, target)], 2)
-        self.assertEqual(self.state.branches[(branch, fallthrough)], 2)
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 20)
+            new_file = pickle.dumps(new_state)
 
+            with new_state as new_new_state:
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 20)
+
+                new_new_state.context['step'] += 10 
+
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 30)
+
+                new_new_file = pickle.dumps(new_new_state)
+
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 30)
+
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 20)
+
+        self.assertEqual( initial_state.context['step'], 10)
+
+        del initial_state
+        del new_state
+        del new_new_state
+
+
+
+        initial_state = pickle.loads(initial_file)
+        self.assertEqual( initial_state.context['step'], 10)
+        new_state = pickle.loads(new_file)
+        self.assertEqual( new_state.context['step'], 20)
+        new_new_state = pickle.loads(new_new_file)
+        self.assertEqual( new_new_state.context['step'], 30)
+
+
+    def _test_state_gen_helper(self, name, msg):
+        self.assertEqual(name, 'statename')
+        self.assertEqual(msg, 'statemsg')
+        raise _CallbackExecuted
+
+    def test_state_gen(self):
+        self.state.subscribe('will_generate_testcase', self._test_state_gen_helper)
+        with self.assertRaises(_CallbackExecuted):
+            self.state.generate_testcase('statename', 'statemsg')

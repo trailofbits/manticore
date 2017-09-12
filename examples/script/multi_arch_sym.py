@@ -16,6 +16,7 @@ if __name__ == '__main__':
 
     # Create a new Manticore object
     m = Manticore(sys.argv[1], sys.argv[2:])
+    m.verbosity = 2
 
     if m.arch == 'arm':
         target = (0x1082c, 'R4')
@@ -31,10 +32,5 @@ if __name__ == '__main__':
         sym_var = state.new_symbolic_value(32, label='from_callback')
         state.cpu.write_register(target[1], sym_var)
 
-    # Start path exploration. start() returns when Manticore finishes
-    m.verbosity = 2
     m.run()
-
-    # Print high level statistics
-    m.dump_stats()
 
