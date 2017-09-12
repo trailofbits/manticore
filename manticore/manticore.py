@@ -336,19 +336,15 @@ class Manticore(object):
     # Common hooks + callback
     ############################################################################
 
-    def init(self, pc):
+    def init(self, f):
         '''
-        A decorator used to register a hook function for a given instruction address.
-        Equivalent to calling :func:`~add_hook`.
-
-        :param pc: Address of instruction to hook
-        :type pc: int or None
+        A decorator used to register a hook function to run before analysis begins. Hook
+        function takes one :class:`~manticore.core.state.State` argument.
         '''
-        def decorator(f):
-            #FIXME this will be self.subscribe 
-            self._executor.subscribe('will_start_run', f)
-            return f
-        return decorator
+        def callback(manticore_obj, state):
+            f(state)
+        self._executor.subscribe('will_start_run', types.MethodType(callback, self))
+        return f
 
     def hook(self, pc):
         '''
