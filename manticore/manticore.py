@@ -180,6 +180,7 @@ class Manticore(object):
             ws_path = None
         self._output = ManticoreOutput(ws_path)
         self._context = {}
+        self._coverage_file = None
 
         #sugar for 'will_execute_instruction"
         self._hooks = {} 
