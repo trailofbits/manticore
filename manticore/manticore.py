@@ -187,7 +187,9 @@ class Manticore(object):
         self._output = ManticoreOutput(ws_path)
         self._context = {}
 
+        #sugar for 'will_execute_instruction"
         self._hooks = {} 
+
         self._executor = Executor(workspace=ws_path, policy=policy)
         self._workers = []
         #Link Executor events to default callbacks in manticore object
@@ -333,24 +335,19 @@ class Manticore(object):
     # Common hooks + callback
     ############################################################################
 
-
-
-    def _get_symbol_address(self, symbol):
+    def init(self, pc):
         '''
-        Return the address of |symbol| within the binary
+        A decorator used to register a hook function for a given instruction address.
+        Equivalent to calling :func:`~add_hook`.
+
+        :param pc: Address of instruction to hook
+        :type pc: int or None
         '''
-        if self._binary_obj is None:
-            return NotImplementedError("Symbols aren't supported")
-
-        for section in self._binary_obj.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
-
-            symbols = section.get_symbol_by_name(symbol)
-            if len(symbols) == 0:
-                continue
-
-            return symbols[0].entry['st_value']
+        def decorator(f):
+            #FIXME this will be self.subscribe 
+            self._executor.subscribe('will_start_run', f)
+            return f
+        return decorator
 
     def hook(self, pc):
         '''
@@ -577,14 +574,13 @@ class Manticore(object):
 
     def _start_run(self):
         assert not self.running
-        if self._initial_state is not None:
-            self.add(self._initial_state)
-            self._initial_state = None
+        #FIXME this will be self.publish 
+        self._executor.publish('will_start_run', self._initial_state)
+        self.enqueue(self._initial_state)
+        self._initial_state = None
 
         #Copy the local main context to the shared conext
         self._executor._shared_context.update(self._context)
-        #FIXME this will be self.publish 
-        self._executor.publish('start_run')
 
     def _finish_run(self, profiling=False):
         assert not self.running
@@ -666,6 +662,7 @@ class Manticore(object):
                 continue
 
             return symbols[0].entry['st_value']
+
 
     @property
     def coverage_file(self):
