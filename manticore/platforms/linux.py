@@ -1378,7 +1378,7 @@ class Linux(Platform):
             logger.info("DUP2: Passed fd is not open. Returning EBADF")
             return -errno.EBADF
 
-        soft_max, hard_max = self._rlimits.get(self.RLIMIT_NOFILE, (256, 1024))
+        soft_max, hard_max = self._rlimits[self.RLIMIT_NOFILE]
         if newfd >= soft_max:
             logger.info("DUP2: newfd is above max descriptor table size")
             return -errno.EBADF
