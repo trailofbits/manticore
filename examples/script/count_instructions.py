@@ -17,11 +17,13 @@ if __name__ == '__main__':
         sys.exit(2)
 
     m = Manticore(sys.argv[1])
-    m.context['count'] = 0
+    with m.locked_context() as context:
+        context['count'] = 0
 
     @m.hook(None)
     def explore(state):
-        m.context['count'] += 1
+        with m.locked_context() as context:
+            context['count'] += 1
 
     m.run(procs=3)
 

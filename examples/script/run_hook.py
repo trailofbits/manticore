@@ -25,7 +25,5 @@ if __name__ == '__main__':
         print "Execution goal reached."
         print "Instruction bytes: {:08x}".format(instruction)
 
-    # Start path exploration. m.run() returns when Manticore
-    # finishes
     m.run()
 

@@ -3,7 +3,6 @@ from manticore.core.smtlib import ConstraintSet, Operators, solver
 from manticore.platforms import evm
 from manticore.core.state import State
 
-set_verbosity('')
 
 class ManticoreEVM(Manticore):
     def transaction(self, transaction):
@@ -11,7 +10,6 @@ class ManticoreEVM(Manticore):
         return transaction
 
     def __init__(self):
-        super(ManticoreEVM, self).__init__()
         #Make the constraint store
         constraints = ConstraintSet()
         #make the ethereum world state
@@ -21,6 +19,7 @@ class ManticoreEVM(Manticore):
         self.temp_initial_state = State(constraints, world)
         self.transactions = []
         self.user_accounts = []
+        super(ManticoreEVM, self).__init__(self.temp_initial_state)
 
     def create_account(self, user=False, **kwargs):
         ''' Can only be used at the begining '''
@@ -49,7 +48,7 @@ class ManticoreEVM(Manticore):
         state.context['step'] = step + 1
         if step < len(self.transactions):
             self.transactions[step](self, state, state.platform)
-            self.add(state)
+            self.enqueue(state)
             e.testcase = False
         else:
             self.report(state, state.platform, e)
@@ -64,7 +63,6 @@ class ManticoreEVM(Manticore):
                 code_data.add(i)
 
     def run(self, **kwargs):
-        self.add(self.temp_initial_state)
         self.temp_initial_state = None
         #now when this transaction ends
         self._executor.subscribe('will_terminate_state', self.terminate_transaction_callback)

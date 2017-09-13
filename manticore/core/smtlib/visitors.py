@@ -47,8 +47,7 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        assert expression.__class__.__mro__[-1] is object 
-
+        assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = 'visit_%s' % sort
@@ -69,7 +68,7 @@ class Visitor(object):
         :type node: Expression
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
-        '''   
+        '''
         cache = self._cache
 
         visited = set()
@@ -145,7 +144,7 @@ class GetDepth(Visitor):
         return 1
 
     def visit_Operation(self, expression, *operands):
-        return 1 + max(operands) 
+        return 1 + max(operands)
 
 def get_depth(exp):
     visitor = GetDepth()
@@ -216,7 +215,7 @@ class PrettyPrinter(Visitor):
     def visit_Variable(self, expression):
         self._print(expression.name)
         return ''
-       
+
     @property
     def result(self):
         return self.output
@@ -256,9 +255,9 @@ class ConstantFolderSimplifier(Visitor):
             result = 0
             for o in operands:
                 result <<= o.size
-                result |= o.value 
+                result |= o.value
             return BitVecConstant(expression.size, result, taint=expression.taint)
-        
+
     def visit_BitVecZeroExtend(self, expression, *operands):
         if all( isinstance(o, Constant) for o in operands):
             return BitVecConstant(expression.size, operands[0].value, taint=expression.taint)
@@ -341,7 +340,7 @@ class ArithmeticSimplifier(Visitor):
         '''
         op = expression.operands[0]
         begining = expression.begining
-        end = expression.end 
+        end = expression.end
 
         if isinstance(op, BitVecConcat):
             new_operands = []
@@ -355,10 +354,10 @@ class ArithmeticSimplifier(Visitor):
                     bitcount += item.size
             if begining != expression.begining:
                 return BitVecExtract(BitVecConcat(sum(map(lambda x: x.size, new_operands)), *reversed(new_operands)), begining, expression.size, taint=expression.taint)
-        
+
     def visit_BitVecAdd(self, expression, *operands):
         ''' a + 0  ==> a
-            0 + a  ==> a 
+            0 + a  ==> a
         '''
         left = expression.operands[0]
         right = expression.operands[1]
@@ -371,8 +370,8 @@ class ArithmeticSimplifier(Visitor):
 
     def visit_BitVecSub(self, expression, *operands):
         ''' a - 0 ==> 0
-            (a + b) - b  ==> a 
-            (b + a) - b  ==> a 
+            (a + b) - b  ==> a
+            (b + a) - b  ==> a
         '''
         left = expression.operands[0]
         right = expression.operands[1]
@@ -381,9 +380,6 @@ class ArithmeticSimplifier(Visitor):
                 return left.operands[1]
             elif self._same_constant(left.operands[1], right):
                 return left.operands[0]
-        
-
-
 
     def visit_BitVecOr(self, expression, *operands):
         ''' a | 0 => a
@@ -434,7 +430,7 @@ class ArithmeticSimplifier(Visitor):
 
         elif isinstance(left, BitVecConstant):
             return BitVecAnd(right, left, taint=expression.taint)
-        
+
 
     def visit_BitVecShiftLeft(self, expression, *operands):
         ''' a << 0 => a                       remove zero
@@ -467,7 +463,6 @@ class ArithmeticSimplifier(Visitor):
         assert len(operands) == 0
         assert not isinstance(expression, Operation)
         return expression
-        
 
 #FIXME this should forget old expressions lru?
 def arithmetic_simplifier(expression):
@@ -562,7 +557,7 @@ class TranslatorSmtlib(Visitor):
 
 
     def visit_BoolConstant(self, expression):
-        return expression.value and 'true' or 'false' 
+        return expression.value and 'true' or 'false'
 
     def visit_Variable(self, expression):
         return expression.name
@@ -584,7 +579,7 @@ class TranslatorSmtlib(Visitor):
 
     @property
     def result(self):
-        output = super(TranslatorSmtlib, self).result 
+        output = super(TranslatorSmtlib, self).result
         if self.use_bindings:
             for name, expr, smtlib in reversed(self._bindings):
                 output = '( let ((%s %s)) %s )' % (name, smtlib, output)

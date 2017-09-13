@@ -5,7 +5,7 @@ class CpuFactory(object):
     _cpus = {
         'i386': I386Cpu,
         'amd64': AMD64Cpu,
-        'armv7': Armv7Cpu
+        'armv7': Armv7Cpu,
     }
 
     @staticmethod

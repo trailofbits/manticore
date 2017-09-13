@@ -664,6 +664,20 @@ class ArrayProxy(Array):
             raise Exception()
         return self._array.index_max
 
+    def __getstate__(self):
+        state = {}
+        state['_array'] = self._array
+        state['name'] = self.name
+        state['index_bits'] = self.index_bits
+        state['index_max'] = self.index_max
+        return state
+
+    def __setstate__(self, state):
+        self._array = state['_array']
+        self.name = state['name']
+        self._index_bits = state['index_bits'] 
+        self._index_max = state['index_max']
+
 
 class ArraySelect(BitVec, Operation):
     def __init__(self, array, index, *args, **kwargs):

@@ -3,7 +3,7 @@ from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
 from types import MethodType
 
 class Eventful(object):
-    ''' 
+    '''
         Abstract class for objects emitting and receiving events
         An eventful object can:
           - publish an event with arbitrary arguments to its subscribers
@@ -11,7 +11,7 @@ class Eventful(object):
           - forward events to/from other eventful objects
     '''
     def __init__(self, *args, **kwargs):
-        # A dictionary from "event name" -> callback methods  
+        # A dictionary from "event name" -> callback methods
         # Note that several methods can be associated with the same object
         self._signals = dict()
         # a set of sink eventful objects (see forward_events_from())
@@ -28,7 +28,7 @@ class Eventful(object):
         return {}
 
     def _unref(self, robj):
-        # this is called when an object that has subscribed to events emitted 
+        # this is called when an object that has subscribed to events emitted
         # here has recently been garbage collected
         # This simply removes all callback methods associated with that object
         # Also if no more callbacks at all for an event name it deletes the event entry
@@ -46,19 +46,20 @@ class Eventful(object):
         #A bucket is a dictionary obj -> set(method1, method2...)
         return self._signals.setdefault(name,  dict())
 
-    def publish(self, name, *args, **kwargs):
-        bucket = self._get_signal_bucket(name)
+    # The underscore _name is to avoid naming collisions with callback params
+    def publish(self, _name, *args, **kwargs):   
+        bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.iteritems():
             for callback in methods:
                 callback(robj(), *args, **kwargs)
 
         #The include_source flag indicates to prepend the source of the event in
-        # the callback signature. This is set on forward_events_from/to 
+        # the callback signature. This is set on forward_events_from/to
         for sink, include_source in self._forwards.items():
             if include_source:
-                sink.publish(name, self, *args, **kwargs)
+                sink.publish(_name, self, *args, **kwargs)
             else:
-                sink.publish(name, *args, **kwargs)
+                sink.publish(_name, *args, **kwargs)
 
     def subscribe(self, name, method):
         if not inspect.ismethod(method):
