@@ -12,11 +12,8 @@ setup(
         'pyelftools',
         'unicorn',
         'ply',
-<<<<<<< HEAD
         'sha3',
-=======
         'z3-solver',
->>>>>>> master
     ],
     extras_require={
         'dev': [
