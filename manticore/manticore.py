@@ -224,10 +224,6 @@ class Manticore(object):
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
-        argv = [] if argv is None else argv
-        envp = {} if envp is None else envp
-        symbolic_files = [] if symbolic_files is None else symbolic_files
-
         try:
             return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
         except elftools.common.exceptions.ELFError:
