@@ -106,14 +106,8 @@ class StateTest(unittest.TestCase):
         self.assertIn('trace', keys)
         self.assertIn('syscalls', keys)
         self.assertIn('stdout', keys)
+        self.assertIn('stderr', keys)
         self.assertIn('stdin', keys)
         self.assertIn('messages', keys)
         self.assertIn('txt', keys)
         self.assertIn('pkl', keys)
-
-    def test_fds(self):
-        out = ManticoreOutput('fs:fdtest')
-        out.save_testcase(self.state, 'fdtest')
-        for f in ['smt', 'trace', 'syscalls', 'stdout', 'stdin', 'stderr', 'messages', 'txt', 'pkl']:
-            self.assertTrue(os.path.exists('fdtest/fdtest_00000000.' + f))
-        shutil.rmtree('fdtest')
