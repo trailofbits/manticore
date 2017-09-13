@@ -12,7 +12,8 @@ from contextlib import contextmanager
 
 from threading import Timer
 
-#FIXME: remove this two
+#FIXME: remove this three
+import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -25,7 +26,7 @@ from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
-from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited
+from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited, Tracer
 import logging
 from .utils import log
 
@@ -165,15 +166,15 @@ class Manticore(Eventful):
     '''
     The central analysis object.
 
-    :param path_or_state: Path to a binary to analyze or `State` object
+    :param path_or_state: Path to a binary to analyze (deprecated) or `State` object
     :type path_or_state: str or State
-    :param args: Arguments to provide to binary
-    :type args: list[str]
+    :param argv: Arguments to provide to binary (deprecated)
+    :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
+    def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
+        super(Manticore, self).__init__()
 
-    def __init__(self, path_or_state, workspace_url=None, policy='random', **kwargs):
-        super(Manticore, self).__init__(**kwargs)
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
@@ -183,11 +184,9 @@ class Manticore(Eventful):
             ws_path = None
         self._output = ManticoreOutput(ws_path)
         self._context = {}
-        self._coverage_file = None
 
         #sugar for 'will_execute_instruction"
         self._hooks = {}
-
         self._executor = Executor(workspace=ws_path, policy=policy)
         self._workers = []
 
@@ -196,25 +195,29 @@ class Manticore(Eventful):
 
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, **kwargs)
-        else:
+            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
+        elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
-        assert isinstance(self._initial_state, State), "Manticore must be intialized with either a state or a path to a binary"
+        else:
+            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
 
-        #Move the folowwing into a plugin
-        self._assertions = {}
-        self._symbolic_files = []
 
         self.plugins = set()
+
+        #Move the folowing into a plugin
+        self._assertions = {}
+        self._coverage_file = None
+
+        #FIXME move the folowing to aplugin
+        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
+        self.subscribe('did_finish_run', self._did_finish_run_callback)
 
         #Default plugins for now.. FIXME?
         self.register_plugin(InstructionCounter())
         self.register_plugin(Visited())
+        self.register_plugin(Tracer())
         self.register_plugin(RecordSymbolicBranches())
 
-        #FIXME move the follwing to aplugin
-        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
-        self.subscribe('did_finish_run', self._did_finish_run_callback)
 
     def register_plugin(self, plugin):
         #Global enumeration of valid events
@@ -244,8 +247,23 @@ class Manticore(Eventful):
         plugin.manticore = None
 
 
+
+    @classmethod
+    def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+        try:
+            return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
+        except elftools.common.exceptions.ELFError:
+            raise Exception('Invalid binary: {}'.format(path))
+
+    @classmethod
+    def decree(cls, path, concrete_data='', **kwargs):
+        try:
+            return cls(make_decree(path, concrete_data), **kwargs)
+        except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
+            raise Exception('Invalid binary: {}'.format(path))
+
     @property
-    def inital_state(self):
+    def initial_state(self):
         return self._initial_state
 
     @property
@@ -300,19 +318,55 @@ class Manticore(Eventful):
                 yield ctx
                 context[key] = ctx
 
-    @property
-    def verbosity(self):
+    @staticmethod
+    def verbosity(level):
         """Convenience interface for setting logging verbosity to one of
         several predefined logging presets. Valid values: 0-5.
         """
-        return log.manticore_verbosity
+        log.set_verbosity(level)
 
-    @verbosity.setter
-    def verbosity(self, setting):
-        """A call used to modify the level of output verbosity
-        :param int setting: the level of verbosity to be used
-        """
-        log.set_verbosity(setting)
+    @property
+    def running(self):
+        return self._executor._running.value
+
+    def enqueue(self, state):
+        ''' Dynamically enqueue states. Users should typically not need to do this '''
+        assert not self.running, "Can't add state where running. Can we?"
+        self._executor.add(state)
+
+    ###########################################################################
+    # Workers                                                                 #
+    ###########################################################################
+    def _start_workers(self, num_processes, profiling=False):
+        assert num_processes > 0, "Must have more than 0 worker processes"
+
+        logger.info("Starting %d processes.", num_processes)
+
+        if profiling:
+            def profile_this(func):
+                @functools.wraps(func)
+                def wrapper(*args, **kwargs):
+                    profile = cProfile.Profile()
+                    profile.enable()
+                    result = func(*args, **kwargs)
+                    profile.disable()
+                    profile.create_stats()
+                    with self.locked_context('profiling_stats', list) as profiling_stats:
+                        profiling_stats.append(profile.stats.items())
+                    return result
+                return wrapper
+
+            target = profile_this(self._executor.run)
+        else:
+            target = self._executor.run
+
+        if num_processes == 1:
+            target()
+        else:
+            for _ in range(num_processes):
+                p = Process(target=target, args=())
+                self._workers.append(p)
+                p.start()
 
     @property
     def running(self):
@@ -592,17 +646,6 @@ class Manticore(Eventful):
     #############################################################################
     #############################################################################
     # Move all the following elsewhere Not all manticores have this
-
-    def add_symbolic_file(self, symbolic_file):
-        '''
-        Add a symbolic file. Each '+' in the file will be considered
-        as symbolic, other char are concretized.
-        Symbolic files must have been defined before the call to `run()`.
-
-        :param str symbolic_file: the name of the symbolic file
-        '''
-        self._symbolic_files.append(symbolic_file)
-
     def _get_symbol_address(self, symbol):
         '''
         Return the address of |symbol| within the binary
@@ -645,7 +688,7 @@ class Manticore(Eventful):
             with self._output.save_stream(self.coverage_file) as f:
                 fmt = "0x{:016x}\n"
                 for m in executor_visited:
-                    f.write(fmt.format(m[1]))
+                    f.write(fmt.format(m))
 
         with self._output.save_stream('visited.txt') as f:
             for entry in sorted(executor_visited):

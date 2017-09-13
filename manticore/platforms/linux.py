@@ -292,6 +292,9 @@ class Linux(Platform):
     This class emulates the most common Linux system calls
     '''
 
+    # from /usr/include/asm-generic/resource.h
+    RLIMIT_NOFILE = 7 #/* max number of open files */
+
     def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
         '''
         Builds a Linux OS platform
@@ -311,6 +314,11 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
+
+        # dict of [int -> (int, int)] where tuple is (soft, hard) limits
+        self._rlimits = {
+            self.RLIMIT_NOFILE: (256, 1024)
+        }
 
         if program != None:
             self.elf = ELFFile(file(program))
@@ -423,6 +431,7 @@ class Linux(Platform):
             else:
                 state_files.append(('File', fd))
         state['files'] = state_files
+        state['rlimits'] = self._rlimits
 
         state['procs'] = self.procs
         state['current'] = self._current
@@ -472,6 +481,7 @@ class Linux(Platform):
         self.files[1].peer = self.output
         self.files[2].peer = self.output
         self.input.peer = self.files[0]
+        self._rlimits = state['rlimits']
 
         self.procs = state['procs']
         self._current = state['current']
@@ -1001,8 +1011,15 @@ class Linux(Platform):
         '''
         return self._open(self.files[fd])
 
+    def _is_fd_open(self, fd):
+        '''
+        Determines if the fd is within range and in the file descr. list
+        :param fd: the file descriptor to check.
+        '''
+        return fd >= 0 and fd < len(self.files) and self.files[fd] is not None
+
     def _get_fd(self, fd):
-        if fd < 0 or fd >= len(self.files) or self.files[fd] is None:
+        if not self._is_fd_open(fd):
             raise BadFd()
         else:
             return self.files[fd]
@@ -1010,7 +1027,6 @@ class Linux(Platform):
     def sys_umask(self, mask):
         '''
         umask - Set file creation mode mask
-
         :param int mask: New mask
         '''
         logger.debug("umask(%o)", mask)
@@ -1359,7 +1375,53 @@ class Linux(Platform):
     def sys_sigprocmask(self, cpu, how, newset, oldset):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
         return 0
+    
+    def sys_dup(self, fd):
+        '''
+        Duplicates an open file descriptor
+        :rtype: int
+        :param fd: the open file descriptor to duplicate.
+        :return: the new file descriptor.
+        '''
+    
+        if not self._is_fd_open(fd):
+            logger.info("DUP: Passed fd is not open. Returning EBADF")
+            return -errno.EBADF
+        
+        newfd = self._dup(fd)
+        logger.debug('sys_dup(%d) -> %d', fd, newfd)
+        return newfd
+        
+    def sys_dup2(self, fd, newfd):
+        '''
+        Duplicates an open fd to newfd. If newfd is open, it is first closed
+        :rtype: int
+        :param fd: the open file descriptor to duplicate.
+        :param newfd: the file descriptor to alias the file described by fd.
+        :return: newfd.
+        '''
+        try:
+            file = self._get_fd(fd)
+        except BadFd:
+            logger.info("DUP2: Passed fd is not open. Returning EBADF")
+            return -errno.EBADF
 
+        soft_max, hard_max = self._rlimits[self.RLIMIT_NOFILE]
+        if newfd >= soft_max:
+            logger.info("DUP2: newfd is above max descriptor table size")
+            return -errno.EBADF
+          
+        if  self._is_fd_open(newfd):
+            self.sys_close(newfd)
+        
+        if newfd >= len(self.files):
+            self.files.extend([None]*(newfd+1-len(self.files)))
+        
+        self.files[newfd] = self.files[fd]
+                    
+        logger.debug('sys_dup2(%d,%d) -> %d', fd, newfd, newfd)
+        return newfd
+    
     def sys_close(self, fd):
         '''
         Closes a file descriptor
@@ -1688,8 +1750,16 @@ class Linux(Platform):
         logger.debug("sys_futex(...) -> -1")
         return -1
     def sys_getrlimit(self, resource, rlim):
-        logger.debug("sys_getrlimit(%x, %x) -> -1", resource, rlim)
-        return -1
+        ret = -1
+        if resource in self._rlimits:
+            rlimit_tup = self._rlimits[resource]
+            # 32 bit values on both 32 and 64 bit platforms. For more info,
+            # see the BUGS section in getrlimit(2) man page.
+            self.current.write_bytes(rlim, struct.pack('<LL', *rlimit_tup))
+            ret = 0
+        logger.debug("sys_getrlimit(%x, %x) -> %d", resource, rlim, ret)
+        return ret
+
     def sys_fadvise64(self, fd, offset, length, advice):
         logger.debug("sys_fadvise64(%x, %x, %x, %x) -> 0", fd, offset, length, advice)
         return 0
@@ -2208,6 +2278,16 @@ class SLinux(Linux):
 
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
+
+    def add_symbolic_file(self, symbolic_file):
+        '''
+        Add a symbolic file. Each '+' in the file will be considered
+        as symbolic, other char are concretized.
+        Symbolic files must have been defined before the call to `run()`.
+
+        :param str symbolic_file: the name of the symbolic file
+        '''
+        self.symbolic_files.append(symbolic_file)
 
     @property
     def constraints(self):
