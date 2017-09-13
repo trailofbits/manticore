@@ -1,5 +1,3 @@
-import os
-import shutil
 import signal
 import unittest
 
