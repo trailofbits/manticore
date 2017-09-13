@@ -12,6 +12,7 @@ from contextlib import contextmanager
 
 from threading import Timer
 
+import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -203,30 +204,29 @@ class Manticore(object):
     '''
     The central analysis object.
 
-    :param path_or_state: Path to a binary to analyze or `State` object
+    :param path_or_state: Path to a binary to analyze (deprecated) or `State` object
     :type path_or_state: str or State
-    :param args: Arguments to provide to binary
-    :type args: list[str]
+    :param argv: Arguments to provide to binary (deprecated)
+    :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
-
-    def __init__(self, path_or_state, workspace_url=None, policy='random', **kwargs):
-        
+    def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
             else:
                 ws_path = workspace_url
         else:
+            if workspace_url is not None:
+                raise Exception('Invalid workspace')
             ws_path = None
+
         self._output = ManticoreOutput(ws_path)
         self._context = {}
         self._coverage_file = None
 
         #sugar for 'will_execute_instruction"
         self._hooks = {}
-
-        self._symbolic_files = []
 
         self._executor = Executor(workspace=ws_path, policy=policy)
         self._workers = []
@@ -237,8 +237,6 @@ class Manticore(object):
         self._executor.subscribe('will_write_memory', self._write_memory_callback)
         self._executor.subscribe('will_execute_instruction', self._execute_instruction_callback)
         self._executor.subscribe('will_decode_instruction', self._decode_instruction_callback)
-        self._executor.subscribe('will_store_state', self._store_state_callback)
-        self._executor.subscribe('will_load_state', self._load_state_callback)
         self._executor.subscribe('will_fork_state', self._fork_state_callback)
         self._executor.subscribe('forking_state', self._forking_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
@@ -248,22 +246,37 @@ class Manticore(object):
 
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, **kwargs)
-        else:
+            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
+        elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
-        assert isinstance(self._initial_state, State), "Manticore must be intialized with either a state or a path to a binary"
+        else:
+            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
 
         #Move the folowwing into a plugin
         self._assertions = {}
+        self._symbolic_files = []
+
+    @classmethod
+    def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+        try:
+            return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
+        except elftools.common.exceptions.ELFError:
+            raise Exception('Invalid binary: {}'.format(path))
+
+    @classmethod
+    def decree(cls, path, concrete_data='', **kwargs):
+        try:
+            return cls(make_decree(path, concrete_data), **kwargs)
+        except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
+            raise Exception('Invalid binary: {}'.format(path))
 
     @property
-    def inital_state(self):
+    def initial_state(self):
         return self._initial_state
 
     def subscribe(self, name, callback):
         from types import MethodType
         self._executor.subscribe(name, MethodType(callback, self))
-
 
     @property
     def context(self):
@@ -317,19 +330,12 @@ class Manticore(object):
                 yield ctx
                 context[key] = ctx
 
-    @property
-    def verbosity(self):
+    @staticmethod
+    def verbosity(level):
         """Convenience interface for setting logging verbosity to one of
         several predefined logging presets. Valid values: 0-5.
         """
-        return log.manticore_verbosity
-
-    @verbosity.setter
-    def verbosity(self, setting):
-        """A call used to modify the level of output verbosity
-        :param int setting: the level of verbosity to be used
-        """
-        log.set_verbosity(setting)
+        log.set_verbosity(level)
 
     @property
     def running(self):
@@ -373,10 +379,46 @@ class Manticore(object):
                 self._workers.append(p)
                 p.start()
 
+
+    ###########################################################################
+    # Workers                                                                 #
+    ###########################################################################
+    def _start_workers(self, num_processes, profiling=False):
+        assert num_processes > 0, "Must have more than 0 worker processes"
+
+        logger.info("Starting %d processes.", num_processes)
+
+        if profiling:
+            def profile_this(func):
+                @functools.wraps(func)
+                def wrapper(*args, **kwargs):
+                    profile = cProfile.Profile()
+                    profile.enable()
+                    result = func(*args, **kwargs)
+                    profile.disable()
+                    profile.create_stats()
+                    with self.locked_context('profiling_stats', list) as profiling_stats:
+                        profiling_stats.append(profile.stats.items())
+                    return result
+                return wrapper
+
+            target = profile_this(self._executor.run)
+        else:
+            target = self._executor.run
+
+        if num_processes == 1:
+            target()
+        else:
+            for _ in range(num_processes):
+                p = Process(target=target, args=())
+                self._workers.append(p)
+                p.start()
+
     def _join_workers(self):
         with WithKeyboardInterruptAs(self._executor.shutdown):
             while len(self._workers) > 0:
                 w = self._workers.pop().join()
+
 
     ############################################################################
     # Common hooks + callback
@@ -421,6 +463,7 @@ class Manticore(object):
             self._hooks.setdefault(pc, set()).add(callback)
             if self._hooks:
                 self._executor.subscribe('will_execute_instruction', self._hook_callback)
+
 
     def _hook_callback(self, state, instruction):
         pc = state.cpu.PC
@@ -512,16 +555,9 @@ class Manticore(object):
         state.constraints.add(assertion)
 
 
-
     ##########################################################################
     #Some are Place holders Remove
     #Any platform specific callback should go to a plugin
-
-    def _store_state_callback(self, state, state_id):
-        logger.info("store state %r", state_id)
-
-    def _load_state_callback(self, state, state_id):
-        logger.info("load state %r", state_id)
 
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
@@ -741,3 +777,4 @@ class Manticore(object):
         #logger.info('Number of paths covered %r', State.state_count())
         logger.info('Total time: %s', elapsed)
         logger.info('IPS: %d', instructions_count/elapsed)
+

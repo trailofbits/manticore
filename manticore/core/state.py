@@ -84,7 +84,6 @@ class State(Eventful):
         #FIXME(felipe) This should go into some event callback in a plugin (start_run?)
         self._init_context()
 
-
     def __getstate__(self):
         state = super(State, self).__getstate__()
         state['platform'] = self._platform

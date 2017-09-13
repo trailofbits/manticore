@@ -434,6 +434,7 @@ class Executor(Eventful):
                             if current_state_id is not None:
                                 current_state = self._workspace.load_state(current_state_id)
                                 self.forward_events_from(current_state, True)
+                                logger.info("load state %r", current_state_id)
                                 self.publish('will_load_state', current_state, current_state_id)
                             #notify siblings we have a state to play with
                             self._notify_start_run()
@@ -491,6 +492,7 @@ class Executor(Eventful):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
+                    print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
                     print str(e), trace
                     #Notify this worker is done
