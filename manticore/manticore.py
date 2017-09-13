@@ -211,9 +211,7 @@ class Manticore(object):
 
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
-            # self._initial_state = make_initial_state(path_or_state, **kwargs)
             self._initial_state = make_initial_state(path_or_state, argv=linux_argv, env=linux_envp, **kwargs)
-            # self._initial_state = make_linux(path_or_state, linux_argv, linux_envp)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
         else:
@@ -233,7 +231,7 @@ class Manticore(object):
     def decree(cls, path, concrete_data='', **kwargs):
         try:
             return cls(make_decree(path, concrete_data), **kwargs)
-        except KeyError:
+        except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception('Invalid binary: {}'.format(path))
 
     @property
