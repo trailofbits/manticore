@@ -556,7 +556,7 @@ class Manticore(object):
 
 
     ##########################################################################
-    #Some are Place holders Remove
+    #Some are placeholders Remove FIXME
     #Any platform specific callback should go to a plugin
 
     def _terminate_state_callback(self, state, state_id, ex):
@@ -706,17 +706,7 @@ class Manticore(object):
     #############################################################################
     #############################################################################
     #############################################################################
-    # Move all the following elsewhere Not all manticores have this
-
-    def add_symbolic_file(self, symbolic_file):
-        '''
-        Add a symbolic file. Each '+' in the file will be considered
-        as symbolic, other char are concretized.
-        Symbolic files must have been defined before the call to `run()`.
-
-        :param str symbolic_file: the name of the symbolic file
-        '''
-        self._symbolic_files.append(symbolic_file)
+    # Move all the following elsewhere Not all manticores have this FIXME
 
     def _get_symbol_address(self, symbol):
         '''
