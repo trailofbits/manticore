@@ -12,6 +12,7 @@ from contextlib import contextmanager
 
 from threading import Timer
 
+#FIXME: remove this two
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -23,6 +24,8 @@ from .core.workspace import ManticoreOutput, Workspace
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
+from .utils.event import Eventful
+from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited
 import logging
 from .utils import log
 
@@ -158,7 +161,7 @@ def make_initial_state(binary_path, **kwargs):
         raise NotImplementedError("Binary {} not supported.".format(binary_path))
     return state
 
-class Manticore(object):
+class Manticore(Eventful):
     '''
     The central analysis object.
 
@@ -170,7 +173,7 @@ class Manticore(object):
     '''
 
     def __init__(self, path_or_state, workspace_url=None, policy='random', **kwargs):
-        
+        super(Manticore, self).__init__(**kwargs)
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
@@ -185,25 +188,11 @@ class Manticore(object):
         #sugar for 'will_execute_instruction"
         self._hooks = {}
 
-        self._symbolic_files = []
-
         self._executor = Executor(workspace=ws_path, policy=policy)
         self._workers = []
-        #Link Executor events to default callbacks in manticore object
-        self._executor.subscribe('did_read_register', self._read_register_callback)
-        self._executor.subscribe('will_write_register', self._write_register_callback)
-        self._executor.subscribe('did_read_memory', self._read_memory_callback)
-        self._executor.subscribe('will_write_memory', self._write_memory_callback)
-        self._executor.subscribe('will_execute_instruction', self._execute_instruction_callback)
-        self._executor.subscribe('will_decode_instruction', self._decode_instruction_callback)
-        self._executor.subscribe('will_store_state', self._store_state_callback)
-        self._executor.subscribe('will_load_state', self._load_state_callback)
-        self._executor.subscribe('will_fork_state', self._fork_state_callback)
-        self._executor.subscribe('forking_state', self._forking_state_callback)
-        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
-        self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
-        self._executor.subscribe('did_finish_run', self._finish_run_callback)
 
+        #Link Executor events to default callbacks in manticore object
+        self.forward_events_from(self._executor)
 
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
@@ -214,6 +203,38 @@ class Manticore(object):
 
         #Move the folowwing into a plugin
         self._assertions = {}
+        self._symbolic_files = []
+
+        self.plugins = set()
+
+        #Default plugins for now.. FIXME?
+        a = InstructionCounter()
+        self.register_plugin(a)
+        self.register_plugin(Visited())
+        self.register_plugin(RecordSymbolicBranches())
+
+        #FIXME move the follwing to aplugin
+        self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
+        self._executor.subscribe('did_finish_run', self._finish_run_callback)
+
+    def register_plugin(self, plugin):
+        #Global enumeration of valid events
+        assert isinstance(plugin, Plugin)
+        assert plugin not in self.plugins, "Plugin instance already registered"
+        assert plugin.manticore is None, "Plugin instance already owned" 
+        plugin.manticore = self
+        self.plugins.add(plugin)
+        
+        for event_name in Plugin.event_names:
+            callback_name = event_name+'_callback'
+            if hasattr(plugin, callback_name):
+                self._executor.subscribe(event_name, getattr(plugin, callback_name))
+            
+    def unregister_plugin(self, plugin):
+        assert plugin in self.plugins, "Plugin instance not registered"
+        self.plugins.remove(plugin)
+        plugin.manticore = None
+
 
     @property
     def inital_state(self):
@@ -292,7 +313,7 @@ class Manticore(object):
     def enqueue(self, state):
         ''' Dynamically enqueue states. Users should typically not need to do this '''
         assert not self.running, "Can't add state where running. Can we?"
-        self._executor.add(state)
+        self._executor.enqueue(state)
 
     ###########################################################################
     # Workers                                                                 #
@@ -377,8 +398,7 @@ class Manticore(object):
             if self._hooks:
                 self._executor.subscribe('will_execute_instruction', self._hook_callback)
 
-    def _hook_callback(self, state, instruction):
-        pc = state.cpu.PC
+    def _hook_callback(self, state, pc, instruction):
         'Invoke all registered generic hooks'
 
         # Ignore symbolic pc.
@@ -472,67 +492,6 @@ class Manticore(object):
     #Some are Place holders Remove
     #Any platform specific callback should go to a plugin
 
-    def _store_state_callback(self, state, state_id):
-        logger.info("store state %r", state_id)
-
-    def _load_state_callback(self, state, state_id):
-        logger.info("load state %r", state_id)
-
-    def _terminate_state_callback(self, state, state_id, ex):
-        #aggregates state statistics into exceutor statistics. FIXME split
-        logger.debug("Terminate state %r %r ", state, state_id)
-        if state is None:
-            return
-        state_visited = state.context.get('visited_since_last_fork', set())
-        state_instructions_count = state.context.get('instructions_count', 0)
-        with self.locked_context() as manticore_context:
-            manticore_visited = manticore_context.get('visited', set())
-            manticore_context['visited'] = manticore_visited.union(state_visited)
-
-            manticore_instructions_count = manticore_context.get('instructions_count', 0)
-            manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
-
-    def _forking_state_callback(self, state, expression, value, policy):
-        state.record_branch(value)
-
-    def _fork_state_callback(self, state, expression, values, policy):
-        state_visited = state.context.get('visited_since_last_fork', set())
-        with self.locked_context() as manticore_context:
-            manticore_visited = manticore_context.get('visited', set())
-            manticore_context['visited'] = manticore_visited.union(state_visited)
-        state.context['visited_since_last_fork'] = set()
-
-    def _read_register_callback(self, state, reg_name, value):
-        logger.debug("Read Register %r %r", reg_name, value)
-
-    def _write_register_callback(self, state, reg_name, value):
-        logger.debug("Write Register %r %r", reg_name, value)
-
-    def _read_memory_callback(self, state,  address, value, size):
-        logger.debug("Read Memory %r %r %r", address, value, size)
-
-    def _write_memory_callback(self, state, address, value, size):
-        logger.debug("Write Memory %r %r %r", address, value, size)
-
-    def _decode_instruction_callback(self, state, pc):
-        logger.debug("Decoding stuff instruction not available")
-
-    def _emulate_instruction_callback(self, state, instruction):
-        logger.debug("About to emulate instruction")
-
-    def _did_execute_instruction_callback(self, state, instruction):
-        logger.debug("Did execute an instruction")
-
-    def _execute_instruction_callback(self, state, instruction):
-        address = state.cpu.PC
-        if not issymbolic(address):
-            state.context.setdefault('trace', list()).append(address)
-            state.context.setdefault('visited_since_last_fork', set()).add(address)
-            state.context.setdefault('visited', set()).add(address)
-            count = state.context.get('instructions_count', 0)
-            state.context['instructions_count'] = count + 1
-
-
     def _generate_testcase_callback(self, state, name, message):
         '''
         Create a serialized description of a given state.
@@ -573,7 +532,7 @@ class Manticore(object):
     def _start_run(self):
         assert not self.running
         #FIXME this will be self.publish 
-        self._executor.publish('will_start_run', self._initial_state)
+        self._publish('will_start_run', self._initial_state)
         self.enqueue(self._initial_state)
         self._initial_state = None
 
@@ -587,8 +546,8 @@ class Manticore(object):
 
         if profiling:
             self._produce_profiling_data()
-        #FIXME this will be self.publish 
-        self._executor.publish('did_finish_run')
+
+        self._publish('did_finish_run')
 
     def run(self, procs=1, timeout=0, should_profile=False):
         '''

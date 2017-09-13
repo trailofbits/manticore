@@ -5,7 +5,7 @@ from manticore.utils.event import Eventful
 
 class A(Eventful):
     def do_stuff(self):
-        self.publish("eventA",1, 'a')
+        self._publish("eventA",1, 'a')
 
 class B(Eventful):
     def __init__(self, child, **kwargs):
@@ -14,7 +14,7 @@ class B(Eventful):
         self.forward_events_from(child)
 
     def do_stuff(self):
-        self.publish("eventB", 2, 'b')
+        self._publish("eventB", 2, 'b')
 
 
 class C():

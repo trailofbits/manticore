@@ -47,7 +47,7 @@ class Eventful(object):
         return self._signals.setdefault(name,  dict())
 
     # The underscore _name is to avoid naming collisions with callback params
-    def publish(self, _name, *args, **kwargs):   
+    def _publish(self, _name, *args, **kwargs):   
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.iteritems():
             for callback in methods:
@@ -57,9 +57,9 @@ class Eventful(object):
         # the callback signature. This is set on forward_events_from/to
         for sink, include_source in self._forwards.items():
             if include_source:
-                sink.publish(_name, self, *args, **kwargs)
+                sink._publish(_name, self, *args, **kwargs)
             else:
-                sink.publish(_name, *args, **kwargs)
+                sink._publish(_name, *args, **kwargs)
 
     def subscribe(self, name, method):
         if not inspect.ismethod(method):
