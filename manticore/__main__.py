@@ -75,8 +75,6 @@ def main():
 
     m = Manticore(args.argv[0], args.argv[1:], env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
 
-    #All the following will only affect this instance
-
     #Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
 
