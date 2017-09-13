@@ -172,9 +172,6 @@ class Manticore(object):
 
     def __init__(self, path_or_state, linux_argv=None, linux_envp=None, workspace_url=None, policy='random', **kwargs):
 
-        linux_argv = [] if linux_argv is None else linux_argv
-        linux_envp = {} if linux_envp is None else linux_envp
-
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
