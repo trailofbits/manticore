@@ -214,8 +214,8 @@ class Manticore(Eventful):
         self.register_plugin(RecordSymbolicBranches())
 
         #FIXME move the follwing to aplugin
-        self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
-        self._executor.subscribe('did_finish_run', self._finish_run_callback)
+        self.subscribe('will_generate_testcase', self._generate_testcase_callback)
+        self.subscribe('did_finish_run', self._did_finish_run_callback)
 
     def register_plugin(self, plugin):
         #Global enumeration of valid events
@@ -228,7 +228,7 @@ class Manticore(Eventful):
         for event_name in Plugin.event_names:
             callback_name = event_name+'_callback'
             if hasattr(plugin, callback_name):
-                self._executor.subscribe(event_name, getattr(plugin, callback_name))
+                self.subscribe(event_name, getattr(plugin, callback_name))
             
     def unregister_plugin(self, plugin):
         assert plugin in self.plugins, "Plugin instance not registered"
@@ -365,7 +365,7 @@ class Manticore(Eventful):
         '''
         def callback(manticore_obj, state):
             f(state)
-        self._executor.subscribe('will_start_run', types.MethodType(callback, self))
+        self.subscribe('will_start_run', types.MethodType(callback, self))
         return f
 
     def hook(self, pc):
@@ -465,8 +465,7 @@ class Manticore(Eventful):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
                 self._executor.subscribe('will_execute_instruction', self._assertions_callback)
 
-    def _assertions_callback(self, state, instruction):
-        pc = state.cpu.PC
+    def _assertions_callback(self, state, instruction, pc):
         if pc not in self._assertions:
             return
 
@@ -630,7 +629,7 @@ class Manticore(Eventful):
         assert not self.running, "Can't set coverage file if Manticore is running."
         self._coverage_file = path
 
-    def _finish_run_callback(self):
+    def _did_finish_run_callback(self):
         _shared_context = self.context
         executor_visited = _shared_context.get('visited', set())
         #Fixme this is duplicated?

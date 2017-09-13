@@ -81,15 +81,21 @@ class Visited(Plugin):
 
 #TODO document all callbacks
 class ExamplePlugin(Plugin):
+    def will_decode_instruction_callback(self, state, pc):
+        logger.info('will_decode_instruction', state, pc)
+    def will_execute_instruction_callback(self, state, pc, instruction):
+        logger.info('will_execute_instruction', state, pc, instruction)
+
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        pass
+        logger.info('did_execute_instruction', state, pc, target_pc, instruction)
     def will_start_run_callback(self, state):
         ''' Called once at the begining of the run. 
             state is the initial root state 
         ''' 
-        pass
+        logger.info('will_start_run')
+
     def did_finish_run_callback(self):
-        pass
+        logger.info('did_finish_run')
 
     def did_enqueue_state_callback(self, state_id, state):
         ''' state was just got enqueued in the executor procesing list'''
