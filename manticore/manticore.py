@@ -170,7 +170,7 @@ class Manticore(object):
     :ivar dict context: Global context for arbitrary data storage
     '''
 
-    def __init__(self, path_or_state, linux_argv=None, linux_envp=None, workspace_url=None, policy='random', **kwargs):
+    def __init__(self, path_or_state, workspace_url=None, policy='random', **kwargs):
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -208,7 +208,7 @@ class Manticore(object):
 
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, argv=linux_argv, env=linux_envp, **kwargs)
+            self._initial_state = make_initial_state(path_or_state, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
         else:
