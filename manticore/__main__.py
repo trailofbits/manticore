@@ -25,7 +25,7 @@ def parse_arguments():
                         help=argparse.SUPPRESS)
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Specify symbolic environment variable VARNAME=++++++')
-    parser.add_argument('--file', type=str, action='append', dest='files',
+    parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
                         help=("File with function addresses to replace "
@@ -69,12 +69,12 @@ def main():
     args = parse_arguments()
 
 
-    #TODO 
-    initial_state = make_initial_state(args.argv[0], argv=args.argv[1:],  disasm=args.disasm)
-    m = Manticore(initial_state, workspace_url=args.workspace,  policy=args.policy)
+    env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
 
-    #This will affect global logging settings and not just logging from 'm'
-    m.verbosity = args.v
+    Manticore.verbosity(args.v)
+
+    m = Manticore(args.argv[0], args.argv[1:], env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
+
     #All the following will only affect this instance
 
     #Fixme(felipe) remove this, move to plugin
@@ -88,14 +88,8 @@ def main():
 
     @m.init
     def init(initial_state):
-        if args.env:
-            for entry in args.env:
-                name, val = entry[0].split('=')
-                initial_state.platform.env_add(name, val)
-
-        if args.files:
-            for file in args.files:
-                initial_state.platform.add_symbolic_file(file)
+        for file in args.files:
+            initial_state.platform.add_symbolic_file(file)
 
 
     m.run(procs=args.procs, timeout=args.timeout, should_profile=args.profile)

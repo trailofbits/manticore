@@ -12,6 +12,7 @@ from contextlib import contextmanager
 
 from threading import Timer
 
+import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -169,8 +170,11 @@ class Manticore(object):
     :ivar dict context: Global context for arbitrary data storage
     '''
 
-    def __init__(self, path_or_state, workspace_url=None, policy='random', **kwargs):
-        
+    def __init__(self, path_or_state, linux_argv=None, linux_envp=None, workspace_url=None, policy='random', **kwargs):
+
+        linux_argv = [] if linux_argv is None else linux_argv
+        linux_envp = {} if linux_envp is None else linux_envp
+
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
@@ -207,16 +211,30 @@ class Manticore(object):
 
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, **kwargs)
-        else:
+            # self._initial_state = make_initial_state(path_or_state, **kwargs)
+            self._initial_state = make_initial_state(path_or_state, argv=linux_argv, env=linux_envp, **kwargs)
+            # self._initial_state = make_linux(path_or_state, linux_argv, linux_envp)
+        elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
-        assert isinstance(self._initial_state, State), "Manticore must be intialized with either a state or a path to a binary"
+        else:
+            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
 
         #Move the folowwing into a plugin
         self._assertions = {}
 
+    @classmethod
+    def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+        argv = [] if argv is None else argv
+        envp = {} if envp is None else envp
+        symbolic_files = [] if symbolic_files is None else symbolic_files
+
+        try:
+            return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
+        except elftools.common.exceptions.ELFError:
+            raise Exception('Invalid binary: {}'.format(path))
+
     @property
-    def inital_state(self):
+    def initial_state(self):
         return self._initial_state
 
     @property
@@ -272,18 +290,22 @@ class Manticore(object):
                 context[key] = ctx
 
     @property
-    def verbosity(self):
+    def xverbosity(self):
         """Convenience interface for setting logging verbosity to one of
         several predefined logging presets. Valid values: 0-5.
         """
         return log.manticore_verbosity
 
-    @verbosity.setter
-    def verbosity(self, setting):
-        """A call used to modify the level of output verbosity
-        :param int setting: the level of verbosity to be used
-        """
-        log.set_verbosity(setting)
+    @staticmethod
+    def verbosity(level):
+        log.set_verbosity(level)
+
+    # @verbosity.setter
+    # def verbosity(self, setting):
+    #     """A call used to modify the level of output verbosity
+    #     :param int setting: the level of verbosity to be used
+    #     """
+    #     log.set_verbosity(setting)
 
     @property
     def running(self):
