@@ -163,14 +163,14 @@ class Manticore(object):
     '''
     The central analysis object.
 
-    :param path_or_state: Path to a binary to analyze or `State` object
+    :param path_or_state: Path to a binary to analyze (deprecated) or `State` object
     :type path_or_state: str or State
-    :param args: Arguments to provide to binary
-    :type args: list[str]
+    :param argv: Arguments to provide to binary (deprecated)
+    :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
 
-    def __init__(self, path_or_state, workspace_url=None, policy='random', **kwargs):
+    def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
 
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
@@ -208,7 +208,7 @@ class Manticore(object):
 
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, **kwargs)
+            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
         else:
