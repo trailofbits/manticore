@@ -289,23 +289,12 @@ class Manticore(object):
                 yield ctx
                 context[key] = ctx
 
-    @property
-    def xverbosity(self):
+    @staticmethod
+    def verbosity(level):
         """Convenience interface for setting logging verbosity to one of
         several predefined logging presets. Valid values: 0-5.
         """
-        return log.manticore_verbosity
-
-    @staticmethod
-    def verbosity(level):
         log.set_verbosity(level)
-
-    # @verbosity.setter
-    # def verbosity(self, setting):
-    #     """A call used to modify the level of output verbosity
-    #     :param int setting: the level of verbosity to be used
-    #     """
-    #     log.set_verbosity(setting)
 
     @property
     def running(self):
