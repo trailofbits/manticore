@@ -12,6 +12,7 @@ from contextlib import contextmanager
 
 from threading import Timer
 
+import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -170,7 +171,7 @@ class Manticore(object):
     '''
 
     def __init__(self, path_or_state, workspace_url=None, policy='random', **kwargs):
-        
+
         if isinstance(workspace_url, str):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
@@ -208,15 +209,30 @@ class Manticore(object):
         if isinstance(path_or_state, str):
             assert os.path.isfile(path_or_state)
             self._initial_state = make_initial_state(path_or_state, **kwargs)
-        else:
+        elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
-        assert isinstance(self._initial_state, State), "Manticore must be intialized with either a state or a path to a binary"
+        else:
+            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
 
         #Move the folowwing into a plugin
         self._assertions = {}
 
+    @classmethod
+    def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+        try:
+            return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
+        except elftools.common.exceptions.ELFError:
+            raise Exception('Invalid binary: {}'.format(path))
+
+    @classmethod
+    def decree(cls, path, concrete_data='', **kwargs):
+        try:
+            return cls(make_decree(path, concrete_data), **kwargs)
+        except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
+            raise Exception('Invalid binary: {}'.format(path))
+
     @property
-    def inital_state(self):
+    def initial_state(self):
         return self._initial_state
 
     @property
@@ -271,19 +287,12 @@ class Manticore(object):
                 yield ctx
                 context[key] = ctx
 
-    @property
-    def verbosity(self):
+    @staticmethod
+    def verbosity(level):
         """Convenience interface for setting logging verbosity to one of
         several predefined logging presets. Valid values: 0-5.
         """
-        return log.manticore_verbosity
-
-    @verbosity.setter
-    def verbosity(self, setting):
-        """A call used to modify the level of output verbosity
-        :param int setting: the level of verbosity to be used
-        """
-        log.set_verbosity(setting)
+        log.set_verbosity(level)
 
     @property
     def running(self):
@@ -627,15 +636,6 @@ class Manticore(object):
     #############################################################################
     # Move all the following elsewhere Not all manticores have this
 
-    def add_symbolic_file(self, symbolic_file):
-        '''
-        Add a symbolic file. Each '+' in the file will be considered
-        as symbolic, other char are concretized.
-        Symbolic files must have been defined before the call to `run()`.
-
-        :param str symbolic_file: the name of the symbolic file
-        '''
-        self._symbolic_files.append(symbolic_file)
 
     def _get_symbol_address(self, symbol):
         '''
