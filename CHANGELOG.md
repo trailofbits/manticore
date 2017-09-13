@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## 0.1.5 - 2017-09-15
 
+### Deprecated
+
+- `Manticore('binary', ['arg1', 'arg2'])` style initialization. Use new class methods (see below).
+
+### Added
+
+- Manticore class methods for Manticore initialization.
+  - e.g. `Manticore.linux('binary', ['arg1', 'arg2'])`
+- `@m.init` analysis initialization hook
+- Support for various Linux syscalls (thanks [johnfxgalea](https://github.com/johnfxgalea)!)
+- [Experimental] Support for symbolic execution of Ethereum Virtual Machine bytecode
+
+### Changed
+
+- `Manticore.verbosity` logging preset levels interface is now a static method
+
+### Fixed
+
+
+### Removed
+
+
+
 ## 0.1.4 - 2017-08-18
 
 ### Added
