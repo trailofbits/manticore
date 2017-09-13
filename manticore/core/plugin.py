@@ -43,11 +43,12 @@ class InstructionCounter(Plugin):
         if state is None: #FIXME Can it be None?
             return
         state_instructions_count = state.context.get('instructions_count', 0)
+
         with self.manticore.locked_context() as manticore_context:
             manticore_instructions_count = manticore_context.get('instructions_count', 0)
             manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
 
-    def _execute_instruction_callback(self, state, instruction):
+    def did_execute_instruction_callback(self, state, prev_pc, target_pc, instruction):
         address = state.cpu.PC
         if not issymbolic(address):
             count = state.context.get('instructions_count', 0)
@@ -62,18 +63,16 @@ class Visited(Plugin):
             manticore_visited = manticore_context.get('visited', set())
             manticore_context['visited'] = manticore_visited.union(state_visited)
 
-    def _fork_state_callback(self, state, expression, values, policy):
+    def will_fork_state_callback(self, state, expression, values, policy):
         state_visited = state.context.get('visited_since_last_fork', set())
         with self.manticore.locked_context() as manticore_context:
             manticore_visited = manticore_context.get('visited', set())
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
-    def _execute_instruction_callback(self, state, instruction):
-        address = state.cpu.PC
-        if not issymbolic(address):
-            state.context.setdefault('visited_since_last_fork', set()).add(address)
-            state.context.setdefault('visited', set()).add(address)
+    def did_execute_instruction_callback(self, state, prev_pc, target_pc, instruction):
+        state.context.setdefault('visited_since_last_fork', set()).add(prev_pc)
+        state.context.setdefault('visited', set()).add(prev_pc)
 
 
 

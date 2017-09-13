@@ -208,8 +208,7 @@ class Manticore(Eventful):
         self.plugins = set()
 
         #Default plugins for now.. FIXME?
-        a = InstructionCounter()
-        self.register_plugin(a)
+        self.register_plugin(InstructionCounter())
         self.register_plugin(Visited())
         self.register_plugin(RecordSymbolicBranches())
 
@@ -230,6 +229,15 @@ class Manticore(Eventful):
             if hasattr(plugin, callback_name):
                 self.subscribe(event_name, getattr(plugin, callback_name))
             
+        for callback_name in dir(plugin):
+            if callback_name.endswith('_callback'):
+                event_name = callback_name[:-9]
+                if event_name not in Plugin.event_names:
+                    logger.info("There is no event name %s for callback on plugin type %s", event_name, type(plugin) ) 
+                    print "There is no event name %s for callback on plugin type %s" %( event_name, type(plugin)  )
+            
+
+
     def unregister_plugin(self, plugin):
         assert plugin in self.plugins, "Plugin instance not registered"
         self.plugins.remove(plugin)
