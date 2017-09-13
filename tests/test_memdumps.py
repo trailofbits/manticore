@@ -84,12 +84,15 @@ class IntegrationTest(unittest.TestCase):
 
         self.assertGreaterEqual(actual, expected)
 
+    @unittest.skip('Windows temporarily unmaintained')
     def testSimpleParse(self):
         self._runManticore("simple_parse")
 
+    @unittest.skip('Windows temporarily unmaintained')
     def testSimpleDeref(self):
         self._runManticore("simple_bad_deref")
 
+    @unittest.skip('Windows temporarily unmaintained')
     def testSimpleBufferOverflow(self):
         self._runManticore("simple_buffer_overflow")
 
@@ -102,6 +105,7 @@ class IntegrationTest(unittest.TestCase):
     def testWin32API(self):
         self._runManticore("win32_api_test")
 
+    @unittest.skip('Windows temporarily unmaintained')
     def testAPIInterception(self):
         self._runManticore("api_interception")
 

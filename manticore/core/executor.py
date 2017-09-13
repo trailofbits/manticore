@@ -203,6 +203,9 @@ class Executor(Eventful):
         if self.load_workspace():
             if initial is not None:
                 logger.error("Ignoring initial state")
+        else:
+            if initial is not None:
+                self.add(initial)
 
     @contextmanager
     def locked_context(self, key=None, default=dict):
@@ -270,12 +273,12 @@ class Executor(Eventful):
     ###############################################
     # Synchronization helpers
     @sync
-    def _start_run(self):
+    def _notify_start_run(self):
         #notify siblings we are about to start a run()
         self._running.value += 1
 
     @sync
-    def _stop_run(self):
+    def _notify_stop_run(self):
         #notify siblings we are about to stop this run()
         self._running.value -= 1
         if self._running.value < 0:
@@ -415,7 +418,7 @@ class Executor(Eventful):
 
         with WithKeyboardInterruptAs(self.shutdown):
             #notify siblings we are about to start a run
-            self._start_run()
+            self._notify_start_run()
 
             logger.debug("Starting Manticore Symbolic Emulator Worker (pid %d).",os.getpid())
 
@@ -426,7 +429,7 @@ class Executor(Eventful):
                     if current_state is None:
                         with self._lock:
                             #notify siblings we are about to stop this run
-                            self._stop_run()
+                            self._notify_stop_run()
                             #Select a single state_id
                             current_state_id = self.get()
                             #load selected state from secondary storage
@@ -435,8 +438,8 @@ class Executor(Eventful):
                                 self.forward_events_from(current_state, True)
                                 logger.info("load state %r", current_state_id)
                                 self.publish('will_load_state', current_state, current_state_id)
-                                #notify siblings we have a state to play with
-                            self._start_run()
+                            #notify siblings we have a state to play with
+                            self._notify_start_run()
 
                         #If current_state is still None. We are done.
                         if current_state is None:
@@ -491,6 +494,7 @@ class Executor(Eventful):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
+                    print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
                     #Notify this worker is done
                     self.publish('will_terminate_state', current_state, current_state_id, 'Exception')
@@ -500,7 +504,7 @@ class Executor(Eventful):
             assert current_state is None
 
             #notify siblings we are about to stop this run
-            self._stop_run()
+            self._notify_stop_run()
 
             #Notify this worker is done (not sure it's needed)
             self.publish('will_finish_run')

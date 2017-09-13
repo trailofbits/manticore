@@ -2279,6 +2279,16 @@ class SLinux(Linux):
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
 
+    def add_symbolic_file(self, symbolic_file):
+        '''
+        Add a symbolic file. Each '+' in the file will be considered
+        as symbolic, other char are concretized.
+        Symbolic files must have been defined before the call to `run()`.
+
+        :param str symbolic_file: the name of the symbolic file
+        '''
+        self.symbolic_files.append(symbolic_file)
+
     @property
     def constraints(self):
         return self._constraints

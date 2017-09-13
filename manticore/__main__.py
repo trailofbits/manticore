@@ -1,8 +1,7 @@
 import sys
 import argparse
 import logging
-
-from manticore import Manticore
+from manticore import Manticore, log, make_initial_state
 
 sys.setrecursionlimit(10000)
 
@@ -24,20 +23,10 @@ def parse_arguments():
     disas = ['capstone', 'binja-il']
     parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
                         help=argparse.SUPPRESS)
-    parser.add_argument('--dumpafter', type=int, default=0,
-                        help='Dump state after every N instructions; 0 to disable')
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Specify symbolic environment variable VARNAME=++++++')
-    parser.add_argument('--errorfile', type=str, default=None,
-                        help='where to write the memory error locations')
-    parser.add_argument('--file', type=str, action='append', dest='files',
+    parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
-    parser.add_argument('--maxstorage', type=int, default=0,
-                        help='Storage use cap in megabytes.')
-    parser.add_argument('--maxstates', type=int, default=0,
-                        help='Maximun number of states to mantain at the same time')
-    parser.add_argument('--maxsymb', type=int, default=512,
-                        help='Maximun number of symbolic bytes to inject')
     parser.add_argument('--names', type=str, default=None,
                         help=("File with function addresses to replace "
                               "with known models"))
@@ -79,51 +68,29 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    m = Manticore(args.argv[0], args.argv[1:], disasm=args.disasm)
-    m.policy = args.policy
-    m.args = args
 
-    if args.data:
-        m.concrete_data = args.data
+    env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
 
-    if args.workspace:
-        m.workspace = args.workspace
+    Manticore.verbosity(args.v)
 
-    if args.profile:
-        m.should_profile = args.profile
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
 
-    if args.dumpafter != 0:
-        m.dumpafter = args.dumpafter
-
-    if args.maxstorage != 0:
-        m.maxstorage = args.maxstorage
-
-    if args.maxstates != 0:
-        m.maxstates = args.maxstates
-
-    if args.coverage:
-        m.coverage_file = args.coverage
+    #Fixme(felipe) remove this, move to plugin
+    m.coverage_file = args.coverage
 
     if args.names is not None:
         m.apply_model_hooks(args.names)
 
-    if args.env:
-        for entry in args.env:
-            name, val = entry[0].split('=')
-            m.env_add(name, val)
-
-    if args.files:
-        for file in args.files:
-            m.add_symbolic_file(file)
-
     if args.assertions:
         m.load_assertions(args.assertions)
 
-    m.verbosity = args.v
+    @m.init
+    def init(initial_state):
+        for file in args.files:
+            initial_state.platform.add_symbolic_file(file)
 
-    m.run(args.procs, args.timeout)
 
-    #m.dump_stats()
+    m.run(procs=args.procs, timeout=args.timeout, should_profile=args.profile)
 
 if __name__ == '__main__':
     main()

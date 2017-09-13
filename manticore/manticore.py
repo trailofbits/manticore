@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import types
-import logging
 import binascii
 import functools
 import cProfile
@@ -13,6 +12,7 @@ from contextlib import contextmanager
 
 from threading import Timer
 
+import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -24,11 +24,24 @@ from .core.workspace import ManticoreOutput, Workspace
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
+import logging
 from .utils import log
 
+log.init_logging()
 logger = logging.getLogger('MANTICORE')
 
-def makeBinja(program, disasm, argv, env, symbolic_files, concrete_start=''):
+def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
+    def _check_disassembler_present(disasm):
+        if is_binja_disassembler(disasm):
+            try:
+                import binaryninja
+            except ImportError:
+                err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
+                       " that supports GUI-less processing for this option"
+                       " to work. Please configure your PYTHONPATH appropriately or"
+                       " select a different disassembler")
+                raise SystemExit(err)
+    _check_disassembler_present(disasm)
     constraints = ConstraintSet()
     logger.info('Loading binary ninja IL from %s', program)
     platform = linux.SLinux(program,
@@ -39,7 +52,8 @@ def makeBinja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     initial_state = State(constraints, platform)
     return initial_state
 
-def makeDecree(program, concrete_data=''):
+
+def make_decree(program, concrete_data='', **kwargs):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
@@ -51,16 +65,17 @@ def makeDecree(program, concrete_data=''):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def makeLinux(program, disasm, argv, env, symbolic_files, concrete_start=''):
-    logger.info('Loading program %s (platform: Linux)', program)
+def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start = ''):
+    env = {} if env is None else env
+    argv = [] if argv is None else argv
+    env = ['%s=%s'%(k,v) for k,v in env.items()]
+
+    logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
+    platform = linux.SLinux(program, argv=argv, envp=env,
+                            symbolic_files=symbolic_files)
 
-    platform = linux.SLinux(program,
-                            argv=argv,
-                            envp=env,
-                            symbolic_files=symbolic_files,
-                            disasm=disasm)
     initial_state = State(constraints, platform)
 
     if concrete_start != '':
@@ -82,11 +97,10 @@ def makeLinux(program, disasm, argv, env, symbolic_files, concrete_start=''):
     #set stdin input...
     platform.input.write(initial_state.symbolicate_buffer('+' * 256,
                                                           label='STDIN'))
-
     return initial_state
 
 
-def makeWindows(args):
+def make_windows(args, programs, context, data, offset, maxsymb, workspace, size=None, buffer=None, **kwargs):
     assert args.size is not None, "Need to specify buffer size"
     assert args.buffer is not None, "Need to specify buffer base address"
     logger.debug('Loading program %s (platform: Windows)', args.argv)
@@ -128,82 +142,54 @@ def makeWindows(args):
 
     return State(constraints, platform)
 
-def binary_type(path):
-    '''
-    Given a path to a binary, return a string representation of its type.
-      i.e. ELF, PE, DECREE, QNX
-    '''
-    magic = None
-    with open(path) as f:
-        magic = f.read(4)
-
+def make_initial_state(binary_path, **kwargs):
+    if 'disasm' in kwargs:
+        if kwargs.get('disasm') == "binja-il":
+            return make_binja(binary_path, **kwargs)
+        else:
+            del kwargs['disasm']
+    magic = file(binary_path).read(4)
     if magic == '\x7fELF':
-        return 'ELF'
-    elif magic == 'MDMP':
-        return 'PE'
+        # Linux
+        state = make_linux(binary_path, **kwargs)
     elif magic == '\x7fCGC':
-        return 'DECREE'
+        # Decree
+        state = make_decree(binary_path, **kwargs)
     else:
-        raise NotImplementedError("Binary {} not supported. Magic bytes: 0x{}".format(path, binascii.hexlify(magic)))
-
+        raise NotImplementedError("Binary {} not supported.".format(binary_path))
+    return state
 
 class Manticore(object):
     '''
     The central analysis object.
 
-    :param path_or_state: Path to a binary to analyze or `State` object
+    :param path_or_state: Path to a binary to analyze (deprecated) or `State` object
     :type path_or_state: str or State
-    :param args: Arguments to provide to binary
-    :type args: list[str]
+    :param argv: Arguments to provide to binary (deprecated)
+    :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
-    def __init__(self, path_or_state, args=None, disasm='capstone'):
 
-        args = [] if args is None else args
+    def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
 
-        if isinstance(path_or_state, str):
-            assert os.path.isfile(path_or_state)
-            self._binary = path_or_state
-            self._initial_state_type = binary_type(self._binary)
+        if isinstance(workspace_url, str):
+            if ':' not in workspace_url:
+                ws_path = 'fs:' + workspace_url
+            else:
+                ws_path = workspace_url
         else:
-            assert isinstance(path_or_state, State), "Manticore must be intialized with either a state or a path to a binary"
-            self._binary = None
-            self._initial_state_type = 'MCORE'
-
-        self._check_disassembler_present(disasm)
-        self._disasm = disasm
-        # yan's comment
-        self._argv = args
-        self._env = {}
-        # Will be set to a temporary directory if not set before running start()
-        self._policy = 'random'
+            ws_path = None
+        self._output = ManticoreOutput(ws_path)
+        self._context = {}
         self._coverage_file = None
-        self._memory_errors = None
-        self._should_profile = False
-        self._workers = []
-        # XXX(yan) '_args' will be removed soon; exists currently to ease porting
-        self._args = args
-        self._time_started = 0
-        self._begun_trace = False
-        self._assertions = {}
-        self._model_hooks = {}
+
+        #sugar for 'will_execute_instruction"
         self._hooks = {}
-        self._running = False
-        self._arch = None
-        self._concrete_data = ''
-        self._dumpafter = 0
-        self._maxstates = 0
-        self._maxstorage = 0
-        self._workspace = getattr(args, 'workspace', None)
-        self._symbolic_files = [] # list of string
 
-        if isinstance(self._workspace, str):
-            if ':' not in self._workspace:
-                self._workspace = 'fs:' + self._workspace
+        self._symbolic_files = []
 
-        self._output = ManticoreOutput(self._workspace)
-        self._executor = Executor(workspace=self._output.descriptor)
-
+        self._executor = Executor(workspace=ws_path, policy=policy)
+        self._workers = []
         #Link Executor events to default callbacks in manticore object
         self._executor.subscribe('did_read_register', self._read_register_callback)
         self._executor.subscribe('will_write_register', self._write_register_callback)
@@ -215,21 +201,42 @@ class Manticore(object):
         self._executor.subscribe('forking_state', self._forking_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_generate_testcase', self._generate_testcase_callback)
+        self._executor.subscribe('did_finish_run', self._finish_run_callback)
 
-        #Executor wide shared context
-        self._context = {}
 
-        # XXX(yan) This is a bit obtuse; once PE support is updated this should
-        # be refactored out
-        if self._initial_state_type == 'ELF':
-            self._binary_obj = ELFFile(file(self._binary))
+        if isinstance(path_or_state, str):
+            assert os.path.isfile(path_or_state)
+            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
+        elif isinstance(path_or_state, State):
+            self._initial_state = path_or_state
+        else:
+            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
 
-        log.init_logging()
+        #Move the folowwing into a plugin
+        self._assertions = {}
+
+    @classmethod
+    def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+        try:
+            return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
+        except elftools.common.exceptions.ELFError:
+            raise Exception('Invalid binary: {}'.format(path))
+
+    @classmethod
+    def decree(cls, path, concrete_data='', **kwargs):
+        try:
+            return cls(make_decree(path, concrete_data), **kwargs)
+        except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
+            raise Exception('Invalid binary: {}'.format(path))
+
+    @property
+    def initial_state(self):
+        return self._initial_state
 
     @property
     def context(self):
         ''' Convenient access to shared context '''
-        if self._executor is None:
+        if not self.running:
             return self._context
         else:
             logger.warning("Using shared context without a lock")
@@ -263,7 +270,7 @@ class Manticore(object):
 
         @contextmanager
         def _real_context():
-            if self._executor is None:
+            if not self.running :
                 yield self._context
             else:
                 with self._executor.locked_context() as context:
@@ -278,81 +285,74 @@ class Manticore(object):
                 yield ctx
                 context[key] = ctx
 
-    # XXX(yan): args is a temporary hack to include while we continue moving
-    # non-Linux platforms to new-style arg handling.
-    @property
-    def args(self):
-        return self._args
-
-    @args.setter
-    def args(self, args):
-        self._args = args
-
-    @property
-    def should_profile(self):
-        return self._should_profile
-
-    @should_profile.setter
-    def should_profile(self, enable_profiling):
-        self._should_profile = enable_profiling
-
-    @property
-    def concrete_data(self):
-        return self._concrete_data
-
-    @concrete_data.setter
-    def concrete_data(self, data):
-        self._concrete_data = data
-
-    @property
-    def maxstates(self):
-        return self._maxstates
-
-    @maxstates.setter
-    def maxstates(self, max_states):
-        self._maxstates = max_states
-
-    @property
-    def dumpafter(self):
-        return self._dumpafter
-
-    @dumpafter.setter
-    def dumpafter(self, dump_after):
-        self._dumpafter = dump_after
-
-    @property
-    def maxstorage(self):
-        return self._maxstorage
-
-    @property
-    def verbosity(self):
+    @staticmethod
+    def verbosity(level):
         """Convenience interface for setting logging verbosity to one of
         several predefined logging presets. Valid values: 0-5.
         """
-        return log.manticore_verbosity
-
-    @verbosity.setter
-    def verbosity(self, setting):
-        """A call used to modify the level of output verbosity
-        :param int setting: the level of verbosity to be used
-        """
-        log.set_verbosity(setting)
-
-    @maxstorage.setter
-    def maxstorage(self, max_storage):
-        self._maxstorage = max_storage
+        log.set_verbosity(level)
 
     @property
-    def workspace(self):
-        return self._workspace
+    def running(self):
+        return self._executor._running.value
 
-    @workspace.setter
-    def workspace(self, ws):
-        assert not self._running, "Can't set workspace if Manticore is running."
-        if ':' not in ws:
-            ws = "fs:" + ws
-        self._output = ManticoreOutput(ws)
-        self._executor._workspace = Workspace(self._executor._lock, self._output._descriptor)
+    def enqueue(self, state):
+        ''' Dynamically enqueue states. Users should typically not need to do this '''
+        assert not self.running, "Can't add state where running. Can we?"
+        self._executor.add(state)
+
+    ###########################################################################
+    # Workers                                                                 #
+    ###########################################################################
+    def _start_workers(self, num_processes, profiling=False):
+        assert num_processes > 0, "Must have more than 0 worker processes"
+
+        logger.info("Starting %d processes.", num_processes)
+
+        if profiling:
+            def profile_this(func):
+                @functools.wraps(func)
+                def wrapper(*args, **kwargs):
+                    profile = cProfile.Profile()
+                    profile.enable()
+                    result = func(*args, **kwargs)
+                    profile.disable()
+                    profile.create_stats()
+                    with self.locked_context('profiling_stats', list) as profiling_stats:
+                        profiling_stats.append(profile.stats.items())
+                    return result
+                return wrapper
+
+            target = profile_this(self._executor.run)
+        else:
+            target = self._executor.run
+
+        if num_processes == 1:
+            target()
+        else:
+            for _ in range(num_processes):
+                p = Process(target=target, args=())
+                self._workers.append(p)
+                p.start()
+
+    def _join_workers(self):
+        with WithKeyboardInterruptAs(self._executor.shutdown):
+            while len(self._workers) > 0:
+                w = self._workers.pop().join()
+
+    ############################################################################
+    # Common hooks + callback
+    ############################################################################
+
+    def init(self, f):
+        '''
+        A decorator used to register a hook function to run before analysis begins. Hook
+        function takes one :class:`~manticore.core.state.State` argument.
+        '''
+        def callback(manticore_obj, state):
+            f(state)
+        self._executor.subscribe('will_start_run', types.MethodType(callback, self))
+        return f
 
     def hook(self, pc):
         '''
@@ -381,160 +381,26 @@ class Manticore(object):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
         else:
             self._hooks.setdefault(pc, set()).add(callback)
+            if self._hooks:
+                self._executor.subscribe('will_execute_instruction', self._hook_callback)
 
-    def add_symbolic_file(self, symbolic_file):
-        '''
-        Add a symbolic file. Each '+' in the file will be considered
-        as symbolic, other char are concretized.
-        Symbolic files must have been defined before the call to `run()`.
+    def _hook_callback(self, state, instruction):
+        pc = state.cpu.PC
+        'Invoke all registered generic hooks'
 
-        :param str symbolic_file: the name of the symbolic file
-        '''
-        self._symbolic_files.append(symbolic_file)
+        # Ignore symbolic pc.
+        # TODO(yan): Should we ask the solver if any of the hooks are possible,
+        # and execute those that are?
+        if not isinstance(pc, (int, long)):
+            return
 
-    def _get_symbol_address(self, symbol):
-        '''
-        Return the address of |symbol| within the binary
-        '''
-        if self._binary_obj is None:
-            return NotImplementedError("Symbols aren't supported")
+        # Invoke all pc-specific hooks
+        for cb in self._hooks.get(pc, []):
+            cb(state)
 
-        for section in self._binary_obj.iter_sections():
-            if not isinstance(section, SymbolTableSection):
-                continue
-
-            symbols = section.get_symbol_by_name(symbol)
-            if len(symbols) == 0:
-                continue
-
-            return symbols[0].entry['st_value']
-
-    def _make_state(self, path):
-        if self._initial_state_type == 'BinaryNinjaIL' or self._disasm == "binja-il":
-            # Binary Ninja
-            env = ['%s=%s' % (k, v) for k, v in self._env.items()]
-            state = makeBinja(self._binary, self._disasm, self._argv, env,
-                              self._symbolic_files, self._concrete_data)
-        elif self._initial_state_type == 'ELF':
-            # Linux
-            env = ['%s=%s' % (k, v) for k, v in self._env.items()]
-            state = makeLinux(self._binary, self._disasm, self._argv, env,
-                              self._symbolic_files, self._concrete_data)
-        elif self._initial_state_type == 'PE':
-            # Windows
-            state = makeWindows(self._args)
-        elif self._initial_state_type == 'DECREE':
-            # Decree
-            state = makeDecree(self._binary, self._concrete_data)
-        elif self._initial_state_type == 'MCORE':
-            state = path_or_state
-        else:
-            raise NotImplementedError("Binary {} not supported.".format(path))
-
-        return state
-
-    @property
-    def policy(self):
-        return self._policy
-
-    @policy.setter
-    def policy(self, policy):
-        assert not self._running, "Can't set policy if Manticore is running."
-        self._policy = policy
-
-    @property
-    def coverage_file(self):
-        return self._coverage_file
-
-    @coverage_file.setter
-    def coverage_file(self, path):
-        assert not self._running, "Can't set coverage file if Manticore is running."
-        self._coverage_file = path
-
-    @property
-    def memory_errors_file(self):
-        return self._memory_errors
-
-    @memory_errors_file.setter
-    def memory_errors_file(self, path):
-        assert not self._running, "Can't set memory errors if Manticore is running."
-        self._memory_errors = path
-
-    @property
-    def env(self):
-        return self._env
-
-    @env.setter
-    def env(self, env):
-        '''
-        Update environment variables from |env|. Use repeated '+' chars for
-        symbolic values.
-        '''
-        assert isinstance(env, dict)
-        assert not self._running, "Can't set process env if Manticore is running."
-
-        self._env.update(env)
-        return self._env
-
-    def env_add(self, key, value, overwrite=True):
-        if key in self._env:
-            if overwrite:
-                self._env[key] = value
-        else:
-            self._env[key] = value
-
-    @property
-    def arch(self):
-        assert self._binary is not None
-
-        if self._arch is not None:
-            return self._arch
-
-        arch = self._binary_obj.get_machine_arch()
-        if   arch == 'x86': self._arch = 'i386'
-        elif arch == 'x64': self._arch = 'x86_64'
-        elif arch == 'ARM': self._arch = 'arm'
-        else: raise "Unsupported architecture: %s"%(arch, )
-
-        return self._arch
-
-
-    def _start_workers(self, num_processes, profiling=False):
-        assert num_processes > 0, "Must have more than 0 worker processes"
-
-        logger.info("Starting %d processes.", num_processes)
-
-        if profiling:
-            def profile_this(func):
-                @functools.wraps(func)
-                def wrapper(*args, **kwargs):
-                    profile = cProfile.Profile()
-                    profile.enable()
-                    result = func(*args, **kwargs)
-                    profile.disable()
-                    profile.create_stats()
-                    with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(profile.stats.items())
-                    return result
-                return wrapper
-
-            target = profile_this(self._executor.run)
-        else:
-            target = self._executor.run
-
-        if self._disasm == 'binja-il':
-            target()
-        else:
-            for _ in range(num_processes):
-                p = Process(target=target, args=())
-                self._workers.append(p)
-                p.start()
-
-    def _join_workers(self):
-        with WithKeyboardInterruptAs(self._executor.shutdown):
-            while len(self._workers) > 0:
-                w = self._workers.pop().join()
-
+        # Invoke all pc-agnostic hooks
+        for cb in self._hooks.get(None, []):
+            cb(state)
 
     ############################################################################
     # Model hooks + callback
@@ -561,6 +427,8 @@ class Manticore(object):
                 def cb_function(state):
                     state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
                 self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
+                self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
+
 
     def _model_hook_callback(self, state, instruction):
         pc = state.cpu.PC
@@ -582,6 +450,34 @@ class Manticore(object):
                 if pc in self._assertions:
                     logger.debug("Repeated PC in assertions file %s", path)
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
+                self._executor.subscribe('will_execute_instruction', self._assertions_callback)
+
+    def _assertions_callback(self, state, instruction):
+        pc = state.cpu.PC
+        if pc not in self._assertions:
+            return
+
+        from core.parser import parse
+
+        program = self._assertions[pc]
+
+        #This will interpret the buffer specification written in INTEL ASM.
+        # (It may dereference pointers)
+        assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
+        if not solver.can_be_true(state.constraints, assertion):
+            logger.info(str(state.cpu))
+            logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
+                    state.cpu.pc, program)
+            raise TerminateState()
+
+        #Everything is good add it.
+        state.constraints.add(assertion)
+
+
+
+    ##########################################################################
+    #Some are Place holders Remove
+    #Any platform specific callback should go to a plugin
 
     def _terminate_state_callback(self, state, state_id, ex):
         #aggregates state statistics into exceutor statistics. FIXME split
@@ -675,14 +571,101 @@ class Manticore(object):
                     import marshal
                     marshal.dump(ps.stats, s)
 
+    def _start_run(self):
+        assert not self.running
+        #FIXME this will be self.publish 
+        self._executor.publish('will_start_run', self._initial_state)
+        self.enqueue(self._initial_state)
+        self._initial_state = None
 
-    def finish_run(self):
-        if self.should_profile:
+        #Copy the local main context to the shared conext
+        self._executor._shared_context.update(self._context)
+
+    def _finish_run(self, profiling=False):
+        assert not self.running
+        #Copy back the shared context
+        self._context = dict(self._executor._shared_context)
+
+        if profiling:
             self._produce_profiling_data()
+        #FIXME this will be self.publish 
+        self._executor.publish('did_finish_run')
 
+    def run(self, procs=1, timeout=0, should_profile=False):
+        '''
+        Runs analysis.
+
+        :param int procs: Number of parallel worker processes
+        :param timeout: Analysis timeout, in seconds
+        '''
+        assert not self.running, "Manticore is already running."
+        self._start_run()
+
+        self._time_started = time.time()
+        if timeout > 0:
+            t = Timer(timeout, self.terminate)
+            t.start()
+        try:
+            self._start_workers(procs, profiling=should_profile)
+
+            self._join_workers()
+        finally:
+            if timeout > 0:
+                t.cancel()
+        self._finish_run(profiling=should_profile)
+
+
+    def terminate(self):
+        '''
+        Gracefully terminate the currently-executing run. Typically called from within
+        a :func:`~hook`.
+        '''
+        self._executor.shutdown()
+
+
+    #############################################################################
+    #############################################################################
+    #############################################################################
+    # Move all the following elsewhere Not all manticores have this
+
+
+    def _get_symbol_address(self, symbol):
+        '''
+        Return the address of |symbol| within the binary
+        '''
+
+        # XXX(yan) This is a bit obtuse; once PE support is updated this should
+        # be refactored out
+        if self._binary_type == 'ELF':
+            self._binary_obj = ELFFile(file(self._binary))
+
+
+        if self._binary_obj is None:
+            return NotImplementedError("Symbols aren't supported")
+
+        for section in self._binary_obj.iter_sections():
+            if not isinstance(section, SymbolTableSection):
+                continue
+
+            symbols = section.get_symbol_by_name(symbol)
+            if len(symbols) == 0:
+                continue
+
+            return symbols[0].entry['st_value']
+
+
+    @property
+    def coverage_file(self):
+        return self._coverage_file
+
+    @coverage_file.setter
+    def coverage_file(self, path):
+        assert not self.running, "Can't set coverage file if Manticore is running."
+        self._coverage_file = path
+
+    def _finish_run_callback(self):
         _shared_context = self.context
         executor_visited = _shared_context.get('visited', set())
-
         #Fixme this is duplicated?
         if self.coverage_file is not None:
             with self._output.save_stream(self.coverage_file) as f:
@@ -707,108 +690,3 @@ class Manticore(object):
         logger.info('IPS: %d', instructions_count/elapsed)
 
 
-    def run(self, procs=1, timeout=0):
-        '''
-        Runs analysis.
-
-        :param int procs: Number of parallel worker processes
-        :param timeout: Analysis timeout, in seconds
-        '''
-        assert not self._running, "Manticore is already running."
-        args = self._args
-
-        replay = None
-        if hasattr(args, 'replay') and args.replay is not None:
-            with open(args.replay, 'r') as freplay:
-                replay = map(lambda x: int(x, 16), freplay.readlines())
-
-        initial_state = self._make_state(self._binary)
-        self._executor.policy = self.policy
-        self._executor.add(initial_state)
-
-        if self._hooks:
-            self._executor.subscribe('will_execute_instruction', self._hook_callback)
-
-        if self._model_hooks:
-            self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
-
-        if self._assertions:
-            self._executor.subscribe('will_execute_instruction', self._assertions_callback)
-
-        self._time_started = time.time()
-
-        self._running = True
-
-        if timeout > 0:
-            t = Timer(timeout, self.terminate)
-            t.start()
-        try:
-            self._start_workers(procs, profiling=self.should_profile)
-
-            self._join_workers()
-        finally:
-            self._running = False
-            if timeout > 0:
-                t.cancel()
-        #Copy back the shared conext
-        self._context = dict(self._executor._shared_context)
-        self._executor = None
-        self.finish_run()
-
-
-    def terminate(self):
-        '''
-        Gracefully terminate the currently-executing run. Typically called from within
-        a :func:`~hook`.
-        '''
-        self._executor.shutdown()
-
-    def _assertions_callback(self, state, instruction):
-        pc = state.cpu.PC
-        if pc not in self._assertions:
-            return
-
-        from core.parser import parse
-
-        program = self._assertions[pc]
-
-        #This will interpret the buffer specification written in INTEL ASM.
-        # (It may dereference pointers)
-        assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
-        if not solver.can_be_true(state.constraints, assertion):
-            logger.info(str(state.cpu))
-            logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                    state.cpu.pc, program)
-            raise TerminateState()
-
-        #Everything is good add it.
-        state.constraints.add(assertion)
-
-    def _hook_callback(self, state, instruction):
-        pc = state.cpu.PC
-        'Invoke all registered generic hooks'
-
-        # Ignore symbolic pc.
-        # TODO(yan): Should we ask the solver if any of the hooks are possible,
-        # and execute those that are?
-        if not isinstance(pc, (int, long)):
-            return
-
-        # Invoke all pc-specific hooks
-        for cb in self._hooks.get(pc, []):
-            cb(state)
-
-        # Invoke all pc-agnostic hooks
-        for cb in self._hooks.get(None, []):
-            cb(state)
-
-    def _check_disassembler_present(self, disasm):
-        if is_binja_disassembler(disasm):
-            try:
-                import binaryninja
-            except ImportError:
-                err = ("BinaryNinja not found! You MUST own a BinaryNinja version"
-                       " that supports GUI-less processing for this option"
-                       " to work. Please configure your PYTHONPATH appropriately or"
-                       " select a different disassembler")
-                raise SystemExit(err)
