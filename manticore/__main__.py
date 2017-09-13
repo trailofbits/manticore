@@ -75,6 +75,7 @@ def main():
 
     #This will affect global logging settings and not just logging from 'm'
     m.verbosity = args.v
+    #All the following will only affect this instance
 
     #Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
