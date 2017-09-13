@@ -233,6 +233,13 @@ class Manticore(object):
         except elftools.common.exceptions.ELFError:
             raise Exception('Invalid binary: {}'.format(path))
 
+    @classmethod
+    def decree(cls, path, concrete_data='', **kwargs):
+        try:
+            return cls(make_decree(path, concrete_data), **kwargs)
+        except KeyError:
+            raise Exception('Invalid binary: {}'.format(path))
+
     @property
     def initial_state(self):
         return self._initial_state
