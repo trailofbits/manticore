@@ -525,9 +525,9 @@ class Manticore(Eventful):
                 if pc in self._assertions:
                     logger.debug("Repeated PC in assertions file %s", path)
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
-                self._executor.subscribe('will_execute_instruction', self._assertions_callback)
+                self.subscribe('will_execute_instruction', self._assertions_callback)
 
-    def _assertions_callback(self, state, instruction, pc):
+    def _assertions_callback(self, state, pc, instruction):
         if pc not in self._assertions:
             return
 

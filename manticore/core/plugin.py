@@ -51,10 +51,11 @@ class InstructionCounter(Plugin):
             manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
 
     def did_execute_instruction_callback(self, state, prev_pc, target_pc, instruction):
-        address = state.cpu.PC
+        address = prev_pc
         if not issymbolic(address):
             count = state.context.get('instructions_count', 0)
             state.context['instructions_count'] = count + 1
+
     def did_finish_run_callback(self):
         _shared_context = self.manticore.context
         instructions_count = _shared_context.get('instructions_count', 0)
