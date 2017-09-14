@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## 0.1.5 - 2017-09-15
 
+Thanks to our external contributors to this release!
+
+- [johnfxgalea](https://github.com/johnfxgalea)
+
 ### Deprecated
 
 - `Manticore('binary', ['arg1', 'arg2'])` style initialization. Use new class methods (see below).
@@ -15,17 +19,21 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 - Platform-specific class methods for Manticore initialization
   - e.g. `Manticore.linux('binary', ['arg1', 'arg2'])`
 - `@m.init` analysis initialization hook
-- Support for various Linux syscalls (thanks [johnfxgalea](https://github.com/johnfxgalea)!)
+- Linux: Various new syscall support, including basic TCP socket support
 - [Experimental] Support for symbolic execution of Ethereum Virtual Machine bytecode
 
 ### Changed
 
 - `Manticore.verbosity` logging preset levels interface is now a static method
+- Analysis is deterministic
 
 ### Fixed
 
+- Linux: stderr file is generated in workspace
 
 ### Removed
+
+- Requirement of external z3 binary installation (z3 installation occurs automatically now via pip)
 
 
 
