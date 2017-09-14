@@ -492,9 +492,7 @@ class Executor(Eventful):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
-                    print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
-                    print str(e), trace
                     #Notify this worker is done
                     self.publish('will_terminate_state', current_state, current_state_id, 'Exception'+str(e))
                     current_state = None
