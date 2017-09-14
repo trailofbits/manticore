@@ -270,7 +270,7 @@ class Manticore(object):
             raise Exception('Invalid binary: {}'.format(path))
 
     @classmethod
-    def evm(cls, path, concrete_data='', **kwargs):
+    def evm(cls, **kwargs):
         #Make the constraint store
         constraints = ConstraintSet()
         #make the ethereum world state
