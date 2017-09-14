@@ -486,6 +486,9 @@ class ManticoreOutput(object):
             summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
             summary.write('Status:\n  {}\n\n'.format(message))
 
+            # FIXME(mark) This is a temporary hack for EVM. We need to sufficiently
+            # abstract the below code to work on many platforms, not just Linux. Then
+            # we can remove this hack.
             if getattr(state.platform, 'procs', None) is None:
                 return
 
