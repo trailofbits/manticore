@@ -1,3 +1,4 @@
+import StringIO
 import errno
 import fcntl
 import logging
@@ -14,7 +15,7 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.cpu.binja import BinjaCpu
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
-from ..core.smtlib import Operators, ConstraintSet
+from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform
@@ -2237,39 +2238,6 @@ class Linux(Platform):
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
 
-    def generate_workspace_files(self):
-        def solve_to_fd(data, fd):
-            try:
-                for c in data:
-                    fd.write(chr(solver.get_value(state.constraints, c)))
-            except SolverException:
-                fd.write('{SolverException}')
-
-
-        import StringIO
-        out = StringIO.StringIO()
-        inn = StringIO.StringIO()
-        err = StringIO.StringIO()
-        net = StringIO.StringIO()
-
-        for name, fd, data in state.platform.syscall_trace:
-            if name in ('_transmit', '_write'):
-                if fd == 1:
-                    solve_to_fd(data, out)
-                elif fd == 2:
-                    solve_to_fd(data, err)
-            if name in ('_recv'):
-                solve_to_fd(data, net)
-            if name in ('_receive', '_read') and fd == 0:
-                solve_to_fd(data, inn)
-
-        ret = {}
-        ret['syscalls'] = repr(self.syscall_trace)
-        ret['stdout'] = out.getvalue()
-        ret['stdin'] = inn.getvalue()
-        ret['stderr'] = err.getvalue()
-        ret['net'] = net.getvalue()
-        return ret
 
 
 ############################################################################
@@ -2451,3 +2419,34 @@ class SLinux(Linux):
 
         return rv
 
+    def generate_workspace_files(self):
+        def solve_to_fd(data, fd):
+            try:
+                for c in data:
+                    fd.write(chr(solver.get_value(self.constraints, c)))
+            except SolverException:
+                fd.write('{SolverException}')
+
+        out = StringIO.StringIO()
+        inn = StringIO.StringIO()
+        err = StringIO.StringIO()
+        net = StringIO.StringIO()
+
+        for name, fd, data in self.syscall_trace:
+            if name in ('_transmit', '_write'):
+                if fd == 1:
+                    solve_to_fd(data, out)
+                elif fd == 2:
+                    solve_to_fd(data, err)
+            if name in ('_recv'):
+                solve_to_fd(data, net)
+            if name in ('_receive', '_read') and fd == 0:
+                solve_to_fd(data, inn)
+
+        ret = {}
+        ret['syscalls'] = repr(self.syscall_trace)
+        ret['stdout'] = out.getvalue()
+        ret['stdin'] = inn.getvalue()
+        ret['stderr'] = err.getvalue()
+        ret['net'] = net.getvalue()
+        return ret
