@@ -455,8 +455,6 @@ class ManticoreOutput(object):
         self._named_key_prefix = prefix
         self._increment_id()
 
-
-        # these are good
         self.save_summary(state, message)
         self.save_trace(state)
         self.save_constraints(state)
