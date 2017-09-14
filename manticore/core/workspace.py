@@ -490,7 +490,9 @@ class ManticoreOutput(object):
             # abstract the below code to work on many platforms, not just Linux. Then
             # we can remove this hack.
             if getattr(state.platform, 'procs', None) is None:
-                summary.write(str(state.platform.current))
+                import pprint
+                summary.write("EVM World:\n")
+                summary.write(pprint.pformat(state.platform._global_storage))
                 return
 
             memories = set()
