@@ -1,6 +1,8 @@
 import inspect
+import logging
 from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
-from types import MethodType
+
+logger = logging.getLogger(__name__)
 
 class Eventful(object):
     '''
@@ -10,6 +12,8 @@ class Eventful(object):
           - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
     '''
+    published_events = set()
+
     def __init__(self, *args, **kwargs):
         # A dictionary from "event name" -> callback methods
         # Note that several methods can be associated with the same object
@@ -47,7 +51,20 @@ class Eventful(object):
         return self._signals.setdefault(name,  dict())
 
     # The underscore _name is to avoid naming collisions with callback params
-    def _publish(self, _name, *args, **kwargs):   
+    def _publish(self, _name, *args, **kwargs):
+        basename = _name
+        if _name.startswith('will_'):
+            basename = _name[5:]
+        elif _name.startswith('did_'):
+            basename = _name[4:]
+
+        # All subclasses except for last (object)
+        for cls in inspect.getmro(self.__class__)[:-1]:
+            if basename in cls.published_events:
+                break
+        else:
+            logger.warning("Event '%s' not pre-declared. (self: %s)", _name, repr(self))
+
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.iteritems():
             for callback in methods:
@@ -78,4 +95,5 @@ class Eventful(object):
         ''' This forwards signal to sink '''
         if not isinstance(sink, Eventful):
             raise TypeError
+        sink.__class__.published_events.update(self.__class__.published_events)
         self._forwards[sink] = include_source

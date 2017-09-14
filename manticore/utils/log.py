@@ -20,7 +20,8 @@ loggers = ['MANTICORE',
            'REGISTERS',
            'SMT',
            'MEMORY',
-           'PLATFORM']
+           'PLATFORM',
+           'manticore.utils.event']
 manticore_verbosity = 0
 
 def init_logging():
