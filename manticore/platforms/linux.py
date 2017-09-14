@@ -2443,10 +2443,11 @@ class SLinux(Linux):
             if name in ('_receive', '_read') and fd == 0:
                 solve_to_fd(data, inn)
 
-        ret = {}
-        ret['syscalls'] = repr(self.syscall_trace)
-        ret['stdout'] = out.getvalue()
-        ret['stdin'] = inn.getvalue()
-        ret['stderr'] = err.getvalue()
-        ret['net'] = net.getvalue()
+        ret = {
+            'syscalls': repr(self.syscall_trace),
+            'stdout': out.getvalue(),
+            'stdin': inn.getvalue(),
+            'stderr': err.getvalue(),
+            'net': net.getvalue()
+        }
         return ret
