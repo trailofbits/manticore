@@ -22,6 +22,7 @@ from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput, Workspace
+from .core.cpu.abstractcpu import Cpu
 from .platforms import linux, decree, windows
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
@@ -226,22 +227,28 @@ class Manticore(Eventful):
         #Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"
-        assert plugin.manticore is None, "Plugin instance already owned" 
+        assert plugin.manticore is None, "Plugin instance already owned"
+
         plugin.manticore = self
         self.plugins.add(plugin)
-        
-        for event_name in Plugin.event_names:
-            callback_name = event_name+'_callback'
-            if hasattr(plugin, callback_name):
-                self.subscribe(event_name, getattr(plugin, callback_name))
-            
+
+        #XXX(yan): keeping track of all_events is potentially too heavyweight just for warnings.
+        all_events = set()
+        for src in (Executor, State, Cpu, Manticore):
+            for event_name in src.published_events:
+                for prefix in ('will', 'did'):
+                    full_name = '{}_{}'.format(prefix, event_name)
+                    all_events.add(full_name)
+                    cb = getattr(plugin, '{}_callback'.format(full_name), None)
+                    if cb is not None:
+                        self.subscribe(full_name, cb)
+
         for callback_name in dir(plugin):
             if callback_name.endswith('_callback'):
                 event_name = callback_name[:-9]
-                if event_name not in Plugin.event_names:
-                    logger.info("There is no event name %s for callback on plugin type %s", event_name, type(plugin) ) 
-                    print "There is no event name %s for callback on plugin type %s" %( event_name, type(plugin)  )
-            
+                if event_name not in all_events:
+                    logger.warning("There is no event name %s for callback on plugin type %s", event_name, type(plugin) )
+
 
 
     def unregister_plugin(self, plugin):
