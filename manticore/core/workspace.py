@@ -454,6 +454,24 @@ class ManticoreOutput(object):
 
         self._named_key_prefix = prefix
         self._increment_id()
+
+        # with self._named_stream('xxx') as x:
+        #     x.write('xxx')
+
+        # self.save_summary(state, message) idk if this should be moved or not
+
+        # these are good
+        self.save_trace(state)
+        self.save_constraints(state)
+        self.save_input_symbols(state)
+
+        for stream_name, data in state.platform.generate_workspace_files():
+            with self._named_stream(stream_name) as stream:
+                stream.write(data)
+
+        # self.save_syscall_trace(state)
+        # self.save_fds(state)
+
         self._store.save_state(state, self._named_key('pkl'))
         return self._last_id
 
