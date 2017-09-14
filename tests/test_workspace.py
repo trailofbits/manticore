@@ -104,6 +104,7 @@ class StateTest(unittest.TestCase):
         self.assertIn('trace', keys)
         self.assertIn('syscalls', keys)
         self.assertIn('stdout', keys)
+        self.assertIn('stderr', keys)
         self.assertIn('stdin', keys)
         self.assertIn('messages', keys)
         self.assertIn('txt', keys)
