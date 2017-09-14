@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Added
 
-- Manticore class methods for Manticore initialization.
+- Platform-specific class methods for Manticore initialization
   - e.g. `Manticore.linux('binary', ['arg1', 'arg2'])`
 - `@m.init` analysis initialization hook
 - Support for various Linux syscalls (thanks [johnfxgalea](https://github.com/johnfxgalea)!)
