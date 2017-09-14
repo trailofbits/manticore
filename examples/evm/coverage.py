@@ -11,7 +11,6 @@ class ManticoreEVM(Manticore):
         return transaction
 
     def __init__(self):
-        super(ManticoreEVM, self).__init__()
         #Make the constraint store
         constraints = ConstraintSet()
         #make the ethereum world state
@@ -19,6 +18,7 @@ class ManticoreEVM(Manticore):
 
         #Let's start with the symbols
         self.temp_initial_state = State(constraints, world)
+        super(ManticoreEVM, self).__init__(self.temp_initial_state)
         self.transactions = []
         self.user_accounts = []
 
@@ -49,7 +49,7 @@ class ManticoreEVM(Manticore):
         state.context['step'] = step + 1
         if step < len(self.transactions):
             self.transactions[step](self, state, state.platform)
-            self.add(state)
+            self.enqueue(state)
             e.testcase = False
         else:
             self.report(state, state.platform, e)
@@ -64,7 +64,7 @@ class ManticoreEVM(Manticore):
                 code_data.add(i)
 
     def run(self, **kwargs):
-        self.add(self.temp_initial_state)
+        self.enqueue(self.temp_initial_state)
         self.temp_initial_state = None
         #now when this transaction ends
         self._executor.subscribe('will_terminate_state', self.terminate_transaction_callback)
