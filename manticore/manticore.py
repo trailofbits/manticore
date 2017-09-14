@@ -270,6 +270,14 @@ class Manticore(object):
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception('Invalid binary: {}'.format(path))
 
+    @classmethod
+    def evm(cls, path, concrete_data='', **kwargs):
+        #Make the constraint store
+        constraints = ConstraintSet()
+        #make the ethereum world state
+        world = evm.EVMWorld(constraints)
+        return cls(State(constraints, world), **kwargs)
+
     @property
     def initial_state(self):
         return self._initial_state
