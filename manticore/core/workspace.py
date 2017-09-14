@@ -455,9 +455,9 @@ class ManticoreOutput(object):
         self._named_key_prefix = prefix
         self._increment_id()
 
-        # self.save_summary(state, message) idk if this should be moved or not
 
         # these are good
+        self.save_summary(state, message)
         self.save_trace(state)
         self.save_constraints(state)
         self.save_input_symbols(state)
@@ -487,6 +487,9 @@ class ManticoreOutput(object):
         with self._named_stream('messages') as summary:
             summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
             summary.write('Status:\n  {}\n\n'.format(message))
+
+            if getattr(state.platform, 'procs', None) is None:
+                return
 
             memories = set()
             for cpu in filter(None, state.platform.procs):
