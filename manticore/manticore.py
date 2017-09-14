@@ -254,7 +254,6 @@ class Manticore(object):
 
         #Move the folowwing into a plugin
         self._assertions = {}
-        self._symbolic_files = []
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
