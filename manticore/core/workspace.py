@@ -462,7 +462,7 @@ class ManticoreOutput(object):
         self.save_constraints(state)
         self.save_input_symbols(state)
 
-        for stream_name, data in state.platform.generate_workspace_files():
+        for stream_name, data in state.platform.generate_workspace_files().items():
             with self._named_stream(stream_name) as stream:
                 stream.write(data)
 
