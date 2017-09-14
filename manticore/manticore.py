@@ -682,28 +682,12 @@ class Manticore(Eventful):
 
     def _did_finish_run_callback(self):
         _shared_context = self.context
-        executor_visited = _shared_context.get('visited', set())
-        #Fixme this is duplicated?
-        if self.coverage_file is not None:
-            with self._output.save_stream(self.coverage_file) as f:
-                fmt = "0x{:016x}\n"
-                for m in executor_visited:
-                    f.write(fmt.format(m))
-
-        with self._output.save_stream('visited.txt') as f:
-            for entry in sorted(executor_visited):
-                f.write('0:{:08x}\n'.format(entry))
 
         with self._output.save_stream('command.sh') as f:
             f.write(' '.join(sys.argv))
 
-        instructions_count = _shared_context.get('instructions_count', 0)
         elapsed = time.time() - self._time_started
         logger.info('Results in %s', self._output.uri)
-        logger.info('Instructions executed: %d', instructions_count)
-        logger.info('Coverage: %d different instructions executed', len(executor_visited))
-        #logger.info('Number of paths covered %r', State.state_count())
         logger.info('Total time: %s', elapsed)
-        logger.info('IPS: %d', instructions_count/elapsed)
 
 

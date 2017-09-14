@@ -1,4 +1,6 @@
+import logging
 from ..utils.helpers import issymbolic
+logger = logging.getLogger('MANTICORE')
 
 class Plugin(object):
     event_names = [
@@ -53,8 +55,17 @@ class InstructionCounter(Plugin):
         if not issymbolic(address):
             count = state.context.get('instructions_count', 0)
             state.context['instructions_count'] = count + 1
+    def did_finish_run_callback(self):
+        _shared_context = self.manticore.context
+        instructions_count = _shared_context.get('instructions_count', 0)
+        logger.info('Instructions executed: %d', instructions_count)
+
 
 class Visited(Plugin):
+    def __init__(self, coverage_file='visited.txt'): 
+        super(Visited, self).__init__()
+        self.coverage_file = coverage_file
+
     def will_terminate_state_callback(self, state, state_id, ex):
         if state is None:
             return
@@ -75,6 +86,16 @@ class Visited(Plugin):
         state.context.setdefault('visited', set()).add(prev_pc)
 
 
+    def did_finish_run_callback(self):
+        _shared_context = self.manticore.context
+        executor_visited = _shared_context.get('visited', set())
+        #Fixme this is duplicated?
+        if self.coverage_file is not None:
+            with self.manticore._output.save_stream(self.coverage_file) as f:
+                fmt = "0x{:016x}\n"
+                for m in executor_visited:
+                    f.write(fmt.format(m))
+        logger.info('Coverage: %d different instructions executed', len(executor_visited))
 
 
 

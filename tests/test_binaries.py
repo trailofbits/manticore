@@ -20,7 +20,8 @@ class IntegrationTest(unittest.TestCase):
 
     def tearDown(self):
         # Remove the directory after the test
-        shutil.rmtree(self.test_dir)
+        #shutil.rmtree(self.test_dir)
+        print self.test_dir
 
     def _loadVisitedSet(self, visited):
 
