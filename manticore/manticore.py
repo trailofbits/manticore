@@ -172,6 +172,9 @@ class Manticore(Eventful):
     :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
+
+    published_events = {'start_run', 'finish_run'}
+
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
         super(Manticore, self).__init__()
 
