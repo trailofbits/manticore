@@ -204,9 +204,15 @@ class Manticore(object):
     '''
     The central analysis object.
 
-    :param path_or_state: Path to a binary to analyze (deprecated) or `State` object
+    This should generally not be invoked directly; the various
+    class method constructors should be preferred:
+    :meth:`~manticore.Manticore.linux`,
+    :meth:`~manticore.Manticore.decree`,
+    :meth:`~manticore.Manticore.evm`.
+
+    :param path_or_state: Path to a binary to analyze (**deprecated**) or `State` object
     :type path_or_state: str or State
-    :param argv: Arguments to provide to binary (deprecated)
+    :param argv: Arguments to provide to binary (**deprecated**)
     :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
@@ -257,20 +263,51 @@ class Manticore(object):
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+        """
+        Constructor for Linux binary analysis.
+
+        :param str path: Path to binary to analyze
+        :param argv: Arguments to provide to the binary
+        :type argv: list[str]
+        :param envp: Environment to provide to the binary
+        :type envp: dict[str, str]
+        :param symbolic_files: Filenames to mark as having symbolic input
+        :type symbolic_files: list[str]
+        :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a Linux State
+        :rtype: Manticore
+        """
         try:
             return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception('Invalid binary: {}'.format(path))
 
     @classmethod
-    def decree(cls, path, concrete_data='', **kwargs):
+    def decree(cls, path, concrete_start='', **kwargs):
+        """
+        Constructor for Decree binary analysis.
+
+        :param str path: Path to binary to analyze
+        :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a Decree State
+        :rtype: Manticore
+        """
         try:
-            return cls(make_decree(path, concrete_data), **kwargs)
+            return cls(make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception('Invalid binary: {}'.format(path))
 
     @classmethod
     def evm(cls, **kwargs):
+        """
+        Constructor for Ethereum virtual machine bytecode analysis.
+
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a EVM State
+        :rtype: Manticore
+        """
         #Make the constraint store
         constraints = ConstraintSet()
         #make the ethereum world state
