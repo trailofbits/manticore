@@ -27,13 +27,14 @@ TOOHIGHMEM = 0x100
 def to_signed(i):
     return i if i < TT255 else i - TT256
 
-def pack(i, size=32):
+def pack_msb(value, size=32):
+    '''takes an int and packs it into a 32 byte string, msb first''' 
     assert size >=1
-    o = [0] * size
-    for x in range(size):
-        o[(size-1) - x] = i & 0xff
-        i >>= 8
-    return ''.join(map(chr,o))
+    bytes = []
+    for position in range(size):
+        bytes.append( Operators.EXTRACT(value, position*8, 8) )
+    chars = map(Operators.CHR, bytes)
+    return ''.join(reversed(chars))
 
 class EVMMemory(object):
     '''
@@ -44,7 +45,8 @@ class EVMMemory(object):
         Builds a memory.
 
         :param constraints:  a set of constraints
-        :param symbols: Symbolic chunks
+        :param address_size: address bit width
+        :param values_size: value bit width
         '''
         assert isinstance(constraints, ConstraintSet)
         self._constraints = constraints
@@ -125,7 +127,7 @@ class EVMMemory(object):
     def _concrete_write(self, address, value):
         assert not issymbolic(address) 
         assert not issymbolic(value)
-        assert value & ~(pow(2,self._value_size)-1) == 0 , "Not the correct size sor a value"
+        assert value & ~(pow(2,self._value_size)-1) == 0 , "Not the correct size for a value"
         self._memory[address] = value
 
     def read(self, address, size):
@@ -314,10 +316,8 @@ class EVMInstruction(object):
 
     def __str__(self):
         bytes = self.bytes.encode('hex')
-
         output = '<%s> '%bytes + self.name + (' 0x%x'%self.operand if self.has_operand else '')
-        if True:
-            output += ' '*(80-len(output))+self.description
+        output += ' '*(80-len(output))+self.description
         return output
 
     @property
@@ -608,16 +608,18 @@ class EVM(Eventful):
 
     def __init__(self, constraints, address, origin, price, data, caller, value, code, header, world=None, depth=0, **kwargs):
         '''
-        memory, the initial memory
-        address, the address of the account which owns the code that is executing.
-        origin, the sender address of the transaction that originated this execution. A 160-bit code used for identifying Accounts.
-        price, the price of gas in the transaction that originated this execution.
-        data, the byte array that is the input data to this execution
-        caller, the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
-        value, the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei.
-        bytecode, the byte array that is the machine code to be executed.
-        header, the block header of the present block.
-        depth, the depth of the present message-call or contract-creation (i.e. the number of CALLs or CREATEs being executed at present).
+        Builds a Ethereum Virtual Machine instance
+
+        :param memory: the initial memory
+        :param address: the address of the account which owns the code that is executing.
+        :param origin: the sender address of the transaction that originated this execution. A 160-bit code used for identifying Accounts.
+        :param price: the price of gas in the transaction that originated this execution.
+        :param data: the byte array that is the input data to this execution
+        :param caller: the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
+        :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei.
+        :param bytecode: the byte array that is the machine code to be executed.
+        :param header: the block header of the present block.
+        :param depth: the depth of the present message-call or contract-creation (i.e. the number of CALLs or CREATEs being executed at present).
 
         '''
         super(EVM, self).__init__(**kwargs)
@@ -714,7 +716,6 @@ class EVM(Eventful):
     def _load(self, address):
         self._allocate(address+32)
         value = self.memory.read(address,1)[0]
-        #print pretty_print(value)
         value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
@@ -796,7 +797,7 @@ class EVM(Eventful):
         self.publish('will_decode_instruction', self.pc)
         current = self.instruction
 
-        self.publish('will_execute_instruction', current)
+        self.publish('did_execute_instruction', current)
 
         implementation = getattr(self, current.semantics, None)
         if implementation is None:

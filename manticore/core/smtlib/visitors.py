@@ -468,7 +468,7 @@ class ArithmeticSimplifier(Visitor):
 arithmetic_simplifier_cache = {}
 def arithmetic_simplifier(expression):
     global arithmetic_simplifier_cache    
-    simp = ArithmeticSimplifier() #cache=arithmetic_simplifier_cache)
+    simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
