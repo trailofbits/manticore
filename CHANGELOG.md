@@ -24,7 +24,7 @@ Thanks to our external contributors to this release!
 
 ### Changed
 
-- `Manticore.verbosity` logging preset levels interface is now a static method, replacing `m.verbosity`
+- `Manticore.verbosity`: logging preset levels interface is now a static method, replacing `m.verbosity` property
 
 ### Fixed
 
