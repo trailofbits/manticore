@@ -583,7 +583,12 @@ class Manticore(object):
             manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
 
     def _forking_state_callback(self, state, expression, value, policy):
-        state.record_branch(value)
+        #FIXME(felipe) remove
+        try:
+            state.record_branch(value)
+        except:
+            pass
+        pass    
 
     def _fork_state_callback(self, state, expression, values, policy):
         state_visited = state.context.get('visited_since_last_fork', set())

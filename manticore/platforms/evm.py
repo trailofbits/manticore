@@ -796,8 +796,7 @@ class EVM(Eventful):
 
         self.publish('will_decode_instruction', self.pc)
         current = self.instruction
-
-        self.publish('did_execute_instruction', current)
+        self.publish('will_execute_instruction', current)
 
         implementation = getattr(self, current.semantics, None)
         if implementation is None:

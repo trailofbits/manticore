@@ -53,7 +53,6 @@ class ManticoreEVM(Manticore):
         else:
             self.report(state, state.platform, e)
     def will_execute_instruction_callback(self, state, instruction):
-        #print state.platform.current
         with self.locked_context('coverage', set) as coverage:
             coverage.add(state.platform.current.pc)
 
