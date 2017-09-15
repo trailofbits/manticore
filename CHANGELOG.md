@@ -18,24 +18,22 @@ Thanks to our external contributors to this release!
 
 - Platform-specific class methods for Manticore initialization
   - e.g. `Manticore.linux('binary', ['arg1', 'arg2'])`
-- `@m.init` analysis initialization hook
+- `Manticore.init` analysis initialization hook
 - Linux: Various new syscall support, including basic TCP socket support
 - [Experimental] Support for symbolic execution of Ethereum Virtual Machine bytecode
 
 ### Changed
 
-- `Manticore.verbosity` logging preset levels interface is now a static method
-- Analysis is deterministic
+- `Manticore.verbosity` logging preset levels interface is now a static method, replacing `m.verbosity`
 
 ### Fixed
 
+- Numerous bugfixes and refactors
 - Linux: stderr file is generated in workspace
 
 ### Removed
 
 - Requirement of external z3 binary installation (z3 installation occurs automatically now via pip)
-
-
 
 ## 0.1.4 - 2017-08-18
 
