@@ -21,7 +21,7 @@ from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput, Workspace
-from .platforms import linux, decree, windows
+from .platforms import linux, decree, windows, evm
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 import logging
@@ -204,9 +204,15 @@ class Manticore(object):
     '''
     The central analysis object.
 
-    :param path_or_state: Path to a binary to analyze (deprecated) or `State` object
+    This should generally not be invoked directly; the various
+    class method constructors should be preferred:
+    :meth:`~manticore.Manticore.linux`,
+    :meth:`~manticore.Manticore.decree`,
+    :meth:`~manticore.Manticore.evm`.
+
+    :param path_or_state: Path to a binary to analyze (**deprecated**) or `State` object
     :type path_or_state: str or State
-    :param argv: Arguments to provide to binary (deprecated)
+    :param argv: Arguments to provide to binary (**deprecated**)
     :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
@@ -254,24 +260,54 @@ class Manticore(object):
 
         #Move the folowwing into a plugin
         self._assertions = {}
-        self._symbolic_files = []
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+        """
+        Constructor for Linux binary analysis.
+
+        :param str path: Path to binary to analyze
+        :param argv: Arguments to provide to the binary
+        :type argv: list[str]
+        :param envp: Environment to provide to the binary
+        :type envp: dict[str, str]
+        :param symbolic_files: Filenames to mark as having symbolic input
+        :type symbolic_files: list[str]
+        :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a Linux State
+        :rtype: Manticore
+        """
         try:
             return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception('Invalid binary: {}'.format(path))
 
     @classmethod
-    def decree(cls, path, concrete_data='', **kwargs):
+    def decree(cls, path, concrete_start='', **kwargs):
+        """
+        Constructor for Decree binary analysis.
+
+        :param str path: Path to binary to analyze
+        :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a Decree State
+        :rtype: Manticore
+        """
         try:
-            return cls(make_decree(path, concrete_data), **kwargs)
+            return cls(make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception('Invalid binary: {}'.format(path))
 
     @classmethod
-    def evm(cls, path, concrete_data='', **kwargs):
+    def evm(cls, **kwargs):
+        """
+        Constructor for Ethereum virtual machine bytecode analysis.
+
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a EVM State
+        :rtype: Manticore
+        """
         #Make the constraint store
         constraints = ConstraintSet()
         #make the ethereum world state
@@ -352,41 +388,6 @@ class Manticore(object):
     def enqueue(self, state):
         ''' Dynamically enqueue states. Users should typically not need to do this '''
         self._executor.add(state)
-
-    ###########################################################################
-    # Workers                                                                 #
-    ###########################################################################
-    def _start_workers(self, num_processes, profiling=False):
-        assert num_processes > 0, "Must have more than 0 worker processes"
-
-        logger.info("Starting %d processes.", num_processes)
-
-        if profiling:
-            def profile_this(func):
-                @functools.wraps(func)
-                def wrapper(*args, **kwargs):
-                    profile = cProfile.Profile()
-                    profile.enable()
-                    result = func(*args, **kwargs)
-                    profile.disable()
-                    profile.create_stats()
-                    with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(profile.stats.items())
-                    return result
-                return wrapper
-
-            target = profile_this(self._executor.run)
-        else:
-            target = self._executor.run
-
-        if num_processes == 1:
-            target()
-        else:
-            for _ in range(num_processes):
-                p = Process(target=target, args=())
-                self._workers.append(p)
-                p.start()
-
 
     ###########################################################################
     # Workers                                                                 #

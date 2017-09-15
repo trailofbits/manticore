@@ -645,7 +645,8 @@ class ArrayProxy(Array):
     def __getitem__(self, index):
         if isinstance(index, slice):
             size = self._get_size(index)
-            size = min(size, self.index_max)
+            if self.index_max is not None:
+                size = min(size, self.index_max)
             return [self._array.select(index.start+i) for i in xrange(size)]
         else:
             return self._array.select(index)

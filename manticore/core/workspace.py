@@ -546,7 +546,7 @@ class ManticoreOutput(object):
                 fd.write('{SolverException}')
 
         with self._named_stream('stdout') as _out:
-            with self._named_stream('stdout') as _err:
+            with self._named_stream('stderr') as _err:
                 with self._named_stream('stdin') as _in:
                     with self._named_stream('net') as _net:
                         for name, fd, data in state.platform.syscall_trace:

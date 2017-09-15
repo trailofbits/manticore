@@ -92,9 +92,9 @@ class StateTest(unittest.TestCase):
         workspace = out._store._data
 
         # Make sure names are constructed correctly
-        for name, data in workspace.items():
-            self.assertTrue(name.startswith(name))
-            if 'messages' in name:
+        for entry, data in workspace.items():
+            self.assertTrue(entry.startswith(name))
+            if 'messages' in entry:
                 self.assertTrue(message in data)
 
         keys = [x.split('.')[1] for x in workspace.keys()]
