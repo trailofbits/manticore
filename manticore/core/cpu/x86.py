@@ -4881,6 +4881,219 @@ class X86Cpu(Cpu):
             #    res = res | (0xff << i)
         op0.write(res)
 
+    ############################################################################
+    # Implementation of PCMPxSTRx Instructions:
+    # + PCMPESTRM, PCMPESTRI, PCMPISTRM, PCMPISTRI
+    ##
+    # '''
+    # See Ref: https://software.intel.com/sites/default/files/m/8/b/8/D9156103.pdf
+
+    # :param cpu: current CPU.
+    # :param op0: compare oprand 1
+    # :param op1: compare oprand 2
+    # :param op2: control byte
+    #             - op2[3:2] :
+    #               + 00: Equal Any
+    #               + 01: Ranges
+    #               + 10: Equal Each
+    #               + 11: Equal Ordered
+    # '''
+    #############################################################################
+    def _pcmpxstrx_srcdat_format(self, ctlbyte):
+        # Parse CTL Byte
+        ## Source Data Format
+        if ((Operators.EXTRACT(ctlbyte, 0, 2) & 1) == 0 ):
+            stepsize = 8
+        else:
+            stepsize = 16
+        return stepsize
+
+    def _pcmpxstri_output_selection(self, ctlbyte, res):
+        ## Output Selection
+        ###  PCMPESTRI/PCMPISTRI
+        stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
+        if (Operators.EXTRACT(ctlbyte, 6, 1) == 0):
+            oecx = 0
+            tres = res
+            while ((tres & 1) != 0):
+                oecx += 1
+                tres >>= 1
+            return oecx
+        else:
+            oecx = 0
+            tres = res
+            msbmask = (1 << (self.regfile._table['XMM0'].size/stepsize - 1))
+            while ((tres & msbmask) != 0):
+                oecx += 1
+                tres = (tres << 1) & ((msbmask << 1) - 1)
+            return oecx
+
+    def _pcmpxstrm_output_selection(self, ctlbyte, res):
+        ## Output Selection
+        ###  PCMPESTRM/PCMPISTRM
+        if (Operators.EXTRACT(ctlbyte, 6, 1) == 0):
+            return res
+        else:
+            stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
+            xmmres = 0
+            for i in range(0, self.regfile._table['XMM0'].size, stepsize):
+                if (res&1 == 1):
+                    xmmres |= (((1 << stepsize) - 1) << i)
+                res >>= 1
+            return xmmres
+
+    def _pcmpistrx_varg(self, arg, ctlbyte):
+        step = self._pcmpxstrx_srcdat_format(ctlbyte)
+        result = []
+        for i in range(0, self.regfile._table['XMM0'].size, step):
+            uc = Operators.EXTRACT(arg, i, step)
+            if uc == 0:
+                break
+            result.append(uc)
+        return result
+
+    def _pcmpestrx_varg(self, arg, regname, ctlbyte):
+        reg = self.read_register(regname)
+        if (issymbolic(reg)):
+            raise ConcretizeRegister(self, regname, "Concretize PCMPESTRx ECX/EDX")
+        smask = 1 << (self.regfile._table[regname].size - 1)
+        step = self._pcmpxstrx_srcdat_format(ctlbyte)
+        if (reg & smask == 1):
+            val = Operators.NOT(reg - 1)
+        if (val > self.regfile._table['XMM0'].size/step):
+            val = self.regfile._table['XMM0'].size/step
+        result = []
+        for i in range(val):
+            uc = Operators.EXTRACT(arg, i*step, step)
+            result.append(uc)
+        return result
+
+    def _pcmpxstrx_aggregation_operation(self, varg0, varg1, ctlbyte):
+        ##
+        needle = [e for e in varg0]
+        haystack = [e for e in varg1]
+
+        ## Aggregation Operation
+        res = 0
+        stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
+        xmmsize = self.regfile._table['XMM0'].size
+        if (Operators.EXTRACT(ctlbyte, 2, 2) == 0):
+            #raise NotImplementedError("pcmpistrx Equal any")
+            for i in range(len(haystack)):
+                if haystack[i] in needle:
+                    res |= (1 << i)
+        elif (Operators.EXTRACT(ctlbyte, 2, 2) == 1):
+            #raise NotImplementedError("pcmpistrx Ranges")
+            assert len(needle)%2 == 0
+            for i in range(len(haystack)):
+                for j in range(0, len(needle), 2):
+                    if haystack[i] >= needle[j] and haystack[i] <= needle[j+1]:
+                        res |= (1 << i)
+                        break
+        elif (Operators.EXTRACT(ctlbyte, 2, 2) == 2):
+            #raise NotImplementedError("pcmpistrx Equal each")
+            # Equal Each requires Null Byte Comparison Here
+            while len(needle) < xmmsize/stepsize:
+                needle.append('\x00')
+            while len(haystack) < xmmsize/stepsize:
+                haystack.append('\x00')
+            for i in range(xmmsize/stepsize):
+                res = Operators.ITEBV(xmmsize, needle[i] == haystack[i], res|(1 << i), res)
+        elif (Operators.EXTRACT(ctlbyte, 2, 2) == 3):
+            #raise NotImplementedError("pcmpistrx Equal ordered")
+            if len(haystack) < len(needle):
+                return 0
+            for i in range(len(haystack)-len(needle)+1):
+                res = Operators.ITEBV(xmmsize, haystack[i:i+len(needle)] == needle, res|(1 << i), res)
+        return res
+
+    def _pcmpxstrx_polarity(self, res1, ctlbyte, arg2len):
+        ## Polarity
+        stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
+        if (Operators.EXTRACT(ctlbyte, 4, 2) == 0):
+            pass
+        if (Operators.EXTRACT(ctlbyte, 4, 2) == 1):
+            res2 = ((1 << (self.regfile._table['XMM0'].size/stepsize)) - 1) ^ res1
+        if (Operators.EXTRACT(ctlbyte, 4, 2) == 2):
+            pass
+        if (Operators.EXTRACT(ctlbyte, 4, 2) == 3):
+            res2 = ((1 << arg2len) - 1) ^ res1
+            pass
+        return res2
+
+    def _pcmpxstrx_setflags(self, res, varg0, varg1, ctlbyte):
+        stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
+        self.ZF = len(varg0) < self.regfile._table['XMM0'].size/stepsize
+        self.SF = len(varg1) < self.regfile._table['XMM0'].size/stepsize
+        self.CF = res != 0
+        self.OF = res & 1
+        self.AF = False
+        self.PF = False
+
+    def _pcmpxstrx_operands(self, op0, op1, op2):
+        arg0 = op0.read()
+        arg1 = op1.read()
+        ctlbyte = op2.read()
+        if (issymbolic(arg0)):
+            # XMM Register
+            assert op0.type == 'register'
+            raise ConcretizeRegister(self, op0.reg, "Concretize for PCMPXSTRX")
+        if (issymbolic(arg1)):
+            if (op1.type == 'register'):
+                # XMM Register
+                raise ConcretizeRegister(self, op1.reg, "Concretize for PCMPXSTRX")
+            else:
+                # Memory
+                raise ConcretizeMemory(self.memory, op1.address(), op0.size)
+        assert(not issymbolic(ctlbyte))
+        return (arg0, arg1, ctlbyte)
+
+    @instruction
+    def PCMPISTRI(cpu, op0, op1, op2):
+        arg0, arg1, ctlbyte = cpu._pcmpxstrx_operands(op0, op1, op2)
+        varg0 = cpu._pcmpistrx_varg(arg0, ctlbyte)
+        varg1 = cpu._pcmpistrx_varg(arg1, ctlbyte)
+        res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
+        res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
+        if (res == 0):
+            cpu.ECX = cpu._pcmpxstrx_srcdat_format(ctlbyte)
+        else:
+            cpu.ECX = cpu._pcmpxstri_output_selection(ctlbyte, res)
+        cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
+
+    @instruction
+    def PCMPISTRM(cpu, op0, op1, op2):
+        arg0, arg1, ctlbyte = cpu._pcmpxstrx_operands(op0, op1, op2)
+        varg0 = cpu._pcmpistrx_varg(arg0, ctlbyte)
+        varg1 = cpu._pcmpistrx_varg(arg1, ctlbyte)
+        res = cpu._pcmpistrx_aggregation_operation(varg0, varg1, ctlbyte)
+        res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
+        cpu.XMM0 = cpu._pcmpxstrm_output_selection(ctlbyte, res)
+        cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
+
+    @instruction
+    def PCMPESTRI(cpu, op0, op1, op2):
+        arg0, arg1, ctlbyte = cpu._pcmpxstrx_operands(op0, op1, op2)
+        varg0 = cpu._pcmpestrx_varg(arg0, 'EAX', ctlbyte)
+        varg1 = cpu._pcmpestrx_varg(arg1, 'EDX', ctlbyte)
+        res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
+        res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
+        if (res == 0):
+            cpu.ECX = cpu._pcmpxstrx_srcdat_format(ctlbyte)
+        else:
+            cpu.ECX = cpu._pcmpxstri_output_selection(ctlbyte, res)
+        cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
+
+    @instruction
+    def PCMPESTRM(cpu, op0, op1, op2):
+        arg0, arg1, ctlbyte = cpu._pcmpxstrx_operands(op0, op1, op2)
+        varg0 = cpu._pcmpestrx_varg(arg0, 'EAX', ctlbyte)
+        varg1 = cpu._pcmpestrx_varg(arg1, 'EDX', ctlbyte)
+        res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
+        res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
+        cpu.XMM0 = cpu._pcmpxstrm_output_selection(ctlbyte, res)
+        cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
+
     @instruction
     def PMOVMSKB(cpu, op0, op1):
         '''
