@@ -233,14 +233,6 @@ class EVMMemory(object):
 
             solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
 
-            crashing_condition = False
-            for base in solutions:
-                if any(not self.access_ok(i, 'w') for i in xrange(base, base + size, self.page_size)):
-                    crashing_condition = Operators.OR(address == base, crashing_condition)
-
-            if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess(address, 'w', size, crashing_condition)
-
             for offset in xrange(size):
                 for base in solutions:
                     condition = base == address

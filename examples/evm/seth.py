@@ -24,10 +24,10 @@ class SEthereum(Manticore):
         ''' INTERNAL USE '''
         step = state.context.get('step',0)
         state.context['step'] = step + 1
-        if step < len(self.transactions):
-            self.transactions[step](self, state, state.platform)
-            self.enqueue(state)
-            e.testcase = False
+        if e.message != 'REVERT' and step < len(self.transactions):
+                self.transactions[step](self, state, state.platform)
+                self.enqueue(state)
+                e.testcase = False
         else:
             self.report(state, state.platform, e)
 
@@ -64,7 +64,7 @@ class SEthereum(Manticore):
         #print world
         for address, memlog, topics in state.platform.logs:
             try:
-                print "LOG:", hex(address), '"'+(''.join(map(chr, memlog[64:])))+'"', topics
+                print "LOG:", hex(state.solve_one(address)), repr(state.solve_one(memlog)), topics
             except Exception,e:
                 print e,"LOG:", address,  repr(memlog), topics
 
