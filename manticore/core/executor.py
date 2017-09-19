@@ -445,6 +445,7 @@ class Executor(Eventful):
                             break
 
                         assert current_state is not None
+                        assert current_state.constraints is current_state.platform.constraints
 
                     try:
 

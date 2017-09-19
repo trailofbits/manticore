@@ -52,46 +52,6 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     initial_state = State(constraints, platform)
     return initial_state
 
-def make_evm(args):
-    constraints = ConstraintSet()
-    import ast
-    contract = {}
-    for l in open(args.programs[0]).readlines():
-        l = l.strip()
-        if l.startswith('#') or not '=' in l :
-            continue
-        name,value = l.split('=')
-        name = name.strip().lower()
-        contract[name]=ast.literal_eval(value)
-
-    contract['data'] = contract.get('data', '+'*256)
-
-    #attack, constraints, address, origin, price, data, sender, value, bytecode, header, depth):
-    bytecode=contract['bytecode'].decode('hex')
-    address=contract['address']
-    origin=contract['sender']
-    sender=contract['sender']
-    value=contract['value']
-    header=contract['header']
-    price=contract['price']
-    data = constraints.new_array(256, name='DATA', index_max=256)
-
-    platform = evm.EVMWorld(constraints)
-    user_account = platform.create_account(address=None, balance=1000)
-    contract_account = platform.create_contract(origin=user_account, price=0, address=None, balance=0, init=bytecode)
-    print platform
-    print platform.current.address
-    
-    platform.run()
-    kj
-    initial_state = State(constraints, platform)
-    initial_state.input_symbols.append(data)
-    platform.data = contract['data']
-    print '[+] Loading EVM program\n' # %s'% platform.disassemble()
-
-    return initial_state
-
-
 def make_decree(program, concrete_data='', **kwargs):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
@@ -227,6 +187,8 @@ class Manticore(object):
                 raise Exception('Invalid workspace')
             ws_path = None
 
+
+
         self._output = ManticoreOutput(ws_path)
         self._context = {}
         self._coverage_file = None
@@ -255,8 +217,11 @@ class Manticore(object):
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
-        else:
+
+        if not isinstance(self._initial_state, State):
             raise TypeError("Manticore must be intialized with either a State or a path to a binary")
+
+        self._executor.forward_events_from(self._initial_state, True)
 
         #Move the folowwing into a plugin
         self._assertions = {}

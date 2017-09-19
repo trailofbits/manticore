@@ -449,6 +449,11 @@ class Z3Solver(Solver):
         if not issymbolic(expression):
             if isinstance(expression, str):
                 expression = ord(expression)
+            if isinstance(expression, list):
+                arr = constraints.new_array(index_max=len(expression))
+                for i in range(len(expression)):
+                    arr[i] = expression[i]
+                return self.get_value(constraints, arr)
             return expression
         assert isinstance(expression, (Bool, BitVec, Array))
         with constraints as temp_cs:

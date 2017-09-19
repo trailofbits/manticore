@@ -49,7 +49,9 @@ class ConstraintSet(object):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
         constraint = arithmetic_simplifier(constraint)
-        # If count > 0 it means this constraint set has been forked and that 
+        if isinstance(constraint, BoolConstant) and not constraint.value:
+            logger.info("Adding an imposible constant constraint")
+        # If self._child is not None this constraint set has been forked and a 
         # a derived constraintset may be using this. So we can't add any more
         # constraints to this one. After the child constraintSet is deleted
         # we regain the ability to add constraints.

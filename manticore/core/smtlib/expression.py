@@ -614,7 +614,6 @@ class ArrayProxy(Array):
         self._array = array
         self.name = array.name
 
-
     @property
     def operands(self):
         return self._array.operands
@@ -645,9 +644,12 @@ class ArrayProxy(Array):
     def __getitem__(self, index):
         if isinstance(index, slice):
             size = self._get_size(index)
-            if self.index_max is not None:
-                size = min(size, self.index_max)
-            return [self._array.select(index.start+i) for i in xrange(size)]
+            result = []
+            for i in xrange(size):
+                if i+index.start >= self.index_max:
+                    break
+                result.append(self._array.select(index.start+i))
+            return result
         else:
             return self._array.select(index)
 
@@ -669,15 +671,13 @@ class ArrayProxy(Array):
         state = {}
         state['_array'] = self._array
         state['name'] = self.name
-        state['index_bits'] = self.index_bits
-        state['index_max'] = self.index_max
         return state
 
     def __setstate__(self, state):
         self._array = state['_array']
         self.name = state['name']
-        self._index_bits = state['index_bits'] 
-        self._index_max = state['index_max']
+        self._index_bits = self._array.index_bits
+        self._index_max = self._array.index_max
 
 
 class ArraySelect(BitVec, Operation):

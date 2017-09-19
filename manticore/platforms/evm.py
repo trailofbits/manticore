@@ -19,6 +19,8 @@ if sys.version_info < (3, 6):
 
 logger = logging.getLogger('PLATFORM')
 
+
+# Auxiliar constants and functions
 TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
@@ -64,8 +66,7 @@ class EVMMemory(object):
         return new_mem
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, ), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory, '_address_size':self._address_size, 
-        '_value_size':self._value_size } )
+        return (self.__class__, (self.constraints, self._address_size,  self._value_size), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory } )
 
     @property
     def constraints(self):
@@ -169,13 +170,13 @@ class EVMMemory(object):
 
             #So here we have all potential solutions of symbolic address (complete set)
             assert len(solutions) > 0            
-
+            '''
             outofgas_condition = False
             for base in solutions:
                 if base + size > TOOHIGHMEM:
                     outofgas_condition = Operators.OR(address == base, outofgas_condition)
 
-            #FIXME: if we can out of gas we jump to it and wont explore the othe option
+            #FIXME: if we can out of gas we jump to it and wont explore the other option
             outofgas_solutions = set(solver.get_all_values(self.constraints, outofgas_condition))
             if outofgas_solutions == set([True]):
                 raise NotEnoughGas("Accessing memory too high")
@@ -184,7 +185,7 @@ class EVMMemory(object):
                 raise ForkState('address too high', outofgas_condition)
 
             assert outofgas_solutions == set([False])
-
+            '''
             condition = False
             for base in solutions:
                 condition = Operators.OR(address == base, condition )
@@ -606,7 +607,7 @@ class EVM(Eventful):
         contents are a series of zeroes of bitsize 256
     '''
 
-    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, world=None, depth=0, **kwargs):
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -623,7 +624,7 @@ class EVM(Eventful):
 
         '''
         super(EVM, self).__init__(**kwargs)
-        self.constraints = constraints
+        self._constraints = constraints
         self.last_exception = None
         self.memory = EVMMemory(constraints)
         self.address = address
@@ -648,15 +649,25 @@ class EVM(Eventful):
         self.pc = 0
         self.stack = []
         self.gas = 0
-        self.global_storage = world
+        self.global_storage = global_storage
         self.allocated = 0
+
+    @property
+    def constraints(self):
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+        self._constraints = constraints
+        self.memory.constraints = constraints
+
 
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
+        state['memory'] = self.memory
         state['global_storage'] = self.global_storage
         state['constraints'] = self.constraints
         state['last_exception'] = self.last_exception
-        state['memory'] = self.memory
         state['address'] = self.address
         state['origin'] = self.origin
         state['caller'] = self.caller
@@ -676,11 +687,11 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
+        self.memory = state['memory']
         self.logs = state['logs'] 
         self.global_storage = state['global_storage']
         self.constraints = state['constraints']
         self.last_exception = state['last_exception']
-        self.memory = state['memory']
         self.address = state['address']
         self.origin = state['origin']
         self.caller = state['caller']
@@ -789,6 +800,7 @@ class EVM(Eventful):
             expression = self.pc
             def setstate(state, value):
                 state.platform.current.pc = value
+
             raise Concretize("Concretice PC",
                                 expression=expression, 
                                 setstate=setstate,
@@ -1320,7 +1332,10 @@ class EVM(Eventful):
         result.append( '-'*147)
         return '\n'.join(result)
 
-
+################################################################################
+################################################################################
+################################################################################
+################################################################################
 class EVMWorld(Platform):
     def __init__(self, constraints, storage=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
@@ -1369,6 +1384,11 @@ class EVMWorld(Platform):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
+        for addr in self.storage: 
+            self.storage[addr]['storage'].constraints = constraints
+        if self.current:
+            self.current.constraints = constraints
+
 
     @property
     def current(self):
@@ -1397,12 +1417,15 @@ class EVMWorld(Platform):
 
     def _push(self, vm):
         #Storage address ->  account(value, local_storage)
-        vm.global_storage = dict(self.storage)
+        vm.global_storage = self.storage
         vm.global_storage[vm.address]['storage'] = copy.copy(self.storage[vm.address]['storage'])
+        if self.depth:
+            self.current.constraints = None
 
         #MAKE A DEEP COPY OF THE SPECIFIC ACCOUNT
         self._callstack.append(vm)
         self.current.depth = self.depth
+        self.current.constraints = self.constraints
         self.forward_events_from(self.current)
         if self.depth > 1024:
             while self.depth >0:
@@ -1411,7 +1434,9 @@ class EVMWorld(Platform):
 
     def _pop(self, rollback=False):
         vm = self._callstack.pop()
-
+        assert self.constraints == vm.constraints
+        if self.current:
+            self.current.constraints = vm.constraints
         if not rollback:
             self.storage = vm.global_storage
             self._deleted_address = self._deleted_address.union(vm.suicide)
@@ -1556,7 +1581,7 @@ class EVMWorld(Platform):
         self.storage[caller]['balance'] -= value
         self.storage[address]['balance'] += value
 
-        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self)
+        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
         self._push(new_vm)
         self._pending_transaction = None
         if self.depth == 1:
@@ -1668,24 +1693,34 @@ class EVMWorld(Platform):
         if any(map(issymbolic, data)):
             logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
             logger.info("SHA3 TODO save this state for future explorations with more known hashes")
+            #Broadcast the signal 
+            self.publish('symbolic_sha3', data, self._sha3.items())
+            '''
+            value = self.constraints.new_bitvec(256)
+            '''
             results = []
             known_hashes = False
             for key, value in self._sha3.items():
                 cond = compare_buffers(key, data)
                 if solver.can_be_true(self._constraints, cond):
-                    print id(self._sha3), "SHA3 Ok found a matching known hash", key, value
                     results.append((cond, value))  
                     known_hashes = Operators.OR(cond, known_hashes)
 
-            #handler for this 
-            self.publish('symbolic_sha3', data, known_hashes)
+            with self._constraints as temp_cs:
+                if solver.can_be_true(temp_cs, Operators.NOT(known_hashes)):
+                    temp_cs.add(Operators.NOT(known_hashes))
+                    a_buffer = solver.get_value(temp_cs, data)
+                    cond = compare_buffers(a_buffer, data)
+                    known_hashes = Operators.OR(cond, known_hashes)
 
-            print "Simplification. We assume we know the hash", results
-            self._constraints.add(known_hashes)
-            value = 0
-            for cond, sha in results:
-                value = Operators.ITEBV(256, cond, sha, value)
-
+            if solver.can_be_true(self._constraints, known_hashes):
+                self._constraints.add(known_hashes)
+                value = 0 #never used
+                for cond, sha in results:
+                    value = Operators.ITEBV(256, cond, sha, value)
+            else:
+                raise TerminateState()
+            
             #value = self._constraints.new_bitvec(256, 'HASH', taint=('sha3',))
         else:
             buf = ''.join(data)
