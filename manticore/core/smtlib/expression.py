@@ -646,7 +646,7 @@ class ArrayProxy(Array):
             size = self._get_size(index)
             result = []
             for i in xrange(size):
-                if i+index.start >= self.index_max:
+                if self.index_max is not None and i+index.start > self.index_max:
                     break
                 result.append(self._array.select(index.start+i))
             return result
