@@ -1,6 +1,7 @@
-from manticore import *
-from manticore.core.smtlib import ConstraintSet, Operators, solver
+from manticore import Manticore
+from manticore.core.smtlib import ConstraintSet, Operators, solver, issymbolic
 from manticore.platforms import evm
+from manticore.platforms.evm import pack_msb
 from manticore.core.state import State
 
 
@@ -24,6 +25,9 @@ class SEthereum(Manticore):
         ''' INTERNAL USE '''
         step = state.context.get('step',0)
         state.context['step'] = step + 1
+        for account, storage in state.platform.storage.items():
+            self.code[account] = storage['code']
+
         if e.message != 'REVERT' and step < len(self.transactions):
                 self.transactions[step](self, state, state.platform)
                 self.enqueue(state)
@@ -43,7 +47,7 @@ class SEthereum(Manticore):
     def did_read_code(self, state, offset, size):
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset+size):
-                code_data.add(i)
+                code_data.add((state.platform.current.address, i))
 
     def run(self, **kwargs):
         #now when this transaction ends
@@ -57,28 +61,51 @@ class SEthereum(Manticore):
         super(SEthereum, self).run(**kwargs)
 
     def report(self, state, world, e):
-        for account, storage in world.storage.items():
-            self.code[account] = storage['code']
+        def compare_buffers(a, b):
+            if len(a) != len(b):
+                return False
+            cond = True
+            for i in range(len(a)):
+                cond = Operators.AND(a[i]==b[i], cond)
+                if cond is False:
+                    return False
+            return cond
+
         print "="*20
-        print "REPORT:", e
-        #print world
+        print "REPORT:", e, "\n"
+
+        print "LOGS:"
         for address, memlog, topics in state.platform.logs:
             try:
-                print "LOG:", hex(state.solve_one(address)), repr(state.solve_one(memlog)), topics
+                print  "\t", hex(state.solve_one(address)), repr(state.solve_one(memlog)), topics
             except Exception,e:
-                print e,"LOG:", address,  repr(memlog), topics
+                print  "\t", address,  repr(memlog), topics
 
         #print state.constraints
+        print "INPUT SYMBOLS"
         for expr in state.input_symbols:
             res = state.solve_one(expr)
+            state.constrain(compare_buffers(expr, res))
             try:
-                print expr.name+':',  res.encode('hex')
+                print "\t", expr.name+':',  res.encode('hex')
             except:
-                print expr.name+':',  res
+                print "\t", expr.name+':',  res
+
+        print "BALANCES"
+        for address, account in world.storage.items():
+            if issymbolic(account['balance']):
+                m,M = solver.minmax(world.constraints, account['balance'])
+                if m==M:
+                    print "\t", hex(address), M
+                else:
+                    print "\t", hex(address), "range:[%x, %x]"%(m,M)                
+            else:
+                print "\t", hex(address), account['balance']
+            
 
 
     def coverage(self, account_address):
-        seen = self.context['coverage'].union( self.context.get('code_data', set()))
+        seen = self.context['coverage'] #.union( self.context.get('code_data', set()))
         runtime_bytecode = self.code[account_address]
 
         class bcolors:
@@ -111,6 +138,7 @@ class SEthereum(Manticore):
         output += "Total assembler lines: %d\n"% total
         output += "Total assembler lines visited: %d\n"% count
         output += "Coverage: %2.2f%%\n"%  (count*100.0/total)
+
 
         return output
 

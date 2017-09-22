@@ -50,7 +50,7 @@ class EVMMemory(object):
         :param address_size: address bit width
         :param values_size: value bit width
         '''
-        assert isinstance(constraints, ConstraintSet)
+        assert isinstance(constraints, (ConstraintSet, type(None)))
         self._constraints = constraints
         self._allocated = 0
         self._symbols = {}
@@ -59,14 +59,14 @@ class EVMMemory(object):
         self._value_size=value_size
 
     def __copy__(self):
-        new_mem = EVMMemory(self.constraints, self._address_size,  self._value_size)
+        new_mem = EVMMemory(self._constraints, self._address_size,  self._value_size)
         new_mem._allocated = self._allocated
         new_mem._memory = dict(self._memory)
         new_mem._symbols = dict(self._symbols)
         return new_mem
 
     def __reduce__(self):
-        return (self.__class__, (self.constraints, self._address_size,  self._value_size), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory } )
+        return (self.__class__, (self._constraints, self._address_size,  self._value_size), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory } )
 
     @property
     def constraints(self):
@@ -81,14 +81,14 @@ class EVMMemory(object):
         if isinstance(size, BitVec):
             size = arithmetic_simplifier(size)
         else:
-            size = BitVecConstant(self._array.index_bits, size)
+            size = BitVecConstant(self._address_size, size)
         assert isinstance(size, BitVecConstant)
         return size.value
 
     def __getitem__(self, index):
         if isinstance(index, slice):
             size = self._get_size(index)
-            return self.read(index, size)
+            return self.read(index.start, size)
         else:
             return self.read(index, 1)[0]
 
@@ -105,15 +105,18 @@ class EVMMemory(object):
         return self._allocated
 
 
+    def __repr__(self):
+        return self.__str__()
+
     def __str__(self):
-        m = []
-        if len(self._memory.keys()):
-            for i in range(max([0] + self._memory.keys())+1):
-                c = self.read(i,1)[0]
-                if issymbolic(c):
-                    c = '?'
-                m.append(c)
-        return ''.join(m)
+        m = {}
+        for key in self._memory.keys():
+            c = self.read(key,1)[0]
+            if issymbolic(c):
+                m[key] = '?'
+            else:
+                m[key] = hex(c)
+        return str(m)
 
     def allocate(self, address):
         '''
@@ -235,12 +238,15 @@ class EVMMemory(object):
 
             for offset in xrange(size):
                 for base in solutions:
+                    self.allocate(base+offset)
                     condition = base == address
                     self._symbols.setdefault(base+offset, []).append((condition, value[offset]))
 
         else:
 
             for offset in xrange(size):
+                self.allocate(address+offset)
+
                 if issymbolic(value[offset]):
                     self._symbols[address+offset] = [(True, value[offset])]
                 else:
@@ -521,6 +527,7 @@ class ConcretizeStack(EVMException):
         self.message = "Concretizing evm stack item {}".format(pos)
         self.pos = pos
         self.expression = expression
+        self.policy = policy
 
 class StackOverflow(EVMException):
     ''' Attemped to push more than 1024 items '''
@@ -710,8 +717,8 @@ class EVM(Eventful):
     def _store(self, address, value):
         #CHECK ADDRESS IS A 256 BIT INT OR BITVEC
         #CHECK VALUE IS A 256 BIT INT OR BITVEC
-        if address > 100000:
-            raise NotEnoughGas()
+        #if address > 100000:
+        #    raise NotEnoughGas()
         self._allocate(address)
         self.memory.write(address, [value])
 
@@ -828,7 +835,7 @@ class EVM(Eventful):
             raise Concretize("Concretice Stack Variable",
                                 expression=ex.expression, 
                                 setstate=setstate,
-                                policy='ALL')
+                                policy=ex.policy)
         except EVMException as e:
             self.last_exception = e
             raise
@@ -1034,6 +1041,12 @@ class EVM(Eventful):
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
         #FIXME concretize offset?
+
+        if issymbolic(offset):
+            self._constraints.add(Operators.ULE(offset, len(self.data)))
+            #self._constraints.add(0 == offset%32)
+        #    raise ConcretizeStack(3, expression=offset, policy='ALL')
+
         bytes = list(self.data[offset:offset+32])
         if len(bytes)<32:
             bytes += ['\x00'] * (32-len(bytes))
@@ -1048,18 +1061,27 @@ class EVM(Eventful):
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
+        print "A" ,mem_offset, data_offset, size
         #FIXME put zero if not enough data
         size = arithmetic_simplifier(size)
+        #FIXME explore calldata sizes better
+        print size
+        if issymbolic(size) or issymbolic(data_offset):
+            self._constraints.add(Operators.ULE(data_offset, len(self.data)))
+            self._constraints.add(Operators.ULE(size, len(self.data) +len(self.data)%32 ))
+
         if issymbolic(size):
-            raise ConcretizeStack(3, expression=size)
-        
+            raise ConcretizeStack(3, expression=size, policy='ALL')
+        if issymbolic(data_offset):
+            raise ConcretizeStack(2, expression=data_offset, policy='ALL')
         for i in range(size):
             if data_offset+i < len(self.data):
                 c = self.data[data_offset+i]
             else:
                 c = '\x00'
-            self._store(mem_offset+i, c)
+            self._store(mem_offset+i, Operators.ORD(c))
 
+        print "D"
 
     def CODESIZE(self):
         '''Get size of code running in current environment'''
@@ -1073,7 +1095,7 @@ class EVM(Eventful):
             if (code_offset+i > len(self.bytecode)):
                 self._store(mem_offset+i, 0)
             else:
-                self._store(mem_offset+i, ord(self.bytecode[code_offset+i]))
+                self._store(mem_offset+i, Operators.ORD(self.bytecode[code_offset+i]))
         self.publish('did_read_code', code_offset, size)
 
     def GASPRICE(self):
@@ -1207,6 +1229,9 @@ class EVM(Eventful):
     ##########################################################################
     ##Logging Operations
     def LOG(self, address, size, *topics):
+        if issymbolic(size):
+            raise ConcretizeStack(2, expression=size, policy='SAMPLED')
+
         memlog = []
         for i in range(size):
             memlog.append(self._load(address+i))
@@ -1230,13 +1255,18 @@ class EVM(Eventful):
 
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
-        code = self.current.read_buffer(offset, size)
+        code = self.read_buffer(offset, size)
         raise Create(value, code)
 
     def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
-        data = self.current.read_buffer(ex.in_offset, ex.in_size, out_offset, out_size)
-        raise Call(gas, to, value, data)
+        if issymbolic(in_offset):
+            raise ConcretizeStack(4, expression=in_offset, policy='SAMPLED')
+        if issymbolic(in_size):
+            raise ConcretizeStack(5, expression=in_size, policy='SAMPLED')
+
+        data = self.read_buffer(in_offset, in_size)
+        raise Call(gas, to, value, data, out_offset, out_size)
 
     def CALLCODE(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
@@ -1322,6 +1352,7 @@ class EVM(Eventful):
             result.append(r)
 
         result.append( '-'*147)
+        result = [hex(self.address) +": "+x for x in result]
         return '\n'.join(result)
 
 ################################################################################
@@ -1376,8 +1407,9 @@ class EVMWorld(Platform):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        for addr in self.storage: 
-            self.storage[addr]['storage'].constraints = constraints
+        for addr in self.storage:
+            if isinstance(self.storage[addr]['storage'], EVMMemory): 
+                self.storage[addr]['storage'].constraints = constraints
         if self.current:
             self.current.constraints = constraints
 
@@ -1391,7 +1423,10 @@ class EVMWorld(Platform):
 
     @property
     def suicide(self):
-        return self.current.suicide
+        if self.depth:
+            return self.current.suicide
+        else:
+            return self._suicide
 
     @property
     def storage(self):
@@ -1492,22 +1527,20 @@ class EVMWorld(Platform):
     def create_account(self, address=None, balance=0, code='', storage=None):
         ''' code is the runtime code '''
         storage = {} if storage is None else storage
-        symbolic_storage = EVMMemory(self.constraints, 256, 256)
-        for key, value in storage.iteritems():
-            symbolic_storage[key] = value
+
         if address is None:
             address = self._new_address()
         assert address not in self.storage.keys(), 'The account already exists'
         self.storage[address] = {}
         self.storage[address]['nonce'] = 0L
         self.storage[address]['balance'] = balance
-        self.storage[address]['storage'] = symbolic_storage
+        self.storage[address]['storage'] = storage
         self.storage[address]['code'] = code
 
         self.publish('did_create_account', address)
         return address
 
-    def create_contract(self, origin, price, address=None, balance=0, init='', run=False, header=None):
+    def create_contract(self, origin=None, price=0, address=None, caller=None, balance=0, init='', run=False, header=None):
         assert len(init) > 0
         '''
         The way that the Solidity compiler expects the constructor arguments to 
@@ -1518,12 +1551,23 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run 
         on the network.
         '''
+        if caller is None and origin is not None:
+            caller = origin
+        if origin is None and caller is not None:
+            origin = caller
+        assert caller == origin
+        if header is None:
+            header = {'timestamp':1}
+
         assert  not issymbolic(address) 
         assert  not issymbolic(origin) 
         address = self.create_account(address, 0)
         if header is None:
             header = {'timestamp' : 0,
                       'number': 0,}
+
+        self.storage[address]['storage'] = EVMMemory(self.constraints, 256, 256)
+
 
         self._pending_transaction = ('Create', address, origin, price, '', origin, balance, init, header)
 
@@ -1547,7 +1591,19 @@ class EVMWorld(Platform):
         self._process_pending_transaction()
 
 
-    def transaction(self, address, origin, price, data, caller, value, header, run=False):
+    def transaction(self, address, origin=None, price=0, data='', caller=None, value=0, header=None, run=False):
+        if caller is None and origin is not None:
+            caller = origin
+        if origin is None and caller is not None:
+            origin = caller
+        if header is None:
+            header = {'timestamp':1}
+        if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
+            #data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
+            data_symb = EVMMemory(self.constraints, 256, 8)
+            for i in range(len(data)):
+                data_symb[i] = Operators.ORD(data[i])
+            data = data_symb
         bytecode = self.storage[address]['code']
         self._pending_transaction = ('Call', address, origin, price, data, caller, value, bytecode, header)
 
@@ -1612,7 +1668,7 @@ class EVMWorld(Platform):
             self.storage[prev_vm.address]['code'] = data
 
         else:
-            size = min(last_ex.out_size, size)
+            size = min(last_ex.out_size, len(data))
             self.current.write_buffer(last_ex.out_offset, data[:size])
             self.current._push(1)
         #we are still on the CALL/CREATE
@@ -1666,8 +1722,6 @@ class EVMWorld(Platform):
         self.suicide.add(address)
         self._pop(rollback=False)
         if self.depth == 0:
-            for address in self.suicide:
-                del self.storage[address]
             raise TerminateState("SELFDESTRUCT", testcase=True)
 
     def HASH(self, data):
