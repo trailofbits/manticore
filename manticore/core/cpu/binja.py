@@ -17,7 +17,7 @@ from ..smtlib import Operators, BitVecConstant, operator
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
-register_logger = logging.getLogger('.'.join([__name__, 'registers']))
+register_logger = logging.getLogger('{}.registers'.format(__name__))
 
 class BinjaRegisterFile(RegisterFile):
 

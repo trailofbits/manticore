@@ -19,7 +19,7 @@ from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
 logger = logging.getLogger(__name__)
-register_logger = logging.getLogger('.'.join([__name__, 'registers']))
+register_logger = logging.getLogger('{}.registers'.format(__name__))
 
 ###################################################################################
 #Exceptions
