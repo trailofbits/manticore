@@ -12,7 +12,7 @@ from .cpu.abstractcpu import ConcretizeRegister
 from .memory import ConcretizeMemory, MemoryException
 from ..platforms.platform import *
 
-logger = logging.getLogger("STATE")
+logger = logging.getLogger(__name__)
 
 class StateException(Exception):
     ''' All state related exceptions '''

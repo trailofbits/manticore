@@ -23,7 +23,7 @@ def mgr_init():
 manager = SyncManager()
 manager.start(mgr_init)
 
-logger = logging.getLogger("EXECUTOR")
+logger = logging.getLogger(__name__)
 
 
 def sync(f):

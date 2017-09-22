@@ -18,8 +18,8 @@ from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
-logger = logging.getLogger("CPU")
-register_logger = logging.getLogger("REGISTERS")
+logger = logging.getLogger(__name__)
+register_logger = logging.getLogger('.'.join([__name__, 'registers']))
 
 ###################################################################################
 #Exceptions

@@ -26,7 +26,7 @@ from visitors import *
 from ...utils.helpers import issymbolic, memoized
 import collections
 
-logger = logging.getLogger("SMT")
+logger = logging.getLogger(__name__)
 
 class Z3NotFoundError(EnvironmentError):
     pass

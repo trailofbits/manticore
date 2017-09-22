@@ -27,8 +27,9 @@ from .utils.nointerrupt import WithKeyboardInterruptAs
 import logging
 from .utils import log
 
+
+logger = logging.getLogger(__name__)
 log.init_logging()
-logger = logging.getLogger('MANTICORE')
 
 def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     def _check_disassembler_present(disasm):

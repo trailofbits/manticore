@@ -16,9 +16,8 @@ from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
 from ...utils.helpers import issymbolic
 
-logger = logging.getLogger("CPU")
-register_logger = logging.getLogger("REGISTERS")
-
+logger = logging.getLogger(__name__)
+register_logger = logging.getLogger('.'.join([__name__, 'registers']))
 
 class BinjaRegisterFile(RegisterFile):
 

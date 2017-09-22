@@ -16,7 +16,7 @@ from multiprocessing.managers import SyncManager
 from .smtlib import solver
 from .smtlib.solver import SolverException
 
-logger = logging.getLogger('WORKSPACE')
+logger = logging.getLogger(__name__)
 
 manager = SyncManager()
 manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
