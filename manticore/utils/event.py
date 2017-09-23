@@ -12,7 +12,7 @@ class Eventful(object):
           - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
     '''
-    published_events = set()
+    _published_events = set()
 
     def __init__(self, *args, **kwargs):
         # A dictionary from "event name" -> callback methods
@@ -50,21 +50,33 @@ class Eventful(object):
         #A bucket is a dictionary obj -> set(method1, method2...)
         return self._signals.setdefault(name,  dict())
 
-    # The underscore _name is to avoid naming collisions with callback params
-    def _publish(self, _name, *args, **kwargs):
-        basename = _name
-        if _name.startswith('will_'):
-            basename = _name[5:]
-        elif _name.startswith('did_'):
-            basename = _name[4:]
 
-        # All subclasses except for last (object)
-        for cls in inspect.getmro(self.__class__)[:-1]:
-            if basename in cls.published_events:
-                break
-        else:
+    @property
+    def published_events(self):
+        ''' Returns a set of all the events that can be emitted from this object'''
+        #The following is done only once (when class and instance variables are the same)
+        if self._published_events is self.__class__._published_events:
+            # All subclasses except for last (object)
+            for cls in inspect.getmro(self.__class__)[:-1]:
+                self._published_events.update(self.__class__._published_events)
+
+        return self._published_events
+
+    def _check_event(self, _name):
+        prefixes = ('will_', 'did_', 'on_')
+        basename = _name
+        for prefix in prefixes:
+            if _name.startswith(prefix):
+                basename = _name[len(prefix):]
+        
+        if basename not in self.published_events:
             logger.warning("Event '%s' not pre-declared. (self: %s)", _name, repr(self))
 
+
+    # The underscore _name is to avoid naming collisions with callback params
+    def _publish(self, _name, *args, **kwargs):
+        #Enable only if debugging
+        self._check_event(_name)
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.iteritems():
             for callback in methods:
@@ -95,5 +107,5 @@ class Eventful(object):
         ''' This forwards signal to sink '''
         if not isinstance(sink, Eventful):
             raise TypeError
-        sink.__class__.published_events.update(self.__class__.published_events)
+        sink.published_events.update(self.published_events)
         self._forwards[sink] = include_source
