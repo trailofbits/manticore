@@ -3,9 +3,16 @@ from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 logger = logging.getLogger('MANTICORE')
 
+
+def _get_all_event_names():
+    all_events = set()
+    for src in Eventful.__subclasses__():
+        all_events.update(src._published_events)
+    return all_events
+
 class Plugin(object):
     #If a plugin is loaded from a python file dynamically this should be updated
-    event_names = set([ src.published_events for src in Eventful.__subclasses__() ])
+    event_names = set(_get_all_event_names())
 
     def __init__(self): 
         self.manticore = None

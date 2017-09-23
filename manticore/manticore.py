@@ -6,7 +6,7 @@ import binascii
 import functools
 import cProfile
 import pstats
-
+import itertools
 from multiprocessing import Process
 from contextlib import contextmanager
 
@@ -232,12 +232,11 @@ class Manticore(Eventful):
         plugin.manticore = self
         self.plugins.add(plugin)
 
-        events = Plugin.all_events
+        events = Plugin.event_names
         prefix = ('will_', 'did_', 'on_')
         all_events = map(lambda (x,y):x+y , itertools.product(prefix, events))
-
         for event_name in all_events:
-            callback_name = '{}_callback'.format(full_name)
+            callback_name = '{}_callback'.format(event_name)
             callback = getattr(plugin, callback_name, None)
             if callback is not None:
                 self.subscribe(event_name, callback)
