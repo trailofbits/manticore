@@ -170,7 +170,7 @@ class Executor(Eventful):
         # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
 
-        self.subscribe('will_load_state', self._register_state_callbacks)
+        self.subscribe('did_load_state', self._register_state_callbacks)
 
         # The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
@@ -432,10 +432,11 @@ class Executor(Eventful):
                             current_state_id = self.get()
                             #load selected state from secondary storage
                             if current_state_id is not None:
+                                self.publish('will_load_state', current_state_id)
                                 current_state = self._workspace.load_state(current_state_id)
                                 self.forward_events_from(current_state, True)
                                 logger.info("load state %r", current_state_id)
-                                self.publish('will_load_state', current_state, current_state_id)
+                                self.publish('did_load_state', current_state, current_state_id)
                             #notify siblings we have a state to play with
                             self._notify_start_run()
 

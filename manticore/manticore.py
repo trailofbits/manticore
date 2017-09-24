@@ -223,7 +223,7 @@ class Manticore(object):
 
         self._executor.forward_events_from(self._initial_state, True)
 
-        #Move the folowwing into a plugin
+        #Move the following into a plugin
         self._assertions = {}
 
     @classmethod
@@ -633,9 +633,10 @@ class Manticore(object):
     def _start_run(self):
         assert not self.running
         #FIXME this will be self.publish 
-        self._executor.publish('will_start_run', self._initial_state)
-        self.enqueue(self._initial_state)
-        self._initial_state = None
+        if self._initial_state is not None:
+            self._executor.publish('will_start_run', self._initial_state)
+            self.enqueue(self._initial_state)
+            self._initial_state = None
 
         #Copy the local main context to the shared conext
         self._executor._shared_context.update(self._context)

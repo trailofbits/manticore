@@ -1537,7 +1537,6 @@ class EVMWorld(Platform):
         self.storage[address]['storage'] = storage
         self.storage[address]['code'] = code
 
-        self.publish('did_create_account', address)
         return address
 
     def create_contract(self, origin=None, price=0, address=None, caller=None, balance=0, init='', run=False, header=None):
@@ -1551,6 +1550,7 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run 
         on the network.
         '''
+        assert self._pending_transaction is None
         if caller is None and origin is not None:
             caller = origin
         if origin is None and caller is not None:
@@ -1558,7 +1558,6 @@ class EVMWorld(Platform):
         assert caller == origin
         if header is None:
             header = {'timestamp':1}
-
         assert  not issymbolic(address) 
         assert  not issymbolic(origin) 
         address = self.create_account(address, 0)
@@ -1572,6 +1571,7 @@ class EVMWorld(Platform):
         self._pending_transaction = ('Create', address, origin, price, '', origin, balance, init, header)
 
         if run:
+            assert False
             #run initialization code
             #Assert everything is concrete?
             assert  not issymbolic(origin) 
@@ -1579,7 +1579,7 @@ class EVMWorld(Platform):
             assert self.storage[origin]['balance'] >= balance
             runtime = self.run()
             self.storage[address]['code'] = ''.join(runtime)
-        self.publish('did_create_account', address)
+
         return address
 
     def CREATE(self, value, bytecode):

@@ -152,7 +152,7 @@ class Store(object):
         with self.save_stream(key) as f:
             self._serializer.serialize(state, f)
 
-    def load_state(self, key):
+    def load_state(self, key, delete=True):
         """
         Load a state from storage.
 
@@ -161,11 +161,8 @@ class Store(object):
         """
         with self.load_stream(key) as f:
             state = self._serializer.deserialize(f)
-            # FIXME (theo) remove this from here and properly handle
-            # serialization for the platform CPU
-            if hasattr(state.cpu, "platform_cpu"):
-                state.cpu.platform_cpu._memory = state.cpu._memory
-            self.rm(key)
+            if delete:
+                self.rm(key)
             return state
 
     def rm(self, key):
@@ -371,7 +368,7 @@ class Workspace(object):
         self._last_id.value += 1
         return id_
 
-    def load_state(self, state_id):
+    def load_state(self, state_id, delete=True):
         """
         Load a state from storage identified by `state_id`.
 
@@ -379,7 +376,7 @@ class Workspace(object):
         :return: The deserialized state
         :rtype: State
         """
-        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix))
+        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete)
 
     def save_state(self, state):
         """
