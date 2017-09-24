@@ -598,6 +598,9 @@ class AMD64RegFile(RegisterFile):
         self._cache[name] = value
         return value
 
+    def sizeof(self, reg):
+        return self._table[reg].size
+
 ###########################
 # Operand Wrapper
 class AMD64Operand(Operand):
@@ -4915,16 +4918,16 @@ class X86Cpu(Cpu):
         if (Operators.EXTRACT(ctlbyte, 6, 1) == 0):
             oecx = 0
             tres = res
-            while ((tres & 1) != 0):
+            while ((tres & 1) == 0):
                 oecx += 1
                 tres >>= 1
             return oecx
         else:
-            oecx = 0
+            oecx = 128/stepsize - 1
             tres = res
-            msbmask = (1 << (self.regfile._table['XMM0'].size/stepsize - 1))
-            while ((tres & msbmask) != 0):
-                oecx += 1
+            msbmask = (1 << (128/stepsize - 1))
+            while ((tres & msbmask) == 0):
+                oecx -= 1
                 tres = (tres << 1) & ((msbmask << 1) - 1)
             return oecx
 
@@ -4936,7 +4939,7 @@ class X86Cpu(Cpu):
         else:
             stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
             xmmres = 0
-            for i in range(0, self.regfile._table['XMM0'].size, stepsize):
+            for i in range(0, 128, stepsize):
                 if (res&1 == 1):
                     xmmres |= (((1 << stepsize) - 1) << i)
                 res >>= 1
@@ -4945,7 +4948,7 @@ class X86Cpu(Cpu):
     def _pcmpistrx_varg(self, arg, ctlbyte):
         step = self._pcmpxstrx_srcdat_format(ctlbyte)
         result = []
-        for i in range(0, self.regfile._table['XMM0'].size, step):
+        for i in range(0, 128, step):
             uc = Operators.EXTRACT(arg, i, step)
             if uc == 0:
                 break
@@ -4956,12 +4959,14 @@ class X86Cpu(Cpu):
         reg = self.read_register(regname)
         if (issymbolic(reg)):
             raise ConcretizeRegister(self, regname, "Concretize PCMPESTRx ECX/EDX")
-        smask = 1 << (self.regfile._table[regname].size - 1)
+        smask = 1 << (self.regfile.sizeof(regname) - 1)
         step = self._pcmpxstrx_srcdat_format(ctlbyte)
         if (reg & smask == 1):
             val = Operators.NOT(reg - 1)
-        if (val > self.regfile._table['XMM0'].size/step):
-            val = self.regfile._table['XMM0'].size/step
+        else:
+            val = reg
+        if (val > 128/step):
+            val = 128/step
         result = []
         for i in range(val):
             uc = Operators.EXTRACT(arg, i*step, step)
@@ -4976,7 +4981,7 @@ class X86Cpu(Cpu):
         ## Aggregation Operation
         res = 0
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
-        xmmsize = self.regfile._table['XMM0'].size
+        xmmsize = 128
         if (Operators.EXTRACT(ctlbyte, 2, 2) == 0):
             #raise NotImplementedError("pcmpistrx Equal any")
             for i in range(len(haystack)):
@@ -5003,18 +5008,21 @@ class X86Cpu(Cpu):
             #raise NotImplementedError("pcmpistrx Equal ordered")
             if len(haystack) < len(needle):
                 return 0
-            for i in range(len(haystack)-len(needle)+1):
-                res = Operators.ITEBV(xmmsize, haystack[i:i+len(needle)] == needle, res|(1 << i), res)
+            for i in range(len(haystack)):
+                subneedle = needle[: (xmmsize/stepsize - i) if len(needle)+i > xmmsize/stepsize else len(needle)]
+                res = Operators.ITEBV(xmmsize, haystack[i:i+len(subneedle)] == subneedle, res|(1 << i), res)
         return res
 
     def _pcmpxstrx_polarity(self, res1, ctlbyte, arg2len):
         ## Polarity
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 0):
+            res2 = res1
             pass
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 1):
-            res2 = ((1 << (self.regfile._table['XMM0'].size/stepsize)) - 1) ^ res1
+            res2 = ((1 << (128/stepsize)) - 1) ^ res1
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 2):
+            res2 = res1
             pass
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 3):
             res2 = ((1 << arg2len) - 1) ^ res1
@@ -5023,8 +5031,8 @@ class X86Cpu(Cpu):
 
     def _pcmpxstrx_setflags(self, res, varg0, varg1, ctlbyte):
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
-        self.ZF = len(varg0) < self.regfile._table['XMM0'].size/stepsize
-        self.SF = len(varg1) < self.regfile._table['XMM0'].size/stepsize
+        self.ZF = len(varg1) < 128/stepsize
+        self.SF = len(varg0) < 128/stepsize
         self.CF = res != 0
         self.OF = res & 1
         self.AF = False
@@ -5056,7 +5064,7 @@ class X86Cpu(Cpu):
         res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
         res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
         if (res == 0):
-            cpu.ECX = cpu._pcmpxstrx_srcdat_format(ctlbyte)
+            cpu.ECX = 128/cpu._pcmpxstrx_srcdat_format(ctlbyte)
         else:
             cpu.ECX = cpu._pcmpxstri_output_selection(ctlbyte, res)
         cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
@@ -5066,7 +5074,7 @@ class X86Cpu(Cpu):
         arg0, arg1, ctlbyte = cpu._pcmpxstrx_operands(op0, op1, op2)
         varg0 = cpu._pcmpistrx_varg(arg0, ctlbyte)
         varg1 = cpu._pcmpistrx_varg(arg1, ctlbyte)
-        res = cpu._pcmpistrx_aggregation_operation(varg0, varg1, ctlbyte)
+        res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
         res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
         cpu.XMM0 = cpu._pcmpxstrm_output_selection(ctlbyte, res)
         cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
@@ -5079,7 +5087,7 @@ class X86Cpu(Cpu):
         res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
         res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
         if (res == 0):
-            cpu.ECX = cpu._pcmpxstrx_srcdat_format(ctlbyte)
+            cpu.ECX = 128/cpu._pcmpxstrx_srcdat_format(ctlbyte)
         else:
             cpu.ECX = cpu._pcmpxstri_output_selection(ctlbyte, res)
         cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)

@@ -121,7 +121,7 @@ while True:
         pc = gdb.getR({'i386': 'EIP', 'amd64': 'RIP'}[arch]) 
         print hex(pc)
         gdb.stepi()
-        print gdb.correspond('info registers')
+        print gdb.correspond('info registers\n')
     except Exception,e:
         print e
 print "# Processed %d instructions." % count
