@@ -13,7 +13,7 @@ from .abstractcpu import (
 
 
 from ..smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
-from ..memory import MemoryException
+from ..memory import MemoryException, ConcretizeMemory
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger("CPU")
