@@ -1061,11 +1061,9 @@ class EVM(Eventful):
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
-        print "A" ,mem_offset, data_offset, size
         #FIXME put zero if not enough data
         size = arithmetic_simplifier(size)
         #FIXME explore calldata sizes better
-        print size
         if issymbolic(size) or issymbolic(data_offset):
             self._constraints.add(Operators.ULE(data_offset, len(self.data)))
             self._constraints.add(Operators.ULE(size, len(self.data) +len(self.data)%32 ))
@@ -1080,8 +1078,6 @@ class EVM(Eventful):
             else:
                 c = '\x00'
             self._store(mem_offset+i, Operators.ORD(c))
-
-        print "D"
 
     def CODESIZE(self):
         '''Get size of code running in current environment'''

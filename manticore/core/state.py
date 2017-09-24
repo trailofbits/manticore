@@ -198,7 +198,7 @@ class State(Eventful):
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
-        name = options.get('name', 'buffer')
+        name = options.get('label', 'buffer')
         taint = options.get('taint', frozenset())
         expr = self._constraints.new_array(name=name, index_max=nbytes, taint=taint)
         self._input_symbols.append(expr)

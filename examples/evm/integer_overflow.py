@@ -25,7 +25,7 @@ bytecode = seth.compile(source_code)
 #Initialize contract
 contract_account = seth.create_contract(owner=user_account, 
                                           balance=0, 
-                                          init_bytecode=bytecode)
+                                          init=bytecode)
 
 symbolic_data = seth.new_symbolic_buffer(name='msg.data.tx1', nbytes=38)
 seth.transaction(  caller=user_account,

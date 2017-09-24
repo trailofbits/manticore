@@ -36,12 +36,12 @@ assert bytecode == '6060604052341561000f57600080fd5b5b6101d08061001f6000396000f3
 # Note that the initialization argument would have been passed immediatelly 
 # after the init bytecode  init=bytecode+pack(parameter)
 contract_account = seth.create_contract(owner=user_account,
-                                        init_bytecode=bytecode)
+                                        init=bytecode)
 
    
 print "[+] Now the symbolic values"
 
-symbolic_data = seth.new_symbolic_buffer(name='msg.data.tx1', nbytes=164)
+symbolic_data = seth.new_symbolic_buffer(label='msg.data.tx1', nbytes=164)
 symbolic_value = seth.new_symbolic_value(256)
 
 seth.transaction(caller=user_account,

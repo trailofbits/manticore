@@ -12,9 +12,9 @@ bytecode = seth.compile(source_code)
 #Initialize contract
 contract_account = seth.create_contract(owner=user_account, 
                                           balance=0, 
-                                          init_bytecode=bytecode)
+                                          init=bytecode)
 
-symbolic_data = seth.new_symbolic_buffer(name='tx1.msg.data.', nbytes=164)
+symbolic_data = seth.new_symbolic_buffer(label='tx1.msg.data.', nbytes=164)
 symbolic_value = seth.new_symbolic_value(256, label='tx1.value')
 seth.transaction(  caller=user_account,
                     address=contract_account,
@@ -25,7 +25,7 @@ seth.transaction(  caller=user_account,
 #Up to here we get onle ~30% coverage. 
 #We need 2 transactions to fully explore the contract
 
-symbolic_data = seth.new_symbolic_buffer(name='tx2.msg.data.', nbytes=164)
+symbolic_data = seth.new_symbolic_buffer(label='tx2.msg.data.', nbytes=164)
 symbolic_value = seth.new_symbolic_value(256, label='tx2.value')
 seth.transaction(  caller=user_account,
                     address=contract_account,

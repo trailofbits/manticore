@@ -76,22 +76,28 @@ class SEthereum(Manticore):
 
     @property
     def running_state_ids(self):
-        return self._saved_states
+        if self.initial_state is not None:
+            return self._saved_states + [-1]
+        else:
+            return self._saved_states
+
     @property
     def final_state_ids(self):
         return self._final_states
 
     def get_world(self, state_id):
-        assert len(self._saved_states) > 0 and self.initial_state is None
+        if state_id == -1:
+            return self.initial_state.platform
+
         state = self._executor._workspace.load_state(state_id, delete=False)
         return state.platform
 
-    def create_contract(self, owner, balance=0, init_bytecode=None, address=None):
+    def create_contract(self, owner, balance=0, init=None, address=None):
         ''' Only available when there is a single state of the world'''
         assert self._pending_transaction is None
-        assert init_bytecode is not None
+        assert init is not None
         address = self.world._new_address()
-        self._pending_transaction = ('CREATE_CONTRACT', owner, address, balance, init_bytecode)
+        self._pending_transaction = ('CREATE_CONTRACT', owner, address, balance, init)
 
         self.run()
 
@@ -218,7 +224,10 @@ function_id, *args):
 
 
     def report(self, state_id):
-        state = self._executor._workspace.load_state(state_id, delete=False)
+        if state_id == -1:
+            state = self.initial_state
+        else:
+            state = self._executor._workspace.load_state(state_id, delete=False)
         e = state.context['last_exception']
         world = state.platform
         def compare_buffers(a, b):
