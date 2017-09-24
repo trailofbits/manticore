@@ -154,9 +154,7 @@ seth.transaction(  caller=attacker_account,
                     data='\x0c\xcf\xac\x9e'+pack_msb(32)+pack_msb(4)+'\x5f\xd8\xc7\x10',
                     value=0)
 
-
 print " attacker_account %x balance: %d"% (attacker_account, seth.world.storage[attacker_account]['balance'])
-print " exploit_account %x balance: %d"%  (exploit_account, seth.world.storage[exploit_account]['balance'])
 print " user_account %x balance: %d"%  (user_account, seth.world.storage[user_account]['balance'])
 print " contract_account %x balance: %d"%  (contract_account, seth.world.storage[contract_account]['balance'])
 
