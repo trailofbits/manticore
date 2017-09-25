@@ -32,7 +32,7 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 
 ```
 # Install system dependencies
-sudo apt-get update && sudo apt-get install python-pip -y
+sudo apt-get update && sudo apt-get install z3 python-pip -y
 python -m pip install -U pip
 
 # Install manticore and its dependencies
