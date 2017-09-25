@@ -6,7 +6,7 @@ import logging
 from ..utils.mappings import _mmap, _munmap
 from ..utils.helpers import issymbolic
 
-logger = logging.getLogger('MEMORY')
+logger = logging.getLogger(__name__)
 
 
 class MemoryException(Exception):

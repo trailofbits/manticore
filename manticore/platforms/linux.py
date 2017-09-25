@@ -21,7 +21,7 @@ from ..platforms.platform import Platform
 from ..utils.helpers import issymbolic, is_binja_disassembler
 from . import linux_syscalls
 
-logger = logging.getLogger("PLATFORM")
+logger = logging.getLogger(__name__)
 
 class RestartSyscall(Exception):
     pass

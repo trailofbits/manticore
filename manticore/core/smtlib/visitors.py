@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from expression import *
 import logging
-logger = logging.getLogger("VISITOR")
+logger = logging.getLogger(__name__)
 
 
 class Visitor(object):
