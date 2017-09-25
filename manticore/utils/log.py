@@ -6,17 +6,22 @@ class ContextFilter(logging.Filter):
     '''
     This is a filter which injects contextual information into the log.
     '''
+    def summarized_name(self, name):
+        '''
+        Produce a summarized record name
+          i.e. manticore.core.executor -> m.c.executor
+        '''
+        components = name.split('.')
+        prefix = '.'.join(c[0] for c in components[:-1])
+        return '{}.{}'.format(prefix, components[-1])
+
     def filter(self, record):
         if hasattr(self, 'stateid') and isinstance(self.stateid, int):
             record.stateid = '[%d]' % self.stateid
         else:
             record.stateid = ''
 
-        # Summarize logger name
-        components = record.name.split('.')
-        name = '.'.join(c[0] for c in components[:-1]) + '.' + components[-1]
-        record.name = name
-
+        record.name = self.summarized_name(record.name)
         return True
 
 manticore_verbosity = 0
