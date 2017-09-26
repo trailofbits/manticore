@@ -16,7 +16,7 @@ from multiprocessing.managers import SyncManager
 from .smtlib import solver
 from .smtlib.solver import SolverException
 
-logger = logging.getLogger('WORKSPACE')
+logger = logging.getLogger(__name__)
 
 manager = SyncManager()
 manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
@@ -534,7 +534,7 @@ class ManticoreOutput(object):
                 fd.write('{SolverException}')
 
         with self._named_stream('stdout') as _out:
-            with self._named_stream('stdout') as _err:
+            with self._named_stream('stderr') as _err:
                 with self._named_stream('stdin') as _in:
                     with self._named_stream('net') as _net:
                         for name, fd, data in state.platform.syscall_trace:

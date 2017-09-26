@@ -18,7 +18,7 @@ from .register import Register
 from ..smtlib import Operators, Expression, BitVecConstant
 from ...utils.helpers import issymbolic
 
-logger = logging.getLogger("CPU")
+logger = logging.getLogger(__name__)
 
 # map different instructions to a single impl here
 OP_NAME_MAP = {
