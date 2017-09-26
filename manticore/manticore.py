@@ -232,9 +232,9 @@ class Manticore(Eventful):
         plugin.manticore = self
         self.plugins.add(plugin)
 
-        events = Plugin.event_names
+        events = Eventful.all_events()
         prefix = ('will_', 'did_', 'on_')
-        all_events = map(lambda (x,y):x+y , itertools.product(prefix, events))
+        all_events = [x+y for x, y in itertools.product(prefix, events)]
         for event_name in all_events:
             callback_name = '{}_callback'.format(event_name)
             callback = getattr(plugin, callback_name, None)
