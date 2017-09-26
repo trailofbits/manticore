@@ -92,6 +92,24 @@ class Visited(Plugin):
                     f.write(fmt.format(m))
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
 
+class ConcreteTraceFollower(Plugin):
+    def __init__(self, source):
+        '''
+        :param iterable source: Iterator producing instruction pointers to be followed
+        '''
+        self.source = source
+
+    def will_start_run_callback(self, state):
+        # Should establish tracing state
+        pass
+
+    def will_execute_instruction_callback(self, state, pc, instruction):
+        # Should confirm instruction executed is in the trace
+        pass
+
+    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
+        # Should direct execution via trace
+        pass
 
 
 #TODO document all callbacks
