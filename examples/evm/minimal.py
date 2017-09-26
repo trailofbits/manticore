@@ -35,7 +35,7 @@ contract_account = seth.create_contract(owner=user_account,
    
 print "[+] Now the symbolic values"
 
-symbolic_data = seth.SByte(164) 
+symbolic_data = seth.SByte(16) 
 symbolic_value = None 
 seth.transaction(caller=user_account,
                 address=contract_account,
