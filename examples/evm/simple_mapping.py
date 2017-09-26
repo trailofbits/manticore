@@ -1,7 +1,7 @@
 from seth import *
 ################ Script #######################
 
-seth = SEthereum()
+seth = ManticoreEVM()
 seth.verbosity(0)
 #And now make the contract account to analyze
 # cat  | solc --bin 

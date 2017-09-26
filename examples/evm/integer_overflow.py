@@ -1,13 +1,13 @@
-from seth1 import *
-################ Script #######################
+from seth import *
 
-seth = SEthereum()
-seth.verbosity(0)
+seth = ManticoreEVM()
+
 #And now make the contract account to analyze
 source_code = '''
 pragma solidity ^0.4.15;
 
 contract Overflow {
+    event Log(string);
     uint private sellerBalance=0;
     
     function add(uint value) returns (bool){
@@ -19,23 +19,23 @@ contract Overflow {
 }
 '''
 
+#Initialize user and contracts
 user_account = seth.create_account(balance=1000)
-
 bytecode = seth.compile(source_code)
-#Initialize contract
 contract_account = seth.create_contract(owner=user_account, 
                                           balance=0, 
                                           init=bytecode)
 
-symbolic_data = seth.new_symbolic_buffer(name='msg.data.tx1', nbytes=38)
+#First add wont owerflow uint256 representation
+symbolic_data = seth.make_function_call('add(uint256)', None)
 seth.transaction(  caller=user_account,
                     address=contract_account,
                     value=0,
                     data=symbolic_data,
                  )
 
-
-symbolic_data = seth.new_symbolic_buffer(name='msg.data.tx2', nbytes=38)
+#Potential overflow
+symbolic_data = seth.make_function_call('add(uint256)', None)
 seth.transaction(  caller=user_account,
                     address=contract_account,
                     value=0,
@@ -51,7 +51,7 @@ print "[+] There are %d alive states now"% len(seth.running_state_ids)
 for state_id in seth.running_state_ids:
     seth.report(state_id)
 
-print "[+] Global coverage:"
+print "[+] Global coverage: %x"% contract_account
 print seth.coverage(contract_account)
 
 

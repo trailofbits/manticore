@@ -24,10 +24,10 @@ logger = logging.getLogger('PLATFORM')
 TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
-TOOHIGHMEM = 0x100
+TOOHIGHMEM = 0x1000
 
 def to_signed(i):
-    return i if i < TT255 else i - TT256
+    return Operators.ITEBV(256, i<TT255, i, i-TT256) #i if i < TT255 else i - TT256
 
 def pack_msb(value, size=32):
     '''takes an int and packs it into a 32 byte string, msb first''' 
@@ -147,13 +147,17 @@ class EVMMemory(object):
         assert not issymbolic(size)
 
         if issymbolic(address):
+            address = arithmetic_simplifier(address)
+
+
             assert solver.check(self.constraints)
             logger.debug('Reading %d items from symbolic offset %s', size, address)
             try:
-                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x100) #if more than 0x3000 exception
+                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
+                print 'Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!'%( m, M)
 
                 #FIXME When we implement gas calculate the max index to exhaust gas 
                 if M >= TOOHIGHMEM:
@@ -523,7 +527,7 @@ class ConcretizeStack(EVMException):
     '''
     Raised when a symbolic memory cell needs to be concretized.
     '''
-    def __init__(self, pos, expression, policy='MINMAX'):
+    def __init__(self, pos, expression=None, policy='MINMAX'):
         self.message = "Concretizing evm stack item {}".format(pos)
         self.pos = pos
         self.expression = expression
@@ -813,8 +817,6 @@ class EVM(Eventful):
         if implementation is None:
             raise TerminateState("Instruction not implemented %s"%current.semantics, testcase=True)
 
-
-
         #Get arguments (imm, pop)
         arguments = []
         if self.instruction.has_operand:
@@ -823,6 +825,13 @@ class EVM(Eventful):
             arguments.append(self._pop())
 
         self.publish('did_execute_instruction', current)
+
+        #simplify stack arguments
+        for i in range(len(arguments)):
+            if isinstance(arguments[i], Expression):           
+                arguments[i] = arithmetic_simplifier(arguments[i])
+            if isinstance(arguments[i], Constant):
+                arguments[i] = arguments[i].value
 
         #Execute
         try:
@@ -833,13 +842,12 @@ class EVM(Eventful):
             def setstate(state, value):
                 self.stack[-ex.pos] = value
             raise Concretize("Concretice Stack Variable",
-                                expression=ex.expression, 
+                                expression=self.stack[-ex.pos], 
                                 setstate=setstate,
                                 policy=ex.policy)
         except EVMException as e:
             self.last_exception = e
             raise
-
         self.publish('did_execute_instruction', self, current)
 
         
@@ -957,11 +965,11 @@ class EVM(Eventful):
     ##Comparison & Bitwise Logic Operations
     def LT(self, a, b): 
         '''Less-than comparision'''
-        return Operators.ITEBV(256, a < b, 1, 0)
+        return Operators.ITEBV(256, Operators.ULT(a, b), 1, 0)
 
     def GT(self, a, b):
         '''Greater-than comparision'''
-        return Operators.ITEBV(256, a > b, 1, 0)
+        return Operators.ITEBV(256, Operators.UGT(a, b), 1, 0)
 
     def SLT(self, a, b): 
         '''Signed less-than comparision'''
@@ -1002,7 +1010,7 @@ class EVM(Eventful):
     def BYTE(self, offset, value):
         '''Retrieve single byte from word'''
         offset = Operators.ITEBV(256, offset<32, (31-offset)*8, 256) 
-        return Operators.EXTRACT(value, offset, 8)
+        return Operators.ZEXTEND(Operators.EXTRACT(value, offset, 8), 256)
 
 
     def SHA3(self, start, end):
@@ -1041,18 +1049,15 @@ class EVM(Eventful):
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
         #FIXME concretize offset?
-
-        if issymbolic(offset):
-            self._constraints.add(Operators.ULE(offset, len(self.data)))
+        #if issymbolic(offset):
+        #    self._constraints.add(Operators.ULE(offset, len(self.data)+32))
             #self._constraints.add(0 == offset%32)
         #    raise ConcretizeStack(3, expression=offset, policy='ALL')
 
         bytes = list(self.data[offset:offset+32])
-        if len(bytes)<32:
-            bytes += ['\x00'] * (32-len(bytes))
+        bytes += list('\x00'*( 32-len(bytes)))
         bytes = map(Operators.ORD, bytes)
         value = Operators.CONCAT(256, *bytes)
-        #FIXME: is this big end?
         return value 
 
     def CALLDATASIZE(self):
@@ -1062,22 +1067,16 @@ class EVM(Eventful):
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
         #FIXME put zero if not enough data
-        size = arithmetic_simplifier(size)
-        #FIXME explore calldata sizes better
         if issymbolic(size) or issymbolic(data_offset):
-            self._constraints.add(Operators.ULE(data_offset, len(self.data)))
-            self._constraints.add(Operators.ULE(size, len(self.data) +len(self.data)%32 ))
+            #self._constraints.add(Operators.ULE(data_offset, len(self.data)))
+            self._constraints.add(Operators.ULE(size+data_offset, len(self.data) + (32-len(self.data)%32) ))
 
         if issymbolic(size):
-            raise ConcretizeStack(3, expression=size, policy='ALL')
-        if issymbolic(data_offset):
-            raise ConcretizeStack(2, expression=data_offset, policy='ALL')
+            raise ConcretizeStack(3, policy='ALL')
+
         for i in range(size):
-            if data_offset+i < len(self.data):
-                c = self.data[data_offset+i]
-            else:
-                c = '\x00'
-            self._store(mem_offset+i, Operators.ORD(c))
+            c = Operators.ITEBV(8,data_offset+i < len(self.data), Operators.ORD(self.data[data_offset+i]), 0)
+            self._store(mem_offset+i, c)
 
     def CODESIZE(self):
         '''Get size of code running in current environment'''
@@ -1086,7 +1085,7 @@ class EVM(Eventful):
     def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
         if issymbolic(size):
-            raise ConcretizeStack(3, expression=size)
+            raise ConcretizeStack(3)
         for i in range(size):
             if (code_offset+i > len(self.bytecode)):
                 self._store(mem_offset+i, 0)
@@ -1226,7 +1225,7 @@ class EVM(Eventful):
     ##Logging Operations
     def LOG(self, address, size, *topics):
         if issymbolic(size):
-            raise ConcretizeStack(2, expression=size, policy='SAMPLED')
+            raise ConcretizeStack(2, policy='ONE')
 
         memlog = []
         for i in range(size):
@@ -1257,9 +1256,9 @@ class EVM(Eventful):
     def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         if issymbolic(in_offset):
-            raise ConcretizeStack(4, expression=in_offset, policy='SAMPLED')
+            raise ConcretizeStack(4, policy='SAMPLED')
         if issymbolic(in_size):
-            raise ConcretizeStack(5, expression=in_size, policy='SAMPLED')
+            raise ConcretizeStack(5, policy='SAMPLED')
 
         data = self.read_buffer(in_offset, in_size)
         raise Call(gas, to, value, data, out_offset, out_size)
@@ -1389,6 +1388,11 @@ class EVMWorld(Platform):
         if self.current is not None:
             self.forward_events_from(self.current)
 
+    def __getitem__(self, index):
+        assert isinstance(index, (int,long))
+        return self.storage[index]
+
+
     def __str__(self):
         return "WORLD:" + str(self._global_storage)
         
@@ -1444,7 +1448,6 @@ class EVMWorld(Platform):
         vm.global_storage[vm.address]['storage'] = copy.copy(self.storage[vm.address]['storage'])
         if self.depth:
             self.current.constraints = None
-
         #MAKE A DEEP COPY OF THE SPECIFIC ACCOUNT
         self._callstack.append(vm)
         self.current.depth = self.depth
@@ -1595,8 +1598,8 @@ class EVMWorld(Platform):
         if header is None:
             header = {'timestamp':1}
         if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
-            #data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
-            data_symb = EVMMemory(self.constraints, 256, 8)
+            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
+            #data_symb = EVMMemory(self.constraints, 256, 8)
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
@@ -1626,6 +1629,7 @@ class EVMWorld(Platform):
         self.storage[address]['balance'] += value
 
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
+        
         self._push(new_vm)
         self._pending_transaction = None
         if self.depth == 1:

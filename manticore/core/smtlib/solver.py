@@ -330,7 +330,7 @@ class Z3Solver(Solver):
 
     #get-all-values min max minmax
     #@memoized
-    def get_all_values(self, constraints, expression, maxcnt=300, silent=False):
+    def get_all_values(self, constraints, expression, maxcnt=3000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
         if not isinstance(expression, Expression):
             return [expression]

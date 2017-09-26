@@ -391,7 +391,7 @@ class Manticore(object):
     def _join_workers(self):
         with WithKeyboardInterruptAs(self._executor.shutdown):
             while len(self._workers) > 0:
-                w = self._workers.pop().join()
+                self._workers.pop().join()
 
 
     ############################################################################

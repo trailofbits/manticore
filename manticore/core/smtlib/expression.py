@@ -538,7 +538,7 @@ class Array(Expression):
 
     def cast_index(self, index):
         if isinstance(index, (int, long)):
-            assert self.index_max is None or index >= 0 and index < self.index_max
+            #assert self.index_max is None or index >= 0 and index < self.index_max
             return BitVecConstant(self._index_bits, index)
         assert isinstance(index, BitVec) and index.size == self._index_bits
         return index
@@ -646,9 +646,10 @@ class ArrayProxy(Array):
             size = self._get_size(index)
             result = []
             for i in xrange(size):
-                #if self.index_max is not None and i+index.start > self.index_max:
-                #    break
-                result.append(self._array.select(index.start+i))
+                if self.index_max is not None and not isinstance(i+index.start, Expression) and i+index.start >= self.index_max:
+                    result.append(0)
+                else:
+                    result.append(self._array.select(index.start+i))
             return result
         else:
             return self._array.select(index)

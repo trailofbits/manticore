@@ -1,10 +1,12 @@
 from manticore import Manticore
-from manticore.core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array
+from manticore.core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
+from manticore.core.smtlib.visitors import arithmetic_simplifier
 from manticore.platforms import evm
 from manticore.platforms.evm import pack_msb
 from manticore.core.state import State
 import tempfile
 from subprocess import Popen, PIPE
+import sha3
 
 solc = "/usr/bin/solc"
 
@@ -44,22 +46,109 @@ def compile_code(source_code):
         outp = p.stdout.readlines()
         return parse_bin(outp)
 
-class SEthereum(Manticore):
+class ManticoreEVM(Manticore):
+    class SByte():
+        def __init__(self, size=1):
+            self.size=size
+        def __mul__(self, reps):
+            return Symbol(self.size*reps)
+    SCHAR = SByte(1)
+    SUINT = SByte(32)
+        
+
+    @staticmethod
+    def pack_msb(value):
+        return ''.join(ManticoreEVM.serialize_uint(value))
+
+    @staticmethod
+    def serialize(value):
+        if isinstance(value, str):
+            return ManticoreEVM.serialize_string(value)
+        if isinstance(value, list):
+            return ManticoreEVM.serialize_array(value)
+        if isinstance(value, (int, long)):
+            return ManticoreEVM.serialize_uint(value)
+        if isinstance(value, ManticoreEVM.SByte):
+            return ManticoreEVM.serialize_uint(value.size) + (None,)*value.size + (('\x00',)*(32-(value.size%32)))
+        if isinstance(value, type(None)):
+            return (None,)*32
+
+
+    @staticmethod
+    def serialize_uint(value, size=32):
+        '''takes an int and packs it into a 32 byte string, msb first''' 
+        assert size >=1
+        bytes = []
+        for position in range(size):
+            bytes.append( Operators.EXTRACT(value, position*8, 8) )
+        chars = map(Operators.CHR, bytes)
+        return tuple(reversed(chars))
+
+    @staticmethod
+    def serialize_string(value):
+        assert isinstance(value, str)
+        return ManticoreEVM.serialize_uint(len(value))+tuple(value + ('\x00'*(32-(len(value)%32))))
+
+    @staticmethod
+    def serialize_array(value):
+        assert isinstance(value, list)
+        serialized = [ManticoreEVM.serialize_uint(len(value))]
+        for item in value:
+            serialized.append(ManticoreEVM.serialize(item))    
+        return reduce(lambda x,y: x+y, serialized)
+
+    @staticmethod
+    def make_function_id( method_name):
+        s = sha3.keccak_256()
+        s.update(method_name)
+        return s.hexdigest()[:8].decode('hex')
+
+    @staticmethod
+    def make_function_call(method_name, *args):
+        function_id = ManticoreEVM.make_function_id(method_name)
+        def check_bitsize(value, size):
+            if isinstance(value, BitVec):
+                return value.size==size
+            return (value & ~((1<<size)-1)) == 0
+        assert len(function_id) == 4
+        result = [tuple(function_id)]
+        dynamic_args = []
+        dynamic_offset = 32*len(args)
+        for arg in args:
+            if isinstance(arg, (list, tuple, str, ManticoreEVM.SByte)):
+                result.append(ManticoreEVM.serialize(dynamic_offset))
+                serialized_arg = ManticoreEVM.serialize(arg)
+                dynamic_args.append(serialized_arg)
+                assert len(serialized_arg)%32 ==0
+                dynamic_offset += len(serialized_arg)
+            else:
+                result.append(ManticoreEVM.serialize(arg))
+
+        for arg in dynamic_args:
+            result.append(arg)
+        return reduce(lambda x,y: x+y, result)
+
     @staticmethod
     def compile(source_code):
         return compile_code(source_code)
 
     def __init__(self):
-        self.code = {}
-        self._pending_transaction = None
-        self._saved_states = []
-        self._final_states = []
+
         #Make the constraint store
         constraints = ConstraintSet()
         #make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        super(SEthereum, self).__init__(initial_state)
+        super(ManticoreEVM, self).__init__(initial_state)
+
+
+        #The following should go to manticore.context so we can use multiprocessing
+        self.code = {}
+        self.context['seth'] = {}
+        self.context['seth']['_pending_transaction'] = None
+        self.context['seth']['_saved_states'] = []
+        self.context['seth']['_final_states'] = []
+
 
 
         self._executor.subscribe('did_load_state', self.load_state_callback)
@@ -71,19 +160,22 @@ class SEthereum(Manticore):
 
     @property
     def world(self):
-        assert len(self._saved_states) == 0
+        if self.initial_state is None:
+            return None
         return self.initial_state.platform
 
     @property
     def running_state_ids(self):
-        if self.initial_state is not None:
-            return self._saved_states + [-1]
-        else:
-            return self._saved_states
+        with self.locked_context('seth') as context:
+            if self.initial_state is not None:
+                return context['_saved_states'] + [-1]
+            else:
+                return context['_saved_states']
 
     @property
     def final_state_ids(self):
-        return self._final_states
+        with self.locked_context('seth') as context:
+            return context['_final_states']
 
     def get_world(self, state_id):
         if state_id == -1:
@@ -94,10 +186,11 @@ class SEthereum(Manticore):
 
     def create_contract(self, owner, balance=0, init=None, address=None):
         ''' Only available when there is a single state of the world'''
-        assert self._pending_transaction is None
+        with self.locked_context('seth') as context:
+            assert context['_pending_transaction'] is None
         assert init is not None
         address = self.world._new_address()
-        self._pending_transaction = ('CREATE_CONTRACT', owner, address, balance, init)
+        self.context['seth']['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
         self.run()
 
@@ -105,52 +198,57 @@ class SEthereum(Manticore):
 
     def create_account(self, balance=0, address=None):
         ''' Only available when there is a single state of the world'''
-        assert self._pending_transaction is None
+        with self.locked_context('seth') as context:
+           assert context['_pending_transaction'] is None
         return self.world.create_account( address, balance, code='', storage=None)
-    '''
-    @staticmethod
-    def _check_bitsize(value, size):
-        return isinstance(value, Bitvec) and function_id.size == size or (function_id & ~((1<<size)-1)) == 0
-function_id, *args):
-        assert self._pending_transaction is None
-        assert self._check_bitsize(function_id, 32)
-        assert all(self._check_vitsize(arg, 256) for arg in args)
-    '''
+
     def transaction(self, caller, address, value, data):
-        self._pending_transaction = ('CALL', caller, address, value, data)
-        self.run()
+        if isinstance(data, self.SByte):
+            data = (None,)*data.size
+        with self.locked_context('seth') as context:
+            context['_pending_transaction'] = ('CALL', caller, address, value, data)
+        return self.run()
 
     def run(self, **kwargs):
-        #Ther is a pending transaction
-        assert self._pending_transaction is not None
-        #there is no states added to the executor queue
-        assert len(self._executor.list()) == 0
-        #there is at least one states in seth saved states
-        assert len(self._saved_states) + int(self.initial_state is not None) > 0
+        #Check if there is a pending transaction
+        with self.locked_context('seth') as context:
+            assert context['_pending_transaction'] is not None
+            #there is at least one states in seth saved states
+            assert len(context['_saved_states']) + int(self.initial_state is not None) > 0
 
-        for state_id in self._saved_states:
-            self._executor.put(state_id)
-        self._saved_states = []
+            #there is no states added to the executor queue
+            assert len(self._executor.list()) == 0
 
-        result = super(SEthereum, self).run(**kwargs)
+            for state_id in context['_saved_states']:
+                self._executor.put(state_id)
+    
+            context['_saved_states'] = []
 
-        if len(self._saved_states)==1:
-            self._initial_state = self._executor._workspace.load_state(self._saved_states[0], delete=True)
-            self._saved_states = []
+        #A callback will use _pending_transaction and 
+        #issue the transaction in each state
+        result = super(ManticoreEVM, self).run(procs = 6, **kwargs)
 
-        #clear pending transcations. We are done.
-        self._pending_transaction = None
+        with self.locked_context('seth') as context:
+
+            if len(context['_saved_states'])==1:
+                self._initial_state = self._executor._workspace.load_state(context['_saved_states'][0], delete=True)
+                context['_saved_states'] = []
+
+            #clear pending transcations. We are done.
+            context['_pending_transaction'] = None
+        return result
           
     def save(self, state, final=False):
         #save the state to secondary storage
         state_id = self._executor._workspace.save_state(state)
 
-        if final:
-            #Keep it on a private list
-            self._final_states.append(state_id)
-        else:
-            #Keep it on a private list
-            self._saved_states.append(state_id)
+        with self.locked_context('seth') as context:
+            if final:
+                #Keep it on a private list
+                context['_final_states'].append(state_id)
+            else:
+                #Keep it on a private list
+                context['_saved_states'].append(state_id)
         return state_id
 
     #Callbacks
@@ -165,10 +263,11 @@ function_id, *args):
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
-                ty, caller, address, value, data = self._pending_transaction
-                if ty == 'CREATE_CONTRACT':
-                    world = state.platform
-                    world.storage[address]['code'] = world.last_return
+                with self.locked_context('seth') as context:
+                    ty, caller, address, value, data = context['_pending_transaction']
+                    if ty == 'CREATE_CONTRACT':
+                        world = state.platform
+                        world.storage[address]['code'] = world.last_return
             self.save(state)
             e.testcase = False  #Do not generate a testcase file
         else:
@@ -186,28 +285,25 @@ function_id, *args):
             return
         world = state.platform
         state.context['processed'] = True
-        ty, caller, address, value, data = self._pending_transaction
+        with self.locked_context('seth') as context:
+            ty, caller, address, value, data = context['_pending_transaction']
 
-        if isinstance (value, tuple):
-            func, args, kwargs = value
-            value = getattr(state, func)(*args, **kwargs)
+        #Replace any none by symbolic values
+        if value is None:
+            value = state.new_symbolic_value(256, label='value')
         if isinstance (data, tuple):
-            func, args, kwargs = data
-            data = getattr(state, func)(*args, **kwargs)
-
-
+            if any( x is None for x in data):
+                symbolic_data = state.new_symbolic_buffer(label='data', nbytes=len(data))
+                for i in range(len(data)):
+                    if data[i] is not None:
+                        symbolic_data[i] = data[i]
+                data = symbolic_data
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value)
         else:
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data)
 
-
-    def new_symbolic_buffer(self, *args, **kwargs):
-        return 'new_symbolic_buffer', args, kwargs
-    def new_symbolic_value(self, *args, **kwargs):
-        return 'new_symbolic_value', args, kwargs
-    
     def will_execute_instruction_callback(self, state, instruction):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
@@ -223,7 +319,7 @@ function_id, *args):
                 code_data.add((state.platform.current.address, i))
 
 
-    def report(self, state_id):
+    def report(self, state_id, ty=None):
         if state_id == -1:
             state = self.initial_state
         else:
@@ -240,14 +336,34 @@ function_id, *args):
                     return False
             return cond
 
+        if ty is not None:
+            if str(e) != ty:
+                return
         print "="*20
         print "REPORT:", e, "\n"
 
         print "LOGS:"
         for address, memlog, topics in state.platform.logs:
             try:
-                print  "\t", hex(state.solve_one(address)), repr(state.solve_one(memlog)), topics
+                res = memlog
+                if isinstance(memlog, Expression):
+                    res = state.solve_one(memlog)
+                    if isinstance(memlog, Array):
+                        state.constrain(compare_buffers(memlog, res))
+                    else:
+                        state.constrain(memlog== res)
+
+                res1 = address
+                if isinstance(address, Expression):
+                    res = state.solve_one(address)
+                    if isinstance(address, Array):
+                        state.constrain(compare_buffers(address, res))
+                    else:
+                        state.constrain(address == res)
+
+                print  "\t %s: %r %s" %( hex(res1), ''.join(map(chr,res)), topics)
             except Exception,e:
+                print e
                 print  "\t", address,  repr(memlog), topics
 
         #print state.constraints
@@ -260,15 +376,18 @@ function_id, *args):
                 state.constrain(expr== res)
    
             try:
-                print "\t", expr.name+':',  res.encode('hex')
+                print "\t %s: %s"%( expr.name, res.encode('hex'))
             except:
                 print "\t", expr.name+':',  res
 
         print "BALANCES"
         for address, account in world.storage.items():
+            if isinstance(account['balance'], Constant):
+                account['balance'] = account['balance'].value
+
             if issymbolic(account['balance']):
-                m,M = solver.minmax(world.constraints, account['balance'])
-                if m==M:
+                m, M = solver.minmax(world.constraints, arithmetic_simplifier(account['balance']))
+                if m == M:
                     print "\t", hex(address), M
                 else:
                     print "\t", hex(address), "range:[%x, %x]"%(m,M)                
@@ -320,13 +439,10 @@ function_id, *args):
 
 
     def symbolic_sha3(self, state, data, known_hashes):
-        #print "SYMBOLIC HASH!"
         with self.locked_context('known_sha3', set) as known_sha3:
             state.platform._sha3.update(known_sha3)
-        #print "symbolic_sha3", state, data, known_hashes
+
     def concrete_sha3(self, state, buf, value):
-        #print "CONCRETE HASH!"
         with self.locked_context('known_sha3', set) as known_sha3:
             known_sha3.add((buf,value))
-        #print "NEW KNOWN HASH", value
 
