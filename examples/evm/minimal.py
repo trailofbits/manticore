@@ -35,9 +35,8 @@ contract_account = seth.create_contract(owner=user_account,
    
 print "[+] Now the symbolic values"
 
-symbolic_data = seth.SByte(164) #seth.new_symbolic_buffer(label='msg.data.tx1', nbytes=164)
-symbolic_value = None #seth.new_symbolic_value(256)
-
+symbolic_data = seth.SByte(164) 
+symbolic_value = None 
 seth.transaction(caller=user_account,
                 address=contract_account,
                 data=symbolic_data,
