@@ -1,19 +1,41 @@
 import logging
+import json
+
+from capstone import CS_GRP_JUMP
+
 from ..utils.helpers import issymbolic
-from ..utils.event import Eventful
 logger = logging.getLogger('MANTICORE')
 
 
 class Plugin(object):
     def __init__(self): 
         self.manticore = None
+        self.last_reg_state = {}
 
 class Tracer(Plugin):
+    def __init__(self, extended_trace=False):
+        self.extended_trace = extended_trace
+        super(Tracer, self).__init__()
+
     def will_start_run_callback(self, state):
         state.context['trace'] = []
 
+    def register_state_to_dict(self, cpu):
+        d = {}
+        for reg in cpu.canonical_registers:
+            val = cpu.read_register(reg)
+            if issymbolic(val):
+                d[reg] = '<sym>'
+            else:
+                d[reg] = cpu.read_register(reg)
+        return d
+
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        state.context['trace'].append(pc)
+        if self.extended_trace:
+            entry = json.dumps(self.register_state_to_dict(state.cpu))
+        else:
+            entry = '0x{:08x}'.format(pc)
+        state.context['trace'].append(entry + '\n')
 
 
 class RecordSymbolicBranches(Plugin):
