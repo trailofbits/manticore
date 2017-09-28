@@ -502,11 +502,11 @@ class ManticoreOutput(object):
                     summary.write("  Instruction: {symbolic}\n")
 
     def save_trace(self, state):
+        if 'trace' not in state.context:
+            return
         with self._named_stream('trace') as f:
-            if 'trace' not in state.context:
-                return
-            for pc in state.context['trace']:
-                f.write('0x{:08x}\n'.format(pc))
+            for entry in state.context['trace']:
+                f.write(entry)
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check
