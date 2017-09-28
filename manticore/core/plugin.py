@@ -115,23 +115,33 @@ class Visited(Plugin):
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
 
 class ConcreteTraceFollower(Plugin):
-    def __init__(self, source):
+    def __init__(self, source=None):
         '''
         :param iterable source: Iterator producing instruction pointers to be followed
         '''
+        super(ConcreteTraceFollower, self).__init__()
         self.source = source
 
     def will_start_run_callback(self, state):
-        # Should establish tracing state
-        pass
+        self.saved_flags = None
 
     def will_execute_instruction_callback(self, state, pc, instruction):
-        # Should confirm instruction executed is in the trace
-        pass
+        if not instruction.group(CS_GRP_JUMP):
+            self.saved_flags = None
+            return
+
+        # Likely unconditional
+        if not instruction.regs_read:
+            self.saved_flags = None
+            return
+
+        self.saved_flags = state.cpu.RFLAGS
+        state.cpu.RFLAGS = state.new_symbolic_value(state.cpu.address_bit_size)
 
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
         # Should direct execution via trace
-        pass
+        if self.saved_flags:
+            state.cpu.RFLAGS = self.saved_flags
 
 
 #TODO document all callbacks
