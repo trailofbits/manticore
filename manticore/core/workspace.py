@@ -502,9 +502,9 @@ class ManticoreOutput(object):
                     summary.write("  Instruction: {symbolic}\n")
 
     def save_trace(self, state):
-        if 'trace' not in state.context:
-            return
         with self._named_stream('trace') as f:
+            if 'trace' not in state.context:
+                return
             for entry in state.context['trace']:
                 f.write(entry)
 
