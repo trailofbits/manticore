@@ -65,17 +65,17 @@ class Store(object):
 
     @classmethod
     def fromdescriptor(cls, desc):
-	"""
-	Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
+        """
+        Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
 
-	Valid descriptors:
-	  * fs:<path>
-	  * redis:<hostname>:<port>
-	  * mem:
+        Valid descriptors:
+          * fs:<path>
+          * redis:<hostname>:<port>
+          * mem:
 
-	:param str desc: Store descriptor
-	:return: Store instance
-	"""
+        :param str desc: Store descriptor
+        :return: Store instance
+        """
         type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
         for subclass in cls.__subclasses__():
             if subclass.store_type == type_:
@@ -409,8 +409,8 @@ class ManticoreOutput(object):
         :param desc: A descriptor ('type:uri') of where to write output.
         """
         self._named_key_prefix = 'test'
-        self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
+        self._descriptor = '{}:{}'.format(self._store.store_type, self._store.uri)
         self._last_id = 0
         self._id_gen = manager.Value('i', self._last_id)
         self._lock = manager.Condition(manager.RLock())
