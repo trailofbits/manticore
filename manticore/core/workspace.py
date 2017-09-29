@@ -409,8 +409,8 @@ class ManticoreOutput(object):
         :param desc: A descriptor ('type:uri') of where to write output.
         """
         self._named_key_prefix = 'test'
+        self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
-        self._descriptor = '{}:{}'.format(self._store.store_type, self._store.uri)
         self._last_id = 0
         self._id_gen = manager.Value('i', self._last_id)
         self._lock = manager.Condition(manager.RLock())

@@ -192,7 +192,7 @@ class Manticore(Eventful):
 
         #sugar for 'will_execute_instruction"
         self._hooks = {}
-        self._executor = Executor(workspace=self._output._descriptor, policy=policy)
+        self._executor = Executor(workspace=self._output.descriptor, policy=policy)
         self._workers = []
 
         #Link Executor events to default callbacks in manticore object
