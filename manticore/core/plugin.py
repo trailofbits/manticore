@@ -12,9 +12,32 @@ class Plugin(object):
         self.manticore = None
         self.last_reg_state = {}
 
+def dict_diff(d1, d2):
+    '''
+    Produce a dict that includes all the keys in d2 that represent different values in d1, as well as values that
+    aren't in d1.
+
+    :param dict d1: First dict
+    :param dict d2: Dict to compare with
+    :rtype: dict
+    '''
+    d = {}
+    for key in set(d1).intersection(set(d2)):
+        if d2[key] != d1[key]:
+            d[key] = d2[key]
+    for key in set(d2).difference(set(d1)):
+        d[key] = d2[key]
+    return d
+
 class Tracer(Plugin):
     def __init__(self, extended_trace=False):
+        '''
+        Record an execution trace
+
+        :param bool extended_trace: Whether to record an extended, json-based trace
+        '''
         self.extended_trace = extended_trace
+        self.last_dict = {}
         super(Tracer, self).__init__()
 
     def will_start_run_callback(self, state):
@@ -24,15 +47,14 @@ class Tracer(Plugin):
         d = {}
         for reg in cpu.canonical_registers:
             val = cpu.read_register(reg)
-            if issymbolic(val):
-                d[reg] = '<sym>'
-            else:
-                d[reg] = cpu.read_register(reg)
+            d[reg] = val if not issymbolic(val) else '<sym>'
         return d
 
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
         if self.extended_trace:
-            entry = json.dumps(self.register_state_to_dict(state.cpu))
+            reg_state = self.register_state_to_dict(state.cpu)
+            entry = json.dumps(dict_diff(self.last_dict, reg_state))
+            self.last_dict = reg_state
         else:
             entry = '0x{:08x}'.format(pc)
         state.context['trace'].append(entry + '\n')
