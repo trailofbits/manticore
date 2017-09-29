@@ -198,20 +198,12 @@ class Manticore(Eventful):
         #Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
-        if isinstance(path_or_state, str):
-            assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
-        elif isinstance(path_or_state, State):
-            self._initial_state = path_or_state
-        else:
-            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
-
-
         self.plugins = set()
 
         #Move the folowing into a plugin
         self._assertions = {}
         self._coverage_file = None
+        self._run_args = (path_or_state, argv, kwargs)
 
         #FIXME move the folowing to aplugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
@@ -602,7 +594,18 @@ class Manticore(Eventful):
 
     def _start_run(self):
         assert not self.running
-        #FIXME this will be self.publish 
+
+        path_or_state, argv, kwargs = self._run_args
+
+        if isinstance(path_or_state, str):
+            assert os.path.isfile(path_or_state)
+            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
+        elif isinstance(path_or_state, State):
+            self._initial_state = path_or_state
+        else:
+            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
+
+        #FIXME this will be self.publish
         self._publish('will_start_run', self._initial_state)
         self.enqueue(self._initial_state)
         self._initial_state = None
