@@ -21,7 +21,7 @@ contract NoDistpatcher {
 '''
 
 print "[+] Creating a user account"
-user_account = seth.create_account( balance=1000)
+user_account = seth.create_account(balance=1000)
 
 
 print "[+] Creating a contract account"

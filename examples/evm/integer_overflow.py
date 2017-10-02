@@ -27,7 +27,7 @@ contract_account = seth.create_contract(owner=user_account,
                                           init=bytecode)
 
 #First add wont owerflow uint256 representation
-symbolic_data = seth.make_function_call('add(uint256)', None)
+symbolic_data = seth.make_function_call('add(uint256)', seth.SValue)
 seth.transaction(  caller=user_account,
                     address=contract_account,
                     value=0,
@@ -35,7 +35,7 @@ seth.transaction(  caller=user_account,
                  )
 
 #Potential overflow
-symbolic_data = seth.make_function_call('add(uint256)', None)
+symbolic_data = seth.make_function_call('add(uint256)', seth.SValue)
 seth.transaction(  caller=user_account,
                     address=contract_account,
                     value=0,

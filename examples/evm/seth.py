@@ -54,6 +54,7 @@ class ManticoreEVM(Manticore):
             return Symbol(self.size*reps)
     SCHAR = SByte(1)
     SUINT = SByte(32)
+    SValue = None
         
 
     @staticmethod
