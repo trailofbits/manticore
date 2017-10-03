@@ -6,7 +6,7 @@ import binascii
 import functools
 import cProfile
 import pstats
-
+import itertools
 from multiprocessing import Process
 from contextlib import contextmanager
 
@@ -175,7 +175,7 @@ class Manticore(Eventful):
     :ivar dict context: Global context for arbitrary data storage
     '''
 
-    published_events = {'start_run', 'finish_run'}
+    _published_events = {'start_run', 'finish_run'}
 
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
         super(Manticore, self).__init__()
@@ -233,22 +233,21 @@ class Manticore(Eventful):
         plugin.manticore = self
         self.plugins.add(plugin)
 
-        #XXX(yan): keeping track of all_events is potentially too heavyweight just for warnings.
-        all_events = set()
-        for src in (Executor, State, Cpu, Manticore):
-            for event_name in src.published_events:
-                for prefix in ('will', 'did'):
-                    full_name = '{}_{}'.format(prefix, event_name)
-                    all_events.add(full_name)
-                    cb = getattr(plugin, '{}_callback'.format(full_name), None)
-                    if cb is not None:
-                        self.subscribe(full_name, cb)
+        events = Eventful.all_events()
+        prefix = ('will_', 'did_', 'on_')
+        all_events = [x+y for x, y in itertools.product(prefix, events)]
+        for event_name in all_events:
+            callback_name = '{}_callback'.format(event_name)
+            callback = getattr(plugin, callback_name, None)
+            if callback is not None:
+                self.subscribe(event_name, callback)
 
-        for callback_name in dir(plugin):
-            if callback_name.endswith('_callback'):
-                event_name = callback_name[:-9]
-                if event_name not in all_events:
-                    logger.warning("There is no event name %s for callback on plugin type %s", event_name, type(plugin) )
+        if logger.isEnabledFor(logging.DEBUG):
+            for callback_name in dir(plugin):
+                if callback_name.endswith('_callback'):
+                    event_name = callback_name[:-9]
+                    if event_name not in all_events:
+                        logger.warning("There is no event name %s for callback on plugin type %s", event_name, type(plugin) )
 
 
 

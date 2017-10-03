@@ -363,7 +363,7 @@ class Cpu(Eventful):
     - stack_alias
     '''
 
-    published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
+    _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
                            'execute_instruction'}
 
     def __init__(self, regfile, memory, **kwargs):

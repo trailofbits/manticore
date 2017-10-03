@@ -68,7 +68,7 @@ class State(Eventful):
     :ivar dict context: Local context for arbitrary data storage
     '''
 
-    published_events = {'generate_testcase'}
+    _published_events = {'generate_testcase'}
 
     def __init__(self, constraints, platform, **kwargs):
         super(State, self).__init__(**kwargs)

@@ -1,16 +1,10 @@
 import logging
 from ..utils.helpers import issymbolic
+from ..utils.event import Eventful
 logger = logging.getLogger('MANTICORE')
 
-class Plugin(object):
-    event_names = [
-        'did_enqueue_state','did_execute_instruction',
-        'did_finish_run','did_read_memory','did_read_register','did_write_memory',
-        'did_write_register','did_fork_state','will_decode_instruction',
-        'will_execute_instruction','will_finish_run','will_fork_state','will_generate_testcase',
-        'will_load_state','will_read_memory','will_read_register','will_start_run',
-        'will_store_state','will_terminate_state','will_write_memory','will_write_register',]
 
+class Plugin(object):
     def __init__(self): 
         self.manticore = None
 

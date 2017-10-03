@@ -4,6 +4,35 @@ from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
 
 logger = logging.getLogger(__name__)
 
+class EventsGatherMetaclass(type):
+    '''
+    Metaclass that is used for Eventful to gather events that classes declare to
+    publish.
+    '''
+    def __new__(cls, name, parents, d):
+        eventful_sub = super(EventsGatherMetaclass, cls).__new__(cls, name, parents, d)
+
+        bases = inspect.getmro(parents[0])
+        if len(bases) < 2:
+            return eventful_sub
+
+        # bases[-1] is always 'object', bases[-2] is next super class, which
+        # will always be Eventful.
+        eventful_cls = bases[-2]
+        subclasses = bases[:-2]
+        relevant_classes = [eventful_sub] + list(subclasses)
+        # Add a class that defines '_published_events' classmethod to a dict for
+        # later lookup. Aggregate the events of all subclasses.
+        relevant_events = set()
+        for sub in relevant_classes:
+            # Not using hasattr() here because we only want classes where it's explicitly
+            # defined.
+            if '_published_events' in sub.__dict__:
+                relevant_events.update(sub._published_events)
+        eventful_cls.__all_events__[eventful_sub] = relevant_events
+
+        return eventful_sub
+
 class Eventful(object):
     '''
         Abstract class for objects emitting and receiving events
@@ -12,7 +41,23 @@ class Eventful(object):
           - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
     '''
-    published_events = set()
+    __metaclass__ = EventsGatherMetaclass
+
+    # Maps an Eventful subclass with a set of all the events it publishes.
+    __all_events__ = dict()
+
+    # Set in subclass to advertise the events it plans to publish
+    _published_events = set()
+
+    @classmethod
+    def all_events(cls):
+        '''
+        Return all events that all subclasses have so far registered to publish.
+        '''
+        all_evts = set()
+        for cls, evts in cls.__all_events__.items():
+            all_evts.update(evts)
+        return all_evts
 
     def __init__(self, *args, **kwargs):
         # A dictionary from "event name" -> callback methods
@@ -50,21 +95,28 @@ class Eventful(object):
         #A bucket is a dictionary obj -> set(method1, method2...)
         return self._signals.setdefault(name,  dict())
 
-    # The underscore _name is to avoid naming collisions with callback params
-    def _publish(self, _name, *args, **kwargs):
+    def _check_event(self, _name):
+        prefixes = ('will_', 'did_', 'on_')
         basename = _name
-        if _name.startswith('will_'):
-            basename = _name[5:]
-        elif _name.startswith('did_'):
-            basename = _name[4:]
-
-        # All subclasses except for last (object)
-        for cls in inspect.getmro(self.__class__)[:-1]:
-            if basename in cls.published_events:
-                break
-        else:
+        for prefix in prefixes:
+            if _name.startswith(prefix):
+                basename = _name[len(prefix):]
+        
+        cls = self.__class__
+        if basename not in cls.__all_events__[cls]:
             logger.warning("Event '%s' not pre-declared. (self: %s)", _name, repr(self))
 
+
+    # Wrapper for _publish_impl that also makes sure the event is published from
+    # a class that supports it. 
+    # The underscore _name is to avoid naming collisions with callback params
+    def _publish(self, _name, *args, **kwargs):
+        self._check_event(_name)
+        self._publish_impl(_name, *args, **kwargs)
+
+    # Separate from _publish since the recursive method call to forward an event
+    # shouldn't check the event.
+    def _publish_impl(self, _name, *args, **kwargs):
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.iteritems():
             for callback in methods:
@@ -74,9 +126,9 @@ class Eventful(object):
         # the callback signature. This is set on forward_events_from/to
         for sink, include_source in self._forwards.items():
             if include_source:
-                sink._publish(_name, self, *args, **kwargs)
+                sink._publish_impl(_name, self, *args, **kwargs)
             else:
-                sink._publish(_name, *args, **kwargs)
+                sink._publish_impl(_name, *args, **kwargs)
 
     def subscribe(self, name, method):
         if not inspect.ismethod(method):
@@ -95,5 +147,4 @@ class Eventful(object):
         ''' This forwards signal to sink '''
         if not isinstance(sink, Eventful):
             raise TypeError
-        sink.__class__.published_events.update(self.__class__.published_events)
         self._forwards[sink] = include_source
