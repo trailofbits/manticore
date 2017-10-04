@@ -4,17 +4,19 @@ import unittest
 from manticore.utils.event import Eventful
 
 class A(Eventful):
+    _published_events = set(['eventA'])
     def do_stuff(self):
-        self.publish("eventA",1, 'a')
+        self._publish("eventA",1, 'a')
 
 class B(Eventful):
+    _published_events = set(['eventB'])
     def __init__(self, child, **kwargs):
         super(B, self).__init__(**kwargs)
         self.child = child
         self.forward_events_from(child)
 
     def do_stuff(self):
-        self.publish("eventB", 2, 'b')
+        self._publish("eventB", 2, 'b')
 
 
 class C():
