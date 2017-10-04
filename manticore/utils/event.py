@@ -49,6 +49,9 @@ class Eventful(object):
     # Set in subclass to advertise the events it plans to publish
     _published_events = set()
 
+    #Event names prefixes
+    prefixes = ('will_', 'did_', 'on_')
+
     @classmethod
     def all_events(cls):
         '''
@@ -95,10 +98,9 @@ class Eventful(object):
         #A bucket is a dictionary obj -> set(method1, method2...)
         return self._signals.setdefault(name,  dict())
 
-    def _check_event(self, _name):
-        prefixes = ('will_', 'did_', 'on_')
+    def _check_event(self, _name):        
         basename = _name
-        for prefix in prefixes:
+        for prefix in self.prefixes:
             if _name.startswith(prefix):
                 basename = _name[len(prefix):]
         
