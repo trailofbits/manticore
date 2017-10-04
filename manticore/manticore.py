@@ -204,6 +204,7 @@ class Manticore(Eventful):
         self._assertions = {}
         self._coverage_file = None
         self._run_args = (path_or_state, argv, kwargs)
+        self._trace_to_follow = None
 
         #FIXME move the folowing to aplugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
@@ -212,9 +213,16 @@ class Manticore(Eventful):
         #Default plugins for now.. FIXME?
         self.register_plugin(InstructionCounter())
         self.register_plugin(Visited())
-        self.register_plugin(Tracer())
+        self.register_plugin(Tracer(extended_trace=True))
         self.register_plugin(RecordSymbolicBranches())
 
+    @property
+    def trace(self):
+        return self._trace_to_follow
+
+    @trace.setter
+    def trace(self, trace):
+        self._trace_to_follow = trace
 
     def register_plugin(self, plugin):
         #Global enumeration of valid events
