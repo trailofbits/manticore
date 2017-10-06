@@ -16,8 +16,8 @@ for test in tests:
         cnt = op_count.get(test['mnemonic'],0)
         if cnt > 1000: #No more than 1000 instructions of each kind
             continue
-        #if test['mnemonic'] != 'PCMPISTRI' and test['mnemonic'] != 'PCMPISTRM' and test['mnemonic'] != 'PCMPESTRI' and test['mnemonic'] != 'PCMPESTRM':
-        #    continue
+        if test['mnemonic'] != 'PCMPISTRI' and test['mnemonic'] != 'PCMPISTRM' and test['mnemonic'] != 'PCMPESTRI' and test['mnemonic'] != 'PCMPESTRM':
+            continue
         op_count[test['mnemonic']] = cnt+1
         test_dic["%s_%d"%(test['mnemonic'], op_count[test['mnemonic']])] = test
     except Exception,e:
