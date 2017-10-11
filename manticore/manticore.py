@@ -253,7 +253,7 @@ class Manticore(Eventful):
             if callback is not None:
                 self.subscribe(event_name, callback)
 
-        if logger.isEnabledFor(logging.DEBUG):
+        if logger.isEnabledFor(logging.DEBUG) or True:
             for callback_name in dir(plugin):
                 if callback_name.endswith('_callback'):
                     event_name = callback_name[:-9]
@@ -328,7 +328,9 @@ class Manticore(Eventful):
 
     def subscribe(self, name, callback):
         from types import MethodType
-        self._executor.subscribe(name, MethodType(callback, self))
+        if not isinstance(callback,MethodType):
+            callback = MethodType(callback, self)
+        super(Manticore,self).subscribe(name, callback)
 
     @property
     def context(self):
@@ -591,7 +593,7 @@ class Manticore(Eventful):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
                 self.subscribe('will_execute_instruction', self._assertions_callback)
 
-    def _assertions_callback(self, mcore, state, pc, instruction):
+    def _assertions_callback(self, mcore, state, last_pc, pc, instruction):
         if pc not in self._assertions:
             return
 
@@ -657,6 +659,7 @@ class Manticore(Eventful):
         assert not self.running
         #FIXME this will be self.publish 
         self._publish('will_start_run', self._initial_state)
+
         self.enqueue(self._initial_state)
         self._initial_state = None
 
