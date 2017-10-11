@@ -251,7 +251,6 @@ class Manticore(Eventful):
             callback_name = '{}_callback'.format(event_name)
             callback = getattr(plugin, callback_name, None)
             if callback is not None:
-                print 'Subscribing {} {} {}'.format(event_name, repr(plugin)[:30], repr(callback)[:30])
                 self.subscribe(event_name, callback)
 
         if logger.isEnabledFor(logging.DEBUG):
