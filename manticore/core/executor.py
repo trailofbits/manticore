@@ -93,10 +93,9 @@ class Uncovered(Policy):
     def _register(self, *args):
         self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
-    def _visited_callback(self, state, instr):
+    def _visited_callback(self, state, pc, instr):
         ''' Maintain our own copy of the visited set
         '''
-        pc = state.platform.current.PC
         with self.locked_context('visited', set) as ctx:
             ctx.add(pc)
 
