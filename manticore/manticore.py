@@ -593,7 +593,7 @@ class Manticore(Eventful):
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
                 self.subscribe('will_execute_instruction', self._assertions_callback)
 
-    def _assertions_callback(self, mcore, state, last_pc, pc, instruction):
+    def _assertions_callback(self, state, pc, instruction):
         if pc not in self._assertions:
             return
 
