@@ -1,3 +1,4 @@
+import sys
 import logging
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
@@ -12,14 +13,14 @@ class Tracer(Plugin):
     def will_start_run_callback(self, state):
         state.context['trace'] = []
 
-    def did_execute_instruction_callback(self, m, state, pc, target_pc, instruction):
+    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
         state.context['trace'].append(pc)
 
 class RecordSymbolicBranches(Plugin):
     def will_start_run_callback(self, state):
         state.context['branches'] = {}
 
-    def did_execute_instruction_callback(self, m, state, last_pc, target_pc, instruction):
+    def did_execute_instruction_callback(self, state, last_pc, target_pc, instruction):
         if state.context.get('forking_pc', False):
             branches = state.context['branches']
             branch = (last_pc, target_pc)
@@ -34,7 +35,7 @@ class RecordSymbolicBranches(Plugin):
 
 class InstructionCounter(Plugin):
 
-    def will_terminate_state_callback(self, mcore, state, state_id, ex):
+    def will_terminate_state_callback(self, state, state_id, ex):
         if state is None: #FIXME Can it be None?
             return
         state_instructions_count = state.context.get('instructions_count', 0)
@@ -43,7 +44,7 @@ class InstructionCounter(Plugin):
             manticore_instructions_count = manticore_context.get('instructions_count', 0)
             manticore_context['instructions_count'] = manticore_instructions_count + state_instructions_count
 
-    def did_execute_instruction_callback(self, m, state, prev_pc, target_pc, instruction):
+    def did_execute_instruction_callback(self, state, prev_pc, target_pc, instruction):
         address = prev_pc
         if not issymbolic(address):
             count = state.context.get('instructions_count', 0)
@@ -60,7 +61,7 @@ class Visited(Plugin):
         super(Visited, self).__init__()
         self.coverage_file = coverage_file
 
-    def will_terminate_state_callback(self, mcore, state, state_id, ex):
+    def will_terminate_state_callback(self, state, state_id, ex):
         if state is None:
             return
         state_visited = state.context.get('visited_since_last_fork', set())
@@ -75,7 +76,7 @@ class Visited(Plugin):
             manticore_context['visited'] = manticore_visited.union(state_visited)
         state.context['visited_since_last_fork'] = set()
 
-    def did_execute_instruction_callback(self, m, state, prev_pc, target_pc, instruction):
+    def did_execute_instruction_callback(self, state, prev_pc, target_pc, instruction):
         state.context.setdefault('visited_since_last_fork', set()).add(prev_pc)
         state.context.setdefault('visited', set()).add(prev_pc)
 
@@ -83,9 +84,11 @@ class Visited(Plugin):
         _shared_context = self.manticore.context
         executor_visited = _shared_context.get('visited', set())
         #Fixme this is duplicated?
-        print 'saving coverage'
+        sys.stderr.write('saving coverage\n')
         if self.coverage_file is not None:
+            sys.stderr.write('not null\n')
             with self.manticore._output.save_stream(self.coverage_file) as f:
+                sys.stderr.write('saving '+repr(len(executor_visited))+' to '+repr(f)+'\n')
                 fmt = "0x{:016x}\n"
                 for m in executor_visited:
                     f.write(fmt.format(m))
@@ -100,7 +103,7 @@ class ExamplePlugin(Plugin):
     def will_execute_instruction_callback(self, state, pc, instruction):
         logger.info('will_execute_instruction', state, pc, instruction)
 
-    def did_execute_instruction_callback(self, m, state, pc, target_pc, instruction):
+    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
         logger.info('did_execute_instruction', state, pc, target_pc, instruction)
     def will_start_run_callback(self, state):
         ''' Called once at the begining of the run. 
