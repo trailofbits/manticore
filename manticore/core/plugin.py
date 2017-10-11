@@ -1,4 +1,3 @@
-import sys
 import logging
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
@@ -84,11 +83,8 @@ class Visited(Plugin):
         _shared_context = self.manticore.context
         executor_visited = _shared_context.get('visited', set())
         #Fixme this is duplicated?
-        sys.stderr.write('saving coverage\n')
         if self.coverage_file is not None:
-            sys.stderr.write('not null\n')
             with self.manticore._output.save_stream(self.coverage_file) as f:
-                sys.stderr.write('saving '+repr(len(executor_visited))+' to '+repr(f)+'\n')
                 fmt = "0x{:016x}\n"
                 for m in executor_visited:
                     f.write(fmt.format(m))
