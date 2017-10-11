@@ -1,6 +1,6 @@
 from expression import *
 import logging
-logger = logging.getLogger("VISITOR")
+logger = logging.getLogger(__name__)
 
 class Visitor(object):
     ''' Class/Type Visitor

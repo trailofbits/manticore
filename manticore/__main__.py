@@ -68,7 +68,6 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-
     env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
 
     Manticore.verbosity(args.v)
@@ -88,7 +87,6 @@ def main():
     def init(initial_state):
         for file in args.files:
             initial_state.platform.add_symbolic_file(file)
-
 
     m.run(procs=args.procs, timeout=args.timeout, should_profile=args.profile)
 

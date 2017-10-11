@@ -13,7 +13,7 @@ from .cpu.abstractcpu import ConcretizeRegister
 from .memory import ConcretizeMemory, MemoryException
 from ..platforms.platform import *
 
-logger = logging.getLogger("STATE")
+logger = logging.getLogger(__name__)
 
 class StateException(Exception):
     ''' All state related exceptions '''
@@ -68,6 +68,8 @@ class State(Eventful):
     :param Platform platform: Initial operating system state
     :ivar dict context: Local context for arbitrary data storage
     '''
+
+    _published_events = {'generate_testcase'}
 
     def __init__(self, constraints, platform, **kwargs):
         super(State, self).__init__(**kwargs)
@@ -386,4 +388,4 @@ class State(Eventful):
         :param str name: Short string identifying this testcase used to prefix workspace entries.
         :param str message: Longer description
         """
-        self.publish('will_generate_testcase', name, message)
+        self._publish('will_generate_testcase', name, message)

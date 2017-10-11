@@ -23,7 +23,7 @@ def mgr_init():
 manager = SyncManager()
 manager.start(mgr_init)
 
-logger = logging.getLogger("EXECUTOR")
+logger = logging.getLogger(__name__)
 
 
 def sync(f):
@@ -42,7 +42,7 @@ class Policy(object):
     def __init__(self, executor, *args, **kwargs):
         super(Policy, self).__init__(*args, **kwargs)
         self._executor = executor
-        self._executor.subscribe('did_add_state', self._add_state_callback)
+        self._executor.subscribe('did_enqueue_state', self._add_state_callback)
 
     @contextmanager
     def locked_context(self, key=None, default=dict):
@@ -163,6 +163,8 @@ class Executor(Eventful):
     conditions (system calls, memory faults, concretization, etc.)
     '''
 
+    _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
+
     def __init__(self, initial=None, workspace=None, policy='random', context=None, **kwargs):
         super(Executor, self).__init__(**kwargs)
 
@@ -244,7 +246,7 @@ class Executor(Eventful):
         #Forward all state signals
         self.forward_events_from(state, True)
 
-    def add(self, state):
+    def enqueue(self, state):
         '''
             Enqueue state.
             Save state on storage, assigns an id to it, then add it to the
@@ -253,7 +255,7 @@ class Executor(Eventful):
         #save the state to secondary storage
         state_id = self._workspace.save_state(state)
         self.put(state_id)
-        self.publish('did_add_state', state_id, state)
+        self._publish('did_enqueue_state', state_id, state)
         return state_id
 
     def load_workspace(self):
@@ -350,7 +352,7 @@ class Executor(Eventful):
 
         #broadcast test generation. This is the time for other modules
         #to output whatever helps to understand this testcase
-        self.publish('will_generate_testcase', state, 'test', message)
+        self._publish('will_generate_testcase', state, 'test', message)
 
     def fork(self, state, expression, policy='ALL', setstate=None):
         '''
@@ -383,7 +385,7 @@ class Executor(Eventful):
                     policy,
                     ', '.join('0x{:x}'.format(sol) for sol in solutions))
 
-        self.publish('will_fork_state', state, expression, solutions, policy)
+        self._publish('will_fork_state', state, expression, solutions, policy)
 
         #Build and enqueue a state for each solution
         children = []
@@ -395,10 +397,10 @@ class Executor(Eventful):
                 #(or other register or memory address to concrete)
                 setstate(new_state, new_value)
 
-                self.publish('forking_state', new_state, expression, new_value, policy)
+                self._publish('did_fork_state', new_state, expression, new_value, policy)
 
                 #enqueue new_state
-                state_id = self.add(new_state)
+                state_id = self.enqueue(new_state)
                 #maintain a list of childres for logging purpose
                 children.append(state_id)
 
@@ -432,11 +434,11 @@ class Executor(Eventful):
                             current_state_id = self.get()
                             #load selected state from secondary storage
                             if current_state_id is not None:
-                                self.publish('will_load_state', current_state_id)
+                                self._publish('will_load_state', current_state_id)
                                 current_state = self._workspace.load_state(current_state_id)
                                 self.forward_events_from(current_state, True)
+                                self._publish('did_load_state', current_state, current_state_id)
                                 logger.info("load state %r", current_state_id)
-                                self.publish('did_load_state', current_state, current_state_id)
                             #notify siblings we have a state to play with
                             self._notify_start_run()
 
@@ -456,7 +458,7 @@ class Executor(Eventful):
                                 break
                         else:
                             #Notify this worker is done
-                            self.publish('will_terminate_state', current_state, current_state_id, 'Shutdown')
+                            self._publish('will_terminate_state', current_state, current_state_id, 'Shutdown')
                             current_state = None
 
 
@@ -472,7 +474,7 @@ class Executor(Eventful):
 
                     except TerminateState as e:
                         #Notify this worker is done
-                        self.publish('will_terminate_state', current_state, current_state_id, e)
+                        self._publish('will_terminate_state', current_state, current_state_id, e)
 
                         logger.debug("Generic terminate state")
                         if e.testcase:
@@ -485,7 +487,7 @@ class Executor(Eventful):
                         logger.error("Exception: %s\n%s", str(e), trace)
 
                         #Notify this state is done
-                        self.publish('will_terminate_state', current_state, current_state_id, e)
+                        self._publish('will_terminate_state', current_state, current_state_id, e)
 
                         if solver.check(current_state.constraints):
                             self.generate_testcase(current_state, "Solver failed" + str(e))
@@ -496,8 +498,7 @@ class Executor(Eventful):
                     trace = traceback.format_exc()
                     logger.error("Exception: %s\n%s", str(e), trace)
                     #Notify this worker is done
-                    print e
-                    self.publish('will_terminate_state', current_state, current_state_id, e)
+                    self._publish('will_terminate_state', current_state, current_state_id, 'Exception')
                     current_state = None
                     logger.setState(None)
 
@@ -505,6 +506,3 @@ class Executor(Eventful):
 
             #notify siblings we are about to stop this run
             self._notify_stop_run()
-
-            #Notify this worker is done (not sure it's needed)
-            self.publish('will_finish_run')

@@ -16,9 +16,8 @@ from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
 from ...utils.helpers import issymbolic
 
-logger = logging.getLogger("CPU")
-register_logger = logging.getLogger("REGISTERS")
-
+logger = logging.getLogger(__name__)
+register_logger = logging.getLogger('{}.registers'.format(__name__))
 
 class BinjaRegisterFile(RegisterFile):
 
@@ -391,12 +390,12 @@ class BinjaCpu(Cpu):
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
-        self.publish('will_decode_instruction', self.PC)
+        self._publish('will_decode_instruction', self.PC)
 
         insn = self.decode_instruction(self.PC)
         self._last_pc = self.PC
 
-        self.publish('will_execute_instruction', insn)
+        self._publish('will_execute_instruction', insn)
 
         # FIXME (theo) why just return here?
         if insn.address != self.PC:
@@ -416,9 +415,9 @@ class BinjaCpu(Cpu):
                 logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
 
-                self.publish('will_emulate_instruction', insn)
+                self._publish('will_emulate_instruction', insn)
                 self.emulate(insn)
-                self.publish('did_emulate_instruction', insn)
+                self._publish('did_emulate_instruction', insn)
 
         implementation = getattr(self, name, fallback_to_emulate)
 
@@ -454,7 +453,7 @@ class BinjaCpu(Cpu):
             self.PC = self._last_pc + insn.size
 
         self._icount += 1
-        self.publish('did_execute_instruction', insn)
+        self._publish('did_execute_instruction', insn)
 
     def update_platform_cpu_regs(self):
         for pl_reg, binja_reg in self.regfile.pl2b_map.items():
