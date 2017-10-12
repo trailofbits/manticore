@@ -15,7 +15,7 @@ import StringIO
 import logging
 import random
 
-logger = logging.getLogger("PLATFORM")
+logger = logging.getLogger(__name__)
 
 class RestartSyscall(Exception):
     pass
