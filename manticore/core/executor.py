@@ -238,8 +238,6 @@ class Executor(Eventful):
                 yield sub_context
                 self._shared_context[key] = sub_context
 
-
-
     def _register_state_callbacks(self, state, state_id):
         '''
             Install forwarding callbacks in state so the events can go up.
@@ -496,7 +494,6 @@ class Executor(Eventful):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
-                    print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
                     #Notify this worker is done
                     self._publish('will_terminate_state', current_state, current_state_id, 'Exception')

@@ -459,8 +459,11 @@ class ManticoreOutput(object):
         self.save_trace(state)
         self.save_constraints(state)
         self.save_input_symbols(state)
-        self.save_syscall_trace(state)
-        self.save_fds(state)
+
+        for stream_name, data in state.platform.generate_workspace_files().items():
+            with self._named_stream(stream_name) as stream:
+                stream.write(data)
+
         self._store.save_state(state, self._named_key('pkl'))
         return self._last_id
 
@@ -482,6 +485,15 @@ class ManticoreOutput(object):
         with self._named_stream('messages') as summary:
             summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
             summary.write('Status:\n  {}\n\n'.format(message))
+
+            # FIXME(mark) This is a temporary hack for EVM. We need to sufficiently
+            # abstract the below code to work on many platforms, not just Linux. Then
+            # we can remove this hack.
+            if getattr(state.platform, 'procs', None) is None:
+                import pprint
+                summary.write("EVM World:\n")
+                summary.write(pprint.pformat(state.platform._global_storage))
+                return
 
             memories = set()
             for cpu in filter(None, state.platform.procs):

@@ -196,7 +196,7 @@ class ConstraintSet(object):
                          if not uniq a numeric nonce will be appended
             :return: a fresh BitVecVariable
         '''
-        assert size in (1, 4, 8, 16, 32, 64, 128, 256)
+        assert size in (1, 4, 8, 16, 32, 64, 128, 160, 256)
         name = self._get_new_name(name)
         return BitVecVariable(size, name, taint=taint)
 
@@ -208,7 +208,7 @@ class ConstraintSet(object):
             :param index_max: upper limit for indexes on ths array (#FIXME)
             :return: a fresh BitVecVariable
         '''
-        assert index_bits in (8, 16, 32, 64)
+        assert index_bits in (8, 16, 32, 64, 128, 256)
         name = self._get_new_name(name)
         return ArrayProxy(ArrayVariable(index_bits, index_max, name, taint=taint))
 

@@ -22,8 +22,7 @@ from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput, Workspace
-from .core.cpu.abstractcpu import Cpu
-from .platforms import linux, decree, windows
+from .platforms import linux, decree, windows, evm
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
@@ -55,6 +54,45 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
                             symbolic_files=symbolic_files,
                             disasm=disasm)
     initial_state = State(constraints, platform)
+    return initial_state
+
+def make_evm(args):
+    constraints = ConstraintSet()
+    import ast
+    contract = {}
+    for l in open(args.programs[0]).readlines():
+        l = l.strip()
+        if l.startswith('#') or not '=' in l :
+            continue
+        name,value = l.split('=')
+        name = name.strip().lower()
+        contract[name]=ast.literal_eval(value)
+
+    contract['data'] = contract.get('data', '+'*256)
+
+    #attack, constraints, address, origin, price, data, sender, value, bytecode, header, depth):
+    bytecode=contract['bytecode'].decode('hex')
+    address=contract['address']
+    origin=contract['sender']
+    sender=contract['sender']
+    value=contract['value']
+    header=contract['header']
+    price=contract['price']
+    data = constraints.new_array(256, name='DATA', index_max=256)
+
+    platform = evm.EVMWorld(constraints)
+    user_account = platform.create_account(address=None, balance=1000)
+    contract_account = platform.create_contract(origin=user_account, price=0, address=None, balance=0, init=bytecode)
+    print platform
+    print platform.current.address
+    
+    platform.run()
+    kj
+    initial_state = State(constraints, platform)
+    initial_state.input_symbols.append(data)
+    platform.data = contract['data']
+    print '[+] Loading EVM program\n' # %s'% platform.disassemble()
+
     return initial_state
 
 
@@ -160,6 +198,8 @@ def make_initial_state(binary_path, **kwargs):
     elif magic == '\x7fCGC':
         # Decree
         state = make_decree(binary_path, **kwargs)
+    elif magic == '#EVM':
+        state = make_evm(binary_path, **kwargs)
     else:
         raise NotImplementedError("Binary {} not supported.".format(binary_path))
     return state
@@ -168,9 +208,15 @@ class Manticore(Eventful):
     '''
     The central analysis object.
 
-    :param path_or_state: Path to a binary to analyze (deprecated) or `State` object
+    This should generally not be invoked directly; the various
+    class method constructors should be preferred:
+    :meth:`~manticore.Manticore.linux`,
+    :meth:`~manticore.Manticore.decree`,
+    :meth:`~manticore.Manticore.evm`.
+
+    :param path_or_state: Path to a binary to analyze (**deprecated**) or `State` object
     :type path_or_state: str or State
-    :param argv: Arguments to provide to binary (deprecated)
+    :param argv: Arguments to provide to binary (**deprecated**)
     :type argv: list[str]
     :ivar dict context: Global context for arbitrary data storage
     '''
@@ -186,7 +232,10 @@ class Manticore(Eventful):
             else:
                 ws_path = workspace_url
         else:
+            if workspace_url is not None:
+                raise Exception('Invalid workspace')
             ws_path = None
+
         self._output = ManticoreOutput(ws_path)
         self._context = {}
 
@@ -260,21 +309,64 @@ class Manticore(Eventful):
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+        """
+        Constructor for Linux binary analysis.
+
+        :param str path: Path to binary to analyze
+        :param argv: Arguments to provide to the binary
+        :type argv: list[str]
+        :param envp: Environment to provide to the binary
+        :type envp: dict[str, str]
+        :param symbolic_files: Filenames to mark as having symbolic input
+        :type symbolic_files: list[str]
+        :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a Linux State
+        :rtype: Manticore
+        """
         try:
             return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception('Invalid binary: {}'.format(path))
 
     @classmethod
-    def decree(cls, path, concrete_data='', **kwargs):
+    def decree(cls, path, concrete_start='', **kwargs):
+        """
+        Constructor for Decree binary analysis.
+
+        :param str path: Path to binary to analyze
+        :param str concrete_start: Concrete stdin to use before symbolic inputt
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a Decree State
+        :rtype: Manticore
+        """
         try:
-            return cls(make_decree(path, concrete_data), **kwargs)
+            return cls(make_decree(path, concrete_start), **kwargs)
         except KeyError:  # FIXME(mark) magic parsing for DECREE should raise better error
             raise Exception('Invalid binary: {}'.format(path))
+
+    @classmethod
+    def evm(cls, **kwargs):
+        """
+        Constructor for Ethereum virtual machine bytecode analysis.
+
+        :param kwargs: Forwarded to the Manticore constructor
+        :return: Manticore instance, initialized with a EVM State
+        :rtype: Manticore
+        """
+        #Make the constraint store
+        constraints = ConstraintSet()
+        #make the ethereum world state
+        world = evm.EVMWorld(constraints)
+        return cls(State(constraints, world), **kwargs)
 
     @property
     def initial_state(self):
         return self._initial_state
+
+    def subscribe(self, name, callback):
+        from types import MethodType
+        self._executor.subscribe(name, MethodType(callback, self))
 
     @property
     def context(self):
@@ -341,7 +433,6 @@ class Manticore(Eventful):
 
     def enqueue(self, state):
         ''' Dynamically enqueue states. Users should typically not need to do this '''
-        assert not self.running, "Can't add state where running. Can we?"
         self._executor.add(state)
 
     ###########################################################################
@@ -425,6 +516,7 @@ class Manticore(Eventful):
         with WithKeyboardInterruptAs(self._executor.shutdown):
             while len(self._workers) > 0:
                 w = self._workers.pop().join()
+
 
     ############################################################################
     # Common hooks + callback
@@ -558,9 +650,8 @@ class Manticore(Eventful):
         state.constraints.add(assertion)
 
 
-
     ##########################################################################
-    #Some are Place holders Remove
+    #Some are placeholders Remove FIXME
     #Any platform specific callback should go to a plugin
 
     def _generate_testcase_callback(self, state, name, message):
@@ -655,7 +746,6 @@ class Manticore(Eventful):
     #############################################################################
     #############################################################################
     #############################################################################
-    # Move all the following elsewhere Not all manticores have this
     def _get_symbol_address(self, symbol):
         '''
         Return the address of |symbol| within the binary
@@ -699,5 +789,4 @@ class Manticore(Eventful):
         elapsed = time.time() - self._time_started
         logger.info('Results in %s', self._output.uri)
         logger.info('Total time: %s', elapsed)
-
 

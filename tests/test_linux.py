@@ -13,6 +13,7 @@ class LinuxTest(unittest.TestCase):
 
     def setUp(self):
         self.linux = linux.Linux(self.BIN_PATH)
+        self.symbolic_linux = linux.SLinux.empty_platform('armv7')
 
     def test_regs_init_state_x86(self):
         x86_defaults = {
@@ -63,7 +64,7 @@ class LinuxTest(unittest.TestCase):
         nr_fstat64 = 197
 
         # Create a minimal state
-        model = linux.SLinux.empty_platform('armv7')
+        model = self.symbolic_linux
         model.current.memory.mmap(0x1000, 0x1000, 'rw ')
         model.current.SP = 0x2000-4
 
@@ -80,4 +81,12 @@ class LinuxTest(unittest.TestCase):
         model.syscall()
 
         print ''.join(model.current.read_bytes(stat, 100)).encode('hex')
+
+    def test_linux_workspace_files(self):
+        files = self.symbolic_linux.generate_workspace_files()
+        self.assertIn('syscalls', files)
+        self.assertIn('stdout', files)
+        self.assertIn('stdin', files)
+        self.assertIn('stderr', files)
+        self.assertIn('net', files)
 
