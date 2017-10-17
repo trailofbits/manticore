@@ -17,7 +17,7 @@ import sys, hashlib
 if sys.version_info < (3, 6):
     import sha3
 
-logger = logging.getLogger('PLATFORM')
+logger = logging.getLogger(__name__)
 
 
 # Auxiliar constants and functions
