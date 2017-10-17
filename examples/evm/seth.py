@@ -215,7 +215,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
             #there is at least one states in seth saved states
-            assert len(context['_saved_states']) + int(self.initial_state is not None) > 0
+            assert context['_saved_states'] or self.initial_state
 
             #there is no states added to the executor queue
             assert len(self._executor.list()) == 0
@@ -227,7 +227,7 @@ class ManticoreEVM(Manticore):
 
         #A callback will use _pending_transaction and 
         #issue the transaction in each state
-        result = super(ManticoreEVM, self).run(procs = 6, **kwargs)
+        result = super(ManticoreEVM, self).run(**kwargs)
 
         with self.locked_context('seth') as context:
 
@@ -308,8 +308,6 @@ class ManticoreEVM(Manticore):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
 
-        #print state.platform.current
-        #print solver.check(state.constraints)
         with self.locked_context('coverage', set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
 
