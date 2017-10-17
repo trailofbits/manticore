@@ -12,7 +12,7 @@ class Plugin(object):
         self.manticore = None
         self.last_reg_state = {}
 
-def dict_diff(d1, d2):
+def _dict_diff(d1, d2):
     '''
     Produce a dict that includes all the keys in d2 that represent different values in d1, as well as values that
     aren't in d1.
@@ -30,15 +30,22 @@ def dict_diff(d1, d2):
     return d
 
 class Tracer(Plugin):
-    def __init__(self, extended_trace=False):
-        '''
-        Record an execution trace
+    def will_start_run_callback(self, state):
+        state.context['trace'] = []
 
-        :param bool extended_trace: Whether to record an extended, json-based trace
+    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
+        state.context['trace'].append(pc)
+
+
+class ExtendedTracer(Plugin):
+    def __init__(self):
         '''
-        self.extended_trace = extended_trace
+        Record a detailed execution trace
+        '''
+        super(ExtendedTracer, self).__init__()
         self.last_dict = {}
-        super(Tracer, self).__init__()
+        self.current_pc = None
+        self.context_key = 'e_trace'
 
     def will_start_run_callback(self, state):
         state.context['trace'] = []
@@ -50,15 +57,38 @@ class Tracer(Plugin):
             d[reg] = val if not issymbolic(val) else '<sym>'
         return d
 
-    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        if self.extended_trace:
-            reg_state = self.register_state_to_dict(state.cpu)
-            entry = json.dumps(dict_diff(self.last_dict, reg_state))
-            self.last_dict = reg_state
-        else:
-            entry = '0x{:08x}'.format(pc)
-        state.context['trace'].append(entry + '\n')
+    def will_execute_instruction_callback(self, state, pc, instruction):
+        self.current_pc = pc
 
+    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
+        reg_state = self.register_state_to_dict(state.cpu)
+        entry = {'type': 'regs', 'values': _dict_diff(self.last_dict, reg_state)}
+        self.last_dict = reg_state
+        state.context[self.context_key].append(json.dumps(entry) + '\n')
+
+    def will_read_memory_callback(self, state, where, size):
+        if self.current_pc == where:
+            return
+
+        print 'will_read_memory %x %r, current_pc %x'%(where, size, self.current_pc)
+
+    def did_read_memory_callback(self, state, where, value, size):
+        if self.current_pc == where:
+            return
+
+        print 'did_read_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
+
+    def will_write_memory_callback(self, state, where, value, size):
+        if self.current_pc == where:
+            return
+
+        print 'will_write_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
+
+    def did_write_memory_callback(self, state, where, value, size):
+        if self.current_pc == where:
+            return
+
+        print 'did_write_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
 
 class RecordSymbolicBranches(Plugin):
     def will_start_run_callback(self, state):

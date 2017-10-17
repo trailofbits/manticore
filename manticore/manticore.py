@@ -213,7 +213,7 @@ class Manticore(Eventful):
         #Default plugins for now.. FIXME?
         self.register_plugin(InstructionCounter())
         self.register_plugin(Visited())
-        self.register_plugin(Tracer(extended_trace=True))
+        self.register_plugin(Tracer())
         self.register_plugin(RecordSymbolicBranches())
 
     @property
