@@ -259,7 +259,6 @@ class ManticoreEVM(Manticore):
             our private list 
         '''
         state.context['last_exception'] = e
-
         if e.message != 'REVERT':
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
@@ -403,7 +402,6 @@ class ManticoreEVM(Manticore):
         world = self.get_world(self.running_state_ids[0])
         seen = self.context['coverage'] #.union( self.context.get('code_data', set()))
         runtime_bytecode = world.storage[account_address]['code']
-
         class bcolors:
             HEADER = '\033[95m'
             OKBLUE = '\033[94m'

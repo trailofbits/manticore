@@ -553,14 +553,14 @@ class Return(EVMException):
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
-        return (self.__class__, (self.data) )
+        return (self.__class__, (self.data,) )
 
 class Revert(EVMException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
-        return (self.__class__, (self.data) )
+        return (self.__class__, (self.data,) )
 
 class SelfDestruct(EVMException):
     ''' Program reached a RETURN instruction '''
@@ -588,10 +588,10 @@ class EVM(Eventful):
         contents are a series of zeroes of bitsize 256
     '''
 
-    _published_events = { 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} #    _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction'}
+    _published_events = {'read_code', 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} #    _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction'}
 
 
-    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=0, **kwargs):
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -834,6 +834,7 @@ class EVM(Eventful):
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
+        last_pc = self.pc
         #Execute
         try:
             result = implementation(*arguments)
@@ -849,7 +850,7 @@ class EVM(Eventful):
         except EVMException as e:
             self.last_exception = e
             raise
-        self._publish( 'did_execute_instruction', self, current)
+        self._publish( 'did_execute_instruction', last_pc, self.pc, current)
 
         
         #Check result (push)
@@ -1427,7 +1428,7 @@ class EVMWorld(Platform):
         self._deleted_address = state['deleted_address']
         self._do_events()
 
-    def do_events(self):
+    def _do_events(self):
         if self.current is not None:
             self.forward_events_from(self.current)
         self.subscribe('concrete_sha3', self._concrete_sha3_callback)
