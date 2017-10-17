@@ -4,7 +4,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.5...HEAD)
 
-## 0.1.5 - 2017-09-15
+## 0.1.5 - 2017-10-18
 
 Thanks to our external contributors to this release!
 
@@ -20,11 +20,13 @@ Thanks to our external contributors to this release!
   - e.g. `Manticore.linux('binary', ['arg1', 'arg2'])`
 - `Manticore.init` analysis initialization hook
 - Linux: Various new syscall support, including basic TCP socket support
+- Core: An updated plugin infrastructure
 - [Experimental] Support for symbolic execution of Ethereum Virtual Machine bytecode
 
 ### Changed
 
 - `Manticore.verbosity`: logging preset levels interface is now a static method, replacing `m.verbosity` property
+- Logger output is slightly modified to be more Pythonic
 
 ### Fixed
 
