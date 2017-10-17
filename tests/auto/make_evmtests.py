@@ -161,11 +161,15 @@ def gen_test(testcase, testname, skip):
     pp(transaction['caller']),
     pp(transaction['value']) )
     output += '''        
-        platform.transaction(address, origin, price, data, caller, value, header)
+        #platform.transaction(address, origin, price, data, caller, value, header)
+        bytecode = platform.storage[address]['code']
+        new_vm = EVM(constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=platform.storage)
         
+  
         throw = False
         try:
-            platform.run()
+            #platform.run()
+            new_vm.run()
         except state.TerminateState as e:                
             if e.message != 'STOP':
                 throw = True

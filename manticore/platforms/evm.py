@@ -26,6 +26,9 @@ TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
 
+def ceil32(x):
+    return Operators.ITE(x % 32 == 0, x , x + 32 - (x % 32))
+
 def to_signed(i):
     return Operators.ITEBV(256, i<TT255, i, i-TT256) #i if i < TT255 else i - TT256
 
@@ -52,21 +55,20 @@ class EVMMemory(object):
         '''
         assert isinstance(constraints, (ConstraintSet, type(None)))
         self._constraints = constraints
-        self._allocated = 0
         self._symbols = {}
         self._memory = {}
         self._address_size=address_size
         self._value_size=value_size
+        self._allocated = 0
 
     def __copy__(self):
         new_mem = EVMMemory(self._constraints, self._address_size,  self._value_size)
-        new_mem._allocated = self._allocated
         new_mem._memory = dict(self._memory)
         new_mem._symbols = dict(self._symbols)
         return new_mem
 
     def __reduce__(self):
-        return (self.__class__, (self._constraints, self._address_size,  self._value_size), {'_symbols':self._symbols, '_allocated':self._allocated, '_memory':self._memory } )
+        return (self.__class__, (self._constraints, self._address_size,  self._value_size), {'_symbols':self._symbols, '_memory':self._memory, '_allocated': self._allocated } )
 
     @property
     def constraints(self):
@@ -101,9 +103,6 @@ class EVMMemory(object):
         else:
             self.write(index, [value])
 
-    def __len__(self):
-        return self._allocated
-
 
     def __repr__(self):
         return self.__str__()
@@ -118,11 +117,15 @@ class EVMMemory(object):
                 m[key] = hex(c)
         return str(m)
 
-    def allocate(self, address):
+
+    def __len__(self):
+        return self._allocated
+
+    def _allocate(self, address):
         '''
             Allocate more memory
         '''
-        new_max = address % 32
+        new_max = ceil32(address) // 32
         self._allocated = Operators.ITEBV(256, self._allocated < new_max, new_max, self._allocated)
 
     def _concrete_read(self, address):
@@ -145,11 +148,10 @@ class EVMMemory(object):
         '''
         #size = self._get_size(size)
         assert not issymbolic(size)
+        self._allocate(address+size)
 
         if issymbolic(address):
             address = arithmetic_simplifier(address)
-
-
             assert solver.check(self.constraints)
             logger.debug('Reading %d items from symbolic offset %s', size, address)
             try:
@@ -157,17 +159,6 @@ class EVMMemory(object):
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
-                print 'Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!'%( m, M)
-
-                #FIXME When we implement gas calculate the max index to exhaust gas 
-                if M >= TOOHIGHMEM:
-                    if m<TOOHIGHMEM:
-                        raise ForkState('address too high', address.ult(TOOHIGHMEM))
-                    else:
-                        raise NotEnoughGas("Accessing memory too high")
-
-                assert(M<TOOHIGHMEM)
-
                 #INCOMPLETE Result! Using the 0x100 values sampled before
                 logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
                 condition = False
@@ -177,22 +168,7 @@ class EVMMemory(object):
 
             #So here we have all potential solutions of symbolic address (complete set)
             assert len(solutions) > 0            
-            '''
-            outofgas_condition = False
-            for base in solutions:
-                if base + size > TOOHIGHMEM:
-                    outofgas_condition = Operators.OR(address == base, outofgas_condition)
 
-            #FIXME: if we can out of gas we jump to it and wont explore the other option
-            outofgas_solutions = set(solver.get_all_values(self.constraints, outofgas_condition))
-            if outofgas_solutions == set([True]):
-                raise NotEnoughGas("Accessing memory too high")
-    
-            elif outofgas_solutions == set([True, False]):
-                raise ForkState('address too high', outofgas_condition)
-
-            assert outofgas_solutions == set([False])
-            '''
             condition = False
             for base in solutions:
                 condition = Operators.OR(address == base, condition )
@@ -235,22 +211,20 @@ class EVMMemory(object):
         :type value: str or list
         '''
         size = len(value)
-        #FIXME consider calling self.allocate?
+        self._allocate(address+size)
+
         if issymbolic(address):
 
             solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
 
             for offset in xrange(size):
                 for base in solutions:
-                    self.allocate(base+offset)
                     condition = base == address
                     self._symbols.setdefault(base+offset, []).append((condition, value[offset]))
 
         else:
 
             for offset in xrange(size):
-                self.allocate(address+offset)
-
                 if issymbolic(value[offset]):
                     self._symbols[address+offset] = [(True, value[offset])]
                 else:
@@ -262,12 +236,13 @@ class EVMMemory(object):
 
 class EVMInstruction(object):
     '''This represents an EVM instruction '''
-    def __init__(self, opcode, name, operand_size, pops, pushes, description, operand=None):
+    def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None):
         self._opcode = opcode 
         self._name = name 
         self._operand_size = operand_size
         self._pops = pops
         self._pushes = pushes
+        self._fee = fee
         self._description = description
         self._operand = operand           #Immediate operand if any
     
@@ -301,6 +276,10 @@ class EVMInstruction(object):
     @property
     def size(self):
         return self._operand_size + 1
+
+    @property
+    def fee(self):
+        return self._fee
 
     def __len__(self):
         return self.size
@@ -434,38 +413,38 @@ class EVMDecoder(object):
                 0x7d: ('PUSH', 30, 0, 1, 0, 'Place 30-byte item on stack.'),
                 0x7e: ('PUSH', 31, 0, 1, 0, 'Place 31-byte item on stack.'),
                 0x7f: ('PUSH', 32, 0, 1, 0, 'Place 32-byte (full word) item on stack.'),
-                0x80: ('DUP', 0, 1, 2, 0, 'Duplicate 1st stack item.'),
-                0x81: ('DUP', 0, 2, 3, 0, 'Duplicate 2nd stack item.'),
-                0x82: ('DUP', 0, 3, 4, 0, 'Duplicate 3rd stack item.'),
-                0x83: ('DUP', 0, 4, 5, 0, 'Duplicate 4th stack item.'),
-                0x84: ('DUP', 0, 5, 6, 0, 'Duplicate 5th stack item.'),
-                0x85: ('DUP', 0, 6, 7, 0, 'Duplicate 6th stack item.'),
-                0x86: ('DUP', 0, 7, 8, 0, 'Duplicate 7th stack item.'),
-                0x87: ('DUP', 0, 8, 9, 0, 'Duplicate 8th stack item.'),
-                0x88: ('DUP', 0, 9, 10, 0, 'Duplicate 9th stack item.'),
-                0x89: ('DUP', 0, 10, 11, 0, 'Duplicate 10th stack item.'),
-                0x8a: ('DUP', 0, 11, 12, 0, 'Duplicate 11th stack item.'),
-                0x8b: ('DUP', 0, 12, 13, 0, 'Duplicate 12th stack item.'),
-                0x8c: ('DUP', 0, 13, 14, 0, 'Duplicate 13th stack item.'),
-                0x8d: ('DUP', 0, 14, 15, 0, 'Duplicate 14th stack item.'),
-                0x8e: ('DUP', 0, 15, 16, 0, 'Duplicate 15th stack item.'),
-                0x8f: ('DUP', 0, 16, 17, 0, 'Duplicate 16th stack item.'),
-                0x90: ('SWAP', 0, 2, 2, 0, 'Exchange 1st and 2nd stack items.'),
-                0x91: ('SWAP', 0, 3, 3, 0, 'Exchange 1st and 3rd stack items.'),
-                0x92: ('SWAP', 0, 4, 4, 0, 'Exchange 1st and 4rd stack items.'),
-                0x93: ('SWAP', 0, 5, 5, 0, 'Exchange 1st and 5rd stack items.'),
-                0x94: ('SWAP', 0, 6, 6, 0, 'Exchange 1st and 6rd stack items.'),
-                0x95: ('SWAP', 0, 7, 7, 0, 'Exchange 1st and 7rd stack items.'),
-                0x96: ('SWAP', 0, 8, 8, 0, 'Exchange 1st and 8rd stack items.'),
-                0x97: ('SWAP', 0, 9, 9, 0, 'Exchange 1st and 9rd stack items.'),
-                0x98: ('SWAP', 0, 10, 10, 0, 'Exchange 1st and 10rd stack items.'),
-                0x99: ('SWAP', 0, 11, 11, 0, 'Exchange 1st and 11rd stack items.'),
-                0x9a: ('SWAP', 0, 12, 12, 0, 'Exchange 1st and 12rd stack items.'),
-                0x9b: ('SWAP', 0, 13, 13, 0, 'Exchange 1st and 13rd stack items.'),
-                0x9c: ('SWAP', 0, 14, 14, 0, 'Exchange 1st and 14rd stack items.'),
-                0x9d: ('SWAP', 0, 15, 15, 0, 'Exchange 1st and 15rd stack items.'),
-                0x9e: ('SWAP', 0, 16, 16, 0, 'Exchange 1st and 16rd stack items.'),
-                0x9f: ('SWAP', 0, 17, 17, 0, 'Exchange 1st and 17th stack items.'),
+                0x80: ('DUP', 0, 1, 2, 3, 'Duplicate 1st stack item.'),
+                0x81: ('DUP', 0, 2, 3, 3, 'Duplicate 2nd stack item.'),
+                0x82: ('DUP', 0, 3, 4, 3, 'Duplicate 3rd stack item.'),
+                0x83: ('DUP', 0, 4, 5, 3, 'Duplicate 4th stack item.'),
+                0x84: ('DUP', 0, 5, 6, 3, 'Duplicate 5th stack item.'),
+                0x85: ('DUP', 0, 6, 7, 3, 'Duplicate 6th stack item.'),
+                0x86: ('DUP', 0, 7, 8, 3, 'Duplicate 7th stack item.'),
+                0x87: ('DUP', 0, 8, 9, 3, 'Duplicate 8th stack item.'),
+                0x88: ('DUP', 0, 9, 10, 3, 'Duplicate 9th stack item.'),
+                0x89: ('DUP', 0, 10, 11, 3, 'Duplicate 10th stack item.'),
+                0x8a: ('DUP', 0, 11, 12, 3, 'Duplicate 11th stack item.'),
+                0x8b: ('DUP', 0, 12, 13, 3, 'Duplicate 12th stack item.'),
+                0x8c: ('DUP', 0, 13, 14, 3, 'Duplicate 13th stack item.'),
+                0x8d: ('DUP', 0, 14, 15, 3, 'Duplicate 14th stack item.'),
+                0x8e: ('DUP', 0, 15, 16, 3, 'Duplicate 15th stack item.'),
+                0x8f: ('DUP', 0, 16, 17, 3, 'Duplicate 16th stack item.'),
+                0x90: ('SWAP', 0, 2, 2, 3, 'Exchange 1st and 2nd stack items.'),
+                0x91: ('SWAP', 0, 3, 3, 3, 'Exchange 1st and 3rd stack items.'),
+                0x92: ('SWAP', 0, 4, 4, 3, 'Exchange 1st and 4rd stack items.'),
+                0x93: ('SWAP', 0, 5, 5, 3, 'Exchange 1st and 5rd stack items.'),
+                0x94: ('SWAP', 0, 6, 6, 3, 'Exchange 1st and 6rd stack items.'),
+                0x95: ('SWAP', 0, 7, 7, 3, 'Exchange 1st and 7rd stack items.'),
+                0x96: ('SWAP', 0, 8, 8, 3, 'Exchange 1st and 8rd stack items.'),
+                0x97: ('SWAP', 0, 9, 9, 3, 'Exchange 1st and 9rd stack items.'),
+                0x98: ('SWAP', 0, 10, 10, 3, 'Exchange 1st and 10rd stack items.'),
+                0x99: ('SWAP', 0, 11, 11, 3, 'Exchange 1st and 11rd stack items.'),
+                0x9a: ('SWAP', 0, 12, 12, 3, 'Exchange 1st and 12rd stack items.'),
+                0x9b: ('SWAP', 0, 13, 13, 3, 'Exchange 1st and 13rd stack items.'),
+                0x9c: ('SWAP', 0, 14, 14, 3, 'Exchange 1st and 14rd stack items.'),
+                0x9d: ('SWAP', 0, 15, 15, 3, 'Exchange 1st and 15rd stack items.'),
+                0x9e: ('SWAP', 0, 16, 16, 3, 'Exchange 1st and 16rd stack items.'),
+                0x9f: ('SWAP', 0, 17, 17, 3, 'Exchange 1st and 17th stack items.'),
                 0xa0: ('LOG', 0, 2, 0, 375, 'Append log record with no topics.'),
                 0xa1: ('LOG', 0, 3, 0, 750, 'Append log record with one topic.'),
                 0xa2: ('LOG', 0, 4, 0, 1125, 'Append log record with two topics.'),
@@ -486,7 +465,7 @@ class EVMDecoder(object):
                 0xfc: ('TXEXECGAS', 0, 0, 1, 0, 'Not in yellow paper FIXME'),
                 0xfd: ('REVERT', 0, 2, 0, 0, 'Stop execution and revert state changes, without consuming all provided gas and providing a reason.'),
                 0xfe: ('INVALID', 0, 0, 0, 0, 'Designated invalid instruction.'),
-                0xff: ('SELFDESTRUCT', 0, 1, 0, 0, 'Halt execution and register account for later deletion.')
+                0xff: ('SELFDESTRUCT', 0, 1, 0, 5000, 'Halt execution and register account for later deletion.')
             }
 
 
@@ -498,8 +477,7 @@ class EVMDecoder(object):
         opcode = ord(next(bytecode))
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
         name, operand_size, pops, pushes, gas, description = EVMDecoder._table.get(opcode, invalid)
-
-        instruction = EVMInstruction(opcode, name, operand_size, pops, pushes, description)
+        instruction = EVMInstruction(opcode, name, operand_size, pops, pushes, gas, description)
         if instruction.has_operand:
             instruction.parse_operand(bytecode)
 
@@ -610,7 +588,10 @@ class EVM(Eventful):
         contents are a series of zeroes of bitsize 256
     '''
 
-    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, **kwargs):
+    _published_events = { 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} #    _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction'}
+
+
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=0, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -641,7 +622,7 @@ class EVM(Eventful):
         self.bytecode = code
         self.suicide = set()
         self.logs = []
-
+        self.gas=gas
         #FIXME parse decode and mark invalid instructions
         #self.invalid = set()
 
@@ -651,7 +632,7 @@ class EVM(Eventful):
         #Machine state
         self.pc = 0
         self.stack = []
-        self.gas = 0
+        self.gas = gas
         self.global_storage = global_storage
         self.allocated = 0
 
@@ -667,6 +648,7 @@ class EVM(Eventful):
 
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
+        state['gas'] = self.gas
         state['memory'] = self.memory
         state['global_storage'] = self.global_storage
         state['constraints'] = self.constraints
@@ -690,6 +672,7 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
+        self.gas = state['gas']
         self.memory = state['memory']
         self.logs = state['logs'] 
         self.global_storage = state['global_storage']
@@ -716,7 +699,17 @@ class EVM(Eventful):
         #print pretty_print (address)
         #if address > 100000:
         #    raise NotEnoughGas()
-        self.memory.allocate(address)
+
+        if address > self.memory._allocated:
+            GMEMORY = 3
+            GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
+
+            old_size = ceil32(self.memory._allocated) // 32
+            old_totalfee = old_size * GMEMORY + old_size ** 2 // GQUADRATICMEMDENOM
+            new_size = ceil32(address) // 32
+            increased = new_size - old_size 
+            fee = increased * GMEMORY + increased**2 // GQUADRATICMEMDENOM
+            self._consume(fee)
 
     def _store(self, address, value):
         #CHECK ADDRESS IS A 256 BIT INT OR BITVEC
@@ -728,7 +721,7 @@ class EVM(Eventful):
 
 
     def _load(self, address):
-        self._allocate(address+32)
+        self._allocate(address)
         value = self.memory.read(address,1)[0]
         value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
@@ -795,7 +788,12 @@ class EVM(Eventful):
         if len(self.stack) == 0:
             raise StackUnderflow()
         return self.stack.pop()
-        
+
+    def _consume(self, fee):
+        assert fee>=0
+        if self.gas < fee:
+            raise NotEnoughGas()
+        self.gas -= fee
 
     #Execute an instruction from current pc
     def execute(self):
@@ -809,9 +807,12 @@ class EVM(Eventful):
                                 setstate=setstate,
                                 policy='ALL')
 
-        self.publish('will_decode_instruction', self.pc)
+        self._publish( 'will_decode_instruction', self.pc)
         current = self.instruction
-        self.publish('will_execute_instruction', current)
+        self._publish( 'will_execute_instruction', current)
+
+        #Consume some gas
+        self._consume(current.fee)
 
         implementation = getattr(self, current.semantics, None)
         if implementation is None:
@@ -824,7 +825,7 @@ class EVM(Eventful):
         for _ in range(current.pops):
             arguments.append(self._pop())
 
-        self.publish('did_execute_instruction', current)
+        self._publish( 'will_execute_instruction', current)
 
         #simplify stack arguments
         for i in range(len(arguments)):
@@ -848,7 +849,7 @@ class EVM(Eventful):
         except EVMException as e:
             self.last_exception = e
             raise
-        self.publish('did_execute_instruction', self, current)
+        self._publish( 'did_execute_instruction', self, current)
 
         
         #Check result (push)
@@ -950,6 +951,13 @@ class EVM(Eventful):
             The zero-th power of zero 0^0 is defined to be one
         '''
         #fixme integer bitvec
+        EXP_SUPPLEMENTAL_GAS = 50   # cost of EXP exponent per byte        
+        def nbytes(e):
+            for i in range(32):
+                if e>>(i*8) == 0:
+                    return i
+            return 32
+        self._consume(EXP_SUPPLEMENTAL_GAS * nbytes(exponent))
         return pow(base, exponent, TT256)
 
     def SIGNEXTEND(self, size, value): 
@@ -1013,13 +1021,26 @@ class EVM(Eventful):
         return Operators.ZEXTEND(Operators.EXTRACT(value, offset, 8), 256)
 
 
-    def SHA3(self, start, end):
+    def SHA3(self, start, size):
         '''Compute Keccak-256 hash'''
+        GSHA3WORD = 6         # Cost of SHA3 per word
         #read memory from start to end
         #calculate hash on it/ maybe remember in some structure where that hash came from
         #http://gavwood.com/paper.pdf
-        data = self.read_buffer(start, end)
-        raise Sha3(data)
+        if size:
+            self._consume(GSHA3WORD * (ceil32(size) // 32) )
+        data = self.read_buffer(start, size)
+        if any(map(issymbolic, data)):
+            raise Sha3(data)
+
+        buf = ''.join(data)
+        value = sha3.keccak_256(buf).hexdigest()
+        value = int('0x'+value,0)
+        self._publish('concrete_sha3', buf, value)
+        logger.info("Found new SHA3 example %r -> %x", buf, value)
+        return value
+
+
 
     ##########################################################################
     ##Environmental Information
@@ -1029,6 +1050,10 @@ class EVM(Eventful):
 
     def BALANCE(self, account):
         '''Get balance of the given account'''
+        BALANCE_SUPPLEMENTAL_GAS = 380
+        self._consume(BALANCE_SUPPLEMENTAL_GAS)
+        if account & TT256M1 not in self.global_storage:
+            return 0
         value = self.global_storage[account & TT256M1 ]['balance']
         if value is None:
             return 0
@@ -1066,6 +1091,10 @@ class EVM(Eventful):
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
+        GCOPY = 3             # cost to copy one 32 byte word
+        self._consume(GCOPY * ceil32(size) // 32)
+
+
         #FIXME put zero if not enough data
         if issymbolic(size) or issymbolic(data_offset):
             #self._constraints.add(Operators.ULE(data_offset, len(self.data)))
@@ -1086,12 +1115,15 @@ class EVM(Eventful):
         '''Copy code running in current environment to memory'''
         if issymbolic(size):
             raise ConcretizeStack(3)
+        GCOPY = 3             # cost to copy one 32 byte word
+        self._consume(GCOPY * ceil32(size) // 32)
+
         for i in range(size):
             if (code_offset+i > len(self.bytecode)):
                 self._store(mem_offset+i, 0)
             else:
                 self._store(mem_offset+i, Operators.ORD(self.bytecode[code_offset+i]))
-        self.publish('did_read_code', code_offset, size)
+        self._publish( 'did_read_code', code_offset, size)
 
     def GASPRICE(self):
         '''Get price of gas in current environment'''
@@ -1100,12 +1132,19 @@ class EVM(Eventful):
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
         #FIXME
+        if not account & TT256M1 in self.global_storage:
+            return 0
         return len(self.global_storage[account & TT256M1]['code'])
 
     def EXTCODECOPY(self, account, address, offset, size): 
         '''Copy an account's code to memory'''
         #FIXME STOP! if not enough data
+        if not account & TT256M1 in self.global_storage:
+            return
         extbytecode = self.global_storage[account& TT256M1]['code']
+        GCOPY = 3             # cost to copy one 32 byte word
+        self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
+
         for i in range(size):
             if offset + i < len(extbytecode):
                 self._store(address+i, extbytecode[offset+i])
@@ -1116,7 +1155,7 @@ class EVM(Eventful):
     ##Block Information
     def BLOCKHASH(self, a):
         '''Get the hash of one of the 256 most recent complete blocks'''
-        #FIXME SHOULD query self.header structure
+        #FIXME! 
         #90743482286830539503240959006302832933333810038750515972785732718729991261126L,
         return 0
 
@@ -1190,7 +1229,7 @@ class EVM(Eventful):
 
     def MSIZE(self):
         '''Get the size of active memory in bytes'''
-        return self.allocated
+        return self.memory._allocated * 32
 
     def GAS(self):
         '''Get the amount of available gas, including the corresponding reduction the amount of available gas'''
@@ -1236,9 +1275,10 @@ class EVM(Eventful):
     ##########################################################################
     ##System operations
     def read_buffer(self, offset, size):
-        
+        if size:
+            self._allocate(offset+size)
         buf = []
-        for i in range(size):
+        for i in xrange(size):
             buf.append(Operators.CHR(self._load(offset+i)))
         return buf
 
@@ -1385,8 +1425,17 @@ class EVMWorld(Platform):
         self._constraints = state['constraints']
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
+        self._do_events()
+
+    def do_events(self):
         if self.current is not None:
             self.forward_events_from(self.current)
+        self.subscribe('concrete_sha3', self._concrete_sha3_callback)
+
+    def _concrete_sha3_callback(self,buf, value):
+        if buf in self._sha3:
+            assert self._sha3[buf] == value
+        self._sha3[buf] = value
 
     def __getitem__(self, index):
         assert isinstance(index, (int,long))
@@ -1736,49 +1785,35 @@ class EVMWorld(Platform):
                     return False
             return cond
 
-        if any(map(issymbolic, data)):
-            logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
-            logger.info("SHA3 TODO save this state for future explorations with more known hashes")
-            #Broadcast the signal 
-            self.publish('symbolic_sha3', data, self._sha3.items())
-            '''
-            value = self.constraints.new_bitvec(256)
-            '''
-            results = []
-            known_hashes = False
-            for key, value in self._sha3.items():
-                cond = compare_buffers(key, data)
-                if solver.can_be_true(self._constraints, cond):
-                    results.append((cond, value))  
-                    known_hashes = Operators.OR(cond, known_hashes)
+        assert any(map(issymbolic, data))
+        logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
+        logger.info("SHA3 TODO save this state for future explorations with more known hashes")
+        #Broadcast the signal 
+        self._publish( 'symbolic_sha3', data, self._sha3.items())
 
-            with self._constraints as temp_cs:
-                if solver.can_be_true(temp_cs, Operators.NOT(known_hashes)):
-                    temp_cs.add(Operators.NOT(known_hashes))
-                    a_buffer = solver.get_value(temp_cs, data)
-                    cond = compare_buffers(a_buffer, data)
-                    known_hashes = Operators.OR(cond, known_hashes)
+        results = []
+        known_hashes = False
+        for key, value in self._sha3.items():
+            cond = compare_buffers(key, data)
+            if solver.can_be_true(self._constraints, cond):
+                results.append((cond, value))  
+                known_hashes = Operators.OR(cond, known_hashes)
 
-            if solver.can_be_true(self._constraints, known_hashes):
-                self._constraints.add(known_hashes)
-                value = 0 #never used
-                for cond, sha in results:
-                    value = Operators.ITEBV(256, cond, sha, value)
-            else:
-                raise TerminateState()
-            
-            #value = self._constraints.new_bitvec(256, 'HASH', taint=('sha3',))
+        with self._constraints as temp_cs:
+            if solver.can_be_true(temp_cs, Operators.NOT(known_hashes)):
+                temp_cs.add(Operators.NOT(known_hashes))
+                a_buffer = solver.get_value(temp_cs, data)
+                cond = compare_buffers(a_buffer, data)
+                known_hashes = Operators.OR(cond, known_hashes)
+
+        if solver.can_be_true(self._constraints, known_hashes):
+            self._constraints.add(known_hashes)
+            value = 0 #never used
+            for cond, sha in results:
+                value = Operators.ITEBV(256, cond, sha, value)
         else:
-            buf = ''.join(data)
-            value = sha3.keccak_256(buf).hexdigest()
-            value = int('0x'+value,0)
-            if buf in self._sha3:
-                assert self._sha3[buf] == value
-            self._sha3[buf] = value
-            self.publish('concrete_sha3', buf, value)
-
-            logger.info("Found new SHA3 example %r -> %x", buf, value)
-
+            raise TerminateState()
+            
         self.current._push(value)
         self.current.pc += self.current.instruction.size
         
