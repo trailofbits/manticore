@@ -50,7 +50,9 @@ class ConstraintSet(object):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
         constraint = arithmetic_simplifier(constraint)
-        # If count > 0 it means this constraint set has been forked and that 
+        if isinstance(constraint, BoolConstant) and not constraint.value:
+            logger.info("Adding an imposible constant constraint")
+        # If self._child is not None this constraint set has been forked and a 
         # a derived constraintset may be using this. So we can't add any more
         # constraints to this one. After the child constraintSet is deleted
         # we regain the ability to add constraints.
@@ -196,7 +198,7 @@ class ConstraintSet(object):
                          if not uniq a numeric nonce will be appended
             :return: a fresh BitVecVariable
         '''
-        assert size in (1, 4, 8, 16, 32, 64, 128, 256)
+        assert size in (1, 4, 8, 16, 32, 64, 128, 160, 256)
         name = self._get_new_name(name)
         return BitVecVariable(size, name, taint=taint)
 
@@ -208,7 +210,7 @@ class ConstraintSet(object):
             :param index_max: upper limit for indexes on ths array (#FIXME)
             :return: a fresh BitVecVariable
         '''
-        assert index_bits in (8, 16, 32, 64)
+        assert index_bits in (8, 16, 32, 64, 128, 256)
         name = self._get_new_name(name)
         return ArrayProxy(ArrayVariable(index_bits, index_max, name, taint=taint))
 

@@ -40,3 +40,6 @@ class Platform(Eventful):
         state = super(Platform, self).__getstate__()
         state['path'] = self._path
         return state
+
+    def generate_workspace_files(self):
+        return {}

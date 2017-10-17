@@ -15,7 +15,6 @@ class Tracer(Plugin):
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
         state.context['trace'].append(pc)
 
-
 class RecordSymbolicBranches(Plugin):
     def will_start_run_callback(self, state):
         state.context['branches'] = {}
@@ -79,7 +78,6 @@ class Visited(Plugin):
     def did_execute_instruction_callback(self, state, prev_pc, target_pc, instruction):
         state.context.setdefault('visited_since_last_fork', set()).add(prev_pc)
         state.context.setdefault('visited', set()).add(prev_pc)
-
 
     def did_finish_run_callback(self):
         _shared_context = self.manticore.context

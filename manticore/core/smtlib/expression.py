@@ -237,6 +237,10 @@ class BitVec(Expression):
 
     def __truediv__(self, other):
         return BitVecDiv(self, self.cast(other))
+
+    def __floordiv__(self, other):
+        return self /other
+
     # These methods are called to implement the binary arithmetic operations
     # (+, # -, *, /, %, divmod(), pow(), **, <<, >>, &, ^, |) with reflected
     # (swapped) operands. These functions are only called if the left operand
@@ -525,7 +529,7 @@ class UnsignedGreaterOrEqual(BoolOperation):
 # Array  BV32 -> BV8  or BV64 -> BV8
 class Array(Expression):
     def __init__(self, index_bits, index_max, *operands, **kwargs):
-        assert index_bits in (32, 64)
+        assert index_bits in (32, 64, 256)
         assert index_max is None or isinstance(index_max, int)
         assert index_max is None or index_max > 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits
@@ -534,7 +538,7 @@ class Array(Expression):
 
     def cast_index(self, index):
         if isinstance(index, (int, long)):
-            assert self.index_max is None or index >= 0 and index < self.index_max
+            #assert self.index_max is None or index >= 0 and index < self.index_max
             return BitVecConstant(self._index_bits, index)
         assert isinstance(index, BitVec) and index.size == self._index_bits
         return index
@@ -603,11 +607,12 @@ class ArrayStore(ArrayOperation):
     def byte(self):
         return self.operands[2]
 
-class ArrayProxy(ArrayVariable):
+class ArrayProxy(Array):
     def __init__(self, array):
         assert isinstance(array, ArrayVariable)
-        super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.name)
+        super(ArrayProxy, self).__init__(array.index_bits, array.index_max)
         self._array = array
+        self.name = array.name
 
     @property
     def operands(self):
@@ -622,8 +627,6 @@ class ArrayProxy(ArrayVariable):
 
     def store(self, index, value):
         auxiliar = self._array.store(index, value)
-        self._array.store = None
-        self._array.select = None
         self._array = auxiliar
         return auxiliar
 
@@ -631,7 +634,8 @@ class ArrayProxy(ArrayVariable):
         size = index.stop - index.start
         if isinstance(size, BitVec):
             import visitors
-            size = visitors.ArithmeticSimplifier(expression=size)
+            from manticore.core.smtlib.visitors import arithmetic_simplifier
+            size = arithmetic_simplifier(size)
         else:
             size = BitVecConstant(self._array.index_bits, size)
         assert isinstance(size, BitVecConstant)
@@ -640,7 +644,13 @@ class ArrayProxy(ArrayVariable):
     def __getitem__(self, index):
         if isinstance(index, slice):
             size = self._get_size(index)
-            return [self._array.select(index.start+i) for i in xrange(size)]
+            result = []
+            for i in xrange(size):
+                if self.index_max is not None and not isinstance(i+index.start, Expression) and i+index.start >= self.index_max:
+                    result.append(0)
+                else:
+                    result.append(self._array.select(index.start+i))
+            return result
         else:
             return self._array.select(index)
 
@@ -657,6 +667,18 @@ class ArrayProxy(ArrayVariable):
         if self._array.index_max is None:
             raise Exception()
         return self._array.index_max
+
+    def __getstate__(self):
+        state = {}
+        state['_array'] = self._array
+        state['name'] = self.name
+        return state
+
+    def __setstate__(self, state):
+        self._array = state['_array']
+        self.name = state['name']
+        self._index_bits = self._array.index_bits
+        self._index_max = self._array.index_max
 
 
 class ArraySelect(BitVec, Operation):

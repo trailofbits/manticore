@@ -2,8 +2,9 @@ import os
 import copy
 import logging
 from collections import OrderedDict
+from weakref import WeakSet
 
-from .smtlib import solver, Bool
+from .smtlib import solver, Bool, ArrayProxy, Array
 from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 
@@ -78,10 +79,12 @@ class State(Eventful):
         self._input_symbols = list()
         self._child = None
         self._context = dict()
-        self._init_context()
         ##################################################################33
         # Events are lost in serialization and fork !!
         self.forward_events_from(platform)
+        
+        #FIXME(felipe) This should go into some event callback in a plugin (start_run?)
+        self._init_context()
 
     def __getstate__(self):
         state = super(State, self).__getstate__()
@@ -103,11 +106,11 @@ class State(Eventful):
         # Events are lost in serialization and fork !!
         self.forward_events_from(self._platform)
 
-    #Fixme(felipe) change for with state.cow_copy() as st_temp:.
+    #Fixme(felipe) change for with "state.cow_copy() as st_temp":.
     def __enter__(self):
         assert self._child is None
         new_state = State(self._constraints.__enter__(), self._platform)
-        new_state._input_symbols = self._input_symbols
+        new_state._input_symbols = list(self._input_symbols)
         new_state._context = copy.deepcopy(self._context)
         self._child = new_state
 
@@ -145,8 +148,7 @@ class State(Eventful):
             raise TerminateState(e.message, testcase=True)
 
         #Remove when code gets stable?
-        assert self._platform._constraints is self._constraints
-        assert self.mem._constraints is self._constraints
+        assert self.platform.constraints is self.constraints
         return result
 
     @property
@@ -198,7 +200,7 @@ class State(Eventful):
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
-        name = options.get('name', 'buffer')
+        name = options.get('label', 'buffer')
         taint = options.get('taint', frozenset())
         expr = self._constraints.new_array(name=name, index_max=nbytes, taint=taint)
         self._input_symbols.append(expr)
@@ -262,10 +264,13 @@ class State(Eventful):
                     assert b != 0
         return data
 
-    def concretize(self, symbolic, policy, maxcount=100):
+    def concretize(self, symbolic, policy, maxcount=1000):
         ''' This finds a set of solutions for symbolic using policy.
             This raises TooManySolutions if more solutions than maxcount
         '''
+        assert self.constraints == self.platform.constraints
+
+
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self._constraints, symbolic)
