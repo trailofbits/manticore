@@ -36,7 +36,7 @@ class Concretize(StateException):
         #Fixme Doc.
 
     '''
-    _ValidPolicies = ['ALL32', 'MINMAX', 'ALL', 'SAMPLED', 'ONE']
+    _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
     def __init__(self, message, expression, setstate=None, policy='ALL',  **kwargs):
         assert policy in self._ValidPolicies, "Policy must be one of: %s"%(', '.join(self._ValidPolicies),)
         self.expression = expression
@@ -283,13 +283,6 @@ class State(Eventful):
             if M - m > 100:
                 vals += self._solver.get_all_values(self._constraints, symbolic,
                                                     maxcnt=maxcount, silent=True)
-        elif policy == 'ALL32':
-            m, M = self._solver.minmax(self._constraints, symbolic)
-            vals += [m, M]
-            for i in range(m+m%32, M, 32):
-                if self._solver.can_be_true(self._constraints, symbolic == i):
-                    vals.append(i)
-
         elif policy == 'ONE':
             vals = [self._solver.get_value(self._constraints, symbolic)]
         else:
