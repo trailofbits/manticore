@@ -8,7 +8,7 @@ import tempfile
 from subprocess import Popen, PIPE
 import sha3
 
-solc = "/usr/bin/solc"
+solc = "solc"
 
 def parse_bin(buf):
     """
@@ -71,7 +71,7 @@ class ManticoreEVM(Manticore):
             return ManticoreEVM.serialize_uint(value)
         if isinstance(value, ManticoreEVM.SByte):
             return ManticoreEVM.serialize_uint(value.size) + (None,)*value.size + (('\x00',)*(32-(value.size%32)))
-        if isinstance(value, type(None)):
+        if value is None:
             return (None,)*32
 
 
