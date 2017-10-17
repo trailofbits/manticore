@@ -69,15 +69,7 @@ class Follower(Plugin):
             state.constrain(state.cpu.RIP == val['RIP'])
 
 f = Follower(r.trace)
-skip = True
 m = Manticore.linux(sys.argv[1])
 m.register_plugin(f)
 m.verbosity(2)
-
-#@m.hook(None)
-#def follow(state):
-#    global skip
-#    if skip: skip = False; return
-#    f.index += 1
-
 m.run()
