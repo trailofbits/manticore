@@ -253,7 +253,7 @@ class Manticore(Eventful):
             if callback is not None:
                 self.subscribe(event_name, callback)
 
-        if logger.isEnabledFor(logging.DEBUG) or True:
+        if logger.isEnabledFor(logging.DEBUG):
             for callback_name in dir(plugin):
                 if callback_name.endswith('_callback'):
                     event_name = callback_name[:-9]
