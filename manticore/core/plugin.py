@@ -48,7 +48,7 @@ class ExtendedTracer(Plugin):
         self.context_key = 'e_trace'
 
     def will_start_run_callback(self, state):
-        state.context['trace'] = []
+        state.context[self.context_key] = []
 
     def register_state_to_dict(self, cpu):
         d = {}
@@ -62,33 +62,43 @@ class ExtendedTracer(Plugin):
 
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
         reg_state = self.register_state_to_dict(state.cpu)
-        entry = {'type': 'regs', 'values': _dict_diff(self.last_dict, reg_state)}
+        entry = {
+            'type': 'regs',
+            'values': _dict_diff(self.last_dict, reg_state)
+        }
         self.last_dict = reg_state
-        state.context[self.context_key].append(json.dumps(entry) + '\n')
+        state.context[self.context_key].append(entry)
 
     def will_read_memory_callback(self, state, where, size):
         if self.current_pc == where:
             return
 
-        print 'will_read_memory %x %r, current_pc %x'%(where, size, self.current_pc)
+        #print 'will_read_memory %x %r, current_pc %x'%(where, size, self.current_pc)
 
     def did_read_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             return
 
-        print 'did_read_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
+        #print 'did_read_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
 
     def will_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
             return
 
-        print 'will_write_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
+        #print 'will_write_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
 
     def did_write_memory_callback(self, state, where, value, size):
         if self.current_pc == where:
+            raise Exception
             return
 
-        print 'did_write_memory %x %r %r, current_pc %x'%(where, value, size, self.current_pc)
+        entry = {
+            'type': 'mem_write',
+            'where': where,
+            'value': value,
+            'size': size
+        }
+        state.context[self.context_key].append(entry)
 
 class RecordSymbolicBranches(Plugin):
     def will_start_run_callback(self, state):

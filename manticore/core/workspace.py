@@ -506,7 +506,7 @@ class ManticoreOutput(object):
             if 'trace' not in state.context:
                 return
             for entry in state.context['trace']:
-                f.write(entry)
+                f.write('0x{:x}'.format(entry))
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check
