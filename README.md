@@ -20,7 +20,7 @@ architectures. It has been primarily used on binaries compiled from C and C++.
 Examples of practical manticore usage are also [on github](https://github.com/trailofbits/manticore-examples).
 
 - OS/Formats: Linux ELF
-- Architectures: x86, x86_64, ARMv7, and experimental support for Ethereum Virtual Machine(EVM)
+- Architectures: x86, x86_64, ARMv7, and Ethereum Virtual Machine (EVM)
 
 ## Requirements
 
