@@ -50,7 +50,11 @@ class Follower(Plugin):
         self.index = 0
         self.trace = trace
         self.last_instruction = None
+        self.symbolic_ranges = []
         super(self.__class__, self).__init__()
+
+    def add_range(self, start, end):
+        self.symbolic_ranges.append((start,end))
 
     def get_next_instruction(self):
         while self.trace[self.index]['type'] != 'regs':
@@ -63,28 +67,19 @@ class Follower(Plugin):
         print 'Forking, constraining PC to {:x}'.format(self.last_instruction['RIP'])
         state.constrain(state.cpu.RIP == self.last_instruction['RIP'])
 
-    def get_intermediate_writes(self):
-        writes = []
-        start = self.index
-        while self.trace[start]['type'] == 'mem_write':
-            writes.append(self.trace[start])
-            start += 1
-        return writes
+    def get_next_write(self):
+        action = self.trace[self.index]
+        assert action['type'] == 'mem_write'
+        self.index += 1
+        return action
 
     def did_write_memory_callback(self, state, where, value, size):
-        if issymbolic(value):
-            writes = self.get_intermediate_writes()
-            for w in writes:
-                if w['where'] != where:
-                    continue
-                assert w['size'] == size
-                symval = state.new_symbolic_value(size, label='concrete_{}'.format(self.index))
-                state.constrain(symval == w['value'])
-                #state.cpu.write_int(where, symval, size)
+        if not issymbolic(value):
+            return
 
-                # Copied from Cpu.write_int to not emit another write_memory event
-                state.cpu.memory[where:where+size/8] = \
-                    [Operators.CHR(Operators.EXTRACT(symval, offset, 8)) for offset in xrange(0, size, 8)]
+        write = self.get_next_write()
+        assert write['where'] == where and write['size'] == size
+        state.constrain(value == write['value'])
 
     def did_execute_instruction_callback(self, state, last_pc, pc, insn):
         val = self.get_next_instruction()
