@@ -1358,7 +1358,7 @@ class EVM(Eventful):
                 m.append(c)
 
         hd = hexdump(m)
-        result = []
+        result = ['-'*147]
         if issymbolic(self.pc):
             result.append( '<Symbolic PC>')
 
@@ -1387,8 +1387,6 @@ class EVM(Eventful):
         for i in range(sp,len(hd)):
             r =  ' '*75 + hd[i]
             result.append(r)
-
-        result =  ['-'*147] + result
 
         result = [hex(self.address) +": "+x for x in result]
         return '\n'.join(result)
