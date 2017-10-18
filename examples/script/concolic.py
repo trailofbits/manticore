@@ -7,8 +7,6 @@ import itertools
 
 from manticore import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
-from manticore.utils.helpers import issymbolic
-from manticore.core.smtlib import Operators
 
 def partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
@@ -32,18 +30,18 @@ class TraceReceiver(Plugin):
         print 'Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
             len(instructions), total, len(writes), total)
 
+
+# Create a concrete Manticore and record it
 t = ExtendedTracer()
 r = TraceReceiver(t)
-
 m = Manticore.linux(sys.argv[1], concrete_start=struct.pack('<I', 0x34))
 m.register_plugin(t)
 m.register_plugin(r)
 m.run()
 
-time.sleep(10)
+time.sleep(3)
 
-# -----------------------------------------------------------------------------
-
+# Create a symbolic Manticore and follow last trace
 m = Manticore.linux(sys.argv[1])
 m.register_plugin(Follower(r.trace))
 m.verbosity(2)
