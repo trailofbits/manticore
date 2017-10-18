@@ -20,8 +20,7 @@ class IntegrationTest(unittest.TestCase):
 
     def tearDown(self):
         # Remove the directory after the test
-        #shutil.rmtree(self.test_dir)
-        print self.test_dir
+        shutil.rmtree(self.test_dir)
 
     def _loadVisitedSet(self, visited):
 
@@ -94,12 +93,6 @@ class IntegrationTest(unittest.TestCase):
         assertions = '%s/assertions.txt'%self.test_dir
         file(assertions,'w').write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
-            print " ".join(['python', '-m', 'manticore',
-                                   '--workspace', workspace,
-                                   '--proc', '4',
-                                   '--assertions', assertions,
-                                   filename,
-                                   '+++++++++'])
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
