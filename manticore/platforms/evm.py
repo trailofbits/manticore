@@ -808,9 +808,10 @@ class EVM(Eventful):
                                 policy='ALL')
 
         self._publish( 'will_decode_instruction', self.pc)
+        last_pc = self.pc
         current = self.instruction
-        self._publish( 'will_execute_instruction', current)
 
+        self._publish( 'will_execute_instruction', current)
         #Consume some gas
         self._consume(current.fee)
 
@@ -825,7 +826,7 @@ class EVM(Eventful):
         for _ in range(current.pops):
             arguments.append(self._pop())
 
-        self._publish( 'will_execute_instruction', current)
+        self._publish( 'did_execute_instruction', last_pc, self.pc, current)
 
         #simplify stack arguments
         for i in range(len(arguments)):
@@ -1387,7 +1388,8 @@ class EVM(Eventful):
             r =  ' '*75 + hd[i]
             result.append(r)
 
-        result.append( '-'*147)
+        result =  ['-'*147] + result
+
         result = [hex(self.address) +": "+x for x in result]
         return '\n'.join(result)
 
