@@ -2,7 +2,7 @@ import cgcrandom
 import weakref
 import sys, os, struct
 from ..core.memory import Memory, MemoryException, SMemory32, Memory32
-from ..core.smtlib import Expression, Operators, solver
+from ..core.smtlib import Expression, Operators, solver, ConstraintSet
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu, I386StdcallAbi, Syscall
 from ..core.cpu.abstractcpu import Interruption, Syscall
@@ -438,14 +438,14 @@ class SWindows(Windows):
     '''
     A symbolic extension of a Decree Operating System platform.
     '''
-    def __init__(self, constraints, path, additional_context=None, snapshot_folder=None):
+    def __init__(self, path, additional_context=None, snapshot_folder=None):
         '''
-        Builds a symbolic extension of a Decree OS
+        Builds a symbolic extension of a Windows OS
         :param constraints: a constraints set.
         :param path: path to minidump to load.
         :param additional_context: optional object for overriding data read from minidump, e.g., initial register values.
         '''
-        self._constraints =  constraints
+        self._constraints = ConstraintSet()
         super(SWindows, self).__init__(path, additional_context, snapshot_folder)
 
     @property
