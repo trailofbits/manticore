@@ -105,6 +105,7 @@ class Follower(Plugin):
         self.trace = trace
         self.last_instruction = None
         self.symbolic_ranges = []
+        self.active = True
         super(self.__class__, self).__init__()
 
     def add_symbolic_range(self, pc_start, pc_end):
@@ -116,22 +117,9 @@ class Follower(Plugin):
         self.index += 1
         return event
 
-    def get_next_instruction(self):
-        while self.trace[self.index]['type'] != 'regs':
-            self.index += 1
-        self.index += 1
-        return self.last_instruction
-
-    def will_fork_state_callback(self, state, expression, solutions, policy):
-        state.constrain(state.cpu.RIP == self.last_instruction['RIP'])
-
-    def get_next_write(self):
-        action = self.trace[self.index]
-        assert action['type'] == 'mem_write'
-        self.index += 1
-        return action
-
     def did_write_memory_callback(self, state, where, value, size):
+        if not self.active:
+            return
         write = self.get_next('mem_write')
 
         if not issymbolic(value):
@@ -141,11 +129,16 @@ class Follower(Plugin):
         state.constrain(value == write['value'])
 
     def did_execute_instruction_callback(self, state, last_pc, pc, insn):
+        if not self.active:
+            return
         event = self.get_next('regs')
         self.last_instruction = event['values']
         if issymbolic(pc):
-            #print self.last_instruction
             state.constrain(state.cpu.RIP == self.last_instruction['RIP'])
+        else:
+            for start, stop in self.symbolic_ranges:
+                if start <= pc <= stop:
+                    self.active = False
 
 class RecordSymbolicBranches(Plugin):
     def will_start_run_callback(self, state):
