@@ -15,7 +15,7 @@ from capstone import *
 from capstone.arm import *
 from capstone.x86 import *
 
-logger = logging.getLogger("EMULATOR")
+logger = logging.getLogger(__name__)
 
 class UnicornEmulator(object):
     '''

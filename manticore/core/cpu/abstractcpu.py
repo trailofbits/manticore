@@ -18,8 +18,8 @@ from ...utils.helpers import issymbolic
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
-logger = logging.getLogger("CPU")
-register_logger = logging.getLogger("REGISTERS")
+logger = logging.getLogger(__name__)
+register_logger = logging.getLogger('{}.registers'.format(__name__))
 
 ###################################################################################
 #Exceptions
@@ -363,6 +363,9 @@ class Cpu(Eventful):
     - stack_alias
     '''
 
+    _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
+                           'execute_instruction'}
+
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", 'capstone')
@@ -437,9 +440,9 @@ class Cpu(Eventful):
         :param value: register value
         :type value: int or long or Expression
         '''
-        self.publish('will_write_register', register, value)
+        self._publish('will_write_register', register, value)
         value = self._regfile.write(register, value)
-        self.publish('did_write_register', register, value)
+        self._publish('did_write_register', register, value)
         return value
 
     def read_register(self, register):
@@ -450,9 +453,9 @@ class Cpu(Eventful):
         :return: register value
         :rtype: int or long or Expression
         '''
-        self.publish('will_read_register', register)
+        self._publish('will_read_register', register)
         value = self._regfile.read(register)
-        self.publish('did_read_register', register, value)
+        self._publish('did_read_register', register, value)
         return value
 
     # Pythonic access to registers and aliases
@@ -498,11 +501,11 @@ class Cpu(Eventful):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self.publish('will_write_memory', where, expression, size)
+        self._publish('will_write_memory', where, expression, size)
 
         self.memory[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in xrange(0, size, 8)]
 
-        self.publish('did_write_memory', where, expression, size)
+        self._publish('did_write_memory', where, expression, size)
 
 
     def read_int(self, where, size=None):
@@ -517,13 +520,13 @@ class Cpu(Eventful):
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
-        self.publish('will_read_memory', where, size)
+        self._publish('will_read_memory', where, size)
 
         data = self.memory[where:where + size / 8]
         assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
-        self.publish('did_read_memory', where, value, size)
+        self._publish('did_read_memory', where, value, size)
         return value
 
 
@@ -727,12 +730,12 @@ class Cpu(Eventful):
         if not self.memory.access_ok(self.PC, 'x'):
             raise InvalidMemoryAccess(self.PC, 'x')
 
-        self.publish('will_decode_instruction', self.PC)
+        self._publish('will_decode_instruction', self.PC)
 
         insn = self.decode_instruction(self.PC)
         self._last_pc = self.PC
 
-        self.publish('will_execute_instruction', insn)
+        self._publish('will_execute_instruction', self.PC, insn)
 
         # FIXME (theo) why just return here?
         if insn.address != self.PC:
@@ -744,10 +747,7 @@ class Cpu(Eventful):
             text_bytes = ' '.join('%02x'%x for x in insn.bytes)
             logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                         insn.address, text_bytes, insn.mnemonic, insn.op_str)
-
-            self.publish('will_emulate_instruction', insn)
             self.emulate(insn)
-            self.publish('did_emulate_instruction', insn)
 
         implementation = getattr(self, name, fallback_to_emulate)
 
@@ -759,7 +759,7 @@ class Cpu(Eventful):
         implementation(*insn.operands)
         self._icount += 1
 
-        self.publish('did_execute_instruction', insn)
+        self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
 
     def emulate(self, insn):
         '''
