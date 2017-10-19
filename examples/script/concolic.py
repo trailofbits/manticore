@@ -6,6 +6,7 @@ import struct
 import itertools
 
 from manticore import Manticore
+from manticore import models
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 
 def partition(pred, iterable):
@@ -31,18 +32,22 @@ class TraceReceiver(Plugin):
             len(instructions), total, len(writes), total)
 
 
+
 # Create a concrete Manticore and record it
+m1 = Manticore.linux(sys.argv[1], ['--first', '--second', '-a', '123'])
 t = ExtendedTracer()
 r = TraceReceiver(t)
-m = Manticore.linux(sys.argv[1], concrete_start=struct.pack('<I', 0x34))
-m.register_plugin(t)
-m.register_plugin(r)
-m.run()
+m1.verbosity(2)
+m1.register_plugin(t)
+m1.register_plugin(r)
+m1.run()
 
-time.sleep(3)
+time.sleep(10)
 
 # Create a symbolic Manticore and follow last trace
-m = Manticore.linux(sys.argv[1])
-m.register_plugin(Follower(r.trace))
-m.verbosity(2)
-m.run()
+m2 = Manticore.linux(sys.argv[1], ['+++++++', '++++++++', '++', '+++'])
+f = Follower(r.trace)
+f.add_symbolic_range(0x400b22, 0x400ba7)
+m2.register_plugin(f)
+m2.verbosity(2)
+m2.run()
