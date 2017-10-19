@@ -209,15 +209,6 @@ class Manticore(Eventful):
         #Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
-        if isinstance(path_or_state, str):
-            assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
-        elif isinstance(path_or_state, State):
-            self._initial_state = path_or_state
-
-        if not isinstance(self._initial_state, State):
-            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
-
         self.plugins = set()
 
         #Move the folowing into a plugin
@@ -675,7 +666,8 @@ class Manticore(Eventful):
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
-        else:
+
+        if not isinstance(self._initial_state, State):
             raise TypeError("Manticore must be intialized with either a State or a path to a binary")
 
         #FIXME this will be self.publish
