@@ -156,8 +156,8 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('will_terminate_state', self.terminate_state_callback)
         self._executor.subscribe('will_execute_instruction', self.will_execute_instruction_callback)
         self._executor.subscribe('did_read_code', self.did_read_code)
-        self._executor.subscribe('symbolic_sha3', self.symbolic_sha3)
-        self._executor.subscribe('concrete_sha3', self.concrete_sha3)
+        self._executor.subscribe('on_symbolic_sha3', self.symbolic_sha3)
+        self._executor.subscribe('on_concrete_sha3', self.concrete_sha3)
 
     @property
     def world(self):

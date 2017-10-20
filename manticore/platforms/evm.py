@@ -27,7 +27,7 @@ TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
 
 def ceil32(x):
-    return Operators.ITE(x % 32 == 0, x , x + 32 - (x % 32))
+    return Operators.ITEBV(256, (x % 32) == 0, x , x + 32 - (x % 32))
 
 def to_signed(i):
     return Operators.ITEBV(256, i<TT255, i, i-TT256) #i if i < TT255 else i - TT256
@@ -1038,7 +1038,7 @@ class EVM(Eventful):
         buf = ''.join(data)
         value = sha3.keccak_256(buf).hexdigest()
         value = int('0x'+value,0)
-        self._publish('concrete_sha3', buf, value)
+        self._publish('on_concrete_sha3', buf, value)
         logger.info("Found new SHA3 example %r -> %x", buf, value)
         return value
 
@@ -1396,6 +1396,8 @@ class EVM(Eventful):
 ################################################################################
 ################################################################################
 class EVMWorld(Platform):
+    _published_events = {'read_code', 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} 
+
     def __init__(self, constraints, storage=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
         self._global_storage = {} if storage is None else storage
@@ -1431,7 +1433,7 @@ class EVMWorld(Platform):
     def _do_events(self):
         if self.current is not None:
             self.forward_events_from(self.current)
-        self.subscribe('concrete_sha3', self._concrete_sha3_callback)
+            self.subscribe('on_concrete_sha3', self._concrete_sha3_callback)
 
     def _concrete_sha3_callback(self,buf, value):
         if buf in self._sha3:
@@ -1502,7 +1504,8 @@ class EVMWorld(Platform):
         self._callstack.append(vm)
         self.current.depth = self.depth
         self.current.constraints = self.constraints
-        self.forward_events_from(self.current)
+        #self.forward_events_from(self.current)
+        self._do_events()
         if self.depth > 1024:
             while self.depth >0:
                 self._pop(rollback=True)
@@ -1790,7 +1793,7 @@ class EVMWorld(Platform):
         logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         #Broadcast the signal 
-        self._publish( 'symbolic_sha3', data, self._sha3.items())
+        self._publish( 'on_symbolic_sha3', data, self._sha3.items())
 
         results = []
         known_hashes = False
