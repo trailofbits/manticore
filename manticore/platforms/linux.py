@@ -33,6 +33,11 @@ class Deadlock(Exception):
 class BadFd(Exception):
     pass
 
+class SyscallNotImplementedError(Exception):
+    def __init__(self, idx, name):
+        msg = 'Syscall index "{}" ({}) not implemented.'.format(idx, name)
+        super(SyscallNotImplementedError, self).__init__(msg)
+
 def perms_from_elf(elf_flags):
     return ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][elf_flags&7]
 
@@ -1874,7 +1879,10 @@ class Linux(Platform):
             name = table.get(index, None)
             implementation = getattr(self, name)
         except (AttributeError, KeyError):
-            raise Exception("SyscallNotImplemented %d %d"%(self.current.address_bit_size, index))
+            if name is not None:
+                raise SyscallNotImplementedError(index, name)
+            else:
+                raise Exception("Bad syscall index, {}".format(index))
 
         return self._syscall_abi.invoke(implementation)
 
