@@ -1315,9 +1315,8 @@ class Linux(Platform):
             f = self._sys_open_get_file(filename, flags)
             logger.debug("Opening file %s for real fd %d",
                          filename, f.fileno())
-        # FIXME(theo) generic exception
-        except SyscallNotImplemented as e:
-            logger.info("Could not open file %s. Reason %s" % (filename, str(e)))
+        except IOError as e:
+            logger.info("Could not open file %s. Reason: %s" % (filename, str(e)))
             return -1
 
         return self._open(f)
