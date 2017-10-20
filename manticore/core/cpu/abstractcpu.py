@@ -756,10 +756,11 @@ class Cpu(Eventful):
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        implementation(*insn.operands)
-        self._icount += 1
-
-        self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
+        try:
+            implementation(*insn.operands)
+            self._icount += 1
+        finally:
+            self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
 
     def emulate(self, insn):
         '''
