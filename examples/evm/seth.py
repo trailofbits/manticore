@@ -44,7 +44,7 @@ def compile_code(source_code):
         temp.flush()
         p = Popen([solc, '--bin', temp.name], stdout=PIPE)
         outp = p.stdout.readlines()
-        return parse_bin(outp)[:]
+        return parse_bin(outp)
 
 class ManticoreEVM(Manticore):
     class SByte():
