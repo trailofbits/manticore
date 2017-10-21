@@ -1,5 +1,4 @@
 import os
-import sys
 import unittest
 
 from manticore.platforms import linux, linux_syscalls
