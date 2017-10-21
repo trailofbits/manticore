@@ -2052,9 +2052,11 @@ class Linux(Platform):
             if self.clocks % 10000 == 0:
                 self.check_timers()
                 self.sched()
-        except (Interruption, Syscall):
+        except (Interruption, Syscall) as e:
             try:
                 self.syscall()
+                if hasattr(e, 'on_handled'):
+                    e.on_handled()
             except RestartSyscall:
                 pass
 

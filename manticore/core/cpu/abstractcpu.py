@@ -756,11 +756,21 @@ class Cpu(Eventful):
             for l in self.render_registers():
                 register_logger.debug(l)
 
+        #FIXME(yan): In the case the instruction implementation invokes a system call, we would not be able to
+        # publish the did_execute_instruction event from here, so we capture and attach it to the syscall
+        # exception for the platform to emit it for us once the syscall has successfully been executed.
+        def did_exec():
+            self._icount += 1
+            self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
+
         try:
             implementation(*insn.operands)
-            self._icount += 1
-        finally:
-            self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
+        except (Interruption, Syscall) as e:
+            e.on_handled = did_exec
+            raise e
+        else:
+            did_exec()
+
 
     def emulate(self, insn):
         '''
