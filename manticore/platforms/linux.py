@@ -750,7 +750,7 @@ class Linux(Platform):
         elf = self.elf
         arch = self.arch
         addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
-        logger.debug("Loading %s as a %s elf"%(filename, arch))
+        logger.debug("Loading %s as a %s elf",filename, arch)
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
@@ -842,8 +842,8 @@ class Linux(Platform):
         #cpu.write_bytes(elf_bss, '\x00'*((elf_bss | (align-1))-elf_bss))
 
         logger.debug("Zeroing main elf fractional pages. From %x to %x.", elf_bss, elf_brk)
-        logger.debug("Main elf bss:%x"%elf_bss)
-        logger.debug("Main elf brk %x:"%elf_brk)
+        logger.debug("Main elf bss:%x",elf_bss)
+        logger.debug("Main elf brk %x:",elf_brk)
 
 	#FIXME Need a way to inspect maps and perms so
 	#we can rollback all to the initial state after zeroing
@@ -935,7 +935,7 @@ class Linux(Platform):
 	    try:
 	        cpu.memory[elf_bss:elf_brk] = '\x00'*(elf_brk-elf_bss)
 	    except Exception, e:
-	        logger.debug("Exception zeroing Interpreter fractional pages: %s"%str(e))
+	        logger.debug("Exception zeroing Interpreter fractional pages: %s",str(e))
             #TODO #FIXME mprotect as it was before zeroing?
 
 
@@ -1316,8 +1316,11 @@ class Linux(Platform):
             logger.debug("Opening file %s for real fd %d",
                          filename, f.fileno())
         except IOError as e:
-            logger.info("Could not open file %s. Reason: %s" % (filename, str(e)))
-            return -1
+            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            if e.errno is not None:
+                return -e.errno
+            else:
+                return -errno.EINVAL
 
         return self._open(f)
 
@@ -1676,7 +1679,7 @@ class Linux(Platform):
             data = ""
             for j in xrange(0,size):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
-            logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
+            logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)",fd, buf, size, data, len(data))
             data = self._transform_write_data(data)
             write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))
