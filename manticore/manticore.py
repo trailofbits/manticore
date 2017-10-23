@@ -671,10 +671,10 @@ class Manticore(Eventful):
             raise TypeError("Manticore must be intialized with either a State or a path to a binary")
 
         #FIXME this will be self.publish
-        self._publish('will_start_run', self._initial_state)
-
-        self.enqueue(self._initial_state)
-        self._initial_state = None
+        if self._initial_state is not None:
+            self._publish('will_start_run', self._initial_state)
+            self.enqueue(self._initial_state)
+            self._initial_state = None
 
         #Copy the local main context to the shared conext
         self._executor._shared_context.update(self._context)

