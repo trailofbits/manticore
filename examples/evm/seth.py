@@ -410,11 +410,16 @@ class ManticoreEVM(Manticore):
             BOLD = '\033[1m'
             UNDERLINE = '\033[4m'
 
+
+        assert  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20'
+        assert  ''.join(runtime_bytecode[-2:]) =='\x00\x29'
+
+
         output = ''
         offset = 0
         count = 0
         total = 0
-        for i in evm.EVMDecoder.decode_all(runtime_bytecode) :
+        for i in evm.EVMDecoder.decode_all(runtime_bytecode[:-9-33-2]) :
             
             if (account_address, offset) in seen:
                 output += bcolors.OKGREEN
