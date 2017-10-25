@@ -11,7 +11,9 @@ class SyscallNotImplemented(OSException):
     ''' Exception raised when you try to call a not implemented
         system call. Go to linux.py and add it!
     '''
-    pass
+    def __init__(self, idx, name):
+        msg = 'Syscall index "{}" ({}) not implemented.'.format(idx, name)
+        super(SyscallNotImplemented, self).__init__(msg)
 
 class ConcretizeSyscallArgument(OSException):
     def __init__(self, reg_num, message='Concretizing syscall argument', policy='SAMPLED'):
@@ -19,7 +21,6 @@ class ConcretizeSyscallArgument(OSException):
         self.message = message
         self.policy = policy
         super(ConcretizeSyscallArgument, self).__init__(message)
-
 
 class Platform(Eventful):
     '''
