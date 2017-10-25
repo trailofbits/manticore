@@ -72,7 +72,7 @@ def main():
 
     Manticore.verbosity(args.v)
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, args=args)
 
     #Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
