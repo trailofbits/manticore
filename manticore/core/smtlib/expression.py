@@ -612,7 +612,7 @@ class ArrayProxy(ArrayVariable):
     @property
     def operands(self):
         return self._array.operands
-    
+
     @property
     def taint(self):
         return self._array.taint
@@ -673,6 +673,9 @@ class ArraySelect(BitVec, Operation):
     def index(self):
         return self.operands[1]
 
+    def __repr__(self):
+        return "smtlib.expression.ArraySelect Object with index %s:\n%s" % (self.index, self.array)
+
 
 class BitVecSignExtend(BitVecOperation):
     def __init__(self, operand, size_dest, *args, **kwargs):
@@ -715,5 +718,4 @@ class BitVecITE(BitVecOperation):
         assert isinstance(true_value, BitVec)
         assert isinstance(false_value, BitVec)
         assert true_value.size == false_value.size
-        super(BitVecITE, self).__init__(size, condition, true_value, false_value, *args, **kwargs)  
-
+        super(BitVecITE, self).__init__(size, condition, true_value, false_value, *args, **kwargs)

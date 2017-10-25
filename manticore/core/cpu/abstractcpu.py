@@ -123,6 +123,7 @@ class Operand(object):
 
         :param int reg_id: Register ID
         '''
+        if reg_id > 234: return None #https://github.com/aquynh/capstone/blob/master/bindings/python/capstone/x86_const.py#L239
         cs_reg_name = self.cpu.instruction.reg_name(reg_id)
         if cs_reg_name is None or cs_reg_name.lower() == '(invalid)':
             return None
@@ -372,6 +373,7 @@ class Cpu(Eventful):
         self._instruction_cache = {}
         self._icount = 0
         self._last_pc = None
+        self._non_unicorn_instrs = 0
         if not hasattr(self, "disasm"):
             self.disasm = init_disassembler(self._disasm, self.arch, self.mode)
         # Ensure that regfile created STACK/PC aliases
@@ -561,12 +563,12 @@ class Cpu(Eventful):
             The size in bytes to cap the string at, or None [default] for no
             limit. This includes the NULL terminator.
         '''
-        
+
         if max_length is not None:
             string = string[:max_length-1]
-        
+
         self.write_bytes(where, string + '\x00')
-        
+
     def read_string(self, where, max_length=None):
         '''
         Read a NUL-terminated concrete buffer from memory.
@@ -742,15 +744,30 @@ class Cpu(Eventful):
 
         def fallback_to_emulate(*operands):
             text_bytes = ' '.join('%02x'%x for x in insn.bytes)
-            logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                        insn.address, text_bytes, insn.mnemonic, insn.op_str)
+            # logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+            #             insn.address, text_bytes, insn.mnemonic, insn.op_str)
 
-            self.publish('will_emulate_instruction', insn)
-            self.emulate(insn)
-            self.publish('did_emulate_instruction', insn)
+            if 'SYSCALL' in name:
+                self.emu.sync_unicorn_to_manticore()
+                implementation = getattr(self, name)
+                implementation(*insn.operands)
+            else:
+                self.publish('will_emulate_instruction', insn)
+                self.emulate(insn)
+                self.publish('did_emulate_instruction', insn)
 
-        implementation = getattr(self, name, fallback_to_emulate)
+        def determine_implementation(instruction):
+            implementation = fallback_to_emulate
+            for op in instruction.operands:
+                if op.mem.segment is not None and 'FS' in op.mem.segment:
+                    print("%s uses the %s segment" % (name, op.mem.segment))
+                    implementation = getattr(self, name, fallback_to_emulate)
+                    self._non_unicorn_instrs += 1
 
+            return implementation
+
+        #implementation = getattr(self, name, fallback_to_emulate)
+        implementation = determine_implementation(insn)
         if logger.level == logging.DEBUG :
             logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
@@ -769,14 +786,15 @@ class Cpu(Eventful):
         :param capstone.CsInsn instruction: The instruction object to emulate
         '''
 
-        emu = UnicornEmulator(self)
-        emu.emulate(insn)
+        if not hasattr(self, 'emu'):
+            self.emu = UnicornEmulator(self)
+        self.emu.emulate(insn)
 
 
         # We have been seeing occasional Unicorn issues with it not clearing
         # the backing unicorn instance. Saw fewer issues with the following
         # line present.
-        del emu
+        # del emu
 
     def render_instruction(self, insn=None):
         try:

@@ -620,6 +620,7 @@ class AMD64Operand(Operand):
         address = 0
         if self.mem.segment is not None:
             seg = self.mem.segment
+            print("Accessing %s" % seg)
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
         else:
@@ -702,14 +703,19 @@ class X86Cpu(Cpu):
     ####################
     # Segments
     def set_descriptor(self, selector, base, limit, perms):
-        assert selector>0 and selector < 0xffff
+        assert selector>=0 and selector < 0xffff
         assert base>=0 and base < (1<<self.address_bit_size)
         assert limit >=0 and limit < 0xffff or limit&0xfff == 0
         #perms ? not used yet Also is not really perms but rather a bunch of attributes
+        self.publish('will_set_descriptor', selector, base, limit, perms)
         self._segments[selector] = (base, limit, perms)
+        self.publish('did_set_descriptor', selector, base, limit, perms)
 
     def get_descriptor(self, selector):
-        return self._segments.setdefault(selector, (0, 0xfffff000, 'rwx'))
+        if selector in self._segments:
+            return self._segments[selector]
+        self.set_descriptor(selector, 0, 0xfffff000, 'rwx')
+        return self._segments[selector]
 
 
     def _wrap_operands(self, operands):
@@ -6023,5 +6029,3 @@ class I386Cpu(X86Cpu):
         :param dest: destination operand.
         '''
         cpu.AL = cpu.read_int(cpu.EBX + Operators.ZEXTEND(cpu.AL, 32), 8)
-
-

@@ -1049,27 +1049,27 @@ class Linux(Platform):
         '''
         getcwd - Get the current working directory
         :param int buf: Pointer to dest array
-        :param size: size in bytes of the array pointed to by the buf 
+        :param size: size in bytes of the array pointed to by the buf
         :return: buf (Success), or 0
         '''
-        
+
         try:
-            current_dir = os.getcwd()          
+            current_dir = os.getcwd()
             length = len(current_dir) + 1
-                      
+
             if size > 0 and size < length:
-                logger.info("GETCWD: size is greater than 0, but is smaller than the length"  
+                logger.info("GETCWD: size is greater than 0, but is smaller than the length"
                             "of the path + 1. Returning ERANGE")
                 return -errno.ERANGE
-        
+
             if not self.current.memory.access_ok(slice(buf, buf+length), 'w'):
                 logger.info("GETCWD: buf within invalid memory. Returning EFAULT")
                 return -errno.EFAULT
-                      
+
             self.current.write_string(buf, current_dir)
             logger.debug("getcwd(0x%08x, %u) -> <%s> (Size %d)", buf, size, current_dir, length)
             return length
-        
+
         except OSError as e:
             return -e.errno
 
@@ -1106,6 +1106,8 @@ class Linux(Platform):
         return 0
 
     def sys_read(self, fd, buf, count):
+
+        print("Reading %s bytes from FD %s into %02x" % (count, fd, buf))
         data = ''
         if count != 0:
             # TODO check count bytes from buf
@@ -1375,7 +1377,7 @@ class Linux(Platform):
     def sys_sigprocmask(self, cpu, how, newset, oldset):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
         return 0
-    
+
     def sys_dup(self, fd):
         '''
         Duplicates an open file descriptor
@@ -1383,15 +1385,15 @@ class Linux(Platform):
         :param fd: the open file descriptor to duplicate.
         :return: the new file descriptor.
         '''
-    
+
         if not self._is_fd_open(fd):
             logger.info("DUP: Passed fd is not open. Returning EBADF")
             return -errno.EBADF
-        
+
         newfd = self._dup(fd)
         logger.debug('sys_dup(%d) -> %d', fd, newfd)
         return newfd
-        
+
     def sys_dup2(self, fd, newfd):
         '''
         Duplicates an open fd to newfd. If newfd is open, it is first closed
@@ -1410,18 +1412,18 @@ class Linux(Platform):
         if newfd >= soft_max:
             logger.info("DUP2: newfd is above max descriptor table size")
             return -errno.EBADF
-          
+
         if  self._is_fd_open(newfd):
             self.sys_close(newfd)
-        
+
         if newfd >= len(self.files):
             self.files.extend([None]*(newfd+1-len(self.files)))
-        
+
         self.files[newfd] = self.files[fd]
-                    
+
         logger.debug('sys_dup2(%d,%d) -> %d', fd, newfd, newfd)
         return newfd
-    
+
     def sys_close(self, fd):
         '''
         Closes a file descriptor
@@ -1875,6 +1877,7 @@ class Linux(Platform):
         except (AttributeError, KeyError):
             raise Exception("SyscallNotImplemented %d %d"%(self.current.address_bit_size, index))
 
+        print("(M) Invoking %s syscall" % name)
         return self._syscall_abi.invoke(implementation)
 
     def sys_clock_gettime(self, clock_id, timespec):
@@ -2377,7 +2380,7 @@ class SLinux(Linux):
         return super(SLinux, self).sys_recv(sockfd, buf, count, flags)
 
     def sys_accept(self, sockfd, addr, addrlen, flags):
-        #TODO(yan): Transmit some symbolic bytes as soon as we start. 
+        #TODO(yan): Transmit some symbolic bytes as soon as we start.
         # Remove this hack once no longer needed.
 
         fd = super(SLinux, self).sys_accept(sockfd, addr, addrlen, flags)
@@ -2393,7 +2396,7 @@ class SLinux(Linux):
     def sys_open(self, buf, flags, mode):
         '''
         A version of open(2) that includes a special case for a symbolic path.
-        When given a symbolic path, it will create a temporary file with 
+        When given a symbolic path, it will create a temporary file with
         64 bytes of symbolic bytes as contents and return that instead.
 
         :param buf: address of zero-terminated pathname
@@ -2416,4 +2419,3 @@ class SLinux(Linux):
             self.current.memory.munmap(buf, 1024)
 
         return rv
-
