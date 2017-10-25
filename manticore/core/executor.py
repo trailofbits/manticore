@@ -93,10 +93,9 @@ class Uncovered(Policy):
     def _register(self, *args):
         self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
-    def _visited_callback(self, state, instr):
+    def _visited_callback(self, state, pc, instr):
         ''' Maintain our own copy of the visited set
         '''
-        pc = state.platform.current.PC
         with self.locked_context('visited', set) as ctx:
             ctx.add(pc)
 
@@ -172,7 +171,7 @@ class Executor(Eventful):
         # Signals / Callbacks handlers will be invoked potentially at different
         # worker processes. State provides a local context to save data.
 
-        self.subscribe('will_load_state', self._register_state_callbacks)
+        self.subscribe('did_load_state', self._register_state_callbacks)
 
         # The main executor lock. Acquire this for accessing shared objects
         self._lock = manager.Condition(manager.RLock())
@@ -237,8 +236,6 @@ class Executor(Eventful):
                     sub_context = default()
                 yield sub_context
                 self._shared_context[key] = sub_context
-
-
 
     def _register_state_callbacks(self, state, state_id):
         '''
@@ -436,6 +433,7 @@ class Executor(Eventful):
                             current_state_id = self.get()
                             #load selected state from secondary storage
                             if current_state_id is not None:
+                                self._publish('will_load_state', current_state_id)
                                 current_state = self._workspace.load_state(current_state_id)
                                 self.forward_events_from(current_state, True)
                                 self._publish('did_load_state', current_state, current_state_id)
@@ -449,6 +447,7 @@ class Executor(Eventful):
                             break
 
                         assert current_state is not None
+                        assert current_state.constraints is current_state.platform.constraints
 
                     try:
 
@@ -496,10 +495,10 @@ class Executor(Eventful):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
-                    print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
+                    print "Exception: %s\n%s"%( str(e), trace)
                     #Notify this worker is done
-                    self._publish('will_terminate_state', current_state, current_state_id, 'Exception')
+                    self._publish('will_terminate_state', current_state, current_state_id, e)
                     current_state = None
                     logger.setState(None)
 

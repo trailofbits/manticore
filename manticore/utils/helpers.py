@@ -1,4 +1,4 @@
-
+import collections
 from ..core.smtlib import Expression
 
 def issymbolic(value):
