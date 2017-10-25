@@ -222,6 +222,8 @@ class UnicornEmulator(object):
                 from ..core.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
                                          policy='ONE')
+            if (reg in ('FS', 'SS')):  #DEBUG: these cause unicorn to segfault, so for now they're skipped
+                continue
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
         # Bring in the instruction itself
