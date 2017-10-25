@@ -96,7 +96,8 @@ class UnicornEmulator(object):
         for index, m in enumerate(self.mem_map):
             size = self.mem_map[m][0]
             print("Reading map %s (%s kb)" % (index, size / 1024))
-            map_bytes = self._cpu.read_bytes(m, size)
+            # map_bytes = self._cpu.read_bytes(m, size)
+            map_bytes = self._cpu._raw_read(m,size)
             print("Writing map %s" % index)
             self._emu.mem_write(m, ''.join(map_bytes))
         print("Unicorn init complete")
@@ -345,7 +346,7 @@ class UnicornEmulator(object):
         # else:
         data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
         # print(data)
-        # print("Writing back %s bits to %02x: %s" % (size, where, ''.join(data)))
+        print("Writing back %s bits to %02x: %s" % (size, where, ''.join(data)))
         if not self.in_map(where):
             self._create_emulated_mapping(self._emu, where)
         self._emu.mem_write(where, ''.join(data))
