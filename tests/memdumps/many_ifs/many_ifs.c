@@ -5,8 +5,6 @@
 // build via:
 // Linux:
 // clang -mno-sse -m32 -ggdb -Wall -O3 -o many_ifs many_ifs.c
-// Windows
-// cl.exe /arch:IA32 /Fe:many_ifs.exe many_ifs.c
 
 #define __PASSWORD__ "passwordpasswordpasswordpasswordpasswordpasswordpasswordpassword"
 #define __PASSWORD_SIZE__ 32
@@ -44,10 +42,6 @@ static int do_checksum(char *start, char *end) {
 }while(0);
 
 int process_buffer(char *buffer, size_t size) {
-
-#ifdef _WIN32
-    __debugbreak();
-#endif
 
     size_t location = 0;
     char cur;
