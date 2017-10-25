@@ -507,19 +507,6 @@ class Cpu(Eventful):
         self.publish('did_write_memory', where, expression, size)
 
 
-    def _raw_read(self, where, size=None):
-        '''
-        Selects bytes from memory
-
-        :param int where: address to read from
-        :param size: number of bits to read
-        :return: the value read
-        :rtype: int or BitVec
-        '''
-        data = self.memory[where:where + size]
-        assert (len(data)) == size
-        return data
-
     def read_int(self, where, size=None):
         '''
         Reads int from memory
@@ -534,8 +521,8 @@ class Cpu(Eventful):
         assert size in SANE_SIZES
         self.publish('will_read_memory', where, size)
 
-        data = self._raw_read(where, size/8)
-
+        data = self.memory[where:where + size / 8]
+        assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
         self.publish('did_read_memory', where, value, size)
@@ -782,7 +769,7 @@ class Cpu(Eventful):
         #implementation = getattr(self, name, fallback_to_emulate)
         implementation = determine_implementation(insn)
         if logger.level == logging.DEBUG :
-            logger.debug(self.render_instruction(insn) + " (%s)" % insn.size)
+            logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
 
