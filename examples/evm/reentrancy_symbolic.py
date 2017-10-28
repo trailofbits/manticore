@@ -117,7 +117,7 @@ seth.transaction(  caller=attacker_account,
 
 #User deposits all in contract
 print "[+] Make the victim user interact with the buggy contract"
-print "    We hope for some funds to be transfered."
+print "    We hope for some funds to be transferred."
 seth.transaction(  caller=user_account,
                     address=contract_account,
                     data=seth.SByte(64),
@@ -143,7 +143,7 @@ seth.transaction(  caller=attacker_account,
                     data=seth.make_function_call('delegate(bytes)', seth.SByte(64)),
                     value=0)
 
-print "[+] Let attacker destroy the exploit andprofit" 
+print "[+] Let attacker destroy the exploit and profit" 
 seth.transaction(  caller=attacker_account,
                     address=exploit_account,
                     data=seth.make_function_call('get_money()'),
@@ -151,7 +151,7 @@ seth.transaction(  caller=attacker_account,
 
 #Finish exploration Report on what we found.
 
-print "[+] There are %d reverted states now. (skiping)"% len(seth.final_state_ids)
+print "[+] There are %d reverted states now. (skipping)"% len(seth.final_state_ids)
 print "[+] There are %d alive states now"% (len(seth.running_state_ids))
 for state_id in seth.running_state_ids:
     seth.report(state_id, ty='SELFDESTRUCT')

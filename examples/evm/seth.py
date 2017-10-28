@@ -7,44 +7,51 @@ from manticore.core.state import State
 import tempfile
 from subprocess import Popen, PIPE
 import sha3
+import json
 
-solc = "solc"
 
-def parse_bin(buf):
-    """
-    Parse the output of solc
-    Return a dict [name: bytecode]
-    """
-    ret = {}
-    i = 0
-    while i < len(buf):
-        # looks for bytecode
-        if buf[i].startswith('==='):
-            # parse the name of the contract
-            name = buf[i][buf[i].find(':')+1:buf[i].rfind(' =')]
-            # parse the bytecode
-            bytecode = buf[i+2]
-            if len(bytecode) > 4: #avoid empty bytecode
-                bytecode = bytecode.replace('\n', '') # remove '\n'                
-                bytecode = bytecode.decode('hex') # convert to hex
-                ret[name] = bytecode
-            i = i+3
+class EVMContract(object):
+    def __init__(self, address, seth=None):
+        self._seth=seth
+        self._address=address
+        self._hashes = {}
+        self._caller = None
+        self._value = 0
+
+        name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self._seth.context['seth']['metadata'][address]
+        for signature in hashes.keys():
+            func_name = str(signature.split('(')[0])
+            self._hashes[func_name] = signature, hashes[signature]
+
+    def __int__(self):
+        return self._address
+
+    def value(self, value):
+        self._value = value
+        return self
+
+    def caller(self, caller):
+        self._caller = caller
+        return self
+
+    def __getattribute__(self, name):
+        if not name.startswith('_') and name in self._hashes.keys():
+            def f(*args, **kwargs):
+                caller = kwargs.get('caller', self._caller)
+                value = kwargs.get('value', self._value)
+                tx_data = self._seth.make_function_call(str(self._hashes[name][0]),*args)
+                if caller is not None:
+                    caller = int(caller)
+                self._seth.transaction(caller=caller,
+                                        address=self._address,
+                                        value=value,
+                                        data=tx_data
+                                     )
+                self._caller = None
+                self._value = 0
+            return f
         else:
-            i = i+1
-    assert len(ret.values())==1
-    return ret.values()[0]
-
-def compile_code(source_code):
-    """
-    Compile a solidity source code
-    Return a list [(contract_name, bytecode)]
-    """
-    with tempfile.NamedTemporaryFile() as temp:
-        temp.write(source_code)
-        temp.flush()
-        p = Popen([solc, '--bin', temp.name], stdout=PIPE)
-        outp = p.stdout.readlines()
-        return parse_bin(outp)
+            return object.__getattribute__(self, name)            
 
 class ManticoreEVM(Manticore):
     class SByte():
@@ -131,7 +138,23 @@ class ManticoreEVM(Manticore):
 
     @staticmethod
     def compile(source_code):
-        return compile_code(source_code)
+        """
+        Compile a solidity source code
+        """
+        solc = "solc"
+        with tempfile.NamedTemporaryFile() as temp:
+            temp.write(source_code)
+            temp.flush()
+            p = Popen([solc, '--combined-json', 'srcmap,srcmap-runtime,bin,hashes', temp.name], stdout=PIPE)
+            outp = json.loads(p.stdout.read())
+            assert len(outp['contracts']), "Only one contract by file supported"
+            name, outp = outp['contracts'].items()[0]
+            name = name.split(':')[1]
+            bytecode = outp['bin'].decode('hex')
+            srcmap = outp['srcmap'].split(';')
+            srcmap_runtime = outp['srcmap-runtime'].split(';')
+            hashes = outp['hashes']
+            return name, source_code, bytecode, srcmap, srcmap_runtime, hashes
 
     def __init__(self):
 
@@ -140,21 +163,22 @@ class ManticoreEVM(Manticore):
         #make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
+        initial_state.context['tx'] = []
         super(ManticoreEVM, self).__init__(initial_state)
 
 
         #The following should go to manticore.context so we can use multiprocessing
-        self.code = {}
         self.context['seth'] = {}
+        self.context['seth']['trace'] = []
+        self.context['seth']['metadata'] = {}
         self.context['seth']['_pending_transaction'] = None
         self.context['seth']['_saved_states'] = []
         self.context['seth']['_final_states'] = []
 
-
-
         self._executor.subscribe('did_load_state', self.load_state_callback)
         self._executor.subscribe('will_terminate_state', self.terminate_state_callback)
         self._executor.subscribe('will_execute_instruction', self.will_execute_instruction_callback)
+        self._executor.subscribe('did_execute_instruction', self.did_execute_instruction_callback)
         self._executor.subscribe('did_read_code', self.did_read_code)
         self._executor.subscribe('on_symbolic_sha3', self.symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self.concrete_sha3)
@@ -178,12 +202,19 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             return context['_final_states']
 
-    def get_world(self, state_id):
+    def get_world(self, state_id=-1):
         if state_id == -1:
             return self.initial_state.platform
 
         state = self._executor._workspace.load_state(state_id, delete=False)
         return state.platform
+
+
+    def solidity_create_contract(self, source_code, owner, balance=0):
+        name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self.compile(source_code)
+        address = self.create_contract(owner=owner, balance=balance, init=init_bytecode)
+        self.context['seth']['metadata'][address] = name, source_code, init_bytecode, metadata, metadata_runtime, hashes
+        return EVMContract(address, self)
 
     def create_contract(self, owner, balance=0, init=None, address=None):
         ''' Only available when there is a single state of the world'''
@@ -268,6 +299,7 @@ class ManticoreEVM(Manticore):
                     if ty == 'CREATE_CONTRACT':
                         world = state.platform
                         world.storage[address]['code'] = world.last_return
+
             self.save(state)
             e.testcase = False  #Do not generate a testcase file
         else:
@@ -287,17 +319,21 @@ class ManticoreEVM(Manticore):
         state.context['processed'] = True
         with self.locked_context('seth') as context:
             ty, caller, address, value, data = context['_pending_transaction']
-
+            txnum = len(state.context['tx'])
         #Replace any none by symbolic values
         if value is None:
-            value = state.new_symbolic_value(256, label='value')
+            value = state.new_symbolic_value(256, label='tx%d_value'%txnum)
         if isinstance (data, tuple):
             if any( x is None for x in data):
-                symbolic_data = state.new_symbolic_buffer(label='data', nbytes=len(data))
+                symbolic_data = state.new_symbolic_buffer(label='tx%d_data'%txnum, nbytes=len(data))
                 for i in range(len(data)):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
                 data = symbolic_data
+
+        state.context['tx'].append((ty, caller, address, value, data))
+
+
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value)
         else:
@@ -311,19 +347,24 @@ class ManticoreEVM(Manticore):
         with self.locked_context('coverage', set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
 
+    def did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
+        state.context.setdefault('seth.trace',[]).append((state.platform.current.address, pc))
+
     def did_read_code(self, state, offset, size):
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset+size):
                 code_data.add((state.platform.current.address, i))
 
 
-    def report(self, state_id, ty=None):
+    def last_return(self, state_id=-1):
         if state_id == -1:
             state = self.initial_state
         else:
             state = self._executor._workspace.load_state(state_id, delete=False)
-        e = state.context['last_exception']
-        world = state.platform
+        return state.world.last_return
+
+
+    def report(self, state_id, ty=None):
         def compare_buffers(a, b):
             if len(a) != len(b):
                 return False
@@ -334,11 +375,53 @@ class ManticoreEVM(Manticore):
                     return False
             return cond
 
+        if state_id == -1:
+            state = self.initial_state
+        else:
+            state = self._executor._workspace.load_state(state_id, delete=False)
+
+        world = state.platform
+        trace = state.context['seth.trace']
+        last_pc = trace[-1][1]
+        last_address = trace[-1][0]
+        try:
+            md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes= self.context['seth']['metadata'][last_address]
+        except:
+            md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None,None,None,None,None,None 
+        runtime_bytecode = world.storage[last_address]['code']
+
+
+        e = state.context['last_exception']
         if ty is not None:
             if str(e) != ty:
                 return
         print "="*20
-        print "REPORT:", e, "\n"
+        print "REPORT:", e, 
+
+
+        try:
+            asm = list(evm.EVMDecoder.decode_all(runtime_bytecode[:-9-33-2]))
+            asm_offset = 0
+            pos = 0
+            source_pos = md_metadata_runtime[pos]
+            for i in asm:
+                if len(md_metadata_runtime[pos]):
+                    source_pos = md_metadata_runtime[pos]
+                if asm_offset == last_pc:
+                    break
+                asm_offset += i.size
+                pos +=1
+
+            beg, size = map(int, source_pos.split(':'))
+
+            print " at:"
+            nl = md_source_code.count('\n')
+            snippet = md_source_code[beg:beg+size]
+            for l in snippet.split('\n'):
+                print '    ',nl,'  ', l
+                nl+=1
+        except:
+            print
 
         print "LOGS:"
         for address, memlog, topics in state.platform.logs:
@@ -364,6 +447,52 @@ class ManticoreEVM(Manticore):
                 print e
                 print  "\t", address,  repr(memlog), topics
 
+        tx = state.context['tx']
+        def x(expr):
+            if issymbolic(expr):
+                res = state.solve_one(expr)
+                if isinstance(expr, Array):
+                    state.constrain(compare_buffers(expr, res))
+                else:
+                    state.constrain(expr == res)
+                expr=res
+            return expr
+        tx_num = 0
+        for ty, caller, address, value, data in tx:
+            tx_num += 1
+            def consume_type(ty, data, offset):
+                if ty == u'uint256':
+                    return '0x'+data[offset:offset+32*2], offset+32*2
+                else:
+                    print "<",ty,">"
+                    raise NotImplemented
+            print "TRANSACTION ", tx_num, '-', ty
+            print '\t From: 0x%x'%x(caller)
+            print '\t To: 0x%x'%x(address)
+            print '\t Value: %d'%x(value)
+            xdata = x(data).encode('hex')
+            print '\t Data:', xdata
+            if ty == 'CALL':
+                print '\t Function: ', 
+                done = False
+                rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
+                try:
+                    signature = rhashes[xdata[:8]]
+                    done = True
+                    func_name = signature.split('(')[0]
+                    print func_name,'(',
+                    types = signature.split('(')[1][:-1].split(',')
+                    off = 8
+                    for ty in types:
+                        if off != 8:
+                            print ',',
+                        val, off = consume_type(ty,xdata,off)
+                        print val,
+                    print ')'
+                except Exception,e:
+                    print xdata   
+
+        '''
         #print state.constraints
         print "INPUT SYMBOLS"
         for expr in state.input_symbols:
@@ -377,7 +506,7 @@ class ManticoreEVM(Manticore):
                 print "\t %s: %s"%( expr.name, res.encode('hex'))
             except:
                 print "\t", expr.name+':',  res
-
+        '''
         print "BALANCES"
         for address, account in world.storage.items():
             if isinstance(account['balance'], Constant):
@@ -395,6 +524,7 @@ class ManticoreEVM(Manticore):
 
 
     def coverage(self, account_address):
+        account_address = int(account_address)
         #This will just pick one of the running states.
         #This assumes the code and the accounts are the same in all versions of the world
         world = self.get_world(self.running_state_ids[0])
@@ -411,15 +541,17 @@ class ManticoreEVM(Manticore):
             UNDERLINE = '\033[4m'
 
 
-        assert  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20'
-        assert  ''.join(runtime_bytecode[-2:]) =='\x00\x29'
+        end = None
+        if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and  ''.join(runtime_bytecode[-2:]) =='\x00\x29':
+            end = -9-33-2
 
 
         output = ''
         offset = 0
         count = 0
         total = 0
-        for i in evm.EVMDecoder.decode_all(runtime_bytecode[:-9-33-2]) :
+        for i in evm.EVMDecoder.decode_all(runtime_bytecode[:end]) :
             
             if (account_address, offset) in seen:
                 output += bcolors.OKGREEN

@@ -103,6 +103,34 @@ class EVMMemory(object):
         else:
             self.write(index, [value])
 
+    def __delitem__(self, index):
+        def delete(offset):
+            if offset in self.memory:
+                del self._memory[offset]
+            if offset in self._symbol:
+                del self._symbols[offset]
+
+        if isinstance(index, slice):
+            for offset in xrange(index.start, index.end):
+                delete(offset)
+        else:
+            delete(index)
+
+    def __contains__(self, offset):
+        return offset in self._memory or \
+               offset in self._symbols
+
+    def get(self, offset, default=0):
+        if offset not in self:
+            return default
+        return self[offset]
+         
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            size = self._get_size(index)
+            return self.read(index.start, size)
+        else:
+            return self.read(index, 1)[0]
 
     def __repr__(self):
         return self.__str__()
@@ -1207,7 +1235,7 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
-        return self.global_storage[self.address]['storage'][offset]
+        return self.global_storage[self.address]['storage'].get(offset,0)
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
@@ -1551,7 +1579,7 @@ class EVMWorld(Platform):
         except Return as ex:
             self.RETURN(ex.data)
         except Revert as ex:
-            self.REVERT()
+            self.REVERT(ex.data)
         except SelfDestruct as ex:
             self.SELFDESTRUCT(ex.to)
         except Sha3 as ex:
@@ -1709,6 +1737,7 @@ class EVMWorld(Platform):
         prev_vm = self._pop() #current VM changed!
         if self.depth == 0:
             self.last_return=data
+            self.last_pc = prev_vm.pc
             raise TerminateState("RETURN", testcase=True)
 
 
@@ -1730,6 +1759,7 @@ class EVMWorld(Platform):
     def STOP(self):
         prev_vm = self._pop(rollback=False)
         if self.depth == 0:
+            self.last_pc = prev_vm.pc
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
         self.current._push(1)
@@ -1744,6 +1774,7 @@ class EVMWorld(Platform):
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
+            self.last_pc = prev_vm.pc
             raise TerminateState("THROW", testcase=True)
 
         self.current.last_exception = None
@@ -1751,13 +1782,15 @@ class EVMWorld(Platform):
         #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 
-    def REVERT(self):
+    def REVERT(self, data):
         prev_vm = self._pop(rollback=True)
         #revert balance on CALL fail
         self.storage[prev_vm.caller]['balance'] += prev_vm.value
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
+            self.last_return=data
+            self.last_pc = prev_vm.pc
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
@@ -1773,8 +1806,10 @@ class EVMWorld(Platform):
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
         self.suicide.add(address)
-        self._pop(rollback=False)
+        prev_vm = self._pop(rollback=False)
         if self.depth == 0:
+            self.last_pc = prev_vm.pc
+            self.last_return=data
             raise TerminateState("SELFDESTRUCT", testcase=True)
 
     def HASH(self, data):
