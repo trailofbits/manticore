@@ -86,15 +86,25 @@ class StateTest(unittest.TestCase):
 
     def test_output(self):
         out = ManticoreOutput('mem:')
-        out.save_testcase(self.state, 'saving state')
-        keys = [x[14:] for x in out._store._data.keys()]
+        name = 'mytest'
+        message = 'custom message'
+        out.save_testcase(self.state, name, message)
+        workspace = out._store._data
+
+        # Make sure names are constructed correctly
+        for entry, data in workspace.items():
+            self.assertTrue(entry.startswith(name))
+            if 'messages' in entry:
+                self.assertTrue(message in data)
+
+        keys = [x.split('.')[1] for x in workspace.keys()]
+
+        for key in self.state.platform.generate_workspace_files():
+            self.assertIn(key, keys)
 
         # Make sure we log everything we should be logging
         self.assertIn('smt', keys)
         self.assertIn('trace', keys)
-        self.assertIn('syscalls', keys)
-        self.assertIn('stdout', keys)
-        self.assertIn('stdin', keys)
         self.assertIn('messages', keys)
         self.assertIn('txt', keys)
         self.assertIn('pkl', keys)

@@ -1,4 +1,4 @@
-
+import collections
 from ..core.smtlib import Expression
 
 def issymbolic(value):
@@ -40,3 +40,7 @@ class memoized(object):
    def __get__(self, obj, objtype):
       '''Support instance methods.'''
       return functools.partial(self.__call__, obj)
+
+
+def is_binja_disassembler(disasm):
+    return disasm == "binja-il"

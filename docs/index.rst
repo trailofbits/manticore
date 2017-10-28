@@ -9,6 +9,7 @@ Manticore is a prototyping tool for dynamic binary analysis, with support for sy
 
    api
    models
+   gotchas
 
 
 Indices and tables
