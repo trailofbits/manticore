@@ -96,7 +96,8 @@ class UnicornEmulator(object):
         for index, m in enumerate(self.mem_map):
             size = self.mem_map[m][0]
             print("Reading map %s (%s kb)" % (index, size / 1024))
-            map_bytes = self._cpu.read_bytes(m, size)
+            # map_bytes = self._cpu.read_bytes(m, size)
+            map_bytes = self._cpu._raw_read(m,size)
             print("Writing map %s" % index)
             self._emu.mem_write(m, ''.join(map_bytes))
         print("Unicorn init complete")
@@ -168,7 +169,7 @@ class UnicornEmulator(object):
         assert access in (UC_MEM_WRITE, UC_MEM_READ, UC_MEM_FETCH)
 
         if access == UC_MEM_WRITE:
-            print("Writing %s bytes to %02x: %02x" % (size, address, value))
+            # print("Writing %s bytes to %02x: %02x" % (size, address, value))
             self._cpu.write_int(address, value, size*8)
 
         # If client code is attempting to read a value, we need to bring it
@@ -338,14 +339,16 @@ class UnicornEmulator(object):
 
     def write_back_memory(self, where, expr, size):
         if issymbolic(expr):
-            print("Concretizing memory")
+            print("Concretizing memory. Original Contents:")
+            data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
+            print("%02x, %s" % (where, data))
             from ..core.memory import ConcretizeMemory
             raise ConcretizeMemory(self._cpu.memory, where, size, policy='ONE')
             # data = '+'*(size/8)
         # else:
         data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
         # print(data)
-        # print("Writing back %s bits to %02x: %s" % (size, where, ''.join(data)))
+        print("Writing back %s bits to %02x: %s" % (size, where, ''.join(data)))
         if not self.in_map(where):
             self._create_emulated_mapping(self._emu, where)
         self._emu.mem_write(where, ''.join(data))
