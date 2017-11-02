@@ -2,7 +2,7 @@ import logging
 import inspect
 
 from ..core.memory import MemoryException, FileMap, AnonMap
-from ..core.smtlib import Operators
+from ..core.smtlib import Operators, solver
 
 from .helpers import issymbolic
 ######################################################################
@@ -18,6 +18,7 @@ from capstone.x86 import *
 
 import pprint as pp
 import struct
+from binascii import hexlify
 
 logger = logging.getLogger("EMULATOR")
 
@@ -55,7 +56,7 @@ class UnicornEmulator(object):
         self.reset()
         for base in self.mem_map:
             size, perms = self.mem_map[base]
-            print("About to map %s bytes from %02x to %02x" % (size, base, base + size))
+            # print("About to map %s bytes from %02x to %02x" % (size, base, base + size))
             self._emu.mem_map(base, size, perms)
 
         self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED,  self._hook_unmapped)
@@ -83,7 +84,7 @@ class UnicornEmulator(object):
             self.registers -= set(['YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15'])
             self.registers |= set(['XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'])
 
-        print("Setting initial register state")
+        # print("Setting initial register state")
         for reg in self.registers:
             val = self._cpu.read_register(reg)
             if issymbolic(val):
@@ -95,12 +96,9 @@ class UnicornEmulator(object):
         self.create_GDT()
         for index, m in enumerate(self.mem_map):
             size = self.mem_map[m][0]
-            print("Reading map %s (%s kb)" % (index, size / 1024))
-            # map_bytes = self._cpu.read_bytes(m, size)
             map_bytes = self._cpu._raw_read(m,size)
-            print("Writing map %s" % index)
             self._emu.mem_write(m, ''.join(map_bytes))
-        print("Unicorn init complete")
+        print("(U) Unicorn init complete")
 
     def reset(self):
         self._emu = self._unicorn()
@@ -145,7 +143,7 @@ class UnicornEmulator(object):
                 permissions |= UC_PROT_WRITE
             if 'x' in m.perms:
                 permissions |= UC_PROT_EXEC
-            print("About to map %s bytes from %02x to %02x" % (len(m), m.start, m.start + len(m)))
+            # print("(U) Mapping %s kb from %s to %s" % (len(m) / 1024, hex(m.start), hex(m.start+len(m))))
             uc.mem_map(m.start, len(m), permissions)
 
             self.mem_map[m.start] = (len(m), permissions)
@@ -197,7 +195,7 @@ class UnicornEmulator(object):
         '''
 
         try:
-            print("Mapping memory at " + hex(address))
+            # print("Mapping memory at " + hex(address))
             m = self._create_emulated_mapping(uc, address)
         except MemoryException as e:
             print("Failed to map memory")
@@ -333,22 +331,25 @@ class UnicornEmulator(object):
                 raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
                                          policy='ONE')
             val = self._emu.reg_read(self._to_unicorn_id(reg))
-            if val != oldval:
-                print("(M) %s: %s -> %s" % (reg, oldval, val))
+            # if val != oldval:
+            #     print("(M) %s: %s -> %s" % (reg, oldval, val))
             self._cpu.write_register(reg, val)
 
     def write_back_memory(self, where, expr, size):
         if issymbolic(expr):
-            print("Concretizing memory. Original Contents:")
+            print("Concretizing memory: ")
+            # print("Constraint set: %s" % self._cpu.memory.constraints)
             data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
-            print("%02x, %s" % (where, data))
-            from ..core.memory import ConcretizeMemory
-            raise ConcretizeMemory(self._cpu.memory, where, size, policy='ONE')
-            # data = '+'*(size/8)
-        # else:
-        data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
-        # print(data)
-        print("Writing back %s bits to %02x: %s" % (size, where, ''.join(data)))
+            concrete_data = []
+            for c in data:
+                if issymbolic(c):
+                    c = chr(solver.get_value(self._cpu.memory.constraints, c))
+                    print("Solved: %s" % hexlify(c))
+                concrete_data.append(c)
+            data = concrete_data
+        else:
+            data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
+        # print("Writing back %s bits to %02x: %s" % (size, where, ''.join(data)))
         if not self.in_map(where):
             self._create_emulated_mapping(self._emu, where)
         self._emu.mem_write(where, ''.join(data))
@@ -358,12 +359,12 @@ class UnicornEmulator(object):
             self._emu.reg_write(self._to_unicorn_id('EFLAGS'), self._cpu.read_register('EFLAGS'))
             return
         oldval = self._emu.reg_read(self._to_unicorn_id(reg))
-        if oldval != val:
-            print("(U) %s: %s -> %s" % (reg, oldval, val))
+        # if oldval != val:
+            # print("(U) %s: %s -> %s" % (reg, oldval, val))
         self._emu.reg_write(self._to_unicorn_id(reg), val)
 
     def update_segment(self, selector, base, size, perms):
-        print("(U) Updating selector %s to 0x%02x (%s bytes) (%s)" % (selector, base, size, perms))
+        # print("(U) Updating selector %s to 0x%02x (%s bytes) (%s)" % (selector, base, size, perms))
         dest = self.gdt_base + (selector*8)
         entry = self.make_table_entry(base, size)
         self._emu.mem_write(dest, entry)

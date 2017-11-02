@@ -620,7 +620,6 @@ class AMD64Operand(Operand):
         address = 0
         if self.mem.segment is not None:
             seg = self.mem.segment
-            print("Accessing %s" % seg)
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
             address += base #todo check limits and perms
         else:

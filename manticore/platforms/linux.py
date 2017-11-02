@@ -1107,7 +1107,7 @@ class Linux(Platform):
 
     def sys_read(self, fd, buf, count):
 
-        print("Reading %s bytes from FD %s into %02x" % (count, fd, buf))
+        print("(M) Reading %s bytes from FD %s into %02x" % (count, fd, buf))
         data = ''
         if count != 0:
             # TODO check count bytes from buf

@@ -84,7 +84,7 @@ class Map(object):
         :param perms: the access permissions of the map (rwx).
         '''
         assert isinstance(start, (int, long)) and start >= 0, 'Invalid start address'
-        print("(M) Mapping %s bytes from %s to %s" % (size, hex(start), hex(start+size)))
+        # print("(M) Mapping %s kb from %s to %s" % (size / 1024, hex(start), hex(start+size)))
         assert isinstance(size, (int, long)) and size > 0, 'Invalid end address'
 
         super(Map, self).__init__()
