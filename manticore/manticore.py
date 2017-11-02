@@ -573,7 +573,7 @@ class Manticore(object):
 
     def _start_run(self):
         assert not self.running
-        #FIXME this will be self.publish 
+        #FIXME this will be self.publish
         self._executor.publish('will_start_run', self._initial_state)
         self.enqueue(self._initial_state)
         self._initial_state = None
@@ -588,7 +588,7 @@ class Manticore(object):
 
         if profiling:
             self._produce_profiling_data()
-        #FIXME this will be self.publish 
+        #FIXME this will be self.publish
         self._executor.publish('did_finish_run')
 
     def run(self, procs=1, timeout=0, should_profile=False):
@@ -651,8 +651,8 @@ class Manticore(object):
             if len(symbols) == 0:
                 continue
 
-            return symbols[0].entry['st_value']
 
+            return symbols[0].entry['st_value']
 
     @property
     def coverage_file(self):

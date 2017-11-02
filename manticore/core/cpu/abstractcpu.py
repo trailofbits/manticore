@@ -756,30 +756,26 @@ class Cpu(Eventful):
         name = self.canonicalize_instruction_name(insn)
 
         def fallback_to_emulate(*operands):
-            text_bytes = ' '.join('%02x'%x for x in insn.bytes)
-            # logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-            #             insn.address, text_bytes, insn.mnemonic, insn.op_str)
-
-            if 'SYSCALL' in name:
-                self.emu.sync_unicorn_to_manticore()
-                implementation = getattr(self, name)
-                implementation(*insn.operands)
-            else:
-                self.publish('will_emulate_instruction', insn)
-                self.emulate(insn)
-                self.publish('did_emulate_instruction', insn)
+            self.publish('will_emulate_instruction', insn)
+            self.emulate(insn)
+            self.publish('did_emulate_instruction', insn)
 
         def determine_implementation(instruction):
             implementation = fallback_to_emulate
+
             for op in instruction.operands:
                 if op.mem.segment is not None and 'FS' in op.mem.segment:
                     print("(U) Falling back to Manticore for %s" % self.render_instruction(instruction))
                     implementation = getattr(self, name, fallback_to_emulate)
                     self._non_unicorn_instrs += 1
+            
+            if 'SYSCALL' in name:
+                self.emu.sync_unicorn_to_manticore()
+                implementation = getattr(self, name, fallback_to_emulate)
+                self._non_unicorn_instrs += 1
 
             return implementation
 
-        #implementation = getattr(self, name, fallback_to_emulate)
         implementation = determine_implementation(insn)
         if logger.level == logging.DEBUG :
             logger.debug(self.render_instruction(insn) + " (%s)" % insn.size)
