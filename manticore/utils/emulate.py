@@ -93,7 +93,10 @@ class UnicornEmulator(object):
                                          policy='ONE')
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
-        self.create_GDT()
+        self.scratch_mem = 0x1000
+        self._emu.mem_map(self.scratch_mem, 4096)
+
+        # self.create_GDT()
         for index, m in enumerate(self.mem_map):
             size = self.mem_map[m][0]
             map_bytes = self._cpu._raw_read(m,size)
@@ -365,9 +368,11 @@ class UnicornEmulator(object):
 
     def update_segment(self, selector, base, size, perms):
         # print("(U) Updating selector %s to 0x%02x (%s bytes) (%s)" % (selector, base, size, perms))
-        dest = self.gdt_base + (selector*8)
-        entry = self.make_table_entry(base, size)
-        self._emu.mem_write(dest, entry)
+        # dest = self.gdt_base + (selector*8)
+        # entry = self.make_table_entry(base, size)
+        # self._emu.mem_write(dest, entry)
+        if selector == 99:
+            self.set_fs(base)
 
 
     def make_table_entry(self, base, limit, access_byte=0xff, flags=0xf0):
@@ -387,3 +392,38 @@ class UnicornEmulator(object):
 
         self._emu.mem_map(base, size)
         self._emu.reg_write(UC_X86_REG_GDTR, (0, base, size, 0))
+
+
+    def set_msr(self, msr, value):
+        '''
+        set the given model-specific register (MSR) to the given value.
+        this will clobber some memory at the given scratch address, as it emits some code.
+        '''
+        # save clobbered registers
+        orax = self._emu.reg_read(UC_X86_REG_RAX)
+        ordx = self._emu.reg_read(UC_X86_REG_RDX)
+        orcx = self._emu.reg_read(UC_X86_REG_RCX)
+        orip = self._emu.reg_read(UC_X86_REG_RIP)
+    
+        # x86: wrmsr
+        buf = '\x0f\x30'
+        self._emu.mem_write(self.scratch_mem, buf)
+        self._emu.reg_write(UC_X86_REG_RAX, value & 0xFFFFFFFF)
+        self._emu.reg_write(UC_X86_REG_RDX, (value >> 32) & 0xFFFFFFFF)
+        self._emu.reg_write(UC_X86_REG_RCX, msr & 0xFFFFFFFF)
+        self._emu.emu_start(self.scratch_mem, self.scratch_mem+len(buf), count=1)
+    
+        # restore clobbered registers
+        self._emu.reg_write(UC_X86_REG_RAX, orax)
+        self._emu.reg_write(UC_X86_REG_RDX, ordx)
+        self._emu.reg_write(UC_X86_REG_RCX, orcx)
+        self._emu.reg_write(UC_X86_REG_RIP, orip)
+    
+    
+    def set_fs(self, addr):
+        '''
+        set the FS.base hidden descriptor-register field to the given address.
+        this enables referencing the fs segment on x86-64.
+        '''
+        FSMSR = 0xC0000100
+        return self.set_msr(FSMSR, addr)
