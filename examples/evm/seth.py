@@ -11,7 +11,9 @@ import json
 
 
 class EVMContract(object):
-    def __init__(self, address, seth=None):
+
+    def __init__(self, address, seth=None, default_caller=None):
+        self._default_caller = default_caller
         self._seth=seth
         self._address=address
         self._hashes = {}
@@ -42,6 +44,8 @@ class EVMContract(object):
                 tx_data = self._seth.make_function_call(str(self._hashes[name][0]),*args)
                 if caller is not None:
                     caller = int(caller)
+                else:
+                    caller = self._default_caller
                 self._seth.transaction(caller=caller,
                                         address=self._address,
                                         value=value,
@@ -70,9 +74,9 @@ class ManticoreEVM(Manticore):
 
     @staticmethod
     def serialize(value):
-        if isinstance(value, str):
+        if isinstance(value, (str,tuple)):
             return ManticoreEVM.serialize_string(value)
-        if isinstance(value, list):
+        if isinstance(value, (list)):
             return ManticoreEVM.serialize_array(value)
         if isinstance(value, (int, long)):
             return ManticoreEVM.serialize_uint(value)
@@ -94,8 +98,8 @@ class ManticoreEVM(Manticore):
 
     @staticmethod
     def serialize_string(value):
-        assert isinstance(value, str)
-        return ManticoreEVM.serialize_uint(len(value))+tuple(value + ('\x00'*(32-(len(value)%32))))
+        assert isinstance(value, (str,tuple))
+        return ManticoreEVM.serialize_uint(len(value)) + tuple(value) + tuple('\x00'*(32-(len(value)%32)))
 
     @staticmethod
     def serialize_array(value):
@@ -112,14 +116,15 @@ class ManticoreEVM(Manticore):
         return s.hexdigest()[:8].decode('hex')
 
     @staticmethod
-    def make_function_call(method_name, *args):
-        function_id = ManticoreEVM.make_function_id(method_name)
-        def check_bitsize(value, size):
-            if isinstance(value, BitVec):
-                return value.size==size
-            return (value & ~((1<<size)-1)) == 0
-        assert len(function_id) == 4
-        result = [tuple(function_id)]
+    def make_function_arguments(*args):
+        
+        if len(args) == 0:
+            return () 
+        args = list(args)
+        for i in range(len(args)):
+            if isinstance(args[i], EVMContract):
+                 args[i] = int(args[i])
+        result = []
         dynamic_args = []
         dynamic_offset = 32*len(args)
         for arg in args:
@@ -134,6 +139,19 @@ class ManticoreEVM(Manticore):
 
         for arg in dynamic_args:
             result.append(arg)
+
+        return reduce(lambda x,y: x+y, result)
+        
+    @staticmethod
+    def make_function_call(method_name, *args):
+        function_id = ManticoreEVM.make_function_id(method_name)
+        def check_bitsize(value, size):
+            if isinstance(value, BitVec):
+                return value.size==size
+            return (value & ~((1<<size)-1)) == 0
+        assert len(function_id) == 4
+        result = [tuple(function_id)]
+        result.append(ManticoreEVM.make_function_arguments(*args))
         return reduce(lambda x,y: x+y, result)
 
     @staticmethod
@@ -209,32 +227,43 @@ class ManticoreEVM(Manticore):
         state = self._executor._workspace.load_state(state_id, delete=False)
         return state.platform
 
+    def get_balance(self, address):
+        if isinstance(address, EVMContract):
+            address = int(address)
+        return self.get_world().storage[address]['balance']
 
-    def solidity_create_contract(self, source_code, owner, balance=0):
+    def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
         name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self.compile(source_code)
-        address = self.create_contract(owner=owner, balance=balance, init=init_bytecode)
+        address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ManticoreEVM.make_function_arguments(*args)))
         self.context['seth']['metadata'][address] = name, source_code, init_bytecode, metadata, metadata_runtime, hashes
-        return EVMContract(address, self)
+        return EVMContract(address, self, default_caller=owner)
 
     def create_contract(self, owner, balance=0, init=None, address=None):
         ''' Only available when there is a single state of the world'''
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is None
         assert init is not None
-        address = self.world._new_address()
+        if address is None:
+            address = self.world._new_address()
         self.context['seth']['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
         self.run()
 
         return address
 
-    def create_account(self, balance=0, address=None):
+    def create_account(self, balance=0, address=None, code=''):
         ''' Only available when there is a single state of the world'''
         with self.locked_context('seth') as context:
            assert context['_pending_transaction'] is None
-        return self.world.create_account( address, balance, code='', storage=None)
+        return self.world.create_account( address, balance, code=code, storage=None)
 
     def transaction(self, caller, address, value, data):
+        if isinstance(address, EVMContract):
+            address = int(address)
+        if isinstance(caller, EVMContract):
+            caller = int(caller)
+
+
         if isinstance(data, self.SByte):
             data = (None,)*data.size
         with self.locked_context('seth') as context:
@@ -256,12 +285,11 @@ class ManticoreEVM(Manticore):
     
             context['_saved_states'] = []
 
-        #A callback will use _pending_transaction and 
-        #issue the transaction in each state
+        #A callback will use _pending_transaction and issue the transaction 
+        #in each state (see load_state_callback)
         result = super(ManticoreEVM, self).run(**kwargs)
 
         with self.locked_context('seth') as context:
-
             if len(context['_saved_states'])==1:
                 self._initial_state = self._executor._workspace.load_state(context['_saved_states'][0], delete=True)
                 context['_saved_states'] = []
@@ -330,7 +358,6 @@ class ManticoreEVM(Manticore):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
                 data = symbolic_data
-
         state.context['tx'].append((ty, caller, address, value, data))
 
 
@@ -343,6 +370,7 @@ class ManticoreEVM(Manticore):
     def will_execute_instruction_callback(self, state, instruction):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
+        print  state.platform.current.pc, instruction
 
         with self.locked_context('coverage', set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
@@ -388,8 +416,12 @@ class ManticoreEVM(Manticore):
             md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes= self.context['seth']['metadata'][last_address]
         except:
             md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None,None,None,None,None,None 
-        runtime_bytecode = world.storage[last_address]['code']
 
+
+        try:
+            runtime_bytecode = world.storage[last_address]['code']
+        except:
+            runtime_bytecode = ''   
 
         e = state.context['last_exception']
         if ty is not None:
@@ -397,7 +429,6 @@ class ManticoreEVM(Manticore):
                 return
         print "="*20
         print "REPORT:", e, 
-
 
         try:
             asm = list(evm.EVMDecoder.decode_all(runtime_bytecode[:-9-33-2]))
@@ -423,7 +454,23 @@ class ManticoreEVM(Manticore):
         except:
             print
 
-        print "LOGS:"
+        print "BALANCES"
+        for address, account in world.storage.items():
+            if isinstance(account['balance'], Constant):
+                account['balance'] = account['balance'].value
+
+            if issymbolic(account['balance']):
+                m, M = solver.minmax(world.constraints, arithmetic_simplifier(account['balance']))
+                if m == M:
+                    print "\t", hex(address), M
+                else:
+                    print "\t", hex(address), "range:[%x, %x]"%(m,M)                
+            else:
+                print "\t", hex(address), account['balance'],"wei"
+
+
+        if state.platform.logs:
+            print "LOGS:"
         for address, memlog, topics in state.platform.logs:
             try:
                 res = memlog
@@ -447,53 +494,6 @@ class ManticoreEVM(Manticore):
                 print e
                 print  "\t", address,  repr(memlog), topics
 
-        tx = state.context['tx']
-        def x(expr):
-            if issymbolic(expr):
-                res = state.solve_one(expr)
-                if isinstance(expr, Array):
-                    state.constrain(compare_buffers(expr, res))
-                else:
-                    state.constrain(expr == res)
-                expr=res
-            return expr
-        tx_num = 0
-        for ty, caller, address, value, data in tx:
-            tx_num += 1
-            def consume_type(ty, data, offset):
-                if ty == u'uint256':
-                    return '0x'+data[offset:offset+32*2], offset+32*2
-                else:
-                    print "<",ty,">"
-                    raise NotImplemented
-            print "TRANSACTION ", tx_num, '-', ty
-            print '\t From: 0x%x'%x(caller)
-            print '\t To: 0x%x'%x(address)
-            print '\t Value: %d'%x(value)
-            xdata = x(data).encode('hex')
-            print '\t Data:', xdata
-            if ty == 'CALL':
-                print '\t Function: ', 
-                done = False
-                rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
-                try:
-                    signature = rhashes[xdata[:8]]
-                    done = True
-                    func_name = signature.split('(')[0]
-                    print func_name,'(',
-                    types = signature.split('(')[1][:-1].split(',')
-                    off = 8
-                    for ty in types:
-                        if off != 8:
-                            print ',',
-                        val, off = consume_type(ty,xdata,off)
-                        print val,
-                    print ')'
-                except Exception,e:
-                    print xdata   
-
-        '''
-        #print state.constraints
         print "INPUT SYMBOLS"
         for expr in state.input_symbols:
             res = state.solve_one(expr)
@@ -506,20 +506,78 @@ class ManticoreEVM(Manticore):
                 print "\t %s: %s"%( expr.name, res.encode('hex'))
             except:
                 print "\t", expr.name+':',  res
-        '''
-        print "BALANCES"
-        for address, account in world.storage.items():
-            if isinstance(account['balance'], Constant):
-                account['balance'] = account['balance'].value
+        
+        #print "Constraints:"
+        #print state.constraints
 
-            if issymbolic(account['balance']):
-                m, M = solver.minmax(world.constraints, arithmetic_simplifier(account['balance']))
-                if m == M:
-                    print "\t", hex(address), M
+        tx = state.context['tx']
+        def x(expr):
+            if issymbolic(expr):
+                res = state.solve_one(expr)
+                if isinstance(expr, Array):
+                    state.constrain(compare_buffers(expr, res))
                 else:
-                    print "\t", hex(address), "range:[%x, %x]"%(m,M)                
-            else:
-                print "\t", hex(address), account['balance']
+                    state.constrain(expr == res)
+                expr=res
+            if isinstance(expr, tuple):
+                expr = ''.join(expr)
+            return expr
+        tx_num = 0
+        for ty, caller, address, value, data in tx:
+            tx_num += 1
+            def consume_type(ty, data, offset):
+                if ty in ( u'uint256', u'address'):
+                    return '0x'+data[offset:offset+64], offset+32*2
+                if ty == u'int256':
+                    value = int('0x'+data[offset:offset+64],16)
+                    mask = 2**(num_bits - 1)
+                    value = -(value & mask) + (value & ~mask)
+                    return value, offset+32*2
+                elif ty == u'':
+                    return '', offset
+                elif ty in (u'bytes', u'string'):
+                    dyn_offset = (4 + int('0x'+data[offset:offset+64],16))*2
+                    size = int('0x'+data[dyn_offset:dyn_offset+64],16)
+                    return data[dyn_offset+64:dyn_offset+64+size*2],offset+8
+                else:
+                    print "<",ty,">"
+                    raise NotImplemented
+
+            print "TRANSACTION ", tx_num, '-', ty
+            try:
+                md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes= self.context['seth']['metadata'][address]
+            except:
+                md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None,None,None,None,None,None 
+
+
+            print '\t From: 0x%x'%x(caller)
+            print '\t To: 0x%x'%x(address)
+            print '\t Value: %d wei'%x(value)
+            xdata = x(data).encode('hex')
+            print '\t Data:', xdata
+            if ty == 'CALL':
+                print '\t Function: ', 
+                done = False
+                rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
+                try:
+                    #print "A", xdata[:8], rhashes
+                    signature = rhashes.get(xdata[:8], '{fallback}()')
+                    done = True
+                    func_name = signature.split('(')[0]
+                    print func_name,'(',
+                    types = signature.split('(')[1][:-1].split(',')
+                    off = 8
+                    for ty in types:
+                        if off != 8:
+                            print ',',
+                        val, off = consume_type(ty, xdata, off)
+                        print val,
+                    print ')'
+                except Exception,e:
+                    print e, xdata   
+
+        
+        
             
 
 

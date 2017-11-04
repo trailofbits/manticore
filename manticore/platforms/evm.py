@@ -1122,7 +1122,8 @@ class EVM(Eventful):
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
         GCOPY = 3             # cost to copy one 32 byte word
-        self._consume(GCOPY * ceil32(size) // 32)
+        size = arithmetic_simplifier(size)
+        #self._consume(GCOPY * ceil32(size) // 32)
 
 
         #FIXME put zero if not enough data
@@ -1676,6 +1677,7 @@ class EVMWorld(Platform):
             caller = origin
         if origin is None and caller is not None:
             origin = caller
+
         if header is None:
             header = {'timestamp':1}
         if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
@@ -1706,6 +1708,22 @@ class EVMWorld(Platform):
         assert self.current is None or self.current.last_exception is not None
 
         ty, address, origin, price, data, caller, value, bytecode, header = self._pending_transaction
+
+
+        if issymbolic(self.storage[caller]['balance']) or issymbolic(value):
+            res = solver.get_all_values(self._constraints, self.storage[caller]['balance'] < value)
+            if set(res) == set([True, False]): 
+                raise Concretize('Forking on available funds',
+                                 expression = self.storage[caller]['balance'] < value,
+                                 setstate=lambda a,b: None,
+                                 policy='ALL')
+            if set(res) == set([False]): 
+                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+        else:
+            if self.storage[caller]['balance'] < value:
+                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+
+
         self.storage[caller]['balance'] -= value
         self.storage[address]['balance'] += value
 
@@ -1726,7 +1744,7 @@ class EVMWorld(Platform):
         origin = self.current.origin
         caller = self.current.address
         price = self.current.price
-        depth = self.depth+1
+        depth = self.depth + 1
         bytecode = self.storage[to]['code']
         header = {'timestamp' :1}
         self.transaction(address, origin, price, data, caller, value, header)
@@ -1809,7 +1827,6 @@ class EVMWorld(Platform):
         prev_vm = self._pop(rollback=False)
         if self.depth == 0:
             self.last_pc = prev_vm.pc
-            self.last_return=data
             raise TerminateState("SELFDESTRUCT", testcase=True)
 
     def HASH(self, data):
