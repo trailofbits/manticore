@@ -763,9 +763,8 @@ class Cpu(Eventful):
         def determine_implementation(instruction):
             implementation = fallback_to_emulate
 
-            for op in instruction.operands:
-                if op.mem.segment is not None and 'FS' in op.mem.segment:
-                    pass
+            # for op in instruction.operands:
+            #     if op.mem.segment is not None and 'FS' in op.mem.segment:
                     # print("(U) Falling back to Manticore for %s" % self.render_instruction(instruction))
                     # implementation = getattr(self, name, fallback_to_emulate)
                     # self._non_unicorn_instrs += 1

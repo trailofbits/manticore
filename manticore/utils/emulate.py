@@ -96,7 +96,6 @@ class UnicornEmulator(object):
         self.scratch_mem = 0x1000
         self._emu.mem_map(self.scratch_mem, 4096)
 
-        # self.create_GDT()
         for index, m in enumerate(self.mem_map):
             size = self.mem_map[m][0]
             map_bytes = self._cpu._raw_read(m,size)
@@ -308,16 +307,9 @@ class UnicornEmulator(object):
                         register, self._cpu.read_register(register),
                         self._emu.reg_read(self._to_unicorn_id(register)) )
             logger.debug(">"*10)
-
-        # Bring back Unicorn registers to Manticore
-        for reg in self.registers:
-            val = self._emu.reg_read(self._to_unicorn_id(reg))
-            self._cpu.write_register(reg, val)
-
-        #Unicorn hack. On single step unicorn wont advance the PC register
-        # mu_pc = self.get_unicorn_pc()
-        # if saved_PC == mu_pc:
-        #     self._cpu.PC = saved_PC + instruction.size
+            
+        # self.sync_unicorn_to_manticore()
+        self._cpu.PC = self._emu.reg_read(self._to_unicorn_id('PC'))
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
@@ -328,14 +320,7 @@ class UnicornEmulator(object):
 
     def sync_unicorn_to_manticore(self):
         for reg in self.registers:
-            oldval = self._cpu.read_register(reg)
-            if issymbolic(oldval):
-                from ..core.cpu.abstractcpu import ConcretizeRegister
-                raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
-                                         policy='ONE')
             val = self._emu.reg_read(self._to_unicorn_id(reg))
-            # if val != oldval:
-            #     print("(M) %s: %s -> %s" % (reg, oldval, val))
             self._cpu.write_register(reg, val)
 
     def write_back_memory(self, where, expr, size):
@@ -373,26 +358,6 @@ class UnicornEmulator(object):
         # self._emu.mem_write(dest, entry)
         if selector == 99:
             self.set_fs(base)
-
-
-    def make_table_entry(self, base, limit, access_byte=0xff, flags=0xf0):
-        # http://wiki.osdev.org/Global_Descriptor_Table#Structure
-        out = 0
-        out |= (limit & 0xffff)
-        out |= ((base & 0xffffff) << 16)
-        out |= ((access_byte & 0xff) << 40)
-        out |= (((limit >> 16) & 0xf) << 48)
-        out |= ((flags & 0xff) << 52)
-        out |= (((base >> 24) & 0xff) << 56)
-        return struct.pack('<Q', out)
-
-    def create_GDT(self, base=0x1000, size=8192):
-        self.gdt_base = base
-        self.gdt_size = size
-
-        self._emu.mem_map(base, size)
-        self._emu.reg_write(UC_X86_REG_GDTR, (0, base, size, 0))
-
 
     def set_msr(self, msr, value):
         '''
