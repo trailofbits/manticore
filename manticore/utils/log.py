@@ -37,11 +37,12 @@ def init_logging():
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(logfmt)
     handler.setFormatter(formatter)
-    for name in logging.getLogger().manager.loggerDict.keys():
+    for name in all_loggers:
         logger = logging.getLogger(name)
         if not name.startswith('manticore'):
-            next
+            continue
         logger.addHandler(handler)
+        logger.propagate = False
         logger.setLevel(logging.WARNING)
         logger.addFilter(ctxfilter)
         logger.setState = types.MethodType(loggerSetState, logger)
