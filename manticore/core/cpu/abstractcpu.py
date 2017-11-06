@@ -42,6 +42,12 @@ class InstructionNotImplementedError(CpuException):
     '''
     pass
 
+class InstructionEmulationError(CpuException):
+    '''
+    Exception raised when failing to emulate an instruction outside of Manticore.
+    '''
+    pass
+
 class DivideByZeroError(CpuException):
     ''' A division by zero '''
     pass
@@ -783,8 +789,8 @@ class Cpu(Eventful):
         emu = UnicornEmulator(self)
         try:
             emu.emulate(insn)
-        
-        #FIXME(pag): Catch `UcError`, e.g. executing a UD2 instruction.
+        except e:
+            raise InstructionEmulationError(str(e))
         finally:
             # We have been seeing occasional Unicorn issues with it not clearing
             # the backing unicorn instance. Saw fewer issues with the following
