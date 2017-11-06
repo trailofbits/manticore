@@ -22,7 +22,7 @@ from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput, Workspace
-from .platforms import linux, decree, windows, evm
+from .platforms import linux, decree, evm
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
@@ -102,48 +102,6 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
                                                           label='STDIN'))
     return initial_state
 
-
-def make_windows(args, programs, context, data, offset, maxsymb, workspace, size=None, buffer=None, **kwargs):
-    assert args.size is not None, "Need to specify buffer size"
-    assert args.buffer is not None, "Need to specify buffer base address"
-    logger.debug('Loading program %s (platform: Windows)', args.argv)
-    additional_context = None
-    if args.context:
-        with open(args.context, "r") as addl_context_file:
-            additional_context = cPickle.loads(addl_context_file.read())
-            logger.debug('Additional context loaded with contents {}'.format(additional_context)) #DEBUG
-
-    constraints = ConstraintSet()
-    platform = windows.SWindows(constraints, args.argv[0], additional_context, snapshot_folder=args.workspace)
-
-    #This will interpret the buffer specification written in INTEL ASM. (It may dereference pointers)
-    data_size = parse(args.size, platform.current.read_bytes, platform.current.read_register)
-    data_ptr  = parse(args.buffer, platform.current.read_bytes, platform.current.read_register)
-
-    logger.debug('Buffer at %x size %d bytes)', data_ptr, data_size)
-    buf_str = "".join(platform.current.read_bytes(data_ptr, data_size))
-    logger.debug('Original buffer: %s', buf_str.encode('hex'))
-
-    offset = args.offset
-    concrete_data = args.data.decode('hex')
-    assert data_size >= offset + len(concrete_data)
-    size = min(args.maxsymb, data_size - offset - len(concrete_data))
-    symb = constraints.new_array(name='RAWMSG', index_max=size)
-
-    platform.current.write_bytes(data_ptr + offset, concrete_data)
-    platform.current.write_bytes(data_ptr + offset + len(concrete_data), [symb[i] for i in xrange(size)] )
-
-    logger.debug('First %d bytes are left concrete', offset)
-    logger.debug('followed by %d bytes of concrete start', len(concrete_data))
-    hex_head = "".join(platform.current.read_bytes(data_ptr, offset+len(concrete_data)))
-    logger.debug('Hexdump head: %s', hex_head.encode('hex'))
-    logger.debug('Total symbolic characters inserted: %d', size)
-    logger.debug('followed by %d bytes of unmodified concrete bytes at end.', (data_size-offset-len(concrete_data))-size )
-    hex_tail = "".join(map(chr, platform.current.read_bytes(data_ptr+offset+len(concrete_data)+size, data_size-(offset+len(concrete_data)+size))))
-    logger.debug('Hexdump tail: %s', hex_tail.encode('hex'))
-    logger.info("Starting PC is: {:08x}".format(platform.current.PC))
-
-    return State(constraints, platform)
 
 def make_initial_state(binary_path, **kwargs):
     if 'disasm' in kwargs:
