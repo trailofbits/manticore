@@ -34,11 +34,14 @@ def init_logging():
     ctxfilter = ContextFilter()
     logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
               " %(message)s")
-    logging.basicConfig(format=logfmt, stream=sys.stdout, level=logging.ERROR)
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(logfmt)
+    handler.setFormatter(formatter)
     for name in logging.getLogger().manager.loggerDict.keys():
         logger = logging.getLogger(name)
         if not name.startswith('manticore'):
             next
+        logger.addHandler(handler)
         logger.setLevel(logging.WARNING)
         logger.addFilter(ctxfilter)
         logger.setState = types.MethodType(loggerSetState, logger)
