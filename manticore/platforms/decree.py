@@ -428,6 +428,7 @@ class Decree(Platform):
             return Decree.CGC_ENOMEM
         cpu.write_int(addr, result, 32)
         logger.info("ALLOCATE(%d, %s, 0x%08x) -> 0x%08x"%(length, perms, addr, result))
+        self.syscall_trace.append(("_allocate", -1, length))
         return 0
 
     def sys_random(self, cpu, buf, count, rnd_bytes):
@@ -458,6 +459,7 @@ class Decree(Platform):
                     return Decree.CGC_EFAULT
 
                 data = file("/dev/urandom","r").read(count)
+                self.syscall_trace.append(("_random", -1, data))
                 cpu.write_bytes(buf, data)
 
         # TODO check 4 bytes from rx_bytes
@@ -638,6 +640,7 @@ class Decree(Platform):
         #    return Decree.CGC_EINVAL
 
         cpu.memory.munmap(addr, size)
+        self.syscall_trace.append(("_deallocate", -1, size))
         return 0
 
     def sys_fdwait(self, cpu, nfds, readfds, writefds, timeout, readyfds):
@@ -719,6 +722,8 @@ class Decree(Platform):
         logger.info("FDWAIT: continuing. Some file is ready Readyfds: %08x", readyfds)
         if readyfds:
             cpu.write_int(readyfds, n, 32)
+
+        self.syscall_trace.append(("_fdwait", -1, None))
         return 0
 
     def int80(self, cpu):
@@ -1035,7 +1040,6 @@ class SDecree(Decree):
         if rnd_bytes:
             cpu.write_int(rnd_bytes, len(data), 32)
         logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf,count,rnd_bytes,len(data))
-        self.syscall_trace.append(("_random", -1, data))
         return 0
 
 
