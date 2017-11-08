@@ -370,7 +370,7 @@ class ManticoreEVM(Manticore):
     def will_execute_instruction_callback(self, state, instruction):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
-        print  state.platform.current.pc, instruction
+        print  state.platform.current
 
         with self.locked_context('coverage', set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
@@ -526,8 +526,10 @@ class ManticoreEVM(Manticore):
         for ty, caller, address, value, data in tx:
             tx_num += 1
             def consume_type(ty, data, offset):
-                if ty in ( u'uint256', u'address'):
+                if ty in u'uint256':
                     return '0x'+data[offset:offset+64], offset+32*2
+                if ty in u'address':
+                    return '0x'+data[offset+24:offset+64], offset+32*2
                 if ty == u'int256':
                     value = int('0x'+data[offset:offset+64],16)
                     mask = 2**(num_bits - 1)

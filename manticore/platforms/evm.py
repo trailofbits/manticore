@@ -121,10 +121,11 @@ class EVMMemory(object):
                offset in self._symbols
 
     def get(self, offset, default=0):
-        if offset not in self:
+        result = self.read(offset, 1)
+        if not result:
             return default
-        return self[offset]
-         
+        return result[0]
+
     def __getitem__(self, index):
         if isinstance(index, slice):
             size = self._get_size(index)
@@ -925,7 +926,7 @@ class EVM(Eventful):
     def DIV(self, a, b):
         '''Integer division operation'''
         try:
-            result = a // b
+            result = Operators.UDIV(a, b)
         except ZeroDivisionError:
             result = 0
         return Operators.ITEBV(256, b==0, 0, result)
@@ -1122,8 +1123,7 @@ class EVM(Eventful):
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
         GCOPY = 3             # cost to copy one 32 byte word
-        size = arithmetic_simplifier(size)
-        #self._consume(GCOPY * ceil32(size) // 32)
+        self._consume(GCOPY * ceil32(size) // 32)
 
 
         #FIXME put zero if not enough data
