@@ -2,7 +2,40 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.4...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.5...HEAD)
+
+## 0.1.5 - 2017-10-19
+
+Thanks to our external contributors to this release!
+
+- [johnfxgalea](https://github.com/johnfxgalea)
+
+### Deprecated
+
+- `Manticore('binary', ['arg1', 'arg2'])` style initialization. Use new class methods (see below).
+
+### Added
+
+- Platform-specific class methods for Manticore initialization
+  - e.g. `Manticore.linux('binary', ['arg1', 'arg2'])`
+- `Manticore.init` analysis initialization hook
+- Linux: Various new syscall support, including basic TCP socket support
+- Core: An updated plugin infrastructure
+- [Experimental] Support for symbolic execution of Ethereum Virtual Machine bytecode
+
+### Changed
+
+- `Manticore.verbosity`: logging preset levels interface is now a static method, replacing `m.verbosity` property
+- Logger output is slightly modified to be more Pythonic
+
+### Fixed
+
+- Numerous bugfixes and refactors
+- Linux: stderr file is generated in workspace
+
+### Removed
+
+- Requirement of external z3 binary installation (z3 installation occurs automatically now via pip)
 
 ## 0.1.4 - 2017-08-18
 

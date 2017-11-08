@@ -90,3 +90,41 @@ class LinuxTest(unittest.TestCase):
         self.assertIn('stderr', files)
         self.assertIn('net', files)
 
+    def test_syscall_events(self):
+        nr_fstat64 = 197
+
+        class Receiver(object):
+            def __init__(self):
+                self.nevents = 0
+            def will_exec(self, pc, i):
+                self.nevents += 1
+            def did_exec(self, last_pc, pc, i):
+                self.nevents += 1
+
+        # Create a minimal state
+        model = self.symbolic_linux
+        model.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        model.current.SP = 0x2000-4
+        model.current.memory.mmap(0x2000, 0x2000, 'rwx')
+        model.current.PC = 0x2000
+        model.current.write_int(model.current.PC, 0x050f)
+
+        r = Receiver()
+        model.current.subscribe('will_execute_instruction', r.will_exec)
+        model.current.subscribe('did_execute_instruction', r.did_exec)
+
+        filename = model.current.push_bytes('/bin/true\x00')
+        fd = model.sys_open(filename, os.O_RDONLY, 0600)
+
+        stat = model.current.SP - 0x100
+        model.current.R0 = fd
+        model.current.R1 = stat
+        model.current.R7 = nr_fstat64
+        self.assertEquals(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
+
+        pre_icount = model.current.icount
+        model.execute()
+        post_icount = model.current.icount
+
+        self.assertEquals(pre_icount+1, post_icount)
+        self.assertEquals(r.nevents, 2)

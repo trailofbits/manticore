@@ -192,7 +192,7 @@ class State(Eventful):
         introduce it into the program state.
 
         :param int nbytes: Length of the new buffer
-        :param str name: (keyword arg only) The name to assign to the buffer
+        :param str label: (keyword arg only) The label to assign to the buffer
         :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
                  (i.e. no \0 bytes, except for the last byte). (bool)
         :param taint: Taint identifier of the new buffer
@@ -200,9 +200,9 @@ class State(Eventful):
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
-        name = options.get('label', 'buffer')
+        label = options.get('label', 'buffer')
         taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=name, index_max=nbytes, taint=taint)
+        expr = self._constraints.new_array(name=label, index_max=nbytes, taint=taint)
         self._input_symbols.append(expr)
 
         if options.get('cstring', False):
