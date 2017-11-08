@@ -28,6 +28,7 @@ class UnicornEmulator(object):
     '''
     def __init__(self, cpu):
         self._cpu = cpu
+        self._mem_delta = {}
         self.flag_registers = set(['CF','PF','AF','ZF','SF','IF','DF','OF'])
 
         text = cpu.memory.map_containing(cpu.PC)
@@ -169,8 +170,7 @@ class UnicornEmulator(object):
         assert access in (UC_MEM_WRITE, UC_MEM_READ, UC_MEM_FETCH)
 
         if access == UC_MEM_WRITE:
-            # print("Writing %s bytes to %02x: %02x" % (size, address, value))
-            self._cpu.write_int(address, value, size*8)
+            self._mem_delta[address] = (value, size)
 
         # If client code is attempting to read a value, we need to bring it
         # in from Manticore state. If we try to mem_write it here, Unicorn
@@ -272,17 +272,6 @@ class UnicornEmulator(object):
         '''
         A single attempt at executing an instruction.
         '''
-        # XXX(yan): This concretizes the entire register state. This is overly
-        # aggressive. Once capstone adds consistent support for accessing
-        # referred registers, make this only concretize those registers being
-        # read from.
-        # for reg in self.registers:
-        #     val = self._cpu.read_register(reg)
-        #     if issymbolic(val):
-        #         from ..core.cpu.abstractcpu import ConcretizeRegister
-        #         raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
-        #                                  policy='ONE')
-        #     self._emu.reg_write(self._to_unicorn_id(reg), val)
 
         # Bring in the instruction itself
         instruction = self._cpu.decode_instruction(self._cpu.PC)
@@ -322,8 +311,15 @@ class UnicornEmulator(object):
         for reg in self.registers:
             val = self._emu.reg_read(self._to_unicorn_id(reg))
             self._cpu.write_register(reg, val)
+        for location in self._mem_delta:
+            value, size = self._mem_delta[location]
+            # print("Writing %s bytes to 0x%02x" % (size, location))
+            self._cpu.write_int(location, value, size*8)
+        self._mem_delta = {}
 
     def write_back_memory(self, where, expr, size):
+        if where in self._mem_delta.keys():
+            return
         if issymbolic(expr):
             print("Concretizing memory: ")
             # print("Constraint set: %s" % self._cpu.memory.constraints)
@@ -337,7 +333,7 @@ class UnicornEmulator(object):
             data = concrete_data
         else:
             data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
-        # print("Writing back %s bits to %02x: %s" % (size, where, ''.join(data)))
+        # print("Writing back %s bits to 0x%02x" % (size, where))
         if not self.in_map(where):
             self._create_emulated_mapping(self._emu, where)
         self._emu.mem_write(where, ''.join(data))
