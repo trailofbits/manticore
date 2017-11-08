@@ -6,6 +6,7 @@ import random
 import struct
 import ctypes
 import socket
+import time
 
 #Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
@@ -1877,8 +1878,11 @@ class Linux(Platform):
         except (AttributeError, KeyError):
             raise Exception("SyscallNotImplemented %d %d"%(self.current.address_bit_size, index))
 
-        print("(M) Invoking %s syscall" % name)
-        return self._syscall_abi.invoke(implementation)
+        start = time.time()
+        out = self._syscall_abi.invoke(implementation)
+
+        print("(M) Invoked %s syscall (%s seconds)" % (name, time.time() - start))
+        return out
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
