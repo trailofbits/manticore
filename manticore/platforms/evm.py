@@ -1717,7 +1717,7 @@ class EVMWorld(Platform):
                                  expression = self.storage[caller]['balance'] < value,
                                  setstate=lambda a,b: None,
                                  policy='ALL')
-            if set(res) == set([False]): 
+            if set(res) == set([True]): 
                 raise TerminateState("Not Enough Funds for transaction", testcase=True)
         else:
             if self.storage[caller]['balance'] < value:

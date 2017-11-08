@@ -526,11 +526,11 @@ class ManticoreEVM(Manticore):
         for ty, caller, address, value, data in tx:
             tx_num += 1
             def consume_type(ty, data, offset):
-                if ty in u'uint256':
+                if ty == u'uint256':
                     return '0x'+data[offset:offset+64], offset+32*2
-                if ty in u'address':
+                elif ty == u'address':
                     return '0x'+data[offset+24:offset+64], offset+32*2
-                if ty == u'int256':
+                elif ty == u'int256':
                     value = int('0x'+data[offset:offset+64],16)
                     mask = 2**(num_bits - 1)
                     value = -(value & mask) + (value & ~mask)
@@ -562,7 +562,6 @@ class ManticoreEVM(Manticore):
                 done = False
                 rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
                 try:
-                    #print "A", xdata[:8], rhashes
                     signature = rhashes.get(xdata[:8], '{fallback}()')
                     done = True
                     func_name = signature.split('(')[0]
