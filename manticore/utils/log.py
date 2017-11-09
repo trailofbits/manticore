@@ -16,7 +16,7 @@ class ContextFilter(logging.Filter):
         return '{}.{}'.format(prefix, components[-1])
 
     def filter(self, record):
-        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
+        if hasattr(self, 'stateid') and isinstance(self.stateid, (int, long)):
             record.stateid = '[%d]' % self.stateid
         else:
             record.stateid = ''
