@@ -268,7 +268,7 @@ class ManticoreEVM(Manticore):
             data = (None,)*data.size
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
-        return self.run()
+        return self.run(procs=10)
 
     def run(self, **kwargs):
         #Check if there is a pending transaction
@@ -370,7 +370,6 @@ class ManticoreEVM(Manticore):
     def will_execute_instruction_callback(self, state, instruction):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
-        print  state.platform.current
 
         with self.locked_context('coverage', set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
@@ -532,7 +531,7 @@ class ManticoreEVM(Manticore):
                     return '0x'+data[offset+24:offset+64], offset+32*2
                 elif ty == u'int256':
                     value = int('0x'+data[offset:offset+64],16)
-                    mask = 2**(num_bits - 1)
+                    mask = 2**(256 - 1)
                     value = -(value & mask) + (value & ~mask)
                     return value, offset+32*2
                 elif ty == u'':

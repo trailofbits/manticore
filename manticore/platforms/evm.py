@@ -1569,7 +1569,7 @@ class EVMWorld(Platform):
         self._process_pending_transaction()
         try:
             if self.current is None:
-                raise TerminateState("No transaction", testcase=False)
+                raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current.execute()
         except Create as ex:
             self.CREATE(ex.value, ex.data)
@@ -1673,6 +1673,7 @@ class EVMWorld(Platform):
 
 
     def transaction(self, address, origin=None, price=0, data='', caller=None, value=0, header=None, run=False):
+        assert self._pending_transaction is None
         if caller is None and origin is not None:
             caller = origin
         if origin is None and caller is not None:
@@ -1718,11 +1719,17 @@ class EVMWorld(Platform):
                                  setstate=lambda a,b: None,
                                  policy='ALL')
             if set(res) == set([True]): 
+                self._pending_transaction = None
                 raise TerminateState("Not Enough Funds for transaction", testcase=True)
         else:
             if self.storage[caller]['balance'] < value:
+                self._pending_transaction = None
                 raise TerminateState("Not Enough Funds for transaction", testcase=True)
 
+        self._pending_transaction = None
+
+        #discarding absurd amount of ether
+        self.constraints.add(self.storage[address]['balance'] + value >= self.storage[address]['balance'])
 
         self.storage[caller]['balance'] -= value
         self.storage[address]['balance'] += value
@@ -1730,7 +1737,6 @@ class EVMWorld(Platform):
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
         
         self._push(new_vm)
-        self._pending_transaction = None
         if self.depth == 1:
             #handle human transactions
             if ty == 'Create':

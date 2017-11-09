@@ -11,7 +11,7 @@ pragma solidity ^0.4.13;
 contract Test {
     event Log(string);
 
-    function target1() payable public {
+    function target() payable public {
         if (msg.value > 10)
             Log("Value greater than 10");
         else
@@ -26,7 +26,7 @@ user_account = seth.create_account(balance=1000)
 contract_account = seth.solidity_create_contract(source_code, owner=user_account)
 
 
-contract_account.target1(value=seth.SValue)
+contract_account.target(value=seth.SValue)
 
 
 print "[+] There are %d reverted states now"% len(seth.final_state_ids)

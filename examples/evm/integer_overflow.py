@@ -20,10 +20,10 @@ user_account = seth.create_account(balance=1000)
 contract_account = seth.solidity_create_contract(source_code, owner=user_account, balance=0)
 
 #First add wont owerflow uint256 representation
-contract_account.caller(contract_account).value(0).add(seth.SValue)
+contract_account.add(seth.SValue)
 
 #Potential overflow
-contract_account.add(seth.SValue, caller=contract_account, value=0)
+contract_account.add(seth.SValue)
 
 
 print "[+] There are %d reverted states now"% len(seth.final_state_ids)
