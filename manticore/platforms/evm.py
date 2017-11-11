@@ -249,8 +249,11 @@ class EVMInstruction(object):
     def parse_operand(self, buf):
         operand = 0
         for _ in range(self.operand_size):
-            operand <<= 8
-            operand |= ord(next(buf))
+            try:
+                operand <<= 8
+                operand |= ord(next(buf))
+            except:
+                raise TerminateState("Operand has insufficient bytes")
         self._operand = operand
 
     @property
