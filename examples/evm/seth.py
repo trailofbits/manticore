@@ -140,7 +140,7 @@ class ManticoreEVM(Manticore):
         #make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        super(ManticoreEVM, self).__init__(initial_state, workspace_url='mem:')
+        super(ManticoreEVM, self).__init__(initial_state)
 
 
         #The following should go to manticore.context so we can use multiprocessing
