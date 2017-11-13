@@ -53,7 +53,11 @@ class File(object):
         state = {}
         state['name'] = self.name
         state['mode'] = self.mode
-        state['pos'] = self.tell()
+        try:
+            state['pos'] = self.tell()
+        except IOError:
+            # This is to handle special files like /dev/tty
+            state['pos'] = None
         return state
 
     def __setstate__(self, state):
@@ -61,7 +65,8 @@ class File(object):
         mode = state['mode']
         pos = state['pos']
         self.file = file(name, mode)
-        self.seek(pos)
+        if pos is not None:
+            self.seek(pos)
 
     @property
     def name(self):
