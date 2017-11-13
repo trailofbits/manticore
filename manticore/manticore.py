@@ -21,7 +21,7 @@ from .core.executor import Executor
 from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
-from .core.workspace import ManticoreOutput, Workspace
+from .core.workspace import ManticoreOutput
 from .platforms import linux, decree, evm
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
@@ -161,7 +161,7 @@ class Manticore(Eventful):
 
         #sugar for 'will_execute_instruction"
         self._hooks = {}
-        self._executor = Executor(workspace=ws_path, policy=policy)
+        self._executor = Executor(store=self._output.store, policy=policy)
         self._workers = []
 
         #Link Executor events to default callbacks in manticore object
@@ -711,6 +711,6 @@ class Manticore(Eventful):
             f.write(' '.join(sys.argv))
 
         elapsed = time.time() - self._time_started
-        logger.info('Results in %s', self._output.uri)
+        logger.info('Results in %s', self._output.store.uri)
         logger.info('Total time: %s', elapsed)
 
