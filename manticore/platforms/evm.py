@@ -531,7 +531,7 @@ class EVMAssembler(object):
     def _get_reverse_table():
         ''' Build an internal table used in the assembler '''
         reverse_table = {}
-        for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) in  EVMAssembler._table.items():
+        for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) inEVMAssembler._table.items():
             mnemonic = name
             if name in ('PUSH', 'POP', 'SWAP', 'LOG'):
                 mnemonic = '%s%d'%(name, opcode&0xf)
@@ -548,7 +548,7 @@ class EVMAssembler(object):
             '\x10'
 
         '''
-        _reverse_table =  EVMAssembler._get_reverse_table()
+        _reverse_table = EVMAssembler._get_reverse_table()
         assembler = assembler.strip().split(' ')
         if not len(assembler[0]):
             return '' 
@@ -585,7 +585,7 @@ class EVMAssembler(object):
         '''
         bytecode = ''
         for line in assembler.split('\n'):
-            bytecode +=  EVMAssembler.encode_one(line)
+            bytecode += EVMAssembler.encode_one(line)
         return bytecode
 
 
@@ -598,7 +598,7 @@ class EVMAssembler(object):
         bytecode = iter(bytecode)
         opcode = ord(next(bytecode))
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
-        name, operand_size, pops, pushes, gas, description =  EVMAssembler._table.get(opcode, invalid)
+        name, operand_size, pops, pushes, gas, description = EVMAssembler._table.get(opcode, invalid)
         instruction = EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description)
         if instruction.has_operand:
             instruction.parse_operand(bytecode)
@@ -632,7 +632,7 @@ class EVMAssembler(object):
         '''
         bytecode = iter(bytecode)
         while True:
-            yield   EVMAssembler.decode_one(bytecode)
+            yield EVMAssembler.decode_one(bytecode)
 
     @staticmethod
     def disassemble(bytecode):
@@ -642,7 +642,7 @@ class EVMAssembler(object):
 
             Example use::
             
-            EVMAssembler.disassemble("0x6060604052600261010")
+          EVMAssembler.disassemble("0x6060604052600261010")
             ...
             PUSH1 0x60
             BLOCKHASH
@@ -664,7 +664,7 @@ class EVMAssembler(object):
 
             Example use::
             
-            EVMAssembler.assemble(  """PUSH1 0x60
+          EVMAssembler.assemble(  """PUSH1 0x60
                                        BLOCKHASH
                                        MSTORE
                                        PUSH1 0x2
@@ -674,7 +674,7 @@ class EVMAssembler(object):
             ...
             "0x6060604052600261010"
         '''
-        return '0x'+ EVMAssembler.encode_all(asmcode).encode('hex')
+        return '0x' + EVMAssembler.encode_all(asmcode).encode('hex')
 
 
 #Exceptions...
@@ -915,7 +915,7 @@ class EVM(Eventful):
         return value
 
     def disassemble(self):
-        return   EVMAssembler.disassemble(self.bytecode)
+        return EVMAssembler.disassemble(self.bytecode)
 
 
     @property
@@ -939,7 +939,7 @@ class EVM(Eventful):
             while True:
                 yield '\x00'
 
-        return   EVMAssembler.decode_one(getcode())
+        return EVMAssembler.decode_one(getcode())
 
     #auxiliar funcs
     #Stack related
@@ -2020,61 +2020,3 @@ class EVMWorld(Platform):
             
         self.current._push(value)
         self.current.pc += self.current.instruction.size
-        
-
-
-if __name__ == '__main__':
-    bytecode='60606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635ec01e4d146044578063e1c7392a146067575bfe5b3415604b57fe5b60516076565b6040518082815260200191505060405180910390f35b3415606e57fe5b60746080565b005b6000600490505b90565b5b5600a165627a7a723058201ee3d4d835c10d46b09531c20dcdfe17b2dcef676a2666d66d0b3dde4969f6e00029'.decode   ('hex')
-    #print   EVMAssembler.disassemble(bytecode)
-
-    instructions = list(  EVMAssembler.decode_all(bytecode))
-
-    BBs = {}
-    EDGES = {}
-    current_bb = []
-    address = 0
-    for i in instructions:
-        i.address = address
-
-        current_bb.append(i)
-        if i.name in ['JUMPI', 'JUMP', 'STOP', 'INVALID', 'RETURN', 'SELFDESTRUCT', 'REVERT']:
-            BBs[current_bb[0].address] = tuple(current_bb)
-            if i.name in ['JUMP', 'JUMPI']:
-                source = current_bb[0].address
-                if len(current_bb) >= 2:
-                    if current_bb[-2].name.startswith('PUSH'):
-                        dest = current_bb[-2].operand
-                    EDGES.setdefault(source, set()).add(dest)
-                    if i.name  == 'JUMPI':
-                        EDGES[source].add(address + i.size)
-
-            current_bb = list()
-        address += i.size
-
-
-    for addr in sorted(BBs.keys()):
-        print hex(addr), ":",  map(hex, sorted(list(EDGES.get(addr,set()))))
-        print '\n'.join(map(lambda x: "  "+str(x), BBs[addr]))
- 
-    address=0x414141414141
-    origin=0x424242424242
-    price=1
-    data='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-    sender=0x434343434343
-    value=1
-    header={'timestamp':1}
-    depth=0
-
-        
-    from manticore.core.smtlib.constraints import ConstraintSet
-    constraints = ConstraintSet()
-    memory = constraints.new_array(256, 'MEM_%d'%depth)
-    evm = EVM(memory, address, origin, price, data, sender, value, bytecode, header, depth)
-    print evm
-    import pickle
-    a = pickle.dumps(evm)
-    evm = pickle.loads(a)
-    while True:
-        evm.execute()  
-        print evm
-
