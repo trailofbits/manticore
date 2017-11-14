@@ -28,6 +28,10 @@ class EVMContract(object):
     def __int__(self):
         return self._address
 
+    @property
+    def address(self):
+        return self._address
+
     def value(self, value):
         self._value = value
         return self
@@ -430,6 +434,8 @@ class ManticoreEVM(Manticore):
         print "REPORT:", e, 
 
         try:
+            # Magic number comes from here:
+            # http://solidity.readthedocs.io/en/develop/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
             asm = list(evm.EVMDecoder.decode_all(runtime_bytecode[:-9-33-2]))
             asm_offset = 0
             pos = 0
@@ -466,7 +472,6 @@ class ManticoreEVM(Manticore):
                     print "\t", hex(address), "range:[%x, %x]"%(m,M)                
             else:
                 print "\t", hex(address), account['balance'],"wei"
-
 
         if state.platform.logs:
             print "LOGS:"

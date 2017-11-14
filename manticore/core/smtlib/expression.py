@@ -35,6 +35,11 @@ class Variable(Expression):
     def name(self):
         return self._name
 
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        memo[id(self)] = self
+        return self
+
 
 class Constant(Expression):
     def __init__(self, value, *args, **kwargs):
