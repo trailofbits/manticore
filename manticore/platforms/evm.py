@@ -249,8 +249,11 @@ class EVMInstruction(object):
     def parse_operand(self, buf):
         operand = 0
         for _ in range(self.operand_size):
-            operand <<= 8
-            operand |= ord(next(buf))
+            try:
+                operand <<= 8
+                operand |= ord(next(buf))
+            except:
+                raise TerminateState("Operand has insufficient bytes")
         self._operand = operand
 
     @property
@@ -431,19 +434,19 @@ class EVMDecoder(object):
                 0x8f: ('DUP', 0, 16, 17, 3, 'Duplicate 16th stack item.'),
                 0x90: ('SWAP', 0, 2, 2, 3, 'Exchange 1st and 2nd stack items.'),
                 0x91: ('SWAP', 0, 3, 3, 3, 'Exchange 1st and 3rd stack items.'),
-                0x92: ('SWAP', 0, 4, 4, 3, 'Exchange 1st and 4rd stack items.'),
-                0x93: ('SWAP', 0, 5, 5, 3, 'Exchange 1st and 5rd stack items.'),
-                0x94: ('SWAP', 0, 6, 6, 3, 'Exchange 1st and 6rd stack items.'),
-                0x95: ('SWAP', 0, 7, 7, 3, 'Exchange 1st and 7rd stack items.'),
-                0x96: ('SWAP', 0, 8, 8, 3, 'Exchange 1st and 8rd stack items.'),
-                0x97: ('SWAP', 0, 9, 9, 3, 'Exchange 1st and 9rd stack items.'),
-                0x98: ('SWAP', 0, 10, 10, 3, 'Exchange 1st and 10rd stack items.'),
-                0x99: ('SWAP', 0, 11, 11, 3, 'Exchange 1st and 11rd stack items.'),
-                0x9a: ('SWAP', 0, 12, 12, 3, 'Exchange 1st and 12rd stack items.'),
-                0x9b: ('SWAP', 0, 13, 13, 3, 'Exchange 1st and 13rd stack items.'),
-                0x9c: ('SWAP', 0, 14, 14, 3, 'Exchange 1st and 14rd stack items.'),
-                0x9d: ('SWAP', 0, 15, 15, 3, 'Exchange 1st and 15rd stack items.'),
-                0x9e: ('SWAP', 0, 16, 16, 3, 'Exchange 1st and 16rd stack items.'),
+                0x92: ('SWAP', 0, 4, 4, 3, 'Exchange 1st and 4th stack items.'),
+                0x93: ('SWAP', 0, 5, 5, 3, 'Exchange 1st and 5th stack items.'),
+                0x94: ('SWAP', 0, 6, 6, 3, 'Exchange 1st and 6th stack items.'),
+                0x95: ('SWAP', 0, 7, 7, 3, 'Exchange 1st and 7th stack items.'),
+                0x96: ('SWAP', 0, 8, 8, 3, 'Exchange 1st and 8th stack items.'),
+                0x97: ('SWAP', 0, 9, 9, 3, 'Exchange 1st and 9th stack items.'),
+                0x98: ('SWAP', 0, 10, 10, 3, 'Exchange 1st and 10th stack items.'),
+                0x99: ('SWAP', 0, 11, 11, 3, 'Exchange 1st and 11th stack items.'),
+                0x9a: ('SWAP', 0, 12, 12, 3, 'Exchange 1st and 12th stack items.'),
+                0x9b: ('SWAP', 0, 13, 13, 3, 'Exchange 1st and 13th stack items.'),
+                0x9c: ('SWAP', 0, 14, 14, 3, 'Exchange 1st and 14th stack items.'),
+                0x9d: ('SWAP', 0, 15, 15, 3, 'Exchange 1st and 15th stack items.'),
+                0x9e: ('SWAP', 0, 16, 16, 3, 'Exchange 1st and 16th stack items.'),
                 0x9f: ('SWAP', 0, 17, 17, 3, 'Exchange 1st and 17th stack items.'),
                 0xa0: ('LOG', 0, 2, 0, 375, 'Append log record with no topics.'),
                 0xa1: ('LOG', 0, 3, 0, 750, 'Append log record with one topic.'),
@@ -1207,6 +1210,8 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
+        if not self.address in self.global_storage:
+            return
         return self.global_storage[self.address]['storage'][offset]
 
     def SSTORE(self, offset, value):
