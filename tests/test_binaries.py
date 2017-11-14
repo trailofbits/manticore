@@ -100,7 +100,7 @@ class IntegrationTest(unittest.TestCase):
                                    filename,
                                    '+++++++++'], stdout=output)
         actual = self._loadVisitedSet(os.path.join(dirname, '%s/visited.txt'%workspace))
-        expected = self._loadVisitedSet(os.path.join(dirname, 'reference/arguments_linux_arm64_visited.txt'))
+        expected = self._loadVisitedSet(os.path.join(dirname, 'reference/arguments_linux_amd64_visited.txt'))
         self.assertGreaterEqual(actual, expected)
 
     def testDecree(self):
