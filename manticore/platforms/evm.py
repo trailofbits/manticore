@@ -276,7 +276,7 @@ class EVMAssembler(object):
     ''' 
         EVM Instruction factory
     '''
-    class EVMInstruction(object):
+    class Instruction(object):
         def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None):
             '''
             This represents an EVM instruction. 
@@ -561,7 +561,7 @@ class EVMAssembler(object):
             assert len(assembler) == 1
             operand = None
 
-        instruction = EVMInstruction(opcode, name, operand_size, pops, pushes, gas, description, operand)
+        instruction = EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand)
         return instruction.bytes
 
 
@@ -600,7 +600,7 @@ class EVMAssembler(object):
         opcode = ord(next(bytecode))
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
         name, operand_size, pops, pushes, gas, description =  EVMAssembler._table.get(opcode, invalid)
-        instruction = EVMInstruction(opcode, name, operand_size, pops, pushes, gas, description)
+        instruction = EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description)
         if instruction.has_operand:
             instruction.parse_operand(bytecode)
 
