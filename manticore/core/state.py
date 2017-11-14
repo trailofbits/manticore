@@ -111,7 +111,7 @@ class State(Eventful):
         assert self._child is None
         new_state = State(self._constraints.__enter__(), self._platform)
         new_state._input_symbols = list(self._input_symbols)
-        new_state._context = copy.copy(self._context)
+        new_state._context = copy.deepcopy(self._context)
         self._child = new_state
 
         #fixme NEW State won't inherit signals (pro: added signals to new_state wont affect parent)
