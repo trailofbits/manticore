@@ -2,7 +2,7 @@ from seth import *
 ################ Script #######################
 
 seth = ManticoreEVM()
-seth.verbosity(2)
+seth.verbosity(0)
 #And now make the contract account to analyze
 # cat  | solc --bin 
 source_code = '''
@@ -12,20 +12,11 @@ contract Test {
     event Log(string);
     mapping(address => uint) private balances;
 
-    function Test(){
-        balances[0x1111111111111111111111111111111111111111] = 10;
-        balances[0x2222222222222222222222222222222222222222] = 20;
-        balances[0x3333333333333333333333333333333333333333] = 30;
-        balances[0x4444444444444444444444444444444444444444] = 40;
-        balances[0x5555555555555555555555555555555555555555] = 50;
-    }
-    
-    function target(address key) returns (bool){
-        if (balances[key] > 20)
-            Log("Balance greater than 20");
-        else
-            Log("Balance less or equal than 20");
-    } 
+    function Test() {}
+    function target1() public {} 
+    function target2() internal {} 
+    function target3() private {} 
+    function() {}
 
 }
 '''
@@ -34,8 +25,8 @@ user_account = seth.create_account(balance=1000)
 contract_account = seth.solidity_create_contract(source_code, owner=user_account)
 
 
-symbolic_data = seth.SByte(64) 
-symbolic_value = 0
+symbolic_data = seth.SByte(4) 
+symbolic_value = None 
 seth.transaction(  caller=user_account,
                    address=contract_account,
                    value=symbolic_value,
