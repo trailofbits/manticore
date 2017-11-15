@@ -190,9 +190,6 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is None
         assert init is not None
-        # bytecode is only valid in 32-byte segments
-        assert len(init) >= 32
-        assert len(init) % 32 == 0
         address = self.world._new_address()
         self.context['seth']['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
