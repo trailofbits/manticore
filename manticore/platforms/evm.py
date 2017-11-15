@@ -531,7 +531,7 @@ class EVMAssembler(object):
     def _get_reverse_table():
         ''' Build an internal table used in the assembler '''
         reverse_table = {}
-        for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) inEVMAssembler._table.items():
+        for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) in EVMAssembler._table.items():
             mnemonic = name
             if name in ('PUSH', 'POP', 'SWAP', 'LOG'):
                 mnemonic = '%s%d'%(name, opcode&0xf)
