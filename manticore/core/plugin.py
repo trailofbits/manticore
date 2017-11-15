@@ -126,7 +126,7 @@ class Follower(Plugin):
             return
 
         assert write['where'] == where and write['size'] == size
-        state.constrain(value == write['value'])
+        # state.constrain(value == write['value'])
 
     def did_execute_instruction_callback(self, state, last_pc, pc, insn):
         if not self.active:
@@ -134,6 +134,7 @@ class Follower(Plugin):
         event = self.get_next('regs')
         self.last_instruction = event['values']
         if issymbolic(pc):
+            print 'constraining symbolic pc to', hex(self.last_instruction['RIP'])
             state.constrain(state.cpu.RIP == self.last_instruction['RIP'])
         else:
             for start, stop in self.symbolic_ranges:
