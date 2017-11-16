@@ -380,6 +380,7 @@ class Executor(Eventful):
         #Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
+        # this is to keep the constrains as minimal as possible
         if len(solutions) == 1:
             setstate(state, solutions[0])
             return state
