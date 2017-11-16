@@ -150,8 +150,12 @@ class ConstraintSet(object):
         for expression in self.constraints:
             translator.visit(expression)
 
+        # band aid hack around the fact that we are double declaring stuff :( :(
+        tmp = set()
         for d in self.declarations:
-            result += d.declaration + '\n'
+            tmp.add(d.declaration)
+        for d in tmp:
+            result += d + '\n'
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
