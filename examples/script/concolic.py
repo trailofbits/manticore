@@ -153,7 +153,7 @@ def concrete_run_get_trace(inp):
     m1 = Manticore.linux(prog, concrete_start=inp)
     t = ExtendedTracer()
     r = TraceReceiver(t)
-    m1.verbosity(2)
+    m1.verbosity(1)
     m1.register_plugin(t)
     m1.register_plugin(r)
     m1.run(procs=1)
@@ -163,7 +163,7 @@ def concrete_run_get_trace(inp):
 def symbolic_run_get_cons(trace):
     m2 = Manticore.linux(prog)
     f = Follower(trace)
-    m2.verbosity(2)
+    m2.verbosity(1)
     m2.register_plugin(f)
 
 
@@ -231,6 +231,8 @@ def get_new_constrs_for_queue(oldcons, newcons):
 
     return ret
 
+def log(s):
+    print '[+]', s
 
 def main():
     # parser = argparse.ArgumentParser(description='Follow a concrete trace')
@@ -263,12 +265,17 @@ def main():
     c = struct.pack('<I', 0)
     xx = a + b + c
 
+    log('seed input generated')
 
     paths = 1
 
+    log('running initial concrete run')
     trc = concrete_run_get_trace(xx)
+
+    log('getting constraints on initial run')
     cons, datas = symbolic_run_get_cons(trc)
 
+    log('permuting constraints')
     perms = permu(cons)
 
     for p in perms:
@@ -277,15 +284,19 @@ def main():
     # hmmm probably issues with the datas stuff here? probably need to store
     # the datas in the q or something. what if there was a new read(2) deep in the program, changing the datas
     while not q.empty():
+        log('get constraint set from queue, queue size: {}'.format(q.qsize()))
         cons = q.get()
         inp = input_from_cons(cons, datas)
-        print 'TRYING INPUT', repr(inp)
-        print 'paths', paths
+        log('generated input from constraints: {}'.format(repr(inp)))
 
 
 
+        log('running generate input concretely')
         trc = concrete_run_get_trace(inp)
         paths +=1 
+        log('num paths found: {}'.format(paths))
+
+        log('doing symex on new generated input')
         newcons, datas = symbolic_run_get_cons(trc)
 
 
@@ -299,10 +310,12 @@ def main():
 
         to_queue = get_new_constrs_for_queue(cons, newcons)
 
+        log('permuting constraints and adding {} constraints sets to queue'.format(len(to_queue)))
+
         for each in to_queue:
             q.put(each)
 
-    print 'paths found:', paths
+    log('paths found: {}'.format(paths))
 
 
 
