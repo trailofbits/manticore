@@ -134,7 +134,7 @@ class Follower(Plugin):
         event = self.get_next('regs')
         self.last_instruction = event['values']
         if issymbolic(pc):
-            print 'constraining symbolic pc to', hex(self.last_instruction['RIP'])
+            # print 'constraining symbolic pc to', hex(self.last_instruction['RIP'])
             state.constrain(state.cpu.RIP == self.last_instruction['RIP'])
         else:
             for start, stop in self.symbolic_ranges:
