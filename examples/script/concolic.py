@@ -19,6 +19,9 @@ from manticore.core.smtlib.visitors  import pretty_print as pp
 import copy
 from manticore.core.smtlib.expression import *
 
+prog = 'basic'
+endd = 0x400ae9
+
 def _partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
     return (list(itertools.ifilterfalse(pred, t1)), filter(pred, t2))
@@ -124,26 +127,6 @@ def permu(cons, includeself):
         ret.append([first_flipped] + o)
     return ret
 
-
-
-
-# def permu(constupl):
-#     '''
-#     takes tuple of constraints (Equal)s
-#     returns list of tuples
-
-
-#     takes constraint set. returns a new one where each constraint 
-#     returns a list of constraints sets where 
-#     '''
-
-#     ret = []
-#     for i, c in enumerate(constupl):
-#         conscopy = list(copy.deepcopy(constupl)) # possibly not necessary
-#         conscopy[i] = flip(c)
-#         ret.append(tuple(conscopy))
-#     return ret
-
 def newcs(constupl):
     x = ConstraintSet()
     x._constraints = list(constupl)
@@ -165,6 +148,15 @@ def input_from_cons(constupl, datas):
 
     return ret
 
+def concrete_run_get_trace(inp):
+    m1 = Manticore.linux(prog, concrete_start=inp)
+    t = ExtendedTracer()
+    r = TraceReceiver(t)
+    m1.verbosity(2)
+    m1.register_plugin(t)
+    m1.register_plugin(r)
+    m1.run(procs=1)
+    return r.trace
 
 def main():
     # parser = argparse.ArgumentParser(description='Follow a concrete trace')
@@ -185,9 +177,6 @@ def main():
 
     # todo randomly generated concrete start
 
-    # prog = sys.argv[1]
-    prog = 'basic'
-
     import random, struct
     # a = struct.pack('<I', random.randint(0, 10))
     # b = struct.pack('<I', random.randint(0, 10))
@@ -197,32 +186,20 @@ def main():
     c = struct.pack('<I', 0)
     xx = a + b + c
 
-    m1 = Manticore.linux(prog, concrete_start=xx)
-    t = ExtendedTracer()
-    r = TraceReceiver(t)
-    m1.verbosity(2)
-    m1.register_plugin(t)
-    m1.register_plugin(r)
-    m1.run(procs=1)
 
-
-    # time.sleep(3)
-
-    # Create a symbolic Manticore and follow last trace
-    # symbolic_args = ['+'*len(arg) for arg in args.cmd[1:]]
+    trc = concrete_run_get_trace(xx)
 
 
 
+
+def symbolic_run(trace):
     m2 = Manticore.linux(prog)
-    f = Follower(r.trace)
-    # if range:
-    #     f.add_symbolic_range(*range)
+    f = Follower(trace)
     m2.verbosity(2)
     m2.register_plugin(f)
 
 
 
-    endd = 0x400ae9
     @m2.hook(endd)
     def x(s):
         with m2.locked_context() as ctx:
@@ -260,8 +237,8 @@ def main():
             print '-'*33
 
     # x(cons)
-    import IPython
-    IPython.embed()
+    # import IPython
+    # IPython.embed()
 
 
 if __name__=='__main__':
