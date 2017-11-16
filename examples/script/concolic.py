@@ -106,7 +106,7 @@ def eqls(a, b):
 
 
 
-def permu(cons, includeself):
+def permu(cons, includeself=False):
     first = cons[0]
     first_flipped = flip(cons[0])
     
@@ -126,6 +126,7 @@ def permu(cons, includeself):
     for o in others:
         ret.append([first_flipped] + o)
     return ret
+
 
 def newcs(constupl):
     x = ConstraintSet()
@@ -158,6 +159,79 @@ def concrete_run_get_trace(inp):
     m1.run(procs=1)
     return r.trace
 
+
+def symbolic_run_get_cons(trace):
+    m2 = Manticore.linux(prog)
+    f = Follower(trace)
+    m2.verbosity(2)
+    m2.register_plugin(f)
+
+
+    @m2.hook(endd)
+    def x(s):
+        with m2.locked_context() as ctx:
+            ctx['sss'] = s
+            ctx['readdata'] = []
+            for name, fd, data in s.platform.syscall_trace:
+                if name in ('_receive', '_read') and fd == 0:
+                    ctx['readdata'] += [data]
+
+    m2.run()
+
+    # lol
+    # return the ConstraintSet and the data from stdin
+
+    st = m2.context['sss']
+    datas = m2.context['readdata']
+
+    # cons = st.constraints.constraints
+    return list(st.constraints.constraints), datas
+
+def x(conn):
+    for c in conn:
+        print pp(c)
+        print '-'*33
+
+def xxx(con):
+    return hex(con.operands[1].value), (hex(con.operands[0].operands[1].value), hex(con.operands[0].operands[2].value))
+
+def newinold(new, olds):
+    for old in olds:
+        if eq(new, old):
+            return True
+    return False
+
+def getnew(oldcons, newcons):
+    ret = []
+    for new in newcons:
+        if not newinold(new, oldcons):
+            ret.append(new)
+    return ret
+
+def consaresat(cons):
+    return solver.can_be_true(newcs(cons), True)
+
+def get_new_constrs_for_queue(oldcons, newcons):
+    ret = []
+
+    # i'm pretty sure its correct to assume newcons is a superset of oldcons
+
+    neww = getnew(oldcons, newcons)
+    if not neww:
+        return ret
+
+
+    perms = permu(neww)
+    for p in perms:
+        candidate = oldcons + p
+        if consaresat(candidate):
+            ret.append(candidate)
+        else:
+            print 'FOUND UNSAT candidate!'
+
+    return ret
+
+
 def main():
     # parser = argparse.ArgumentParser(description='Follow a concrete trace')
     # parser.add_argument('-f', '--explore_from', help='Value of PC from which to explore symbolically', type=str)
@@ -176,6 +250,9 @@ def main():
     #
 
     # todo randomly generated concrete start
+    import Queue
+
+    q = Queue.Queue()
 
     import random, struct
     # a = struct.pack('<I', random.randint(0, 10))
@@ -187,58 +264,46 @@ def main():
     xx = a + b + c
 
 
+    paths = 1
+
     trc = concrete_run_get_trace(xx)
+    cons, datas = symbolic_run_get_cons(trc)
+
+    perms = permu(cons)
+
+    for p in perms:
+        q.put(p)
+
+    # hmmm probably issues with the datas stuff here? probably need to store
+    # the datas in the q or something. what if there was a new read(2) deep in the program, changing the datas
+    while not q.empty():
+        cons = q.get()
+        inp = input_from_cons(cons, datas)
+        print 'TRYING INPUT', repr(inp)
+        print 'paths', paths
 
 
 
-
-def symbolic_run(trace):
-    m2 = Manticore.linux(prog)
-    f = Follower(trace)
-    m2.verbosity(2)
-    m2.register_plugin(f)
+        trc = concrete_run_get_trace(inp)
+        paths +=1 
+        newcons, datas = symbolic_run_get_cons(trc)
 
 
+        # hmmm ideally do some smart stuff so we don't have to check if the
+        # constraints are unsat. something like the compare the constraints set
+        # which you used to generate the input, and the constraint set you got
+        # from the symex. sounds pretty hard
+        #
+        # but maybe a dumb way where we blindly permute the constraints
+        # and just check if they're sat before queueing will work
 
-    @m2.hook(endd)
-    def x(s):
-        with m2.locked_context() as ctx:
-            ctx['sss'] = s
-            ctx['readdata'] = []
-            for name, fd, data in s.platform.syscall_trace:
-                print name
-                print 123123
-                if name in ('_receive', '_read') and fd == 0:
-                    print 55555
-                    ctx['readdata'] += [data]
+        to_queue = get_new_constrs_for_queue(cons, newcons)
 
+        for each in to_queue:
+            q.put(each)
 
+    print 'paths found:', paths
 
-
-
-    m2.run()
-
-
-
-    st = m2.context['sss']
-    datas = m2.context['readdata']
-
-    cons = st.constraints.constraints
-
-
-
-
-
-
-
-    def x(conn):
-        for c in conn:
-            print pp(c)
-            print '-'*33
-
-    # x(cons)
-    # import IPython
-    # IPython.embed()
 
 
 if __name__=='__main__':
