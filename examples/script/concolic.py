@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import copy
-from manticore.core.smtlib.expression import *
 '''
 A simple concolic execution driver script. Only currently supports passing symbolic arguments via argv.
 
@@ -14,6 +12,11 @@ import itertools
 
 from manticore import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
+from manticore.core.smtlib.constraints import ConstraintSet
+from manticore.core.smtlib import Z3Solver, solver
+
+import copy
+from manticore.core.smtlib.expression import *
 
 def _partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
@@ -101,6 +104,14 @@ def main():
     def x(s):
         with m2.locked_context() as ctx:
             ctx['sss'] = s
+            ctx['readdata'] = []
+            for name, fd, data in s.platform.syscall_trace:
+                print name
+                print 123123
+                if name in ('_receive', '_read') and fd == 0:
+                    print 55555
+                    ctx['readdata'] += [data]
+
 
 
 
@@ -111,6 +122,8 @@ def main():
 
 
     st = m2.context['sss']
+    datas = m2.context['readdata']
+
     cons = st.constraints.constraints
 
     def flip(constraint):
@@ -163,19 +176,41 @@ def main():
             ret.append(tuple(conscopy))
         return ret
 
+    def newcs(constupl):
+        x = ConstraintSet()
+        x._constraints = list(constupl)
+        return x
+
+    aaa = newcs(cons)
+
+
+    def input_from_cons(constupl, datas):
+        newset = newcs(constupl)
+        # newset = ConstraintSet()
+        # # probably some unnecessary conversion bt lists and tuples
+        # newset._constraints = list(constupl)
+
+        ret = ''
+
+        for data in datas:
+            for c in data:
+                ret += chr(solver.get_value(newset, c))
+
+        return ret
 
 
 
 
 
-    def x(conn):
-        for c in conn:
-            print pp(c)
-            print '-'*33
 
-    x(cons)
-    import IPython
-    IPython.embed()
+    # def x(conn):
+    #     for c in conn:
+    #         print pp(c)
+    #         print '-'*33
+
+    # x(cons)
+    # import IPython
+    # IPython.embed()
 
 
 if __name__=='__main__':
