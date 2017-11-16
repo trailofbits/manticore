@@ -5,6 +5,7 @@ A simple concolic execution driver script. Only currently supports passing symbo
 
 '''
 
+import Queue
 import sys
 import random, struct
 import time
@@ -60,21 +61,10 @@ def flip(constraint):
     cond, iifpc, eelsepc = a.operands
     assert isinstance(iifpc, BitVecConstant) and isinstance(eelsepc, BitVecConstant)
 
-    # print 'forcepc is', hex(forcepc.value)
-    # print 'iifpc is', hex(iifpc.value)
-    # print 'eelsepc is', hex(eelsepc.value)
-
     if forcepc.value == iifpc.value:
-        # print 'setting forcepc to', eelsepc.value
-        # forcepc = eelsepc
         c.operands[1] = eelsepc
     else:
         c.operands[1] = iifpc
-    
-    # print 'NEW C'
-    # print pp(c)
-    # print '-'*33
-
     return c
 
 def eq(a, b):
@@ -104,7 +94,6 @@ def eqls(a, b):
         if not eq(aa, bb):
             return False
     return True
-
 
 
 # permutes constraints. highly possibly that returned constraints can be
@@ -141,9 +130,6 @@ def newcs(constupl):
 
 def input_from_cons(constupl, datas):
     newset = newcs(constupl)
-    # newset = ConstraintSet()
-    # # probably some unnecessary conversion bt lists and tuples
-    # newset._constraints = list(constupl)
 
     ret = ''
 
@@ -170,7 +156,6 @@ def symbolic_run_get_cons(trace):
     m2.verbosity(1)
     m2.register_plugin(f)
 
-
     @m2.hook(endd)
     def x(s):
         with m2.locked_context() as ctx:
@@ -182,13 +167,9 @@ def symbolic_run_get_cons(trace):
 
     m2.run()
 
-    # lol
-    # return the ConstraintSet and the data from stdin
-
     st = m2.context['sss']
     datas = m2.context['readdata']
 
-    # cons = st.constraints.constraints
     return list(st.constraints.constraints), datas
 
 def x(conn):
@@ -224,7 +205,6 @@ def get_new_constrs_for_queue(oldcons, newcons):
     if not neww:
         return ret
 
-
     perms = permu(neww)
     for p in perms:
         candidate = oldcons + p
@@ -246,35 +226,17 @@ def inp2ints(inp):
     return 'a={} b={} c={}'.format(a, b, c)
 
 
-
 def main():
-    # parser = argparse.ArgumentParser(description='Follow a concrete trace')
-    # parser.add_argument('-f', '--explore_from', help='Value of PC from which to explore symbolically', type=str)
-    # parser.add_argument('-t', '--explore_to', type=str, default=sys.maxint,
-    #                     help="Value of PC until which to explore symbolically. (Probably don't want this set)")
-    # parser.add_argument('--verbose', '-v', action='count', help='Increase verbosity')
-    # parser.add_argument('cmd', type=str, nargs='+',
-    #                     help='Program and arguments. Use "--" to separate script arguments from target arguments')
-    # args = parser.parse_args(sys.argv[1:])
-
-    # range = None
-    # if args.explore_from:
-    #     range = (args.explore_from, args.explore_to)
-
-    # Create a concrete Manticore and record it
-    #
-
-    # todo randomly generated concrete start
-    import Queue
 
     q = Queue.Queue()
 
+    # todo randomly generated concrete start
     # a = struct.pack('<I', random.randint(0, 10))
     # b = struct.pack('<I', random.randint(0, 10))
     # c = struct.pack('<I', random.randint(0, 10))
     a = struct.pack('<I', 0)
     b = struct.pack('<I', 5)
-    b = struct.pack('<I', 4) # causes a bug; 8 paths instead of 5
+    # b = struct.pack('<I', 4) # causes a bug; 8 paths instead of 5
     c = struct.pack('<I', 0)
     xx = a + b + c
 
@@ -303,15 +265,12 @@ def main():
         inp = input_from_cons(cons, datas)
         log('generated input from constraints: {}'.format(inp2ints(inp)))
 
-
-
         log('running generate input concretely')
         trc = concrete_run_get_trace(inp)
         paths +=1 
 
         log('doing symex on new generated input')
         newcons, datas = symbolic_run_get_cons(trc)
-
 
         # hmmm ideally do some smart stuff so we don't have to check if the
         # constraints are unsat. something like the compare the constraints set
@@ -329,8 +288,6 @@ def main():
             q.put(each)
 
     log('paths found: {}'.format(paths))
-
-
 
 if __name__=='__main__':
     main()
