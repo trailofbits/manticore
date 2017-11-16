@@ -6,6 +6,7 @@ A simple concolic execution driver script. Only currently supports passing symbo
 '''
 
 import sys
+import random, struct
 import time
 import argparse
 import itertools
@@ -106,6 +107,9 @@ def eqls(a, b):
 
 
 
+# permutes constraints. highly possibly that returned constraints can be
+# unsat this does it blindly, without any attention to the constraints
+# themselves
 def permu(cons, includeself=False):
     first = cons[0]
     first_flipped = flip(cons[0])
@@ -224,15 +228,24 @@ def get_new_constrs_for_queue(oldcons, newcons):
     perms = permu(neww)
     for p in perms:
         candidate = oldcons + p
+        # candidate new constraint sets might not be sat because we blindly
+        # permute the new constraints that the path uncovered and append them
+        # back onto the original set. we do this without regard for how the
+        # permutation of the new constraints combines with the old constratins
+        # to affect the satisfiability of the whole
         if consaresat(candidate):
             ret.append(candidate)
-        else:
-            print 'FOUND UNSAT candidate!'
 
     return ret
 
 def log(s):
-    print '[+]', s
+    print '[+]', s, '\n'
+
+def inp2ints(inp):
+    a, b, c = struct.unpack('<III', inp)
+    return 'a={} b={} c={}'.format(a, b, c)
+
+
 
 def main():
     # parser = argparse.ArgumentParser(description='Follow a concrete trace')
@@ -256,16 +269,16 @@ def main():
 
     q = Queue.Queue()
 
-    import random, struct
     # a = struct.pack('<I', random.randint(0, 10))
     # b = struct.pack('<I', random.randint(0, 10))
     # c = struct.pack('<I', random.randint(0, 10))
     a = struct.pack('<I', 0)
     b = struct.pack('<I', 5)
+    b = struct.pack('<I', 4) # causes a bug; 8 paths instead of 5
     c = struct.pack('<I', 0)
     xx = a + b + c
 
-    log('seed input generated')
+    log('seed input generated: {}'.format(inp2ints(xx)))
 
     paths = 1
 
@@ -275,11 +288,12 @@ def main():
     log('getting constraints on initial run')
     cons, datas = symbolic_run_get_cons(trc)
 
-    log('permuting constraints')
-    perms = permu(cons)
+    to_queue = get_new_constrs_for_queue([], cons)
 
-    for p in perms:
-        q.put(p)
+    log('permuting constraints and adding {} constraints sets to queue'.format(len(to_queue)))
+
+    for each in to_queue:
+        q.put(each)
 
     # hmmm probably issues with the datas stuff here? probably need to store
     # the datas in the q or something. what if there was a new read(2) deep in the program, changing the datas
@@ -287,14 +301,13 @@ def main():
         log('get constraint set from queue, queue size: {}'.format(q.qsize()))
         cons = q.get()
         inp = input_from_cons(cons, datas)
-        log('generated input from constraints: {}'.format(repr(inp)))
+        log('generated input from constraints: {}'.format(inp2ints(inp)))
 
 
 
         log('running generate input concretely')
         trc = concrete_run_get_trace(inp)
         paths +=1 
-        log('num paths found: {}'.format(paths))
 
         log('doing symex on new generated input')
         newcons, datas = symbolic_run_get_cons(trc)
