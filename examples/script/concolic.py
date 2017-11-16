@@ -14,6 +14,7 @@ from manticore import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
 from manticore.core.smtlib.constraints import ConstraintSet
 from manticore.core.smtlib import Z3Solver, solver
+from manticore.core.smtlib.visitors  import pretty_print as pp
 
 import copy
 from manticore.core.smtlib.expression import *
@@ -40,6 +41,129 @@ class TraceReceiver(Plugin):
         print 'Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
             len(instructions), total, len(writes), total)
 
+def flip(constraint):
+    '''
+    flips a constraint (Equal)
+    '''
+    c = copy.deepcopy(constraint)
+    
+    # assume they are the equal -> ite form that we produce on standard branches
+    assert len(c.operands) == 2
+    a, forcepc = c.operands
+    assert isinstance(a, BitVecITE) and isinstance(forcepc, BitVecConstant)
+
+    assert len(a.operands) == 3
+    cond, iifpc, eelsepc = a.operands
+    assert isinstance(iifpc, BitVecConstant) and isinstance(eelsepc, BitVecConstant)
+
+    # print 'forcepc is', hex(forcepc.value)
+    # print 'iifpc is', hex(iifpc.value)
+    # print 'eelsepc is', hex(eelsepc.value)
+
+    if forcepc.value == iifpc.value:
+        # print 'setting forcepc to', eelsepc.value
+        # forcepc = eelsepc
+        c.operands[1] = eelsepc
+    else:
+        c.operands[1] = iifpc
+    
+    # print 'NEW C'
+    # print pp(c)
+    # print '-'*33
+
+    return c
+
+def eq(a, b):
+    # this ignores checking the conditions, only checks the 2 possible pcs
+    # the one that it is forced to
+
+    ite1, force1 = a.operands
+    ite2, force2 = b.operands
+
+    if force1.value != force2.value:
+        return False
+
+    _, first1, second1 = ite1.operands
+    _, first2, second2 = ite1.operands
+
+    if first1.value != first2.value:
+        return False
+    if second1.value != second2.value:
+        return False
+
+    return True
+    
+
+def eqls(a, b):
+	# a b and 2 iterables of branch constraints
+    for aa, bb in zip(a, b):
+        if not eq(aa, bb):
+            return False
+    return True
+
+
+
+def permu(cons, includeself):
+    first = cons[0]
+    first_flipped = flip(cons[0])
+    
+    if len(cons) == 1:
+        if includeself:
+            return [[first], [first_flipped]]
+        else:
+            return [[first_flipped]]
+    ret = []
+    others = permu(cons[1:], True)
+    for o in others:
+        add = [first] + o
+        if includeself:
+            ret.append(add)
+        elif not eqls(add, cons):
+            ret.append(add)
+    for o in others:
+        ret.append([first_flipped] + o)
+    return ret
+
+
+
+
+# def permu(constupl):
+#     '''
+#     takes tuple of constraints (Equal)s
+#     returns list of tuples
+
+
+#     takes constraint set. returns a new one where each constraint 
+#     returns a list of constraints sets where 
+#     '''
+
+#     ret = []
+#     for i, c in enumerate(constupl):
+#         conscopy = list(copy.deepcopy(constupl)) # possibly not necessary
+#         conscopy[i] = flip(c)
+#         ret.append(tuple(conscopy))
+#     return ret
+
+def newcs(constupl):
+    x = ConstraintSet()
+    x._constraints = list(constupl)
+    return x
+
+
+
+def input_from_cons(constupl, datas):
+    newset = newcs(constupl)
+    # newset = ConstraintSet()
+    # # probably some unnecessary conversion bt lists and tuples
+    # newset._constraints = list(constupl)
+
+    ret = ''
+
+    for data in datas:
+        for c in data:
+            ret += chr(solver.get_value(newset, c))
+
+    return ret
 
 
 def main():
@@ -97,7 +221,6 @@ def main():
     m2.register_plugin(f)
 
 
-    sss = 0
 
     endd = 0x400ae9
     @m2.hook(endd)
@@ -118,7 +241,6 @@ def main():
 
     m2.run()
 
-    from manticore.core.smtlib.visitors  import pretty_print as pp
 
 
     st = m2.context['sss']
@@ -126,91 +248,20 @@ def main():
 
     cons = st.constraints.constraints
 
-    def flip(constraint):
-        '''
-        flips a constraint (Equal)
-        '''
-        c = copy.deepcopy(constraint)
-        
-        # assume they are the equal -> ite form that we produce on standard branches
-        assert len(c.operands) == 2
-        a, forcepc = c.operands
-        assert isinstance(a, BitVecITE) and isinstance(forcepc, BitVecConstant)
-
-        assert len(a.operands) == 3
-        cond, iifpc, eelsepc = a.operands
-        assert isinstance(iifpc, BitVecConstant) and isinstance(eelsepc, BitVecConstant)
-
-        # print 'forcepc is', hex(forcepc.value)
-        # print 'iifpc is', hex(iifpc.value)
-        # print 'eelsepc is', hex(eelsepc.value)
-
-        if forcepc.value == iifpc.value:
-            # print 'setting forcepc to', eelsepc.value
-            # forcepc = eelsepc
-            c.operands[1] = eelsepc
-        else:
-            c.operands[1] = iifpc
-        
-        # print 'NEW C'
-        # print pp(c)
-        # print '-'*33
-
-        return c
-
-
-    def permu(constupl):
-        '''
-        takes tuple of constraints (Equal)s
-        returns list of tuples
-
-
-        takes constraint set. returns a new one where each constraint 
-        returns a list of constraints sets where 
-        '''
-
-        ret = []
-        for i, c in enumerate(constupl):
-            conscopy = list(copy.deepcopy(constupl)) # possibly not necessary
-            conscopy[i] = flip(c)
-            ret.append(tuple(conscopy))
-        return ret
-
-    def newcs(constupl):
-        x = ConstraintSet()
-        x._constraints = list(constupl)
-        return x
-
-    aaa = newcs(cons)
-
-
-    def input_from_cons(constupl, datas):
-        newset = newcs(constupl)
-        # newset = ConstraintSet()
-        # # probably some unnecessary conversion bt lists and tuples
-        # newset._constraints = list(constupl)
-
-        ret = ''
-
-        for data in datas:
-            for c in data:
-                ret += chr(solver.get_value(newset, c))
-
-        return ret
 
 
 
 
 
 
-    # def x(conn):
-    #     for c in conn:
-    #         print pp(c)
-    #         print '-'*33
+    def x(conn):
+        for c in conn:
+            print pp(c)
+            print '-'*33
 
     # x(cons)
-    # import IPython
-    # IPython.embed()
+    import IPython
+    IPython.embed()
 
 
 if __name__=='__main__':
