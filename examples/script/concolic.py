@@ -1,7 +1,16 @@
 #!/usr/bin/env python
 
 '''
-A simple concolic execution driver script. Only currently supports passing symbolic arguments via argv.
+Rough concolic execution implementation
+
+Limitations
+- tested only on the simpleassert example program in examples/
+- only works for 3 ints of stdin
+
+Bugs
+- Will sometimes explore the same path more than once (a=0 b=4 c=0)
+- Will probably break if a newly discovered branch gets more input/does another read(2)
+- possibly unnecessary deepcopies
 
 '''
 
@@ -21,7 +30,7 @@ from manticore.core.smtlib.visitors  import pretty_print as pp
 import copy
 from manticore.core.smtlib.expression import *
 
-prog = 'basic'
+prog = '../linux/simpleassert'
 endd = 0x400ae9
 
 def _partition(pred, iterable):
