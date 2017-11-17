@@ -103,6 +103,35 @@ class EVMMemory(object):
         else:
             self.write(index, [value])
 
+    def __delitem__(self, index):
+        def delete(offset):
+            if offset in self.memory:
+                del self._memory[offset]
+            if offset in self._symbol:
+                del self._symbols[offset]
+
+        if isinstance(index, slice):
+            for offset in xrange(index.start, index.end):
+                delete(offset)
+        else:
+            delete(index)
+
+    def __contains__(self, offset):
+        return offset in self._memory or \
+               offset in self._symbols
+
+    def get(self, offset, default=0):
+        result = self.read(offset, 1)
+        if not result:
+            return default
+        return result[0]
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            size = self._get_size(index)
+            return self.read(index.start, size)
+        else:
+            return self.read(index, 1)[0]
 
     def __repr__(self):
         return self.__str__()
@@ -249,8 +278,11 @@ class EVMInstruction(object):
     def parse_operand(self, buf):
         operand = 0
         for _ in range(self.operand_size):
-            operand <<= 8
-            operand |= ord(next(buf))
+            try:
+                operand <<= 8
+                operand |= ord(next(buf))
+            except:
+                raise TerminateState("Operand has insufficient bytes")
         self._operand = operand
 
     @property
@@ -431,19 +463,19 @@ class EVMDecoder(object):
                 0x8f: ('DUP', 0, 16, 17, 3, 'Duplicate 16th stack item.'),
                 0x90: ('SWAP', 0, 2, 2, 3, 'Exchange 1st and 2nd stack items.'),
                 0x91: ('SWAP', 0, 3, 3, 3, 'Exchange 1st and 3rd stack items.'),
-                0x92: ('SWAP', 0, 4, 4, 3, 'Exchange 1st and 4rd stack items.'),
-                0x93: ('SWAP', 0, 5, 5, 3, 'Exchange 1st and 5rd stack items.'),
-                0x94: ('SWAP', 0, 6, 6, 3, 'Exchange 1st and 6rd stack items.'),
-                0x95: ('SWAP', 0, 7, 7, 3, 'Exchange 1st and 7rd stack items.'),
-                0x96: ('SWAP', 0, 8, 8, 3, 'Exchange 1st and 8rd stack items.'),
-                0x97: ('SWAP', 0, 9, 9, 3, 'Exchange 1st and 9rd stack items.'),
-                0x98: ('SWAP', 0, 10, 10, 3, 'Exchange 1st and 10rd stack items.'),
-                0x99: ('SWAP', 0, 11, 11, 3, 'Exchange 1st and 11rd stack items.'),
-                0x9a: ('SWAP', 0, 12, 12, 3, 'Exchange 1st and 12rd stack items.'),
-                0x9b: ('SWAP', 0, 13, 13, 3, 'Exchange 1st and 13rd stack items.'),
-                0x9c: ('SWAP', 0, 14, 14, 3, 'Exchange 1st and 14rd stack items.'),
-                0x9d: ('SWAP', 0, 15, 15, 3, 'Exchange 1st and 15rd stack items.'),
-                0x9e: ('SWAP', 0, 16, 16, 3, 'Exchange 1st and 16rd stack items.'),
+                0x92: ('SWAP', 0, 4, 4, 3, 'Exchange 1st and 4th stack items.'),
+                0x93: ('SWAP', 0, 5, 5, 3, 'Exchange 1st and 5th stack items.'),
+                0x94: ('SWAP', 0, 6, 6, 3, 'Exchange 1st and 6th stack items.'),
+                0x95: ('SWAP', 0, 7, 7, 3, 'Exchange 1st and 7th stack items.'),
+                0x96: ('SWAP', 0, 8, 8, 3, 'Exchange 1st and 8th stack items.'),
+                0x97: ('SWAP', 0, 9, 9, 3, 'Exchange 1st and 9th stack items.'),
+                0x98: ('SWAP', 0, 10, 10, 3, 'Exchange 1st and 10th stack items.'),
+                0x99: ('SWAP', 0, 11, 11, 3, 'Exchange 1st and 11th stack items.'),
+                0x9a: ('SWAP', 0, 12, 12, 3, 'Exchange 1st and 12th stack items.'),
+                0x9b: ('SWAP', 0, 13, 13, 3, 'Exchange 1st and 13th stack items.'),
+                0x9c: ('SWAP', 0, 14, 14, 3, 'Exchange 1st and 14th stack items.'),
+                0x9d: ('SWAP', 0, 15, 15, 3, 'Exchange 1st and 15th stack items.'),
+                0x9e: ('SWAP', 0, 16, 16, 3, 'Exchange 1st and 16th stack items.'),
                 0x9f: ('SWAP', 0, 17, 17, 3, 'Exchange 1st and 17th stack items.'),
                 0xa0: ('LOG', 0, 2, 0, 375, 'Append log record with no topics.'),
                 0xa1: ('LOG', 0, 3, 0, 750, 'Append log record with one topic.'),
@@ -897,7 +929,7 @@ class EVM(Eventful):
     def DIV(self, a, b):
         '''Integer division operation'''
         try:
-            result = a // b
+            result = Operators.UDIV(a, b)
         except ZeroDivisionError:
             result = 0
         return Operators.ITEBV(256, b==0, 0, result)
@@ -1207,7 +1239,7 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
-        return self.global_storage[self.address]['storage'][offset]
+        return self.global_storage[self.address]['storage'].get(offset,0)
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
@@ -1540,7 +1572,7 @@ class EVMWorld(Platform):
         self._process_pending_transaction()
         try:
             if self.current is None:
-                raise TerminateState("No transaction", testcase=False)
+                raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current.execute()
         except Create as ex:
             self.CREATE(ex.value, ex.data)
@@ -1551,7 +1583,7 @@ class EVMWorld(Platform):
         except Return as ex:
             self.RETURN(ex.data)
         except Revert as ex:
-            self.REVERT()
+            self.REVERT(ex.data)
         except SelfDestruct as ex:
             self.SELFDESTRUCT(ex.to)
         except Sha3 as ex:
@@ -1644,10 +1676,12 @@ class EVMWorld(Platform):
 
 
     def transaction(self, address, origin=None, price=0, data='', caller=None, value=0, header=None, run=False):
+        assert self._pending_transaction is None
         if caller is None and origin is not None:
             caller = origin
         if origin is None and caller is not None:
             origin = caller
+
         if header is None:
             header = {'timestamp':1}
         if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
@@ -1678,13 +1712,34 @@ class EVMWorld(Platform):
         assert self.current is None or self.current.last_exception is not None
 
         ty, address, origin, price, data, caller, value, bytecode, header = self._pending_transaction
+
+
+        if issymbolic(self.storage[caller]['balance']) or issymbolic(value):
+            res = solver.get_all_values(self._constraints, self.storage[caller]['balance'] < value)
+            if set(res) == set([True, False]): 
+                raise Concretize('Forking on available funds',
+                                 expression = self.storage[caller]['balance'] < value,
+                                 setstate=lambda a,b: None,
+                                 policy='ALL')
+            if set(res) == set([True]): 
+                self._pending_transaction = None
+                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+        else:
+            if self.storage[caller]['balance'] < value:
+                self._pending_transaction = None
+                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+
+        self._pending_transaction = None
+
+        #discarding absurd amount of ether
+        self.constraints.add(self.storage[address]['balance'] + value >= self.storage[address]['balance'])
+
         self.storage[caller]['balance'] -= value
         self.storage[address]['balance'] += value
 
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
         
         self._push(new_vm)
-        self._pending_transaction = None
         if self.depth == 1:
             #handle human transactions
             if ty == 'Create':
@@ -1698,7 +1753,7 @@ class EVMWorld(Platform):
         origin = self.current.origin
         caller = self.current.address
         price = self.current.price
-        depth = self.depth+1
+        depth = self.depth + 1
         bytecode = self.storage[to]['code']
         header = {'timestamp' :1}
         self.transaction(address, origin, price, data, caller, value, header)
@@ -1709,6 +1764,7 @@ class EVMWorld(Platform):
         prev_vm = self._pop() #current VM changed!
         if self.depth == 0:
             self.last_return=data
+            self.last_pc = prev_vm.pc
             raise TerminateState("RETURN", testcase=True)
 
 
@@ -1730,6 +1786,7 @@ class EVMWorld(Platform):
     def STOP(self):
         prev_vm = self._pop(rollback=False)
         if self.depth == 0:
+            self.last_pc = prev_vm.pc
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
         self.current._push(1)
@@ -1744,6 +1801,7 @@ class EVMWorld(Platform):
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
+            self.last_pc = prev_vm.pc
             raise TerminateState("THROW", testcase=True)
 
         self.current.last_exception = None
@@ -1751,13 +1809,15 @@ class EVMWorld(Platform):
         #we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 
-    def REVERT(self):
+    def REVERT(self, data):
         prev_vm = self._pop(rollback=True)
         #revert balance on CALL fail
         self.storage[prev_vm.caller]['balance'] += prev_vm.value
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
+            self.last_return=data
+            self.last_pc = prev_vm.pc
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
@@ -1773,8 +1833,9 @@ class EVMWorld(Platform):
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
         self.suicide.add(address)
-        self._pop(rollback=False)
+        prev_vm = self._pop(rollback=False)
         if self.depth == 0:
+            self.last_pc = prev_vm.pc
             raise TerminateState("SELFDESTRUCT", testcase=True)
 
     def HASH(self, data):
