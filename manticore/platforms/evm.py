@@ -276,7 +276,7 @@ class EVMAssembler(object):
         EVM Instruction factory
     '''
     class Instruction(object):
-        def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None):
+        def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None, offset=0):
             '''
             This represents an EVM instruction. 
             EVMAssembler will create this for you.
@@ -288,7 +288,8 @@ class EVMAssembler(object):
             :param pushes: number of items pushed into the stack
             :param fee: gas fee for the instruction
             :param description: textual description of the instruction
-            :param operand: optionale immediate operand
+            :param operand: optional immediate operand
+            :param offset: optional offset of this instruction in the program
             '''
             self._opcode = opcode 
             self._name = name 
@@ -302,12 +303,32 @@ class EVMAssembler(object):
                     mask = (1<<operand_size*8)-1
                     if ~mask & operand:
                         raise ValueError("operand should be %d bits long"%(operand_size*8))
+            self._offset=offset
+
+        @property
+        def opcode(self):
+            ''' The opcode as an integer ''' 
+            return self._opcode
+
+        @property
+        def name(self):
+            ''' The instruction name/mnemonic ''' 
+            if self._name == 'PUSH':
+                return 'PUSH%d'%self.operand_size
+            elif self._name == 'DUP':
+                return 'DUP%d'%self.pops
+            elif self._name == 'SWAP':
+                return 'SWAP%d'%(self.pops-1)
+            elif self._name == 'LOG':
+                return 'LOG%d'%(self.pops-2)
+            return self._name
             
         def parse_operand(self, buf):
             ''' Parses an operand from buf 
                 :param buf: a buffer
-                :type buf: iterator
+                :type buf: iterator/generator/string
             '''
+            buf = iter(buf)
             try:
                 operand = 0
                 for _ in range(self.operand_size):
@@ -319,46 +340,42 @@ class EVMAssembler(object):
 
         @property
         def operand_size(self):
+            ''' The immediate operand size '''
             return self._operand_size
 
         @property
         def has_operand(self):
+            ''' Flag that indicates if the instruction uses an immediate operand'''
             return self.operand_size > 0
 
         @property
         def operand(self):
+            ''' The immediate operand '''
             return self._operand
 
         @property
         def pops(self):
+            '''Number words popped from the stack'''
             return self._pops
 
         @property
         def pushes(self):
+            '''Number words pushed to the stack'''
             return self._pushes
 
         @property
         def size(self):
+            ''' Size of the encoded instruction '''
             return self._operand_size + 1
 
         @property
         def fee(self):
+            ''' Tha basic gass fee of the instruction '''
             return self._fee
 
         def __len__(self):
             return self.size
 
-        @property
-        def name(self):
-            if self._name == 'PUSH':
-                return 'PUSH%d'%self.operand_size
-            elif self._name == 'DUP':
-                return 'DUP%d'%self.pops
-            elif self._name == 'SWAP':
-                return 'SWAP%d'%(self.pops-1)
-            elif self._name == 'LOG':
-                return 'LOG%d'%(self.pops-2)
-            return self._name
 
         def __str__(self):
             output = self.name + (' 0x%x'%self.operand if self.has_operand else '')
@@ -366,14 +383,20 @@ class EVMAssembler(object):
 
         @property
         def semantics(self):
+            ''' Canonical semantics. 
+                Ex. PUSH32->PUSH 
+                    ADD   ->ADD
+            '''
             return self._name
 
         @property
         def description(self):
+            ''' Coloquial description of the instruction '''
             return self._description
 
         @property
         def bytes(self):
+            ''' Encoded insttruction '''
             bytes = []
             bytes.append(chr(self._opcode))
             for offset in reversed(xrange(self.operand_size)):
@@ -381,7 +404,92 @@ class EVMAssembler(object):
                 bytes.append(chr(c))
             return ''.join(bytes)
 
+        @property
+        def offset(self):
+            '''Location in the program (optional)'''
+            return self._offset
 
+        @property
+        def group(self):
+            '''Instruction classification as per the yellow paper'''
+            classes = {
+                        0:   'Stop and Arithmetic Operations',
+                        1:   'Comparison & Bitwise Logic Operations',
+                        2:   'SHA3',
+                        3:   'Environmental Information',
+                        4:   'Block Information',
+                        5:   'Stack, Memory, Storage and Flow Operations',
+                        6:   'Push Operations',
+                        7:   'Push Operations',
+                        8:   'Duplication Operations',
+                        9:   'Exchange Operations',
+                        0xa: 'Logging Operations',
+                        0xf: 'System operations'
+                      }
+            return classes.get(self.opcode>>4, 'Invalid instruction')
+
+
+        @property
+        def reads_from_stack(self):
+            ''' True if the instruction reads from stack '''
+            return self.pops > 0
+
+        @property
+        def writes_to_stack(self):
+            ''' True if the instruction writes to the stack '''
+            return self.pushes > 0
+            
+        @property
+        def reads_from_memory(self):
+            ''' True if the instruction reads from memory '''
+            return self.semantics in ('MLOAD','CREATE', 'CALL', 'CALLCODE', 'RETURN', 'DELEGATECALL', 'REVERT')
+
+        @property
+        def writes_to_memory(self):
+            ''' True if the instruction writes to memory '''
+            return self.semantics in ('MSTORE', 'MSTORE8', 'CALLDATACOPY', 'CODECOPY', 'EXTCODECOPY')
+            
+        @property
+        def reads_from_memory(self):
+            ''' True if the instruction reads from memory '''
+            return self.semantics in ('MLOAD','CREATE', 'CALL', 'CALLCODE', 'RETURN', 'DELEGATECALL', 'REVERT')
+
+        @property
+        def writes_to_storage(self):
+            ''' True if the instruction writes to the storage '''
+            return self.semantics in ('SSTORE')
+
+        @property
+        def reads_from_storage(self):
+            ''' True if the instruction reads from the storage '''
+            return self.semantics in ('SLOAD')
+
+        @property
+        def is_terminator(self):
+            ''' True if the instruction is a basic block terminator '''
+            return self.semantics in ('RETURN', 'STOP', 'INVALID', 'JUMP', 'JUMPI', 'SELFDESTRUCT')
+
+        @property
+        def is_branch(self):
+            ''' True if the instruction is a jump'''
+            return self.semantics in ('JUMP', 'JUMPI')
+
+        @property
+        def is_environmental(self):
+            ''' True if the instruction access enviromental data '''
+            return self.group == 'Environmental Information'
+            
+        @property
+        def is_system(self):
+            ''' True if the instruction is a system operation '''
+            return self.group == 'System operations'
+
+        @property
+        def uses_block_info(self):
+            ''' True if the instruction access block information'''
+            return self.group == 'Block Information'
+
+            
     #from http://gavwood.com/paper.pdf
     _table = {#opcode: (name, immediate_operand_size, pops, pushes, gas, description)
                 0x00: ('STOP', 0, 0, 0, 0, 'Halts execution.'),
@@ -534,24 +642,24 @@ class EVMAssembler(object):
         for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) in EVMAssembler._table.items():
             mnemonic = name
             if name in ('PUSH', 'POP', 'SWAP', 'LOG'):
-                mnemonic = '%s%d'%(name, opcode&0xf)
+                mnemonic = '%s%d'%(name, (opcode&0x1f) + 1)
             reverse_table[mnemonic] = opcode, name, immediate_operand_size, pops, pushes, gas, description
         return reverse_table
 
     @staticmethod
-    def encode_one(assembler):
-        ''' Assemble one instruction from its textual representation
+    def assemble_one(assembler, offset=0):
+        ''' Assemble one EVM instruction from its textual representation. 
+
+            :return: An Instruction object
 
             Example use::
             
-            >>> evm.EVMAssembler.encode_one('LT')
-            '\x10'
+            >>> instr = evm.EVMAssembler.encode_one('LT')
+            
 
         '''
         _reverse_table = EVMAssembler._get_reverse_table()
         assembler = assembler.strip().split(' ')
-        if not len(assembler[0]):
-            return '' 
         opcode, name, operand_size, pops, pushes, gas, description = _reverse_table[assembler[0].upper()]
         if operand_size > 0:
             assert len(assembler) == 2
@@ -560,13 +668,12 @@ class EVMAssembler(object):
             assert len(assembler) == 1
             operand = None
 
-        instruction = EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand)
-        return instruction.bytes
-
+        return EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
 
     @staticmethod
-    def encode_all(assembler):
-        ''' Assemble an assebler program from its textual representation
+    def assemble_all(assembler, offset=0):
+        ''' Assemble a sequence of textual representation of EVM instructions 
+            :return: An generator of Instruction objects
 
             Example use::
             
@@ -583,15 +690,19 @@ class EVMAssembler(object):
                 """)
 
         '''
-        bytecode = ''
-        for line in assembler.split('\n'):
-            bytecode += EVMAssembler.encode_one(line)
-        return bytecode
-
+        if isinstance(assembler, str):
+            assembler = assembler.split('\n')
+        assembler = iter(assembler)
+        for line in assembler:
+            if not line.strip():
+                continue
+            instr = EVMAssembler.assemble_one(line, offset=offset)
+            yield instr
+            offset += instr.size
 
     @staticmethod
-    def decode_one(bytecode):
-        ''' Decode a single instruction from a stream
+    def disassemble_one(bytecode, offset=0):
+        ''' Decode a single instruction from a bytecode
             :param bytecode: the bytecode stream 
             :type bytecode: iterator/sequence/str
         '''
@@ -599,17 +710,19 @@ class EVMAssembler(object):
         opcode = ord(next(bytecode))
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
         name, operand_size, pops, pushes, gas, description = EVMAssembler._table.get(opcode, invalid)
-        instruction = EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description)
+        instruction = EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description, offset=offset)
         if instruction.has_operand:
             instruction.parse_operand(bytecode)
 
         return instruction
 
     @staticmethod
-    def decode_all(bytecode):
-        ''' Decode all instructions in bytecode 
+    def disassemble_all(bytecode, offset=0):
+        ''' Decode all instructions in bytecode
             :param bytecode: an evm bytecode (binary)
             :type bytecode: iterator/sequence/str
+
+            :return: An generator of Instruction objects
 
             Example use::
             
@@ -630,15 +743,20 @@ class EVMAssembler(object):
 
 
         '''
+
         bytecode = iter(bytecode)
         while True:
-            yield EVMAssembler.decode_one(bytecode)
+            instr = EVMAssembler.disassemble_one(bytecode)
+            offset += instr.size
+            yield instr
 
     @staticmethod
-    def disassemble(bytecode):
-        ''' Returns the string representation of the disassembled bytecode 
+    def disassemble(bytecode, offset=0):
+        ''' Disassemble an EVM bytecode 
             :param bytecode: canonical representation of an evm bytecode (hexadecimal)
             :type bytecode: str
+
+            :return: the text representation of the aseembler code
 
             Example use::
             
@@ -653,14 +771,16 @@ class EVMAssembler(object):
         '''
         if bytecode.startswith('0x'):
             bytecode = bytecode[2:]
-        bytecode = bytecode[2:].decode('hex')
-        return '\n'.join(map(str, EVMAssembler.decode_all(bytecode)))
+        bytecode = bytecode.decode('hex')
+        return '\n'.join(map(str, EVMAssembler.disassemble_all(bytecode, offset=offset)))
 
     @staticmethod
-    def assemble(asmcode):
-        ''' Returns the string representation of the disassembled bytecode 
+    def assemble(asmcode, offset=0):
+        ''' Assemble an EVM program 
             :param asmcode: an evm assembler program
             :type asmcode: str
+
+            :return: the hex representation of the bytecode
 
             Example use::
             
@@ -674,8 +794,7 @@ class EVMAssembler(object):
             ...
             "0x6060604052600261010"
         '''
-        return '0x' + EVMAssembler.encode_all(asmcode).encode('hex')
-
+        return '0x' + (''.join(map(str, EVMAssembler.assemble_all(asmcode, offset=offset)))).encode('hex')
 
 #Exceptions...
 
