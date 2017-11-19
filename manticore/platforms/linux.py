@@ -1753,6 +1753,8 @@ class Linux(Platform):
         self.sched()
         self.running.remove(procid)
         #self.procs[procid] = None
+        if(error_code & 0x8000000000000000):
+            error_code = -0x10000000000000000 + error_code
         logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
             raise TerminateState("Program finished with exit status: %r" % error_code, testcase=True)
