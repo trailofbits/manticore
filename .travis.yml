@@ -6,15 +6,14 @@ language: python
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python2.7.12/lib/python2.7/site-packages
-  - $HOME/virtualenv/python2.7.12/bin/
-  - $HOME/unicorn
+  - $HOME/virtualenv/python2.7.13/lib/python2.7/site-packages
+  - $HOME/virtualenv/python2.7.13/bin/
 dist: trusty
 sudo: required
 os:
 - linux
 python:
-- 2.7
+- 2.7.13
 install:
 - travis_retry pip install -U pip
 - travis_retry pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
