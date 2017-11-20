@@ -437,7 +437,7 @@ class EVMAssembler(object):
 
         @property
         def fee(self):
-            ''' Tha basic gass fee of the instruction '''
+            ''' The basic gas fee of the instruction '''
             return self._fee
 
         @property
