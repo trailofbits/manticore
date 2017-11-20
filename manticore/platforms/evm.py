@@ -272,7 +272,7 @@ class EVMAssembler(object):
         
         Example use::
 
-            >>> from manticore.platforms.evm import *
+            >>> from manticore.platforms.evm import EVMAssembler
             >>> EVMAssembler.disassemble_one('\\x60\\x10')
             Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
             >>> EVMAssembler.assemble_one('PUSH1 0x10')
@@ -391,6 +391,7 @@ class EVMAssembler(object):
             
         def parse_operand(self, buf):
             ''' Parses an operand from buf 
+
                 :param buf: a buffer
                 :type buf: iterator/generator/string
             '''
