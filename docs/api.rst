@@ -36,3 +36,12 @@ Models
    .. function:: strlen
 
    .. function:: strcmp
+
+EVM
+---
+.. automodule:: manticore.platforms.evm
+.. autoclass:: manticore.platforms.evm::EVMAssembler.Instruction
+    :members: 
+.. autoclass:: manticore.platforms.evm.EVMAssembler
+    :members: 
+

@@ -1,9 +1,4 @@
-'''
-Solidity / Smart contract VM
-Implements the yellow paper: http://gavwood.com/paper.pdf
-Get example contracts from here:
-https://ethereum.github.io/browser-solidity/#version=soljson-latest.js
-'''
+''' Symbolic EVM implementation based the yellow paper: http://gavwood.com/paper.pdf '''
 import random, copy
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
@@ -274,6 +269,31 @@ class EVMMemory(object):
 class EVMAssembler(object):
     ''' 
         EVM Instruction factory
+        
+        Example use::
+
+            >>> from manticore.platforms.evm import *
+            >>> EVMAssembler.disassemble_one('\\x60\\x10')
+            Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
+            >>> EVMAssembler.assemble_one('PUSH1 0x10')
+            Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
+            >>> tuple(EVMAssembler.disassemble_all('\\x30\\x31'))
+            (Instruction(0x30, 'ADDRESS', 0, 0, 1, 2, 'Get address of currently executing account.', None, 0), 
+             Instruction(0x31, 'BALANCE', 0, 1, 1, 20, 'Get balance of the given account.', None, 1))
+            >>> tuple(EVMAssembler.assemble_all('ADDRESS\\nBALANCE'))
+            (Instruction(0x30, 'ADDRESS', 0, 0, 1, 2, 'Get address of currently executing account.', None, 0),
+             Instruction(0x31, 'BALANCE', 0, 1, 1, 20, 'Get balance of the given account.', None, 1))
+            >>> EVMAssembler.assemble_hex(
+            ...                         """PUSH1 0x60
+            ...                            BLOCKHASH 
+            ...                            MSTORE
+            ...                            PUSH1 0x2
+            ...                            PUSH2 0x100
+            ...                         """
+            ...                      )
+            '0x606040526002610100'
+            >>> EVMAssembler.disassemble_hex('0x606040526002610100')
+            'PUSH1 0x60\\nBLOCKHASH\\nMSTORE\\nPUSH1 0x2\\nPUSH2 0x100'
     '''
     class Instruction(object):
         def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None, offset=0):
@@ -304,6 +324,27 @@ class EVMAssembler(object):
                     if ~mask & operand:
                         raise ValueError("operand should be %d bits long"%(operand_size*8))
             self._offset=offset
+
+        def __eq__(self, other):
+            ''' Instructions are equal if all features match '''
+            return self._opcode == other._opcode and\
+            self._name == other._name and\
+            self._operand == other._operand and\
+            self._operand_size == other._operand_size and\
+            self._pops == other._pops and\
+            self._pushes == other._pushes and\
+            self._fee == other._fee and\
+            self._offset == other._offset and\
+            self._description == other._description 
+
+        def __repr__(self):
+            output = 'Instruction(0x%x, %r, %d, %d, %d, %d, %r, %r, %r)'%(self._opcode, self._name, self._operand_size, self._pops, self._pushes, self._fee, self._description, self._operand, self._offset)
+            return output
+
+
+        def __str__(self):
+            output = self.name + (' 0x%x'%self.operand if self.has_operand else '')
+            return output
 
         @property
         def opcode(self):
@@ -373,20 +414,9 @@ class EVMAssembler(object):
             ''' Tha basic gass fee of the instruction '''
             return self._fee
 
-        def __len__(self):
-            return self.size
-
-
-        def __str__(self):
-            output = self.name + (' 0x%x'%self.operand if self.has_operand else '')
-            return output
-
         @property
         def semantics(self):
-            ''' Canonical semantics. 
-                Ex. PUSH32->PUSH 
-                    ADD   ->ADD
-            '''
+            ''' Canonical semantics '''
             return self._name
 
         @property
@@ -467,7 +497,7 @@ class EVMAssembler(object):
         @property
         def is_terminator(self):
             ''' True if the instruction is a basic block terminator '''
-            return self.semantics in ('RETURN', 'STOP', 'INVALID', 'JUMP', 'JUMPI', 'SELFDESTRUCT')
+            return self.semantics in ('RETURN', 'STOP', 'INVALID', 'JUMP', 'JUMPI', 'SELFDESTRUCT', 'REVERT')
 
         @property
         def is_branch(self):
@@ -641,53 +671,66 @@ class EVMAssembler(object):
         reverse_table = {}
         for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) in EVMAssembler._table.items():
             mnemonic = name
-            if name in ('PUSH', 'POP', 'SWAP', 'LOG'):
+            if name == 'PUSH':
                 mnemonic = '%s%d'%(name, (opcode&0x1f) + 1)
+            elif name in ('SWAP', 'LOG'):
+                mnemonic = '%s%d'%(name, (opcode&0xf) + 1)
+
             reverse_table[mnemonic] = opcode, name, immediate_operand_size, pops, pushes, gas, description
         return reverse_table
 
     @staticmethod
     def assemble_one(assembler, offset=0):
         ''' Assemble one EVM instruction from its textual representation. 
+            
+            :param assembler: assembler code for one instruction
+            :param offset: offset of the instruction in the bytecode (optional)
 
             :return: An Instruction object
 
             Example use::
-            
-            >>> instr = evm.EVMAssembler.encode_one('LT')
+
+                >>> print evm.EVMAssembler.encode_one('LT')
             
 
         '''
-        _reverse_table = EVMAssembler._get_reverse_table()
-        assembler = assembler.strip().split(' ')
-        opcode, name, operand_size, pops, pushes, gas, description = _reverse_table[assembler[0].upper()]
-        if operand_size > 0:
-            assert len(assembler) == 2
-            operand = int(assembler[1],0)
-        else:
-            assert len(assembler) == 1
-            operand = None
+        try:
+            _reverse_table = EVMAssembler._get_reverse_table()
+            assembler = assembler.strip().split(' ')
+            opcode, name, operand_size, pops, pushes, gas, description = _reverse_table[assembler[0].upper()]
+            if operand_size > 0:
+                assert len(assembler) == 2
+                operand = int(assembler[1],0)
+            else:
+                assert len(assembler) == 1
+                operand = None
 
-        return EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
+            return EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
+        except:
+            raise Exception("Something wron at offset %d"%offset)
 
     @staticmethod
     def assemble_all(assembler, offset=0):
         ''' Assemble a sequence of textual representation of EVM instructions 
+
+            :param assembler: assembler code for any number of instructions
+            :param offset: offset of the first instruction in the bytecode(optional)
+
             :return: An generator of Instruction objects
 
             Example use::
             
-            >>> evm.EVMAssembler.encode_one("""PUSH1 0x60
-                PUSH1 0x40
-                MSTORE
-                PUSH1 0x2
-                PUSH2 0x108
-                PUSH1 0x0
-                POP
-                SSTORE
-                PUSH1 0x40
-                MLOAD
-                """)
+                >>> evm.EVMAssembler.encode_one("""PUSH1 0x60
+                    PUSH1 0x40
+                    MSTORE
+                    PUSH1 0x2
+                    PUSH2 0x108
+                    PUSH1 0x0
+                    POP
+                    SSTORE
+                    PUSH1 0x40
+                    MLOAD
+                    """)
 
         '''
         if isinstance(assembler, str):
@@ -703,8 +746,15 @@ class EVMAssembler(object):
     @staticmethod
     def disassemble_one(bytecode, offset=0):
         ''' Decode a single instruction from a bytecode
+
             :param bytecode: the bytecode stream 
+            :param offset: offset of the instruction in the bytecode(optional)
             :type bytecode: iterator/sequence/str
+
+            Example use::
+            
+                >>> print EVMAssembler.assemble_one('PUSH1 0x10')
+
         '''
         bytecode = iter(bytecode)
         opcode = ord(next(bytecode))
@@ -720,81 +770,136 @@ class EVMAssembler(object):
     def disassemble_all(bytecode, offset=0):
         ''' Decode all instructions in bytecode
             :param bytecode: an evm bytecode (binary)
+            :param offset: offset of the first instruction in the bytecode(optional)
+
             :type bytecode: iterator/sequence/str
 
             :return: An generator of Instruction objects
 
             Example use::
             
-            for inst in EVMAssembler.decode_all(bytecode):
-                print inst
+                >>> for inst in EVMAssembler.decode_all(bytecode):
+                ...    print inst
 
-            ... 
-            PUSH1 0x60
-            PUSH1 0x40
-            MSTORE
-            PUSH1 0x2
-            PUSH2 0x108
-            PUSH1 0x0
-            POP
-            SSTORE
-            PUSH1 0x40
-            MLOAD
+                ... 
+                PUSH1 0x60
+                PUSH1 0x40
+                MSTORE
+                PUSH1 0x2
+                PUSH2 0x108
+                PUSH1 0x0
+                POP
+                SSTORE
+                PUSH1 0x40
+                MLOAD
 
 
         '''
 
         bytecode = iter(bytecode)
         while True:
-            instr = EVMAssembler.disassemble_one(bytecode)
+            instr = EVMAssembler.disassemble_one(bytecode, offset=offset)
             offset += instr.size
             yield instr
 
     @staticmethod
     def disassemble(bytecode, offset=0):
         ''' Disassemble an EVM bytecode 
-            :param bytecode: canonical representation of an evm bytecode (hexadecimal)
+            :param bytecode: binary representation of an evm bytecode (hexadecimal)
+            :param offset: offset of the first instruction in the bytecode(optional)
             :type bytecode: str
 
             :return: the text representation of the aseembler code
 
             Example use::
             
-          EVMAssembler.disassemble("0x6060604052600261010")
-            ...
-            PUSH1 0x60
-            BLOCKHASH
-            MSTORE
-            PUSH1 0x2
-            PUSH2 0x100
+                >>> EVMAssembler.disassemble("0x6060604052600261010")
+                ...
+                PUSH1 0x60
+                BLOCKHASH
+                MSTORE
+                PUSH1 0x2
+                PUSH2 0x100
 
         '''
-        if bytecode.startswith('0x'):
-            bytecode = bytecode[2:]
-        bytecode = bytecode.decode('hex')
         return '\n'.join(map(str, EVMAssembler.disassemble_all(bytecode, offset=offset)))
 
     @staticmethod
     def assemble(asmcode, offset=0):
         ''' Assemble an EVM program 
+
             :param asmcode: an evm assembler program
+            :param offset: offset of the first instruction in the bytecode(optional)
+
             :type asmcode: str
 
             :return: the hex representation of the bytecode
 
             Example use::
             
-          EVMAssembler.assemble(  """PUSH1 0x60
-                                       BLOCKHASH
-                                       MSTORE
-                                       PUSH1 0x2
-                                       PUSH2 0x100
-                                    """
-                                 )
-            ...
-            "0x6060604052600261010"
+                >>> EVMAssembler.assemble(  """PUSH1 0x60
+                                           BLOCKHASH
+                                           MSTORE
+                                           PUSH1 0x2
+                                           PUSH2 0x100
+                                        """
+                                     )
+                ...
+                "0x6060604052600261010"
         '''
-        return '0x' + (''.join(map(str, EVMAssembler.assemble_all(asmcode, offset=offset)))).encode('hex')
+        return ''.join(map(lambda x:x.bytes, EVMAssembler.assemble_all(asmcode, offset=offset)))
+
+    @staticmethod
+    def disassemble_hex(bytecode, offset=0):
+        ''' Disassemble an EVM bytecode 
+            :param bytecode: canonical representation of an evm bytecode (hexadecimal)
+            :param offset: offset of the first instruction in the bytecode(optional)
+
+            :type bytecode: str
+
+            :return: the text representation of the aseembler code
+
+            Example use::
+            
+                >>> EVMAssembler.disassemble("0x6060604052600261010")
+                ...
+                PUSH1 0x60
+                BLOCKHASH
+                MSTORE
+                PUSH1 0x2
+                PUSH2 0x100
+
+        '''
+        if bytecode.startswith('0x'):
+            bytecode = bytecode[2:]
+        bytecode = bytecode.decode('hex')
+        return EVMAssembler.disassemble(bytecode, offset=offset)
+
+    @staticmethod
+    def assemble_hex(asmcode, offset=0):
+        ''' Assemble an EVM program 
+            :param asmcode: an evm assembler program
+            :param offset: offset of the first instruction in the bytecode(optional)
+
+            :type asmcode: str
+
+            :return: the hex representation of the bytecode
+
+            Example use::
+            
+                >>> EVMAssembler.assemble(  """PUSH1 0x60
+                                           BLOCKHASH
+                                           MSTORE
+                                           PUSH1 0x2
+                                           PUSH2 0x100
+                                        """
+                                     )
+                ...
+                "0x6060604052600261010"
+        '''
+        return '0x' + EVMAssembler.assemble(asmcode, offset=offset).encode('hex')
+
+
 
 #Exceptions...
 
@@ -1058,7 +1163,7 @@ class EVM(Eventful):
             while True:
                 yield '\x00'
 
-        return EVMAssembler.decode_one(getcode())
+        return EVMAssembler.disassemble_one(getcode())
 
     #auxiliar funcs
     #Stack related
@@ -1113,10 +1218,10 @@ class EVM(Eventful):
         arguments = []
         if self.instruction.has_operand:
             arguments.append(current.operand)
+
         for _ in range(current.pops):
             arguments.append(self._pop())
 
-        self._publish( 'did_execute_instruction', last_pc, self.pc, current)
 
         #simplify stack arguments
         for i in range(len(arguments)):
