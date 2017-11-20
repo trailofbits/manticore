@@ -878,6 +878,7 @@ class EVMAssembler(object):
     @staticmethod
     def disassemble_hex(bytecode, offset=0):
         ''' Disassemble an EVM bytecode 
+
             :param bytecode: canonical representation of an evm bytecode (hexadecimal)
             :param offset: offset of the first instruction in the bytecode(optional)
 
