@@ -1,4 +1,4 @@
-''' Symbolic EVM implementation based the yellow paper: http://gavwood.com/paper.pdf '''
+''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
 import random, copy
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
