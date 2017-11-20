@@ -452,7 +452,7 @@ class EVMAssembler(object):
 
         @property
         def bytes(self):
-            ''' Encoded insttruction '''
+            ''' Encoded instruction '''
             bytes = []
             bytes.append(chr(self._opcode))
             for offset in reversed(xrange(self.operand_size)):
