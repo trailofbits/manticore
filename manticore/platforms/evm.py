@@ -876,7 +876,7 @@ class EVMAssembler(object):
         ''' Disassemble an EVM bytecode 
 
             :param bytecode: canonical representation of an evm bytecode (hexadecimal)
-            :param offset: offset of the first instruction in the bytecode(optional)
+            :param int offset: offset of the first instruction in the bytecode(optional)
             :type bytecode: str
             :return: the text representation of the aseembler code
 
