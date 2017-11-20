@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # EVM disassembler
-from manticore.platforms.evm import *
+from manticore.platforms.evm import EVMAssembler as ea
 
 def printi(instruction):
     print 'Instruction: %s'% instruction
@@ -25,22 +25,21 @@ def printi(instruction):
     print '\tis terminator', instruction.is_terminator
 
 
-instruction = EVMAssembler.disassemble_one('\x60\x10')
+instruction = ea.disassemble_one('\x60\x10')
 printi(instruction)
 
-instruction = EVMAssembler.assemble_one('PUSH1 0x10')
+instruction = ea.assemble_one('PUSH1 0x10')
 printi(instruction)
 
-for instruction in EVMAssembler.disassemble_all('\x30\x31'):
+for instruction in ea.disassemble_all('\x30\x31'):
     printi(instruction)
 
-for instruction in EVMAssembler.assemble_all('ADDRESS\nBALANCE'):
+for instruction in ea.assemble_all('ADDRESS\nBALANCE'):
     printi(instruction)
 
 
 #High level simple assembler/disassembler
-
-EVMAssembler.assemble(
+print ea.assemble_hex(
                         """PUSH1 0x60
                            BLOCKHASH
                            MSTORE
@@ -50,7 +49,7 @@ EVMAssembler.assemble(
                      )
 
 
-print EVMAssembler.disassemble('0x606040526002610100')
+print ea.disassemble_hex('0x606040526002610100')
 
 
 
