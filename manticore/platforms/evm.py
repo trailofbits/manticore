@@ -716,7 +716,7 @@ class EVMAssembler(object):
 
             Example use::
 
-                >>> print evm.EVMAssembler.encode_one('LT')
+                >>> print evm.EVMAssembler.assemble_one('LT')
             
 
         '''
