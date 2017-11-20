@@ -711,7 +711,6 @@ class EVMAssembler(object):
             
             :param assembler: assembler code for one instruction
             :param offset: offset of the instruction in the bytecode (optional)
-
             :return: An Instruction object
 
             Example use::
@@ -741,7 +740,6 @@ class EVMAssembler(object):
 
             :param assembler: assembler code for any number of instructions
             :param offset: offset of the first instruction in the bytecode(optional)
-
             :return: An generator of Instruction objects
 
             Example use::
@@ -776,6 +774,7 @@ class EVMAssembler(object):
             :param bytecode: the bytecode stream 
             :param offset: offset of the instruction in the bytecode(optional)
             :type bytecode: iterator/sequence/str
+            :return: an Instruction object
 
             Example use::
             
@@ -795,11 +794,10 @@ class EVMAssembler(object):
     @staticmethod
     def disassemble_all(bytecode, offset=0):
         ''' Decode all instructions in bytecode
+
             :param bytecode: an evm bytecode (binary)
             :param offset: offset of the first instruction in the bytecode(optional)
-
             :type bytecode: iterator/sequence/str
-
             :return: An generator of Instruction objects
 
             Example use::
@@ -831,15 +829,15 @@ class EVMAssembler(object):
     @staticmethod
     def disassemble(bytecode, offset=0):
         ''' Disassemble an EVM bytecode 
+
             :param bytecode: binary representation of an evm bytecode (hexadecimal)
             :param offset: offset of the first instruction in the bytecode(optional)
             :type bytecode: str
-
             :return: the text representation of the aseembler code
 
             Example use::
             
-                >>> EVMAssembler.disassemble("0x6060604052600261010")
+                >>> EVMAssembler.disassemble("\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00")
                 ...
                 PUSH1 0x60
                 BLOCKHASH
@@ -856,9 +854,7 @@ class EVMAssembler(object):
 
             :param asmcode: an evm assembler program
             :param offset: offset of the first instruction in the bytecode(optional)
-
             :type asmcode: str
-
             :return: the hex representation of the bytecode
 
             Example use::
@@ -871,7 +867,7 @@ class EVMAssembler(object):
                                         """
                                      )
                 ...
-                "0x6060604052600261010"
+                "\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00"
         '''
         return ''.join(map(lambda x:x.bytes, EVMAssembler.assemble_all(asmcode, offset=offset)))
 
@@ -881,14 +877,12 @@ class EVMAssembler(object):
 
             :param bytecode: canonical representation of an evm bytecode (hexadecimal)
             :param offset: offset of the first instruction in the bytecode(optional)
-
             :type bytecode: str
-
             :return: the text representation of the aseembler code
 
             Example use::
             
-                >>> EVMAssembler.disassemble("0x6060604052600261010")
+                >>> EVMAssembler.disassemble_hex("0x6060604052600261010")
                 ...
                 PUSH1 0x60
                 BLOCKHASH
@@ -905,16 +899,15 @@ class EVMAssembler(object):
     @staticmethod
     def assemble_hex(asmcode, offset=0):
         ''' Assemble an EVM program 
+
             :param asmcode: an evm assembler program
             :param offset: offset of the first instruction in the bytecode(optional)
-
             :type asmcode: str
-
             :return: the hex representation of the bytecode
 
             Example use::
             
-                >>> EVMAssembler.assemble(  """PUSH1 0x60
+                >>> EVMAssembler.assemble_hex(  """PUSH1 0x60
                                            BLOCKHASH
                                            MSTORE
                                            PUSH1 0x2
