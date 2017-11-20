@@ -24,8 +24,8 @@ Examples of practical manticore usage are also [on github](https://github.com/tr
 
 ## Requirements
 
-Manticore is supported on Linux, and requires Python 2.7. Ubuntu 16.04 is strongly recommended.  
-If you'd like to use the Ethereum API functionalities such as compiling sol source, you would need to install the [solc](https://github.com/ethereum/solidity) binary.
+Manticore is supported on Linux, and requires Python 2.7. Ubuntu 16.04 is strongly recommended.
+Ethereum APIs which compile Solidity source code require the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
 ## Quick Start
 
