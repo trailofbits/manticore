@@ -412,7 +412,7 @@ class EVMAssembler(object):
 
         @property
         def has_operand(self):
-            ''' Flag that indicates if the instruction uses an immediate operand'''
+            ''' True if the instruction uses an immediate operand'''
             return self.operand_size > 0
 
         @property
