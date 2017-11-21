@@ -345,6 +345,8 @@ class Armv7Cpu(Cpu):
 
     def _set_mode(self, new_mode):
         assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
+        if self.mode != new_mode:
+            logger.debug("swapping into {} mode".format({cs.CS_MODE_ARM:"ARM", cs.CS_MODE_THUMB:"THUMB"}[new_mode]))
         self.mode = new_mode
         self.disasm.disasm.mode = new_mode
 
@@ -573,9 +575,15 @@ class Armv7Cpu(Cpu):
         :param Armv7Operand dest: The destination operand; register.
         :param Armv7Operand src: The source operand; register or immediate.
         '''
-        result, carry_out = src.read(withCarry=True)
-        dest.write(result)
-        cpu.setFlags(C=carry_out, N=HighBit(result), Z=(result == 0))
+        if cpu.mode == cs.CS_MODE_ARM:
+            result, carry_out = src.read(withCarry=True)
+            dest.write(result)
+            cpu.setFlags(C=carry_out, N=HighBit(result), Z=(result == 0))
+        else:
+            # thumb mode cannot do wonky things to the operand, so no carry calculation
+            result = src.read()
+            dest.write(result)
+            cpu.setFlags(N=HighBit(result), Z=(result == 0))
 
     @instruction
     def MOVT(cpu, dest, src):
@@ -815,8 +823,12 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
-    def SUB(cpu, dest, src, add):
-        result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
+    def SUB(cpu, dest, src, add=None):
+        if add:
+            result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
+        else:
+            #support for the thumb mode version of sub <dest>, <immediate>
+            result, carry, overflow = cpu._ADD(dest.read(), ~src.read())
         dest.write(result)
         return result, carry, overflow
 
@@ -862,7 +874,10 @@ class Armv7Cpu(Cpu):
         address = cpu.PC
         target = dest.read()
         next_instr_addr = cpu.regfile.read('PC')
-        cpu.regfile.write('LR', next_instr_addr)
+        if cpu.mode == cs.CS_MODE_THUMB:
+            cpu.regfile.write('LR', next_instr_addr + 1)
+        else:
+            cpu.regfile.write('LR', next_instr_addr)
         cpu.regfile.write('PC', target & ~1)
 
         ## The `blx <label>` form of this instruction forces a mode swap
