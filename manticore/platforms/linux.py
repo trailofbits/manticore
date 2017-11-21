@@ -53,7 +53,11 @@ class File(object):
         state = {}
         state['name'] = self.name
         state['mode'] = self.mode
-        state['pos'] = self.tell()
+        try:
+            state['pos'] = self.tell()
+        except IOError:
+            # This is to handle special files like /dev/tty
+            state['pos'] = None
         return state
 
     def __setstate__(self, state):
@@ -61,7 +65,8 @@ class File(object):
         mode = state['mode']
         pos = state['pos']
         self.file = file(name, mode)
-        self.seek(pos)
+        if pos is not None:
+            self.seek(pos)
 
     @property
     def name(self):
@@ -1748,9 +1753,9 @@ class Linux(Platform):
         self.sched()
         self.running.remove(procid)
         #self.procs[procid] = None
-        logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
+        logger.debug("EXIT_GROUP PROC_%02d %s", procid, ctypes.c_int32(error_code).value)
         if len(self.running) == 0 :
-            raise TerminateState("Program finished with exit status: %r" % error_code, testcase=True)
+            raise TerminateState("Program finished with exit status: %r" % ctypes.c_int32(error_code).value, testcase=True)
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):

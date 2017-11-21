@@ -124,7 +124,7 @@ class BranchLimited(Policy):
     def _register(self, *args):
         self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
-    def _visited_callback(self, state, instr):
+    def _visited_callback(self, state, pc, instr):
         ''' Maintain our own copy of the visited set
         '''
         pc = state.platform.current.PC
@@ -164,7 +164,7 @@ class Executor(Eventful):
 
     _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
 
-    def __init__(self, initial=None, workspace=None, policy='random', context=None, **kwargs):
+    def __init__(self, initial=None, store=None, policy='random', context=None, **kwargs):
         super(Executor, self).__init__(**kwargs)
 
 
@@ -185,7 +185,7 @@ class Executor(Eventful):
         # Number of currently running workers. Initially no running workers
         self._running = manager.Value('i', 0 )
 
-        self._workspace = Workspace(self._lock, workspace)
+        self._workspace = Workspace(self._lock, store)
 
         # Executor wide shared context
         if context is None:
@@ -380,6 +380,10 @@ class Executor(Eventful):
         #Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
+        if len(solutions) == 1:
+            setstate(state, solutions[0])
+            return state
+
         logger.info("Forking, about to store. (policy: %s, values: %s)",
                     policy,
                     ', '.join('0x{:x}'.format(sol) for sol in solutions))
@@ -468,8 +472,7 @@ class Executor(Eventful):
                         #setstate()
 
                         logger.debug("Generic state fork on condition")
-                        self.fork(current_state, e.expression, e.policy, e.setstate)
-                        current_state = None
+                        current_state = self.fork(current_state, e.expression, e.policy, e.setstate)
 
                     except TerminateState as e:
                         #Notify this worker is done

@@ -1,11 +1,8 @@
 from seth import *
-
 seth = ManticoreEVM()
-
 #And now make the contract account to analyze
 source_code = '''
 pragma solidity ^0.4.15;
-
 contract Overflow {
     event Log(string);
     uint private sellerBalance=0;
@@ -18,29 +15,15 @@ contract Overflow {
     } 
 }
 '''
-
 #Initialize user and contracts
 user_account = seth.create_account(balance=1000)
-bytecode = seth.compile(source_code)
-contract_account = seth.create_contract(owner=user_account, 
-                                          balance=0, 
-                                          init=bytecode)
+contract_account = seth.solidity_create_contract(source_code, owner=user_account, balance=0)
 
 #First add wont owerflow uint256 representation
-symbolic_data = seth.make_function_call('add(uint256)', seth.SValue)
-seth.transaction(  caller=user_account,
-                    address=contract_account,
-                    value=0,
-                    data=symbolic_data,
-                 )
+contract_account.add(seth.SValue)
 
 #Potential overflow
-symbolic_data = seth.make_function_call('add(uint256)', seth.SValue)
-seth.transaction(  caller=user_account,
-                    address=contract_account,
-                    value=0,
-                    data=symbolic_data
-                 )
+contract_account.add(seth.SValue)
 
 
 print "[+] There are %d reverted states now"% len(seth.final_state_ids)
