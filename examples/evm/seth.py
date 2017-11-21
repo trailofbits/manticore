@@ -385,7 +385,7 @@ class ManticoreEVM(Manticore):
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data)
 
-    def _will_execute_instruction_callback(self, state, instruction):
+    def _will_execute_instruction_callback(self, state, pc, instruction):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
 
@@ -614,7 +614,7 @@ class ManticoreEVM(Manticore):
         offset = 0
         count = 0
         total = 0
-        for i in evm.EVMAssembler.disassemble_all(runtime_bytecode[:end]) :
+        for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]) :
             
             if (account_address, offset) in seen:
                 output += bcolors.OKGREEN

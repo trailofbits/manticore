@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # EVM disassembler
-from manticore.platforms.evm import EVMAssembler as ea
+from manticore.platforms.evm import EVMAsm as ea
 
 def printi(instruction):
     print 'Instruction: %s'% instruction

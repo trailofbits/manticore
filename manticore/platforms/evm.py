@@ -266,24 +266,24 @@ class EVMMemory(object):
                         del self._symbols[address+offset]
                     self._concrete_write(address+offset, value[offset])
         
-class EVMAssembler(object):
+class EVMAsm(object):
     ''' 
         EVM Instruction factory
         
         Example use::
 
-            >>> from manticore.platforms.evm import EVMAssembler
-            >>> EVMAssembler.disassemble_one('\\x60\\x10')
+            >>> from manticore.platforms.evm import EVMAsm
+            >>> EVMAsm.disassemble_one('\\x60\\x10')
             Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
-            >>> EVMAssembler.assemble_one('PUSH1 0x10')
+            >>> EVMAsm.assemble_one('PUSH1 0x10')
             Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
-            >>> tuple(EVMAssembler.disassemble_all('\\x30\\x31'))
+            >>> tuple(EVMAsm.disassemble_all('\\x30\\x31'))
             (Instruction(0x30, 'ADDRESS', 0, 0, 1, 2, 'Get address of currently executing account.', None, 0), 
              Instruction(0x31, 'BALANCE', 0, 1, 1, 20, 'Get balance of the given account.', None, 1))
-            >>> tuple(EVMAssembler.assemble_all('ADDRESS\\nBALANCE'))
+            >>> tuple(EVMAsm.assemble_all('ADDRESS\\nBALANCE'))
             (Instruction(0x30, 'ADDRESS', 0, 0, 1, 2, 'Get address of currently executing account.', None, 0),
              Instruction(0x31, 'BALANCE', 0, 1, 1, 20, 'Get balance of the given account.', None, 1))
-            >>> EVMAssembler.assemble_hex(
+            >>> EVMAsm.assemble_hex(
             ...                         """PUSH1 0x60
             ...                            BLOCKHASH 
             ...                            MSTORE
@@ -292,14 +292,14 @@ class EVMAssembler(object):
             ...                         """
             ...                      )
             '0x606040526002610100'
-            >>> EVMAssembler.disassemble_hex('0x606040526002610100')
+            >>> EVMAsm.disassemble_hex('0x606040526002610100')
             'PUSH1 0x60\\nBLOCKHASH\\nMSTORE\\nPUSH1 0x2\\nPUSH2 0x100'
     '''
     class Instruction(object):
         def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None, offset=0):
             '''
             This represents an EVM instruction. 
-            EVMAssembler will create this for you.
+            EVMAsm will create this for you.
 
             :param opcode: the opcode value
             :param name: instruction name
@@ -313,7 +313,7 @@ class EVMAssembler(object):
 
             Example use::
 
-                instruction = EVMAssembler.assemble_one('PUSH1 0x10')
+                instruction = EVMAsm.assemble_one('PUSH1 0x10')
                 print 'Instruction: %s'% instruction
                 print '\tdescription:', instruction.description
                 print '\tgroup:', instruction.group
@@ -695,7 +695,7 @@ class EVMAssembler(object):
     def _get_reverse_table():
         ''' Build an internal table used in the assembler '''
         reverse_table = {}
-        for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) in EVMAssembler._table.items():
+        for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) in EVMAsm._table.items():
             mnemonic = name
             if name == 'PUSH':
                 mnemonic = '%s%d'%(name, (opcode&0x1f) + 1)
@@ -715,12 +715,12 @@ class EVMAssembler(object):
 
             Example use::
 
-                >>> print evm.EVMAssembler.assemble_one('LT')
+                >>> print evm.EVMAsm.assemble_one('LT')
             
 
         '''
         try:
-            _reverse_table = EVMAssembler._get_reverse_table()
+            _reverse_table = EVMAsm._get_reverse_table()
             assembler = assembler.strip().split(' ')
             opcode, name, operand_size, pops, pushes, gas, description = _reverse_table[assembler[0].upper()]
             if operand_size > 0:
@@ -730,7 +730,7 @@ class EVMAssembler(object):
                 assert len(assembler) == 1
                 operand = None
 
-            return EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
+            return EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
         except:
             raise Exception("Something wron at offset %d"%offset)
 
@@ -744,7 +744,7 @@ class EVMAssembler(object):
 
             Example use::
             
-                >>> evm.EVMAssembler.encode_one("""PUSH1 0x60
+                >>> evm.EVMAsm.encode_one("""PUSH1 0x60
                     PUSH1 0x40
                     MSTORE
                     PUSH1 0x2
@@ -763,7 +763,7 @@ class EVMAssembler(object):
         for line in assembler:
             if not line.strip():
                 continue
-            instr = EVMAssembler.assemble_one(line, offset=offset)
+            instr = EVMAsm.assemble_one(line, offset=offset)
             yield instr
             offset += instr.size
 
@@ -778,14 +778,14 @@ class EVMAssembler(object):
 
             Example use::
             
-                >>> print EVMAssembler.assemble_one('PUSH1 0x10')
+                >>> print EVMAsm.assemble_one('PUSH1 0x10')
 
         '''
         bytecode = iter(bytecode)
         opcode = ord(next(bytecode))
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
-        name, operand_size, pops, pushes, gas, description = EVMAssembler._table.get(opcode, invalid)
-        instruction = EVMAssembler.Instruction(opcode, name, operand_size, pops, pushes, gas, description, offset=offset)
+        name, operand_size, pops, pushes, gas, description = EVMAsm._table.get(opcode, invalid)
+        instruction = EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, offset=offset)
         if instruction.has_operand:
             instruction.parse_operand(bytecode)
 
@@ -802,7 +802,7 @@ class EVMAssembler(object):
 
             Example use::
             
-                >>> for inst in EVMAssembler.decode_all(bytecode):
+                >>> for inst in EVMAsm.decode_all(bytecode):
                 ...    print inst
 
                 ... 
@@ -822,7 +822,7 @@ class EVMAssembler(object):
 
         bytecode = iter(bytecode)
         while True:
-            instr = EVMAssembler.disassemble_one(bytecode, offset=offset)
+            instr = EVMAsm.disassemble_one(bytecode, offset=offset)
             offset += instr.size
             yield instr
 
@@ -837,7 +837,7 @@ class EVMAssembler(object):
 
             Example use::
             
-                >>> EVMAssembler.disassemble("\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00")
+                >>> EVMAsm.disassemble("\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00")
                 ...
                 PUSH1 0x60
                 BLOCKHASH
@@ -846,7 +846,7 @@ class EVMAssembler(object):
                 PUSH2 0x100
 
         '''
-        return '\n'.join(map(str, EVMAssembler.disassemble_all(bytecode, offset=offset)))
+        return '\n'.join(map(str, EVMAsm.disassemble_all(bytecode, offset=offset)))
 
     @staticmethod
     def assemble(asmcode, offset=0):
@@ -859,7 +859,7 @@ class EVMAssembler(object):
 
             Example use::
             
-                >>> EVMAssembler.assemble(  """PUSH1 0x60
+                >>> EVMAsm.assemble(  """PUSH1 0x60
                                            BLOCKHASH
                                            MSTORE
                                            PUSH1 0x2
@@ -869,7 +869,7 @@ class EVMAssembler(object):
                 ...
                 "\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00"
         '''
-        return ''.join(map(lambda x:x.bytes, EVMAssembler.assemble_all(asmcode, offset=offset)))
+        return ''.join(map(lambda x:x.bytes, EVMAsm.assemble_all(asmcode, offset=offset)))
 
     @staticmethod
     def disassemble_hex(bytecode, offset=0):
@@ -882,7 +882,7 @@ class EVMAssembler(object):
 
             Example use::
             
-                >>> EVMAssembler.disassemble_hex("0x6060604052600261010")
+                >>> EVMAsm.disassemble_hex("0x6060604052600261010")
                 ...
                 PUSH1 0x60
                 BLOCKHASH
@@ -894,7 +894,7 @@ class EVMAssembler(object):
         if bytecode.startswith('0x'):
             bytecode = bytecode[2:]
         bytecode = bytecode.decode('hex')
-        return EVMAssembler.disassemble(bytecode, offset=offset)
+        return EVMAsm.disassemble(bytecode, offset=offset)
 
     @staticmethod
     def assemble_hex(asmcode, offset=0):
@@ -907,7 +907,7 @@ class EVMAssembler(object):
 
             Example use::
             
-                >>> EVMAssembler.assemble_hex(  """PUSH1 0x60
+                >>> EVMAsm.assemble_hex(  """PUSH1 0x60
                                            BLOCKHASH
                                            MSTORE
                                            PUSH1 0x2
@@ -917,7 +917,7 @@ class EVMAssembler(object):
                 ...
                 "0x6060604052600261010"
         '''
-        return '0x' + EVMAssembler.assemble(asmcode, offset=offset).encode('hex')
+        return '0x' + EVMAsm.assemble(asmcode, offset=offset).encode('hex')
 
 
 
@@ -1159,7 +1159,7 @@ class EVM(Eventful):
         return value
 
     def disassemble(self):
-        return EVMAssembler.disassemble(self.bytecode)
+        return EVMAsm.disassemble(self.bytecode)
 
 
     @property
@@ -1183,7 +1183,7 @@ class EVM(Eventful):
             while True:
                 yield '\x00'
 
-        return EVMAssembler.disassemble_one(getcode())
+        return EVMAsm.disassemble_one(getcode())
 
     #auxiliar funcs
     #Stack related
@@ -1226,7 +1226,7 @@ class EVM(Eventful):
         last_pc = self.pc
         current = self.instruction
 
-        self._publish( 'will_execute_instruction', current)
+        self._publish( 'will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
 
@@ -1932,9 +1932,11 @@ class EVMWorld(Platform):
                                  setstate=lambda a,b: None,
                                  policy='ALL')
             if set(res) == set([True]):
+                self._pending_transaction = None
                 raise TerminateState("Not Enough Funds for transaction", testcase=True)
         else:
             if src_balance < value:
+                self._pending_transaction = None
                 raise TerminateState("Not Enough Funds for transaction", testcase=True)
 
         self.storage[dst]['balance'] += value
@@ -2043,7 +2045,6 @@ class EVMWorld(Platform):
             while True:
                 self.execute()
         except TerminateState as e:
-            self._pending_transaction = None
             if self.depth == 0 and e.message == 'RETURN':
                 return self.last_return
             '''import traceback
