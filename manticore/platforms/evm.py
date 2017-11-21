@@ -1626,6 +1626,7 @@ class EVM(Eventful):
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
+        #self.world.set_storage_data(self.address, offset, value)
         self.global_storage[self.address]['storage'][offset] = value
         if value is 0:
             del self.global_storage[self.address]['storage'][offset]
@@ -1902,14 +1903,70 @@ class EVMWorld(Platform):
         else:
             return self._global_storage
 
-    @storage.setter
-    def storage(self, value):
-        if self.depth:
-            self.current.global_storage = value
-        else:
-            self._global_storage = value
+    def set_storage(self, address, offset, value):
+        self.storage[address]['storage'][offset] = value
 
-    def _push(self, vm):
+    def get_storage_data(self, address, offset):
+        return self.storage[address]['storage'].get(offset)
+
+    def set_balance(self, address, value):
+        self.storage[int(address)]['balance'] = value
+
+    def get_balance(self, address):
+        return self.storage[address]['balance']
+
+    def add_to_balance(self, address, value):
+        self.storage[address]['balance'] += value
+
+    def send_ether(self, src, dst, value):
+        src_balance = self.get_balance(src)
+        dst_balance = self.get_balance(dst)
+        #discarding absurd amount of ether
+        self.constraints.add(src_balance + value >= src_balance)
+
+        if issymbolic(src_balance) or issymbolic(value):
+            res = solver.get_all_values(self._constraints, src_balance < value)
+            if set(res) == set([True, False]): 
+                raise Concretize('Forking on available funds',
+                                 expression = src_balance < value,
+                                 setstate=lambda a,b: None,
+                                 policy='ALL')
+            if set(res) == set([True]):
+                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+        else:
+            if src_balance < value:
+                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+
+        self.storage[dst]['balance'] += value
+        self.storage[src]['balance'] -= value
+
+    def get_code(self, address):
+        return self.storage[address]['code']
+
+    def set_code(self, address, data):
+        self.storage[address]['code'] = data
+
+    def log(self, address, topic, data):
+        pass
+    '''
+    self.log_storage = lambda addr: 0
+    self.add_suicide = lambda addr: 0
+    self.add_refund = lambda x: 0
+    self.block_prevhash = 0
+    self.block_coinbase = 0
+    self.block_timestamp = 0
+    self.block_number = 0
+    self.block_difficulty = 0
+    self.block_gas_limit = 0
+    self.tx_origin = b'0' * 40
+    self.tx_gasprice = 0
+    self.create = lambda msg: 0, 0, 0
+    self.call = lambda msg: 0, 0, 0
+    self.sendmsg = lambda msg: 0, 0, 0
+    '''
+
+
+    def _push_vm(self, vm):
         #Storage address ->  account(value, local_storage)
         vm.global_storage = self.storage
         vm.global_storage[vm.address]['storage'] = copy.copy(self.storage[vm.address]['storage'])
@@ -1926,13 +1983,17 @@ class EVMWorld(Platform):
                 self._pop(rollback=True)
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
-    def _pop(self, rollback=False):
+    def _pop_vm(self, rollback=False):
         vm = self._callstack.pop()
         assert self.constraints == vm.constraints
         if self.current:
             self.current.constraints = vm.constraints
         if not rollback:
-            self.storage = vm.global_storage
+            if self.depth:
+                self.current.global_storage = vm.global_storage
+            else:
+                self._global_storage = vm.global_storage
+
             self._deleted_address = self._deleted_address.union(vm.suicide)
             self._logs += vm.logs
             if not self.depth:
@@ -1982,6 +2043,7 @@ class EVMWorld(Platform):
             while True:
                 self.execute()
         except TerminateState as e:
+            self._pending_transaction = None
             if self.depth == 0 and e.message == 'RETURN':
                 return self.last_return
             '''import traceback
@@ -2073,14 +2135,14 @@ class EVMWorld(Platform):
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
-        bytecode = self.storage[address]['code']
+        bytecode = self.get_code(address)
         self._pending_transaction = ('Call', address, origin, price, data, caller, value, bytecode, header)
 
         if run:
             assert self.depth == 0
             assert  not issymbolic(caller) 
             assert  not issymbolic(address) 
-            assert self.storage[caller]['balance'] >= value
+            assert self.get_balance(caller) >= value
             #run contract
             #Assert everything is concrete?
             try:
@@ -2095,34 +2157,10 @@ class EVMWorld(Platform):
         assert self.current is None or self.current.last_exception is not None
 
         ty, address, origin, price, data, caller, value, bytecode, header = self._pending_transaction
-
-
-        if issymbolic(self.storage[caller]['balance']) or issymbolic(value):
-            res = solver.get_all_values(self._constraints, self.storage[caller]['balance'] < value)
-            if set(res) == set([True, False]): 
-                raise Concretize('Forking on available funds',
-                                 expression = self.storage[caller]['balance'] < value,
-                                 setstate=lambda a,b: None,
-                                 policy='ALL')
-            if set(res) == set([True]): 
-                self._pending_transaction = None
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
-        else:
-            if self.storage[caller]['balance'] < value:
-                self._pending_transaction = None
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
-
-        self._pending_transaction = None
-
-        #discarding absurd amount of ether
-        self.constraints.add(self.storage[address]['balance'] + value >= self.storage[address]['balance'])
-
-        self.storage[caller]['balance'] -= value
-        self.storage[address]['balance'] += value
-
+        self.send_ether(caller, address, value)
+        self._pending_transaction=None
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
-        
-        self._push(new_vm)
+        self._push_vm(new_vm)
         if self.depth == 1:
             #handle human transactions
             if ty == 'Create':
@@ -2137,14 +2175,14 @@ class EVMWorld(Platform):
         caller = self.current.address
         price = self.current.price
         depth = self.depth + 1
-        bytecode = self.storage[to]['code']
+        bytecode = self.get_code(to)
         header = {'timestamp' :1}
         self.transaction(address, origin, price, data, caller, value, header)
         self._process_pending_transaction()
 
 
     def RETURN(self, data):
-        prev_vm = self._pop() #current VM changed!
+        prev_vm = self._pop_vm() #current VM changed!
         if self.depth == 0:
             self.last_return=data
             self.last_pc = prev_vm.pc
@@ -2157,8 +2195,7 @@ class EVMWorld(Platform):
 
         if isinstance(last_ex, Create):
             self.current._push(prev_vm.address)
-            self.storage[prev_vm.address]['code'] = data
-
+            self.set_code(prev_vm.address, data)
         else:
             size = min(last_ex.out_size, len(data))
             self.current.write_buffer(last_ex.out_offset, data[:size])
@@ -2167,7 +2204,7 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def STOP(self):
-        prev_vm = self._pop(rollback=False)
+        prev_vm = self._pop_vm(rollback=False)
         if self.depth == 0:
             self.last_pc = prev_vm.pc
             raise TerminateState("STOP", testcase=True)
@@ -2178,7 +2215,7 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def THROW(self):
-        prev_vm = self._pop(rollback=True)
+        prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
         self.storage[prev_vm.caller]['balance'] += prev_vm.value
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
@@ -2193,7 +2230,7 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def REVERT(self, data):
-        prev_vm = self._pop(rollback=True)
+        prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
         self.storage[prev_vm.caller]['balance'] += prev_vm.value
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
@@ -2216,7 +2253,7 @@ class EVMWorld(Platform):
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
         self.suicide.add(address)
-        prev_vm = self._pop(rollback=False)
+        prev_vm = self._pop_vm(rollback=False)
         if self.depth == 0:
             self.last_pc = prev_vm.pc
             raise TerminateState("SELFDESTRUCT", testcase=True)

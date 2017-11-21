@@ -30,7 +30,7 @@ class ABI(object):
             return ABI.serialize_array(value)
         if isinstance(value, (int, long)):
             return ABI.serialize_uint(value)
-        if isinstance(value, SByte):
+        if isinstance(value, ABI.SByte):
             return ABI.serialize_uint(value.size) + (None,)*value.size + (('\x00',)*(32-(value.size%32)))
         if value is None:
             return (None,)*32
@@ -79,12 +79,12 @@ class ABI(object):
         for arg in args:
             if isinstance(arg, (list, tuple, str, ManticoreEVM.SByte)):
                 result.append(ABI.serialize(dynamic_offset))
-                serialized_arg = ManticoreEVM.serialize(arg)
+                serialized_arg = ABI.serialize(arg)
                 dynamic_args.append(serialized_arg)
                 assert len(serialized_arg)%32 ==0
                 dynamic_offset += len(serialized_arg)
             else:
-                result.append(ManticoreEVM.serialize(arg))
+                result.append(ABI.serialize(arg))
 
         for arg in dynamic_args:
             result.append(arg)
@@ -93,14 +93,14 @@ class ABI(object):
         
     @staticmethod
     def make_function_call(method_name, *args):
-        function_id = ManticoreEVM.make_function_id(method_name)
+        function_id = ABI.make_function_id(method_name)
         def check_bitsize(value, size):
             if isinstance(value, BitVec):
                 return value.size==size
             return (value & ~((1<<size)-1)) == 0
         assert len(function_id) == 4
         result = [tuple(function_id)]
-        result.append(ManticoreEVM.make_function_arguments(*args))
+        result.append(ABI.make_function_arguments(*args))
         return reduce(lambda x,y: x+y, result)
 
 
