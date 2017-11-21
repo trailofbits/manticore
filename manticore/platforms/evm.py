@@ -1226,7 +1226,7 @@ class EVM(Eventful):
         last_pc = self.pc
         current = self.instruction
 
-        self._publish( 'will_execute_instruction', current)
+        self._publish( 'will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
 
