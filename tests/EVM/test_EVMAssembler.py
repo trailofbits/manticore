@@ -13,21 +13,21 @@ class EVMTest_Assembler(unittest.TestCase):
     maxDiff=None 
 
     def test_ADD_1(self):
-        instruction = evm.EVMAssembler.disassemble_one('\x60\x10')
-        self.assertEqual( evm.EVMAssembler.Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0),
+        instruction = evm.EVMAsm.disassemble_one('\x60\x10')
+        self.assertEqual( evm.EVMAsm.Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0),
                           instruction)
 
 
-        instruction = evm.EVMAssembler.assemble_one('PUSH1 0x10')
-        evm.EVMAssembler.Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
+        instruction = evm.EVMAsm.assemble_one('PUSH1 0x10')
+        evm.EVMAsm.Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
         
-        instructions1 = evm.EVMAssembler.disassemble_all('\x30\x31')
-        instructions2 = evm.EVMAssembler.assemble_all('ADDRESS\nBALANCE')
+        instructions1 = evm.EVMAsm.disassemble_all('\x30\x31')
+        instructions2 = evm.EVMAsm.assemble_all('ADDRESS\nBALANCE')
         self.assertTrue( all(a == b for a,b in zip(instructions1, instructions2)))
 
         #High level simple assembler/disassembler
 
-        bytecode = evm.EVMAssembler.assemble_hex(
+        bytecode = evm.EVMAsm.assemble_hex(
                                 """PUSH1 0x60
                                    BLOCKHASH
                                    MSTORE
@@ -37,7 +37,7 @@ class EVMTest_Assembler(unittest.TestCase):
                              )
         self.assertEqual(bytecode, '0x606040526002610100')
 
-        asmcode =  evm.EVMAssembler.disassemble_hex('0x606040526002610100')
+        asmcode =  evm.EVMAsm.disassemble_hex('0x606040526002610100')
         self.assertEqual(asmcode, '''PUSH1 0x60\nBLOCKHASH\nMSTORE\nPUSH1 0x2\nPUSH2 0x100''')
 
 
