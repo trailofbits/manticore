@@ -789,7 +789,7 @@ class Cpu(Eventful):
         emu = UnicornEmulator(self)
         try:
             emu.emulate(insn)
-        except e:
+        except Exception as e:
             raise InstructionEmulationError(str(e))
         finally:
             # We have been seeing occasional Unicorn issues with it not clearing

@@ -53,6 +53,8 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
+    parser.add_argument('--version', action='version', version='Manticore 0.1.5',
+                         help='Show program version information')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
