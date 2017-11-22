@@ -1,8 +1,8 @@
-from manticore import Manticore
-from manticore.core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
-from manticore.core.smtlib.visitors import arithmetic_simplifier
-from manticore.platforms import evm
-from manticore.core.state import State
+from . import Manticore
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
+from .core.smtlib.visitors import arithmetic_simplifier
+from .platforms import evm
+from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
 import sha3
@@ -171,9 +171,38 @@ class EVMAccount(object):
 
 
 class ManticoreEVM(Manticore):
-    ''' Manticore EVM manager'''
+    ''' Manticore EVM manager
+    
+        Usage Ex::
+
+            from seth import ManticoreEVM, ABI
+            seth = ManticoreEVM()
+            #And now make the contract account to analyze
+            source_code = """
+                pragma solidity ^0.4.15;
+                contract AnInt {
+                    uint private i=0;                    
+                    function set(uint value){
+                        i=value
+                    } 
+                }
+            """
+            #Initialize user and contracts
+            user_account = seth.create_account(balance=1000)
+            contract_account = seth.solidity_create_contract(source_code, owner=user_account, balance=0)
+            contract_account.set(12345, value=100) 
+
+            seth.report()
+            print seth.coverage(contract_account)
+    '''
     SByte=ABI.SByte
     SValue=ABI.SValue
+
+
+    @staticmethod
+    def compile(source_code):
+        name, source_code, bytecode, srcmap, srcmap_runtime, hashes = ManticoreEVM._compile(source_code)
+        return bytecode
 
     @staticmethod
     def _compile(source_code):
@@ -226,11 +255,11 @@ class ManticoreEVM(Manticore):
     @property
     def world(self):
         ''' The world instance or None if there is more than one state '''  
-        return self.get_world(-1)
+        return self.get_world(None)
 
     @property
     def running_state_ids(self):
-        ''' States Ids of the states still running ''' 
+        ''' IDs of the running states''' 
         with self.locked_context('seth') as context:
             if self.initial_state is not None:
                 return context['_saved_states'] + [-1]
@@ -239,40 +268,32 @@ class ManticoreEVM(Manticore):
 
     @property
     def final_state_ids(self):
-        ''' States Ids of finalized states ''' 
-
+        ''' IDs of the terminated states ''' 
         with self.locked_context('seth') as context:
             return context['_final_states']
 
-    def get_world(self, state_id=-1):
+    def get_world(self, state_id=None):
         ''' Returns the evm world of `state_id` state. '''
-        if state_id == -1:
-            state = self.initial_state
-        else:
-            state = self._executor._workspace.load_state(state_id, delete=False)
-
+        state = self.load(state_id)
         if state is None:
             return None
         else:
             return state.platform
 
-    def get_balance(self, address, state_id=-1):
+    def get_balance(self, address, state_id=None):
         ''' Balance for account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).storage[address]['balance']
 
-    def get_storage(self, address, offset, state_id=-1):
+    def get_storage(self, address, offset, state_id=None):
         ''' Storage data for `offset` on account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
         return self.get_world(state_id).storage[address]['storage'].get(offset)
 
-    def last_return(self, state_id=-1):
-        if state_id == -1:
-            state = self.initial_state
-        else:
-            state = self._executor._workspace.load_state(state_id, delete=False)
+    def last_return(self, state_id=None):
+        state = self.load(state_id)
         return state.world.last_return
 
     def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
@@ -386,6 +407,30 @@ class ManticoreEVM(Manticore):
                 context['_saved_states'].append(state_id)
         return state_id
 
+    def load(self, state_id=None):
+        ''' Load one of the running or final states.
+            
+            :param state_id: a state id or None. If None it assumes there is a single running state
+        '''
+        state = None
+        if state_id is None:
+            #a single state was assumed
+            if len(self.running_state_ids) == 1:  
+                #Get the ID of the single running state              
+                state_id = self.running_state_ids[0]
+                if state_id != -1:
+                    #if there is a single running state with id != 1. We consider it is a new initial_state
+                    assert self.initial_state is None
+                    state = self.initial_state = self._executor._workspace.load_state(state_id, delete=True)
+            else:
+                raise Exception("More than one state running. Do not know which to choose.")
+        if state_id == -1:
+            state = self.initial_state
+        else:
+            state = self._executor._workspace.load_state(state_id, delete=False)
+
+        return state
+
     #Callbacks
     def _terminate_state_callback(self, state, state_id, e):
         ''' INTERNAL USE 
@@ -460,7 +505,7 @@ class ManticoreEVM(Manticore):
             for i in range(offset, offset+size):
                 code_data.add((state.platform.current.address, i))
 
-    def report(self, state_id, ty=None):
+    def report(self, state_id=None, ty=None):
         ''' Prints a small report on state id '''
         def compare_buffers(a, b):
             if len(a) != len(b):
@@ -471,12 +516,7 @@ class ManticoreEVM(Manticore):
                 if cond is False:
                     return False
             return cond
-
-        if state_id == -1:
-            state = self.initial_state
-        else:
-            state = self._executor._workspace.load_state(state_id, delete=False)
-
+        state = self.load(state_id)
         world = state.platform
         trace = state.context['seth.trace']
         last_pc = trace[-1][1]
@@ -628,14 +668,13 @@ class ManticoreEVM(Manticore):
             xdata = x(data).encode('hex')
             print '\t Data:', xdata
             if ty == 'CALL':
-                print '\t Function: ', 
                 done = False
-                rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
                 try:
+                    rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
                     signature = rhashes.get(xdata[:8], '{fallback}()')
                     done = True
                     func_name = signature.split('(')[0]
-                    print func_name,'(',
+                    print '\t Function: ', func_name,'(',
                     types = signature.split('(')[1][:-1].split(',')
                     off = 8
                     for ty in types:

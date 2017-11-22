@@ -1,4 +1,4 @@
-from seth import ManticoreEVM
+from manticore.seth import ManticoreEVM
 ################ Script #######################
 
 seth = ManticoreEVM()

@@ -1,4 +1,4 @@
-from seth import *
+from manticore.seth import ManticoreEVM
 seth = ManticoreEVM()
 #And now make the contract account to analyze
 source_code = '''
