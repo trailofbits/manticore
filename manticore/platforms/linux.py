@@ -1370,6 +1370,10 @@ class Linux(Platform):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
         return 1000
 
+    def sys_gettid(self, v):
+        logger.debug("GETTID, warning tid modeled as concrete 1000")
+        return 1000
+
     def sys_ARM_NR_set_tls(self, val):
         if hasattr(self, '_arm_tls_memory'):
             self.current.write_int(self._arm_tls_memory, val)
