@@ -15,7 +15,8 @@ from ..memory import (
     ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
 )
 from ...utils.helpers import issymbolic
-from ...utils.emulate import UnicornEmulator
+from ...utils.emulate import ConcreteUnicornEmulator
+from ...utils.fallback_emulator import UnicornEmulator
 from ...utils.event import Eventful
 
 logger = logging.getLogger("CPU")
@@ -364,9 +365,10 @@ class Cpu(Eventful):
     - stack_alias
     '''
 
-    def __init__(self, regfile, memory, **kwargs):
+    def __init__(self, regfile, memory, *args, **kwargs):
         assert isinstance(regfile, RegisterFile)
         self._disasm = kwargs.pop("disasm", 'capstone')
+        self._concrete = kwargs.pop("concrete", False)
         super(Cpu, self).__init__(**kwargs)
         self._regfile = regfile
         self._memory = memory
@@ -387,15 +389,17 @@ class Cpu(Eventful):
         state['icount'] = self._icount
         state['last_pc'] = self._last_pc
         state['disassembler'] = self._disasm
+        state['concrete'] = self._concrete
         return state
 
     def __setstate__(self, state):
         Cpu.__init__(self, state['regfile'],
                      state['memory'],
-                     disasm=state['disassembler'])
+                     disasm=state['disassembler'], concrete=state['concrete'])
         self._icount = state['icount']
         self._last_pc = state['last_pc']
         self._disasm = state['disassembler']
+        self._concrete = state['concrete']
         super(Cpu, self).__setstate__(state)
 
     @property
@@ -761,11 +765,16 @@ class Cpu(Eventful):
             self.publish('did_emulate_instruction', insn)
 
         def determine_implementation(instruction):
-            implementation = fallback_to_emulate
-            
-            if 'SYSCALL' in name:
-                self.emu.sync_unicorn_to_manticore()
+            if self._concrete:
+                implementation = fallback_to_emulate
+
+                if 'SYSCALL' in name:
+                    self.emu.sync_unicorn_to_manticore()
+                    implementation = getattr(self, name, fallback_to_emulate)
+            else:
                 implementation = getattr(self, name, fallback_to_emulate)
+
+            if implementation != fallback_to_emulate:
                 self._non_unicorn_instrs += 1
 
             return implementation
@@ -790,14 +799,18 @@ class Cpu(Eventful):
         '''
 
         if not hasattr(self, 'emu'):
-            self.emu = UnicornEmulator(self)
+            if self._concrete:
+                self.emu = ConcreteUnicornEmulator(self)
+            else:
+                self.emu = UnicornEmulator(self)
         self.emu.emulate(insn)
 
 
         # We have been seeing occasional Unicorn issues with it not clearing
         # the backing unicorn instance. Saw fewer issues with the following
         # line present.
-        # del emu
+        if not self._concrete:
+            del emu
 
     def render_instruction(self, insn=None):
         try:

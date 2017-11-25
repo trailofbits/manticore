@@ -16,7 +16,7 @@ class Eventful(object):
         self._signals = dict()
         # a set of sink eventful objects (see forward_events_from())
         self._forwards = WeakKeyDictionary()
-        super(Eventful, self).__init__(*args, **kwargs)
+        super(Eventful, self).__init__()
 
     def __setstate__(self, state):
         ''' It wont get serialized by design, user is responsible to reconnect'''
@@ -47,7 +47,7 @@ class Eventful(object):
         return self._signals.setdefault(name,  dict())
 
     # The underscore _name is to avoid naming collisions with callback params
-    def publish(self, _name, *args, **kwargs):   
+    def publish(self, _name, *args, **kwargs):
         bucket = self._get_signal_bucket(_name)
         for robj, methods in bucket.iteritems():
             for callback in methods:

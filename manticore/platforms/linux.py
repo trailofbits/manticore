@@ -315,6 +315,7 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
+        self._concrete = kwargs.pop('concrete', False)
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -410,7 +411,7 @@ class Linux(Platform):
 
     def _mk_proc(self, arch):
         mem = Memory32() if arch in {'i386', 'armv7'} else Memory64()
-        cpu = CpuFactory.get_cpu(mem, arch)
+        cpu = CpuFactory.get_cpu(mem, arch, concrete=self._concrete)
         return cpu
 
 
@@ -2256,7 +2257,7 @@ class SLinux(Linux):
     :param tuple[str] symbolic_files: files to consider symbolic
     """
     def __init__(self, programs, argv=None, envp=None, symbolic_files=None,
-                 disasm='capstone'):
+                 disasm='capstone', **kwargs):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
         symbolic_files = [] if symbolic_files is None else symbolic_files
@@ -2267,7 +2268,7 @@ class SLinux(Linux):
         super(SLinux, self).__init__(programs,
                                      argv=argv,
                                      envp=envp,
-                                     disasm=disasm)
+                                     disasm=disasm, **kwargs)
 
 
     def _mk_proc(self, arch):
@@ -2280,7 +2281,7 @@ class SLinux(Linux):
             from ..core.cpu.binja import BinjaCpu
             return BinjaCpu(mem)
 
-        cpu = CpuFactory.get_cpu(mem, arch)
+        cpu = CpuFactory.get_cpu(mem, arch, concrete=self._concrete)
         return cpu
 
     def add_symbolic_file(self, symbolic_file):

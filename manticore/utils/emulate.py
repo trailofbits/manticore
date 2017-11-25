@@ -20,7 +20,7 @@ import time
 
 logger = logging.getLogger("EMULATOR")
 
-class UnicornEmulator(object):
+class ConcreteUnicornEmulator(object):
     '''
     Helper class to emulate a single instruction via Unicorn.
     '''

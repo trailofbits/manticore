@@ -65,7 +65,7 @@ def make_decree(program, concrete_data='', **kwargs):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start = ''):
+def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start = '', **kwargs):
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = ['%s=%s'%(k,v) for k,v in env.items()]
@@ -74,7 +74,7 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
 
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
-                            symbolic_files=symbolic_files)
+                            symbolic_files=symbolic_files, **kwargs)
 
     initial_state = State(constraints, platform)
 
