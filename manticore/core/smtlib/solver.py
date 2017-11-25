@@ -26,7 +26,7 @@ from visitors import *
 from ...utils.helpers import issymbolic, memoized
 import collections
 
-logger = logging.getLogger("SMT")
+logger = logging.getLogger(__name__)
 
 class Z3NotFoundError(EnvironmentError):
     pass
@@ -330,8 +330,10 @@ class Z3Solver(Solver):
 
     #get-all-values min max minmax
     #@memoized
-    def get_all_values(self, constraints, expression, maxcnt=300, silent=False):
+    def get_all_values(self, constraints, expression, maxcnt=3000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
+        if not isinstance(expression, Expression):
+            return [expression]
         assert isinstance(constraints, ConstraintSet)
         assert isinstance(expression, Expression)
 
@@ -447,6 +449,11 @@ class Z3Solver(Solver):
         if not issymbolic(expression):
             if isinstance(expression, str):
                 expression = ord(expression)
+            if isinstance(expression, list):
+                arr = constraints.new_array(index_max=len(expression))
+                for i in range(len(expression)):
+                    arr[i] = expression[i]
+                return self.get_value(constraints, arr)
             return expression
         assert isinstance(expression, (Bool, BitVec, Array))
         with constraints as temp_cs:

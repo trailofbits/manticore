@@ -17,7 +17,7 @@ import StringIO
 import logging
 import random
 from windows_syscalls import syscalls_num
-logger = logging.getLogger("PLATFORM")
+logger = logging.getLogger(__name__)
 
 
 class SyscallNotImplemented(TerminateState):

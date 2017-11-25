@@ -16,8 +16,7 @@ from ..smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
 from ..memory import MemoryException
 from ...utils.helpers import issymbolic
 
-logger = logging.getLogger("CPU")
-
+logger = logging.getLogger(__name__)
 
 OP_NAME_MAP = {
     'JNE':      'JNZ',

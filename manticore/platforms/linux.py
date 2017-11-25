@@ -1,3 +1,4 @@
+import StringIO
 import errno
 import fcntl
 import logging
@@ -15,14 +16,14 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
 from ..core.cpu.binja import BinjaCpu
 from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
-from ..core.smtlib import Operators, ConstraintSet
+from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
-from ..platforms.platform import Platform
+from ..platforms.platform import Platform, SyscallNotImplemented
 from ..utils.helpers import issymbolic, is_binja_disassembler
 from . import linux_syscalls
 
-logger = logging.getLogger("PLATFORM")
+logger = logging.getLogger(__name__)
 
 class RestartSyscall(Exception):
     pass
@@ -38,6 +39,9 @@ def perms_from_elf(elf_flags):
 
 def perms_from_protflags(prot_flags):
     return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
+
+def mode_from_flags(file_flags):
+    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags&7]
 
 
 class File(object):
@@ -748,7 +752,7 @@ class Linux(Platform):
         elf = self.elf
         arch = self.arch
         addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
-        logger.debug("Loading %s as a %s elf"%(filename, arch))
+        logger.debug("Loading %s as a %s elf",filename, arch)
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
@@ -840,8 +844,8 @@ class Linux(Platform):
         #cpu.write_bytes(elf_bss, '\x00'*((elf_bss | (align-1))-elf_bss))
 
         logger.debug("Zeroing main elf fractional pages. From %x to %x.", elf_bss, elf_brk)
-        logger.debug("Main elf bss:%x"%elf_bss)
-        logger.debug("Main elf brk %x:"%elf_brk)
+        logger.debug("Main elf bss:%x",elf_bss)
+        logger.debug("Main elf brk %x:",elf_brk)
 
 	#FIXME Need a way to inspect maps and perms so
 	#we can rollback all to the initial state after zeroing
@@ -933,7 +937,7 @@ class Linux(Platform):
 	    try:
 	        cpu.memory[elf_bss:elf_brk] = '\x00'*(elf_brk-elf_bss)
 	    except Exception, e:
-	        logger.debug("Exception zeroing Interpreter fractional pages: %s"%str(e))
+	        logger.debug("Exception zeroing Interpreter fractional pages: %s",str(e))
             #TODO #FIXME mprotect as it was before zeroing?
 
 
@@ -1025,6 +1029,17 @@ class Linux(Platform):
             raise BadFd()
         else:
             return self.files[fd]
+
+    def _transform_write_data(self, data):
+        '''
+        Implement in subclass to transform data written by write(2)/writev(2)
+
+        Nop by default.
+        :param list data: Anything being written to a file descriptor
+        :rtype list
+        :return: Transformed data
+        '''
+        return data
 
     def sys_umask(self, mask):
         '''
@@ -1168,6 +1183,7 @@ class Linux(Platform):
                 raise RestartSyscall()
 
             data = cpu.read_bytes(buf, count)
+            data = self._transform_write_data(data)
             write_fd.write(data)
 
             for line in ''.join([str(x) for x in data]).split('\n'):
@@ -1281,8 +1297,8 @@ class Linux(Platform):
         else:
             return -errno.EINVAL
 
-    def _sys_open_get_file(self, filename, flags, mode):
-        f = File(filename, mode) # TODO (theo) modes, flags
+    def _sys_open_get_file(self, filename, flags):
+        f = File(filename, mode_from_flags(flags))
         return f
 
     def sys_open(self, buf, flags, mode):
@@ -1298,15 +1314,16 @@ class Linux(Platform):
                     filename = os.path.abspath(self.program)
                 else:
                     logger.info("FIXME!")
-            mode = {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[flags&7]
 
-            f = self._sys_open_get_file(filename, flags, mode)
-            logger.debug("Opening file %s for %s real fd %d",
-                         filename, mode, f.fileno())
-        # FIXME(theo) generic exception
-        except Exception as e:
-            logger.info("Could not open file %s. Reason %s" % (filename, str(e)))
-            return -1
+            f = self._sys_open_get_file(filename, flags)
+            logger.debug("Opening file %s for real fd %d",
+                         filename, f.fileno())
+        except IOError as e:
+            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            if e.errno is not None:
+                return -e.errno
+            else:
+                return -errno.EINVAL
 
         return self._open(f)
 
@@ -1652,6 +1669,12 @@ class Linux(Platform):
         ptrsize = cpu.address_bit_size
         sizeof_iovec = 2 * (ptrsize // 8)
         total = 0
+        try:
+            write_fd = self._get_fd(fd)
+        except BadFd:
+            logger.error("writev: Not a valid file descriptor ({})".format(fd))
+            return -errno.EBADF
+
         for i in xrange(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
@@ -1659,8 +1682,9 @@ class Linux(Platform):
             data = ""
             for j in xrange(0,size):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
-            logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
-            self.files[fd].write(data)
+            logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)",fd, buf, size, data, len(data))
+            data = self._transform_write_data(data)
+            write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))
             total+=size
         return total
@@ -1876,7 +1900,10 @@ class Linux(Platform):
             name = table.get(index, None)
             implementation = getattr(self, name)
         except (AttributeError, KeyError):
-            raise Exception("SyscallNotImplemented %d %d"%(self.current.address_bit_size, index))
+            if name is not None:
+                raise SyscallNotImplemented(index, name)
+            else:
+                raise Exception("Bad syscall index, {}".format(index))
 
         out = self._syscall_abi.invoke(implementation)
 
@@ -2033,9 +2060,11 @@ class Linux(Platform):
             if self.clocks % 10000 == 0:
                 self.check_timers()
                 self.sched()
-        except (Interruption, Syscall):
+        except (Interruption, Syscall) as e:
             try:
                 self.syscall()
+                if hasattr(e, 'on_handled'):
+                    e.on_handled()
             except RestartSyscall:
                 pass
 
@@ -2243,6 +2272,7 @@ class Linux(Platform):
         return last.header.p_vaddr + last.header.p_memsz
 
 
+
 ############################################################################
 # Symbolic versions follows
 
@@ -2319,16 +2349,29 @@ class SLinux(Linux):
         self.symbolic_files = state['symbolic_files']
         super(SLinux, self).__setstate__(state)
 
-    def _sys_open_get_file(self, filename, flags, mode):
+    def _sys_open_get_file(self, filename, flags):
         if filename in self.symbolic_files:
             logger.debug("%s file is considered symbolic", filename)
-            assert flags & 7 == os.O_RDWR or flags & 7 == os.O_RDONLY, (
-                "Symbolic files should be readable?")
-            f = SymbolicFile(self.constraints, filename, mode)
+            f = SymbolicFile(self.constraints, filename, mode_from_flags(flags))
         else:
-            f = super(SLinux, self)._sys_open_get_file(filename, flags, mode)
+            f = super(SLinux, self)._sys_open_get_file(filename, flags)
 
         return f
+
+
+    def _transform_write_data(self, data):
+        bytes_concretized = 0;
+        concrete_data = []
+        for c in data:
+            if issymbolic(c):
+                bytes_concretized += 1
+                c = chr(solver.get_value(self.constraints, c))
+            concrete_data.append(c)
+
+        if bytes_concretized > 0:
+            logger.debug("Concretized {} written bytes.".format(bytes_concretized))
+
+        return super(SLinux, self)._transform_write_data(concrete_data)
 
     #Dispatchers...
 
@@ -2421,3 +2464,36 @@ class SLinux(Linux):
             self.current.memory.munmap(buf, 1024)
 
         return rv
+
+    def generate_workspace_files(self):
+        def solve_to_fd(data, fd):
+            try:
+                for c in data:
+                    fd.write(chr(solver.get_value(self.constraints, c)))
+            except SolverException:
+                fd.write('{SolverException}')
+
+        out = StringIO.StringIO()
+        inn = StringIO.StringIO()
+        err = StringIO.StringIO()
+        net = StringIO.StringIO()
+
+        for name, fd, data in self.syscall_trace:
+            if name in ('_transmit', '_write'):
+                if fd == 1:
+                    solve_to_fd(data, out)
+                elif fd == 2:
+                    solve_to_fd(data, err)
+            if name in ('_recv'):
+                solve_to_fd(data, net)
+            if name in ('_receive', '_read') and fd == 0:
+                solve_to_fd(data, inn)
+
+        ret = {
+            'syscalls': repr(self.syscall_trace),
+            'stdout': out.getvalue(),
+            'stdin': inn.getvalue(),
+            'stderr': err.getvalue(),
+            'net': net.getvalue()
+        }
+        return ret

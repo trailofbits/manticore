@@ -13,6 +13,7 @@ class LinuxTest(unittest.TestCase):
 
     def setUp(self):
         self.linux = linux.Linux(self.BIN_PATH)
+        self.symbolic_linux = linux.SLinux.empty_platform('armv7')
 
     def test_regs_init_state_x86(self):
         x86_defaults = {
@@ -63,7 +64,7 @@ class LinuxTest(unittest.TestCase):
         nr_fstat64 = 197
 
         # Create a minimal state
-        model = linux.SLinux.empty_platform('armv7')
+        model = self.symbolic_linux
         model.current.memory.mmap(0x1000, 0x1000, 'rw ')
         model.current.SP = 0x2000-4
 
@@ -81,3 +82,49 @@ class LinuxTest(unittest.TestCase):
 
         print ''.join(model.current.read_bytes(stat, 100)).encode('hex')
 
+    def test_linux_workspace_files(self):
+        files = self.symbolic_linux.generate_workspace_files()
+        self.assertIn('syscalls', files)
+        self.assertIn('stdout', files)
+        self.assertIn('stdin', files)
+        self.assertIn('stderr', files)
+        self.assertIn('net', files)
+
+    def test_syscall_events(self):
+        nr_fstat64 = 197
+
+        class Receiver(object):
+            def __init__(self):
+                self.nevents = 0
+            def will_exec(self, pc, i):
+                self.nevents += 1
+            def did_exec(self, last_pc, pc, i):
+                self.nevents += 1
+
+        # Create a minimal state
+        model = self.symbolic_linux
+        model.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        model.current.SP = 0x2000-4
+        model.current.memory.mmap(0x2000, 0x2000, 'rwx')
+        model.current.PC = 0x2000
+        model.current.write_int(model.current.PC, 0x050f)
+
+        r = Receiver()
+        model.current.subscribe('will_execute_instruction', r.will_exec)
+        model.current.subscribe('did_execute_instruction', r.did_exec)
+
+        filename = model.current.push_bytes('/bin/true\x00')
+        fd = model.sys_open(filename, os.O_RDONLY, 0600)
+
+        stat = model.current.SP - 0x100
+        model.current.R0 = fd
+        model.current.R1 = stat
+        model.current.R7 = nr_fstat64
+        self.assertEquals(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
+
+        pre_icount = model.current.icount
+        model.execute()
+        post_icount = model.current.icount
+
+        self.assertEquals(pre_icount+1, post_icount)
+        self.assertEquals(r.nevents, 2)

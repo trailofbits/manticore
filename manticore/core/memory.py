@@ -6,7 +6,7 @@ import logging
 from ..utils.mappings import _mmap, _munmap
 from ..utils.helpers import issymbolic
 
-logger = logging.getLogger('MEMORY')
+logger = logging.getLogger(__name__)
 
 
 class MemoryException(Exception):
@@ -870,7 +870,7 @@ class SMemory(Memory):
     '''
     def __init__(self, constraints, symbols=None, *args, **kwargs):
         '''
-        Builds a map of memory.
+        Builds a memory.
 
         :param constraints:  a set of constraints
         :param symbols: Symbolic chunks

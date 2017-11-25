@@ -207,6 +207,60 @@ class StateTest(unittest.TestCase):
         self.assertEqual(msg, 'statemsg')
         raise _CallbackExecuted
 
+    def testContextSerialization(self):
+        import cPickle as pickle
+        initial_file = ''
+        new_file = ''
+        new_new_file = ''
+        constraints = ConstraintSet()
+        initial_state = State(constraints, FakePlatform())
+        initial_state.context['step'] = 10
+        initial_file = pickle.dumps(initial_state)
+        with initial_state as new_state:
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 10)
+
+            new_state.context['step'] = 20 
+
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 20)
+            new_file = pickle.dumps(new_state)
+
+            with new_state as new_new_state:
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 20)
+
+                new_new_state.context['step'] += 10 
+
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 30)
+
+                new_new_file = pickle.dumps(new_new_state)
+
+                self.assertEqual( initial_state.context['step'], 10)
+                self.assertEqual( new_state.context['step'], 20)
+                self.assertEqual( new_new_state.context['step'], 30)
+
+            self.assertEqual( initial_state.context['step'], 10)
+            self.assertEqual( new_state.context['step'], 20)
+
+        self.assertEqual( initial_state.context['step'], 10)
+
+        del initial_state
+        del new_state
+        del new_new_state
+
+
+
+        initial_state = pickle.loads(initial_file)
+        self.assertEqual( initial_state.context['step'], 10)
+        new_state = pickle.loads(new_file)
+        self.assertEqual( new_state.context['step'], 20)
+        new_new_state = pickle.loads(new_new_file)
+        self.assertEqual( new_new_state.context['step'], 30)
+        
     def test_state_gen(self):
         self.state.subscribe('will_generate_testcase', self._test_state_gen_helper)
         with self.assertRaises(_CallbackExecuted):
