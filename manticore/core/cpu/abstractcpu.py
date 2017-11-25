@@ -507,14 +507,14 @@ class Cpu(Eventful):
         self.publish('did_write_memory', where, expression, size)
 
 
-    def _raw_read(self, where, size=None):
+    def _raw_read(self, where, size=1):
         '''
         Selects bytes from memory
 
         :param int where: address to read from
-        :param size: number of bits to read
-        :return: the value read
-        :rtype: int or BitVec
+        :param size: number of bytes to read
+        :return: the bytes in memory
+        :rtype: list
         '''
         data = self.memory[where:where + size]
         assert (len(data)) == size

@@ -16,9 +16,6 @@ from capstone import *
 from capstone.arm import *
 from capstone.x86 import *
 
-import pprint as pp
-import struct
-from binascii import hexlify
 import time
 
 logger = logging.getLogger("EMULATOR")
@@ -40,6 +37,11 @@ class UnicornEmulator(object):
         cpu.subscribe('did_write_memory', self.write_back_memory)
         cpu.subscribe('did_write_register', self.write_back_register)
         cpu.subscribe('did_set_descriptor', self.update_segment)
+        cpu.subscribe('will_execute_instruction', self.pre_execute_callback)
+        cpu.subscribe('did_execute_instruction', self.post_execute_callback)
+        
+        self.reset()
+        
         # Keep track of all memory mappings. We start with just the text section
         self.mem_map = {}
         for m in cpu.memory.maps:
@@ -53,12 +55,11 @@ class UnicornEmulator(object):
                     permissions |= UC_PROT_EXEC
                 self.mem_map[m.start] = (len(m), permissions)
 
+
         # Establish Manticore state, potentially from past emulation
         # attempts
-        self.reset()
         for base in self.mem_map:
             size, perms = self.mem_map[base]
-            # print("About to map %s bytes from %02x to %02x" % (size, base, base + size))
             self._emu.mem_map(base, size, perms)
 
         self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED,  self._hook_unmapped)
@@ -92,6 +93,7 @@ class UnicornEmulator(object):
                 from ..core.cpu.abstractcpu import ConcretizeRegister
                 raise ConcretizeRegister(self._cpu, reg, "Concretizing for emulation.",
                                          policy='ONE')
+            logger.debug("Writing %s into %s", val, reg)
             self._emu.reg_write(self._to_unicorn_id(reg), val)
 
         self.scratch_mem = 0x1000
@@ -99,11 +101,13 @@ class UnicornEmulator(object):
 
         for index, m in enumerate(self.mem_map):
             size = self.mem_map[m][0]
+            
+            start_time = time.time()
             map_bytes = self._cpu._raw_read(m,size)
+            logger.info("Reading %s kb map at 0x%02x took %s seconds", size / 1024, m, time.time() - start_time)
             self._emu.mem_write(m, ''.join(map_bytes))
-        
+
         self.init_time = time.time() - self.init_time
-        print("(U) Unicorn init complete (%s seconds)" % self.init_time)
         self._last_step_time = time.time()
 
     def reset(self):
@@ -149,7 +153,6 @@ class UnicornEmulator(object):
                 permissions |= UC_PROT_WRITE
             if 'x' in m.perms:
                 permissions |= UC_PROT_EXEC
-            # print("(U) Mapping %s kb from %s to %s" % (len(m) / 1024, hex(m.start), hex(m.start+len(m))))
             uc.mem_map(m.start, len(m), permissions)
 
             self.mem_map[m.start] = (len(m), permissions)
@@ -184,10 +187,9 @@ class UnicornEmulator(object):
         '''
 
         try:
-            # print("Mapping memory at " + hex(address))
             m = self._create_emulated_mapping(uc, address)
         except MemoryException as e:
-            print("Failed to map memory")
+            logger.error("Failed to map memory")
             self._to_raise = e
             self._should_try_again = False
             return False
@@ -199,7 +201,7 @@ class UnicornEmulator(object):
         '''
         Handle software interrupt (SVC/INT)
         '''
-        print("Caught interrupt: %s" % number)
+        logger.info("Caught interrupt: %s" % number)
         from ..core.cpu.abstractcpu import Interruption
         self._to_raise = Interruption(number)
         return True
@@ -221,8 +223,7 @@ class UnicornEmulator(object):
                 try:
                     return globals()['UC_X86_REG_' + custom_mapping[reg_name]]
                 except:
-                    print 'UC_X86_REG_' + str(reg_name) + ' not in '
-                    pp.pprint([k for k in globals() if 'UC_X86_REG' in k])
+                    logger.error("Can't find register UC_X86_REG_%s",str(reg_name))
                     raise
 
         else:
@@ -240,14 +241,8 @@ class UnicornEmulator(object):
 
             # Try emulation
             self._should_try_again = False
-
-            starttime = time.time()
-            self.out_of_step_time += (starttime - self._last_step_time)
-            self._last_step_time = starttime
             
             self._step(instruction)
-            
-            self.in_step_time += (time.time() - starttime)
 
             if not self._should_try_again:
                 break
@@ -285,7 +280,7 @@ class UnicornEmulator(object):
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
-            print("Raising %s" % self._to_raise)
+            logger.info("Raising %s", self._to_raise)
             raise self._to_raise
 
         return
@@ -297,7 +292,7 @@ class UnicornEmulator(object):
             self._cpu.write_register(reg, val)
         for location in self._mem_delta:
             value, size = self._mem_delta[location]
-            # print("Writing %s bytes to 0x%02x" % (size, location))
+            logger.debug("Writing %s bytes to 0x%02x", size, location)
             self._cpu.write_int(location, value, size*8)
         self._mem_delta = {}
         self.sync_time += (time.time() - start)
@@ -306,19 +301,16 @@ class UnicornEmulator(object):
         if where in self._mem_delta.keys():
             return
         if issymbolic(expr):
-            print("Concretizing memory: ")
-            # print("Constraint set: %s" % self._cpu.memory.constraints)
             data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
             concrete_data = []
             for c in data:
                 if issymbolic(c):
                     c = chr(solver.get_value(self._cpu.memory.constraints, c))
-                    print("Solved: %s" % hexlify(c))
                 concrete_data.append(c)
             data = concrete_data
         else:
             data = [Operators.CHR(Operators.EXTRACT(expr, offset, 8)) for offset in xrange(0, size, 8)]
-        # print("Writing back %s bits to 0x%02x" % (size, where))
+        logger.debug("Writing back %s bits to 0x%02x", size, where)
         if not self.in_map(where):
             self._create_emulated_mapping(self._emu, where)
         self._emu.mem_write(where, ''.join(data))
@@ -327,13 +319,10 @@ class UnicornEmulator(object):
         if reg in self.flag_registers:
             self._emu.reg_write(self._to_unicorn_id('EFLAGS'), self._cpu.read_register('EFLAGS'))
             return
-        oldval = self._emu.reg_read(self._to_unicorn_id(reg))
-        # if oldval != val:
-            # print("(U) %s: %s -> %s" % (reg, oldval, val))
         self._emu.reg_write(self._to_unicorn_id(reg), val)
 
     def update_segment(self, selector, base, size, perms):
-        # print("(U) Updating selector %s to 0x%02x (%s bytes) (%s)" % (selector, base, size, perms))
+        logger.info("Updating selector %s to 0x%02x (%s bytes) (%s)", selector, base, size, perms)
         if selector == 99:
             self.set_fs(base)
 
@@ -370,3 +359,13 @@ class UnicornEmulator(object):
         '''
         FSMSR = 0xC0000100
         return self.set_msr(FSMSR, addr)
+        
+    def pre_execute_callback(self, _insn):
+        start_time = time.time()
+        self.out_of_step_time += (start_time - self._last_step_time)
+        self._last_step_time = start_time
+
+    def post_execute_callback(self, _insn):
+        start_time = time.time()
+        self.in_step_time += (start_time - self._last_step_time)
+        self._last_step_time = start_time

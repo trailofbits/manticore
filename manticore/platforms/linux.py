@@ -1108,7 +1108,6 @@ class Linux(Platform):
 
     def sys_read(self, fd, buf, count):
 
-        print("(M) Reading %s bytes from FD %s into %02x" % (count, fd, buf))
         data = ''
         if count != 0:
             # TODO check count bytes from buf
@@ -1878,10 +1877,8 @@ class Linux(Platform):
         except (AttributeError, KeyError):
             raise Exception("SyscallNotImplemented %d %d"%(self.current.address_bit_size, index))
 
-        start = time.time()
         out = self._syscall_abi.invoke(implementation)
 
-        print("(M) Invoked %s syscall (%s seconds)" % (name, time.time() - start))
         return out
 
     def sys_clock_gettime(self, clock_id, timespec):

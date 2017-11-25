@@ -54,7 +54,7 @@ class Policy(object):
             yield policy_context
 
     def _add_state_callback(self, state_id, state):
-        ''' Save summarize(state) on policy shared context before 
+        ''' Save summarize(state) on policy shared context before
             the state is stored
         '''
         summary = self.summarize(state)
@@ -137,7 +137,7 @@ class BranchLimited(Policy):
 
     def choice(self, state_ids):
         interesting = set(state_ids)
-        with self.locked_context() as policy_ctx: 
+        with self.locked_context() as policy_ctx:
             visited = policy_ctx.get('visited', dict())
             summaries = policy_ctx.get('summaries', dict())
             lst = []
@@ -193,7 +193,7 @@ class Executor(Eventful):
 
         #scheduling priority policy (wip)
         #Set policy
-        policies = {'random': Random, 
+        policies = {'random': Random,
                     'uncovered': Uncovered,
                     'branchlimited': BranchLimited,
                     }
@@ -209,7 +209,7 @@ class Executor(Eventful):
 
     @contextmanager
     def locked_context(self, key=None, default=dict):
-        ''' Executor context is a shared memory object. All workers share this. 
+        ''' Executor context is a shared memory object. All workers share this.
             It needs a lock. Its used like this:
 
             with executor.context() as context:
@@ -494,7 +494,6 @@ class Executor(Eventful):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
-                    print str(e), trace
                     logger.error("Exception: %s\n%s", str(e), trace)
                     #Notify this worker is done
                     self.publish('will_terminate_state', current_state, current_state_id, 'Exception')
