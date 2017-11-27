@@ -587,6 +587,8 @@ class TranslatorSmtlib(Visitor):
         return output
 
 def translate_to_smtlib(expression, **kwargs):
+    if isinstance(expression, ArrayProxy):
+        expression = expression.array
     translator = TranslatorSmtlib(**kwargs)
     translator.visit(expression)
     return translator.result

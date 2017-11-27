@@ -198,6 +198,8 @@ class ManticoreEVM(Manticore):
     SByte=ABI.SByte
     SValue=ABI.SValue
 
+    
+
 
     @staticmethod
     def compile(source_code):
