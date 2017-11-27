@@ -705,9 +705,9 @@ class X86Cpu(Cpu):
         assert base>=0 and base < (1<<self.address_bit_size)
         assert limit >=0 and limit < 0xffff or limit&0xfff == 0
         #perms ? not used yet Also is not really perms but rather a bunch of attributes
-        self.publish('will_set_descriptor', selector, base, limit, perms)
+        self._publish('will_set_descriptor', selector, base, limit, perms)
         self._segments[selector] = (base, limit, perms)
-        self.publish('did_set_descriptor', selector, base, limit, perms)
+        self._publish('did_set_descriptor', selector, base, limit, perms)
 
     def get_descriptor(self, selector):
         if selector in self._segments:

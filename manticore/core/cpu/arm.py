@@ -324,8 +324,8 @@ class Armv7Cpu(Cpu):
     arch = cs.CS_ARCH_ARM
     mode = cs.CS_MODE_ARM
 
-    def __init__(self, memory):
-        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
+    def __init__(self, memory, *args, **kwargs):
+        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory, *args, **kwargs)
         self._it_conditional = list()
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = False

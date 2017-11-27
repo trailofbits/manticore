@@ -272,7 +272,7 @@ class BinjaCpu(Cpu):
     '''
     A Virtual CPU model for Binary Ninja's IL
     '''
-    def __init__(self, memory):
+    def __init__(self, memory, *args, **kwargs):
         '''
         Builds a CPU model.
         :param arch: BinaryNinja arch.
@@ -285,7 +285,7 @@ class BinjaCpu(Cpu):
             # get a platform specific CPU
             # and mark it as non-virtual so as to not increment the PC in the
             # @instruction decorator
-            self.platform_cpu = CpuFactory.get_cpu(memory, 'amd64')
+            self.platform_cpu = CpuFactory.get_cpu(memory, 'amd64', *args, **kwargs)
             self.platform_cpu.real_cpu = False
         platform_regs = self.platform_cpu.all_registers
         self.max_instr_width = arch.max_instr_length
@@ -301,7 +301,7 @@ class BinjaCpu(Cpu):
         super(BinjaCpu, self).__init__(BinjaRegisterFile('x86_64',
                                                          platform_regs),
                                        memory,
-                                       disasm="binja-il")
+                                       disasm="binja-il", *args, **kwargs)
 
     def initialize_disassembler(self, program_path):
         import binaryninja as bn
