@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-A simple concolic execution driver script. Only currently supports passing symbolic arguments via argv.
+A simple trace following execution driver script. Only supports passing symbolic arguments via argv.
 
 '''
 
