@@ -334,8 +334,11 @@ class Workspace(object):
     A workspace maintains a list of states to run and assigns them IDs.
     """
 
-    def __init__(self, lock, desc=None):
-        self._store = Store.fromdescriptor(desc)
+    def __init__(self, lock, store_or_desc=None):
+        if isinstance(store_or_desc, Store):
+            self._store = store_or_desc
+        else:
+            self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
         self._last_id = manager.Value('i', 0)
         self._lock = lock
@@ -413,8 +416,8 @@ class ManticoreOutput(object):
         self._lock = manager.Condition(manager.RLock())
 
     @property
-    def uri(self):
-        return self._store.uri
+    def store(self):
+        return self._store
 
     @property
     def descriptor(self):

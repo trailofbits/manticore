@@ -35,6 +35,11 @@ class Variable(Expression):
     def name(self):
         return self._name
 
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        memo[id(self)] = self
+        return self
+
 
 class Constant(Expression):
     def __init__(self, value, *args, **kwargs):
@@ -530,7 +535,7 @@ class UnsignedGreaterOrEqual(BoolOperation):
 class Array(Expression):
     def __init__(self, index_bits, index_max, *operands, **kwargs):
         assert index_bits in (32, 64, 256)
-        assert index_max is None or isinstance(index_max, int)
+        assert index_max is None or isinstance(index_max, (int, long))
         assert index_max is None or index_max > 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits
         self._index_max = index_max
@@ -699,7 +704,7 @@ class ArraySelect(BitVec, Operation):
 class BitVecSignExtend(BitVecOperation):
     def __init__(self, operand, size_dest, *args, **kwargs):
         assert isinstance(operand, BitVec)
-        assert isinstance(size_dest, int)
+        assert isinstance(size_dest, (int, long))
         assert size_dest >= operand.size
         super(BitVecSignExtend, self).__init__(size_dest, operand, *args, **kwargs)
         self.extend = size_dest - operand.size
@@ -726,7 +731,7 @@ class BitVecExtract(BitVecOperation):
 
 class BitVecConcat(BitVecOperation):
     def __init__(self, size_dest, *operands, **kwargs):
-        assert isinstance(size_dest, int)
+        assert isinstance(size_dest, (int, long))
         assert all(map(lambda x: isinstance(x, BitVec), operands))
         assert size_dest == sum(map(lambda x: x.size, operands))
         super(BitVecConcat, self).__init__(size_dest, *operands, **kwargs)

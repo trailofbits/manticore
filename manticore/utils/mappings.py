@@ -45,13 +45,6 @@ if osname == "darwin" or osname.startswith("linux"):
     mmap = _mmap
     munmap = _munmap
 
-elif osname == "win32":
-    def _mmap(fd, offset, size):
-        return MMAP.mmap(fd, size, offset=offset, access=MMAP.ACCESS_COPY)
-    def _munmap(address, size):
-        pass
-    mmap = _mmap
-    munmap = _munmap
 else:
     raise ValueError("Unsupported host OS: " + osname)
 

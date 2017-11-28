@@ -42,6 +42,12 @@ class InstructionNotImplementedError(CpuException):
     '''
     pass
 
+class InstructionEmulationError(CpuException):
+    '''
+    Exception raised when failing to emulate an instruction outside of Manticore.
+    '''
+    pass
+
 class DivideByZeroError(CpuException):
     ''' A division by zero '''
     pass
@@ -742,25 +748,35 @@ class Cpu(Eventful):
             return
 
         name = self.canonicalize_instruction_name(insn)
-
-        def fallback_to_emulate(*operands):
-            text_bytes = ' '.join('%02x'%x for x in insn.bytes)
-            logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                        insn.address, text_bytes, insn.mnemonic, insn.op_str)
-            self.emulate(insn)
-
-        implementation = getattr(self, name, fallback_to_emulate)
-
+            
         if logger.level == logging.DEBUG :
             logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
 
         try:
-            implementation(*insn.operands)
-        finally:
-            self._icount += 1
-            self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
+            try:
+                getattr(self, name)(*insn.operands)
+            except AttributeError:
+                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                            insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                self.emulate(insn)
+        except (Interruption, Syscall) as e:
+            e.on_handled = lambda: self._publish_instruction_as_executed(insn)
+            raise e
+        else:
+            self._publish_instruction_as_executed(insn)
+
+    #FIXME(yan): In the case the instruction implementation invokes a system call, we would not be able to
+    # publish the did_execute_instruction event from here, so we capture and attach it to the syscall
+    # exception for the platform to emit it for us once the syscall has successfully been executed.
+    def _publish_instruction_as_executed(self, insn):
+        '''
+        Notify listeners that an instruction has been executed.
+        '''
+        self._icount += 1
+        self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
 
     def emulate(self, insn):
         '''
@@ -771,13 +787,15 @@ class Cpu(Eventful):
         '''
 
         emu = UnicornEmulator(self)
-        emu.emulate(insn)
-
-
-        # We have been seeing occasional Unicorn issues with it not clearing
-        # the backing unicorn instance. Saw fewer issues with the following
-        # line present.
-        del emu
+        try:
+            emu.emulate(insn)
+        except Exception as e:
+            raise InstructionEmulationError(str(e))
+        finally:
+            # We have been seeing occasional Unicorn issues with it not clearing
+            # the backing unicorn instance. Saw fewer issues with the following
+            # line present.
+            del emu
 
     def render_instruction(self, insn=None):
         try:
