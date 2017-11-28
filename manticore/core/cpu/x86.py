@@ -3068,6 +3068,78 @@ class X86Cpu(Cpu):
         cpu.push(cpu.RFLAGS, 64)
 
     @instruction
+    def PUSHA(cpu):
+        '''
+        Pushes contents of all the registers onto the stack.
+
+        The order in which the register values are pushed into the stack
+        is the same as mentioned in the list below.The value of SP pushed
+        is the value prior to the first push.
+
+        :param cpu: current CPU.
+        '''
+        temp_SP = cpu.read_register('SP')
+        registers = ['AX', 'CX', 'DX', 'BX', temp_SP, 'BP', 'SI', 'DI']
+        for reg in registers:
+            value = cpu.read_register(reg)
+            cpu.push(value, 16)
+        
+    @instruction
+    def POPA(cpu):
+        '''
+        Pop contents of the stack onto the registers.
+
+        The order in which the register values are poped from the stack
+        is the same as mentioned in the list below. The value of SP is ignored
+        and just the value is just incremented after register is loaded.
+
+        :param cpu: current CPU.
+        '''
+        current_SP = cpu.read_register('SP')
+        registers = ['DI', 'SI', 'BP', 'SP', 'BX', 'DX', 'CX', 'AX']
+        for reg in registers:
+            if reg == 'SP':
+                cpu.write_register(reg, current_SP + 2)
+            value = cpu.pop(16)
+            cpu.write_register(reg, value)
+
+    @instruction
+    def PUSHAD(cpu):
+        '''
+        Pushes contents of all the registers onto the stack.
+
+        The order in which the register values are pushed into the stack
+        is the same as mentioned in the list below.The value of SP pushed
+        is the value prior to the first push.
+
+        :param cpu: current CPU.
+        '''
+        temp_SP = cpu.read_register('ESP')
+        registers = ['EAX', 'ECX', 'EDX', 'EBX', temp_SP, 'EBP', 'ESI', 'EDI']
+        for reg in registers:
+            value = cpu.read_register(reg)
+            cpu.push(value, 32)
+
+    @instruction
+    def POPAD(cpu):
+        '''
+        Pop contents of the stack onto the registers.
+
+        The order in which the register values are poped from the stack
+        is the same as mentioned in the list below. The value of SP is ignored
+        and just the value is just incremented after register is loaded.
+
+        :param cpu: current CPU.
+        '''
+        current_SP = cpu.read_register('ESP')
+        registers = ['EDI', 'ESI', 'EBP', 'ESP', 'EBX', 'EDX', 'ECX', 'EAX']
+        for reg in registers:
+            if reg == 'ESP':
+                cpu.write_register(reg, current_SP + 4)
+            value = cpu.pop(32)
+            cpu.write_register(reg, value)
+
+    @instruction
     def INT(cpu, op0):
         '''
         Calls to interrupt procedure.
