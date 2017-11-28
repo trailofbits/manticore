@@ -7,6 +7,7 @@ import tempfile
 from subprocess import Popen, PIPE
 import sha3
 import json
+import StringIO
 
 
 class ABI(object):
@@ -293,6 +294,7 @@ class ManticoreEVM(Manticore):
         return self.get_world(state_id).storage[address]['storage'].get(offset)
 
     def last_return(self, state_id=None):
+        ''' last returned buffer for state `state_id` '''
         state = self.load(state_id)
         return state.world.last_return
 
@@ -507,6 +509,8 @@ class ManticoreEVM(Manticore):
 
     def report(self, state_id=None, ty=None):
         ''' Prints a small report on state id '''
+        output = StringIO.StringIO()
+
         def compare_buffers(a, b):
             if len(a) != len(b):
                 return False
@@ -516,17 +520,19 @@ class ManticoreEVM(Manticore):
                 if cond is False:
                     return False
             return cond
+
         state = self.load(state_id)
         world = state.platform
         trace = state.context['seth.trace']
-        last_pc = trace[-1][1]
-        last_address = trace[-1][0]
+        last_address, last_pc = trace[-1]
+        
+        #Try to recover metadata from solidity based contracts
         try:
-            md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes= self.context['seth']['metadata'][last_address]
+            md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = self.context['seth']['metadata'][last_address]
         except:
             md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None,None,None,None,None,None 
 
-
+        # try to get the runtime bytecode from the account
         try:
             runtime_bytecode = world.storage[last_address]['code']
         except:
@@ -536,8 +542,8 @@ class ManticoreEVM(Manticore):
         if ty is not None:
             if str(e) != ty:
                 return
-        print "="*20
-        print "REPORT:", e, 
+
+        output.write("REPORT:" + str(e)) 
 
         try:
             # Magic number comes from here:
@@ -556,16 +562,16 @@ class ManticoreEVM(Manticore):
 
             beg, size = map(int, source_pos.split(':'))
 
-            print " at:"
+            output.write( " at:" )
             nl = md_source_code.count('\n')
             snippet = md_source_code[beg:beg+size]
             for l in snippet.split('\n'):
-                print '    ',nl,'  ', l
+                output.write('    %s  %s\n'%(nl, l))
                 nl+=1
         except:
-            print
+            output.write('\n')
 
-        print "BALANCES"
+        output.write("BALANCES\n")
         for address, account in world.storage.items():
             if isinstance(account['balance'], Constant):
                 account['balance'] = account['balance'].value
@@ -573,38 +579,38 @@ class ManticoreEVM(Manticore):
             if issymbolic(account['balance']):
                 m, M = solver.minmax(world.constraints, arithmetic_simplifier(account['balance']))
                 if m == M:
-                    print "\t", hex(address), M
+                    output.write('\t%x %r\n'%(address, M))
                 else:
-                    print "\t", hex(address), "range:[%x, %x]"%(m,M)                
+                    output.write('\t%x range:[%x, %x]\n'%(address, m, M))
             else:
-                print "\t", hex(address), account['balance'],"wei"
+                output.write('\t%x %d wei\n'%(address,account['balance']))
 
         if state.platform.logs:
-            print "LOGS:"
-        for address, memlog, topics in state.platform.logs:
-            try:
-                res = memlog
-                if isinstance(memlog, Expression):
-                    res = state.solve_one(memlog)
-                    if isinstance(memlog, Array):
-                        state.constrain(compare_buffers(memlog, res))
-                    else:
-                        state.constrain(memlog== res)
+            output.write('LOGS:\n')
+            for address, memlog, topics in state.platform.logs:
+                try:
+                    res = memlog
+                    if isinstance(memlog, Expression):
+                        res = state.solve_one(memlog)
+                        if isinstance(memlog, Array):
+                            state.constrain(compare_buffers(memlog, res))
+                        else:
+                            state.constrain(memlog== res)
 
-                res1 = address
-                if isinstance(address, Expression):
-                    res = state.solve_one(address)
-                    if isinstance(address, Array):
-                        state.constrain(compare_buffers(address, res))
-                    else:
-                        state.constrain(address == res)
+                    res1 = address
+                    if isinstance(address, Expression):
+                        res = state.solve_one(address)
+                        if isinstance(address, Array):
+                            state.constrain(compare_buffers(address, res))
+                        else:
+                            state.constrain(address == res)
 
-                print  "\t %s: %r %s" %( hex(res1), ''.join(map(chr,res)), topics)
-            except Exception,e:
-                print e
-                print  "\t", address,  repr(memlog), topics
+                    output.write('\t %s: %r %s\n' %( hex(res1), ''.join(map(chr,res)), topics))
+                except Exception,e:
+                    print e
+                    output.write('\t %r %r %r\n' % (address,  repr(memlog), topics))
 
-        print "INPUT SYMBOLS"
+        output.write('INPUT SYMBOLS\n')
         for expr in state.input_symbols:
             res = state.solve_one(expr)
             if isinstance(expr, Array):
@@ -613,9 +619,9 @@ class ManticoreEVM(Manticore):
                 state.constrain(expr== res)
    
             try:
-                print "\t %s: %s"%( expr.name, res.encode('hex'))
+                output.write('\t %s: %s\n'%( expr.name, res.encode('hex')))
             except:
-                print "\t", expr.name+':',  res
+                output.write('\t %s: %s'% (expr.name, res))
         
         #print "Constraints:"
         #print state.constraints
@@ -652,21 +658,20 @@ class ManticoreEVM(Manticore):
                     size = int('0x'+data[dyn_offset:dyn_offset+64],16)
                     return data[dyn_offset+64:dyn_offset+64+size*2],offset+8
                 else:
-                    print "<",ty,">"
-                    raise NotImplemented
+                    raise NotImplemented(ty)
 
-            print "TRANSACTION ", tx_num, '-', ty
+            output.write('TRANSACTION %d - %s' % (tx_num, ty))
             try:
                 md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes= self.context['seth']['metadata'][address]
             except:
                 md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None,None,None,None,None,None 
 
 
-            print '\t From: 0x%x'%x(caller)
-            print '\t To: 0x%x'%x(address)
-            print '\t Value: %d wei'%x(value)
+            output.write('\t From: 0x%x\n'% x(caller) )
+            output.write('\t To: 0x%x\n'%x(address))
+            output.write('\t Value: %d wei\n'%x(value))
             xdata = x(data).encode('hex')
-            print '\t Data:', xdata
+            output.write('\t Data: %s\n'% xdata)
             if ty == 'CALL':
                 done = False
                 try:
@@ -674,18 +679,19 @@ class ManticoreEVM(Manticore):
                     signature = rhashes.get(xdata[:8], '{fallback}()')
                     done = True
                     func_name = signature.split('(')[0]
-                    print '\t Function: ', func_name,'(',
+                    output.write('\t Function: %s(' % func_name)
                     types = signature.split('(')[1][:-1].split(',')
                     off = 8
                     for ty in types:
                         if off != 8:
                             print ',',
                         val, off = consume_type(ty, xdata, off)
-                        print val,
-                    print ')'
+                        output.write('%s'%val)
+                    output.write(')\n')
                 except Exception,e:
-                    print e, xdata   
-            
+                    output.write('%s %s\n'%(e, xdata))
+        return output.getvalue()
+
     def coverage(self, account_address):
         ''' Output a code coverage report for contract account_address '''
         account_address = int(account_address)
