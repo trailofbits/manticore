@@ -791,9 +791,10 @@ class Cpu(Eventful):
         try:
             emu.emulate(insn)
         except unicorn.UcError as e:
-            text_bytes = ' '.join('%02x'%x for x in insn.bytes)
-            logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-              insn.address, text_bytes, insn.mnemonic, insn.op_str)
+            if e.errno == unicorn.UC_ERR_INSN_INVALID:
+                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                  insn.address, text_bytes, insn.mnemonic, insn.op_str)
             raise InstructionEmulationError(str(e))
         except e:
             raise InstructionEmulationError(str(e))
