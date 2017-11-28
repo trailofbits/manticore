@@ -1238,7 +1238,7 @@ class Linux(Platform):
         def pad(s):
             return s +'\x00'*(65-len(s))
 
-        now = datetime.now().strftime("%a %b %d %H:%M:%S ART %Y")
+        now = datetime(2017, 8, 01).strftime("%a %b %d %H:%M:%S ART %Y")
         info = (('sysname', 'Linux'),
                 ('nodename', 'ubuntu'),
                 ('release', '4.4.0-77-generic'),

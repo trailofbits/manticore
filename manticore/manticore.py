@@ -181,6 +181,7 @@ class Manticore(Eventful):
         #Move the folowing into a plugin
         self._assertions = {}
         self._coverage_file = None
+        self.trace = None
 
         #FIXME move the folowing to aplugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)

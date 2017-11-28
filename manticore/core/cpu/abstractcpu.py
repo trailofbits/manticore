@@ -777,7 +777,7 @@ class Cpu(Eventful):
         '''
         self._icount += 1
         self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
-    
+
     def emulate(self, insn):
         '''
         If we could not handle emulating an instruction, use Unicorn to emulate
