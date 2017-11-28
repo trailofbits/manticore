@@ -1,5 +1,4 @@
 import logging
-import json
 
 from capstone import CS_GRP_JUMP
 
