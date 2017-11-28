@@ -8,7 +8,7 @@ from manticore.core.memory import ConcretizeMemory, Memory32, SMemory32
 from manticore.core.state import State
 from manticore.core.smtlib import BitVecVariable, ConstraintSet
 from manticore.platforms import linux
-from manticore.utils.emulate import UnicornEmulator
+from manticore.utils.fallback_emulator import UnicornEmulator
 
 from capstone.arm import *
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM

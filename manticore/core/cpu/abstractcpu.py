@@ -762,48 +762,40 @@ class Cpu(Eventful):
 
         name = self.canonicalize_instruction_name(insn)
 
-        def fallback_to_emulate(*operands):
-            if self._concrete:
-                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
-                logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                            insn.address, text_bytes, insn.mnemonic, insn.op_str)
-            self.emulate(insn)
-
-        def determine_implementation(instruction):
-            if self._concrete:
-                implementation = fallback_to_emulate
-
-                if 'SYSCALL' in name:
-                    self.emu.sync_unicorn_to_manticore()
-                    implementation = getattr(self, name, fallback_to_emulate)
-            else:
-                implementation = getattr(self, name, fallback_to_emulate)
-
-            if implementation != fallback_to_emulate:
-                self._non_unicorn_instrs += 1
-
-            return implementation
-
-        implementation = determine_implementation(insn)
         if logger.level == logging.DEBUG :
             logger.debug(self.render_instruction(insn) + " (%s)" % insn.size)
             for l in self.render_registers():
                 register_logger.debug(l)
 
-        #FIXME(yan): In the case the instruction implementation invokes a system call, we would not be able to
-        # publish the did_execute_instruction event from here, so we capture and attach it to the syscall
-        # exception for the platform to emit it for us once the syscall has successfully been executed.
-        def did_exec():
-            self._icount += 1
-            self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
-
         try:
-            implementation(*insn.operands)
+            if self._concrete and 'SYSCALL' in name:
+                self.emu.sync_unicorn_to_manticore()
+            if self._concrete and 'SYSCALL' not in name:
+                self.emulate(insn)
+            else:
+                try:
+                    self._non_unicorn_instrs += 1
+                    getattr(self, name)(*insn.operands)
+                except AttributeError:
+                    text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                    logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                                insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                    self.emulate(insn)
         except (Interruption, Syscall) as e:
-            e.on_handled = did_exec
+            e.on_handled = lambda: self._publish_instruction_as_executed(insn)
             raise e
         else:
-            did_exec()
+            self._publish_instruction_as_executed(insn)
+
+    #FIXME(yan): In the case the instruction implementation invokes a system call, we would not be able to
+    # publish the did_execute_instruction event from here, so we capture and attach it to the syscall
+    # exception for the platform to emit it for us once the syscall has successfully been executed.
+    def _publish_instruction_as_executed(self, insn):
+        '''
+        Notify listeners that an instruction has been executed.
+        '''
+        self._icount += 1
+        self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
 
 
     def emulate(self, insn):

@@ -360,12 +360,12 @@ class ConcreteUnicornEmulator(object):
         FSMSR = 0xC0000100
         return self.set_msr(FSMSR, addr)
         
-    def pre_execute_callback(self, _insn):
+    def pre_execute_callback(self, _pc, _insn):
         start_time = time.time()
         self.out_of_step_time += (start_time - self._last_step_time)
         self._last_step_time = start_time
 
-    def post_execute_callback(self, _insn):
+    def post_execute_callback(self, _last_pc, _pc, _insn):
         start_time = time.time()
         self.in_step_time += (start_time - self._last_step_time)
         self._last_step_time = start_time
