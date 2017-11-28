@@ -274,20 +274,15 @@ class Abi(object):
             yield base
             base += word_bytes
 
-    def invoke(self, model, prefix_args=None):
+    def get_argument_values(self, model, prefix_args):
         '''
-        Invoke a callable `model` as if it was a native function. If
-        :func:`~manticore.models.isvariadic` returns true for `model`, `model` receives a single
-        argument that is a generator for function arguments. Pass a tuple of
-        arguments for `prefix_args` you'd like to precede the actual
-        arguments.
+        Extract arguments for model from the environment and return as a tuple that
+        is ready to be passed to the model.
 
-        :param callable model: Python model of the function
-        :param tuple prefix_args: Parameters to pass to model before actual ones
-        :return: The result of calling `model`
+        :param model: A function implementing a model or a syscall
+        :return: Arguments to be passed to the model
+        :rtype: tuple
         '''
-        prefix_args = prefix_args or ()
-
         spec = inspect.getargspec(model)
 
         if spec.varargs:
@@ -312,12 +307,31 @@ class Abi(object):
         # TODO(mark) this is here as a hack to avoid circular import issues
         from ...models import isvariadic
 
+        if isvariadic(model):
+            arguments = prefix_args + (argument_iter,)
+        else:
+            arguments = prefix_args + tuple(islice(argument_iter, nargs))
+
+        return arguments
+
+    def invoke(self, model, prefix_args=None):
+        '''
+        Invoke a callable `model` as if it was a native function. If
+        :func:`~manticore.models.isvariadic` returns true for `model`, `model` receives a single
+        argument that is a generator for function arguments. Pass a tuple of
+        arguments for `prefix_args` you'd like to precede the actual
+        arguments.
+
+        :param callable model: Python model of the function
+        :param tuple prefix_args: Parameters to pass to model before actual ones
+        :return: The result of calling `model`
+        '''
+        prefix_args = prefix_args or ()
+
+        arguments = self.get_argument_values(model, prefix_args)
+
         try:
-            if isvariadic(model):
-                result = model(*(prefix_args + (argument_iter,)))
-            else:
-                argument_tuple = prefix_args + tuple(islice(argument_iter, nargs))
-                result = model(*argument_tuple)
+            result = model(*arguments)
         except ConcretizeArgument as e:
             assert e.argnum >= len(prefix_args), "Can't concretize a constant arg"
             idx = e.argnum - len(prefix_args)
@@ -339,10 +353,15 @@ class Abi(object):
 
         return result
 
+platform_logger = logging.getLogger('manticore.platforms.platform')
+
 class SyscallAbi(Abi):
     '''
     A system-call specific ABI.
+
+    Captures model arguments and return values for centralized logging.
     '''
+
     def syscall_number(self):
         '''
         Extract the index of the invoked syscall.
@@ -350,6 +369,32 @@ class SyscallAbi(Abi):
         :return: int
         '''
         raise NotImplementedError
+
+    def get_argument_values(self, model, prefix_args):
+        self._last_arguments = super(SyscallAbi, self).get_argument_values(model, prefix_args)
+        return self._last_arguments
+
+    def invoke(self, model, prefix_args=None):
+        max_arg_expansion = 32
+        # invoke() will call get_argument_values()
+        self._last_arguments = ()
+
+        ret = super(SyscallAbi, self).invoke(model, prefix_args)
+
+        if platform_logger.isEnabledFor(logging.DEBUG):
+            args = []
+            for arg in self._last_arguments:
+                arg_s = "0x{:x}".format(arg)
+                if self._cpu.memory.access_ok(arg, 'r'):
+                    s = self._cpu.read_string(arg, max_arg_expansion).translate(None, '\n')
+                    if len(s) == max_arg_expansion:
+                        s = s + '..'
+                    if len(s) > 4: # don't expand very short strings
+                        arg_s = arg_s + ' ({})'.format(s)
+                args.append(arg_s)
+
+            args_s = ', '.join(args)
+            platform_logger.debug('%s(%s) -> %d', model.im_func.func_name, args_s, ret)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
