@@ -98,12 +98,12 @@ def eq(a, b):
 
     return True
 
-def perm(lst, pred):
-    ''' Produce permutations of `lst`, where permutations are mutated by `pred`. Used for flipping constraints. highly
+def perm(lst, func):
+    ''' Produce permutations of `lst`, where permutations are mutated by `func`. Used for flipping constraints. highly
     possible that returned constraints can be unsat this does it blindly, without any attention to the constraints
     themselves '''
     for i in range(1, 2**len(lst)):
-        yield [pred(item) if (1<<j)&i else item for (j, item) in enumerate(lst)]
+        yield [func(item) if (1<<j)&i else item for (j, item) in enumerate(lst)]
 
 def constraints_to_constraintset(constupl):
     x = ConstraintSet()
