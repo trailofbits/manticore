@@ -404,7 +404,7 @@ class SyscallAbi(Abi):
 
             ret_s = '{}'.format(ret)
             if ret > min_hex_expansion:
-                ret_s = ret_s + '({:x})'.format(ret)
+                ret_s = ret_s + '(0x{:x})'.format(ret)
 
             platform_logger.debug('%s(%s) -> %s', model.im_func.func_name, args_s, ret_s)
 
