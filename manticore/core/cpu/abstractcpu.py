@@ -648,7 +648,7 @@ class Cpu(Eventful):
         while True:
             c = self.read_int(where, 8)
 
-            if c == 0 or issymbolic(c):
+            if issymbolic(c) or c == 0:
                 break
 
             if max_length is not None:
