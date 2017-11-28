@@ -15,10 +15,7 @@ Bugs
 '''
 
 import Queue
-import sys
-import random, struct
-import time
-import argparse
+import struct
 import itertools
 
 from manticore import Manticore
@@ -32,10 +29,14 @@ from manticore.core.smtlib.expression import *
 
 prog = '../linux/simpleassert'
 endd = 0x400ae9
+VERBOSITY = 0
 
 def _partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
     return (list(itertools.ifilterfalse(pred, t1)), filter(pred, t2))
+
+def log(s):
+    print '[+]', s
 
 class TraceReceiver(Plugin):
     def __init__(self, tracer):
@@ -52,29 +53,30 @@ class TraceReceiver(Plugin):
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
         total = len(self._trace)
-        print 'Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
-            len(instructions), total, len(writes), total)
+        log('Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
+            len(instructions), total, len(writes), total))
 
 def flip(constraint):
     '''
     flips a constraint (Equal)
-    '''
-    c = copy.deepcopy(constraint)
-    
-    # assume they are the equal -> ite form that we produce on standard branches
-    assert len(c.operands) == 2
-    a, forcepc = c.operands
-    assert isinstance(a, BitVecITE) and isinstance(forcepc, BitVecConstant)
 
-    assert len(a.operands) == 3
-    cond, iifpc, eelsepc = a.operands
+    (Equal (BitVecITE Cond IfC ElseC) IfC)
+        ->
+    (Equal (BitVecITE Cond IfC ElseC) ElseC)
+    '''
+    equal = copy.deepcopy(constraint)
+
+    assert len(equal.operands) == 2
+    # assume they are the equal -> ite form that we produce on standard branches
+    ite, forcepc = equal.operands
+    assert isinstance(ite, BitVecITE) and isinstance(forcepc, BitVecConstant)
+    assert len(ite.operands) == 3
+    cond, iifpc, eelsepc = ite.operands
     assert isinstance(iifpc, BitVecConstant) and isinstance(eelsepc, BitVecConstant)
 
-    if forcepc.value == iifpc.value:
-        c.operands[1] = eelsepc
-    else:
-        c.operands[1] = iifpc
-    return c
+    equal.operands[1] = eelsepc if forcepc.value == iifpc.value else iifpc
+
+    return equal
 
 def eq(a, b):
     # this ignores checking the conditions, only checks the 2 possible pcs
@@ -95,64 +97,35 @@ def eq(a, b):
         return False
 
     return True
-    
 
-def eqls(a, b):
-	# a b and 2 iterables of branch constraints
-    for aa, bb in zip(a, b):
-        if not eq(aa, bb):
-            return False
-    return True
+def perm(lst, pred):
+    ''' Produce permutations of `lst`, where permutations are mutated by `pred`. Used for flipping constraints. highly
+    possible that returned constraints can be unsat this does it blindly, without any attention to the constraints
+    themselves '''
+    for i in range(1, 2**len(lst)):
+        yield [pred(item) if (1<<j)&i else item for (j, item) in enumerate(lst)]
 
-
-# permutes constraints. highly possibly that returned constraints can be
-# unsat this does it blindly, without any attention to the constraints
-# themselves
-def permu(cons, includeself=False):
-    first = cons[0]
-    first_flipped = flip(cons[0])
-    
-    if len(cons) == 1:
-        if includeself:
-            return [[first], [first_flipped]]
-        else:
-            return [[first_flipped]]
-    ret = []
-    others = permu(cons[1:], True)
-    for o in others:
-        add = [first] + o
-        if includeself:
-            ret.append(add)
-        elif not eqls(add, cons):
-            ret.append(add)
-    for o in others:
-        ret.append([first_flipped] + o)
-    return ret
-
-
-def newcs(constupl):
+def constraints_to_constraintset(constupl):
     x = ConstraintSet()
     x._constraints = list(constupl)
     return x
 
-
-
 def input_from_cons(constupl, datas):
-    newset = newcs(constupl)
+    ' solve bytes in |datas| based on '
+    newset = constraints_to_constraintset(constupl)
 
     ret = ''
-
     for data in datas:
         for c in data:
             ret += chr(solver.get_value(newset, c))
-
     return ret
 
+# Run a concrete run with |inp| as stdin
 def concrete_run_get_trace(inp):
-    m1 = Manticore.linux(prog, concrete_start=inp)
+    m1 = Manticore.linux(prog, concrete_start=inp, workspace_url='mem:')
     t = ExtendedTracer()
     r = TraceReceiver(t)
-    m1.verbosity(1)
+    m1.verbosity(VERBOSITY)
     m1.register_plugin(t)
     m1.register_plugin(r)
     m1.run(procs=1)
@@ -160,15 +133,15 @@ def concrete_run_get_trace(inp):
 
 
 def symbolic_run_get_cons(trace):
-    m2 = Manticore.linux(prog)
+    m2 = Manticore.linux(prog, workspace_url='mem:')
     f = Follower(trace)
-    m2.verbosity(1)
+    m2.verbosity(VERBOSITY)
     m2.register_plugin(f)
 
     @m2.hook(endd)
     def x(s):
         with m2.locked_context() as ctx:
-            ctx['sss'] = s
+            ctx['completed_state'] = s
             ctx['readdata'] = []
             for name, fd, data in s.platform.syscall_trace:
                 if name in ('_receive', '_read') and fd == 0:
@@ -176,7 +149,7 @@ def symbolic_run_get_cons(trace):
 
     m2.run()
 
-    st = m2.context['sss']
+    st = m2.context['completed_state']
     datas = m2.context['readdata']
 
     return list(st.constraints.constraints), datas
@@ -189,32 +162,29 @@ def x(conn):
 def xxx(con):
     return hex(con.operands[1].value), (hex(con.operands[0].operands[1].value), hex(con.operands[0].operands[2].value))
 
-def newinold(new, olds):
-    for old in olds:
-        if eq(new, old):
-            return True
-    return False
+def contains(new, olds):
+    '__contains__ operator using the `eq` function'
+    return any(eq(new, old) for old in olds)
 
 def getnew(oldcons, newcons):
-    ret = []
-    for new in newcons:
-        if not newinold(new, oldcons):
-            ret.append(new)
-    return ret
+    "return all constraints in newcons that aren't in oldcons"
+    return [new for new in newcons if not contains(new, oldcons)]
 
-def consaresat(cons):
-    return solver.can_be_true(newcs(cons), True)
+def constraints_are_sat(cons):
+    'Whether constraints are sat'
+    return solver.can_be_true(constraints_to_constraintset(cons), True)
 
 def get_new_constrs_for_queue(oldcons, newcons):
     ret = []
 
     # i'm pretty sure its correct to assume newcons is a superset of oldcons
 
-    neww = getnew(oldcons, newcons)
-    if not neww:
+    new_constraints = getnew(oldcons, newcons)
+    if not new_constraints:
         return ret
 
-    perms = permu(neww)
+    perms = perm(new_constraints, flip)
+
     for p in perms:
         candidate = oldcons + p
         # candidate new constraint sets might not be sat because we blindly
@@ -222,47 +192,47 @@ def get_new_constrs_for_queue(oldcons, newcons):
         # back onto the original set. we do this without regard for how the
         # permutation of the new constraints combines with the old constratins
         # to affect the satisfiability of the whole
-        if consaresat(candidate):
+        if constraints_are_sat(candidate):
             ret.append(candidate)
 
     return ret
-
-def log(s):
-    print '[+]', s, '\n'
 
 def inp2ints(inp):
     a, b, c = struct.unpack('<III', inp)
     return 'a={} b={} c={}'.format(a, b, c)
 
+def ints2inp(*ints):
+    return struct.pack('<'+'I'*len(ints), *ints)
+
+def concrete_input_to_constraints(ci, prev=None):
+    if prev is None:
+        prev = []
+    trc = concrete_run_get_trace(ci)
+    log("getting constraints from symbolic run")
+    cons, datas = symbolic_run_get_cons(trc)
+    # hmmm ideally do some smart stuff so we don't have to check if the
+    # constraints are unsat. something like the compare the constraints set
+    # which you used to generate the input, and the constraint set you got
+    # from the symex. sounds pretty hard
+    #
+    # but maybe a dumb way where we blindly permute the constraints
+    # and just check if they're sat before queueing will work
+    new_constraints, datas = get_new_constrs_for_queue(prev, cons), datas
+    log('permuting constraints and adding {} constraints sets to queue'.format(len(new_constraints)))
+    return new_constraints, datas
+
 
 def main():
 
+    paths = 1
     q = Queue.Queue()
 
     # todo randomly generated concrete start
-    # a = struct.pack('<I', random.randint(0, 10))
-    # b = struct.pack('<I', random.randint(0, 10))
-    # c = struct.pack('<I', random.randint(0, 10))
-    a = struct.pack('<I', 0)
-    b = struct.pack('<I', 5)
-    # b = struct.pack('<I', 4) # causes a bug; 8 paths instead of 5
-    c = struct.pack('<I', 0)
-    xx = a + b + c
+    stdin = ints2inp(0, 5, 0)
 
-    log('seed input generated: {}'.format(inp2ints(xx)))
+    log('seed input generated ({}), running initial concrete run.'.format(inp2ints(stdin)))
 
-    paths = 1
-
-    log('running initial concrete run')
-    trc = concrete_run_get_trace(xx)
-
-    log('getting constraints on initial run')
-    cons, datas = symbolic_run_get_cons(trc)
-
-    to_queue = get_new_constrs_for_queue([], cons)
-
-    log('permuting constraints and adding {} constraints sets to queue'.format(len(to_queue)))
-
+    to_queue, datas = concrete_input_to_constraints(stdin)
     for each in to_queue:
         q.put(each)
 
@@ -272,26 +242,8 @@ def main():
         log('get constraint set from queue, queue size: {}'.format(q.qsize()))
         cons = q.get()
         inp = input_from_cons(cons, datas)
-        log('generated input from constraints: {}'.format(inp2ints(inp)))
-
-        log('running generate input concretely')
-        trc = concrete_run_get_trace(inp)
-        paths +=1 
-
-        log('doing symex on new generated input')
-        newcons, datas = symbolic_run_get_cons(trc)
-
-        # hmmm ideally do some smart stuff so we don't have to check if the
-        # constraints are unsat. something like the compare the constraints set
-        # which you used to generate the input, and the constraint set you got
-        # from the symex. sounds pretty hard
-        #
-        # but maybe a dumb way where we blindly permute the constraints
-        # and just check if they're sat before queueing will work
-
-        to_queue = get_new_constrs_for_queue(cons, newcons)
-
-        log('permuting constraints and adding {} constraints sets to queue'.format(len(to_queue)))
+        to_queue, datas = concrete_input_to_constraints(inp, cons)
+        paths +=1
 
         for each in to_queue:
             q.put(each)
