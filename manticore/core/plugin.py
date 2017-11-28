@@ -99,47 +99,6 @@ class ExtendedTracer(Plugin):
         }
         state.context[self.context_key].append(entry)
 
-class Follower(Plugin):
-    def __init__(self, trace):
-        self.index = 0
-        self.trace = trace
-        self.last_instruction = None
-        self.symbolic_ranges = []
-        self.active = True
-        super(self.__class__, self).__init__()
-
-    def add_symbolic_range(self, pc_start, pc_end):
-        self.symbolic_ranges.append((pc_start,pc_end))
-
-    def get_next(self, type):
-        event = self.trace[self.index]
-        assert event['type'] == type
-        self.index += 1
-        return event
-
-    def did_write_memory_callback(self, state, where, value, size):
-        if not self.active:
-            return
-        write = self.get_next('mem_write')
-
-        if not issymbolic(value):
-            return
-
-        assert write['where'] == where and write['size'] == size
-        state.constrain(value == write['value'])
-
-    def did_execute_instruction_callback(self, state, last_pc, pc, insn):
-        if not self.active:
-            return
-        event = self.get_next('regs')
-        self.last_instruction = event['values']
-        if issymbolic(pc):
-            state.constrain(state.cpu.RIP == self.last_instruction['RIP'])
-        else:
-            for start, stop in self.symbolic_ranges:
-                if start <= pc <= stop:
-                    self.active = False
-
 class RecordSymbolicBranches(Plugin):
     def will_start_run_callback(self, state):
         state.context['branches'] = {}
