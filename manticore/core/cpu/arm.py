@@ -824,7 +824,7 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def SUB(cpu, dest, src, add=None):
-        if add is not None
+        if add is not None:
             result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
         else:
             #support for the thumb mode version of sub <dest>, <immediate>
