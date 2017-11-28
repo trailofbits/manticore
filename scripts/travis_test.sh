@@ -7,6 +7,17 @@ else
     echo "Failed to build Linux examples"
     RV=1
 fi
+
+echo "Testing all built examples"
+for i in $(find . -executable -type f); do
+	if manticore $i; then
+		echo "Success: " $i
+	else
+		echo "Failed : " $i
+		RV=1
+	fi
+done
+exit ${RV}
 cd ../..
 
 coverage erase
