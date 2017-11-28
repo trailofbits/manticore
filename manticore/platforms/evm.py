@@ -699,7 +699,7 @@ class EVMAsm(object):
             mnemonic = name
             if name == 'PUSH':
                 mnemonic = '%s%d'%(name, (opcode&0x1f) + 1)
-            elif name in ('SWAP', 'LOG'):
+            elif name in ('SWAP', 'LOG', 'DUP'):
                 mnemonic = '%s%d'%(name, (opcode&0xf) + 1)
 
             reverse_table[mnemonic] = opcode, name, immediate_operand_size, pops, pushes, gas, description
@@ -732,7 +732,7 @@ class EVMAsm(object):
 
             return EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
         except:
-            raise Exception("Something wron at offset %d"%offset)
+            raise Exception("Something wrong at offset %d"%offset)
 
     @staticmethod
     def assemble_all(assembler, offset=0):
