@@ -124,7 +124,7 @@ class BranchLimited(Policy):
     def _register(self, *args):
         self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
-    def _visited_callback(self, state, instr):
+    def _visited_callback(self, state, pc, instr):
         ''' Maintain our own copy of the visited set
         '''
         pc = state.platform.current.PC
@@ -380,6 +380,10 @@ class Executor(Eventful):
         #Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
+        if len(solutions) == 1:
+            setstate(state, solutions[0])
+            return state
+
         logger.info("Forking, about to store. (policy: %s, values: %s)",
                     policy,
                     ', '.join('0x{:x}'.format(sol) for sol in solutions))
@@ -468,8 +472,7 @@ class Executor(Eventful):
                         #setstate()
 
                         logger.debug("Generic state fork on condition")
-                        self.fork(current_state, e.expression, e.policy, e.setstate)
-                        current_state = None
+                        current_state = self.fork(current_state, e.expression, e.policy, e.setstate)
 
                     except TerminateState as e:
                         #Notify this worker is done
