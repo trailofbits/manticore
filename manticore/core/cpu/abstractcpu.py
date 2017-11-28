@@ -578,7 +578,7 @@ class Cpu(Eventful):
         
     def read_string(self, where, max_length=None):
         '''
-        Read a NUL-terminated concrete buffer from memory.
+        Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
 
         :param int where: Address to read string from
         :param int max_length:
@@ -591,9 +591,7 @@ class Cpu(Eventful):
         while True:
             c = self.read_int(where, 8)
 
-            assert not issymbolic(c)
-
-            if c == 0:
+            if c == 0 or issymbolic(c):
                 break
 
             if max_length is not None:
