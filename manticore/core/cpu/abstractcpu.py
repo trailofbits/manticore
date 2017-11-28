@@ -1,6 +1,7 @@
 import inspect
 import logging
 import StringIO
+import string
 import sys
 import types
 
@@ -376,26 +377,36 @@ class SyscallAbi(Abi):
         return self._last_arguments
 
     def invoke(self, model, prefix_args=None):
-        max_arg_expansion = 32
         # invoke() will call get_argument_values()
         self._last_arguments = ()
 
         ret = super(SyscallAbi, self).invoke(model, prefix_args)
 
         if platform_logger.isEnabledFor(logging.DEBUG):
+            # Try to expand strings up to max_arg_expansion
+            max_arg_expansion = 32
+            # Add a hex representation to return if greater than min_hex_expansion
+            min_hex_expansion = 0x80
+
             args = []
             for arg in self._last_arguments:
                 arg_s = "0x{:x}".format(arg)
                 if self._cpu.memory.access_ok(arg, 'r'):
-                    s = self._cpu.read_string(arg, max_arg_expansion).translate(None, '\n')
-                    if len(s) == max_arg_expansion:
-                        s = s + '..'
-                    if len(s) > 4: # don't expand very short strings
-                        arg_s = arg_s + ' ({})'.format(s)
+                    s = self._cpu.read_string(arg, max_arg_expansion)
+                    if all(c in string.printable for c in s):
+                        if len(s) == max_arg_expansion:
+                            s = s + '..'
+                        if len(s) > 2:
+                            arg_s = arg_s + ' ({})'.format(s.translate(None, '\n'))
                 args.append(arg_s)
 
             args_s = ', '.join(args)
-            platform_logger.debug('%s(%s) -> %d', model.im_func.func_name, args_s, ret)
+
+            ret_s = '{}'.format(ret)
+            if ret > min_hex_expansion:
+                ret_s = ret_s + '({:x})'.format(ret)
+
+            platform_logger.debug('%s(%s) -> %s', model.im_func.func_name, args_s, ret_s)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
