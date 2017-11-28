@@ -167,12 +167,20 @@ class Manticore(Eventful):
         #Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
+        if isinstance(path_or_state, str):
+            assert os.path.isfile(path_or_state)
+            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
+        elif isinstance(path_or_state, State):
+            self._initial_state = path_or_state
+
+        if not isinstance(self._initial_state, State):
+            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
+
         self.plugins = set()
 
         #Move the folowing into a plugin
         self._assertions = {}
         self._coverage_file = None
-        self._run_args = (path_or_state, argv, kwargs)
         self.trace = None
 
         #FIXME move the folowing to aplugin
@@ -185,6 +193,7 @@ class Manticore(Eventful):
         self.register_plugin(Tracer())
         self.register_plugin(RecordSymbolicBranches())
 
+
     def register_plugin(self, plugin):
         #Global enumeration of valid events
         assert isinstance(plugin, Plugin)
@@ -196,7 +205,6 @@ class Manticore(Eventful):
 
         events = Eventful.all_events()
         prefix = Eventful.prefixes
-
         all_events = [x+y for x, y in itertools.product(prefix, events)]
         for event_name in all_events:
             callback_name = '{}_callback'.format(event_name)
@@ -608,21 +616,9 @@ class Manticore(Eventful):
 
     def _start_run(self):
         assert not self.running
-
-        path_or_state, argv, kwargs = self._run_args
-
-        if isinstance(path_or_state, str):
-            assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
-        elif isinstance(path_or_state, State):
-            self._initial_state = path_or_state
-
-        if not isinstance(self._initial_state, State):
-            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
-
-        #FIXME this will be self.publish
         if self._initial_state is not None:
             self._publish('will_start_run', self._initial_state)
+
             self.enqueue(self._initial_state)
             self._initial_state = None
 
