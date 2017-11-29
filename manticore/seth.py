@@ -176,7 +176,7 @@ class ManticoreEVM(Manticore):
     
         Usage Ex::
 
-            from seth import ManticoreEVM, ABI
+            from manticore.seth import ManticoreEVM, ABI
             seth = ManticoreEVM()
             #And now make the contract account to analyze
             source_code = """
@@ -302,10 +302,15 @@ class ManticoreEVM(Manticore):
         ''' Creates a solidity contract 
 
             :param source_code: solidity source code
+            :type source_code: str
             :param owner: owner account (will be default caller in any transactions)
+            :type owner: int or EVMAccount
             :param balance: balance to be transfered on creation
+            :type balance: int or SValue
             :param address: the address for the new contract (optional)
+            :type address: int or EVMAccount
             :param args: constructor arguments
+            :type args: tuple
             :return: an EVMAccount
         '''
 
@@ -318,9 +323,13 @@ class ManticoreEVM(Manticore):
         ''' Creates a contract 
 
             :param init: initializing evm bytecode and arguments
+            :type init: str
             :param owner: owner account (will be default caller in any transactions)
+            :type owner: int or EVMAccount
             :param balance: balance to be transfered on creation
+            :type balance: int or SValue
             :param address: the address for the new contract (optional)
+            :type address: int or EVMAccount
             :return: an EVMAccount
         '''
         with self.locked_context('seth') as context:
@@ -338,7 +347,9 @@ class ManticoreEVM(Manticore):
         ''' Creates a normal account
 
             :param balance: balance to be transfered on creation
+            :type balance: int or SValue
             :param address: the address for the new contract (optional)
+            :type address: int or EVMAccount
             :return: an EVMAccount
         '''
         with self.locked_context('seth') as context:
@@ -346,7 +357,16 @@ class ManticoreEVM(Manticore):
         return self.world.create_account( address, balance, code=code, storage=None)
 
     def transaction(self, caller, address, value, data):
-        ''' Issue a transaction '''
+        ''' Issue a transaction 
+
+            :param caller: the address of the account sending the transaction
+            :type caller: int or EVMAccount
+            :param value: balance to be transfered on creation
+            :type value: int or SValue
+            :param address: the address of the contract to call
+            :type address: int or EVMAccount
+            :return: an EVMAccount
+        '''
         if isinstance(address, EVMAccount):
             address = int(address)
         if isinstance(caller, EVMAccount):
@@ -390,7 +410,7 @@ class ManticoreEVM(Manticore):
         return result
           
     def save(self, state, final=False):
-        ''' Save a state in secundary storage and add it to running or final lists
+        ''' Save a state in secondary storage and add it to running or final lists
 
             :param state: A manticore State
             :param final: True if state is final
@@ -412,7 +432,8 @@ class ManticoreEVM(Manticore):
     def load(self, state_id=None):
         ''' Load one of the running or final states.
             
-            :param state_id: a state id or None. If None it assumes there is a single running state
+            :param state_id: If None it assumes there is a single running state
+            :type state_id: int or None
         '''
         state = None
         if state_id is None:

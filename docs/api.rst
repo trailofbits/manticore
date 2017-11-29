@@ -38,13 +38,11 @@ Models
    .. function:: strcmp
 
 EVM
-====
-.. automodule:: manticore.platforms.evm
-API
 ---
+.. automodule:: manticore.platforms.evm
 .. automodule:: manticore.seth
     :members: 
-Assembler
+EVM Assembler
 ---------
 .. autoclass:: manticore.platforms.evm::EVMAsm.Instruction
     :members: 
