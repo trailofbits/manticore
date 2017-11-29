@@ -1626,7 +1626,6 @@ class EVM(Eventful):
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
-        #self.world.set_storage_data(self.address, offset, value)
         self.global_storage[self.address]['storage'][offset] = value
         if value is 0:
             del self.global_storage[self.address]['storage'][offset]
