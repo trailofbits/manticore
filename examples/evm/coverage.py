@@ -1,4 +1,4 @@
-from seth import *
+from manticore.seth import ManticoreEVM
 
 seth = ManticoreEVM()
 seth.verbosity(3)

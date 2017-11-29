@@ -1,4 +1,4 @@
-from seth import ManticoreEVM
+from manticore.seth import ManticoreEVM
 ################ Script #######################
 
 seth = ManticoreEVM()
@@ -9,7 +9,7 @@ source_code = '''
 pragma solidity ^0.4.13;
 contract NoDistpatcher {
     event Log(string);
-    function address(){}
+
     function() payable {
         if (msg.data[0] == 'A') {
             Log("Got an A");

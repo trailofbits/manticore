@@ -1,98 +1,51 @@
-from manticore import Manticore
-from manticore.core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
-from manticore.core.smtlib.visitors import arithmetic_simplifier
-from manticore.platforms import evm
-from manticore.platforms.evm import pack_msb
-from manticore.core.state import State
+from . import Manticore
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
+from .core.smtlib.visitors import arithmetic_simplifier
+from .platforms import evm
+from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
 import sha3
 import json
 
 
-class EVMContract(object):
+class ABI(object):
+    '''
+        This class contains methods to handle the ABI.
+        The Application Binary Interface is the standard way to interact with
+        contracts in the Ethereum ecosystem, both from outside the blockchain 
+        and for contract-to-contract interaction. 
 
-    def __init__(self, address, seth=None, default_caller=None):
-        self._default_caller = default_caller
-        self._seth=seth
-        self._address=address
-        self._hashes = {}
-        self._caller = None
-        self._value = 0
-
-        name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self._seth.context['seth']['metadata'][address]
-        for signature in hashes.keys():
-            func_name = str(signature.split('(')[0])
-            self._hashes[func_name] = signature, hashes[signature]
-
-    def __int__(self):
-        return self._address
-
-    @property
-    def address(self):
-        return self._address
-
-    def value(self, value):
-        self._value = value
-        return self
-
-    def caller(self, caller):
-        self._caller = caller
-        return self
-
-    def __getattribute__(self, name):
-        if not name.startswith('_') and name in self._hashes.keys():
-            def f(*args, **kwargs):
-                caller = kwargs.get('caller', self._caller)
-                value = kwargs.get('value', self._value)
-                tx_data = self._seth.make_function_call(str(self._hashes[name][0]),*args)
-                if caller is not None:
-                    caller = int(caller)
-                else:
-                    caller = self._default_caller
-                self._seth.transaction(caller=caller,
-                                        address=self._address,
-                                        value=value,
-                                        data=tx_data
-                                     )
-                self._caller = None
-                self._value = 0
-            return f
-        else:
-            return object.__getattribute__(self, name)            
-
-class ManticoreEVM(Manticore):
+    '''
     class SByte():
+        ''' Unconstrained symbolic byte, not asociated with any constraint set '''
         def __init__(self, size=1):
             self.size=size
         def __mul__(self, reps):
             return Symbol(self.size*reps)
+
     SCHAR = SByte(1)
     SUINT = SByte(32)
     SValue = None
-        
-
-    @staticmethod
-    def pack_msb(value):
-        return ''.join(ManticoreEVM.serialize_uint(value))
 
     @staticmethod
     def serialize(value):
+        ''' Translates a python object to its EVM ABI serialization.
+            It supports s '''
         if isinstance(value, (str,tuple)):
-            return ManticoreEVM.serialize_string(value)
+            return ABI.serialize_string(value)
         if isinstance(value, (list)):
-            return ManticoreEVM.serialize_array(value)
+            return ABI.serialize_array(value)
         if isinstance(value, (int, long)):
-            return ManticoreEVM.serialize_uint(value)
-        if isinstance(value, ManticoreEVM.SByte):
-            return ManticoreEVM.serialize_uint(value.size) + (None,)*value.size + (('\x00',)*(32-(value.size%32)))
+            return ABI.serialize_uint(value)
+        if isinstance(value, ABI.SByte):
+            return ABI.serialize_uint(value.size) + (None,)*value.size + (('\x00',)*(32-(value.size%32)))
         if value is None:
             return (None,)*32
 
-
     @staticmethod
     def serialize_uint(value, size=32):
-        '''takes an int and packs it into a 32 byte string, msb first''' 
+        '''Translates a python int into a 32 byte string, msb first''' 
         assert size >=1
         bytes = []
         for position in range(size):
@@ -102,15 +55,16 @@ class ManticoreEVM(Manticore):
 
     @staticmethod
     def serialize_string(value):
+        '''Translates a string or a tuple of chars its EVM ABI serialization''' 
         assert isinstance(value, (str,tuple))
-        return ManticoreEVM.serialize_uint(len(value)) + tuple(value) + tuple('\x00'*(32-(len(value)%32)))
+        return ABI.serialize_uint(len(value)) + tuple(value) + tuple('\x00'*(32-(len(value)%32)))
 
     @staticmethod
     def serialize_array(value):
         assert isinstance(value, list)
-        serialized = [ManticoreEVM.serialize_uint(len(value))]
+        serialized = [ABI.serialize_uint(len(value))]
         for item in value:
-            serialized.append(ManticoreEVM.serialize(item))    
+            serialized.append(ABI.serialize(item))    
         return reduce(lambda x,y: x+y, serialized)
 
     @staticmethod
@@ -126,20 +80,20 @@ class ManticoreEVM(Manticore):
             return () 
         args = list(args)
         for i in range(len(args)):
-            if isinstance(args[i], EVMContract):
+            if isinstance(args[i], EVMAccount):
                  args[i] = int(args[i])
         result = []
         dynamic_args = []
         dynamic_offset = 32*len(args)
         for arg in args:
             if isinstance(arg, (list, tuple, str, ManticoreEVM.SByte)):
-                result.append(ManticoreEVM.serialize(dynamic_offset))
-                serialized_arg = ManticoreEVM.serialize(arg)
+                result.append(ABI.serialize(dynamic_offset))
+                serialized_arg = ABI.serialize(arg)
                 dynamic_args.append(serialized_arg)
                 assert len(serialized_arg)%32 ==0
                 dynamic_offset += len(serialized_arg)
             else:
-                result.append(ManticoreEVM.serialize(arg))
+                result.append(ABI.serialize(arg))
 
         for arg in dynamic_args:
             result.append(arg)
@@ -148,20 +102,116 @@ class ManticoreEVM(Manticore):
         
     @staticmethod
     def make_function_call(method_name, *args):
-        function_id = ManticoreEVM.make_function_id(method_name)
+        function_id = ABI.make_function_id(method_name)
         def check_bitsize(value, size):
             if isinstance(value, BitVec):
                 return value.size==size
             return (value & ~((1<<size)-1)) == 0
         assert len(function_id) == 4
         result = [tuple(function_id)]
-        result.append(ManticoreEVM.make_function_arguments(*args))
+        result.append(ABI.make_function_arguments(*args))
         return reduce(lambda x,y: x+y, result)
+
+
+class EVMAccount(object):
+    ''' An EVM account '''
+    def __init__(self, address, seth=None, default_caller=None):
+        ''' Encapsulates an account. 
+
+            :param address: the address of this account
+            :type address: 160 bit long integer
+            :param seth: the controlling manticore
+            :param default_caller: the default caller address for any transaction
+
+        '''
+        self._default_caller = default_caller
+        self._seth=seth
+        self._address=address
+        self._hashes = {}
+
+        if self._seth:
+            name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self._seth.context['seth']['metadata'][address]
+            for signature in hashes.keys():
+                func_name = str(signature.split('(')[0])
+                self._hashes[func_name] = signature, hashes[signature]
+
+    def __int__(self):
+        return self._address
+
+    def __getattribute__(self, name):
+        ''' If this is a contract account of which we know the functions hashes
+            this will build the transaction for the function call.
+
+            Example use::
+        
+                #call funtion `add` on contract_account with argument `1000`
+                contract_account.add(1000)
+         
+        '''
+        if not name.startswith('_') and name in self._hashes.keys():
+            def f(*args, **kwargs):
+                caller = kwargs.get('caller', None)
+                value = kwargs.get('value', 0)
+                tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
+                if caller is not None:
+                    caller = int(caller)
+                else:
+                    caller = self._default_caller
+                self._seth.transaction(caller=caller,
+                                        address=self._address,
+                                        value=value,
+                                        data=tx_data
+                                     )
+                self._caller = None
+                self._value = 0
+            return f
+        else:
+            return object.__getattribute__(self, name)            
+
+
+
+class ManticoreEVM(Manticore):
+    ''' Manticore EVM manager
+    
+        Usage Ex::
+
+            from seth import ManticoreEVM, ABI
+            seth = ManticoreEVM()
+            #And now make the contract account to analyze
+            source_code = """
+                pragma solidity ^0.4.15;
+                contract AnInt {
+                    uint private i=0;                    
+                    function set(uint value){
+                        i=value
+                    } 
+                }
+            """
+            #Initialize user and contracts
+            user_account = seth.create_account(balance=1000)
+            contract_account = seth.solidity_create_contract(source_code, owner=user_account, balance=0)
+            contract_account.set(12345, value=100) 
+
+            seth.report()
+            print seth.coverage(contract_account)
+    '''
+    SByte=ABI.SByte
+    SValue=ABI.SValue
+
+    
+
 
     @staticmethod
     def compile(source_code):
-        """
-        Compile a solidity source code
+        name, source_code, bytecode, srcmap, srcmap_runtime, hashes = ManticoreEVM._compile(source_code)
+        return bytecode
+
+    @staticmethod
+    def _compile(source_code):
+        """ Compile a solidity contract, used internally
+            
+            :param source_code: a solidity source code
+            :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
         with tempfile.NamedTemporaryFile() as temp:
@@ -179,7 +229,6 @@ class ManticoreEVM(Manticore):
             return name, source_code, bytecode, srcmap, srcmap_runtime, hashes
 
     def __init__(self):
-
         #Make the constraint store
         constraints = ConstraintSet()
         #make the ethereum world state
@@ -197,22 +246,22 @@ class ManticoreEVM(Manticore):
         self.context['seth']['_saved_states'] = []
         self.context['seth']['_final_states'] = []
 
-        self._executor.subscribe('did_load_state', self.load_state_callback)
-        self._executor.subscribe('will_terminate_state', self.terminate_state_callback)
-        self._executor.subscribe('will_execute_instruction', self.will_execute_instruction_callback)
-        self._executor.subscribe('did_execute_instruction', self.did_execute_instruction_callback)
-        self._executor.subscribe('did_read_code', self.did_read_code)
-        self._executor.subscribe('on_symbolic_sha3', self.symbolic_sha3)
-        self._executor.subscribe('on_concrete_sha3', self.concrete_sha3)
+        self._executor.subscribe('did_load_state', self._load_state_callback)
+        self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
+        self._executor.subscribe('will_execute_instruction', self._will_execute_instruction_callback)
+        self._executor.subscribe('did_execute_instruction', self._did_execute_instruction_callback)
+        self._executor.subscribe('did_read_code', self._did_read_code)
+        self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
+        self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
 
     @property
     def world(self):
-        if self.initial_state is None:
-            return None
-        return self.initial_state.platform
+        ''' The world instance or None if there is more than one state '''  
+        return self.get_world(None)
 
     @property
     def running_state_ids(self):
+        ''' IDs of the running states''' 
         with self.locked_context('seth') as context:
             if self.initial_state is not None:
                 return context['_saved_states'] + [-1]
@@ -221,29 +270,59 @@ class ManticoreEVM(Manticore):
 
     @property
     def final_state_ids(self):
+        ''' IDs of the terminated states ''' 
         with self.locked_context('seth') as context:
             return context['_final_states']
 
-    def get_world(self, state_id=-1):
-        if state_id == -1:
-            return self.initial_state.platform
+    def get_world(self, state_id=None):
+        ''' Returns the evm world of `state_id` state. '''
+        state = self.load(state_id)
+        if state is None:
+            return None
+        else:
+            return state.platform
 
-        state = self._executor._workspace.load_state(state_id, delete=False)
-        return state.platform
-
-    def get_balance(self, address):
-        if isinstance(address, EVMContract):
+    def get_balance(self, address, state_id=None):
+        ''' Balance for account `address` on state `state_id` '''
+        if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world().storage[address]['balance']
+        return self.get_world(state_id).storage[address]['balance']
+
+    def get_storage(self, address, offset, state_id=None):
+        ''' Storage data for `offset` on account `address` on state `state_id` '''
+        if isinstance(address, EVMAccount):
+            address = int(address)
+        return self.get_world(state_id).storage[address]['storage'].get(offset)
+
+    def last_return(self, state_id=None):
+        state = self.load(state_id)
+        return state.world.last_return
 
     def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
-        name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self.compile(source_code)
-        address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ManticoreEVM.make_function_arguments(*args)))
+        ''' Creates a solidity contract 
+
+            :param source_code: solidity source code
+            :param owner: owner account (will be default caller in any transactions)
+            :param balance: balance to be transfered on creation
+            :param address: the address for the new contract (optional)
+            :param args: constructor arguments
+            :return: an EVMAccount
+        '''
+
+        name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self._compile(source_code)
+        address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
         self.context['seth']['metadata'][address] = name, source_code, init_bytecode, metadata, metadata_runtime, hashes
-        return EVMContract(address, self, default_caller=owner)
+        return EVMAccount(address, self, default_caller=owner)
 
     def create_contract(self, owner, balance=0, init=None, address=None):
-        ''' Only available when there is a single state of the world'''
+        ''' Creates a contract 
+
+            :param init: initializing evm bytecode and arguments
+            :param owner: owner account (will be default caller in any transactions)
+            :param balance: balance to be transfered on creation
+            :param address: the address for the new contract (optional)
+            :return: an EVMAccount
+        '''
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is None
         assert init is not None
@@ -256,15 +335,21 @@ class ManticoreEVM(Manticore):
         return address
 
     def create_account(self, balance=0, address=None, code=''):
-        ''' Only available when there is a single state of the world'''
+        ''' Creates a normal account
+
+            :param balance: balance to be transfered on creation
+            :param address: the address for the new contract (optional)
+            :return: an EVMAccount
+        '''
         with self.locked_context('seth') as context:
            assert context['_pending_transaction'] is None
         return self.world.create_account( address, balance, code=code, storage=None)
 
     def transaction(self, caller, address, value, data):
-        if isinstance(address, EVMContract):
+        ''' Issue a transaction '''
+        if isinstance(address, EVMAccount):
             address = int(address)
-        if isinstance(caller, EVMContract):
+        if isinstance(caller, EVMAccount):
             caller = int(caller)
 
 
@@ -275,6 +360,8 @@ class ManticoreEVM(Manticore):
         return self.run(procs=10)
 
     def run(self, **kwargs):
+        ''' Run any pending transaction on any running state '''
+
         #Check if there is a pending transaction
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
@@ -303,6 +390,13 @@ class ManticoreEVM(Manticore):
         return result
           
     def save(self, state, final=False):
+        ''' Save a state in secundary storage and add it to running or final lists
+
+            :param state: A manticore State
+            :param final: True if state is final
+            :returns: a state id
+
+        '''
         #save the state to secondary storage
         state_id = self._executor._workspace.save_state(state)
 
@@ -315,8 +409,32 @@ class ManticoreEVM(Manticore):
                 context['_saved_states'].append(state_id)
         return state_id
 
+    def load(self, state_id=None):
+        ''' Load one of the running or final states.
+            
+            :param state_id: a state id or None. If None it assumes there is a single running state
+        '''
+        state = None
+        if state_id is None:
+            #a single state was assumed
+            if len(self.running_state_ids) == 1:  
+                #Get the ID of the single running state              
+                state_id = self.running_state_ids[0]
+                if state_id != -1:
+                    #if there is a single running state with id != 1. We consider it is a new initial_state
+                    assert self.initial_state is None
+                    state = self.initial_state = self._executor._workspace.load_state(state_id, delete=True)
+            else:
+                raise Exception("More than one state running. Do not know which to choose.")
+        if state_id == -1:
+            state = self.initial_state
+        else:
+            state = self._executor._workspace.load_state(state_id, delete=False)
+
+        return state
+
     #Callbacks
-    def terminate_state_callback(self, state, state_id, e):
+    def _terminate_state_callback(self, state, state_id, e):
         ''' INTERNAL USE 
             Every time a state finishes executing last transaction we save it in
             our private list 
@@ -340,7 +458,7 @@ class ManticoreEVM(Manticore):
 
 
     #Callbacks
-    def load_state_callback(self, state, state_id):
+    def _load_state_callback(self, state, state_id):
         ''' INTERNAL USE 
             When a state was just loaded from stoage we do the pending transaction
         '''
@@ -371,31 +489,26 @@ class ManticoreEVM(Manticore):
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data)
 
-    def will_execute_instruction_callback(self, state, instruction):
+    def _will_execute_instruction_callback(self, state, pc, instruction):
+        ''' INTERNAL USE '''
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
 
         with self.locked_context('coverage', set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
 
-    def did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
+    def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
+        ''' INTERNAL USE '''
         state.context.setdefault('seth.trace',[]).append((state.platform.current.address, pc))
 
-    def did_read_code(self, state, offset, size):
+    def _did_read_code(self, state, offset, size):
+        ''' INTERNAL USE '''
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset+size):
                 code_data.add((state.platform.current.address, i))
 
-
-    def last_return(self, state_id=-1):
-        if state_id == -1:
-            state = self.initial_state
-        else:
-            state = self._executor._workspace.load_state(state_id, delete=False)
-        return state.world.last_return
-
-
-    def report(self, state_id, ty=None):
+    def report(self, state_id=None, ty=None):
+        ''' Prints a small report on state id '''
         def compare_buffers(a, b):
             if len(a) != len(b):
                 return False
@@ -405,12 +518,7 @@ class ManticoreEVM(Manticore):
                 if cond is False:
                     return False
             return cond
-
-        if state_id == -1:
-            state = self.initial_state
-        else:
-            state = self._executor._workspace.load_state(state_id, delete=False)
-
+        state = self.load(state_id)
         world = state.platform
         trace = state.context['seth.trace']
         last_pc = trace[-1][1]
@@ -472,7 +580,6 @@ class ManticoreEVM(Manticore):
                     print "\t", hex(address), "range:[%x, %x]"%(m,M)                
             else:
                 print "\t", hex(address), account['balance'],"wei"
-
 
         if state.platform.logs:
             print "LOGS:"
@@ -563,14 +670,13 @@ class ManticoreEVM(Manticore):
             xdata = x(data).encode('hex')
             print '\t Data:', xdata
             if ty == 'CALL':
-                print '\t Function: ', 
                 done = False
-                rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
                 try:
+                    rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
                     signature = rhashes.get(xdata[:8], '{fallback}()')
                     done = True
                     func_name = signature.split('(')[0]
-                    print func_name,'(',
+                    print '\t Function: ', func_name,'(',
                     types = signature.split('(')[1][:-1].split(',')
                     off = 8
                     for ty in types:
@@ -581,13 +687,9 @@ class ManticoreEVM(Manticore):
                     print ')'
                 except Exception,e:
                     print e, xdata   
-
-        
-        
             
-
-
     def coverage(self, account_address):
+        ''' Output a code coverage report for contract account_address '''
         account_address = int(account_address)
         #This will just pick one of the running states.
         #This assumes the code and the accounts are the same in all versions of the world
@@ -615,7 +717,7 @@ class ManticoreEVM(Manticore):
         offset = 0
         count = 0
         total = 0
-        for i in evm.EVMDecoder.decode_all(runtime_bytecode[:end]) :
+        for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]) :
             
             if (account_address, offset) in seen:
                 output += bcolors.OKGREEN
@@ -631,16 +733,16 @@ class ManticoreEVM(Manticore):
         output += "Total assembler lines: %d\n"% total
         output += "Total assembler lines visited: %d\n"% count
         output += "Coverage: %2.2f%%\n"%  (count*100.0/total)
-
-
         return output
 
+    def _symbolic_sha3(self, state, data, known_hashes):
+        ''' INTERNAL USE '''
 
-    def symbolic_sha3(self, state, data, known_hashes):
         with self.locked_context('known_sha3', set) as known_sha3:
             state.platform._sha3.update(known_sha3)
 
-    def concrete_sha3(self, state, buf, value):
+    def _concrete_sha3(self, state, buf, value):
+        ''' INTERNAL USE '''
         with self.locked_context('known_sha3', set) as known_sha3:
             known_sha3.add((buf,value))
 

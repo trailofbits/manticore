@@ -36,3 +36,18 @@ Models
    .. function:: strlen
 
    .. function:: strcmp
+
+EVM
+====
+.. automodule:: manticore.platforms.evm
+API
+---
+.. automodule:: manticore.seth
+    :members: 
+Assembler
+---------
+.. autoclass:: manticore.platforms.evm::EVMAsm.Instruction
+    :members: 
+.. autoclass:: manticore.platforms.evm.EVMAsm
+    :members: 
+

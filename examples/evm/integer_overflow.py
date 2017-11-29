@@ -1,10 +1,9 @@
-from seth import *
+from manticore.seth import ManticoreEVM
 seth = ManticoreEVM()
 #And now make the contract account to analyze
 source_code = '''
 pragma solidity ^0.4.15;
 contract Overflow {
-    event Log(string);
     uint private sellerBalance=0;
     
     function add(uint value) returns (bool){
@@ -19,7 +18,7 @@ contract Overflow {
 user_account = seth.create_account(balance=1000)
 contract_account = seth.solidity_create_contract(source_code, owner=user_account, balance=0)
 
-#First add wont owerflow uint256 representation
+#First add won't overflow uint256 representation
 contract_account.add(seth.SValue)
 
 #Potential overflow
