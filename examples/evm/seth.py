@@ -2,7 +2,6 @@ from manticore import Manticore
 from manticore.core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
 from manticore.core.smtlib.visitors import arithmetic_simplifier
 from manticore.platforms import evm
-from manticore.platforms.evm import pack_msb
 from manticore.core.state import State
 import tempfile
 from subprocess import Popen, PIPE
@@ -371,7 +370,7 @@ class ManticoreEVM(Manticore):
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data)
 
-    def will_execute_instruction_callback(self, state, instruction):
+    def will_execute_instruction_callback(self, state, pc, instruction):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
 
@@ -472,7 +471,6 @@ class ManticoreEVM(Manticore):
                     print "\t", hex(address), "range:[%x, %x]"%(m,M)                
             else:
                 print "\t", hex(address), account['balance'],"wei"
-
 
         if state.platform.logs:
             print "LOGS:"
