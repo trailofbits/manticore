@@ -1,4 +1,4 @@
-from seth import *
+from manticore.seth import ManticoreEVM
 ################ Script #######################
 
 seth = ManticoreEVM()
@@ -23,7 +23,6 @@ contract Test {
 #Initialize accounts
 user_account = seth.create_account(balance=1000)
 contract_account = seth.solidity_create_contract(source_code, owner=user_account)
-
 
 symbolic_data = seth.SByte(4) 
 symbolic_value = None 
