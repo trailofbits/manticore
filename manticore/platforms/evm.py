@@ -1902,7 +1902,7 @@ class EVMWorld(Platform):
         else:
             return self._global_storage
 
-    def set_storage(self, address, offset, value):
+    def set_storage_data(self, address, offset, value):
         self.storage[address]['storage'][offset] = value
 
     def get_storage_data(self, address, offset):
@@ -1946,25 +1946,6 @@ class EVMWorld(Platform):
 
     def set_code(self, address, data):
         self.storage[address]['code'] = data
-
-    def log(self, address, topic, data):
-        pass
-    '''
-    self.log_storage = lambda addr: 0
-    self.add_suicide = lambda addr: 0
-    self.add_refund = lambda x: 0
-    self.block_prevhash = 0
-    self.block_coinbase = 0
-    self.block_timestamp = 0
-    self.block_number = 0
-    self.block_difficulty = 0
-    self.block_gas_limit = 0
-    self.tx_origin = b'0' * 40
-    self.tx_gasprice = 0
-    self.create = lambda msg: 0, 0, 0
-    self.call = lambda msg: 0, 0, 0
-    self.sendmsg = lambda msg: 0, 0, 0
-    '''
 
 
     def _push_vm(self, vm):
