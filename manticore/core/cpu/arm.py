@@ -88,7 +88,9 @@ class Armv7Operand(Operand):
             value = self.cpu.regfile.read(self.reg)
             # XXX This can be an offset of 8, depending on ARM mode
             if self.reg in ('PC', 'R15'):
-                value += 4
+                #this may be correct?
+                logger.debug("adding {} to value for PC relative offset".format(len(self.cpu.instruction.bytes)))
+                value += len(self.cpu.instruction.bytes)
             if self.is_shifted():
                 shift = self.op.shift
                 value, carry = self.cpu._Shift(value, shift.type, shift.value, carry)
@@ -163,7 +165,12 @@ class Armv7Operand(Operand):
         # If pc is the base, we need to correct for the fact that the ARM
         # spec defines PC to point to the current insn + 8, which we are not
         # compliant with (we do current insn + 4)
-        return base+4 if self.mem.base in ('PC', 'R15')  else base
+        #TODO: (GDR, 2017-11-29: fix the above comment to reflect that it's current insn + len of insn + 4)
+        if self.mem.base in ('PC', 'R15'):
+            logger.debug("adding {} to pc because arm".format(len(self.cpu.instruction.bytes)))
+            return base + len(self.cpu.instruction.bytes)
+        else:
+            return base
 
     def _getExpandImmCarry(self, carryIn):
         '''Manually compute the carry bit produced by expanding an immediate
@@ -900,6 +907,12 @@ class Armv7Cpu(Cpu):
     def POP(cpu, *regs):
         for reg in regs:
             val = cpu.stack_pop(cpu.address_bit_size / 8)
+            if reg.reg in ('PC', 'R15'):
+                if val & 0x1:
+                    cpu._set_mode(cs.CS_MODE_THUMB)
+                else:
+                    cpu._set_mode(cs.CS_MODE_ARM)
+                val = val & ~0x1
             reg.write(val)
 
     @instruction
