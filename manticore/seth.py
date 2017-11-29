@@ -583,7 +583,7 @@ class ManticoreEVM(Manticore):
                 else:
                     output.write('\t%x range:[%x, %x]\n'%(address, m, M))
             else:
-                output.write('\t%x %d wei\n'%(address,account['balance']))
+                output.write('\t%x %d wei\n'%(address, account['balance']))
 
         if state.platform.logs:
             output.write('LOGS:\n')

@@ -1,6 +1,7 @@
 import inspect
 import logging
 import StringIO
+import string
 import sys
 import types
 
@@ -8,6 +9,7 @@ from functools import wraps
 from itertools import islice, imap
 
 import capstone as cs
+import unicorn
 
 from .disasm import init_disassembler
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
@@ -274,20 +276,16 @@ class Abi(object):
             yield base
             base += word_bytes
 
-    def invoke(self, model, prefix_args=None):
+    def get_argument_values(self, model, prefix_args):
         '''
-        Invoke a callable `model` as if it was a native function. If
-        :func:`~manticore.models.isvariadic` returns true for `model`, `model` receives a single
-        argument that is a generator for function arguments. Pass a tuple of
-        arguments for `prefix_args` you'd like to precede the actual
-        arguments.
+        Extract arguments for model from the environment and return as a tuple that
+        is ready to be passed to the model.
 
         :param callable model: Python model of the function
         :param tuple prefix_args: Parameters to pass to model before actual ones
-        :return: The result of calling `model`
+        :return: Arguments to be passed to the model
+        :rtype: tuple
         '''
-        prefix_args = prefix_args or ()
-
         spec = inspect.getargspec(model)
 
         if spec.varargs:
@@ -312,12 +310,31 @@ class Abi(object):
         # TODO(mark) this is here as a hack to avoid circular import issues
         from ...models import isvariadic
 
+        if isvariadic(model):
+            arguments = prefix_args + (argument_iter,)
+        else:
+            arguments = prefix_args + tuple(islice(argument_iter, nargs))
+
+        return arguments
+
+    def invoke(self, model, prefix_args=None):
+        '''
+        Invoke a callable `model` as if it was a native function. If
+        :func:`~manticore.models.isvariadic` returns true for `model`, `model` receives a single
+        argument that is a generator for function arguments. Pass a tuple of
+        arguments for `prefix_args` you'd like to precede the actual
+        arguments.
+
+        :param callable model: Python model of the function
+        :param tuple prefix_args: Parameters to pass to model before actual ones
+        :return: The result of calling `model`
+        '''
+        prefix_args = prefix_args or ()
+
+        arguments = self.get_argument_values(model, prefix_args)
+
         try:
-            if isvariadic(model):
-                result = model(*(prefix_args + (argument_iter,)))
-            else:
-                argument_tuple = prefix_args + tuple(islice(argument_iter, nargs))
-                result = model(*argument_tuple)
+            result = model(*arguments)
         except ConcretizeArgument as e:
             assert e.argnum >= len(prefix_args), "Can't concretize a constant arg"
             idx = e.argnum - len(prefix_args)
@@ -339,10 +356,15 @@ class Abi(object):
 
         return result
 
+platform_logger = logging.getLogger('manticore.platforms.platform')
+
 class SyscallAbi(Abi):
     '''
     A system-call specific ABI.
+
+    Captures model arguments and return values for centralized logging.
     '''
+
     def syscall_number(self):
         '''
         Extract the index of the invoked syscall.
@@ -350,6 +372,42 @@ class SyscallAbi(Abi):
         :return: int
         '''
         raise NotImplementedError
+
+    def get_argument_values(self, model, prefix_args):
+        self._last_arguments = super(SyscallAbi, self).get_argument_values(model, prefix_args)
+        return self._last_arguments
+
+    def invoke(self, model, prefix_args=None):
+        # invoke() will call get_argument_values()
+        self._last_arguments = ()
+
+        ret = super(SyscallAbi, self).invoke(model, prefix_args)
+
+        if platform_logger.isEnabledFor(logging.DEBUG):
+            # Try to expand strings up to max_arg_expansion
+            max_arg_expansion = 32
+            # Add a hex representation to return if greater than min_hex_expansion
+            min_hex_expansion = 0x80
+
+            args = []
+            for arg in self._last_arguments:
+                arg_s = "0x{:x}".format(arg)
+                if self._cpu.memory.access_ok(arg, 'r'):
+                    s = self._cpu.read_string(arg, max_arg_expansion)
+                    if all(c in string.printable for c in s):
+                        if len(s) == max_arg_expansion:
+                            s = s + '..'
+                        if len(s) > 2:
+                            arg_s = arg_s + ' ({})'.format(s.translate(None, '\n'))
+                args.append(arg_s)
+
+            args_s = ', '.join(args)
+
+            ret_s = '{}'.format(ret)
+            if ret > min_hex_expansion:
+                ret_s = ret_s + '(0x{:x})'.format(ret)
+
+            platform_logger.debug('%s(%s) -> %s', model.im_func.func_name, args_s, ret_s)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
@@ -578,7 +636,7 @@ class Cpu(Eventful):
         
     def read_string(self, where, max_length=None):
         '''
-        Read a NUL-terminated concrete buffer from memory.
+        Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
 
         :param int where: Address to read string from
         :param int max_length:
@@ -591,9 +649,7 @@ class Cpu(Eventful):
         while True:
             c = self.read_int(where, 8)
 
-            assert not issymbolic(c)
-
-            if c == 0:
+            if issymbolic(c) or c == 0:
                 break
 
             if max_length is not None:
@@ -777,7 +833,7 @@ class Cpu(Eventful):
         '''
         self._icount += 1
         self._publish('did_execute_instruction', self._last_pc, self.PC, insn)
-    
+
     def emulate(self, insn):
         '''
         If we could not handle emulating an instruction, use Unicorn to emulate
@@ -789,7 +845,13 @@ class Cpu(Eventful):
         emu = UnicornEmulator(self)
         try:
             emu.emulate(insn)
-        except e:
+        except unicorn.UcError as e:
+            if e.errno == unicorn.UC_ERR_INSN_INVALID:
+                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                  insn.address, text_bytes, insn.mnemonic, insn.op_str)
+            raise InstructionEmulationError(str(e))
+        except Exception as e:
             raise InstructionEmulationError(str(e))
         finally:
             # We have been seeing occasional Unicorn issues with it not clearing
