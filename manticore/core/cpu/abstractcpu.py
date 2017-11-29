@@ -9,6 +9,7 @@ from functools import wraps
 from itertools import islice, imap
 
 import capstone as cs
+import unicorn
 
 from .disasm import init_disassembler
 from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
@@ -844,6 +845,12 @@ class Cpu(Eventful):
         emu = UnicornEmulator(self)
         try:
             emu.emulate(insn)
+        except unicorn.UcError as e:
+            if e.errno == unicorn.UC_ERR_INSN_INVALID:
+                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                  insn.address, text_bytes, insn.mnemonic, insn.op_str)
+            raise InstructionEmulationError(str(e))
         except Exception as e:
             raise InstructionEmulationError(str(e))
         finally:

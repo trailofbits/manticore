@@ -499,7 +499,6 @@ class Executor(Eventful):
                     import traceback
                     trace = traceback.format_exc()
                     logger.error("Exception: %s\n%s", str(e), trace)
-                    print "Exception: %s\n%s"%( str(e), trace)
                     #Notify this worker is done
                     self._publish('will_terminate_state', current_state, current_state_id, e)
                     current_state = None
