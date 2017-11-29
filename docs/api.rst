@@ -40,8 +40,8 @@ Models
 EVM
 ---
 .. automodule:: manticore.platforms.evm
-.. autoclass:: manticore.platforms.evm::EVMAssembler.Instruction
+.. autoclass:: manticore.platforms.evm::EVMAsm.Instruction
     :members: 
-.. autoclass:: manticore.platforms.evm.EVMAssembler
+.. autoclass:: manticore.platforms.evm.EVMAsm
     :members: 
 
