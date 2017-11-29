@@ -8,9 +8,10 @@ else
     RV=1
 fi
 
+# Testing all Binaries in examples/
 for i in $(find . -executable -type f); do
 	if [[ $i  != *"sendmail"* ]]; then
-		if manticore $i; then
+		if [[ $(./$i) ]]; then
 			echo "Success: " $i
 		else
 			echo "Failed : " $i
