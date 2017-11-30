@@ -704,6 +704,14 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.stack_push(42)
         self.cpu.execute()
         self.assertEqual(self.rf.read('R1'), 42)
+        self.assertEqual(self.cpu.mode, CS_MODE_ARM)
+
+    @itest_custom("ldr pc, [sp]")
+    def test_ldr_imm_off_none_to_thumb(self):
+        self.cpu.stack_push(43)
+        self.cpu.execute()
+        self.assertEqual(self.rf.read('R15'), 42)
+        self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
 
     @itest_custom("ldr r1, [sp, #4]")
     def test_ldr_imm_off_pos(self):
@@ -1039,6 +1047,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R3'), 2)
 
+    @itest_setregs("R3=0xE")
+    @itest_thumb("sub r3, #12")
+    def test_thumb_sub_basic(self):
+        self.assertEqual(self.rf.read('R3'), 2)
+
     @itest_custom("sub r3, r1, #5")
     @itest_setregs("R1=10")
     def test_sub_imm(self):
@@ -1130,6 +1143,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R2'), 0x1005)
 
+    @itest_setregs("R3=0x1000")
+    @itest_thumb("orr r3, #5")
+    def test_thumb_orr_imm(self):
+        self.assertEqual(self.rf.read('R3'), 0x1005)
+
     @itest_custom("orrs r2, r3")
     @itest_setregs("R2=0x5", "R3=0x80000000")
     def test_orrs_imm_flags(self):
@@ -1170,6 +1188,11 @@ class Armv7CpuInstructions(unittest.TestCase):
     def test_eor_imm(self):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R2'), 0xF)
+
+    @itest_setregs("R3=0xA")
+    @itest_thumb("eor r3, #5")
+    def test_thumb_eor_imm(self):
+        self.assertEqual(self.rf.read('R3'), 0xF)
 
     @itest_custom("eors r2, r3")
     @itest_setregs("R2=0xAA", "R3=0x80000000")
@@ -1431,6 +1454,11 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest("BIC R2, R1, #0x10")
     def test_bic_reg_imm(self):
         self.assertEqual(self.rf.read('R2'), 0xEF)
+
+    @itest_setregs("R1=0xFF")
+    @itest("BIC R1, #0x10")
+    def test_thumb_bic_reg_imm(self):
+        self.assertEqual(self.rf.read('R1'), 0xEF)
 
     @itest_setregs("R1=0x1008")
     @itest("BLX R1")

@@ -755,6 +755,13 @@ class Armv7Cpu(Cpu):
             word = Operators.SEXTEND(mem, width, cpu.address_bit_size)
         else:
             word = Operators.ZEXTEND(mem, cpu.address_bit_size)
+        if dest.reg in ('PC', 'R15'):
+            if word & 0x1:
+                cpu._set_mode(cs.CS_MODE_THUMB)
+            else:
+                cpu._set_mode(cs.CS_MODE_ARM)
+            word &= ~0x1
+            logger.debug("LDR writing 0x{:x} -> PC".format(word))
         dest.write(word)
         cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
 
@@ -843,7 +850,7 @@ class Armv7Cpu(Cpu):
             result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
         else:
             #support for the thumb mode version of sub <dest>, <immediate>
-            result, carry, overflow = cpu._ADD(dest.read(), ~src.read())
+            result, carry, overflow = cpu._ADD(dest.read(), ~src.read(), 1)
         dest.write(result)
         return result, carry, overflow
 
@@ -881,7 +888,10 @@ class Armv7Cpu(Cpu):
     @instruction
     def BL(cpu, label):
         next_instr_addr = cpu.regfile.read('PC')
-        cpu.regfile.write('LR', next_instr_addr)
+        if cpu.mode == cs.CS_MODE_THUMB:
+            cpu.regfile.write('LR', next_instr_addr + 1)
+        else:
+            cpu.regfile.write('LR', next_instr_addr)
         cpu.regfile.write('PC', label.read())
 
     @instruction
@@ -1024,16 +1034,22 @@ class Armv7Cpu(Cpu):
         cpu.setFlags(C=carry, N=HighBit(result), Z=(result == 0))
 
     @instruction
-    def ORR(cpu, dest, op1, op2):
-        cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
+    def ORR(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
+        else:
+            cpu._bitwise_instruction(lambda x, y: x | y, dest, dest, op1)
 
     @instruction
     def ORN(cpu, dest, op1, op2):
         cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
 
     @instruction
-    def EOR(cpu, dest, op1, op2):
-        cpu._bitwise_instruction(lambda x, y: x ^ y, dest, op1, op2)
+    def EOR(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, op1, op2)
+        else:
+            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, dest, op1)
 
     @instruction
     def AND(cpu, dest, op1, op2):
@@ -1139,8 +1155,11 @@ class Armv7Cpu(Cpu):
         cpu.setFlags(N=HighBit(result), Z=(result==0))
 
     @instruction
-    def BIC(cpu, dest, reg, imm):
-        result = (reg.read() & ~imm.read()) & Mask(cpu.address_bit_size)
+    def BIC(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            result = (op1.read() & ~op2.read()) & Mask(cpu.address_bit_size)
+        else:
+            result = (dest.read() & ~op1.read()) & Mask(cpu.address_bit_size)
         dest.write(result)
         cpu.setFlags(N=HighBit(result), Z=(result==0))
 
