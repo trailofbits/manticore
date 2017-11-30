@@ -404,6 +404,36 @@ class Armv7Cpu(Cpu):
             flag_name = 'APSR_{}'.format(flag)
             self.regfile.write(flag_name, val)
 
+    def _Shift_thumb(cpu, value, _type, amount, carry):
+        assert(_type > cs.arm.ARM_SFT_INVALID and _type <= cs.arm.ARM_SFT_RRX_REG)
+
+        # XXX: Capstone should set the value of an RRX shift to 1, which is
+        # asserted in the manual, but it sets it to 0, so we have to check
+        if _type in (cs.arm.ARM_SFT_RRX, cs.arm.ARM_SFT_RRX_REG) and amount != 1:
+            amount = 1
+
+        elif _type in range(cs.arm.ARM_SFT_ASR_REG, cs.arm.ARM_SFT_RRX_REG + 1):
+            amount = Operators.EXTRACT(amount.read(), 0, 8)
+
+        if amount == 0:
+            return value, carry
+
+        width = cpu.address_bit_size
+
+        if   _type in (cs.arm.ARM_SFT_ASR, cs.arm.ARM_SFT_ASR_REG):
+            return ASR_C(value, amount, width)
+        elif _type in (cs.arm.ARM_SFT_LSL, cs.arm.ARM_SFT_LSL_REG):
+            return LSL_C(value, amount, width)
+        elif _type in (cs.arm.ARM_SFT_LSR, cs.arm.ARM_SFT_LSR_REG):
+            return LSR_C(value, amount, width)
+        elif _type in (cs.arm.ARM_SFT_ROR, cs.arm.ARM_SFT_ROR_REG):
+            return ROR_C(value, amount, width)
+        elif _type in (cs.arm.ARM_SFT_RRX, cs.arm.ARM_SFT_RRX_REG):
+            return RRX_C(value, carry, width)
+
+        raise NotImplementedError("Bad shift value")
+
+
 
     def _Shift(cpu, value, _type, amount, carry):
         assert(_type > cs.arm.ARM_SFT_INVALID and _type <= cs.arm.ARM_SFT_RRX_REG)
@@ -814,9 +844,12 @@ class Armv7Cpu(Cpu):
         return result, carry_out, overflow
 
     @instruction
-    def ADC(cpu, dest, op1, op2):
+    def ADC(cpu, dest, op1, op2=None):
         carry = cpu.regfile.read('APSR_C')
-        result, carry, overflow = cpu._ADD(op1.read(), op2.read(), carry)
+        if op2 is not None:
+            result, carry, overflow = cpu._ADD(op1.read(), op2.read(), carry)
+        else:
+            result, carry, overflow = cpu._ADD(dest.read(), op1.read(), carry)
         dest.write(result)
         return result, carry, overflow
 
@@ -856,9 +889,12 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     @instruction
-    def SBC(cpu, dest, src, add):
+    def SBC(cpu, dest, op1, op2=None):
         carry = cpu.regfile.read('APSR_C')
-        result, carry, overflow = cpu._ADD(src.read(), ~add.read(), carry)
+        if op2 is not None:
+            result, carry, overflow = cpu._ADD(op1.read(), ~op2.read(), carry)
+        else:
+            result, carry, overflow = cpu._ADD(dest.read(), ~op1.read(), carry)
         dest.write(result)
         return result, carry, overflow
 
@@ -1042,8 +1078,11 @@ class Armv7Cpu(Cpu):
             cpu._bitwise_instruction(lambda x, y: x | y, dest, dest, op1)
 
     @instruction
-    def ORN(cpu, dest, op1, op2):
-        cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
+    def ORN(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
+        else:
+            cpu._bitwise_instruction(lambda x, y: x | ~y, dest, dest, op1)
 
     @instruction
     def EOR(cpu, dest, op1, op2=None):
@@ -1053,8 +1092,11 @@ class Armv7Cpu(Cpu):
             cpu._bitwise_instruction(lambda x, y: x ^ y, dest, dest, op1)
 
     @instruction
-    def AND(cpu, dest, op1, op2):
-        cpu._bitwise_instruction(lambda x, y: x & y, dest, op1, op2)
+    def AND(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            cpu._bitwise_instruction(lambda x, y: x & y, dest, op1, op2)
+        else:
+            cpu._bitwise_instruction(lambda x, y: x & y, dest, dest, op1)
 
     @instruction
     def TEQ(cpu, *operands):
@@ -1106,6 +1148,9 @@ class Armv7Cpu(Cpu):
         elif rest and rest[0].type=='immediate':
             amount = rest[0].read()
             result, carry = cpu._Shift(op.read(), srtype, amount, carry)
+        elif cpu.mode == cs.CS_MODE_THUMB:
+            #lsr r1, r2 is a perfectly valid instruction in thumb mode
+            result, carry = cpu._Shift_thumb(dest.read(), srtype, op, carry)
         else:
             result, carry = op.read(withCarry=True)
         dest.write(result)

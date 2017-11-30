@@ -446,6 +446,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R3'), 0x60000000)
 
+    @itest_setregs("R3=0xfffffff6", "R4=10")
+    @itest_thumb("adcs r3, r4")
+    def test_thumb_adc_basic(self):
+        self.assertEqual(self.rf.read('R3'), 0)
+
     @itest_custom("adc r3, r1, r2")
     @itest_setregs("R1=1", "R2=2", "APSR_C=1")
     def test_adc_basic(self):
@@ -1064,6 +1069,11 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.cpu.execute()
         self.assertEqual(self.rf.read('R3'), 4)
 
+    @itest_setregs("R0=0","R3=0xffffffff")
+    @itest_thumb("sbcs r0, r3")
+    def test_sbc_thumb(self):
+        self.assertEqual(self.rf.read('R0'), 0)
+
     @itest_custom("ldm sp, {r1, r2, r3}")
     def test_ldm(self):
         self.cpu.stack_push(0x41414141)
@@ -1390,6 +1400,11 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest("lsr r0, r0, #3")
     def test_lsr_reg_imm(self):
         self.assertEqual(self.rf.read('R0'), 0x1000 >> 3)
+
+    @itest_setregs("R1=0", "R2=3")
+    @itest_thumb("lsrs r1, r2")
+    def test_thumb_lsrs(self):
+        self.assertEqual(self.cpu.R1, 0)
 
     @itest_setregs("R5=0", "R6=16")
     @itest_thumb("lsr.w R5, R6, #3")
