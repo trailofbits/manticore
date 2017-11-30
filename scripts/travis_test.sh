@@ -7,6 +7,19 @@ else
     echo "Failed to build Linux examples"
     RV=1
 fi
+
+# Testing all Binaries in examples/
+for i in $(find . -executable -type f); do
+	if [[ $i  != *"sendmail"* ]]; then
+		if [[ $(./$i) ]]; then
+			echo "Success: " $i
+		else
+			echo "Failed : " $i
+			RV=1
+		fi
+	fi
+done
+
 cd ../..
 
 coverage erase
