@@ -167,8 +167,16 @@ class Armv7Operand(Operand):
         # compliant with (we do current insn + 4)
         #TODO: (GDR, 2017-11-29: fix the above comment to reflect that it's current insn + len of insn + 4)
         if self.mem.base in ('PC', 'R15'):
-            logger.debug("adding {} to pc because arm".format(len(self.cpu.instruction.bytes)))
-            return base + len(self.cpu.instruction.bytes)
+            if self.cpu.mode == cs.CS_MODE_ARM:
+                logger.debug("ARM mode PC relative addressing: PC + offset: 0x{:x} + 0x{:x}".format(base, 4))
+                return base + 4
+            else:
+                #we store PC + len(current_instruction)
+                #we need (PC & 0xFFFFFFFC) + 4
+                #thus:
+                new_base = (base - len(self.cpu.instruction.bytes)) & 0xFFFFFFFC
+                logger.debug("THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{:x} + 0x{:x}".format(new_base, 4))
+                return new_base + 4
         else:
             return base
 
