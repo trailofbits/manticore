@@ -86,10 +86,8 @@ class Armv7Operand(Operand):
         carry = self.cpu.regfile.read('APSR_C')
         if self.type == 'register':
             value = self.cpu.regfile.read(self.reg)
-            # XXX This can be an offset of 8, depending on ARM mode
+            # We set PC to point to the next instruction after the current
             if self.reg in ('PC', 'R15'):
-                #this may be correct?
-                logger.debug("adding {} to value for PC relative offset".format(len(self.cpu.instruction.bytes)))
                 value += len(self.cpu.instruction.bytes)
             if self.is_shifted():
                 shift = self.op.shift
@@ -162,16 +160,19 @@ class Armv7Operand(Operand):
 
         base = self.cpu.regfile.read(self.mem.base)
 
-        # If pc is the base, we need to correct for the fact that the ARM
-        # spec defines PC to point to the current insn + 8, which we are not
-        # compliant with (we do current insn + 4)
-        #TODO: (GDR, 2017-11-29: fix the above comment to reflect that it's current insn + len of insn + 4)
+        # PC relative addressing is fun in ARM:
+        # In arm mode, the spec defines the base value as current insn + 8
+        # In thumb mode, the spec defines the base value as ALIGN(current insn address) + 4,
+        # where ALIGN(current insn address) => <current insn address> & 0xFFFFFFFC
+        #
+        # Regardless of mode, our implementation of read(PC) will return the address
+        # of the instruction following the current instruction.
         if self.mem.base in ('PC', 'R15'):
             if self.cpu.mode == cs.CS_MODE_ARM:
                 logger.debug("ARM mode PC relative addressing: PC + offset: 0x{:x} + 0x{:x}".format(base, 4))
                 return base + 4
             else:
-                #we store PC + len(current_instruction)
+                #base currently has the value PC + len(current_instruction)
                 #we need (PC & 0xFFFFFFFC) + 4
                 #thus:
                 new_base = (base - len(self.cpu.instruction.bytes)) & 0xFFFFFFFC
