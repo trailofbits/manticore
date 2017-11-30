@@ -16,7 +16,7 @@ class ContextFilter(logging.Filter):
         return '{}.{}'.format(prefix, components[-1])
 
     def filter(self, record):
-        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
+        if hasattr(self, 'stateid') and isinstance(self.stateid, (int, long)):
             record.stateid = '[%d]' % self.stateid
         else:
             record.stateid = ''
@@ -34,11 +34,15 @@ def init_logging():
     ctxfilter = ContextFilter()
     logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
               " %(message)s")
-    logging.basicConfig(format=logfmt, stream=sys.stdout, level=logging.ERROR)
-    for name in logging.getLogger().manager.loggerDict.keys():
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(logfmt)
+    handler.setFormatter(formatter)
+    for name in all_loggers:
         logger = logging.getLogger(name)
         if not name.startswith('manticore'):
-            next
+            continue
+        logger.addHandler(handler)
+        logger.propagate = False
         logger.setLevel(logging.WARNING)
         logger.addFilter(ctxfilter)
         logger.setState = types.MethodType(loggerSetState, logger)

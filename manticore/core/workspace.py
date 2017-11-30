@@ -65,17 +65,17 @@ class Store(object):
 
     @classmethod
     def fromdescriptor(cls, desc):
-	"""
-	Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
+        """
+        Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
 
-	Valid descriptors:
-	  * fs:<path>
-	  * redis:<hostname>:<port>
-	  * mem:
+        Valid descriptors:
+          * fs:<path>
+          * redis:<hostname>:<port>
+          * mem:
 
-	:param str desc: Store descriptor
-	:return: Store instance
-	"""
+        :param str desc: Store descriptor
+        :return: Store instance
+        """
         type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
         for subclass in cls.__subclasses__():
             if subclass.store_type == type_:
@@ -334,8 +334,11 @@ class Workspace(object):
     A workspace maintains a list of states to run and assigns them IDs.
     """
 
-    def __init__(self, lock, desc=None):
-        self._store = Store.fromdescriptor(desc)
+    def __init__(self, lock, store_or_desc=None):
+        if isinstance(store_or_desc, Store):
+            self._store = store_or_desc
+        else:
+            self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
         self._last_id = manager.Value('i', 0)
         self._lock = lock
@@ -413,8 +416,8 @@ class ManticoreOutput(object):
         self._lock = manager.Condition(manager.RLock())
 
     @property
-    def uri(self):
-        return self._store.uri
+    def store(self):
+        return self._store
 
     @property
     def descriptor(self):
@@ -514,8 +517,8 @@ class ManticoreOutput(object):
         with self._named_stream('trace') as f:
             if 'trace' not in state.context:
                 return
-            for pc in state.context['trace']:
-                f.write('0x{:08x}\n'.format(pc))
+            for entry in state.context['trace']:
+                f.write('0x{:x}'.format(entry))
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check

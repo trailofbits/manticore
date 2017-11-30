@@ -130,65 +130,9 @@ class Elf(Binary):
     def threads(self):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
 
-class Minidump(Binary):
-    def __init__(self, filename):
-        self.md = minidump.MiniDump(path)
-        assert self.md.get_architecture() == "x86"
-        self.arch = 'i386'
-
-        major, minor = map(int, self.md.version.split(' ')[0].split('.'))
-        if major == 6:
-            self.flavor = "Windows7SP%d"%minor
-        elif major == 10:
-            self.flavor = "Windows10SP%d"%minor
-        else:
-            raise NotImplemented() #"Windows version not supported")
-
-        super(Minidump, self).__init__(filename)
-
-
-
-    def maps(self):
-        # Setting up memory maps
-        query = self.md.get_memory_map()
-        data = self.get_memory_data()
-
-        for addr in data:
-            perms, size = query[addr]
-            offsetofdatainminidump = 0
-            yield((addr&0xffffffff, size, perms, self.path, offsetofdatainminidump, len(data[addr]) ) )
-
-    def threads(self):
-        selectedThreadId = self.md.get_threads()[0].ThreadId
-        
-        for thread in self.md.get_threads():
-            cxt = md.get_register_context_by_tid(thread.ThreadId)
-            #Let's just ignore all extra threads for now
-            status = 'Sleeping'
-            if selectedThreadId == thread.ThreadId:
-                status = 'Running'
-            registers = { 'EIP': cxt.Eip,
-                            'ESP': cxt.Esp,
-                            'EBP': cxt.Ebp,
-                            'EAX': cxt.Eax,
-                            'EBX': cxt.Ebx,
-                            'ECX': cxt.Ecx,
-                            'EDX': cxt.Edx,
-                            'ESI': cxt.Esi,
-                            'EDI': cxt.Edi,
-                            'FS': cxt.SegFs}
-
-            if (additional_context and 'registers' in additional_context):
-                for name, value in additional_context['registers'].iteritems():
-                    registers[name]= value
-            yield((status, registers))
-
-
-
 
 Binary.magics= { '\x7fCGC': CGCElf,
-                 '\x7fELF': Elf,
-                 'MDMP': Minidump}
+                 '\x7fELF': Elf }
 
 
 if __name__ == '__main__':

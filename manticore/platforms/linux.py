@@ -53,7 +53,11 @@ class File(object):
         state = {}
         state['name'] = self.name
         state['mode'] = self.mode
-        state['pos'] = self.tell()
+        try:
+            state['pos'] = self.tell()
+        except IOError:
+            # This is to handle special files like /dev/tty
+            state['pos'] = None
         return state
 
     def __setstate__(self, state):
@@ -61,7 +65,8 @@ class File(object):
         mode = state['mode']
         pos = state['pos']
         self.file = file(name, mode)
-        self.seek(pos)
+        if pos is not None:
+            self.seek(pos)
 
     @property
     def name(self):
@@ -1117,7 +1122,6 @@ class Linux(Platform):
                         "Fd not seekable. Returning EBADF"))
             return -errno.EBADF
 
-        logger.debug("LSEEK(%d, 0x%08x (%d), %d)", fd, offset, signed_offset, whence)
         return 0
 
     def sys_read(self, fd, buf, count):
@@ -1138,13 +1142,6 @@ class Linux(Platform):
             self.syscall_trace.append(("_read", fd, data))
             self.current.write_bytes(buf, data)
 
-        logger.debug("READ(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
-                     fd,
-                     buf,
-                     count,
-                     len(data),
-                     repr(data)[:min(count,10)],
-                     len(data))
         return len(data)
 
     def sys_write(self, fd, buf, count):
@@ -1212,10 +1209,6 @@ class Linux(Platform):
                 break
             filename += c
 
-        logger.debug("access(%s, %x) -> %r",
-                     filename,
-                     mode,
-                     os.access(filename, mode))
         if os.access(filename, mode):
             return 0
         else:
@@ -1233,7 +1226,7 @@ class Linux(Platform):
         def pad(s):
             return s +'\x00'*(65-len(s))
 
-        now = datetime.now().strftime("%a %b %d %H:%M:%S ART %Y")
+        now = datetime(2017, 8, 01).strftime("%a %b %d %H:%M:%S ART %Y")
         info = (('sysname', 'Linux'),
                 ('nodename', 'ubuntu'),
                 ('release', '4.4.0-77-generic'),
@@ -1243,7 +1236,6 @@ class Linux(Platform):
 
         uname_buf = ''.join(pad(pair[1]) for pair in info)
         self.current.write_bytes(old_utsname, uname_buf)
-        logger.debug("sys_newuname(...) -> %s", uname_buf)
         return 0
 
     def sys_brk(self, brk):
@@ -1264,7 +1256,6 @@ class Linux(Platform):
                 addr = mem.mmap(mem._ceil(self.elf_brk), size, perms)
                 assert mem._ceil(self.elf_brk) == addr, "Error in brk!"
             self.elf_brk += size
-        logger.debug("sys_brk(0x%08x) -> 0x%08x", brk, self.elf_brk)
         return self.elf_brk
 
     def sys_arch_prctl(self, code, addr):
@@ -1285,7 +1276,6 @@ class Linux(Platform):
         assert code == ARCH_SET_FS
         self.current.FS = 0x63
         self.current.set_descriptor(self.current.FS, addr, 0x4000, 'rw')
-        logger.debug("sys_arch_prctl(%04x, %016x) -> 0", code, addr)
         return 0
 
     def sys_ioctl(self, fd, request, argp):
@@ -1340,8 +1330,6 @@ class Linux(Platform):
         except OSError as e:
             ret = -e.errno
 
-        logger.debug("sys_rename('%s', '%s') -> %s", oldname, newname, ret)
-
         return ret
 
     def sys_fsync(self, fd):
@@ -1357,12 +1345,14 @@ class Linux(Platform):
         except BadFd:
             ret = -errno.EINVAL
 
-        logger.debug("sys_fsync(%d) -> %d", fd, ret)
-
         return ret
 
     def sys_getpid(self, v):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
+        return 1000
+
+    def sys_gettid(self, v):
+        logger.debug("GETTID, warning tid modeled as concrete 1000")
         return 1000
 
     def sys_ARM_NR_set_tls(self, val):
@@ -1406,7 +1396,6 @@ class Linux(Platform):
             return -errno.EBADF
         
         newfd = self._dup(fd)
-        logger.debug('sys_dup(%d) -> %d', fd, newfd)
         return newfd
         
     def sys_dup2(self, fd, newfd):
@@ -1436,7 +1425,6 @@ class Linux(Platform):
         
         self.files[newfd] = self.files[fd]
                     
-        logger.debug('sys_dup2(%d,%d) -> %d', fd, newfd, newfd)
         return newfd
     
     def sys_close(self, fd):
@@ -1469,7 +1457,6 @@ class Linux(Platform):
         else:
             data = os.readlink(filename)[:bufsize]
         self.current.write_bytes(buf, data)
-        logger.debug("READLINK %d %x %d -> %s",path,buf,bufsize,data)
         return len(data)
 
     def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
@@ -1548,13 +1535,6 @@ class Linux(Platform):
             cpu.memory.munmap(result, size)
             result = -1
 
-        logger.debug("sys_mmap(%s, 0x%x, %s, %x, %d) - (0x%x)",
-                     actually_mapped,
-                     size,
-                     perms,
-                     flags,
-                     fd,
-                     result)
         return result
 
     def sys_mprotect(self, start, size, prot):
@@ -1570,7 +1550,6 @@ class Linux(Platform):
         '''
         perms = perms_from_protflags(prot)
         ret = self.current.memory.mprotect(start, size, perms)
-        logger.debug("sys_mprotect(0x%016x, 0x%x, %s) -> %r (%r)", start, size, perms, ret, prot)
         return 0
 
     def sys_munmap(self, addr, size):
@@ -1644,12 +1623,6 @@ class Linux(Platform):
             total += len(data)
             cpu.write_bytes(buf, data)
             self.syscall_trace.append(("_read", fd, data))
-            logger.debug("READV(%r, %r, %r) -> <%r> (size:%r)",
-                         fd,
-                         buf,
-                         size,
-                         data,
-                         len(data))
         return total
 
     def sys_writev(self, fd, iov, count):
@@ -1679,7 +1652,6 @@ class Linux(Platform):
             data = ""
             for j in xrange(0,size):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
-            logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)",fd, buf, size, data, len(data))
             data = self._transform_write_data(data)
             write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))
@@ -1748,30 +1720,23 @@ class Linux(Platform):
         self.sched()
         self.running.remove(procid)
         #self.procs[procid] = None
-        logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
-            raise TerminateState("Program finished with exit status: %r" % error_code, testcase=True)
+            raise TerminateState("Program finished with exit status: %r" % ctypes.c_int32(error_code).value, testcase=True)
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
-        logger.debug("sys_ptrace(%016x, %d, %016x, %016x) -> 0", request, pid, addr, data)
         return 0
     def sys_nanosleep(self, req, rem):
-        logger.debug("sys_nanosleep(...)")
         return 0
     def sys_set_tid_address(self, tidptr):
-        logger.debug("sys_set_tid_address(%016x) -> 0", tidptr)
         return 1000 #tha pid
     def sys_faccessat(self, dirfd, pathname, mode, flags):
         filename = self.current.read_string(pathname)
-        logger.debug("sys_faccessat(%016x, %s, %x, %x) -> 0", dirfd, filename, mode, flags)
         return -1
 
     def sys_set_robust_list(self, head, length):
-        logger.debug("sys_set_robust_list(%016x, %d) -> -1", head, length)
         return -1
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        logger.debug("sys_futex(...) -> -1")
         return -1
     def sys_getrlimit(self, resource, rlim):
         ret = -1
@@ -1781,14 +1746,11 @@ class Linux(Platform):
             # see the BUGS section in getrlimit(2) man page.
             self.current.write_bytes(rlim, struct.pack('<LL', *rlimit_tup))
             ret = 0
-        logger.debug("sys_getrlimit(%x, %x) -> %d", resource, rlim, ret)
         return ret
 
     def sys_fadvise64(self, fd, offset, length, advice):
-        logger.debug("sys_fadvise64(%x, %x, %x, %x) -> 0", fd, offset, length, advice)
         return 0
     def sys_gettimeofday(self, tv, tz):
-        logger.debug("sys_gettimeofday(%x, %x) -> 0", tv, tz)
         return 0
 
     def sys_socket(self, domain, socket_type, protocol):
@@ -1803,7 +1765,6 @@ class Linux(Platform):
 
         f = SocketDesc(domain, socket_type, protocol)
         fd = self._open(f)
-        logger.debug("socket(%d, %d, %d) -> %d", domain, socket_type, protocol, fd)
         return fd
 
     def _is_sockfd(self, sockfd):
@@ -1816,11 +1777,9 @@ class Linux(Platform):
             return -errno.EBADF
 
     def sys_bind(self, sockfd, address, address_len):
-        logger.debug("bind(%d, %x, %d)", sockfd, address, address_len)
         return self._is_sockfd(sockfd)
 
     def sys_listen(self, sockfd, backlog):
-        logger.debug("listen(%d, %d)", sockfd, backlog)
         return self._is_sockfd(sockfd)
 
     def sys_accept(self, sockfd, addr, addrlen, flags):
@@ -1830,7 +1789,6 @@ class Linux(Platform):
 
         sock = Socket()
         fd = self._open(sock)
-        logger.debug('accept(%d, %x, %d, %d) -> %d', sockfd, addr, addrlen, flags, fd)
         return fd
 
     def sys_recv(self, sockfd, buf, count, flags):
@@ -1845,10 +1803,6 @@ class Linux(Platform):
         data = sock.read(count)
         self.current.write_bytes(buf, data)
         self.syscall_trace.append(("_recv", sockfd, data))
-
-        logger.debug("recv(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
-                     sockfd, buf, count, len(data), repr(data)[:min(count,32)],
-                     len(data))
 
         return len(data)
 
@@ -2110,8 +2064,6 @@ class Linux(Platform):
         bufstat += to_timespec(nw, stat.st_mtime) # long   st_mtime, nsec;
         bufstat += to_timespec(nw, stat.st_ctime) # long   st_ctime, nsec;
 
-        logger.debug("sys_newfstat(%d, ...) -> %d bytes", fd, len(bufstat))
-
         self.current.write_bytes(buf, bufstat)
         return 0
 
@@ -2136,8 +2088,6 @@ class Linux(Platform):
 
         def to_timespec(ts):
             return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
-
-        logger.debug("sys_fstat %d", fd)
 
         bufstat = add(8, stat.st_dev)    # dev_t st_dev;
         bufstat += add(4, 0)              # __pad1
@@ -2181,8 +2131,6 @@ class Linux(Platform):
 
         def to_timespec(ts):
             return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
-
-        logger.debug("sys_fstat64 %d", fd)
 
         bufstat = add(8, stat.st_dev)        # unsigned long long      st_dev;
         bufstat += add(4, 0)                  # unsigned char   __pad0[4];

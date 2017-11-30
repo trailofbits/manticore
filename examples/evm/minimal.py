@@ -1,4 +1,4 @@
-from seth import ManticoreEVM
+from manticore.seth import ManticoreEVM
 ################ Script #######################
 
 seth = ManticoreEVM()
@@ -9,6 +9,7 @@ source_code = '''
 pragma solidity ^0.4.13;
 contract NoDistpatcher {
     event Log(string);
+
     function() payable {
         if (msg.data[0] == 'A') {
             Log("Got an A");
@@ -25,17 +26,12 @@ user_account = seth.create_account(balance=1000)
 
 
 print "[+] Creating a contract account"
-bytecode = seth.compile(source_code) 
-#Initialize contract
-# Note that the initialization argument would have been passed immediatelly 
-# after the init bytecode  init=bytecode+pack(parameter)
-contract_account = seth.create_contract(owner=user_account,
-                                        init=bytecode)
+contract_account = seth.solidity_create_contract(source_code, owner=user_account)
 
-   
+
 print "[+] Now the symbolic values"
 
-symbolic_data = seth.SByte(16) 
+symbolic_data = seth.SByte(320) 
 symbolic_value = None 
 seth.transaction(caller=user_account,
                 address=contract_account,

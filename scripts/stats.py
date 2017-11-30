@@ -72,7 +72,7 @@ elif args.bbs:
                     break
 
         def p(x):
-            return isinstance(x, int) and hex(x) or x
+            return isinstance(x, (int, long)) and hex(x) or x
         
         print '%s -> [%s]'%(p(origin), ', '.join(map(p, targets)) )
     

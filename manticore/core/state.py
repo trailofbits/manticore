@@ -139,7 +139,7 @@ class State(Eventful):
         except ConcretizeMemory as e:
             expression = self.cpu.read_int(e.address, e.size)
             def setstate(state, value):
-                state.cpu.write_int(e.reg_name, value, e.size)
+                state.cpu.write_int(e.address, value, e.size)
             raise Concretize(e.message,
                                 expression=expression,
                                 setstate=setstate,
@@ -308,7 +308,7 @@ class State(Eventful):
         '''
         return self._solver.get_value(self._constraints, expr)
 
-    def solve_n(self, expr, nsolves, policy='minmax'):
+    def solve_n(self, expr, nsolves):
         '''
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         `nsolves` solutions.

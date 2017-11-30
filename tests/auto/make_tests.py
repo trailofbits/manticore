@@ -16,6 +16,8 @@ for test in tests:
         cnt = op_count.get(test['mnemonic'],0)
         if cnt > 1000: #No more than 1000 instructions of each kind
             continue
+        if test['mnemonic'] != 'PCMPISTRI' and test['mnemonic'] != 'PCMPISTRM' and test['mnemonic'] != 'PCMPESTRI' and test['mnemonic'] != 'PCMPESTRM':
+            continue
         op_count[test['mnemonic']] = cnt+1
         test_dic["%s_%d"%(test['mnemonic'], op_count[test['mnemonic']])] = test
     except Exception,e:
@@ -216,6 +218,7 @@ for test_name in sorted(test_dic.keys()):
             print """        cs.add(cpu.%s == 0x%x)"""%(reg_name, value)
 
 
+    pc_reg = 'RIP' if 'RIP' in test['pre']['registers'] else 'EIP'
     print """
         done = False
         while not done:
@@ -226,8 +229,27 @@ for test_name in sorted(test_dic.keys()):
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
-                setattr(cpu, e.reg_name, values[0])"""
-
+                setattr(cpu, e.reg_name, values[0])
+                setattr(cpu, '{PC}', {PC_VAL})""".format(
+                        PC=pc_reg,
+                        PC_VAL=hex(test['pre']['registers'][pc_reg]))
+    print """
+            except ConcretizeMemory,e:
+                symbol = getattr(cpu, '{FRAME_BASE}')
+                if isinstance(symbol, Expression):
+                    values = solver.get_all_values(cs, symbol)
+                    self.assertEqual(len(values), 1)
+                    setattr(cpu, '{FRAME_BASE}', values[0])
+                for i in range(e.size):
+                    symbol = mem[e.address+i]
+                    if isinstance(symbol, Expression):
+                        values = solver.get_all_values(cs, symbol)
+                        self.assertEqual(len(values), 1)
+                        mem[e.address+i] = values[0]
+                setattr(cpu, '{PC}', {PC_VAL})""".format(
+                        FRAME_BASE='RBP' if 'RBP' in test['pre']['registers'] else 'EBP',
+                        PC=pc_reg,
+                        PC_VAL=hex(test['pre']['registers'][pc_reg]))
 
 
     print """
