@@ -2318,6 +2318,11 @@ class SLinux(Linux):
 
     #Dispatchers...
 
+    def sys_exit_group(self, error_code):
+        if issymbolic(error_code):
+            raise ConcretizeArgument(self, 0)
+        return super(SLinux, self).sys_exit_group(error_code)
+
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
             logger.debug("Ask to read from a symbolic file descriptor!!")
