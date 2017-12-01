@@ -2320,6 +2320,7 @@ class SLinux(Linux):
 
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
+            logger.debug("Solving for a symbolic process status code")
             raise ConcretizeArgument(self, 0)
         return super(SLinux, self).sys_exit_group(error_code)
 
