@@ -42,7 +42,6 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='+',
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--size', type=str, help='Specify buffer full size')
     parser.add_argument('--timeout', type=int, default=0,
                         help='Timeout. Abort exploration aftr TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
