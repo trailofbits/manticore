@@ -8,7 +8,7 @@ sys.setrecursionlimit(10000)
 def parse_arguments():
     ###########################################################################
     # parse arguments
-    parser = argparse.ArgumentParser(description='Symbolically analyze a program')
+    parser = argparse.ArgumentParser(description='Dynamic binary analysis tool')
     parser.add_argument('--assertions', type=str, default=None,
                         help=argparse.SUPPRESS)
     parser.add_argument('--buffer', type=str,
