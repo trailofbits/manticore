@@ -133,6 +133,11 @@ def concrete_run_get_trace(inp):
 
 
 def symbolic_run_get_cons(trace):
+    '''
+    Execute a symbolic run that follows a concrete run; return constraints generated
+    and the stdin data produced
+    '''
+
     m2 = Manticore.linux(prog, workspace_url='mem:')
     f = Follower(trace)
     m2.verbosity(VERBOSITY)
@@ -141,26 +146,19 @@ def symbolic_run_get_cons(trace):
     @m2.hook(endd)
     def x(s):
         with m2.locked_context() as ctx:
-            ctx['completed_state'] = s
-            ctx['readdata'] = []
+            readdata = []
             for name, fd, data in s.platform.syscall_trace:
                 if name in ('_receive', '_read') and fd == 0:
-                    ctx['readdata'] += [data]
+                    readdata.append(data)
+            ctx['readdata'] = readdata
+            ctx['constraints'] = list(s.constraints.constraints)
 
     m2.run()
 
-    st = m2.context['completed_state']
+    constraints = m2.context['constraints']
     datas = m2.context['readdata']
 
-    return list(st.constraints.constraints), datas
-
-def x(conn):
-    for c in conn:
-        print pp(c)
-        print '-'*33
-
-def xxx(con):
-    return hex(con.operands[1].value), (hex(con.operands[0].operands[1].value), hex(con.operands[0].operands[2].value))
+    return constraints, datas
 
 def contains(new, olds):
     '__contains__ operator using the `eq` function'
@@ -172,7 +170,7 @@ def getnew(oldcons, newcons):
 
 def constraints_are_sat(cons):
     'Whether constraints are sat'
-    return solver.can_be_true(constraints_to_constraintset(cons), True)
+    return solver.check(constraints_to_constraintset(cons))
 
 def get_new_constrs_for_queue(oldcons, newcons):
     ret = []
@@ -198,11 +196,11 @@ def get_new_constrs_for_queue(oldcons, newcons):
     return ret
 
 def inp2ints(inp):
-    a, b, c = struct.unpack('<III', inp)
+    a, b, c = struct.unpack('<iii', inp)
     return 'a={} b={} c={}'.format(a, b, c)
 
 def ints2inp(*ints):
-    return struct.pack('<'+'I'*len(ints), *ints)
+    return struct.pack('<'+'i'*len(ints), *ints)
 
 def concrete_input_to_constraints(ci, prev=None):
     if prev is None:
@@ -217,7 +215,7 @@ def concrete_input_to_constraints(ci, prev=None):
     #
     # but maybe a dumb way where we blindly permute the constraints
     # and just check if they're sat before queueing will work
-    new_constraints, datas = get_new_constrs_for_queue(prev, cons), datas
+    new_constraints = get_new_constrs_for_queue(prev, cons)
     log('permuting constraints and adding {} constraints sets to queue'.format(len(new_constraints)))
     return new_constraints, datas
 
