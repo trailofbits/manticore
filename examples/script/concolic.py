@@ -202,10 +202,19 @@ def inp2ints(inp):
 def ints2inp(*ints):
     return struct.pack('<'+'i'*len(ints), *ints)
 
+traces = set()
 def concrete_input_to_constraints(ci, prev=None):
+    global traces
     if prev is None:
         prev = []
     trc = concrete_run_get_trace(ci)
+
+    # Only heed new traces
+    trace_rips = tuple(x['values']['RIP'] for x in trc if x['type'] == 'regs')
+    if trace_rips in traces:
+        return [], []
+    traces.add(trace_rips)
+    
     log("getting constraints from symbolic run")
     cons, datas = symbolic_run_get_cons(trc)
     # hmmm ideally do some smart stuff so we don't have to check if the
@@ -240,13 +249,15 @@ def main():
         log('get constraint set from queue, queue size: {}'.format(q.qsize()))
         cons = q.get()
         inp = input_from_cons(cons, datas)
-        to_queue, datas = concrete_input_to_constraints(inp, cons)
+        to_queue, new_datas = concrete_input_to_constraints(inp, cons)
+        if len(new_datas) > 0:
+            datas = new_datas
         paths +=1
 
         for each in to_queue:
             q.put(each)
 
-    log('paths found: {}'.format(paths))
+    log('paths found: {}'.format(len(traces)))
 
 if __name__=='__main__':
     main()
