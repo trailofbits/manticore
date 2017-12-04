@@ -50,8 +50,8 @@ class InstructionEmulationError(CpuException):
     '''
     pass
 
-class DivideByZeroError(CpuException):
-    ''' A division by zero '''
+class DivideError(CpuException):
+    ''' A division error. '''
     pass
 
 class Interruption(CpuException):
