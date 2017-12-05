@@ -1896,6 +1896,10 @@ class EVMWorld(Platform):
             return self._suicide
 
     @property
+    def accounts(self):
+        return self.storage.keys()
+
+    @property
     def storage(self):
         if self.depth:
             return self.current.global_storage
@@ -1942,10 +1946,36 @@ class EVMWorld(Platform):
         self.storage[src]['balance'] -= value
 
     def get_code(self, address):
+        if address not in self.storage:
+            return None
+
         return self.storage[address]['code']
 
     def set_code(self, address, data):
         self.storage[address]['code'] = data
+
+    def log(self, address, topic, data):
+        self.logs.append((address, data, topics))
+        logger.info('LOG %r %r', memlog, topics)
+
+    def add_suicide(self, address)
+        self.suicide.add(address)
+
+    '''
+    self.log_storage = lambda addr: 0
+    self.add_refund = lambda x: 0
+    self.block_prevhash = 0
+    self.block_coinbase = 0
+    self.block_timestamp = 0
+    self.block_number = 0
+    self.block_difficulty = 0
+    self.block_gas_limit = 0
+    self.tx_origin = b'0' * 40
+    self.tx_gasprice = 0
+    self.create = lambda msg: 0, 0, 0
+    self.call = lambda msg: 0, 0, 0
+    self.sendmsg = lambda msg: 0, 0, 0
+    '''
 
 
     def _push_vm(self, vm):
@@ -2108,11 +2138,15 @@ class EVMWorld(Platform):
         if origin is None and caller is not None:
             origin = caller
 
+        if address not in self.accounts or\
+           caller not in self.accounts or \
+           origin != caller and origin not in self.accounts:
+            raise Exception('Account does not exist %x'%address)
+
         if header is None:
             header = {'timestamp':1}
         if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
-            #data_symb = EVMMemory(self.constraints, 256, 8)
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
@@ -2233,7 +2267,7 @@ class EVMWorld(Platform):
             self.create_account(address=recipient, balance=0, code='', storage=None)
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
-        self.suicide.add(address)
+        self.add_suicide(address)
         prev_vm = self._pop_vm(rollback=False)
         if self.depth == 0:
             self.last_pc = prev_vm.pc

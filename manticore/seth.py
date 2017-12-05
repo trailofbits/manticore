@@ -139,6 +139,9 @@ class EVMAccount(object):
     def __int__(self):
         return self._address
 
+    def __str__(self):
+        return hex(self._address)
+
     def __getattribute__(self, name):
         ''' If this is a contract account of which we know the functions hashes
             this will build the transaction for the function call.
@@ -227,7 +230,8 @@ class ManticoreEVM(Manticore):
             hashes = outp['hashes']
             return name, source_code, bytecode, srcmap, srcmap_runtime, hashes
 
-    def __init__(self):
+    def __init__(self, procs=8):
+        self._config_procs=procs
         #Make the constraint store
         constraints = ConstraintSet()
         #make the ethereum world state
@@ -329,7 +333,7 @@ class ManticoreEVM(Manticore):
             :param balance: balance to be transfered on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
-            :type address: int or EVMAccount
+            :type address: int
             :return: an EVMAccount
         '''
         with self.locked_context('seth') as context:
@@ -339,7 +343,7 @@ class ManticoreEVM(Manticore):
             address = self.world._new_address()
         self.context['seth']['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
-        self.run()
+        self.run(procs=self._config_procs)
 
         return address
 
@@ -349,12 +353,13 @@ class ManticoreEVM(Manticore):
             :param balance: balance to be transfered on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
-            :type address: int or EVMAccount
+            :type address: int
             :return: an EVMAccount
         '''
         with self.locked_context('seth') as context:
            assert context['_pending_transaction'] is None
-        return self.world.create_account( address, balance, code=code, storage=None)
+        address = self.world.create_account( address, balance, code=code, storage=None)
+        return address
 
     def transaction(self, caller, address, value, data):
         ''' Issue a transaction 
@@ -371,13 +376,12 @@ class ManticoreEVM(Manticore):
             address = int(address)
         if isinstance(caller, EVMAccount):
             caller = int(caller)
-
-
+        
         if isinstance(data, self.SByte):
             data = (None,)*data.size
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
-        return self.run(procs=10)
+        return  self.run(procs=self._config_procs)
 
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
@@ -387,13 +391,11 @@ class ManticoreEVM(Manticore):
             assert context['_pending_transaction'] is not None
             #there is at least one states in seth saved states
             assert context['_saved_states'] or self.initial_state
-
             #there is no states added to the executor queue
             assert len(self._executor.list()) == 0
 
             for state_id in context['_saved_states']:
                 self._executor.put(state_id)
-    
             context['_saved_states'] = []
 
         #A callback will use _pending_transaction and issue the transaction 
@@ -404,6 +406,7 @@ class ManticoreEVM(Manticore):
             if len(context['_saved_states'])==1:
                 self._initial_state = self._executor._workspace.load_state(context['_saved_states'][0], delete=True)
                 context['_saved_states'] = []
+                assert self.running_state_ids == [-1]
 
             #clear pending transcations. We are done.
             context['_pending_transaction'] = None
@@ -441,12 +444,9 @@ class ManticoreEVM(Manticore):
             if len(self.running_state_ids) == 1:  
                 #Get the ID of the single running state              
                 state_id = self.running_state_ids[0]
-                if state_id != -1:
-                    #if there is a single running state with id != 1. We consider it is a new initial_state
-                    assert self.initial_state is None
-                    state = self.initial_state = self._executor._workspace.load_state(state_id, delete=True)
             else:
                 raise Exception("More than one state running. Do not know which to choose.")
+
         if state_id == -1:
             state = self.initial_state
         else:
@@ -483,7 +483,6 @@ class ManticoreEVM(Manticore):
         ''' INTERNAL USE 
             When a state was just loaded from stoage we do the pending transaction
         '''
-
         if state.context.get('processed', False):
             return
         world = state.platform
@@ -491,6 +490,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             ty, caller, address, value, data = context['_pending_transaction']
             txnum = len(state.context['tx'])
+
         #Replace any none by symbolic values
         if value is None:
             value = state.new_symbolic_value(256, label='tx%d_value'%txnum)
@@ -501,14 +501,12 @@ class ManticoreEVM(Manticore):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
                 data = symbolic_data
-        state.context['tx'].append((ty, caller, address, value, data))
-
-
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value)
         else:
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data)
+        state.context['tx'].append((ty, caller, address, value, data))
 
     def _will_execute_instruction_callback(self, state, pc, instruction):
         ''' INTERNAL USE '''
@@ -530,6 +528,9 @@ class ManticoreEVM(Manticore):
 
     def report(self, state_id=None, ty=None):
         ''' Prints a small report on state id '''
+        state = self.load(state_id)
+        world = state.platform
+
         output = StringIO.StringIO()
 
         def compare_buffers(a, b):
@@ -542,16 +543,13 @@ class ManticoreEVM(Manticore):
                     return False
             return cond
 
-        state = self.load(state_id)
-        world = state.platform
         trace = state.context['seth.trace']
-        last_address, last_pc = trace[-1]
-        
+        last_address, last_pc = trace[-1]        
         #Try to recover metadata from solidity based contracts
         try:
             md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = self.context['seth']['metadata'][last_address]
         except:
-            md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None,None,None,None,None,None 
+            md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None, None, None, None, None, None 
 
         # try to get the runtime bytecode from the account
         try:
@@ -569,7 +567,7 @@ class ManticoreEVM(Manticore):
         try:
             # Magic number comes from here:
             # http://solidity.readthedocs.io/en/develop/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
-            asm = list(evm.EVMDecoder.decode_all(runtime_bytecode[:-9-33-2]))
+            asm = list(evm.EVMAsm.disassemble_all(runtime_bytecode[:-9-33-2]))
             asm_offset = 0
             pos = 0
             source_pos = md_metadata_runtime[pos]
@@ -589,7 +587,7 @@ class ManticoreEVM(Manticore):
             for l in snippet.split('\n'):
                 output.write('    %s  %s\n'%(nl, l))
                 nl+=1
-        except:
+        except Exception,e:
             output.write('\n')
 
         output.write("BALANCES\n")
@@ -605,7 +603,6 @@ class ManticoreEVM(Manticore):
                     output.write('\t%x range:[%x, %x]\n'%(address, m, M))
             else:
                 output.write('\t%x %d wei\n'%(address, account['balance']))
-
         if state.platform.logs:
             output.write('LOGS:\n')
             for address, memlog, topics in state.platform.logs:
@@ -642,7 +639,7 @@ class ManticoreEVM(Manticore):
             try:
                 output.write('\t %s: %s\n'%( expr.name, res.encode('hex')))
             except:
-                output.write('\t %s: %s'% (expr.name, res))
+                output.write('\t %s: %s\n'% (expr.name, res))
         
         #print "Constraints:"
         #print state.constraints
@@ -713,12 +710,48 @@ class ManticoreEVM(Manticore):
                     output.write('%s %s\n'%(e, xdata))
         return output.getvalue()
 
+    def global_coverage(self, account_address):
+        ''' Returns code coverage for the contract on `account_address`.
+            This sums up all the visited code lines from any of the explored 
+            states.
+        '''
+        account_address = int(account_address)
+
+        #Search one state in which the account_address exists
+        world=None
+        for state_id in self.running_state_ids + self.final_state_ids:
+            world = self.get_world(state_id)
+            if account_address in world.storage:
+                break
+
+        seen = self.context['coverage'] #.union( self.context.get('code_data', set()))
+        runtime_bytecode = world.storage[account_address]['code']
+
+        end = None
+        if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and  ''.join(runtime_bytecode[-2:]) =='\x00\x29':
+            end = -9-33-2  #Size of metadata at the end of most contracts
+
+        count, total = 0, 0
+        for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]) :
+            if (account_address, i.offset) in seen:
+                count += 1            
+            total += 1
+
+        return count*100.0/total
+
     def coverage(self, account_address):
         ''' Output a code coverage report for contract account_address '''
         account_address = int(account_address)
         #This will just pick one of the running states.
         #This assumes the code and the accounts are the same in all versions of the world
-        world = self.get_world(self.running_state_ids[0])
+        #Search one state in which the account_address exists
+        world=None
+        for state_id in self.running_state_ids + self.final_state_ids:
+            world = self.get_world(state_id)
+            if account_address in world.storage:
+                break
+
         seen = self.context['coverage'] #.union( self.context.get('code_data', set()))
         runtime_bytecode = world.storage[account_address]['code']
         class bcolors:
