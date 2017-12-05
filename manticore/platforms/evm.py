@@ -1958,7 +1958,7 @@ class EVMWorld(Platform):
         self.logs.append((address, data, topics))
         logger.info('LOG %r %r', memlog, topics)
 
-    def add_suicide(self, address)
+    def add_suicide(self, address):
         self.suicide.add(address)
 
     '''
@@ -2141,7 +2141,7 @@ class EVMWorld(Platform):
         if address not in self.accounts or\
            caller not in self.accounts or \
            origin != caller and origin not in self.accounts:
-            raise Exception('Account does not exist %x'%address)
+            raise TerminateState('Account does not exist %x'%address, testcase=True)
 
         if header is None:
             header = {'timestamp':1}

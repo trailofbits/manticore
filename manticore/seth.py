@@ -488,6 +488,7 @@ class ManticoreEVM(Manticore):
         world = state.platform
         state.context['processed'] = True
         with self.locked_context('seth') as context:
+            #take current global transaction we need to apply to all running states
             ty, caller, address, value, data = context['_pending_transaction']
             txnum = len(state.context['tx'])
 
@@ -603,9 +604,9 @@ class ManticoreEVM(Manticore):
                     output.write('\t%x range:[%x, %x]\n'%(address, m, M))
             else:
                 output.write('\t%x %d wei\n'%(address, account['balance']))
-        if state.platform.logs:
+        if world.logs:
             output.write('LOGS:\n')
-            for address, memlog, topics in state.platform.logs:
+            for address, memlog, topics in world.logs:
                 try:
                     res = memlog
                     if isinstance(memlog, Expression):
