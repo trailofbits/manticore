@@ -126,9 +126,14 @@ class Z3Solver(Solver):
         self.support_reset = True
         logger.debug('Z3 version: %s', self.version)
 
-        if self.version >= Version(4, 4, 1):
+        if self.version >= Version(4, 5, 0):
+            self.support_maximize = False
+            self.support_minimize = False
+            self.support_reset = True
+        elif self.version >= Version(4, 4, 1):
             self.support_maximize = True
             self.support_minimize = True
+            self.support_reset = False
         else:
             logger.debug(' Please install Z3 4.4.1 or newer to get optimization support')
 
@@ -390,7 +395,7 @@ class Z3Solver(Solver):
         with constraints as temp_cs:
             X = temp_cs.new_bitvec(x.size)
             temp_cs.add(X == x)
-            aux = temp_cs.new_bitvec(X.size)
+            aux = temp_cs.new_bitvec(X.size, name='optimized_')
             self._reset(temp_cs)
             self._send(aux.declaration)
 
@@ -492,7 +497,8 @@ class Z3Solver(Solver):
 
         self._send('(get-value (%s))'%var.name)
         ret = self._recv()
-        assert ret.startswith('((') and ret.endswith('))')
+        if  not ( ret.startswith('((') and ret.endswith('))') ):
+            raise Exception('SMTLIB error parsing response: %s' % ret)
 
         if isinstance(expression, Bool):
             return {'true':True, 'false':False}[ret[2:-2].split(' ')[1]]
