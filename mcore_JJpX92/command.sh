@@ -1,0 +1,1 @@
+/home/dan/manticore/manticore/__main__.py /home/dan/manticore/tests/binaries/basic_linux_amd64
