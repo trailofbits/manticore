@@ -498,7 +498,7 @@ class Z3Solver(Solver):
         self._send('(get-value (%s))'%var.name)
         ret = self._recv()
         if  not ( ret.startswith('((') and ret.endswith('))') ):
-            raise Exception('SMTLIB error parsing response: %s' % ret)
+            raise SolverException('SMTLIB error parsing response: %s' % ret)
 
         if isinstance(expression, Bool):
             return {'true':True, 'false':False}[ret[2:-2].split(' ')[1]]
