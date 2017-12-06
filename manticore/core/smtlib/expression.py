@@ -682,8 +682,9 @@ class ArrayProxy(Array):
                     new_array[i] = self._array.select(start+i)
             return new_array
         else:
-            if index >= self.index_max:
-                raise IndexError
+            if self.index_max is not None :
+                if not isinstance(index, Expression) and index >= self.index_max:
+                    raise IndexError
             return self._array.select(index)
 
     def __setitem__(self, index, value):
