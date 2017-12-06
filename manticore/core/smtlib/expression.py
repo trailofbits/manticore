@@ -538,7 +538,7 @@ class Array(Expression):
     def __init__(self, index_bits, index_max, *operands, **kwargs):
         assert index_bits in (32, 64, 256)
         assert index_max is None or isinstance(index_max, (int, long))
-        assert index_max is None or index_max > 0 and index_max < 2 ** index_bits
+        assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits
         self._index_max = index_max
         super(Array, self).__init__(*operands, **kwargs)

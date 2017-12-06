@@ -2290,6 +2290,7 @@ class EVMWorld(Platform):
         if self.depth == 0:
             tx = self._transactions[-1]
             #tx.last_pc = prev_vm.pc
+            tx.return_data=None
             tx.result = 'THROW'
             raise TerminateState("THROW", testcase=True)
 
@@ -2308,7 +2309,7 @@ class EVMWorld(Platform):
             tx = self._transactions[-1]
             tx.return_data=data
             #tx.last_pc = prev_vm.pc
-            tx.result = 'THROW'
+            tx.result = 'REVERT'
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None

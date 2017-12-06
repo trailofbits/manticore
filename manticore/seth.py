@@ -28,16 +28,37 @@ def calculate_coverage(code, seen):
 class SolidityMetadata(object):
     #__slots__= 'name', 'source_code', 'init_bytecode', 'metadata', 'metadata_runtime', 'hashes'
 
-    def __init__(self, name, source_code, init_bytecode, metadata, metadata_runtime, hashes):
+    def __init__(self, name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi):
         self.name = name
         self.source_code = source_code
         self.init_bytecode = init_bytecode
         self.metadata = metadata
         self.metadata_runtime = metadata_runtime
         self.hashes = hashes
+        self.abi = dict( [(item['name'], item) for item in abi ])
+
     @property
     def signatures(self):
         return dict(( (b,a) for (a,b) in self.hashes.items() ))
+
+    def get_abi(self, hsh):
+        func_name = self.get_func_name(hsh)
+        return self.abi[func_name]
+
+    def get_func_argument_types(self, hsh):
+        abi = self.get_abi(hsh)
+        return '('+','.join(x['type'] for x in abi['inputs']) +')'
+
+    def get_func_return_types(self, hsh):
+        abi = self.get_abi(hsh)
+        return '('+','.join(x['type'] for x in abi['outputs']) +')'
+
+    def get_func_name(self, hsh):
+        signature = self.signatures.get(hsh,'{fallback}()')
+        return signature.split('(')[0]
+        
+    def get_func_signature(self, hsh):
+        return self.signatures.get(hsh, '{fallback}()')
 
     def __redduce__(self):
         ''' Implements serialization/pickle '''
@@ -345,7 +366,7 @@ class ManticoreEVM(Manticore):
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
-            p = Popen([solc, '--combined-json', 'srcmap,srcmap-runtime,bin,hashes', temp.name], stdout=PIPE)
+            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes', temp.name], stdout=PIPE)
             outp = json.loads(p.stdout.read())
             assert len(outp['contracts']), "Only one contract by file supported"
             name, outp = outp['contracts'].items()[0]
@@ -354,7 +375,8 @@ class ManticoreEVM(Manticore):
             srcmap = outp['srcmap'].split(';')
             srcmap_runtime = outp['srcmap-runtime'].split(';')
             hashes = outp['hashes']
-            return name, source_code, bytecode, srcmap, srcmap_runtime, hashes
+            abi = json.loads(outp['abi'])
+            return name, source_code, bytecode, srcmap, srcmap_runtime, hashes, abi
 
     def __init__(self, procs=1):
         ''' A manticere EVM manager 
@@ -465,7 +487,6 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.world.transactions
 
-
     def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
 
@@ -482,9 +503,9 @@ class ManticoreEVM(Manticore):
             :return: an EVMAccount
         '''
 
-        name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self._compile(source_code)
+        name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi = self._compile(source_code)
         address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
-        self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, metadata, metadata_runtime, hashes)
+        self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi)
         return EVMAccount(address, self, default_caller=owner)
 
     def create_contract(self, owner, balance=0, init=None, address=None):

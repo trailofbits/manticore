@@ -47,19 +47,20 @@ for state in seth.all_states:
         print "\tcaller 0x%x" % state.solve_one(tx.caller)  #The caller as by the yellow paper
         print "\taddress 0x%x" % state.solve_one(tx.address) #The address as by the yellow paper
         print "\tvalue: %d" % state.solve_one(tx.value)   #The value as by the yellow paper
-        print "\tdata: %r" % state.solve_one(tx.data)
+        print "\tcalldata: %r" % state.solve_one(tx.data)
         print "\tresult: %s" % tx.result  #The result if any RETURN or REVERT
-        
+        print "\treturn_data: %r" % state.solve_one(tx.return_data)  #The returned data if RETURN or REVERT
 
         if tx.sort == 'Call':
             metadata = seth.get_metadata(tx.address)
             if metadata is not None:
                 function_id = tx.data[:4]  #hope there is enough data
                 function_id = state.solve_one(function_id).encode('hex')
-                signature = metadata.signatures.get(function_id, '{fallback}()')
+                signature = metadata.get_func_signature(function_id)
                 print "\tparsed calldata", ABI.parse(signature, tx.data) #func_id, *function arguments
                 if tx.result == 'RETURN':
-                    print '\tparsed result', ABI.parse('bool', tx.return_data) #function return
+                    ret_types = metadata.get_func_return_types(function_id)
+                    print '\tparsed return_data', ABI.parse(ret_types, tx.return_data) #function return
 
     #the logs
     for log_item in blockchain.logs:
