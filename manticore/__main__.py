@@ -8,13 +8,13 @@ sys.setrecursionlimit(10000)
 def parse_arguments():
     ###########################################################################
     # parse arguments
-    parser = argparse.ArgumentParser(description='Symbolically analyze a program')
+    parser = argparse.ArgumentParser(description='Dynamic binary analysis tool')
     parser.add_argument('--assertions', type=str, default=None,
-                        help='File with additional assertions')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--buffer', type=str,
-                        help='Specify buffer to make symbolic')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--context', type=str, default=None,
-                        help='path to file with additional context')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--coverage', type=str, default=None,
                         help='where to write the coverage data')
     parser.add_argument('--data', type=str, default='',
@@ -28,10 +28,9 @@ def parse_arguments():
     parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
-                        help=("File with function addresses to replace "
-                              "with known models"))
+                        help=argparse.SUPPRESS)
     parser.add_argument('--offset', type=int, default=16,
-                        help='Buffer header size to leave concrete')
+                        help=argparse.SUPPRESS)
     # FIXME (theo) Add some documentation on the different search policy options
     parser.add_argument('--policy', type=str, default='random',
                         help=("Search policy. random|adhoc|uncovered|dicount"
@@ -43,9 +42,6 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='+',
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--replay', type=str, default=None,
-                        help='The trace filename to replay')
-    parser.add_argument('--size', type=str, help='Specify buffer full size')
     parser.add_argument('--timeout', type=int, default=0,
                         help='Timeout. Abort exploration aftr TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,

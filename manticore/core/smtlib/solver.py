@@ -448,8 +448,11 @@ class Z3Solver(Solver):
             :param val: an expression or symbol '''
         if not issymbolic(expression):
             if isinstance(expression, str):
-                expression = ord(expression)
-            if isinstance(expression, list):
+                if len(expression) == 1:
+                    expression = ord(expression)
+                else:
+                    expression = map(ord, expression)  
+            if isinstance(expression, (list, tuple)):
                 arr = constraints.new_array(index_max=len(expression))
                 for i in range(len(expression)):
                     arr[i] = expression[i]
@@ -461,7 +464,7 @@ class Z3Solver(Solver):
                 var = temp_cs.new_bool()
             elif isinstance(expression, BitVec):
                 var = temp_cs.new_bitvec(expression.size)
-            elif isinstance(expression, Array):
+            elif isinstance(expression, (Array, ArrayProxy)):
                 var = []
                 result = ''
                 for i in xrange(expression.index_max):

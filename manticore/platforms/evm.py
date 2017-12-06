@@ -27,6 +27,26 @@ def ceil32(x):
 def to_signed(i):
     return Operators.ITEBV(256, i<TT255, i, i-TT256)
 
+class Transaction(object):
+    __slots__= 'sort', 'address', 'origin', 'price', 'data', 'caller', 'value', 'return_data', 'result'
+    def __init__(self, sort, address, origin, price, data, caller, value, return_data, result):
+        self.sort = sort
+        self.address = address
+        self.origin = origin
+        self.price = price
+        self.data = data
+        self.caller = caller
+        self.value = value
+        self.return_data = return_data
+        self.result = result
+
+    def __reduce__(self):
+        ''' Implements serialization/pickle '''
+        return (self.__class__,  (self.sort,  self.address, self.origin, self.price, self.data, self.caller, self.value, self.return_data, self.result))
+
+
+
+
 class EVMMemory(object):
     def __init__(self, constraints, address_size=256, value_size=8, *args, **kwargs):
         '''
@@ -1041,7 +1061,7 @@ class EVM(Eventful):
         self.value = value
         self.depth = depth
         self.bytecode = code
-        self.suicide = set()
+        self.suicides = set()
         self.logs = []
         self.gas=gas
         #FIXME parse decode and mark invalid instructions
@@ -1087,7 +1107,7 @@ class EVM(Eventful):
         state['stack'] = self.stack
         state['gas'] = self.gas
         state['allocated'] = self.allocated
-        state['suicide'] = self.suicide
+        state['suicides'] = self.suicides
         state['logs'] = self.logs
 
         return state
@@ -1112,7 +1132,7 @@ class EVM(Eventful):
         self.stack = state['stack']
         self.gas = state['gas']
         self.allocated = state['allocated']
-        self.suicide = state['suicide']
+        self.suicides = state['suicides']
         super(EVM, self).__setstate__(state)
 
     #Memory related
@@ -1822,6 +1842,7 @@ class EVMWorld(Platform):
         self._logs = list()
         self._sha3 = {}
         self._pending_transaction = None
+        self._transactions = list()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1832,6 +1853,8 @@ class EVMWorld(Platform):
         state['constraints'] = self._constraints
         state['callstack'] = self._callstack
         state['deleted_address'] = self._deleted_address
+        state['transactions'] = self._transactions
+
         return state
 
     def __setstate__(self, state):
@@ -1843,6 +1866,7 @@ class EVMWorld(Platform):
         self._constraints = state['constraints']
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
+        self._transactions = state['transactions']
         self._do_events()
 
     def _do_events(self):
@@ -1871,6 +1895,14 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
+    @property
+    def transactions(self):
+        return self._transactions
+
+    @property
+    def last_return_data(self):
+        return self.transactions[-1].return_data
+
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
@@ -1889,15 +1921,28 @@ class EVMWorld(Platform):
             return None
 
     @property
-    def suicide(self):
-        if self.depth:
-            return self.current.suicide
-        else:
-            return self._suicide
-
-    @property
     def accounts(self):
         return self.storage.keys()
+
+    @property
+    def normal_accounts(self):
+        accs = []
+        for address in self.accounts:
+            if len(self.get_code(address)) == 0:
+                accs.append(address)
+        return accs
+
+    @property
+    def contract_accounts(self):
+        accs = []
+        for address in self.accounts:
+            if len(self.get_code(address)) > 0:
+                accs.append(address)
+        return accs
+
+    @property
+    def deleted_addresses(self):
+        return self._deleted_address
 
     @property
     def storage(self):
@@ -1946,20 +1991,16 @@ class EVMWorld(Platform):
         self.storage[src]['balance'] -= value
 
     def get_code(self, address):
-        if address not in self.storage:
-            return None
-
         return self.storage[address]['code']
 
     def set_code(self, address, data):
         self.storage[address]['code'] = data
 
+
     def log(self, address, topic, data):
         self.logs.append((address, data, topics))
         logger.info('LOG %r %r', memlog, topics)
 
-    def add_suicide(self, address):
-        self.suicide.add(address)
 
     '''
     self.log_storage = lambda addr: 0
@@ -2000,17 +2041,18 @@ class EVMWorld(Platform):
         assert self.constraints == vm.constraints
         if self.current:
             self.current.constraints = vm.constraints
+
         if not rollback:
             if self.depth:
                 self.current.global_storage = vm.global_storage
             else:
                 self._global_storage = vm.global_storage
 
-            self._deleted_address = self._deleted_address.union(vm.suicide)
-            self._logs += vm.logs
-            if not self.depth:
-                for address in self._deleted_address:
-                    del self.storage[address]
+                self._deleted_address = self._deleted_address.union(vm.suicides)
+                self._logs += vm.logs
+                if not self.depth:
+                    for address in self._deleted_address:
+                        del self.storage[address]
         return vm
 
     @property
@@ -2177,12 +2219,17 @@ class EVMWorld(Platform):
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
         self._push_vm(new_vm)
         if self.depth == 1:
+
             #handle human transactions
             if ty == 'Create':
                 self.current.last_exception = Create(None, None, None)
+                data = bytecode
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
+            tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
+            self._transactions.append(tx)
+ 
 
     def CALL(self, gas, to, value, data):
         address = to
@@ -2199,8 +2246,10 @@ class EVMWorld(Platform):
     def RETURN(self, data):
         prev_vm = self._pop_vm() #current VM changed!
         if self.depth == 0:
-            self.last_return=data
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=data
+            #tx.last_pc = prev_vm.pc
+            tx.result = 'RETURN'
             raise TerminateState("RETURN", testcase=True)
 
 
@@ -2221,7 +2270,10 @@ class EVMWorld(Platform):
     def STOP(self):
         prev_vm = self._pop_vm(rollback=False)
         if self.depth == 0:
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=data
+            tx.last_pc = prev_vm.pc
+            tx.result_type = 'STOP'
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
         self.current._push(1)
@@ -2236,7 +2288,9 @@ class EVMWorld(Platform):
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            #tx.last_pc = prev_vm.pc
+            tx.result = 'THROW'
             raise TerminateState("THROW", testcase=True)
 
         self.current.last_exception = None
@@ -2251,8 +2305,10 @@ class EVMWorld(Platform):
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
-            self.last_return=data
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=data
+            #tx.last_pc = prev_vm.pc
+            tx.result = 'THROW'
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
@@ -2267,10 +2323,12 @@ class EVMWorld(Platform):
             self.create_account(address=recipient, balance=0, code='', storage=None)
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
-        self.add_suicide(address)
+        self.suicide.add(address)
         prev_vm = self._pop_vm(rollback=False)
         if self.depth == 0:
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.last_pc = prev_vm.pc
+            tx.result_type = 'SELFDESTRUCT'
             raise TerminateState("SELFDESTRUCT", testcase=True)
 
     def HASH(self, data):

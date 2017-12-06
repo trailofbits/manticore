@@ -9,6 +9,39 @@ import sha3
 import json
 import StringIO
 
+def calculate_coverage(code, seen):
+    '''     '''
+    runtime_bytecode = code
+    end = None
+    if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+        and  ''.join(runtime_bytecode[-2:]) =='\x00\x29':
+        end = -9-33-2  #Size of metadata at the end of most contracts
+
+    count, total = 0, 0
+    for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]) :
+        if i.offset in seen:
+            count += 1            
+        total += 1
+
+    return count*100.0/total
+
+class SolidityMetadata(object):
+    #__slots__= 'name', 'source_code', 'init_bytecode', 'metadata', 'metadata_runtime', 'hashes'
+
+    def __init__(self, name, source_code, init_bytecode, metadata, metadata_runtime, hashes):
+        self.name = name
+        self.source_code = source_code
+        self.init_bytecode = init_bytecode
+        self.metadata = metadata
+        self.metadata_runtime = metadata_runtime
+        self.hashes = hashes
+    @property
+    def signatures(self):
+        return dict(( (b,a) for (a,b) in self.hashes.items() ))
+
+    def __redduce__(self):
+        ''' Implements serialization/pickle '''
+        return (self.__class__,  (self.name, self.source_code, self.init_bytecode, self.metadata, self.metadata_runtime,self.hashes) )
 
 class ABI(object):
     '''
@@ -114,6 +147,66 @@ class ABI(object):
         return reduce(lambda x,y: x+y, result)
 
 
+
+    @staticmethod        
+    def _consume_type(ty, data, offset):
+        def get_uint(size, offset):
+            byte_size = size/8
+            padding = 32 - byte_size # for 160
+            return Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size]))
+        if ty == u'uint256':
+            return get_uint(256, offset), offset+32
+        if ty == u'bool':
+            return get_uint(8, offset), offset+32
+        elif ty == u'address':
+            return get_uint(160, offset), offset+32
+        elif ty == u'int256':
+            value = get_uint(256, offset)
+            mask = 2**(256 - 1)
+            value = -(value & mask) + (value & ~mask)
+            return value, offset+32
+        elif ty == u'':
+            return '', offset
+        elif ty in (u'bytes', u'string'):
+            dyn_offset = 4 + get_uint(256,offset)
+            size = get_uint(256, dyn_offset)
+            return data[dyn_offset+32:dyn_offset+32+size], offset+4
+        else:
+            print "<",ty,">"
+            raise NotImplemented(ty)
+
+    @staticmethod
+    def parse(signature, data):
+        is_multiple = '(' in signature
+
+        if is_multiple:
+            func_name = signature.split('(')[0]
+            types = signature.split('(')[1][:-1].split(',')
+            if len(func_name) > 0:
+                off = 4
+            else:
+                func_name = None
+                off = 0
+        else:
+            func_name = None
+            types = (signature,)
+            off = 0
+
+        arguments = []
+        for ty in types:
+            val, off = ABI._consume_type(ty, data, off)
+            arguments.append(val)
+
+        if is_multiple:
+            if func_name is not None:
+                return func_name, tuple(arguments)
+            else:
+                return tuple(arguments)
+        else:
+            return arguments[0]
+
+
+
 class EVMAccount(object):
     ''' An EVM account '''
     def __init__(self, address, seth=None, default_caller=None):
@@ -131,10 +224,11 @@ class EVMAccount(object):
         self._hashes = {}
 
         if self._seth:
-            name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self._seth.context['seth']['metadata'][address]
-            for signature in hashes.keys():
-                func_name = str(signature.split('(')[0])
-                self._hashes[func_name] = signature, hashes[signature]
+            md = self._seth.get_metadata(address)
+            if md is not None:
+                for signature, func_id in md.hashes.items():
+                    func_name = str(signature.split('(')[0])
+                    self._hashes[func_name] = signature, func_id
 
     def __int__(self):
         return self._address
@@ -202,6 +296,10 @@ class ManticoreEVM(Manticore):
     SByte=ABI.SByte
     SValue=ABI.SValue
 
+    def make_symbolic_buffer(self, size):
+        return ABI.SByte(size)
+    def make_symbolic_value(self):
+        return ABI.SValue
 
     @staticmethod
     def compile(source_code):
@@ -230,7 +328,9 @@ class ManticoreEVM(Manticore):
             hashes = outp['hashes']
             return name, source_code, bytecode, srcmap, srcmap_runtime, hashes
 
-    def __init__(self, procs=8):
+    def __init__(self, procs=1):
+        self.normal_accounts = set()
+        self.contract_accounts = set()
         self._config_procs=procs
         #Make the constraint store
         constraints = ConstraintSet()
@@ -240,11 +340,9 @@ class ManticoreEVM(Manticore):
         initial_state.context['tx'] = []
         super(ManticoreEVM, self).__init__(initial_state)
 
-
+        self.metadata = {}
         #The following should go to manticore.context so we can use multiprocessing
         self.context['seth'] = {}
-        self.context['seth']['trace'] = []
-        self.context['seth']['metadata'] = {}
         self.context['seth']['_pending_transaction'] = None
         self.context['seth']['_saved_states'] = []
         self.context['seth']['_final_states'] = []
@@ -271,11 +369,38 @@ class ManticoreEVM(Manticore):
             else:
                 return context['_saved_states']
 
+
     @property
-    def final_state_ids(self):
+    def all_state_ids(self):
+        ''' IDs of the all states ''' 
+        return self.running_state_ids + self.terminated_state_ids
+
+    @property
+    def terminated_state_ids(self):
         ''' IDs of the terminated states ''' 
         with self.locked_context('seth') as context:
             return context['_final_states']
+
+    @property
+    def running_states(self):
+        ''' Running states''' 
+        for state_id in self.running_state_ids:
+            state = self.load(state_id)
+            yield state
+
+    @property
+    def terminated_states(self):
+        ''' Terminated states''' 
+        for state_id in self.terminated_state_ids:
+            state = self.load(state_id)
+            yield state
+
+    @property
+    def all_states(self):
+        ''' All states''' 
+        for state_id in self.terminated_state_ids + self.running_state_ids:
+            state = self.load(state_id)
+            yield state
 
     def get_world(self, state_id=None):
         ''' Returns the evm world of `state_id` state. '''
@@ -320,7 +445,7 @@ class ManticoreEVM(Manticore):
 
         name, source_code, init_bytecode, metadata, metadata_runtime, hashes = self._compile(source_code)
         address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
-        self.context['seth']['metadata'][address] = name, source_code, init_bytecode, metadata, metadata_runtime, hashes
+        self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, metadata, metadata_runtime, hashes)
         return EVMAccount(address, self, default_caller=owner)
 
     def create_contract(self, owner, balance=0, init=None, address=None):
@@ -345,6 +470,7 @@ class ManticoreEVM(Manticore):
 
         self.run(procs=self._config_procs)
 
+        self.contract_accounts.add(address)
         return address
 
     def create_account(self, balance=0, address=None, code=''):
@@ -359,6 +485,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
            assert context['_pending_transaction'] is None
         address = self.world.create_account( address, balance, code=code, storage=None)
+        self.normal_accounts.add(address)
         return address
 
     def transaction(self, caller, address, value, data):
@@ -445,7 +572,7 @@ class ManticoreEVM(Manticore):
                 #Get the ID of the single running state              
                 state_id = self.running_state_ids[0]
             else:
-                raise Exception("More than one state running. Do not know which to choose.")
+                raise Exception("More than one state running. Do not know which one to choose.")
 
         if state_id == -1:
             state = self.initial_state
@@ -469,7 +596,7 @@ class ManticoreEVM(Manticore):
                     ty, caller, address, value, data = context['_pending_transaction']
                     if ty == 'CREATE_CONTRACT':
                         world = state.platform
-                        world.storage[address]['code'] = world.last_return
+                        world.storage[address]['code'] = world.last_return_data
 
             self.save(state)
             e.testcase = False  #Do not generate a testcase file
@@ -513,10 +640,10 @@ class ManticoreEVM(Manticore):
         ''' INTERNAL USE '''
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
-
+        #print state.platform.current
         with self.locked_context('coverage', set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
-
+        
     def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
         ''' INTERNAL USE '''
         state.context.setdefault('seth.trace',[]).append((state.platform.current.address, pc))
@@ -526,6 +653,14 @@ class ManticoreEVM(Manticore):
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset+size):
                 code_data.add((state.platform.current.address, i))
+
+
+    def get_metadata(self, address):
+        try:
+            md = self.metadata[address]
+        except:
+            md = SolidityMetadata(None, None, None, None, None, None)
+        return md
 
     def report(self, state_id=None, ty=None):
         ''' Prints a small report on state id '''
@@ -588,7 +723,7 @@ class ManticoreEVM(Manticore):
             for l in snippet.split('\n'):
                 output.write('    %s  %s\n'%(nl, l))
                 nl+=1
-        except Exception,e:
+        except Exception as e:
             output.write('\n')
 
         output.write("BALANCES\n")
@@ -604,6 +739,7 @@ class ManticoreEVM(Manticore):
                     output.write('\t%x range:[%x, %x]\n'%(address, m, M))
             else:
                 output.write('\t%x %d wei\n'%(address, account['balance']))
+
         if world.logs:
             output.write('LOGS:\n')
             for address, memlog, topics in world.logs:
@@ -626,7 +762,6 @@ class ManticoreEVM(Manticore):
 
                     output.write('\t %s: %r %s\n' %( hex(res1), ''.join(map(chr,res)), topics))
                 except Exception,e:
-                    print e
                     output.write('\t %r %r %r\n' % (address,  repr(memlog), topics))
 
         output.write('INPUT SYMBOLS\n')
@@ -720,7 +855,7 @@ class ManticoreEVM(Manticore):
 
         #Search one state in which the account_address exists
         world=None
-        for state_id in self.running_state_ids + self.final_state_ids:
+        for state_id in self.all_state_ids:
             world = self.get_world(state_id)
             if account_address in world.storage:
                 break
@@ -741,14 +876,14 @@ class ManticoreEVM(Manticore):
 
         return count*100.0/total
 
-    def coverage(self, account_address):
+    def report_coverage(self, account_address):
         ''' Output a code coverage report for contract account_address '''
         account_address = int(account_address)
         #This will just pick one of the running states.
         #This assumes the code and the accounts are the same in all versions of the world
         #Search one state in which the account_address exists
         world=None
-        for state_id in self.running_state_ids + self.final_state_ids:
+        for state_id in self.all_state_ids:
             world = self.get_world(state_id)
             if account_address in world.storage:
                 break
