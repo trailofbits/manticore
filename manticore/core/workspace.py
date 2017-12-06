@@ -528,7 +528,7 @@ class ManticoreOutput(object):
             f.write(str(state.constraints))
 
     def save_input_symbols(self, state):
-        with self._named_stream('txt') as f:
+        with self._named_stream('input') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
                 f.write('%s: %s\n' % (symbol.name, repr(buf)))

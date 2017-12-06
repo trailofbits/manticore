@@ -330,7 +330,7 @@ class ManticoreEVM(Manticore):
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
-            :return: an EVMAccount
+            :return: an EVMAccount address (long)
         '''
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is None
@@ -350,7 +350,7 @@ class ManticoreEVM(Manticore):
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
-            :return: an EVMAccount
+            :return: an EVMAccount address (long)
         '''
         with self.locked_context('seth') as context:
            assert context['_pending_transaction'] is None
