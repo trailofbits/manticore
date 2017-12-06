@@ -17,8 +17,6 @@ print "[+] Creating a contract account", contract_account
 attacker_account = seth.create_account(balance=1000)
 print "[+] Creating a attacker account", attacker_account
 
-print '\tparsed result', ABI.parse('bool', "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA") #function return
-
 
 last_coverage = None 
 new_coverage = 0
