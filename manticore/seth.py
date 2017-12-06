@@ -297,12 +297,40 @@ class ManticoreEVM(Manticore):
     SValue=ABI.SValue
 
     def make_symbolic_buffer(self, size):
+        ''' Creates a symbolic buffer of size bytes to be used in transactions.
+            You can not operate on it. It is intended as a place holder for the 
+            real expression.
+            
+            Example use::
+                
+                symbolic_data = seth.make_symbolic_buffer(320)
+                seth.transaction(caller=attacker_account,
+                                address=contract_account,
+                                data=symbolic_data,
+                                value=100000 )
+
+
+        '''
         return ABI.SByte(size)
     def make_symbolic_value(self):
+        ''' Creates a symbolic value, normally a uint256, to be used in transactions.
+            You can not operate on it. It is intended as a place holder for the 
+            real expression.
+            
+            Example use::
+                
+                symbolic_value = seth.make_symbolic_value()
+                seth.transaction(caller=attacker_account,
+                                address=contract_account,
+                                data=data,
+                                value=symbolic_data )
+
+        '''
         return ABI.SValue
 
     @staticmethod
     def compile(source_code):
+        ''' Get initialization bytecode from a solidity source code '''
         name, source_code, bytecode, srcmap, srcmap_runtime, hashes = ManticoreEVM._compile(source_code)
         return bytecode
 
@@ -329,6 +357,9 @@ class ManticoreEVM(Manticore):
             return name, source_code, bytecode, srcmap, srcmap_runtime, hashes
 
     def __init__(self, procs=1):
+        ''' A manticere EVM manager 
+            :param procs: number of workers to use in the exploration  
+        '''
         self.normal_accounts = set()
         self.contract_accounts = set()
         self._config_procs=procs
@@ -383,25 +414,27 @@ class ManticoreEVM(Manticore):
 
     @property
     def running_states(self):
-        ''' Running states''' 
+        ''' Iterates over the running states''' 
         for state_id in self.running_state_ids:
             state = self.load(state_id)
             yield state
 
     @property
     def terminated_states(self):
-        ''' Terminated states''' 
+        ''' Iterates over the terminated states''' 
         for state_id in self.terminated_state_ids:
             state = self.load(state_id)
             yield state
 
     @property
     def all_states(self):
-        ''' All states''' 
+        ''' Iterates over the all states (terminated and alive)''' 
         for state_id in self.terminated_state_ids + self.running_state_ids:
             state = self.load(state_id)
             yield state
 
+
+    #deprecate this 5 in favor of for sta in seth.all_states: do stuff?
     def get_world(self, state_id=None):
         ''' Returns the evm world of `state_id` state. '''
         state = self.load(state_id)
@@ -423,9 +456,15 @@ class ManticoreEVM(Manticore):
         return self.get_world(state_id).storage[address]['storage'].get(offset)
 
     def last_return(self, state_id=None):
-        ''' last returned buffer for state `state_id` '''
+        ''' Last returned buffer for state `state_id` '''
         state = self.load(state_id)
         return state.world.last_return
+
+    def transactions(self, state_id=None):
+        ''' Transactions list for state `state_id` '''
+        state = self.load(state_id)
+        return state.world.transactions
+
 
     def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
@@ -582,6 +621,17 @@ class ManticoreEVM(Manticore):
         return state
 
     #Callbacks
+    def _symbolic_sha3(self, state, data, known_hashes):
+        ''' INTERNAL USE '''
+
+        with self.locked_context('known_sha3', set) as known_sha3:
+            state.platform._sha3.update(known_sha3)
+
+    def _concrete_sha3(self, state, buf, value):
+        ''' INTERNAL USE '''
+        with self.locked_context('known_sha3', set) as known_sha3:
+            known_sha3.add((buf,value))
+
     def _terminate_state_callback(self, state, state_id, e):
         ''' INTERNAL USE 
             Every time a state finishes executing last transaction we save it in
@@ -656,15 +706,17 @@ class ManticoreEVM(Manticore):
 
 
     def get_metadata(self, address):
+        ''' Gets the solidity metadata for address.
+            This is available only if address is a contract created from solidity
+        '''
         try:
             md = self.metadata[address]
         except:
             md = SolidityMetadata(None, None, None, None, None, None)
         return md
 
-    def report(self, state_id=None, ty=None):
-        ''' Prints a small report on state id '''
-        state = self.load(state_id)
+    def report(self, state, ty=None):
+        ''' Prints a small report on state. Prints a little something about state :) '''
         world = state.platform
 
         output = StringIO.StringIO()
@@ -928,15 +980,4 @@ class ManticoreEVM(Manticore):
         output += "Total assembler lines visited: %d\n"% count
         output += "Coverage: %2.2f%%\n"%  (count*100.0/total)
         return output
-
-    def _symbolic_sha3(self, state, data, known_hashes):
-        ''' INTERNAL USE '''
-
-        with self.locked_context('known_sha3', set) as known_sha3:
-            state.platform._sha3.update(known_sha3)
-
-    def _concrete_sha3(self, state, buf, value):
-        ''' INTERNAL USE '''
-        with self.locked_context('known_sha3', set) as known_sha3:
-            known_sha3.add((buf,value))
 
