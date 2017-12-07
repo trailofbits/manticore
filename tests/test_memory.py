@@ -1693,7 +1693,32 @@ class MemoryTest(unittest.TestCase):
         # Make sure erroring writes don't get recorded
         self.assertEqual(len(trace), 0)
 
+    def test_force_access(self):
+        mem = Memory32()
 
+        ro = mem.mmap(0x1000, 0x1000, 'r')
+        wo = mem.mmap(0x2000, 0x1000, 'w')
+        xo = mem.mmap(0x3000, 0x1000, 'x')
+        nul = mem.mmap(0x4000, 0x1000, '')
+
+        self.assertEqual(len(mem.mappings()), 4)
+        self.assertItemsEqual((ro,wo,xo, nul), (0x1000,0x2000,0x3000, 0x4000))
+
+        self.assertTrue(mem.access_ok(ro, 'r'))
+        self.assertFalse(mem.access_ok(ro, 'w'))
+        with self.assertRaises(InvalidMemoryAccess):
+            mem.write(ro, 'hello')
+        mem.write(ro, 'hello', force=True) # Would raise if fails, failing this test
+
+        with self.assertRaises(InvalidMemoryAccess):
+            mem.read(wo, 4)
+        mem.read(wo, 4, force=True) # Would raise if fails, failing this test
+
+        with self.assertRaises(InvalidMemoryAccess):
+            mem.read(nul, 4)
+            mem.write(nul, 'hello')
+        mem.read(nul, 4, force=True)
+        mem.write(nul, 'hello', force=True)
 if __name__ == '__main__':
     unittest.main()
 
