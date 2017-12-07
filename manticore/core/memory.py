@@ -371,7 +371,6 @@ class COWMap(Map):
 
     def __setitem__(self, index, value):
         assert self._in_range(index)
-        assert self.access_ok('w')
         if isinstance(index, slice):
             for i in xrange(index.stop-index.start):
                 self._cow[index.start+i] = value[i]
@@ -380,7 +379,6 @@ class COWMap(Map):
 
     def __getitem__(self, index):
         assert self._in_range(index)
-        assert self.access_ok('r')
 
         if isinstance(index, slice):
             result = []
