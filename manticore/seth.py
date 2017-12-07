@@ -727,11 +727,7 @@ class ManticoreEVM(Manticore):
         ''' Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         '''
-        try:
-            md = self.metadata[address]
-        except:
-            md = SolidityMetadata(None, None, None, None, None, None)
-        return md
+        return self.metadata.get(address)
 
     def report(self, state, ty=None):
         ''' Prints a small report on state. Prints a little something about state :) '''
