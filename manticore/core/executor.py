@@ -427,8 +427,8 @@ class Executor(Eventful):
 
 
             while not self.is_shutdown():
-                try:
-                    try:
+                try:  # handle fatal errors: exceptions in Manticore
+                    try:  # handle external (e.g. solver) errors, and executor control exceptions
                         #select a suitable state to analyze
                         if current_state is None:
                             with self._lock:
