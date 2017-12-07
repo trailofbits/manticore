@@ -2335,7 +2335,6 @@ class EVMWorld(Platform):
 
         if self.depth == 0:
             tx = self._transactions[-1]
-            #tx.last_pc = prev_vm.pc
             tx.result = 'SELFDESTRUCT'
             raise TerminateState("SELFDESTRUCT", testcase=True)
             
