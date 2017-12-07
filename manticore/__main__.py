@@ -74,7 +74,7 @@ def ethereum_filename(filename):
 
 
 def ethereum_cli(args):
-    from manticore.seth import ManticoreEVM, calculate_coverage, ABI
+    from seth import ManticoreEVM, calculate_coverage, ABI
 
     m = ManticoreEVM(procs=args.procs)
 
@@ -82,13 +82,8 @@ def ethereum_cli(args):
         source_code = f.read()
 
     user_account = m.create_account(balance=1000)
-    print "[+] Creating a user account", user_account
-
     contract_account = m.solidity_create_contract(source_code, owner=user_account)
-    print "[+] Creating a contract account", contract_account
-
     attacker_account = m.create_account(balance=1000)
-    print "[+] Creating a attacker account", attacker_account
 
     last_coverage = None
     new_coverage = 0
