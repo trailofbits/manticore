@@ -629,7 +629,7 @@ class ManticoreEVM(Manticore):
                 #Get the ID of the single running state              
                 state_id = self.running_state_ids[0]
             else:
-                raise Exception("More than one state running. Do not know which one to choose.")
+                raise Exception("More than one state running.")
 
         if state_id == -1:
             state = self.initial_state
