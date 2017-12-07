@@ -427,23 +427,26 @@ class Executor(Eventful):
 
 
             while not self.is_shutdown():
-                try:
-                    #select a suitable state to analyze
-                    if current_state is None:
-                        with self._lock:
-                            #notify siblings we are about to stop this run
-                            self._notify_stop_run()
-                            #Select a single state_id
-                            current_state_id = self.get()
-                            #load selected state from secondary storage
-                            if current_state_id is not None:
-                                self._publish('will_load_state', current_state_id)
-                                current_state = self._workspace.load_state(current_state_id)
-                                self.forward_events_from(current_state, True)
-                                self._publish('did_load_state', current_state, current_state_id)
-                                logger.info("load state %r", current_state_id)
-                            #notify siblings we have a state to play with
-                            self._notify_start_run()
+                try:  # handle fatal errors: exceptions in Manticore
+                    try:  # handle external (e.g. solver) errors, and executor control exceptions
+                        #select a suitable state to analyze
+                        if current_state is None:
+                            with self._lock:
+                                #notify siblings we are about to stop this run
+                                self._notify_stop_run()
+                                try:
+                                    #Select a single state_id
+                                    current_state_id = self.get()
+                                    #load selected state from secondary storage
+                                    if current_state_id is not None:
+                                        self._publish('will_load_state', current_state_id)
+                                        current_state = self._workspace.load_state(current_state_id)
+                                        self.forward_events_from(current_state, True)
+                                        self._publish('did_load_state', current_state, current_state_id)
+                                        logger.info("load state %r", current_state_id)
+                                    #notify siblings we have a state to play with
+                                finally:
+                                    self._notify_start_run()
 
                         #If current_state is still None. We are done.
                         if current_state is None:
@@ -453,7 +456,7 @@ class Executor(Eventful):
                         assert current_state is not None
                         assert current_state.constraints is current_state.platform.constraints
 
-                    try:
+
 
                         # Allows to terminate manticore worker on user request
                         while not self.is_shutdown():

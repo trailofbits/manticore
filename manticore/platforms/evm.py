@@ -27,6 +27,26 @@ def ceil32(x):
 def to_signed(i):
     return Operators.ITEBV(256, i<TT255, i, i-TT256)
 
+class Transaction(object):
+    __slots__= 'sort', 'address', 'origin', 'price', 'data', 'caller', 'value', 'return_data', 'result'
+    def __init__(self, sort, address, origin, price, data, caller, value, return_data, result):
+        self.sort = sort
+        self.address = address
+        self.origin = origin
+        self.price = price
+        self.data = data
+        self.caller = caller
+        self.value = value
+        self.return_data = return_data
+        self.result = result
+
+    def __reduce__(self):
+        ''' Implements serialization/pickle '''
+        return (self.__class__,  (self.sort,  self.address, self.origin, self.price, self.data, self.caller, self.value, self.return_data, self.result))
+
+
+
+
 class EVMMemory(object):
     def __init__(self, constraints, address_size=256, value_size=8, *args, **kwargs):
         '''
@@ -1041,7 +1061,7 @@ class EVM(Eventful):
         self.value = value
         self.depth = depth
         self.bytecode = code
-        self.suicide = set()
+        self.suicides = set()
         self.logs = []
         self.gas=gas
         #FIXME parse decode and mark invalid instructions
@@ -1087,7 +1107,7 @@ class EVM(Eventful):
         state['stack'] = self.stack
         state['gas'] = self.gas
         state['allocated'] = self.allocated
-        state['suicide'] = self.suicide
+        state['suicides'] = self.suicides
         state['logs'] = self.logs
 
         return state
@@ -1112,7 +1132,7 @@ class EVM(Eventful):
         self.stack = state['stack']
         self.gas = state['gas']
         self.allocated = state['allocated']
-        self.suicide = state['suicide']
+        self.suicides = state['suicides']
         super(EVM, self).__setstate__(state)
 
     #Memory related
@@ -1822,6 +1842,7 @@ class EVMWorld(Platform):
         self._logs = list()
         self._sha3 = {}
         self._pending_transaction = None
+        self._transactions = list()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1832,6 +1853,8 @@ class EVMWorld(Platform):
         state['constraints'] = self._constraints
         state['callstack'] = self._callstack
         state['deleted_address'] = self._deleted_address
+        state['transactions'] = self._transactions
+
         return state
 
     def __setstate__(self, state):
@@ -1843,6 +1866,7 @@ class EVMWorld(Platform):
         self._constraints = state['constraints']
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
+        self._transactions = state['transactions']
         self._do_events()
 
     def _do_events(self):
@@ -1871,6 +1895,14 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
+    @property
+    def transactions(self):
+        return self._transactions
+
+    @property
+    def last_return_data(self):
+        return self.transactions[-1].return_data
+
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
@@ -1889,11 +1921,28 @@ class EVMWorld(Platform):
             return None
 
     @property
-    def suicide(self):
-        if self.depth:
-            return self.current.suicide
-        else:
-            return self._suicide
+    def accounts(self):
+        return self.storage.keys()
+
+    @property
+    def normal_accounts(self):
+        accs = []
+        for address in self.accounts:
+            if len(self.get_code(address)) == 0:
+                accs.append(address)
+        return accs
+
+    @property
+    def contract_accounts(self):
+        accs = []
+        for address in self.accounts:
+            if len(self.get_code(address)) > 0:
+                accs.append(address)
+        return accs
+
+    @property
+    def deleted_addresses(self):
+        return self._deleted_address
 
     @property
     def storage(self):
@@ -1948,6 +1997,41 @@ class EVMWorld(Platform):
         self.storage[address]['code'] = data
 
 
+    def log(self, address, topic, data):
+        self.logs.append((address, data, topics))
+        logger.info('LOG %r %r', memlog, topics)
+
+    def log_storage(self, addr):
+        pass
+
+    def add_refund(self, value):
+        pass
+
+    def block_prevhash(self):
+        return 0
+
+    def block_coinbase(self):
+        return 0
+
+    def block_timestamp(self):
+        return 0
+
+    def block_number(self):
+        return  0
+
+    def block_difficulty(self):
+        return 0
+
+    def block_gas_limit(self):
+        return 0
+
+    def tx_origin(self):
+        return self.current_vm.origin
+
+    def tx_gasprice(self):
+        return 0
+
+    #CALLSTACK
     def _push_vm(self, vm):
         #Storage address ->  account(value, local_storage)
         vm.global_storage = self.storage
@@ -1970,15 +2054,14 @@ class EVMWorld(Platform):
         assert self.constraints == vm.constraints
         if self.current:
             self.current.constraints = vm.constraints
+
         if not rollback:
             if self.depth:
                 self.current.global_storage = vm.global_storage
             else:
                 self._global_storage = vm.global_storage
-
-            self._deleted_address = self._deleted_address.union(vm.suicide)
-            self._logs += vm.logs
-            if not self.depth:
+                self._deleted_address = self._deleted_address.union(vm.suicides)
+                self._logs += vm.logs
                 for address in self._deleted_address:
                     del self.storage[address]
         return vm
@@ -2027,11 +2110,6 @@ class EVMWorld(Platform):
         except TerminateState as e:
             if self.depth == 0 and e.message == 'RETURN':
                 return self.last_return
-            '''import traceback
-            print "Exception in user code:"
-            print '-'*60
-            traceback.print_exc(file=sys.stdout)
-            print '-'*60'''
             raise e
 
     def create_account(self, address=None, balance=0, code='', storage=None):
@@ -2108,11 +2186,15 @@ class EVMWorld(Platform):
         if origin is None and caller is not None:
             origin = caller
 
+        if address not in self.accounts or\
+           caller not in self.accounts or \
+           origin != caller and origin not in self.accounts:
+            raise TerminateState('Account does not exist %x'%address, testcase=True)
+
         if header is None:
             header = {'timestamp':1}
         if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
-            #data_symb = EVMMemory(self.constraints, 256, 8)
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
@@ -2143,12 +2225,17 @@ class EVMWorld(Platform):
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
         self._push_vm(new_vm)
         if self.depth == 1:
+
             #handle human transactions
             if ty == 'Create':
                 self.current.last_exception = Create(None, None, None)
+                data = bytecode
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
+            tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
+            self._transactions.append(tx)
+ 
 
     def CALL(self, gas, to, value, data):
         address = to
@@ -2165,8 +2252,10 @@ class EVMWorld(Platform):
     def RETURN(self, data):
         prev_vm = self._pop_vm() #current VM changed!
         if self.depth == 0:
-            self.last_return=data
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=data
+            #tx.last_pc = prev_vm.pc
+            tx.result = 'RETURN'
             raise TerminateState("RETURN", testcase=True)
 
 
@@ -2187,7 +2276,10 @@ class EVMWorld(Platform):
     def STOP(self):
         prev_vm = self._pop_vm(rollback=False)
         if self.depth == 0:
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=None
+            #tx.last_pc = prev_vm.pc
+            tx.result = 'STOP'
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
         self.current._push(1)
@@ -2202,7 +2294,10 @@ class EVMWorld(Platform):
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            #tx.last_pc = prev_vm.pc
+            tx.return_data=None
+            tx.result = 'THROW'
             raise TerminateState("THROW", testcase=True)
 
         self.current.last_exception = None
@@ -2217,8 +2312,10 @@ class EVMWorld(Platform):
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
-            self.last_return=data
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=data
+            #tx.last_pc = prev_vm.pc
+            tx.result = 'REVERT'
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
@@ -2233,12 +2330,14 @@ class EVMWorld(Platform):
             self.create_account(address=recipient, balance=0, code='', storage=None)
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
-        self.suicide.add(address)
+        self.current.suicides.add(address)
         prev_vm = self._pop_vm(rollback=False)
-        if self.depth == 0:
-            self.last_pc = prev_vm.pc
-            raise TerminateState("SELFDESTRUCT", testcase=True)
 
+        if self.depth == 0:
+            tx = self._transactions[-1]
+            tx.result = 'SELFDESTRUCT'
+            raise TerminateState("SELFDESTRUCT", testcase=True)
+            
     def HASH(self, data):
 
         def compare_buffers(a, b):
@@ -2255,7 +2354,7 @@ class EVMWorld(Platform):
         logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         #Broadcast the signal 
-        self._publish( 'on_symbolic_sha3', data, self._sha3.items())
+        self._publish('on_symbolic_sha3', data, self._sha3.items())
 
         results = []
         known_hashes = False
