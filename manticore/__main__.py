@@ -106,6 +106,9 @@ def ethereum_cli(args):
         print "[+] There are %d reverted states now"% len(m.terminated_state_ids)
         print "[+] There are %d alive states now"% len(m.running_state_ids)
 
+    for state in m.all_states:
+        print str(state.context['last_exception'])
+
     # for state in seth.all_states:
     #     blockchain = state.platform
     #     for tx in blockchain.transactions:  # external transactions
