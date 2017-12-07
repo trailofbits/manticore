@@ -468,7 +468,7 @@ class Z3Solver(Solver):
                 var = temp_cs.new_bool()
             elif isinstance(expression, BitVec):
                 var = temp_cs.new_bitvec(expression.size)
-            elif isinstance(expression, (Array, ArrayProxy)):
+            elif isinstance(expression, Array):
                 var = []
                 result = ''
                 for i in xrange(expression.index_max):

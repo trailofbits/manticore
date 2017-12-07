@@ -2001,24 +2001,37 @@ class EVMWorld(Platform):
         self.logs.append((address, data, topics))
         logger.info('LOG %r %r', memlog, topics)
 
+    def log_storage(self, addr):
+        pass
 
-    '''
-    self.log_storage = lambda addr: 0
-    self.add_refund = lambda x: 0
-    self.block_prevhash = 0
-    self.block_coinbase = 0
-    self.block_timestamp = 0
-    self.block_number = 0
-    self.block_difficulty = 0
-    self.block_gas_limit = 0
-    self.tx_origin = b'0' * 40
-    self.tx_gasprice = 0
-    self.create = lambda msg: 0, 0, 0
-    self.call = lambda msg: 0, 0, 0
-    self.sendmsg = lambda msg: 0, 0, 0
-    '''
+    def add_refund(self, value):
+        pass
 
+    def block_prevhash(self):
+        return 0
 
+    def block_coinbase(self):
+        return 0
+
+    def block_timestamp(self):
+        return 0
+
+    def block_number(self):
+        return  0
+
+    def block_difficulty(self):
+        return 0
+
+    def block_gas_limit(self):
+        return 0
+
+    def tx_origin(self):
+        return self.current_vm.origin
+
+    def tx_gasprice(self):
+        return 0
+
+    #CALLSTACK
     def _push_vm(self, vm):
         #Storage address ->  account(value, local_storage)
         vm.global_storage = self.storage
@@ -2047,12 +2060,10 @@ class EVMWorld(Platform):
                 self.current.global_storage = vm.global_storage
             else:
                 self._global_storage = vm.global_storage
-
                 self._deleted_address = self._deleted_address.union(vm.suicides)
                 self._logs += vm.logs
-                if not self.depth:
-                    for address in self._deleted_address:
-                        del self.storage[address]
+                for address in self._deleted_address:
+                    del self.storage[address]
         return vm
 
     @property
@@ -2099,11 +2110,6 @@ class EVMWorld(Platform):
         except TerminateState as e:
             if self.depth == 0 and e.message == 'RETURN':
                 return self.last_return
-            '''import traceback
-            print "Exception in user code:"
-            print '-'*60
-            traceback.print_exc(file=sys.stdout)
-            print '-'*60'''
             raise e
 
     def create_account(self, address=None, balance=0, code='', storage=None):
@@ -2324,14 +2330,15 @@ class EVMWorld(Platform):
             self.create_account(address=recipient, balance=0, code='', storage=None)
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
-        self.suicide.add(address)
+        self.current.suicides.add(address)
         prev_vm = self._pop_vm(rollback=False)
+
         if self.depth == 0:
             tx = self._transactions[-1]
-            tx.last_pc = prev_vm.pc
-            tx.result_type = 'SELFDESTRUCT'
+            #tx.last_pc = prev_vm.pc
+            tx.result = 'SELFDESTRUCT'
             raise TerminateState("SELFDESTRUCT", testcase=True)
-
+            
     def HASH(self, data):
 
         def compare_buffers(a, b):
@@ -2348,7 +2355,7 @@ class EVMWorld(Platform):
         logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         #Broadcast the signal 
-        self._publish( 'on_symbolic_sha3', data, self._sha3.items())
+        self._publish('on_symbolic_sha3', data, self._sha3.items())
 
         results = []
         known_hashes = False

@@ -1,7 +1,7 @@
 from manticore.seth import ManticoreEVM, calculate_coverage, ABI
 import sys
 ################ Script #######################
-seth = ManticoreEVM()
+seth = ManticoreEVM(procs=8)
 seth.verbosity(0)
 #And now make the contract account to analyze
 # cat  | solc --bin 

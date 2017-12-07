@@ -26,8 +26,6 @@ def calculate_coverage(code, seen):
     return count*100.0/total
 
 class SolidityMetadata(object):
-    #__slots__= 'name', 'source_code', 'init_bytecode', 'metadata', 'metadata_runtime', 'hashes'
-
     def __init__(self, name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi):
         self.name = name
         self.source_code = source_code
@@ -59,10 +57,6 @@ class SolidityMetadata(object):
         
     def get_func_signature(self, hsh):
         return self.signatures.get(hsh, '{fallback}()')
-
-    def __redduce__(self):
-        ''' Implements serialization/pickle '''
-        return (self.__class__,  (self.name, self.source_code, self.init_bytecode, self.metadata, self.metadata_runtime,self.hashes) )
 
 class ABI(object):
     '''
@@ -255,7 +249,7 @@ class EVMAccount(object):
         return self._address
 
     def __str__(self):
-        return hex(self._address)
+        return str(self._address)
 
     def __getattribute__(self, name):
         ''' If this is a contract account of which we know the functions hashes
@@ -333,6 +327,7 @@ class ManticoreEVM(Manticore):
 
         '''
         return ABI.SByte(size)
+
     def make_symbolic_value(self):
         ''' Creates a symbolic value, normally a uint256, to be used in transactions.
             You can not operate on it. It is intended as a place holder for the 
@@ -480,12 +475,12 @@ class ManticoreEVM(Manticore):
     def last_return(self, state_id=None):
         ''' Last returned buffer for state `state_id` '''
         state = self.load(state_id)
-        return state.world.last_return
+        return state.platform.last_return
 
     def transactions(self, state_id=None):
         ''' Transactions list for state `state_id` '''
         state = self.load(state_id)
-        return state.world.transactions
+        return state.platform.transactions
 
     def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
@@ -521,6 +516,7 @@ class ManticoreEVM(Manticore):
             :type address: int
             :return: an EVMAccount
         '''
+        assert len(self.running_state_ids) == 1, "No forking yet"
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is None
         assert init is not None
@@ -542,6 +538,7 @@ class ManticoreEVM(Manticore):
             :type address: int
             :return: an EVMAccount
         '''
+        assert len(self.running_state_ids) == 1, "No forking yet"
         with self.locked_context('seth') as context:
            assert context['_pending_transaction'] is None
         address = self.world.create_account( address, balance, code=code, storage=None)
