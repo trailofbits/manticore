@@ -766,13 +766,12 @@ class Memory(object):
             return m.access_ok(access)
 
     #write and read potentially symbolic bytes at symbolic indexes
-    def read(self, addr, size):
-        if not self.access_ok(slice(addr, addr+size), 'r'):
+    def read(self, addr, size, force=False):
+        if not force and not self.access_ok(slice(addr, addr+size), 'r'):
             raise InvalidMemoryAccess(addr, 'r')
 
         assert size > 0
         result = []
-        start = addr
         stop = addr+size
         p = addr
         while p < stop:
@@ -819,9 +818,9 @@ class Memory(object):
             self._recording_stack[-1].extend(lst)
         return lst
 
-    def write(self, addr, buf):
+    def write(self, addr, buf, force=False):
         size = len(buf)
-        if not self.access_ok(slice(addr, addr + size), 'w'):
+        if not force and not self.access_ok(slice(addr, addr + size), 'w'):
             raise InvalidMemoryAccess(addr, 'w')
         assert size > 0
         stop = addr + size
@@ -912,13 +911,14 @@ class SMemory(Memory):
                 del self._symbols[addr]
         super(SMemory, self).munmap(start,size)
 
-    def read(self, address, size):
+    def read(self, address, size, force=False):
         '''
         Read a stream of potentially symbolic bytes from a potentially symbolic
         address
 
         :param address: Where to read from
         :param size: How many bytes
+        :param force: Whether to ignore permissions
         :rtype: list
         '''
         size = self._get_size(size)
@@ -984,7 +984,7 @@ class SMemory(Memory):
                     assert len(result) == offset+1
             return map(Operators.CHR, result)
         else:
-            result = map(Operators.ORD, super(SMemory, self).read(address, size))
+            result = map(Operators.ORD, super(SMemory, self).read(address, size, force))
             for offset in range(size):
                 if address+offset in self._symbols:
                     for condition, value in self._symbols[address+offset]:
@@ -994,13 +994,14 @@ class SMemory(Memory):
                             result[offset] = Operators.ITEBV(8, condition, Operators.ORD(value), result[offset])
             return map(Operators.CHR, result)
 
-    def write(self, address, value):
+    def write(self, address, value, force=False):
         '''
         Write a value at address.
         :param address: The address at which to write
         :type address: int or long or Expression
         :param value: Bytes to write
         :type value: str or list
+        :param force: Whether to ignore permissions
         '''
         size = len(value)
         if issymbolic(address):
@@ -1024,14 +1025,14 @@ class SMemory(Memory):
 
             for offset in xrange(size):
                 if issymbolic(value[offset]):
-                    if not self.access_ok(address+offset, 'w'):
+                    if not force and not self.access_ok(address+offset, 'w'):
                         raise InvalidMemoryAccess(address+offset, 'w')
                     self._symbols[address+offset] = [(True, value[offset])]
                 else:
                     # overwrite all previous items
                     if address+offset in self._symbols:
                         del self._symbols[address+offset]
-                    super(SMemory, self).write(address+offset, [value[offset]])
+                    super(SMemory, self).write(address+offset, [value[offset]], force)
 
 
 class Memory32(Memory):
