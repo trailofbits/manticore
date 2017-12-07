@@ -2271,9 +2271,9 @@ class EVMWorld(Platform):
         prev_vm = self._pop_vm(rollback=False)
         if self.depth == 0:
             tx = self._transactions[-1]
-            tx.return_data=data
-            tx.last_pc = prev_vm.pc
-            tx.result_type = 'STOP'
+            tx.return_data=None
+            #tx.last_pc = prev_vm.pc
+            tx.result = 'STOP'
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
         self.current._push(1)

@@ -2,7 +2,6 @@ from manticore.seth import ManticoreEVM
 ################ Script #######################
 
 seth = ManticoreEVM()
-seth.verbosity(9)
 #And now make the contract account to analyze
 # cat  | solc --bin 
 source_code = '''

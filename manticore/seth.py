@@ -35,7 +35,7 @@ class SolidityMetadata(object):
         self.metadata = metadata
         self.metadata_runtime = metadata_runtime
         self.hashes = hashes
-        self.abi = dict( [(item['name'], item) for item in abi ])
+        self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
 
     @property
     def signatures(self):
