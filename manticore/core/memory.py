@@ -653,7 +653,6 @@ class Memory(object):
             raise MemoryException("Page not mapped", address)
         return self._page2map[page_offset]
 
-
     def mappings(self):
         '''
         Returns a sorted list of all the mappings for this memory.
@@ -689,7 +688,6 @@ class Memory(object):
                 m = self._page2map[self._page(addr)]
                 yield m
                 addr = m.end
-
 
     def munmap(self, start, size):
         '''
@@ -735,7 +733,6 @@ class Memory(object):
                 self._add(head)
             if tail:
                 self._add(tail)
-
 
     #Permissions
     def __contains__(self, address):
