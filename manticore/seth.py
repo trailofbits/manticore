@@ -399,7 +399,7 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_execute_instruction', self._will_execute_instruction_callback)
         self._executor.subscribe('did_execute_instruction', self._did_execute_instruction_callback)
-        self._executor.subscribe('did_read_code', self._did_read_code)
+        self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
 
@@ -716,7 +716,7 @@ class ManticoreEVM(Manticore):
         ''' INTERNAL USE '''
         state.context.setdefault('seth.trace',[]).append((state.platform.current.address, pc))
 
-    def _did_read_code(self, state, offset, size):
+    def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset+size):
