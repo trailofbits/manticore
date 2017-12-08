@@ -64,15 +64,6 @@ def parse_arguments():
     return parsed
 
 
-def ethereum_filename(filename):
-    """
-
-    :param str filename:
-    :return:
-    """
-    return filename.endswith('.sol')
-
-
 def ethereum_cli(args):
     from seth import ManticoreEVM
 
@@ -171,7 +162,7 @@ def main():
     Manticore.verbosity(args.v)
 
     # TODO(mark): Temporarily hack ethereum support into manticore cli
-    if ethereum_filename(args.argv[0]):
+    if args.argv[0].endswith('.sol'):
         ethereum_cli(args)
         return
 
