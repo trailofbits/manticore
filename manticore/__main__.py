@@ -70,11 +70,11 @@ def ethereum_filename(filename):
     :param str filename:
     :return:
     """
-    return filename.endswith('.sol') or filename.endswith('.evm')
+    return filename.endswith('.sol')
 
 
 def ethereum_cli(args):
-    from seth import ManticoreEVM, calculate_coverage, ABI
+    from seth import ManticoreEVM
 
     m = ManticoreEVM(procs=args.procs)
 
