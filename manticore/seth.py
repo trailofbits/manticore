@@ -656,7 +656,7 @@ class ManticoreEVM(Manticore):
             our private list 
         '''
         state.context['last_exception'] = e
-        if e.message != 'REVERT':
+        if e.message != 'REVERT' and 'und' not in e.message:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
