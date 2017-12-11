@@ -656,7 +656,9 @@ class ManticoreEVM(Manticore):
             our private list 
         '''
         state.context['last_exception'] = e
-        if e.message != 'REVERT':
+        # TODO(mark): This will break if we ever change the message text. Use a less
+        # brittle check.
+        if e.message not in {'REVERT', 'Not Enough Funds for transaction'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
