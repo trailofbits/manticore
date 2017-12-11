@@ -32,7 +32,7 @@ class Tracer(Plugin):
     def will_start_run_callback(self, state):
         state.context['trace'] = []
 
-    def will_execute_instruction_callback(self, state, pc, instruction):
+    def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
         state.context['trace'].append(pc)
 
 class ExtendedTracer(Plugin):
