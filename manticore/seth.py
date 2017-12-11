@@ -488,7 +488,7 @@ class ManticoreEVM(Manticore):
     @staticmethod
     def compile(source_code):
         ''' Get initialization bytecode from a solidity source code '''
-        name, source_code, bytecode, srcmap, srcmap_runtime, hashes = ManticoreEVM._compile(source_code)
+        name, source_code, bytecode, srcmap, srcmap_runtime, hashes, abi = ManticoreEVM._compile(source_code)
         return bytecode
 
     @staticmethod
@@ -800,7 +800,9 @@ class ManticoreEVM(Manticore):
             our private list 
         '''
         state.context['last_exception'] = e
-        if e.message != 'REVERT':
+        # TODO(mark): This will break if we ever change the message text. Use a less
+        # brittle check.
+        if e.message not in {'REVERT', 'Not Enough Funds for transaction'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
@@ -1148,4 +1150,3 @@ class ManticoreEVM(Manticore):
         output += "Total assembler lines visited: %d\n"% count
         output += "Coverage: %2.2f%%\n"%  (count*100.0/total)
         return output
-

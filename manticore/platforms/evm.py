@@ -2,7 +2,8 @@
 import random, copy
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet
+from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
+    SolverException
 from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
@@ -2398,3 +2399,18 @@ class EVMWorld(Platform):
             
         self.current._push(value)
         self.current.pc += self.current.instruction.size
+
+    def generate_workspace_files(self):
+        ret = {}
+        for i, tx in enumerate(self.transactions):
+            name = 'tx.{}'.format(i)
+            data = {
+                'to': tx.address,
+                'from': tx.caller,
+                'data': solver.get_value(self.constraints, tx.data).encode('hex'),
+                'value': tx.value if not issymbolic(tx.value) else '{symbolic!}'
+            }
+            import json
+            ret[name] = json.dumps(data, indent=4)
+
+        return ret
