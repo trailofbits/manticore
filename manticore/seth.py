@@ -23,7 +23,6 @@ class Detector(Plugin):
         return state.context.setdefault('seth.findings.%s'%self.name,set())
 
     def add_finding(self, state, finding):
-        name = self.__class__.__name__.split('.')[-1]
         address = state.platform.current.address
         pc = state.platform.current.pc
         self.get_findings(state).add((address, pc, finding))

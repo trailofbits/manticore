@@ -116,6 +116,7 @@ def ethereum_cli(args):
         output += '\n'.join(('\t\t'+x for x in src.split('\n')))
         output += '\n'
         print output
+            
 
     # for state in seth.all_states:
     #     blockchain = state.platform
