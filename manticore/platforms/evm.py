@@ -2384,22 +2384,13 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def generate_workspace_files(self):
-        def solve_data(data):
-            ret = ''
-            try:
-                for c in data:
-                    ret += chr(solver.get_value(self.constraints, c))
-            except SolverException:
-                ret += '{ SolverException :( }'
-            return ret
-
         ret = {}
         for i, tx in enumerate(self.transactions):
             name = 'tx.{}'.format(i)
             data = {
                 'to': tx.address,
                 'from': tx.caller,
-                'data': solve_data(tx.data).encode('hex'),
+                'data': solver.get_value(self.constraints, tx.data).encode('hex'),
                 'value': tx.value if not issymbolic(tx.value) else '{symbolic!}'
             }
             import json
