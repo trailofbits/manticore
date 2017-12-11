@@ -928,11 +928,13 @@ class SMemory(Memory):
             assert solver.check(self.constraints)
             logger.debug('Reading %d bytes from symbolic address %s', size, address)
             try:
-                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
+                solutions = self._try_get_solutions(address, size, 'r', force=force)
+                assert len(solutions) > 0
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
 
+                # The force param shouldn't affect this, as this is checking for unmapped reads, not bad perms
                 crashing_condition = True
                 for start, end, perms, offset, name  in self.mappings():
                     if start <= M+size and end >= m :
@@ -952,16 +954,6 @@ class SMemory(Memory):
                 raise ForkState("Forking state on incomplete result", condition)
 
             #So here we have all potential solutions to address
-            assert len(solutions) > 0
-
-
-            crashing_condition = False
-            for base in solutions:
-                if any(not self.access_ok(i, 'r') for i in xrange(base, base + size, self.page_size)):
-                    crashing_condition = Operators.OR(address == base, crashing_condition)
-
-            if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
 
             condition = False
             for base in solutions:
@@ -1006,21 +998,12 @@ class SMemory(Memory):
         size = len(value)
         if issymbolic(address):
 
-            solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
-
-            crashing_condition = False
-            for base in solutions:
-                if any(not self.access_ok(i, 'w') for i in xrange(base, base + size, self.page_size)):
-                    crashing_condition = Operators.OR(address == base, crashing_condition)
-
-            if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess(address, 'w', size, crashing_condition)
+            solutions = self._try_get_solutions(address, size, 'w', force=force)
 
             for offset in xrange(size):
                 for base in solutions:
                     condition = base == address
                     self._symbols.setdefault(base+offset, []).append((condition, value[offset]))
-
         else:
 
             for offset in xrange(size):
@@ -1033,6 +1016,37 @@ class SMemory(Memory):
                     if address+offset in self._symbols:
                         del self._symbols[address+offset]
                     super(SMemory, self).write(address+offset, [value[offset]], force)
+
+    def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
+        '''
+        Try to solve for a symbolic address, checking permissions when reading/writing size bytes.
+
+        :param Expression address: The address to solve for
+        :param int size: How many bytes to check permissions for
+        :param str access: 'r' or 'w'
+        :param int max_solutions: Will raise if more solutions are found
+        :param force: Whether to ignore permission failure
+        :rtype: list
+        '''
+        assert issymbolic(address)
+
+        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
+
+        crashing_condition = False
+        for base in solutions:
+            # if force is True, we only want to crash when address isn't mapped, not just when access fails
+            if force:
+                if any(i not in self for i in range(base, base+size, self.page_size)):
+                    crashing_condition = Operators.OR(address == base, crashing_condition)
+            else:
+                if any(not self.access_ok(i, access) for i in xrange(base, base + size, self.page_size)):
+                    crashing_condition = Operators.OR(address == base, crashing_condition)
+
+        if solver.can_be_true(self.constraints, crashing_condition):
+            raise InvalidSymbolicMemoryAccess(address, access, size, crashing_condition)
+
+        return solutions
+
 
 
 class Memory32(Memory):
