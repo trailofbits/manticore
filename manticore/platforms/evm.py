@@ -2,7 +2,8 @@
 import random, copy
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet
+from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
+    SolverException
 from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
@@ -2381,3 +2382,30 @@ class EVMWorld(Platform):
             
         self.current._push(value)
         self.current.pc += self.current.instruction.size
+
+    def generate_workspace_files(self):
+        def solve_data(data):
+            ret = ''
+            try:
+                for c in data:
+                    ret += chr(solver.get_value(self.constraints, c))
+            except SolverException:
+                ret += '{ SolverException :( }'
+            return ret
+
+        ret = {}
+        for i, tx in enumerate(self.transactions):
+            name = 'tx.{}'.format(i)
+            data = {
+                'to': tx.address,
+                'from': tx.caller,
+                'data': tx.data,
+                'solveddata': solve_data(tx.data).encode('hex'),
+                # 'data': tx.data,
+                # 'data': ''.join(tx.data),
+                'value': tx.value
+
+            }
+            print data
+
+        return ret
