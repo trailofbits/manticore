@@ -447,9 +447,16 @@ class Z3Solver(Solver):
             The current set of assertions must be sat.
             :param val: an expression or symbol '''
         if not issymbolic(expression):
+            if expression is None:
+                return
             if isinstance(expression, str):
-                expression = ord(expression)
-            if isinstance(expression, list):
+                if len(expression) == 1:
+                    expression = ord(expression)
+                else:
+                    expression = map(ord, expression)  
+            if isinstance(expression, (list, tuple)):
+                if len(expression) == 0:
+                    return expression
                 arr = constraints.new_array(index_max=len(expression))
                 for i in range(len(expression)):
                     arr[i] = expression[i]

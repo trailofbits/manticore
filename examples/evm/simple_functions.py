@@ -1,4 +1,4 @@
-from seth import *
+from manticore.seth import ManticoreEVM
 ################ Script #######################
 
 seth = ManticoreEVM()
@@ -24,7 +24,6 @@ contract Test {
 user_account = seth.create_account(balance=1000)
 contract_account = seth.solidity_create_contract(source_code, owner=user_account)
 
-
 symbolic_data = seth.SByte(4) 
 symbolic_value = None 
 seth.transaction(  caller=user_account,
@@ -36,11 +35,11 @@ seth.transaction(  caller=user_account,
 
 print "[+] There are %d reverted states now"% len(seth.final_state_ids)
 for state_id in seth.final_state_ids:
-    seth.report(state_id)
+    print seth.report(state_id)
 
 print "[+] There are %d alive states now"% len(seth.running_state_ids)
 for state_id in seth.running_state_ids:
-    seth.report(state_id)
+    print seth.report(state_id)
 
 print "[+] Global coverage:"
 print seth.coverage(contract_account)

@@ -65,17 +65,17 @@ class Store(object):
 
     @classmethod
     def fromdescriptor(cls, desc):
-	"""
-	Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
+        """
+        Create a :class:`~manticore.core.workspace.Store` instance depending on the descriptor.
 
-	Valid descriptors:
-	  * fs:<path>
-	  * redis:<hostname>:<port>
-	  * mem:
+        Valid descriptors:
+          * fs:<path>
+          * redis:<hostname>:<port>
+          * mem:
 
-	:param str desc: Store descriptor
-	:return: Store instance
-	"""
+        :param str desc: Store descriptor
+        :return: Store instance
+        """
         type_, uri = ('fs', None) if desc is None else desc.split(':', 1)
         for subclass in cls.__subclasses__():
             if subclass.store_type == type_:
@@ -517,8 +517,8 @@ class ManticoreOutput(object):
         with self._named_stream('trace') as f:
             if 'trace' not in state.context:
                 return
-            for pc in state.context['trace']:
-                f.write('0x{:08x}\n'.format(pc))
+            for entry in state.context['trace']:
+                f.write('0x{:x}\n'.format(entry))
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check
@@ -528,7 +528,7 @@ class ManticoreOutput(object):
             f.write(str(state.constraints))
 
     def save_input_symbols(self, state):
-        with self._named_stream('txt') as f:
+        with self._named_stream('input') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
                 f.write('%s: %s\n' % (symbol.name, repr(buf)))

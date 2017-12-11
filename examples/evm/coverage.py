@@ -1,4 +1,4 @@
-from seth import *
+from manticore.seth import ManticoreEVM
 
 seth = ManticoreEVM()
 seth.verbosity(3)
@@ -30,7 +30,7 @@ seth.transaction(  caller=user_account,
 print "[+] There are %d reverted states now"% len(seth.final_state_ids)
 print "[+] There are %d alive states now"% len(seth.running_state_ids)
 for state_id in seth.running_state_ids:
-    seth.report(state_id)
+    print seth.report(state_id)
 
 print "[+] Global coverage: %x"% contract_account
 print seth.coverage(contract_account)

@@ -10,6 +10,8 @@ class Expression(object):
         super(Expression, self).__init__()
         self._taint = frozenset(taint)
 
+    def __repr__(self):
+        return "<%s at %x>" % (type(self).__name__, id(self))
     @property
     def is_tainted(self):
         return len(self._taint) != 0
@@ -536,7 +538,7 @@ class Array(Expression):
     def __init__(self, index_bits, index_max, *operands, **kwargs):
         assert index_bits in (32, 64, 256)
         assert index_max is None or isinstance(index_max, (int, long))
-        assert index_max is None or index_max > 0 and index_max < 2 ** index_bits
+        assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits
         self._index_max = index_max
         super(Array, self).__init__(*operands, **kwargs)
@@ -619,10 +621,22 @@ class ArrayProxy(Array):
         self._array = array
         self.name = array.name
 
+
+    def __len__(self):
+        return len(self._array)
+
     @property
     def operands(self):
         return self._array.operands
+
+    @property
+    def index_bits(self):
+        return self._array.index_bits
     
+    @property
+    def index_max(self):
+        return self._array.index_max
+   
     @property
     def taint(self):
         return self._array.taint
@@ -635,8 +649,17 @@ class ArrayProxy(Array):
         self._array = auxiliar
         return auxiliar
 
+    def _fix_index(self, index):
+        stop, start = index.stop, index.start
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = len(self)
+        return start, stop
+        
     def _get_size(self, index):
-        size = index.stop - index.start
+        start, stop = self._fix_index(index)
+        size = stop - start
         if isinstance(size, BitVec):
             import visitors
             from manticore.core.smtlib.visitors import arithmetic_simplifier
@@ -648,23 +671,30 @@ class ArrayProxy(Array):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
+            start, stop = self._fix_index(index)
             size = self._get_size(index)
-            result = []
+            new_array = ArrayVariable(self.index_bits, size, name='%s_b%d_e%d'%(self.name, start, stop), taint=self.taint)
+            new_array = ArrayProxy(new_array)
             for i in xrange(size):
-                if self.index_max is not None and not isinstance(i+index.start, Expression) and i+index.start >= self.index_max:
-                    result.append(0)
+                if self.index_max is not None and not isinstance(i+start, Expression) and i+start >= self.index_max:
+                    new_array[i] = 0
                 else:
-                    result.append(self._array.select(index.start+i))
-            return result
+                    new_array[i] = self._array.select(start+i)
+            return new_array
         else:
+            if self.index_max is not None :
+                if not isinstance(index, Expression) and index >= self.index_max:
+                    raise IndexError
             return self._array.select(index)
 
     def __setitem__(self, index, value):
+
         if isinstance(index, slice):
+            start, stop = self._fix_index(index)
             size = self._get_size(index)
             assert len(value) == size
             for i in xrange(size):
-                self.store(index.start+i, value[i])
+                self.store(start+i, value[i])
         else:
             self.store(index, value)
 
