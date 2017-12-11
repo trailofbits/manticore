@@ -14,7 +14,8 @@ from .core.plugin import Plugin
 class Detector(Plugin):
 
     def get_findings(self, state):
-        return state.context.setdefault('seth.findings.%s'%self.__class__,[])
+        name = self.__class__.name.split('.')[-1]
+        return state.context.setdefault('seth.findings.%s'%name,[])
 
     def add_finding(self, state, finding):
         state.context.setdefault('seth.findings.%s'%self.__class__,[]).append(finding)
@@ -26,6 +27,9 @@ class Detector(Plugin):
         return src
 
 class IntegerOverflow(Detector):
+    '''
+        Detects any it overflow on instructions ADD and SUB.
+    '''
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         if instruction.semantics == 'ADD':
             if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
@@ -37,6 +41,9 @@ class IntegerOverflow(Detector):
                 self.add_finding(state, "Integer underflow at SUB instruction offset %x. %s" % (state.platform.current.pc, src))
             
 class UnitializedMemory(Detector):
+    '''
+        detects the use of not initialized memory
+    '''
     def did_evm_read_memory(self, state, offset, value):
         if not state.can_be_true(value != 0):
             #Not initialized memory should be zero
@@ -56,6 +63,9 @@ class UnitializedMemory(Detector):
 
 
 class UnitializedStorage(Detector):
+    '''
+        UnitializedStorage: detects the use of not initialized storage
+    '''
     def did_evm_read_storage(self, state, offset, value):
         if not state.can_be_true(value != 0):
             #Not initialized memory should be zero
