@@ -65,9 +65,15 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from seth import ManticoreEVM
+    from seth import ManticoreEVM, IntegerOverflow, UnitializedStorage, UnitializedMemory
 
     m = ManticoreEVM(procs=args.procs)
+
+    ################ Default? Detectors #######################
+    m.register_detector(IntegerOverflow())
+    m.register_detector(UnitializedStorage())
+    m.register_detector(UnitializedMemory())
+
 
     with open(args.argv[0]) as f:
         source_code = f.read()
@@ -99,6 +105,17 @@ def ethereum_cli(args):
 
     for state in m.all_states:
         print str(state.context['last_exception'])
+
+    for address, pc, finding in m.global_findings:
+        output = ''
+        output += 'Finding: %s\n' % finding
+        output += '\t Contract: %s\n' % address
+        output += '\t Program counter: %s\n' % pc
+        output += '\t Snippet:\n'
+        src = m.get_metadata(address).get_source_for(pc)
+        output += '\n'.join(('\t\t'+x for x in src.split('\n')))
+        output += '\n'
+        print output
 
     # for state in seth.all_states:
     #     blockchain = state.platform

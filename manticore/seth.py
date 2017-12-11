@@ -7,24 +7,45 @@ import tempfile
 from subprocess import Popen, PIPE
 import sha3
 import json
+import logging
 import StringIO
 from .core.plugin import Plugin
 
+logger = logging.getLogger(__name__)
+
 ################ Detectors ####################
 class Detector(Plugin):
+    @property
+    def name(self):
+        return self.__class__.__name__.split('.')[-1]
 
     def get_findings(self, state):
-        name = self.__class__.name.split('.')[-1]
-        return state.context.setdefault('seth.findings.%s'%name,[])
+        return state.context.setdefault('seth.findings.%s'%self.name,set())
 
     def add_finding(self, state, finding):
-        state.context.setdefault('seth.findings.%s'%self.__class__,[]).append(finding)
+        name = self.__class__.__name__.split('.')[-1]
+        address = state.platform.current.address
+        pc = state.platform.current.pc
+        self.get_findings(state).add((address, pc, finding))
+
+        with self.manticore.locked_context('seth.global_findings', set) as global_findings:
+            global_findings.add((address, pc, finding))
         logger.info(finding)
 
-    def _get_src(self, state):
-        md = self.manticore.get_metadata(state.platform.current.address)
-        src = md.get_source_for(state.platform.current.pc)
-        return src
+    def _get_src(self, address, pc):
+        return self.manticore.get_metadata(address).get_source_for(pc)
+
+    def report(self, state):
+        output = ''
+        for address, pc, finding in self.get_findings(state):
+            output += 'Finding %s\n' % finding
+            output += '\t Contract: %s\n' % address
+            output += '\t Program counter: %s\n' % pc
+            output += '\t Snippet:\n'
+            output += '\n'.join(('\t\t'+x for x in self._get_src(address, pc).split('\n')))
+            output += '\n'
+        return output
+
 
 class IntegerOverflow(Detector):
     '''
@@ -33,12 +54,11 @@ class IntegerOverflow(Detector):
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         if instruction.semantics == 'ADD':
             if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
-                src = self._get_src(state)
-                self.add_finding(state, "Integer overflow at ADD instruction offset %x. %s" % (state.platform.current.pc, src))
+                self.add_finding(state, "Integer overflow at ADD instruction")
         if instruction.semantics == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
                 src = self._get_src(state)
-                self.add_finding(state, "Integer underflow at SUB instruction offset %x. %s" % (state.platform.current.pc, src))
+                self.add_finding(state, "Integer underflow at SUB instruction")
             
 class UnitializedMemory(Detector):
     '''
@@ -54,8 +74,7 @@ class UnitializedMemory(Detector):
             cbu = Operators.AND(cbu, offset!=known_address)
 
         if state.can_be_true(cbu):
-            src = self._get_src(state)
-            self.add_finding(state, "Potentially reading uninitialized memory at instruction %x. %s" % (state.platform.current.pc,src))
+            self.add_finding(state, "Potentially reading uninitialized memory at instruction")
  
     def did_evm_write_memory(self, state, offset, value):
         #concrete or symbolic write
@@ -76,8 +95,7 @@ class UnitializedStorage(Detector):
             cbu = Operators.AND(cbu, offset!=known_address)
 
         if state.can_be_true(cbu):
-            src = self._get_src(state)
-            self.add_finding(state, "Potentially reading uninitialized storage at instruction %x. %s" % (state.platform.current.pc,src))
+            self.add_finding(state, "Potentially reading uninitialized storage")
  
     def did_evm_write_storage(self, state, offset, value):
         #concrete or symbolic write
@@ -513,7 +531,9 @@ class ManticoreEVM(Manticore):
         initial_state.context['tx'] = []
         super(ManticoreEVM, self).__init__(initial_state)
 
+        self.detectors = {}
         self.metadata = {}
+
         #The following should go to manticore.context so we can use multiprocessing
         self.context['seth'] = {}
         self.context['seth']['_pending_transaction'] = None
@@ -527,11 +547,6 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
-
-        ################ Default? Detectors #######################
-        self.register_plugin(UnitializedStorage())
-        self.register_plugin(UnitializedMemory())
-        self.register_plugin(IntegerOverflow())
 
     @property
     def world(self):
@@ -852,12 +867,22 @@ class ManticoreEVM(Manticore):
             for i in range(offset, offset+size):
                 code_data.add((state.platform.current.address, i))
 
-
     def get_metadata(self, address):
         ''' Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         '''
         return self.metadata.get(address)
+
+    def register_detector(self, d):
+        if not isinstance(d, Detector):
+            raise Exception("Not a Detector")
+        self.detectors[d.name] = d
+        self.register_plugin(d)
+
+    @property
+    def global_findings(self):
+        with self.locked_context('seth.global_findings', set) as global_findings:
+            return global_findings
 
     def report(self, state, ty=None):
         ''' Prints a small report on state. Prints a little something about state :) '''
