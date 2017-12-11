@@ -2399,13 +2399,10 @@ class EVMWorld(Platform):
             data = {
                 'to': tx.address,
                 'from': tx.caller,
-                'data': tx.data,
-                'solveddata': solve_data(tx.data).encode('hex'),
-                # 'data': tx.data,
-                # 'data': ''.join(tx.data),
-                'value': tx.value
-
+                'data': solve_data(tx.data).encode('hex'),
+                'value': tx.value if not issymbolic(tx.value) else '{symbolic!}'
             }
-            print data
+            import json
+            ret[name] = json.dumps(data, indent=4)
 
         return ret
