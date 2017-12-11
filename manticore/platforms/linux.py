@@ -2408,6 +2408,52 @@ class SLinux(Linux):
 
         return rv
 
+    def sys_getrandom(self, buf, size, flags):
+        data = ''
+        if issymbolic(buf):
+            logger.debug("Ask to generate random to a symbolic buffer")
+            raise ConcretizeArgument(self, 1)
+
+        if issymbolic(size):
+            logger.debug("Ask to generate random of symbolic number of bytes ")
+            raise ConcretizeArgument(self, 2)
+
+        if not {'', 'GRND_NONBLOCK', 'GRND_RANDOM'}[flags & 7]:
+            logger.info(("GETRANDOM: Invalid Flag Specified. Returning EINVAL"))
+            return -errno.EINVAL
+        flag = {'', 'GRND_NONBLOCK', 'GRND_RANDOM'}[flags & 7]
+
+        if size != 0:
+            if not buf in self.current.memory:
+                logger.info("GETRANDOM: buf points to invalid address. Returning EFAULT")
+                return -errno.EFAULT
+
+            try:
+                if flag == "GRND_RANDOM":
+                    try:
+                      data = random.getrandbits(size)
+                    except:
+                      if flag == "GRND_NONBLOCK":
+                          logger.info(("GETRANDOM: No Random Bytes Available. Returning EAGAIN"))
+                          return -errno.EAGAIN
+                else:
+                    try:
+                        data = random.SystemRandom.getrandbits(size)  # or could also use os.urandom
+                    except:
+                        if flag == "GRND_NONBLOCK":
+                            logger.info(("GETRANDOM: Entropy Pool Initialization Error. Returning EAGAIN"))
+                            return -errno.EAGAIN
+
+            except:
+                logger.info(("GETRANDOM: Call interrupted by signal handler. Returning EINTR"))
+                return -errno.EINTR
+
+            self.syscall_trace.append(("getrandom", buf, size, flags))
+            self.current.write_bytes(buf, data)
+
+        return len(data)
+
+
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
             try:
