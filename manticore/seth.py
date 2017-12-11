@@ -36,7 +36,6 @@ class IntegerOverflow(Detector):
                 src = self._get_src(state)
                 self.add_finding(state, "Integer underflow at SUB instruction offset %x. %s" % (state.platform.current.pc, src))
             
-
 class UnitializedMemory(Detector):
     def did_evm_read_memory(self, state, offset, value):
         if not state.can_be_true(value != 0):
@@ -97,9 +96,10 @@ class SolidityMetadata(object):
         self.source_code = source_code
         self.init_bytecode = init_bytecode
         self.metadata = metadata
+
         self.hashes = hashes
-        self.runtime_bytecode = runtime_bytecode
         self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
+        self.runtime_bytecode = runtime_bytecode
 
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         self.metadata_runtime = {}
