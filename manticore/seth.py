@@ -499,6 +499,7 @@ class ManticoreEVM(Manticore):
         '''
 
         name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi = self._compile(source_code)
+        self._output.store.save_value('contract.bytecode', init_bytecode)
         address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
         self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi)
         return EVMAccount(address, self, default_caller=owner)
