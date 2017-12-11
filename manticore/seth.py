@@ -402,6 +402,7 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('did_read_code', self._did_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
+        self._executor.subscribe('will_generate_testcase', self._will_generate_testcase_callback)
 
     @property
     def world(self):
@@ -1001,4 +1002,10 @@ class ManticoreEVM(Manticore):
         output += "Total assembler lines visited: %d\n"% count
         output += "Coverage: %2.2f%%\n"%  (count*100.0/total)
         return output
+
+    def _will_generate_testcase_callback(self, state, name, message):
+        print 111111, state, name, message
+        print self._output
+        print map(hex, state.context['trace'])
+        pass
 
