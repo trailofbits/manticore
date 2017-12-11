@@ -1,41 +1,8 @@
 from manticore.seth import ManticoreEVM, calculate_coverage, ABI
-from manticore.core.plugin import Plugin
-import sys
-################ Detectors ####################
-class Detector(Plugin):
-    def add_finding(self, state, finding):
-       state.context.setdefault('seth.findings',[]).append(finding)
-
-    def did_execute_evm_instruction_callback(self, state, instruction, arguments, result):
-        if instruction.semantics == 'ADD':
-            if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
-                self.add_finding("Integer overflow at ADD instruction %x" % state.platform.current.pc)
-        if instruction.semantics == 'SUB':
-            if state.can_be_true(arguments[1] > arguments[0])):
-                self.add_finding("Integer underflow at SUB instruction %x" % state.platform.current.pc)
-            
-
-
-    def did_evm_read_memory(self, state, offset, value):
-        if not state.can_be_true(value != 0):
-            #Not initialized memory should be zero
-            return 
-        #check if offset is known
-        cbu = True #Can be unknown
-        for known_address in state.context['seth.detectors.initialized_memory']:
-            cbu = Operators.AND(cbu, offset!=known_address)
-
-        if state.can_be_true(cbu):
-            self.add_finding("Potentially reading uninitialized memory at instruction %x" % state.platform.current.pc)
-            
-
-    def did_evm_write_memory(self, state, offset, value):
-        #concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_memory',set()).add(offset)
 
 ################ Script #######################
 seth = ManticoreEVM(procs=8)
-seth.register_plugin(Detector())
+
 seth.verbosity(0)
 #And now make the contract account to analyze
 # cat  | solc --bin 
@@ -85,8 +52,8 @@ for state in seth.all_states:
         print "\tresult: %s" % tx.result  #The result if any RETURN or REVERT
         print "\treturn_data: %r" % state.solve_one(tx.return_data)  #The returned data if RETURN or REVERT
 
+        metadata = seth.get_metadata(tx.address)
         if tx.sort == 'Call':
-            metadata = seth.get_metadata(tx.address)
             if metadata is not None:
                 function_id = tx.data[:4]  #hope there is enough data
                 function_id = state.solve_one(function_id).encode('hex')
@@ -95,6 +62,12 @@ for state in seth.all_states:
                 if tx.result == 'RETURN':
                     ret_types = metadata.get_func_return_types(function_id)
                     print '\tparsed return_data', ABI.parse(ret_types, tx.return_data) #function return
+
+        if tx.result in ('THROW', 'REVERT', 'SELFDESTRUCT'):
+            if metadata is not None:
+                address, offset = state.context['seth.trace'][-1]
+                print metadata.get_source_for(offset)
+            
 
     #the logs
     for log_item in blockchain.logs:
