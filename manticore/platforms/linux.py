@@ -1314,6 +1314,32 @@ class Linux(Platform):
 
         return self._open(f)
 
+    def sys_openat(self, dirfd, buf, flags, mode):
+
+        filename = self.current.read_string(buf)
+
+        if os.path.isabs(filename):
+            f = self.sys_open(buf, flags, mode)
+            return self._open(f)
+
+        try:
+            directory_file_descriptor = self._get_fd(dirfd)
+        except BadFd:
+            logger.info(("OPENAT: Not valid file descriptor. Returning EBADF"))
+            return -errno.EBADF
+
+        if os.path.isdir(directory_file_descriptor):
+            if  str(directory_file_descriptor) == "-100": # Value of AT_FDCWD
+                f = self.sys_open(buf, flags, mode)
+            else:
+                buf = directory_file_descriptor.name+buf
+                f = self.sys_open(buf, flags, mode)
+        else:
+            logger.info(("OPENAT: Not directory descriptor. Returning ENOTDIR"))
+            return -errno.ENOTDIR
+
+        return self._open(f)
+
     def sys_rename(self, oldnamep, newnamep):
         '''
         Rename filename `oldnamep` to `newnamep`.
@@ -2452,7 +2478,6 @@ class SLinux(Linux):
             self.current.write_bytes(buf, data)
 
         return len(data)
-
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
