@@ -1314,32 +1314,7 @@ class Linux(Platform):
 
         return self._open(f)
 
-    def sys_openat(self, dirfd, buf, flags, mode):
-
-        filename = self.current.read_string(buf)
-
-        if os.path.isabs(filename):
-            f = self.sys_open(buf, flags, mode)
-            return self._open(f)
-
-        try:
-            directory_file_descriptor = self._get_fd(dirfd)
-        except BadFd:
-            logger.info(("OPENAT: Not valid file descriptor. Returning EBADF"))
-            return -errno.EBADF
-
-        if os.path.isdir(directory_file_descriptor):
-            if  str(directory_file_descriptor) == "-100": # Value of AT_FDCWD
-                f = self.sys_open(buf, flags, mode)
-            else:
-                buf = directory_file_descriptor.name+buf
-                f = self.sys_open(buf, flags, mode)
-        else:
-            logger.info(("OPENAT: Not directory descriptor. Returning ENOTDIR"))
-            return -errno.ENOTDIR
-
-        return self._open(f)
-
+ 
     def sys_rename(self, oldnamep, newnamep):
         '''
         Rename filename `oldnamep` to `newnamep`.
@@ -2444,10 +2419,11 @@ class SLinux(Linux):
             logger.debug("Ask to generate random of symbolic number of bytes ")
             raise ConcretizeArgument(self, 2)
 
-        if not {'', 'GRND_NONBLOCK', 'GRND_RANDOM'}[flags & 7]:
-            logger.info(("GETRANDOM: Invalid Flag Specified. Returning EINVAL"))
-            return -errno.EINVAL
-        flag = {'', 'GRND_NONBLOCK', 'GRND_RANDOM'}[flags & 7]
+        try:
+          flag = ['', 'GRND_NONBLOCK', 'GRND_RANDOM'][flags & 7]
+        except:
+          logger.info(("GETRANDOM: Invalid Flag Specified. Returning EINVAL"))
+          return -errno.EINVAL
 
         if size != 0:
             if not buf in self.current.memory:
@@ -2474,10 +2450,27 @@ class SLinux(Linux):
                 logger.info(("GETRANDOM: Call interrupted by signal handler. Returning EINTR"))
                 return -errno.EINTR
 
-            self.syscall_trace.append(("getrandom", buf, size, flags))
-            self.current.write_bytes(buf, data)
+            self.current.write_bytes(buf, str(data))
 
-        return len(data)
+        return len(str(data))
+
+    def sys_openat(self, dirfd, buf, flags, mode):
+         offset = 0
+         symbolic_path = issymbolic(self.current.read_int(buf, 8))
+         if symbolic_path:
+            import tempfile
+            fd, path = tempfile.mkstemp()
+            with open(path, 'wb+') as f:
+                f.write('+'*64)
+            self.symbolic_files.append(path)
+            buf = self.current.memory.mmap(None, 1024, 'rw ', data_init=path)
+
+         rv = super(SLinux, self).sys_open(buf, flags, mode)
+
+         if symbolic_path:
+            self.current.memory.munmap(buf, 1024)
+
+         return rv
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
