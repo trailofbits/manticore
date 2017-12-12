@@ -347,7 +347,7 @@ class ManticoreEVM(Manticore):
     @staticmethod
     def compile(source_code):
         ''' Get initialization bytecode from a solidity source code '''
-        name, source_code, bytecode, srcmap, srcmap_runtime, hashes = ManticoreEVM._compile(source_code)
+        name, source_code, bytecode, srcmap, srcmap_runtime, hashes, abi = ManticoreEVM._compile(source_code)
         return bytecode
 
     @staticmethod
@@ -499,6 +499,7 @@ class ManticoreEVM(Manticore):
         '''
 
         name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi = self._compile(source_code)
+        self._output.store.save_value('contract.bytecode', init_bytecode)
         address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
         self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi)
         return EVMAccount(address, self, default_caller=owner)
@@ -1000,4 +1001,3 @@ class ManticoreEVM(Manticore):
         output += "Total assembler lines visited: %d\n"% count
         output += "Coverage: %2.2f%%\n"%  (count*100.0/total)
         return output
-
