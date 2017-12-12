@@ -505,6 +505,10 @@ class EVMAsm(object):
                       }
             return classes.get(self.opcode>>4, 'Invalid instruction')
 
+        @property
+        def uses_stack(self):
+            ''' True if the instruction reads/writes from/to the stack '''
+            return self.reads_from_stack or self.writes_to_stack
 
         @property
         def reads_from_stack(self):
@@ -566,7 +570,11 @@ class EVMAsm(object):
             ''' True if the instruction access block information'''
             return self.group == 'Block Information'
 
-            
+        @property
+        def is_arithmetic(self):
+            ''' True if the instruction is an arithmetic operation '''
+            return  self.semantics in ('ADD', 'MUL', 'SUB', 'DIV', 'SDIV', 'MOD', 'SMOD', 'ADDMOD', 'MULMOD', 'EXP', 'SIGNEXTEND')
+ 
     #from http://gavwood.com/paper.pdf
     _table = {#opcode: (name, immediate_operand_size, pops, pushes, gas, description)
                 0x00: ('STOP', 0, 0, 0, 0, 'Halts execution.'),
@@ -1032,7 +1040,12 @@ class EVM(Eventful):
         from position 0), and the stack contents. The memory
         contents are a series of zeroes of bitsize 256
     '''
-    _published_events = {'read_code', 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
+    _published_events = {'evm_execute_instruction', 
+                         'evm_read_storage', 'evm_write_storage',
+                         'evm_read_memory',
+                         'evm_write_memory', 
+                         'evm_read_code',
+                         'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
     def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
@@ -1154,6 +1167,7 @@ class EVM(Eventful):
         #CHECK VALUE IS A 256 BIT INT OR BITVEC
         self._allocate(address)
         self.memory.write(address, [value])
+        self._publish('did_evm_write_memory', address, value)
 
 
     def _load(self, address):
@@ -1162,6 +1176,8 @@ class EVM(Eventful):
         value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
+        self._publish('did_evm_read_memory', address, value)
+
         return value
 
     @staticmethod
@@ -1243,11 +1259,11 @@ class EVM(Eventful):
                                 setstate=setstate,
                                 policy='ALL')
 
-        self._publish( 'will_decode_instruction', self.pc)
+        self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
 
-        self._publish( 'will_execute_instruction', self.pc, current)
+        self._publish('will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
 
@@ -1263,7 +1279,6 @@ class EVM(Eventful):
         for _ in range(current.pops):
             arguments.append(self._pop())
 
-
         #simplify stack arguments
         for i in range(len(arguments)):
             if isinstance(arguments[i], Expression):           
@@ -1271,10 +1286,13 @@ class EVM(Eventful):
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
+        self._publish('will_evm_execute_instruction', current, arguments)
+
         last_pc = self.pc
         #Execute
         try:
             result = implementation(*arguments)
+            self._publish('did_evm_execute_instruction', current, arguments, result)
         except ConcretizeStack as ex:
             for arg in reversed(arguments):
                 self._push(arg)
@@ -1561,7 +1579,7 @@ class EVM(Eventful):
                 self._store(mem_offset+i, 0)
             else:
                 self._store(mem_offset+i, Operators.ORD(self.bytecode[code_offset+i]))
-        self._publish( 'did_read_code', code_offset, size)
+        self._publish( 'did_evm_read_code', code_offset, size)
 
     def GASPRICE(self):
         '''Get price of gas in current environment'''
@@ -1643,13 +1661,16 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
-        return self.global_storage[self.address]['storage'].get(offset,0)
+        value = self.global_storage[self.address]['storage'].get(offset,0)
+        self._publish('did_evm_read_storage', offset, value)
+        return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
         self.global_storage[self.address]['storage'][offset] = value
         if value is 0:
             del self.global_storage[self.address]['storage'][offset]
+        self._publish('did_evm_write_storage', offset, value)
 
     def JUMP(self, dest):
         '''Alter the program counter'''
@@ -1832,7 +1853,7 @@ class EVM(Eventful):
 ################################################################################
 ################################################################################
 class EVMWorld(Platform):
-    _published_events = {'read_code', 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} 
+    _published_events = {'evm_read_storage', 'evm_write_storage', 'evm_read_code', 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} 
 
     def __init__(self, constraints, storage=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
@@ -2255,7 +2276,6 @@ class EVMWorld(Platform):
         if self.depth == 0:
             tx = self._transactions[-1]
             tx.return_data=data
-            #tx.last_pc = prev_vm.pc
             tx.result = 'RETURN'
             raise TerminateState("RETURN", testcase=True)
 
@@ -2279,7 +2299,6 @@ class EVMWorld(Platform):
         if self.depth == 0:
             tx = self._transactions[-1]
             tx.return_data=None
-            #tx.last_pc = prev_vm.pc
             tx.result = 'STOP'
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
@@ -2296,7 +2315,6 @@ class EVMWorld(Platform):
 
         if self.depth == 0:
             tx = self._transactions[-1]
-            #tx.last_pc = prev_vm.pc
             tx.return_data=None
             tx.result = 'THROW'
             raise TerminateState("THROW", testcase=True)
@@ -2315,7 +2333,6 @@ class EVMWorld(Platform):
         if self.depth == 0:
             tx = self._transactions[-1]
             tx.return_data=data
-            #tx.last_pc = prev_vm.pc
             tx.result = 'REVERT'
             raise TerminateState("REVERT", testcase=True)
 
