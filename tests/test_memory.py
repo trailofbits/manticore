@@ -1725,14 +1725,12 @@ class MemoryTest(unittest.TestCase):
         mem = SMemory32(cs)
 
         ro = mem.mmap(0x1000, 0x1000, 'r')
-        wo = mem.mmap(0x2000, 0x1000, 'w')
-        xo = mem.mmap(0x3000, 0x1000, 'x')
-        nul = mem.mmap(0x4000, 0x1000, '')
+        nul = mem.mmap(0x2000, 0x1000, '')
 
         # 1. Expression on edge of read only map
         addr = cs.new_bitvec(32)
-        cs.add(addr > (0x1000-16))
-        cs.add(addr < (0x1000+16))
+        cs.add(addr > (ro-16))
+        cs.add(addr < (ro+16))
 
         # Can write to unmapped memory, should raise despite force
         with self.assertRaises(InvalidSymbolicMemoryAccess) as e:
@@ -1740,8 +1738,8 @@ class MemoryTest(unittest.TestCase):
 
         # 2. Force write to mapped memory, should not raise
         addr = cs.new_bitvec(32)
-        cs.add(addr > (0x4000+0xff0))
-        cs.add(addr < (0x4000+0x1000))
+        cs.add(addr > (nul+0xff0))
+        cs.add(addr < (nul+0x1000))
         mem.write(addr, 'hello', force=True)
 
 
