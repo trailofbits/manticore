@@ -1314,6 +1314,38 @@ class Linux(Platform):
 
         return self._open(f)
 
+    def sys_openat(self, dirfd, buf, flags, mode):
+        '''
+        Openat SystemCall - Similar to open system call except dirfd argument
+        when path contained in buf is relative, dirfd is referred to set the relative path
+        Special value AT_FDCWD set for dirfd to set path relative to current directory
+
+        :param dirfd: directory file descriptor to refer in case of relative path at buf
+        :param buf: address of zero-terminated pathname
+        :param flags: file access bits
+        :param mode: file permission mode
+        '''
+
+        filename = self.current.read_string(buf)
+
+        if os.path.isabs(filename):
+            return self.sys_open(buf, flags, mode)
+
+        if dirfd == -100: # Value of AT_FDCWD
+            return self.sys_open(buf, flags, mode)
+
+        try:
+            directory_file_descriptor = self._get_fd(dirfd)
+        except BadFd:
+            logger.info("OPENAT: Not valid file descriptor. Returning EBADF")
+            return -errno.EBADF
+
+        if os.path.isdir(directory_file_descriptor.name):
+                buf = os.path.relpath(buf,directory_file_descriptor.name)
+                return self.sys_open(buf, flags, mode)
+        else:
+            logger.info("OPENAT: Not directory descriptor. Returning ENOTDIR")
+            return -errno.ENOTDIR
  
     def sys_rename(self, oldnamep, newnamep):
         '''
@@ -2409,7 +2441,36 @@ class SLinux(Linux):
 
         return rv
 
+    def sys_openat(self, dirfd, buf, flags, mode):
+        '''
+        A version of openat that includes a symbolic path and symnbolic directory file descriptor
+
+        :param dirfd: directory file descriptor
+        :param buf: address of zero-terminated pathname
+        :param flags: file access bits
+        :param mode: file permission mode
+        '''
+
+        if issymbolic(dirfd):
+            logger.debug("Ask to read from a symbolic directory file descriptor!!")
+            raise ConcretizeArgument(self, 0)
+
+        if issymbolic(buf):
+            logger.debug("Ask to read to a symbolic buffer")
+            raise ConcretizeArgument(self, 1)
+
+        return super(SLinux, self).sys_openat(dirfd, buf, flags, mode)
+
     def sys_getrandom(self, buf, size, flags):
+        '''
+        The getrandom system call fills the buffer with random bytes of buflen.
+        The source of random (/dev/random or /dev/urandom) is decided based on the flags value.
+
+        :param buf: buffer to be filled with random bytes
+        :param size: size of the random bytes to be filled
+        :param flags: source of random (/dev/random or /dev/urandom)
+        :return: number of bytes copied to buf
+        '''
         data = ''
         if issymbolic(buf):
             logger.debug("Ask to generate random to a symbolic buffer")
@@ -2436,41 +2497,23 @@ class SLinux(Linux):
                       data = random.getrandbits(size)
                     except:
                       if flag == "GRND_NONBLOCK":
-                          logger.info(("GETRANDOM: No Random Bytes Available. Returning EAGAIN"))
+                          logger.info("GETRANDOM: No Random Bytes Available. Returning EAGAIN")
                           return -errno.EAGAIN
                 else:
                     try:
                         data = random.SystemRandom.getrandbits(size)  # or could also use os.urandom
                     except:
                         if flag == "GRND_NONBLOCK":
-                            logger.info(("GETRANDOM: Entropy Pool Initialization Error. Returning EAGAIN"))
+                            logger.info("GETRANDOM: Entropy Pool Initialization Error. Returning EAGAIN")
                             return -errno.EAGAIN
 
             except:
-                logger.info(("GETRANDOM: Call interrupted by signal handler. Returning EINTR"))
+                logger.info("GETRANDOM: Call interrupted by signal handler. Returning EINTR")
                 return -errno.EINTR
 
             self.current.write_bytes(buf, str(data))
 
         return len(str(data))
-
-    def sys_openat(self, dirfd, buf, flags, mode):
-         offset = 0
-         symbolic_path = issymbolic(self.current.read_int(buf, 8))
-         if symbolic_path:
-            import tempfile
-            fd, path = tempfile.mkstemp()
-            with open(path, 'wb+') as f:
-                f.write('+'*64)
-            self.symbolic_files.append(path)
-            buf = self.current.memory.mmap(None, 1024, 'rw ', data_init=path)
-
-         rv = super(SLinux, self).sys_open(buf, flags, mode)
-
-         if symbolic_path:
-            self.current.memory.munmap(buf, 1024)
-
-         return rv
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
