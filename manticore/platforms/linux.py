@@ -1341,8 +1341,8 @@ class Linux(Platform):
             return -errno.EBADF
 
         if os.path.isdir(directory_file_descriptor.name):
-                buf = os.path.relpath(buf,directory_file_descriptor.name)
-                return self.sys_open(buf, flags, mode)
+            buf = os.path.relpath(buf,directory_file_descriptor.name)
+            return self.sys_open(buf, flags, mode)
         else:
             logger.info("OPENAT: Not directory descriptor. Returning ENOTDIR")
             return -errno.ENOTDIR
@@ -2474,11 +2474,11 @@ class SLinux(Linux):
         data = ''
         if issymbolic(buf):
             logger.debug("Ask to generate random to a symbolic buffer")
-            raise ConcretizeArgument(self, 1)
+            raise ConcretizeArgument(self, 0)
 
         if issymbolic(size):
             logger.debug("Ask to generate random of symbolic number of bytes ")
-            raise ConcretizeArgument(self, 2)
+            raise ConcretizeArgument(self, 1)
 
         try:
           flag = ['', 'GRND_NONBLOCK', 'GRND_RANDOM'][flags & 7]
