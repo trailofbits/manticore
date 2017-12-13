@@ -159,10 +159,7 @@ class PrettyPrinter(Visitor):
         self.depth = depth
 
     def _print(self, s, e=None):
-        xx = str(s)
-        if isinstance(s, (int, long)):
-            xx = hex(s)
-        self.output += ' '*self.indent + xx # + '(%016x)'%hash(e)
+        self.output += ' '*self.indent + str(s) # + '(%016x)'%hash(e)
         self.output += '\n'
 
     def visit(self, expression):

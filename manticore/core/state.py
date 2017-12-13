@@ -177,9 +177,6 @@ class State(Eventful):
 
         :param manticore.core.smtlib.Bool constraint: Constraint to add
         '''
-        # print 'CONSTRAINING  ', constraint
-        # from manticore.core.smtlib.visitors import pretty_print as pp
-        # print pp(constraint)
         self._constraints.add(constraint)
 
     def abandon(self):
