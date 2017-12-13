@@ -1,4 +1,4 @@
-from manticore.seth import ManticoreEVM
+from manticore.seth import ManticoreEVM, ABI, calculate_coverage
 seth = ManticoreEVM()
 #And now make the contract account to analyze
 source_code = '''
@@ -25,15 +25,12 @@ contract_account.add(seth.SValue)
 contract_account.add(seth.SValue)
 
 
-print "[+] There are %d reverted states now"% len(seth.final_state_ids)
-for state_id in seth.final_state_ids:
-    print seth.report(state_id)
+#Let seth know we are not sending more transactions so it can output 
+# info about running states and global statistics
+seth.finalize()
 
-print "[+] There are %d alive states now"% len(seth.running_state_ids)
-for state_id in seth.running_state_ids:
-    print seth.report(state_id)
+print "[+] Look for results in %s"% seth.workspace
 
-print "[+] Global coverage: %x"% contract_account
-print seth.coverage(contract_account)
+
 
 

@@ -15,7 +15,6 @@ if sys.version_info < (3, 6):
 
 logger = logging.getLogger(__name__)
 
-
 # Auxiliar constants and functions
 TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
@@ -45,6 +44,11 @@ class Transaction(object):
         ''' Implements serialization/pickle '''
         return (self.__class__,  (self.sort,  self.address, self.origin, self.price, self.data, self.caller, self.value, self.return_data, self.result))
 
+class EVMLog():
+    def __init__(self, address, memlog, topics):
+        self.address = address
+        self.memlog = memlog
+        self.topics = topics
 
 
 
@@ -140,6 +144,10 @@ class EVMMemory(object):
     def __contains__(self, offset):
         return offset in self._memory or \
                offset in self._symbols
+
+    def items(self):
+        offsets = set( self._symbols.keys() + self._memory.keys())
+        return [(x, self[x]) for x in offsets]
 
     def get(self, offset, default=0):
         result = self.read(offset, 1)
@@ -1722,13 +1730,14 @@ class EVM(Eventful):
     ##########################################################################
     ##Logging Operations
     def LOG(self, address, size, *topics):
+
         if issymbolic(size):
             raise ConcretizeStack(2, policy='ONE')
 
         memlog = []
         for i in range(size):
             memlog.append(self._load(address+i))
-        self.logs.append((self.address, memlog, topics))
+        self.logs.append(EVMLog(self.address, memlog, topics))
         logger.info('LOG %r %r', memlog, topics)
 
     ##########################################################################
@@ -1979,6 +1988,12 @@ class EVMWorld(Platform):
     def get_storage_data(self, address, offset):
         return self.storage[address]['storage'].get(offset)
 
+    def get_storage_items(self, address):
+        return self.storage[address]['storage'].items()
+
+    def has_storage(self, address):
+        return self.storage[address]['storage'] != 0
+
     def set_balance(self, address, value):
         self.storage[int(address)]['balance'] = value
 
@@ -1987,6 +2002,15 @@ class EVMWorld(Platform):
 
     def add_to_balance(self, address, value):
         self.storage[address]['balance'] += value
+
+    def get_code(self, address):
+        return self.storage[address]['code']
+
+    def set_code(self, address, data):
+        self.storage[address]['code'] = data
+
+    def has_code(self, address):
+        return len(self.storage[address]['code']) > 0
 
     def send_ether(self, src, dst, value):
         src_balance = self.get_balance(src)
@@ -2011,12 +2035,6 @@ class EVMWorld(Platform):
 
         self.storage[dst]['balance'] += value
         self.storage[src]['balance'] -= value
-
-    def get_code(self, address):
-        return self.storage[address]['code']
-
-    def set_code(self, address, data):
-        self.storage[address]['code'] = data
 
 
     def log(self, address, topic, data):

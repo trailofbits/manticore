@@ -9,6 +9,7 @@ import sha3
 import json
 import logging
 import StringIO
+import cPickle as pickle
 from .core.plugin import Plugin
 
 logger = logging.getLogger(__name__)
@@ -118,34 +119,25 @@ def calculate_coverage(code, seen):
     return count*100.0/total
 
 class SolidityMetadata(object):
-    def __init__(self, name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi):
-        self.name = name
-        self.source_code = source_code
-        self.init_bytecode = init_bytecode
-        self.metadata = metadata
-
-        self.hashes = hashes
-        self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
-        self.runtime_bytecode = runtime_bytecode
-
+    def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
-        self.metadata_runtime = {}
+        new_srcmap = {}
         end = None
-        if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and  ''.join(runtime_bytecode[-2:]) =='\x00\x29':
+        if  ''.join(bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and  ''.join(bytecode[-2:]) =='\x00\x29':
             end = -9-33-2  #Size of metadata at the end of most contracts
 
         asm_offset = 0
         asm_pos = 0
-        md = dict(enumerate(metadata_runtime[asm_pos].split(':')))
+        md = dict(enumerate(srcmap[asm_pos].split(':')))
         s = int(md.get(0,0))
         l = int(md.get(1,0))
         f = int(md.get(2,0))
         j = md.get(3,None)
 
-        for i in evm.EVMAsm.disassemble_all(self.runtime_bytecode[:end]):
-            if len(metadata_runtime[asm_pos]):
-                md = metadata_runtime[asm_pos]
+        for i in evm.EVMAsm.disassemble_all(bytecode[:end]):
+            if asm_pos in srcmap and len(srcmap[asm_pos]):
+                md = srcmap[asm_pos]
                 if len(md):
                     d = {}
                     for p, k in enumerate(md.split(':')):
@@ -157,14 +149,33 @@ class SolidityMetadata(object):
                     f = int(d.get(2,f))
                     j = d.get(3,j)
 
-            self.metadata_runtime[asm_offset] = (s,l,f,j)
+            new_srcmap[asm_offset] = (s,l,f,j)
             asm_pos += 1
             asm_offset += i.size
 
-    def get_source_for(self, asm_pos):
+        return new_srcmap 
+
+
+    def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi):
+        self.name = name
+        self.source_code = source_code
+        self.init_bytecode = init_bytecode
+        self.hashes = hashes
+        self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
+        self.runtime_bytecode = runtime_bytecode
+        self.srcmap_runtime = self.__build_source_map(runtime_bytecode, srcmap_runtime)
+        self.srcmap = self.__build_source_map(init_bytecode, srcmap)
+
+    def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset
+            if runtime is False it uses initialization bytecode source map
         '''
-        beg, size, _, _ = self.metadata_runtime[asm_pos]
+        if runtime:
+            srcmap = self.srcmap_runtime
+        else:
+            srcmap = self.srcmap
+        
+        beg, size, _, _ = srcmap[asm_offset]
         output = ''
         nl = self.source_code.count('\n')
         snippet = self.source_code[beg:beg+size]
@@ -594,6 +605,20 @@ class ManticoreEVM(Manticore):
             state = self.load(state_id)
             yield state
 
+    def terminate_state_id(self, state_id):
+        with self.locked_context('seth') as seth_context:
+            lst = seth_context['_saved_states']
+            lst.remove(state_id)
+            seth_context['_saved_states'] = lst
+
+        state = self.load(state_id)
+        self._generate_testcase_callback(state, 'test', 'Still Running')
+
+        with self.locked_context('seth') as seth_context:
+            lst = seth_context['_final_states']
+            lst.append(state_id)
+            seth_context['_final_states'] = lst
+        
 
     #deprecate this 5 in favor of for sta in seth.all_states: do stuff?
     def get_world(self, state_id=None):
@@ -718,7 +743,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
             #there is at least one states in seth saved states
-            assert context['_saved_states'] or self.initial_state
+            assert context['_saved_states'] or self.initial_state is not None
             #there is no states added to the executor queue
             assert len(self._executor.list()) == 0
 
@@ -779,7 +804,6 @@ class ManticoreEVM(Manticore):
             state = self.initial_state
         else:
             state = self._executor._workspace.load_state(state_id, delete=False)
-
         return state
 
     #Callbacks
@@ -860,7 +884,7 @@ class ManticoreEVM(Manticore):
         
     def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
         ''' INTERNAL USE '''
-        state.context.setdefault('seth.trace',[]).append((state.platform.current.address, pc))
+        state.context.setdefault('seth.trace',[]).append((state.platform.current.address, prev_pc))
 
     def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
@@ -884,6 +908,184 @@ class ManticoreEVM(Manticore):
     def global_findings(self):
         with self.locked_context('seth.global_findings', set) as global_findings:
             return global_findings
+
+    @property
+    def workspace(self):
+        return self._output._descriptor
+
+    def _generate_testcase_callback(self, state, name, message):
+        '''
+        Create a serialized description of a given state.
+        :param state: The state to generate information about
+        :param message: Accompanying message
+        '''
+        # workspace should not be responsible for formating the output
+        # each object knows its secrets, each class should be able to report its
+        # final state
+        #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
+        def flagged(flag):
+            return '(*)' if flag else '' 
+        testcase = self._output.testcase()
+        logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
+        blockchain = state.platform
+        with testcase.open_stream('summary') as summary:            
+            summary.write("Last exception: %s\n" %state.context['last_exception'])
+
+            #Last instruction
+            metadata = self.get_metadata(blockchain.transactions[-1].address)
+            if metadata is not None:
+                address, offset = state.context['seth.trace'][-1]
+                summary.write('Last instruction at contract %x offset %x\n' %(address, offset))
+                at_runtime = blockchain.transactions[-1].sort != 'Create'
+                summary.write(metadata.get_source_for(offset, at_runtime))
+                summary.write('\n')
+
+
+
+            #Accounts summary
+            is_something_symbolic = False
+            summary.write("%d accounts.\n" % len(blockchain.accounts))
+            for account_address in blockchain.accounts:
+                summary.write("Address: 0x%x\n" % account_address)
+                balance = blockchain.get_balance(account_address)
+                is_balance_symbolic = issymbolic(balance)
+                is_something_symbolic = is_something_symbolic or is_balance_symbolic
+                balance = state.solve_one(balance)
+                summary.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+
+                if blockchain.has_storage(account_address):
+                    summary.write("Storage:\n")
+                    for offset, value in blockchain.get_storage_items(account_address):
+                        is_storage_symbolic = issymbolic(offset) or issymbolic(value) 
+                        offset = state.solve_one(offset)
+                        value = state.solve_one(value)
+                        summary.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
+                        is_something_symbolic = is_something_symbolic or is_storage_symbolic
+
+                code = blockchain.get_code(account_address)
+                if len(code):
+                    summary.write("Code:\n")
+                    fcode = StringIO.StringIO(code)
+                    for chunk in iter(lambda: fcode.read(32), b''):
+                        summary.write('\t%s\n' % chunk.encode('hex'))
+                    trace = set(( offset for address_i, offset in state.context['seth.trace'] if address == address_i))        
+                    summary.write("Coverage %d%% (on this state)\n" %  calculate_coverage(code, trace)) #coverage % for address in this account/state
+                summary.write("\n")
+
+
+            if is_something_symbolic:
+                summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+
+
+        #Transactions
+        with testcase.open_stream('tx') as tx_summary:
+            for tx in blockchain.transactions: #external transactions
+                tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
+
+                #The result if any RETURN or REVERT
+                tx_summary.write("Type: %s -> %s\n" % (tx.sort, 'OK' if tx.result == 'RETURN' else 'FAIL' ))
+                tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
+                tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
+                tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
+                tx_summary.write("Data: %s %s\n"% (state.solve_one(tx.data).encode('hex'), flagged(issymbolic(tx.data))))
+                if tx.return_data is not None:
+                    return_data = state.solve_one(tx.return_data)
+                    tx_summary.write("Return_data: %s %s\n" % (return_data.encode('hex'), flagged(issymbolic(tx.return_data))))
+
+                
+                metadata = self.get_metadata(tx.address)
+                if tx.sort == 'Call':
+                    if metadata is not None:
+                        function_id = tx.data[:4]  #hope there is enough data
+                        function_id = state.solve_one(function_id).encode('hex')
+                        signature = metadata.get_func_signature(function_id)
+                        function_name, arguments = ABI.parse(signature, tx.data)
+
+                        if tx.result == 'RETURN':
+                            ret_types = metadata.get_func_return_types(function_id)
+                            return_data = ABI.parse(ret_types, tx.return_data) #function return
+
+                        tx_summary.write('\n')
+                        tx_summary.write( "Function call:\n")
+                        tx_summary.write("%s(" % state.solve_one(function_name ))
+                        tx_summary.write(','.join(map(str, map(state.solve_one, arguments))))
+                        tx_summary.write(') -> %s\n' % tx.result)
+                        tx_summary.write('return_data: %s\n' % ''.join(map(chr, map(state.solve_one, return_data))))
+
+                tx_summary.write('\n\n')
+
+        #logs
+        with testcase.open_stream('logs') as logs_summary:
+            #the logs
+            for log_item in blockchain.logs:
+                logs_summary.write("Address: %x\n" % log_item.address)
+                logs_summary.write("Memlog: %s %s\n" % (state.solve_one(log_item.memlog).encode('hex'), flagged(issymbolic(log_item.memlog))))
+                logs_summary.write("Topics:\n")
+                for topic in log_item.topics:
+                    logs_summary.write("\t%d) %x %s" %(log_item.topics.index(topic), state.solve_one(topic), flagged(issymbolic(topic))))
+            else:
+                logs_summary.write('No logs')
+
+        with testcase.open_stream('constraints') as smt_summary:
+            smt_summary.write(str(state.constraints))
+
+        with testcase.open_stream('pkl') as statef:
+            try:
+                statef.write(pickle.dumps(state, 2))
+            except RuntimeError:
+                # recursion exceeded. try a slower, iterative solution
+                from .utils import iterpickle
+                logger.debug("Using iterpickle to dump state")
+                statef.write(iterpickle.dumps(state, 2))
+
+
+
+    def finalize(self):
+        #move runnign states to final states list
+        # and generate a testcase for each
+        lst = tuple(self.running_state_ids)
+        for state_id in lst:
+            self.terminate_state_id(state_id)
+
+        #delete actual streams from storage
+        for state_id in self.all_state_ids:
+            self._executor._workspace.rm_state(state_id)
+
+        #clean up lists
+        with self.locked_context('seth') as seth_context:
+            seth_context['_saved_states'] = []
+        with self.locked_context('seth') as seth_context:
+            seth_context['_final_states'] = []
+        
+        #global summary
+        with self._output.save_stream('global.summary') as global_summary :
+            # (accounts created by contract code are not in this list )
+            global_summary.write( "Global coverage:\n")
+            for address in self.contract_accounts: 
+                global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address))) #coverage % for address in this state
+
+
+            if len(self.global_findings):
+                global_summary.write( "Global Findings:\n")
+
+                for address, pc, finding in m.global_findings:
+                    global_summary.write('- %s -\n' % finding )
+                    global_summary.write( '\t Contract: %s\n' % address )
+                    global_summary.write( '\t Program counter: %s\n' % pc )
+                    md = self.get_metadata(address)
+                    if md is not None:
+                        src = md.get_source_for(pc)
+                        global_summary.write( '\t Snippet:\n' )
+                        global_summary.write( '\n'.join(('\t\t'+x for x in src.split('\n'))) )
+                        global_summary.write( '\n\n' )
+
+
+        logger.info("[+] Look for results in %s", self.workspace )
+
+
+    @property
+    def workspace(self):
+        return self._executor._workspace._store.uri
 
     def report(self, state, ty=None):
         ''' Prints a small report on state. Prints a little something about state :) '''
@@ -1082,8 +1284,12 @@ class ManticoreEVM(Manticore):
             if account_address in world.storage:
                 break
 
-        seen = self.context['coverage'] #.union( self.context.get('code_data', set()))
-        runtime_bytecode = world.storage[account_address]['code']
+
+        with self.locked_context('coverage') as coverage:
+            seen = coverage
+        #runtime_bytecode = world.storage[account_address]['code']
+        runtime_bytecode = self.get_metadata(account_address).runtime_bytecode
+
 
         end = None
         if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \

