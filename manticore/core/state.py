@@ -297,6 +297,10 @@ class State(Eventful):
         from .smtlib import solver
         return solver
 
+
+    def can_be_true(self, expr):
+        return self._solver.can_be_true(self._constraints, expr)
+
     def solve_one(self, expr):
         '''
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into

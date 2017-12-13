@@ -7,7 +7,99 @@ import tempfile
 from subprocess import Popen, PIPE
 import sha3
 import json
+import logging
 import StringIO
+from .core.plugin import Plugin
+
+logger = logging.getLogger(__name__)
+
+################ Detectors ####################
+class Detector(Plugin):
+    @property
+    def name(self):
+        return self.__class__.__name__.split('.')[-1]
+
+    def get_findings(self, state):
+        return state.context.setdefault('seth.findings.%s'%self.name,set())
+
+    def add_finding(self, state, finding):
+        address = state.platform.current.address
+        pc = state.platform.current.pc
+        self.get_findings(state).add((address, pc, finding))
+
+        with self.manticore.locked_context('seth.global_findings', set) as global_findings:
+            global_findings.add((address, pc, finding))
+        logger.info(finding)
+
+    def _get_src(self, address, pc):
+        return self.manticore.get_metadata(address).get_source_for(pc)
+
+    def report(self, state):
+        output = ''
+        for address, pc, finding in self.get_findings(state):
+            output += 'Finding %s\n' % finding
+            output += '\t Contract: %s\n' % address
+            output += '\t Program counter: %s\n' % pc
+            output += '\t Snippet:\n'
+            output += '\n'.join(('\t\t'+x for x in self._get_src(address, pc).split('\n')))
+            output += '\n'
+        return output
+
+
+class IntegerOverflow(Detector):
+    '''
+        Detects any it overflow on instructions ADD and SUB.
+    '''
+    def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+        if instruction.semantics == 'ADD':
+            if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
+                self.add_finding(state, "Integer overflow at ADD instruction")
+        if instruction.semantics == 'SUB':
+            if state.can_be_true(arguments[1] > arguments[0]):
+                src = self._get_src(state)
+                self.add_finding(state, "Integer underflow at SUB instruction")
+            
+class UnitializedMemory(Detector):
+    '''
+        detects the use of not initialized memory
+    '''
+    def did_evm_read_memory(self, state, offset, value):
+        if not state.can_be_true(value != 0):
+            #Not initialized memory should be zero
+            return 
+        #check if offset is known
+        cbu = True #Can be unknown
+        for known_address in state.context['seth.detectors.initialized_memory']:
+            cbu = Operators.AND(cbu, offset!=known_address)
+
+        if state.can_be_true(cbu):
+            self.add_finding(state, "Potentially reading uninitialized memory at instruction")
+ 
+    def did_evm_write_memory(self, state, offset, value):
+        #concrete or symbolic write
+        state.context.setdefault('seth.detectors.initialized_memory',set()).add(offset)
+
+
+class UnitializedStorage(Detector):
+    '''
+        UnitializedStorage: detects the use of not initialized storage
+    '''
+    def did_evm_read_storage(self, state, offset, value):
+        if not state.can_be_true(value != 0):
+            #Not initialized memory should be zero
+            return 
+        #check if offset is known
+        cbu = True #Can be unknown
+        for known_address in state.context['seth.detectors.initialized_storage']:
+            cbu = Operators.AND(cbu, offset!=known_address)
+
+        if state.can_be_true(cbu):
+            self.add_finding(state, "Potentially reading uninitialized storage")
+ 
+    def did_evm_write_storage(self, state, offset, value):
+        #concrete or symbolic write
+        state.context.setdefault('seth.detectors.initialized_storage',set()).add(offset)
+
 
 def calculate_coverage(code, seen):
     '''     '''
@@ -26,14 +118,60 @@ def calculate_coverage(code, seen):
     return count*100.0/total
 
 class SolidityMetadata(object):
-    def __init__(self, name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi):
+    def __init__(self, name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi):
         self.name = name
         self.source_code = source_code
         self.init_bytecode = init_bytecode
         self.metadata = metadata
-        self.metadata_runtime = metadata_runtime
+
         self.hashes = hashes
         self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
+        self.runtime_bytecode = runtime_bytecode
+
+        # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
+        self.metadata_runtime = {}
+        end = None
+        if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and  ''.join(runtime_bytecode[-2:]) =='\x00\x29':
+            end = -9-33-2  #Size of metadata at the end of most contracts
+
+        asm_offset = 0
+        asm_pos = 0
+        md = dict(enumerate(metadata_runtime[asm_pos].split(':')))
+        s = int(md.get(0,0))
+        l = int(md.get(1,0))
+        f = int(md.get(2,0))
+        j = md.get(3,None)
+
+        for i in evm.EVMAsm.disassemble_all(self.runtime_bytecode[:end]):
+            if len(metadata_runtime[asm_pos]):
+                md = metadata_runtime[asm_pos]
+                if len(md):
+                    d = {}
+                    for p, k in enumerate(md.split(':')):
+                        if len(k):
+                            d[p]=k
+                            
+                    s = int(d.get(0,s))
+                    l = int(d.get(1,l))
+                    f = int(d.get(2,f))
+                    j = d.get(3,j)
+
+            self.metadata_runtime[asm_offset] = (s,l,f,j)
+            asm_pos += 1
+            asm_offset += i.size
+
+    def get_source_for(self, asm_pos):
+        ''' Solidity source code snippet related to `asm_pos` evm bytecode offset
+        '''
+        beg, size, _, _ = self.metadata_runtime[asm_pos]
+        output = ''
+        nl = self.source_code.count('\n')
+        snippet = self.source_code[beg:beg+size]
+        for l in snippet.split('\n'):
+            output += '    %s  %s\n'%(nl, l)
+            nl+=1
+        return output
 
     @property
     def signatures(self):
@@ -181,7 +319,7 @@ class ABI(object):
             value = -(value & mask) + (value & ~mask)
             return value, offset+32
         elif ty == u'':
-            return '', offset
+            return None, offset
         elif ty in (u'bytes', u'string'):
             dyn_offset = 4 + get_uint(256,offset)
             size = get_uint(256, dyn_offset)
@@ -210,7 +348,10 @@ class ABI(object):
         arguments = []
         for ty in types:
             val, off = ABI._consume_type(ty, data, off)
-            arguments.append(val)
+            if val is not None:
+                arguments.append(val)
+            else:
+                break
 
         if is_multiple:
             if func_name is not None:
@@ -361,7 +502,7 @@ class ManticoreEVM(Manticore):
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes', temp.name], stdout=PIPE)
+            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', temp.name], stdout=PIPE)
             outp = json.loads(p.stdout.read())
             assert len(outp['contracts']), "Only one contract by file supported"
             name, outp = outp['contracts'].items()[0]
@@ -371,7 +512,8 @@ class ManticoreEVM(Manticore):
             srcmap_runtime = outp['srcmap-runtime'].split(';')
             hashes = outp['hashes']
             abi = json.loads(outp['abi'])
-            return name, source_code, bytecode, srcmap, srcmap_runtime, hashes, abi
+            runtime = outp['bin-runtime'].decode('hex')
+            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi
 
     def __init__(self, procs=1):
         ''' A manticere EVM manager 
@@ -388,7 +530,9 @@ class ManticoreEVM(Manticore):
         initial_state.context['tx'] = []
         super(ManticoreEVM, self).__init__(initial_state)
 
+        self.detectors = {}
         self.metadata = {}
+
         #The following should go to manticore.context so we can use multiprocessing
         self.context['seth'] = {}
         self.context['seth']['_pending_transaction'] = None
@@ -399,7 +543,7 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_execute_instruction', self._will_execute_instruction_callback)
         self._executor.subscribe('did_execute_instruction', self._did_execute_instruction_callback)
-        self._executor.subscribe('did_read_code', self._did_read_code)
+        self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
 
@@ -498,10 +642,9 @@ class ManticoreEVM(Manticore):
             :return: an EVMAccount
         '''
 
-        name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi = self._compile(source_code)
-        self._output.store.save_value('contract.bytecode', init_bytecode)
+        name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi = self._compile(source_code)
         address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
-        self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, metadata, metadata_runtime, hashes, abi)
+        self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi)
         return EVMAccount(address, self, default_caller=owner)
 
     def create_contract(self, owner, balance=0, init=None, address=None):
@@ -630,7 +773,7 @@ class ManticoreEVM(Manticore):
                 #Get the ID of the single running state              
                 state_id = self.running_state_ids[0]
             else:
-                raise Exception("More than one state running. Do not know which one to choose.")
+                raise Exception("More than one state running.")
 
         if state_id == -1:
             state = self.initial_state
@@ -719,22 +862,28 @@ class ManticoreEVM(Manticore):
         ''' INTERNAL USE '''
         state.context.setdefault('seth.trace',[]).append((state.platform.current.address, pc))
 
-    def _did_read_code(self, state, offset, size):
+    def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset+size):
                 code_data.add((state.platform.current.address, i))
 
-
     def get_metadata(self, address):
         ''' Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         '''
-        try:
-            md = self.metadata[address]
-        except:
-            md = SolidityMetadata(None, None, None, None, None, None)
-        return md
+        return self.metadata.get(address)
+
+    def register_detector(self, d):
+        if not isinstance(d, Detector):
+            raise Exception("Not a Detector")
+        self.detectors[d.name] = d
+        self.register_plugin(d)
+
+    @property
+    def global_findings(self):
+        with self.locked_context('seth.global_findings', set) as global_findings:
+            return global_findings
 
     def report(self, state, ty=None):
         ''' Prints a small report on state. Prints a little something about state :) '''
