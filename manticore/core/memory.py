@@ -744,7 +744,7 @@ class Memory(object):
         else:
             return self.map_containing(index).perms
 
-    def access_ok(self, index, access):
+    def access_ok(self, index, access, force=False):
         if isinstance(index, slice):
             assert index.stop - index.start >= 0
             addr = index.start
@@ -752,22 +752,23 @@ class Memory(object):
                 if addr not in self:
                     return False
                 m = self.map_containing(addr)
-                size = min(m.end-addr, index.stop-addr)
 
-                if not m.access_ok(access):
+                if not force and not m.access_ok(access):
                     return False
-                addr += size
+
+                until_next_page = min(m.end-addr, index.stop-addr)
+                addr += until_next_page
             assert addr == index.stop
             return True
         else:
             if index not in self:
                 return False
             m = self.map_containing(index)
-            return m.access_ok(access)
+            return force or m.access_ok(access)
 
     #write and read potentially symbolic bytes at symbolic indexes
     def read(self, addr, size, force=False):
-        if not force and not self.access_ok(slice(addr, addr+size), 'r'):
+        if not self.access_ok(slice(addr, addr+size), 'r', force):
             raise InvalidMemoryAccess(addr, 'r')
 
         assert size > 0
@@ -820,7 +821,7 @@ class Memory(object):
 
     def write(self, addr, buf, force=False):
         size = len(buf)
-        if not force and not self.access_ok(slice(addr, addr + size), 'w'):
+        if not self.access_ok(slice(addr, addr + size), 'w', force):
             raise InvalidMemoryAccess(addr, 'w')
         assert size > 0
         stop = addr + size
@@ -1008,7 +1009,7 @@ class SMemory(Memory):
 
             for offset in xrange(size):
                 if issymbolic(value[offset]):
-                    if not force and not self.access_ok(address+offset, 'w'):
+                    if not self.access_ok(address+offset, 'w', force):
                         raise InvalidMemoryAccess(address+offset, 'w')
                     self._symbols[address+offset] = [(True, value[offset])]
                 else:
@@ -1034,13 +1035,8 @@ class SMemory(Memory):
 
         crashing_condition = False
         for base in solutions:
-            # if force is True, we only want to crash when address isn't mapped, not just when access fails
-            if force:
-                if any(i not in self for i in range(base, base+size, self.page_size)):
-                    crashing_condition = Operators.OR(address == base, crashing_condition)
-            else:
-                if any(not self.access_ok(i, access) for i in xrange(base, base + size, self.page_size)):
-                    crashing_condition = Operators.OR(address == base, crashing_condition)
+            if not self.access_ok(slice(base,base+size), access, force):
+                crashing_condition = Operators.OR(address == base, crashing_condition)
 
         if solver.can_be_true(self.constraints, crashing_condition):
             raise InvalidSymbolicMemoryAccess(address, access, size, crashing_condition)
