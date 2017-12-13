@@ -252,7 +252,6 @@ def concrete_input_to_constraints(ci, prev=None):
 
 def main():
 
-    paths = 1
     q = Queue.Queue()
 
     # todo randomly generated concrete start
@@ -273,7 +272,6 @@ def main():
         to_queue, new_datas = concrete_input_to_constraints(inp, cons)
         if len(new_datas) > 0:
             datas = new_datas
-        paths +=1
 
         for each in to_queue:
             q.put(each)
