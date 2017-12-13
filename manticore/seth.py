@@ -119,6 +119,7 @@ def calculate_coverage(code, seen):
     return count*100.0/total
 
 class SolidityMetadata(object):
+<<<<<<< HEAD
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
@@ -176,6 +177,55 @@ class SolidityMetadata(object):
             srcmap = self.srcmap
         
         beg, size, _, _ = srcmap[asm_offset]
+=======
+    def __init__(self, name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi):
+        self.name = name
+        self.source_code = source_code
+        self.init_bytecode = init_bytecode
+        self.metadata = metadata
+
+        self.hashes = hashes
+        self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
+        self.runtime_bytecode = runtime_bytecode
+
+        # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
+        self.metadata_runtime = {}
+        end = None
+        if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and  ''.join(runtime_bytecode[-2:]) =='\x00\x29':
+            end = -9-33-2  #Size of metadata at the end of most contracts
+
+        asm_offset = 0
+        asm_pos = 0
+        md = dict(enumerate(metadata_runtime[asm_pos].split(':')))
+        s = int(md.get(0,0))
+        l = int(md.get(1,0))
+        f = int(md.get(2,0))
+        j = md.get(3,None)
+
+        for i in evm.EVMAsm.disassemble_all(self.runtime_bytecode[:end]):
+            if len(metadata_runtime[asm_pos]):
+                md = metadata_runtime[asm_pos]
+                if len(md):
+                    d = {}
+                    for p, k in enumerate(md.split(':')):
+                        if len(k):
+                            d[p]=k
+                            
+                    s = int(d.get(0,s))
+                    l = int(d.get(1,l))
+                    f = int(d.get(2,f))
+                    j = d.get(3,j)
+
+            self.metadata_runtime[asm_offset] = (s,l,f,j)
+            asm_pos += 1
+            asm_offset += i.size
+
+    def get_source_for(self, asm_pos):
+        ''' Solidity source code snippet related to `asm_pos` evm bytecode offset
+        '''
+        beg, size, _, _ = self.metadata_runtime[asm_pos]
+>>>>>>> master
         output = ''
         nl = self.source_code.count('\n')
         snippet = self.source_code[beg:beg+size]
@@ -911,7 +961,7 @@ class ManticoreEVM(Manticore):
 
     @property
     def workspace(self):
-        return self._output._descriptor
+        return self._executor._workspace._store.uri
 
     def _generate_testcase_callback(self, state, name, message):
         '''
@@ -1082,10 +1132,6 @@ class ManticoreEVM(Manticore):
 
         logger.info("[+] Look for results in %s", self.workspace )
 
-
-    @property
-    def workspace(self):
-        return self._executor._workspace._store.uri
 
     def report(self, state, ty=None):
         ''' Prints a small report on state. Prints a little something about state :) '''
