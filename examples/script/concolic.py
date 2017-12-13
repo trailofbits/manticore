@@ -8,9 +8,6 @@ Limitations
 - only works for 3 ints of stdin
 
 Bugs
-- Will sometimes explore the same path more than once (a=0 b=4 c=0)
-    - The root cause of this was not completely identified, and instead we implemented
-      the trace set() to correct the behavior.
 - Will probably break if a newly discovered branch gets more input/does another read(2)
 - possibly unnecessary deepcopies
 
