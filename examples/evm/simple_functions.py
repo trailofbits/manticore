@@ -32,16 +32,4 @@ seth.transaction(  caller=user_account,
                    data=symbolic_data
                  )
 
-
-print "[+] There are %d reverted states now"% len(seth.final_state_ids)
-for state_id in seth.final_state_ids:
-    print seth.report(state_id)
-
-print "[+] There are %d alive states now"% len(seth.running_state_ids)
-for state_id in seth.running_state_ids:
-    print seth.report(state_id)
-
-print "[+] Global coverage:"
-print seth.coverage(contract_account)
-
-
+seth.finalize()

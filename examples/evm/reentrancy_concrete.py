@@ -125,5 +125,5 @@ print " attacker_account %x balance: %d"% (attacker_account, seth.get_balance(at
 print " user_account %x balance: %d"%  (user_account, seth.get_balance(user_account))
 print " contract_account %x balance: %d"%  (contract_account, seth.get_balance(contract_account))
 
-
+seth.finalize()
 

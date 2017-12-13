@@ -990,7 +990,7 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("Data: %s %s\n"% (state.solve_one(tx.data).encode('hex'), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: %s %s\n" % (return_data.encode('hex'), flagged(issymbolic(tx.return_data))))
+                    tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
 
                 
                 metadata = self.get_metadata(tx.address)
