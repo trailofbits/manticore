@@ -103,7 +103,7 @@ class UnitializedStorage(Detector):
 
 
 def calculate_coverage(code, seen):
-    '''     '''
+    ''' Calculates what % of code have been seen '''
     runtime_bytecode = code
     end = None
     if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
@@ -119,6 +119,18 @@ def calculate_coverage(code, seen):
     return count*100.0/total
 
 class SolidityMetadata(object):
+    def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings):
+        ''' Contract metadata for solidity based contracts '''
+        self.name = name
+        self.source_code = source_code
+        self._init_bytecode = init_bytecode
+        self._runtime_bytecode = runtime_bytecode
+        self.hashes = hashes
+        self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
+        self.warnings = warnings
+        self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
+        self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
+
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
@@ -154,17 +166,6 @@ class SolidityMetadata(object):
             asm_offset += i.size
 
         return new_srcmap 
-
-    def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings):
-        self.name = name
-        self.source_code = source_code
-        self._init_bytecode = init_bytecode
-        self._runtime_bytecode = runtime_bytecode
-        self.hashes = hashes
-        self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
-        self.warnings = warnings
-        self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
-        self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
     @property
     def runtime_bytecode(self):
@@ -281,18 +282,20 @@ class ABI(object):
         assert isinstance(value, list)
         serialized = [ABI.serialize_uint(len(value))]
         for item in value:
+            #TODO check all values are the same type
             serialized.append(ABI.serialize(item))    
         return reduce(lambda x,y: x+y, serialized)
 
     @staticmethod
-    def make_function_id( method_name):
+    def make_function_id( method_name_and_signature):
+        ''' Makes function hash id from method signature '''
         s = sha3.keccak_256()
-        s.update(method_name)
+        s.update(method_name_and_signature)
         return s.hexdigest()[:8].decode('hex')
 
     @staticmethod
     def make_function_arguments(*args):
-        
+        ''' Serializes a sequence of arguments '''
         if len(args) == 0:
             return () 
         args = list(args)
@@ -329,10 +332,9 @@ class ABI(object):
         result.append(ABI.make_function_arguments(*args))
         return reduce(lambda x,y: x+y, result)
 
-
-
     @staticmethod        
     def _consume_type(ty, data, offset):
+        ''' INTERNAL parses a value of type from data '''
         def get_uint(size, offset):
             def simplify(x):
                 value = arithmetic_simplifier(x)
@@ -370,8 +372,9 @@ class ABI(object):
 
     @staticmethod
     def parse(signature, data):
-        is_multiple = '(' in signature
+        ''' Deserialize function ID and arguments specified in `signature` from `data` '''
 
+        is_multiple = '(' in signature
         if is_multiple:
             func_name = signature.split('(')[0]
             types = signature.split('(')[1][:-1].split(',')
@@ -635,15 +638,22 @@ class ManticoreEVM(Manticore):
             yield state
 
     def count_states(self):
-       return len(self.terminated_state_ids + self.running_state_ids)
+        ''' Total states count '''
+        return len(self.terminated_state_ids + self.running_state_ids)
 
     def count_running_states(self):
-       return len(self.running_state_ids)
+        ''' Running states count '''
+        return len(self.running_state_ids)
 
     def count_terminated_states(self):
-       return len(self.terminated_state_ids)
+        ''' Terminated states count '''
+        return len(self.terminated_state_ids)
         
     def terminate_state_id(self, state_id):
+        ''' Manually  terminates a states by state_id.
+            Moves the state from the running list into the terminated list and 
+            generates a testcase for it
+        '''
         if state_id != -1:
             with self.locked_context('seth') as seth_context:
                 lst = seth_context['_saved_states']
@@ -715,7 +725,6 @@ class ManticoreEVM(Manticore):
             :type args: tuple
             :return: an EVMAccount
         '''
-
         name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings = self._compile(source_code)
         address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
         #FIXME different states "could"(VERY UNLIKELY) have different contracts 
