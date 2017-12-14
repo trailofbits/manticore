@@ -1745,10 +1745,20 @@ class EVM(Eventful):
     def read_buffer(self, offset, size):
         if size:
             self._allocate(offset+size)
-        buf = []
+
+        data = []
         for i in xrange(size):
-            buf.append(Operators.CHR(self._load(offset+i)))
-        return buf
+            data.append(Operators.CHR(self._load(offset+i)))
+
+        if any(map(issymbolic, data)):
+            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
+            for i in range(len(data)):
+                data_symb[i] = Operators.ORD(data[i])
+            data = data_symb
+        else:
+            data = ''.join(data)
+
+        return data
 
     def write_buffer(self, offset, buf):
         count = 0
@@ -1992,7 +2002,7 @@ class EVMWorld(Platform):
         return self.storage[address]['storage'].items()
 
     def has_storage(self, address):
-        return self.storage[address]['storage'] != 0
+        return len(self.storage[address]['storage'].items()) != 0
 
     def set_balance(self, address, value):
         self.storage[int(address)]['balance'] = value
@@ -2011,30 +2021,6 @@ class EVMWorld(Platform):
 
     def has_code(self, address):
         return len(self.storage[address]['code']) > 0
-
-    def send_ether(self, src, dst, value):
-        src_balance = self.get_balance(src)
-        dst_balance = self.get_balance(dst)
-        #discarding absurd amount of ether
-        self.constraints.add(src_balance + value >= src_balance)
-
-        if issymbolic(src_balance) or issymbolic(value):
-            res = solver.get_all_values(self._constraints, src_balance < value)
-            if set(res) == set([True, False]): 
-                raise Concretize('Forking on available funds',
-                                 expression = src_balance < value,
-                                 setstate=lambda a,b: None,
-                                 policy='ALL')
-            if set(res) == set([True]):
-                self._pending_transaction = None
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
-        else:
-            if src_balance < value:
-                self._pending_transaction = None
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
-
-        self.storage[dst]['balance'] += value
-        self.storage[src]['balance'] -= value
 
 
     def log(self, address, topic, data):
@@ -2098,6 +2084,8 @@ class EVMWorld(Platform):
         if not rollback:
             if self.depth:
                 self.current.global_storage = vm.global_storage
+                self.current.logs += vm.logs
+                self.current.suicides = self.current.suicides.union(vm.suicides)
             else:
                 self._global_storage = vm.global_storage
                 self._deleted_address = self._deleted_address.union(vm.suicides)
@@ -2195,8 +2183,7 @@ class EVMWorld(Platform):
 
         self.storage[address]['storage'] = EVMMemory(self.constraints, 256, 256)
 
-
-        self._pending_transaction = ('Create', address, origin, price, '', origin, balance, init, header)
+        self._pending_transaction = ('Create', address, origin, price, '', origin, balance, ''.join(init), header)
 
         if run:
             assert False
@@ -2215,6 +2202,7 @@ class EVMWorld(Platform):
         caller = self.current.address
         price = self.current.price
         header = {'timestamp': 100}  #FIXME
+
         self.create_contract(origin, price, address=None, balance=value, init=bytecode, run=False)
         self._process_pending_transaction()
 
@@ -2238,6 +2226,8 @@ class EVMWorld(Platform):
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
+        else:
+            data = ''.join(data)
         bytecode = self.get_code(address)
         self._pending_transaction = ('Call', address, origin, price, data, caller, value, bytecode, header)
 
@@ -2255,21 +2245,74 @@ class EVMWorld(Platform):
                 pass
 
     def _process_pending_transaction(self):
+        def err():
+            if self.depth == 0:
+                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+
+
         if self._pending_transaction is None:
             return
         assert self.current is None or self.current.last_exception is not None
 
         ty, address, origin, price, data, caller, value, bytecode, header = self._pending_transaction
-        self.send_ether(caller, address, value)
+
+
+        src_balance = self.get_balance(caller) #from
+        dst_balance = self.get_balance(address) #to
+
+        #discarding absurd amount of ether (no ether overflow)
+        self.constraints.add(src_balance + value >= src_balance)
+
+        failed = False
+
+        if self.depth > 1024:
+            failed=True
+
+        if not failed:
+            enough_balance = src_balance >= value
+            if issymbolic(enough_balance):
+                enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
+
+                if set(enough_balance_solutions) == set([True, False]): 
+                    raise Concretize('Forking on available funds',
+                                     expression = src_balance < value,
+                                     setstate=lambda a,b: None,
+                                     policy='ALL')
+
+                if set(enough_balance_solutions) == set([False]):
+                    failed = True
+            else:
+                if not enough_balance:
+                    failed = True
+
         self._pending_transaction=None
+
+
+        if ty == 'Create': 
+            data = bytecode
+ 
+        is_human_tx = ( self.depth == 0 )
+
+        if failed:
+            if is_human_tx: #human transaction
+                tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
+                self._transactions.append(tx)
+            else:
+                self.current._push(0)
+                return
+
+        #Here we have enoug funds and room in the callstack
+
+        self.storage[address]['balance'] += value
+        self.storage[caller]['balance'] -= value
+
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
         self._push_vm(new_vm)
-        if self.depth == 1:
 
+        if is_human_tx:
             #handle human transactions
             if ty == 'Create':
                 self.current.last_exception = Create(None, None, None)
-                data = bytecode
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 

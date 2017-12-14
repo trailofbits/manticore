@@ -43,4 +43,6 @@ seth.transaction(  caller=user_account,
                  )
 
 seth.finalize()
+print "[+] Look for results in %s"% seth.workspace
+
 

@@ -310,6 +310,8 @@ class State(Eventful):
         :return: Concrete value
         :rtype: int
         '''
+        if not issymbolic(expr):
+            return expr
         return self._solver.get_value(self._constraints, expr)
 
     def solve_n(self, expr, nsolves):

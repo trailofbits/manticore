@@ -113,16 +113,8 @@ exploit_account.proxycall(seth.SByte(4))
 print "[+] The attacker destroys the exploit contract and profit" 
 exploit_account.get_money()
 
-#print "[+] There are %d reverted states now"% len(seth.final_state_ids)
-#for state_id in seth.final_state_ids:
-#     seth.report(state_id)
-
-print "[+] There are %d alive states now"% (len(seth.running_state_ids))
-for state_id in seth.running_state_ids:
-    world = seth.get_world(state_id)
-
-print "[+] Global coverage:"
-print seth.coverage(contract_account, ty='SUICIDE')
-
-
+#Let seth know we are not sending more transactions so it can output 
+# info about running states and global statistics
+seth.finalize()
+print "[+] Look for results in %s"% seth.workspace
 

@@ -24,7 +24,7 @@ contract Test {
 user_account = seth.create_account(balance=1000)
 contract_account = seth.solidity_create_contract(source_code, owner=user_account)
 
-symbolic_data = seth.SByte(4) 
+symbolic_data = seth.make_symbolic_buffer(4) 
 symbolic_value = None 
 seth.transaction(  caller=user_account,
                    address=contract_account,
@@ -33,3 +33,5 @@ seth.transaction(  caller=user_account,
                  )
 
 seth.finalize()
+print "[+] Look for results in %s"% seth.workspace
+
