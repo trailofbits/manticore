@@ -1052,7 +1052,7 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
 
                 #The result if any RETURN or REVERT
-                tx_summary.write("Type: %s -> %s\n" % tx.sort)
+                tx_summary.write("Type: %s\n" % tx.sort)
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
