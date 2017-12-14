@@ -1045,8 +1045,12 @@ class ManticoreEVM(Manticore):
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
-                        is_return_symbolic = issymbolic(return_data)
-                        tx_summary.write('return_data: %s %s\n' % (state.solve_one(return_data).encode('hex'), flagged(is_return_symbolic)))
+                        is_return_symbolic = any(map(issymbolic, return_data))
+                        return_values = tuple(map(state.solve_one, return_data))
+                        if len(return_values) == 1:
+                            return_values = return_values[0]
+
+                        tx_summary.write('return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
                         is_something_symbolic = is_something_symbolic or is_return_symbolic
 
 

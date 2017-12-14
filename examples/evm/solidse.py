@@ -1,20 +1,20 @@
 from manticore.seth import ManticoreEVM, calculate_coverage, ABI
 
 ################ Script #######################
-seth = ManticoreEVM(procs=8)
+m = ManticoreEVM(procs=8)
 
-seth.verbosity(0)
+m.verbosity(0)
 #And now make the contract account to analyze
 # cat  | solc --bin 
 source_code = file(sys.argv[1],'rb').read()
 
-user_account = seth.create_account(balance=1000)
+user_account = m.create_account(balance=1000)
 print "[+] Creating a user account", user_account
 
-contract_account = seth.solidity_create_contract(source_code, owner=user_account)
+contract_account = m.solidity_create_contract(source_code, owner=user_account)
 print "[+] Creating a contract account", contract_account
 
-attacker_account = seth.create_account(balance=1000)
+attacker_account = m.create_account(balance=1000)
 print "[+] Creating a attacker account", attacker_account
 
 
@@ -23,23 +23,23 @@ new_coverage = 0
 tx_count = 0
 while new_coverage != last_coverage and new_coverage < 100:
 
-    symbolic_data = seth.make_symbolic_buffer(320)
-    symbolic_value = seth.make_symbolic_value() 
+    symbolic_data = m.make_symbolic_buffer(320)
+    symbolic_value = m.make_symbolic_value() 
 
-    seth.transaction(caller=attacker_account,
+    m.transaction(caller=attacker_account,
                     address=contract_account,
                     data=symbolic_data,
                     value=symbolic_value )
 
     tx_count += 1
     last_coverage = new_coverage
-    new_coverage = seth.global_coverage(contract_account)
+    new_coverage = m.global_coverage(contract_account)
     
     print "[+] Coverage after %d transactions: %d%%"%(tx_count, new_coverage)
-    print "[+] There are %d reverted states now"% len(seth.terminated_state_ids)
-    print "[+] There are %d alive states now"% len(seth.running_state_ids)
+    print "[+] There are %d reverted states now"% len(m.terminated_state_ids)
+    print "[+] There are %d alive states now"% len(m.running_state_ids)
 
-for state in seth.all_states:
+for state in m.all_states:
     print "="*20
     blockchain = state.platform
     for tx in blockchain.transactions: #external transactions
@@ -52,7 +52,7 @@ for state in seth.all_states:
         print "\tresult: %s" % tx.result  #The result if any RETURN or REVERT
         print "\treturn_data: %r" % state.solve_one(tx.return_data)  #The returned data if RETURN or REVERT
 
-        metadata = seth.get_metadata(tx.address)
+        metadata = m.get_metadata(tx.address)
         if tx.sort == 'Call':
             if metadata is not None:
                 function_id = tx.data[:4]  #hope there is enough data
@@ -65,7 +65,7 @@ for state in seth.all_states:
 
         if tx.result in ('THROW', 'REVERT', 'SELFDESTRUCT'):
             if metadata is not None:
-                address, offset = state.context['seth.trace'][-1]
+                address, offset = state.context['m.trace'][-1]
                 print metadata.get_source_for(offset)
             
 
@@ -83,15 +83,15 @@ for state in seth.all_states:
     for address in blockchain.contract_accounts: 
         code = blockchain.get_code(address)
         balance = blockchain.get_balance(address)
-        trace = set(( offset for address_i, offset in state.context['seth.trace'] if address == address_i))        
+        trace = set(( offset for address_i, offset in state.context['m.trace'] if address == address_i))        
         print calculate_coverage(code, trace) #coverage % for address in this state
 
 # All accounts ever created by the script 
 # (may not all be alife in all states)
 # (accounts created by contract code are not in this list )
 print "[+] Global coverage:"
-for address in seth.contract_accounts: 
-    print address, seth.global_coverage(address) #coverage % for address in this state
+for address in m.contract_accounts: 
+    print address, m.global_coverage(address) #coverage % for address in this state
 
 
 

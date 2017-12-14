@@ -1734,9 +1734,8 @@ class EVM(Eventful):
         if issymbolic(size):
             raise ConcretizeStack(2, policy='ONE')
 
-        memlog = []
-        for i in range(size):
-            memlog.append(self._load(address+i))
+        memlog = self.read_buffer(address, size)
+
         self.logs.append(EVMLog(self.address, memlog, topics))
         logger.info('LOG %r %r', memlog, topics)
 

