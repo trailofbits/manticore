@@ -1200,11 +1200,11 @@ class ManticoreEVM(Manticore):
                     for i in evm.EVMAsm.disassemble_all(md.init_bytecode) :
                         if (address, i.offset) in seen:
                             count += 1
-                            global_init_asm.write( '* ') 
+                            global_init_asm.write( '*') 
                         else:
-                            global_init_asm.write( '  ') 
+                            global_init_asm.write( ' ') 
 
-                        global_init_asm.write('%s\n'%i)
+                        global_init_asm.write('%4x: %s\n'%(i.offset, i))
                         total += 1
 
             with self._output.save_stream('global_%s.init_visited'%md.name) as f :
@@ -1253,8 +1253,7 @@ class ManticoreEVM(Manticore):
 
         return count*100.0/total
 
-
-    #Fixme. This is for avoinding  super._did_finish_run_callback
+    #TODO: find a better way to suppress execution of Manticore._did_finish_run_callback    
     def _did_finish_run_callback(self):
         _shared_context = self.context
  
