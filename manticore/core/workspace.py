@@ -398,8 +398,6 @@ class Workspace(object):
         Remove a state from storage identified by `state_id`.
 
         :param state_id: The state reference of what to load
-        :return: The deserialized state
-        :rtype: State
         """
         return self._store.rm('{}{:08x}{}'.format(self._prefix, state_id, self._suffix))
 
