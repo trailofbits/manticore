@@ -10,6 +10,7 @@ from ..core.executor import TerminateState
 from ..utils.helpers import issymbolic
 from ..binary import CGCElf
 from ..platforms.platform import Platform
+from ..platforms.platform import RestartSyscall, Deadlock, BadFd, SyscallNotImplemented
 from contextlib import closing
 import StringIO
 import logging
