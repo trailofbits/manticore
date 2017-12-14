@@ -158,13 +158,31 @@ class SolidityMetadata(object):
     def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings):
         self.name = name
         self.source_code = source_code
-        self.init_bytecode = init_bytecode
+        self._init_bytecode = init_bytecode
+        self._runtime_bytecode = runtime_bytecode
         self.hashes = hashes
         self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
-        self.runtime_bytecode = runtime_bytecode
-        self.srcmap_runtime = self.__build_source_map(runtime_bytecode, srcmap_runtime)
-        self.srcmap = self.__build_source_map(init_bytecode, srcmap)
         self.warnings = warnings
+        self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
+        self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
+
+    @property
+    def runtime_bytecode(self):
+        ''' Removes metadata from the tail of bytecode '''
+        end = None
+        if  ''.join(self._runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and  ''.join(self._runtime_bytecode[-2:]) =='\x00\x29':
+            end = -9-33-2  #Size of metadata at the end of most contracts
+        return self._runtime_bytecode[:end]
+    @property
+    def init_bytecode(self):
+        ''' Removes metadata from the tail of bytecode '''
+        end = None
+        if  ''.join(self._init_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and  ''.join(self._init_bytecode[-2:]) =='\x00\x29':
+            end = -9-33-2  #Size of metadata at the end of most contracts
+        return self._init_bytecode[:end]
+
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset
@@ -700,7 +718,10 @@ class ManticoreEVM(Manticore):
 
         name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings = self._compile(source_code)
         address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
+        #FIXME different states "could"(VERY UNLIKELY) have different contracts 
+        # asociated with the same address 
         self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings)
+
         return EVMAccount(address, self, default_caller=owner)
 
     def create_contract(self, owner, balance=0, init=None, address=None):
@@ -911,7 +932,13 @@ class ManticoreEVM(Manticore):
         assert state.platform.constraints == state.platform.current.constraints
         logger.debug("%s", state.platform.current)
         #print state.platform.current
-        with self.locked_context('coverage', set) as coverage:
+
+        if 'Call' in str(type(state.platform.current.last_exception)):
+            coverage_context_name = 'runtime_coverage'
+        else:
+            coverage_context_name = 'init_coverage'
+
+        with self.locked_context(coverage_context_name, set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
         
     def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
@@ -1133,191 +1160,61 @@ class ManticoreEVM(Manticore):
                 global_summary.write( '\n\nCompiler warnings for %s:\n' % md.name )
                 global_summary.write( md.warnings )
 
+        for address, md in self.metadata.items():
+            with self._output.save_stream('global_%s.sol'%md.name) as global_src :
+                global_src.write(md.source_code)
+            with self._output.save_stream('global_%s.runtime_bytecode'%md.name) as global_runtime_bytecode :
+                global_runtime_bytecode.write(md.runtime_bytecode)
+            with self._output.save_stream('global_%s.init_bytecode'%md.name) as global_init_bytecode :
+                global_init_bytecode.write(md.init_bytecode)
+
+
+            with self._output.save_stream('global_%s.runtime_asm'%md.name) as global_runtime_asm :
+                runtime_bytecode = md.runtime_bytecode
+
+                with self.locked_context('runtime_coverage') as seen:
+
+                    count, total = 0, 0
+                    for i in evm.EVMAsm.disassemble_all(runtime_bytecode) :
+                        if (address, i.offset) in seen:
+                            count += 1
+                            global_runtime_asm.write( '*') 
+                        else:
+                            global_runtime_asm.write( ' ') 
+
+                        global_runtime_asm.write('%4x: %s\n'%(i.offset, i))
+                        total += 1
+
+            with self._output.save_stream('global_%s.init_asm'%md.name) as global_init_asm :
+                with self.locked_context('init_coverage') as seen:
+                    count, total = 0, 0
+                    for i in evm.EVMAsm.disassemble_all(md.init_bytecode) :
+                        if (address, i.offset) in seen:
+                            count += 1
+                            global_init_asm.write( '* ') 
+                        else:
+                            global_init_asm.write( '  ') 
+
+                        global_init_asm.write('%s\n'%i)
+                        total += 1
+
+            with self._output.save_stream('global_%s.init_visited'%md.name) as f :
+                with self.locked_context('init_coverage') as seen:
+                    visited = set((o for (a,o) in seen if a == address))
+                    for o in sorted(visited):
+                        f.write('0x%x\n'%o)
+
+            with self._output.save_stream('global_%s.runtime_visited'%md.name) as f :
+                with self.locked_context('runtime_coverage') as seen:
+                    visited = set()
+                    for (a,o) in seen:
+                        if a == address:
+                            visited.add(o)
+                    for o in sorted(visited):
+                        f.write('0x%x\n'%o)
+
+
         logger.info("[+] Look for results in %s", self.workspace )
-
-
-    def report(self, state, ty=None):
-        ''' Prints a small report on state. Prints a little something about state :) '''
-        world = state.platform
-
-        output = StringIO.StringIO()
-
-        def compare_buffers(a, b):
-            if len(a) != len(b):
-                return False
-            cond = True
-            for i in range(len(a)):
-                cond = Operators.AND(a[i]==b[i], cond)
-                if cond is False:
-                    return False
-            return cond
-
-        trace = state.context['seth.trace']
-        last_address, last_pc = trace[-1]        
-        #Try to recover metadata from solidity based contracts
-        try:
-            md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = self.context['seth']['metadata'][last_address]
-        except:
-            md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None, None, None, None, None, None 
-
-        # try to get the runtime bytecode from the account
-        try:
-            runtime_bytecode = world.storage[last_address]['code']
-        except:
-            runtime_bytecode = ''   
-
-        e = state.context['last_exception']
-        if ty is not None:
-            if str(e) != ty:
-                return
-
-        output.write("REPORT:" + str(e)) 
-
-        try:
-            # Magic number comes from here:
-            # http://solidity.readthedocs.io/en/develop/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
-            asm = list(evm.EVMAsm.disassemble_all(runtime_bytecode[:-9-33-2]))
-            asm_offset = 0
-            pos = 0
-            source_pos = md_metadata_runtime[pos]
-            for i in asm:
-                if len(md_metadata_runtime[pos]):
-                    source_pos = md_metadata_runtime[pos]
-                if asm_offset == last_pc:
-                    break
-                asm_offset += i.size
-                pos +=1
-
-            beg, size = map(int, source_pos.split(':'))
-
-            output.write( " at:" )
-            nl = md_source_code.count('\n')
-            snippet = md_source_code[beg:beg+size]
-            for l in snippet.split('\n'):
-                output.write('    %s  %s\n'%(nl, l))
-                nl+=1
-        except Exception as e:
-            output.write('\n')
-
-        output.write("BALANCES\n")
-        for address, account in world.storage.items():
-            if isinstance(account['balance'], Constant):
-                account['balance'] = account['balance'].value
-
-            if issymbolic(account['balance']):
-                m, M = solver.minmax(world.constraints, arithmetic_simplifier(account['balance']))
-                if m == M:
-                    output.write('\t%x %r\n'%(address, M))
-                else:
-                    output.write('\t%x range:[%x, %x]\n'%(address, m, M))
-            else:
-                output.write('\t%x %d wei\n'%(address, account['balance']))
-
-        if world.logs:
-            output.write('LOGS:\n')
-            for address, memlog, topics in world.logs:
-                try:
-                    res = memlog
-                    if isinstance(memlog, Expression):
-                        res = state.solve_one(memlog)
-                        if isinstance(memlog, Array):
-                            state.constrain(compare_buffers(memlog, res))
-                        else:
-                            state.constrain(memlog== res)
-
-                    res1 = address
-                    if isinstance(address, Expression):
-                        res = state.solve_one(address)
-                        if isinstance(address, Array):
-                            state.constrain(compare_buffers(address, res))
-                        else:
-                            state.constrain(address == res)
-
-                    output.write('\t %s: %r %s\n' %( hex(res1), ''.join(map(chr,res)), topics))
-                except Exception,e:
-                    output.write('\t %r %r %r\n' % (address,  repr(memlog), topics))
-
-        output.write('INPUT SYMBOLS\n')
-        for expr in state.input_symbols:
-            res = state.solve_one(expr)
-            if isinstance(expr, Array):
-                state.constrain(compare_buffers(expr, res))
-            else:
-                state.constrain(expr== res)
-   
-            try:
-                output.write('\t %s: %s\n'%( expr.name, res.encode('hex')))
-            except:
-                output.write('\t %s: %s\n'% (expr.name, res))
-        
-        #print "Constraints:"
-        #print state.constraints
-
-        tx = state.context['tx']
-        def x(expr):
-            if issymbolic(expr):
-                res = state.solve_one(expr)
-                if isinstance(expr, Array):
-                    state.constrain(compare_buffers(expr, res))
-                else:
-                    state.constrain(expr == res)
-                expr=res
-            if isinstance(expr, tuple):
-                expr = ''.join(expr)
-            return expr
-        tx_num = 0
-        for ty, caller, address, value, data in tx:
-            tx_num += 1
-            def consume_type(ty, data, offset):
-                if ty == u'uint256':
-                    return '0x'+data[offset:offset+64], offset+32*2
-                elif ty == u'address':
-                    return '0x'+data[offset+24:offset+64], offset+32*2
-                elif ty == u'int256':
-                    value = int('0x'+data[offset:offset+64],16)
-                    mask = 2**(256 - 1)
-                    value = -(value & mask) + (value & ~mask)
-                    return value, offset+32*2
-                elif ty == u'':
-                    return '', offset
-                elif ty in (u'bytes', u'string'):
-                    dyn_offset = (4 + int('0x'+data[offset:offset+64],16))*2
-                    size = int('0x'+data[dyn_offset:dyn_offset+64],16)
-                    return data[dyn_offset+64:dyn_offset+64+size*2],offset+8
-                else:
-                    raise NotImplemented(ty)
-
-            output.write('TRANSACTION %d - %s' % (tx_num, ty))
-            try:
-                md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes= self.context['seth']['metadata'][address]
-            except:
-                md_name, md_source_code, md_init_bytecode, md_metadata, md_metadata_runtime, md_hashes = None,None,None,None,None,None 
-
-
-            output.write('\t From: 0x%x\n'% x(caller) )
-            output.write('\t To: 0x%x\n'%x(address))
-            output.write('\t Value: %d wei\n'%x(value))
-            xdata = x(data).encode('hex')
-            output.write('\t Data: %s\n'% xdata)
-            if ty == 'CALL':
-                done = False
-                try:
-                    rhashes = dict((hsh, signature) for signature, hsh in md_hashes.iteritems())
-                    signature = rhashes.get(xdata[:8], '{fallback}()')
-                    done = True
-                    func_name = signature.split('(')[0]
-                    output.write('\t Function: %s(' % func_name)
-                    types = signature.split('(')[1][:-1].split(',')
-                    off = 8
-                    for ty in types:
-                        if off != 8:
-                            print ',',
-                        val, off = consume_type(ty, xdata, off)
-                        output.write('%s'%val)
-                    output.write(')\n')
-                except Exception,e:
-                    output.write('%s %s\n'%(e, xdata))
-        return output.getvalue()
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
@@ -1334,79 +1231,21 @@ class ManticoreEVM(Manticore):
                 break
 
 
-        with self.locked_context('coverage') as coverage:
+        with self.locked_context('runtime_coverage') as coverage:
             seen = coverage
         #runtime_bytecode = world.storage[account_address]['code']
         runtime_bytecode = self.get_metadata(account_address).runtime_bytecode
 
-
-        end = None
-        if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and  ''.join(runtime_bytecode[-2:]) =='\x00\x29':
-            end = -9-33-2  #Size of metadata at the end of most contracts
-
         count, total = 0, 0
-        for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]) :
+        for i in evm.EVMAsm.disassemble_all(runtime_bytecode) :
             if (account_address, i.offset) in seen:
                 count += 1            
             total += 1
 
         return count*100.0/total
 
-    def report_coverage(self, account_address):
-        ''' Output a code coverage report for contract account_address '''
-        account_address = int(account_address)
-        #This will just pick one of the running states.
-        #This assumes the code and the accounts are the same in all versions of the world
-        #Search one state in which the account_address exists
-        world=None
-        for state_id in self.all_state_ids:
-            world = self.get_world(state_id)
-            if account_address in world.storage:
-                break
 
-        seen = self.context['coverage'] #.union( self.context.get('code_data', set()))
-        runtime_bytecode = world.storage[account_address]['code']
-        class bcolors:
-            HEADER = '\033[95m'
-            OKBLUE = '\033[94m'
-            OKGREEN = '\033[92m'
-            WARNING = '\033[93m'
-            FAIL = '\033[91m'
-            ENDC = '\033[0m'
-            BOLD = '\033[1m'
-            UNDERLINE = '\033[4m'
-
-
-        end = None
-        if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and  ''.join(runtime_bytecode[-2:]) =='\x00\x29':
-            end = -9-33-2
-
-
-        output = ''
-        offset = 0
-        count = 0
-        total = 0
-        for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]) :
-            
-            if (account_address, offset) in seen:
-                output += bcolors.OKGREEN
-                output += "** 0x%04x %s\n"%(offset, i)
-                output += bcolors.ENDC
-                count += 1
-            else:
-                output += "   0x%04x %s\n"%(offset, i)
-            
-            total += 1
-            offset += i.size
-
-        output += "Total assembler lines: %d\n"% total
-        output += "Total assembler lines visited: %d\n"% count
-        output += "Coverage: %2.2f%%\n"%  (count*100.0/total)
-        return output
-
-
+    #Fixme. This is for avoinding  super._did_finish_run_callback
     def _did_finish_run_callback(self):
         _shared_context = self.context
  
