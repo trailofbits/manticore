@@ -105,7 +105,7 @@ def ethereum_cli(args):
 
 
     m.finalize()
-    print "[+] Look for results in %s"% seth.workspace
+    print "[+] Look for results in %s"% m.workspace
 
 
 
