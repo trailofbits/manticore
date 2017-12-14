@@ -104,7 +104,7 @@ def ethereum_cli(args):
         print "[+] There are %d alive states now"% len(m.running_state_ids)
 
 
-    seth.finalize()
+    m.finalize()
     print "[+] Look for results in %s"% seth.workspace
 
 
