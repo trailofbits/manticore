@@ -690,7 +690,7 @@ class Manticore(Eventful):
                 continue
 
             symbols = section.get_symbol_by_name(symbol)
-            if len(symbols) == 0:
+            if not symbols:
                 continue
 
             return symbols[0].entry['st_value']
