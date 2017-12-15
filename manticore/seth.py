@@ -1,3 +1,5 @@
+import string
+
 from . import Manticore
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
 from .core.smtlib.visitors import arithmetic_simplifier
@@ -1098,17 +1100,17 @@ class ManticoreEVM(Manticore):
         #logs
         with testcase.open_stream('logs') as logs_summary:
             is_something_symbolic = False
-            if len(blockchain.logs) > 0:
-                for log_item in blockchain.logs:
-                    logs_summary.write("Address: %x\n" % log_item.address)
-                    is_log_symbolic = issymbolic(log_item.memlog)
-                    is_something_symbolic = is_log_symbolic or is_something_symbolic
-                    logs_summary.write("Memlog: %s %s\n" % (state.solve_one(log_item.memlog).encode('hex'), flagged(is_log_symbolic)))
-                    logs_summary.write("Topics:\n")
-                    for topic in log_item.topics:
-                        logs_summary.write("\t%d) %x %s" %(log_item.topics.index(topic), state.solve_one(topic), flagged(issymbolic(topic))))
-            else:
-                logs_summary.write('No logs\n')
+            for log_item in blockchain.logs:
+                is_log_symbolic = issymbolic(log_item.memlog)
+                is_something_symbolic = is_log_symbolic or is_something_symbolic
+                solved_memlog = state.solve_one(log_item.memlog)
+                printable_bytes = ''.join(filter(lambda c: c in string.printable, solved_memlog))
+
+                logs_summary.write("Address: %x\n" % log_item.address)
+                logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
+                logs_summary.write("Topics:\n")
+                for topic in log_item.topics:
+                    logs_summary.write("\t%d) %x %s" %(log_item.topics.index(topic), state.solve_one(topic), flagged(issymbolic(topic))))
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
