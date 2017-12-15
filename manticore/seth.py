@@ -531,7 +531,7 @@ class ManticoreEVM(Manticore):
     @staticmethod
     def compile(source_code):
         ''' Get initialization bytecode from a solidity source code '''
-        name, source_code, bytecode, srcmap, srcmap_runtime, hashes, abi = ManticoreEVM._compile(source_code)
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code)
         return bytecode
 
     @staticmethod
