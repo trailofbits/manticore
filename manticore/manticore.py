@@ -370,11 +370,10 @@ class Manticore(Eventful):
     ###########################################################################
     # Workers                                                                 #
     ###########################################################################
-    def _start_workers(self, num_processes, profiling=False, verbose=True):
+    def _start_workers(self, num_processes, profiling=False):
         assert num_processes > 0, "Must have more than 0 worker processes"
 
-        if verbose:
-            logger.info("Starting %d processes.", num_processes)
+        logger.debug("Starting %d processes.", num_processes)
 
         if profiling:
             def profile_this(func):

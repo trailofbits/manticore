@@ -814,10 +814,6 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def _start_workers(self, *args, **kwargs):
-        return super(ManticoreEVM, self)._start_workers(verbose=False, *args,
-                **kwargs)
-
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
 
