@@ -1270,7 +1270,8 @@ class ManticoreEVM(Manticore):
 
         return count*100.0/total
 
-    #TODO: find a better way to suppress execution of Manticore._did_finish_run_callback    
+    # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
+    # We suppress because otherwise we log it many times and it looks weird.
     def _did_finish_run_callback(self):
-        _shared_context = self.context
+        pass
 
