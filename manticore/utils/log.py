@@ -29,7 +29,7 @@ all_loggers = []
 
 def init_logging():
     global all_loggers
-    all_loggers = logging.getLogger().manager.loggerDict.keys()
+    loggers = logging.getLogger().manager.loggerDict.keys()
         
     ctxfilter = ContextFilter()
     logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
@@ -37,15 +37,18 @@ def init_logging():
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(logfmt)
     handler.setFormatter(formatter)
-    for name in all_loggers:
+    for name in loggers:
         logger = logging.getLogger(name)
         if not name.startswith('manticore'):
+            continue
+        if name in all_loggers:
             continue
         logger.addHandler(handler)
         logger.propagate = False
         logger.setLevel(logging.WARNING)
         logger.addFilter(ctxfilter)
         logger.setState = types.MethodType(loggerSetState, logger)
+        all_loggers.append(name)
 
 def loggerSetState(logger, stateid):
     logger.filters[0].stateid = stateid
