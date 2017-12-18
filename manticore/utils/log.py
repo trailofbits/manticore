@@ -62,7 +62,7 @@ def set_verbosity(setting):
         # 1
         [
             ('manticore.manticore', logging.INFO),
-            ('manticore.__main__', logging.INFO),
+            ('manticore.main', logging.INFO),
         ],
         # 2 (-v)
         [

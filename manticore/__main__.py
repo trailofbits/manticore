@@ -1,9 +1,17 @@
 import sys
+import logging
 import argparse
 
-from manticore import Manticore
+from . import Manticore
+from .utils import log
+
+# XXX(yan): This would normally be __name__, but then logger output will be pre-
+# pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
+logger = logging.getLogger('manticore.main')
+log.init_logging()
 
 sys.setrecursionlimit(10000)
+
 
 def parse_arguments():
     ###########################################################################
@@ -99,14 +107,13 @@ def ethereum_cli(args):
         last_coverage = new_coverage
         new_coverage = m.global_coverage(contract_account)
 
-        print "[+] Coverage after %d transactions: %d%%"%(tx_count, new_coverage)
-        print "[+] There are %d reverted states now"% len(m.terminated_state_ids)
-        print "[+] There are %d alive states now"% len(m.running_state_ids)
-
+        logger.info("Coverage after %d transactions: %d%%", tx_count, new_coverage)
+        logger.info("There are %d reverted states now", len(m.terminated_state_ids))
+        logger.info("There are %d alive states now", len(m.running_state_ids))
 
     m.finalize()
-    print "[+] Look for results in %s"% m.workspace
 
+    logger.info("Results in %s", m.workspace)
 
 
 def main():
