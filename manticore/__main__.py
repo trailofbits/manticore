@@ -82,6 +82,7 @@ def ethereum_cli(args):
     m.register_detector(UnitializedStorage())
     m.register_detector(UnitializedMemory())
 
+    logger.info("Beginning analysis")
 
     with open(args.argv[0]) as f:
         source_code = f.read()
@@ -89,8 +90,6 @@ def ethereum_cli(args):
     user_account = m.create_account(balance=1000)
     contract_account = m.solidity_create_contract(source_code, owner=user_account)
     attacker_account = m.create_account(balance=1000)
-
-    logger.info("Beginning analysis")
 
     last_coverage = None
     new_coverage = 0
