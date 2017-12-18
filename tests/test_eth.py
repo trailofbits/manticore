@@ -5,6 +5,7 @@ from manticore.seth import ManticoreEVM, IntegerOverflow
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# FIXME(mark): Remove these two lines when logging works for ManticoreEVM
 from manticore.utils.log import init_logging
 init_logging()
 
