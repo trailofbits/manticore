@@ -54,12 +54,13 @@ class IntegerOverflow(Detector):
         Detects any it overflow on instructions ADD and SUB.
     '''
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-        if instruction.semantics == 'ADD':
+        mnemonic = instruction.semantics
+        if mnemonic in ('ADD', 'MUL'):
             if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
-                self.add_finding(state, "Integer overflow at ADD instruction")
-        if instruction.semantics == 'SUB':
+                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+        elif mnemonic == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
-                self.add_finding(state, "Integer underflow at SUB instruction")
+                self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
             
 class UnitializedMemory(Detector):
     '''
