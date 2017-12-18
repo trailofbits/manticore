@@ -61,12 +61,14 @@ def set_verbosity(setting):
         zero,
         # 1
         [
-            ('manticore.manticore', logging.INFO)
+            ('manticore.manticore', logging.INFO),
+            ('manticore.__main__', logging.INFO),
         ],
         # 2 (-v)
         [
             ('manticore.core.executor', logging.INFO),
-            ('manticore.platforms.*', logging.DEBUG)
+            ('manticore.platforms.*', logging.DEBUG),
+            ('manticore.core.plugin', logging.DEBUG),
         ],
         # 3 (-vv)
         [
