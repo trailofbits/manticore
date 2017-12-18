@@ -59,7 +59,6 @@ class IntegerOverflow(Detector):
                 self.add_finding(state, "Integer overflow at ADD instruction")
         if instruction.semantics == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
-                src = self._get_src(state)
                 self.add_finding(state, "Integer underflow at SUB instruction")
             
 class UnitializedMemory(Detector):
