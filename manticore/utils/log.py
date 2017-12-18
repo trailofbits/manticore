@@ -49,6 +49,7 @@ def init_logging():
         logger.addFilter(ctxfilter)
         logger.setState = types.MethodType(loggerSetState, logger)
         all_loggers.append(name)
+    set_verbosity(manticore_verbosity)
 
 def loggerSetState(logger, stateid):
     logger.filters[0].stateid = stateid
@@ -63,11 +64,13 @@ def set_verbosity(setting):
         [
             ('manticore.manticore', logging.INFO),
             ('manticore.main', logging.INFO),
+            ('manticore.seth', logging.INFO),
         ],
         # 2 (-v)
         [
             ('manticore.core.executor', logging.INFO),
             ('manticore.platforms.*', logging.DEBUG),
+            ('manticore.seth', logging.DEBUG),
             ('manticore.core.plugin', logging.DEBUG),
         ],
         # 3 (-vv)
@@ -116,4 +119,5 @@ def set_verbosity(setting):
             for logger_name in glob(all_loggers, pattern):
                 logger = logging.getLogger(logger_name)
                 logger.setLevel(log_level)
+
     manticore_verbosity = clamped
