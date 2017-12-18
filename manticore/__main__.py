@@ -90,7 +90,7 @@ def ethereum_cli(args):
     contract_account = m.solidity_create_contract(source_code, owner=user_account)
     attacker_account = m.create_account(balance=1000)
 
-    logger.info("Starting with %d processes", args.procs)
+    logger.info("Beginning analysis")
 
     last_coverage = None
     new_coverage = 0
