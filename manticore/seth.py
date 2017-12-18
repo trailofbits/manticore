@@ -807,6 +807,10 @@ class ManticoreEVM(Manticore):
             context['_completed_transactions'] = context['_completed_transactions'] + 1
         return  self.run(procs=self._config_procs)
 
+    def _start_workers(self, *args, **kwargs):
+        return super(ManticoreEVM, self)._start_workers(verbose=False, *args,
+                **kwargs)
+
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
 
@@ -821,6 +825,8 @@ class ManticoreEVM(Manticore):
             for state_id in context['_saved_states']:
                 self._executor.put(state_id)
             context['_saved_states'] = []
+
+        logger.info('Starting %d processes.\n', kwargs.get('procs', 1))
 
         #A callback will use _pending_transaction and issue the transaction 
         #in each state (see load_state_callback)
