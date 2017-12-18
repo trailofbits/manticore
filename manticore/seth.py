@@ -802,9 +802,13 @@ class ManticoreEVM(Manticore):
             data = (None,)*data.size
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
+
+        status = self.run(procs=self._config_procs)
+
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
-        return  self.run(procs=self._config_procs)
+
+        return status
 
     def _start_workers(self, *args, **kwargs):
         return super(ManticoreEVM, self)._start_workers(verbose=False, *args,
