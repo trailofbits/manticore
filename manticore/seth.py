@@ -808,6 +808,10 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
+        logger.info("Coverage after %d transactions: %d%%", self.completed_transactions, self.global_coverage(address))
+        logger.info("There are %d reverted states now", len(self.terminated_state_ids))
+        logger.info("There are %d alive states now", len(self.running_state_ids))
+
         return status
 
     def _start_workers(self, *args, **kwargs):
@@ -1273,7 +1277,3 @@ class ManticoreEVM(Manticore):
     def _did_finish_run_callback(self):
         _shared_context = self.context
 
-        if self.completed_transactions > 0:
-            logger.info("Coverage after %d transactions.", self.completed_transactions)
-            logger.info("There are %d reverted states now", len(self.terminated_state_ids))
-            logger.info("There are %d alive states now", len(self.running_state_ids))
