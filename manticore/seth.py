@@ -823,6 +823,33 @@ class ManticoreEVM(Manticore):
 
         return status
 
+    def multi_tx_analysis(self, solidity_filename):
+        with open(solidity_filename) as f:
+            source_code = f.read()
+
+        user_account = self.create_account(balance=1000)
+        contract_account = self.solidity_create_contract(source_code, owner=user_account)
+        attacker_account = self.create_account(balance=1000)
+
+
+        last_coverage = None
+        new_coverage = 0
+        while new_coverage != last_coverage and new_coverage < 100:
+
+            symbolic_data = self.make_symbolic_buffer(320)
+            symbolic_value = self.make_symbolic_value()
+
+            self.transaction(caller=attacker_account,
+                          address=contract_account,
+                          data=symbolic_data,
+                          value=symbolic_value )
+
+            last_coverage = new_coverage
+            new_coverage = self.global_coverage(contract_account)
+
+        self.finalize()
+
+
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
 
