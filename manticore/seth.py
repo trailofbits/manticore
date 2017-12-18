@@ -1240,7 +1240,7 @@ class ManticoreEVM(Manticore):
                         f.write('0x%x\n'%o)
 
 
-        logger.info("Look for results in %s", self.workspace )
+        logger.info("Results in %s", self.workspace )
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
