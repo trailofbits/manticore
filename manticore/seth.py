@@ -32,7 +32,7 @@ class Detector(Plugin):
 
         with self.manticore.locked_context('seth.global_findings', set) as global_findings:
             global_findings.add((address, pc, finding))
-        logger.info(finding)
+        logger.warning(finding)
 
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
