@@ -584,6 +584,7 @@ class ManticoreEVM(Manticore):
         self.context['seth']['_pending_transaction'] = None
         self.context['seth']['_saved_states'] = []
         self.context['seth']['_final_states'] = []
+        self.context['seth']['_completed_transactions'] = 0
 
         self._executor.subscribe('did_load_state', self._load_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
@@ -597,6 +598,11 @@ class ManticoreEVM(Manticore):
     def world(self):
         ''' The world instance or None if there is more than one state '''  
         return self.get_world(None)
+
+    @property
+    def completed_transactions(self):
+        with self.locked_context('seth') as context:
+            return context['_completed_transactions']
 
     @property
     def running_state_ids(self):
@@ -797,6 +803,8 @@ class ManticoreEVM(Manticore):
             data = (None,)*data.size
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
+        with self.locked_context('seth') as context:
+            context['_completed_transactions'] = context['_completed_transactions'] + 1
         return  self.run(procs=self._config_procs)
 
     def run(self, **kwargs):
