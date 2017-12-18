@@ -369,7 +369,6 @@ class ABI(object):
             size = get_uint(256, dyn_offset)
             return data[dyn_offset+32:dyn_offset+32+size], offset+4
         else:
-            print "<",ty,">"
             raise NotImplemented(ty)
 
     @staticmethod
@@ -584,6 +583,7 @@ class ManticoreEVM(Manticore):
         self.context['seth']['_pending_transaction'] = None
         self.context['seth']['_saved_states'] = []
         self.context['seth']['_final_states'] = []
+        self.context['seth']['_completed_transactions'] = 0
 
         self._executor.subscribe('did_load_state', self._load_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
@@ -597,6 +597,11 @@ class ManticoreEVM(Manticore):
     def world(self):
         ''' The world instance or None if there is more than one state '''  
         return self.get_world(None)
+
+    @property
+    def completed_transactions(self):
+        with self.locked_context('seth') as context:
+            return context['_completed_transactions']
 
     @property
     def running_state_ids(self):
@@ -797,7 +802,17 @@ class ManticoreEVM(Manticore):
             data = (None,)*data.size
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
-        return  self.run(procs=self._config_procs)
+
+        status = self.run(procs=self._config_procs)
+
+        with self.locked_context('seth') as context:
+            context['_completed_transactions'] = context['_completed_transactions'] + 1
+
+        logger.info("Coverage after %d transactions: %d%%", self.completed_transactions, self.global_coverage(address))
+        logger.info("There are %d reverted states now", len(self.terminated_state_ids))
+        logger.info("There are %d alive states now", len(self.running_state_ids))
+
+        return status
 
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
@@ -942,7 +957,6 @@ class ManticoreEVM(Manticore):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
         logger.debug("%s", state.platform.current)
-        #print state.platform.current
 
         if 'Call' in str(type(state.platform.current.last_exception)):
             coverage_context_name = 'runtime_coverage'
@@ -1225,7 +1239,7 @@ class ManticoreEVM(Manticore):
                         f.write('0x%x\n'%o)
 
 
-        logger.info("[+] Look for results in %s", self.workspace )
+        logger.info("Look for results in %s", self.workspace )
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
@@ -1258,4 +1272,4 @@ class ManticoreEVM(Manticore):
     #TODO: find a better way to suppress execution of Manticore._did_finish_run_callback    
     def _did_finish_run_callback(self):
         _shared_context = self.context
- 
+

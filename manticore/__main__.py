@@ -1,9 +1,16 @@
 import sys
+import logging
 import argparse
 
-from manticore import Manticore
+from . import Manticore
+from .utils import log
+
+# XXX(yan): This would normally be __name__, but then logger output will be pre-
+# pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
+logger = logging.getLogger('manticore.main')
 
 sys.setrecursionlimit(10000)
+
 
 def parse_arguments():
     ###########################################################################
@@ -66,6 +73,7 @@ def parse_arguments():
 
 def ethereum_cli(args):
     from seth import ManticoreEVM, IntegerOverflow, UnitializedStorage, UnitializedMemory
+    log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
 
@@ -82,9 +90,10 @@ def ethereum_cli(args):
     contract_account = m.solidity_create_contract(source_code, owner=user_account)
     attacker_account = m.create_account(balance=1000)
 
+    logger.info("Starting with %d processes", args.procs)
+
     last_coverage = None
     new_coverage = 0
-    tx_count = 0
     while new_coverage != last_coverage and new_coverage < 100:
 
         symbolic_data = m.make_symbolic_buffer(320)
@@ -95,21 +104,13 @@ def ethereum_cli(args):
                          data=symbolic_data,
                          value=symbolic_value )
 
-        tx_count += 1
         last_coverage = new_coverage
         new_coverage = m.global_coverage(contract_account)
 
-        print "[+] Coverage after %d transactions: %d%%"%(tx_count, new_coverage)
-        print "[+] There are %d reverted states now"% len(m.terminated_state_ids)
-        print "[+] There are %d alive states now"% len(m.running_state_ids)
-
-
     m.finalize()
-    print "[+] Look for results in %s"% m.workspace
-
-
 
 def main():
+    log.init_logging()
     args = parse_arguments()
 
     Manticore.verbosity(args.v)

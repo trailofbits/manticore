@@ -3,7 +3,7 @@ import logging
 from capstone import CS_GRP_JUMP
 
 from ..utils.helpers import issymbolic
-logger = logging.getLogger('MANTICORE')
+logger = logging.getLogger(__name__)
 
 
 class Plugin(object):
