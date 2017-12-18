@@ -369,7 +369,6 @@ class ABI(object):
             size = get_uint(256, dyn_offset)
             return data[dyn_offset+32:dyn_offset+32+size], offset+4
         else:
-            print "<",ty,">"
             raise NotImplemented(ty)
 
     @staticmethod
@@ -826,8 +825,6 @@ class ManticoreEVM(Manticore):
                 self._executor.put(state_id)
             context['_saved_states'] = []
 
-        logger.info('Starting %d processes.\n', kwargs.get('procs', 1))
-
         #A callback will use _pending_transaction and issue the transaction 
         #in each state (see load_state_callback)
         result = super(ManticoreEVM, self).run(**kwargs)
@@ -956,7 +953,6 @@ class ManticoreEVM(Manticore):
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
         logger.debug("%s", state.platform.current)
-        #print state.platform.current
 
         if 'Call' in str(type(state.platform.current.last_exception)):
             coverage_context_name = 'runtime_coverage'
@@ -1239,7 +1235,7 @@ class ManticoreEVM(Manticore):
                         f.write('0x%x\n'%o)
 
 
-        logger.info("[+] Look for results in %s", self.workspace )
+        logger.info("Look for results in %s", self.workspace )
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
@@ -1272,4 +1268,8 @@ class ManticoreEVM(Manticore):
     #TODO: find a better way to suppress execution of Manticore._did_finish_run_callback    
     def _did_finish_run_callback(self):
         _shared_context = self.context
- 
+
+        if self.completed_transactions > 0:
+            logger.info("Coverage after %d transactions.", self.completed_transactions)
+            logger.info("There are %d reverted states now", len(self.terminated_state_ids))
+            logger.info("There are %d alive states now", len(self.running_state_ids))
