@@ -803,14 +803,14 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
 
+        logger.info("Starting symbolic transaction: %d", self.completed_transactions + 1)
+
         status = self.run(procs=self._config_procs)
 
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
-        logger.info("Coverage after %d transactions: %d%%", self.completed_transactions, self.global_coverage(address))
-        logger.info("There are %d reverted states now", len(self.terminated_state_ids))
-        logger.info("There are %d alive states now", len(self.running_state_ids))
+        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Reverted States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
 
         return status
 
