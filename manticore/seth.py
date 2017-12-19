@@ -1015,10 +1015,11 @@ class ManticoreEVM(Manticore):
         with testcase.open_stream('summary') as summary:            
             summary.write("Last exception: %s\n" %state.context['last_exception'])
 
+            address, offset = state.context['seth.trace'][-1]
+            
             #Last instruction
             metadata = self.get_metadata(blockchain.transactions[-1].address)
             if metadata is not None:
-                address, offset = state.context['seth.trace'][-1]
                 summary.write('Last instruction at contract %x offset %x\n' %(address, offset))
                 at_runtime = blockchain.transactions[-1].sort != 'Create'
                 summary.write(metadata.get_source_for(offset, at_runtime))
