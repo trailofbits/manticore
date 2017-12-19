@@ -1,20 +1,20 @@
 import sys
 import argparse
-import logging
-from manticore import Manticore, log, make_initial_state
+
+from manticore import Manticore
 
 sys.setrecursionlimit(10000)
 
 def parse_arguments():
     ###########################################################################
     # parse arguments
-    parser = argparse.ArgumentParser(description='Symbolically analyze a program')
+    parser = argparse.ArgumentParser(description='Dynamic binary analysis tool')
     parser.add_argument('--assertions', type=str, default=None,
-                        help='File with additional assertions')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--buffer', type=str,
-                        help='Specify buffer to make symbolic')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--context', type=str, default=None,
-                        help='path to file with additional context')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--coverage', type=str, default=None,
                         help='where to write the coverage data')
     parser.add_argument('--data', type=str, default='',
@@ -28,10 +28,9 @@ def parse_arguments():
     parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
-                        help=("File with function addresses to replace "
-                              "with known models"))
+                        help=argparse.SUPPRESS)
     parser.add_argument('--offset', type=int, default=16,
-                        help='Buffer header size to leave concrete')
+                        help=argparse.SUPPRESS)
     # FIXME (theo) Add some documentation on the different search policy options
     parser.add_argument('--policy', type=str, default='random',
                         help=("Search policy. random|adhoc|uncovered|dicount"
@@ -43,9 +42,6 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='+',
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--replay', type=str, default=None,
-                        help='The trace filename to replay')
-    parser.add_argument('--size', type=str, help='Specify buffer full size')
     parser.add_argument('--timeout', type=int, default=0,
                         help='Timeout. Abort exploration aftr TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
@@ -67,12 +63,63 @@ def parse_arguments():
 
     return parsed
 
+
+def ethereum_cli(args):
+    from seth import ManticoreEVM, IntegerOverflow, UnitializedStorage, UnitializedMemory
+
+    m = ManticoreEVM(procs=args.procs)
+
+    ################ Default? Detectors #######################
+    m.register_detector(IntegerOverflow())
+    m.register_detector(UnitializedStorage())
+    m.register_detector(UnitializedMemory())
+
+
+    with open(args.argv[0]) as f:
+        source_code = f.read()
+
+    user_account = m.create_account(balance=1000)
+    contract_account = m.solidity_create_contract(source_code, owner=user_account)
+    attacker_account = m.create_account(balance=1000)
+
+    last_coverage = None
+    new_coverage = 0
+    tx_count = 0
+    while new_coverage != last_coverage and new_coverage < 100:
+
+        symbolic_data = m.make_symbolic_buffer(320)
+        symbolic_value = m.make_symbolic_value()
+
+        m.transaction(caller=attacker_account,
+                         address=contract_account,
+                         data=symbolic_data,
+                         value=symbolic_value )
+
+        tx_count += 1
+        last_coverage = new_coverage
+        new_coverage = m.global_coverage(contract_account)
+
+        print "[+] Coverage after %d transactions: %d%%"%(tx_count, new_coverage)
+        print "[+] There are %d reverted states now"% len(m.terminated_state_ids)
+        print "[+] There are %d alive states now"% len(m.running_state_ids)
+
+
+    m.finalize()
+    print "[+] Look for results in %s"% m.workspace
+
+
+
 def main():
     args = parse_arguments()
 
-    env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
-
     Manticore.verbosity(args.v)
+
+    # TODO(mark): Temporarily hack ethereum support into manticore cli
+    if args.argv[0].endswith('.sol'):
+        ethereum_cli(args)
+        return
+
+    env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
 

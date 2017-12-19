@@ -1,8 +1,8 @@
-from seth import *
+from manticore.seth import ManticoreEVM
 ################ Script #######################
 
-seth = ManticoreEVM()
-seth.verbosity(2)
+m = ManticoreEVM()
+m.verbosity(2)
 #And now make the contract account to analyze
 # cat  | solc --bin 
 source_code = '''
@@ -30,28 +30,19 @@ contract Test {
 }
 '''
 #Initialize accounts
-user_account = seth.create_account(balance=1000)
-contract_account = seth.solidity_create_contract(source_code, owner=user_account)
+user_account = m.create_account(balance=1000)
+contract_account = m.solidity_create_contract(source_code, owner=user_account)
 
 
-symbolic_data = seth.SByte(64) 
+symbolic_data = m.SByte(64) 
 symbolic_value = 0
-seth.transaction(  caller=user_account,
+m.transaction(  caller=user_account,
                    address=contract_account,
                    value=symbolic_value,
                    data=symbolic_data
                  )
 
-
-print "[+] There are %d reverted states now"% len(seth.final_state_ids)
-for state_id in seth.final_state_ids:
-    seth.report(state_id)
-
-print "[+] There are %d alive states now"% len(seth.running_state_ids)
-for state_id in seth.running_state_ids:
-    seth.report(state_id)
-
-print "[+] Global coverage:"
-print seth.coverage(contract_account)
+m.finalize()
+print "[+] Look for results in %s"% m.workspace
 
 

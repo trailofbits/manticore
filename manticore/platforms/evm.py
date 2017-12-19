@@ -1,14 +1,10 @@
-'''
-Solidity / Smart contract VM
-Implements the yellow paper: http://gavwood.com/paper.pdf
-Get example contracts from here:
-https://ethereum.github.io/browser-solidity/#version=soljson-latest.js
-'''
+''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
 import random, copy
+from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet
+from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
+    SolverException
 from ..core.state import ForkState, TerminateState
-from ..utils.helpers import issymbolic
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
 from ..core.state import Concretize,TerminateState
@@ -18,7 +14,6 @@ if sys.version_info < (3, 6):
     import sha3
 
 logger = logging.getLogger(__name__)
-
 
 # Auxiliar constants and functions
 TT256 = 2 ** 256
@@ -30,26 +25,50 @@ def ceil32(x):
     return Operators.ITEBV(256, (x % 32) == 0, x , x + 32 - (x % 32))
 
 def to_signed(i):
-    return Operators.ITEBV(256, i<TT255, i, i-TT256) #i if i < TT255 else i - TT256
+    return Operators.ITEBV(256, i<TT255, i, i-TT256)
 
-def pack_msb(value, size=32):
-    '''takes an int and packs it into a 32 byte string, msb first''' 
-    assert size >=1
-    bytes = []
-    for position in range(size):
-        bytes.append( Operators.EXTRACT(value, position*8, 8) )
-    chars = map(Operators.CHR, bytes)
-    return ''.join(reversed(chars))
+class Transaction(object):
+    __slots__= 'sort', 'address', 'origin', 'price', 'data', 'caller', 'value', 'return_data', 'result'
+    def __init__(self, sort, address, origin, price, data, caller, value, return_data, result):
+        self.sort = sort
+        self.address = address
+        self.origin = origin
+        self.price = price
+        self.data = data
+        self.caller = caller
+        self.value = value
+        self.return_data = return_data
+        self.result = result
+
+    def __reduce__(self):
+        ''' Implements serialization/pickle '''
+        return (self.__class__,  (self.sort,  self.address, self.origin, self.price, self.data, self.caller, self.value, self.return_data, self.result))
+
+class EVMLog():
+    def __init__(self, address, memlog, topics):
+        self.address = address
+        self.memlog = memlog
+        self.topics = topics
+
+
 
 class EVMMemory(object):
-    '''
-    The EVM symbolic memory manager.
-    '''
     def __init__(self, constraints, address_size=256, value_size=8, *args, **kwargs):
         '''
-        Builds a memory.
+        A symbolic memory manager for EVM. 
+        This is internally used to provide memory to an Ethereum Virtual Machine.
+        It maps address_size bits wide bitvectors to value_size wide bitvectors.
+        Normally BitVec(256) -> BitVec(8)
 
-        :param constraints:  a set of constraints
+        Example use::
+            cs = ConstraintSet()
+            mem = EVMMemory(cs)
+            mem[16] = 0x41
+            assert (mem.allocated == 1)
+            assert (mem[16] == 0x41)
+
+        :param constraints: a set of constraints
+        :type constraints: ConstraintSet
         :param address_size: address bit width
         :param values_size: value bit width
         '''
@@ -62,12 +81,14 @@ class EVMMemory(object):
         self._allocated = 0
 
     def __copy__(self):
+        ''' Makes a copy of itself '''
         new_mem = EVMMemory(self._constraints, self._address_size,  self._value_size)
         new_mem._memory = dict(self._memory)
         new_mem._symbols = dict(self._symbols)
         return new_mem
 
     def __reduce__(self):
+        ''' Implements serialization/pickle '''
         return (self.__class__, (self._constraints, self._address_size,  self._value_size), {'_symbols':self._symbols, '_memory':self._memory, '_allocated': self._allocated } )
 
     @property
@@ -79,6 +100,10 @@ class EVMMemory(object):
         self._constraints = constraints
 
     def _get_size(self, index):
+        ''' Calculates the size of a slice 
+            :param index: a slice 
+            :type index: slice
+        '''
         size = index.stop - index.start
         if isinstance(size, BitVec):
             size = arithmetic_simplifier(size)
@@ -120,6 +145,10 @@ class EVMMemory(object):
         return offset in self._memory or \
                offset in self._symbols
 
+    def items(self):
+        offsets = set( self._symbols.keys() + self._memory.keys())
+        return [(x, self[x]) for x in offsets]
+
     def get(self, offset, default=0):
         result = self.read(offset, 1)
         if not result:
@@ -150,6 +179,10 @@ class EVMMemory(object):
     def __len__(self):
         return self._allocated
 
+    @property
+    def allocated(self):
+        return self._allocated
+
     def _allocate(self, address):
         '''
             Allocate more memory
@@ -168,14 +201,15 @@ class EVMMemory(object):
 
     def read(self, address, size):
         '''
-        Read a stream of potentially symbolic items from a potentially symbolic
-        address
+        Read size items from address.
+        Address can by a symbolic value.
+        The result is a sequence the requested size.
+        Resultant items can by symbolic.
 
         :param address: Where to read from
         :param size: How many items
         :rtype: list
         '''
-        #size = self._get_size(size)
         assert not issymbolic(size)
         self._allocate(address+size)
 
@@ -188,7 +222,6 @@ class EVMMemory(object):
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
-                #INCOMPLETE Result! Using the 0x100 values sampled before
                 logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
                 condition = False
                 for base in e.solutions:
@@ -237,7 +270,7 @@ class EVMMemory(object):
         :param address: The address at which to write
         :type address: int or long or Expression
         :param value: Bytes to write
-        :type value: str or list
+        :type value: tuple or list
         '''
         size = len(value)
         self._allocate(address+size)
@@ -261,101 +294,295 @@ class EVMMemory(object):
                     if address+offset in self._symbols:
                         del self._symbols[address+offset]
                     self._concrete_write(address+offset, value[offset])
-
-
-class EVMInstruction(object):
-    '''This represents an EVM instruction '''
-    def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None):
-        self._opcode = opcode 
-        self._name = name 
-        self._operand_size = operand_size
-        self._pops = pops
-        self._pushes = pushes
-        self._fee = fee
-        self._description = description
-        self._operand = operand           #Immediate operand if any
-    
-    def parse_operand(self, buf):
-        operand = 0
-        for _ in range(self.operand_size):
-            try:
-                operand <<= 8
-                operand |= ord(next(buf))
-            except:
-                raise TerminateState("Operand has insufficient bytes")
-        self._operand = operand
-
-    @property
-    def operand_size(self):
-        return self._operand_size
-
-    @property
-    def has_operand(self):
-        return self.operand_size > 0
-
-    @property
-    def operand(self):
-        return self._operand
-
-    @property
-    def pops(self):
-        return self._pops
-
-    @property
-    def pushes(self):
-        return self._pushes
-
-    @property
-    def size(self):
-        return self._operand_size + 1
-
-    @property
-    def fee(self):
-        return self._fee
-
-    def __len__(self):
-        return self.size
-
-    @property
-    def name(self):
-        if self._name == 'PUSH':
-            return 'PUSH%d'%self.operand_size
-        elif self._name == 'DUP':
-            return 'DUP%d'%self.pops
-        elif self._name == 'SWAP':
-            return 'SWAP%d'%(self.pops-1)
-        elif self._name == 'LOG':
-            return 'LOG%d'%(self.pops-2)
-        return self._name
-
-    def __str__(self):
-        bytes = self.bytes.encode('hex')
-        output = '<%s> '%bytes + self.name + (' 0x%x'%self.operand if self.has_operand else '')
-        output += ' '*(80-len(output))+self.description
-        return output
-
-    @property
-    def semantics(self):
-        return self._name
-
-    @property
-    def description(self):
-        return self._description
-
-    @property
-    def bytes(self):
-        bytes = []
-        bytes.append(chr(self._opcode))
-        for offset in reversed(xrange(self.operand_size)):
-            c = (self.operand >> offset*8 ) & 0xff 
-            bytes.append(chr(c))
-        return ''.join(bytes)
-
         
-class EVMDecoder(object):
+class EVMAsm(object):
     ''' 
         EVM Instruction factory
+        
+        Example use::
+
+            >>> from manticore.platforms.evm import EVMAsm
+            >>> EVMAsm.disassemble_one('\\x60\\x10')
+            Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
+            >>> EVMAsm.assemble_one('PUSH1 0x10')
+            Instruction(0x60, 'PUSH', 1, 0, 1, 0, 'Place 1 byte item on stack.', 16, 0)
+            >>> tuple(EVMAsm.disassemble_all('\\x30\\x31'))
+            (Instruction(0x30, 'ADDRESS', 0, 0, 1, 2, 'Get address of currently executing account.', None, 0), 
+             Instruction(0x31, 'BALANCE', 0, 1, 1, 20, 'Get balance of the given account.', None, 1))
+            >>> tuple(EVMAsm.assemble_all('ADDRESS\\nBALANCE'))
+            (Instruction(0x30, 'ADDRESS', 0, 0, 1, 2, 'Get address of currently executing account.', None, 0),
+             Instruction(0x31, 'BALANCE', 0, 1, 1, 20, 'Get balance of the given account.', None, 1))
+            >>> EVMAsm.assemble_hex(
+            ...                         """PUSH1 0x60
+            ...                            BLOCKHASH 
+            ...                            MSTORE
+            ...                            PUSH1 0x2
+            ...                            PUSH2 0x100
+            ...                         """
+            ...                      )
+            '0x606040526002610100'
+            >>> EVMAsm.disassemble_hex('0x606040526002610100')
+            'PUSH1 0x60\\nBLOCKHASH\\nMSTORE\\nPUSH1 0x2\\nPUSH2 0x100'
     '''
+    class Instruction(object):
+        def __init__(self, opcode, name, operand_size, pops, pushes, fee, description, operand=None, offset=0):
+            '''
+            This represents an EVM instruction. 
+            EVMAsm will create this for you.
+
+            :param opcode: the opcode value
+            :param name: instruction name
+            :param operand_size: immediate operand size in bytes
+            :param pops: number of items popped from the stack
+            :param pushes: number of items pushed into the stack
+            :param fee: gas fee for the instruction
+            :param description: textual description of the instruction
+            :param operand: optional immediate operand
+            :param offset: optional offset of this instruction in the program
+
+            Example use::
+
+                instruction = EVMAsm.assemble_one('PUSH1 0x10')
+                print 'Instruction: %s'% instruction
+                print '\tdescription:', instruction.description
+                print '\tgroup:', instruction.group
+                print '\taddress:', instruction.offset
+                print '\tsize:', instruction.size
+                print '\thas_operand:', instruction.has_operand
+                print '\toperand_size:', instruction.operand_size
+                print '\toperand:', instruction.operand
+                print '\tsemantics:', instruction.semantics
+                print '\tpops:', instruction.pops
+                print '\tpushes:', instruction.pushes
+                print '\tbytes:', '0x'+instruction.bytes.encode('hex')
+                print '\twrites to stack:', instruction.writes_to_stack
+                print '\treads from stack:', instruction.reads_from_stack
+                print '\twrites to memory:', instruction.writes_to_memory
+                print '\treads from memory:', instruction.reads_from_memory
+                print '\twrites to storage:', instruction.writes_to_storage
+                print '\treads from storage:', instruction.reads_from_storage
+                print '\tis terminator', instruction.is_terminator
+
+
+            '''
+            self._opcode = opcode 
+            self._name = name 
+            self._operand_size = operand_size
+            self._pops = pops
+            self._pushes = pushes
+            self._fee = fee
+            self._description = description
+            self._operand = operand           #Immediate operand if any
+            if operand_size != 0 and operand is not None:
+                    mask = (1<<operand_size*8)-1
+                    if ~mask & operand:
+                        raise ValueError("operand should be %d bits long"%(operand_size*8))
+            self._offset=offset
+
+        def __eq__(self, other):
+            ''' Instructions are equal if all features match '''
+            return self._opcode == other._opcode and\
+            self._name == other._name and\
+            self._operand == other._operand and\
+            self._operand_size == other._operand_size and\
+            self._pops == other._pops and\
+            self._pushes == other._pushes and\
+            self._fee == other._fee and\
+            self._offset == other._offset and\
+            self._description == other._description 
+
+        def __repr__(self):
+            output = 'Instruction(0x%x, %r, %d, %d, %d, %d, %r, %r, %r)'%(self._opcode, self._name, self._operand_size, self._pops, self._pushes, self._fee, self._description, self._operand, self._offset)
+            return output
+
+
+        def __str__(self):
+            output = self.name + (' 0x%x'%self.operand if self.has_operand else '')
+            return output
+
+        @property
+        def opcode(self):
+            ''' The opcode as an integer ''' 
+            return self._opcode
+
+        @property
+        def name(self):
+            ''' The instruction name/mnemonic ''' 
+            if self._name == 'PUSH':
+                return 'PUSH%d'%self.operand_size
+            elif self._name == 'DUP':
+                return 'DUP%d'%self.pops
+            elif self._name == 'SWAP':
+                return 'SWAP%d'%(self.pops-1)
+            elif self._name == 'LOG':
+                return 'LOG%d'%(self.pops-2)
+            return self._name
+            
+        def parse_operand(self, buf):
+            ''' Parses an operand from buf 
+
+                :param buf: a buffer
+                :type buf: iterator/generator/string
+            '''
+            buf = iter(buf)
+            try:
+                operand = 0
+                for _ in range(self.operand_size):
+                    operand <<= 8
+                    operand |= ord(next(buf))
+                self._operand = operand
+            except StopIteration:
+                raise Exception("Not enough data for decoding")
+
+        @property
+        def operand_size(self):
+            ''' The immediate operand size '''
+            return self._operand_size
+
+        @property
+        def has_operand(self):
+            ''' True if the instruction uses an immediate operand'''
+            return self.operand_size > 0
+
+        @property
+        def operand(self):
+            ''' The immediate operand '''
+            return self._operand
+
+        @property
+        def pops(self):
+            '''Number words popped from the stack'''
+            return self._pops
+
+        @property
+        def pushes(self):
+            '''Number words pushed to the stack'''
+            return self._pushes
+
+        @property
+        def size(self):
+            ''' Size of the encoded instruction '''
+            return self._operand_size + 1
+
+        @property
+        def fee(self):
+            ''' The basic gas fee of the instruction '''
+            return self._fee
+
+        @property
+        def semantics(self):
+            ''' Canonical semantics '''
+            return self._name
+
+        @property
+        def description(self):
+            ''' Coloquial description of the instruction '''
+            return self._description
+
+        @property
+        def bytes(self):
+            ''' Encoded instruction '''
+            bytes = []
+            bytes.append(chr(self._opcode))
+            for offset in reversed(xrange(self.operand_size)):
+                c = (self.operand >> offset*8 ) & 0xff 
+                bytes.append(chr(c))
+            return ''.join(bytes)
+
+        @property
+        def offset(self):
+            '''Location in the program (optional)'''
+            return self._offset
+
+        @property
+        def group(self):
+            '''Instruction classification as per the yellow paper'''
+            classes = {
+                        0:   'Stop and Arithmetic Operations',
+                        1:   'Comparison & Bitwise Logic Operations',
+                        2:   'SHA3',
+                        3:   'Environmental Information',
+                        4:   'Block Information',
+                        5:   'Stack, Memory, Storage and Flow Operations',
+                        6:   'Push Operations',
+                        7:   'Push Operations',
+                        8:   'Duplication Operations',
+                        9:   'Exchange Operations',
+                        0xa: 'Logging Operations',
+                        0xf: 'System operations'
+                      }
+            return classes.get(self.opcode>>4, 'Invalid instruction')
+
+        @property
+        def uses_stack(self):
+            ''' True if the instruction reads/writes from/to the stack '''
+            return self.reads_from_stack or self.writes_to_stack
+
+        @property
+        def reads_from_stack(self):
+            ''' True if the instruction reads from stack '''
+            return self.pops > 0
+
+        @property
+        def writes_to_stack(self):
+            ''' True if the instruction writes to the stack '''
+            return self.pushes > 0
+            
+        @property
+        def reads_from_memory(self):
+            ''' True if the instruction reads from memory '''
+            return self.semantics in ('MLOAD','CREATE', 'CALL', 'CALLCODE', 'RETURN', 'DELEGATECALL', 'REVERT')
+
+        @property
+        def writes_to_memory(self):
+            ''' True if the instruction writes to memory '''
+            return self.semantics in ('MSTORE', 'MSTORE8', 'CALLDATACOPY', 'CODECOPY', 'EXTCODECOPY')
+            
+        @property
+        def reads_from_memory(self):
+            ''' True if the instruction reads from memory '''
+            return self.semantics in ('MLOAD','CREATE', 'CALL', 'CALLCODE', 'RETURN', 'DELEGATECALL', 'REVERT')
+
+        @property
+        def writes_to_storage(self):
+            ''' True if the instruction writes to the storage '''
+            return self.semantics in ('SSTORE')
+
+        @property
+        def reads_from_storage(self):
+            ''' True if the instruction reads from the storage '''
+            return self.semantics in ('SLOAD')
+
+        @property
+        def is_terminator(self):
+            ''' True if the instruction is a basic block terminator '''
+            return self.semantics in ('RETURN', 'STOP', 'INVALID', 'JUMP', 'JUMPI', 'SELFDESTRUCT', 'REVERT')
+
+        @property
+        def is_branch(self):
+            ''' True if the instruction is a jump'''
+            return self.semantics in ('JUMP', 'JUMPI')
+
+        @property
+        def is_environmental(self):
+            ''' True if the instruction access enviromental data '''
+            return self.group == 'Environmental Information'
+            
+        @property
+        def is_system(self):
+            ''' True if the instruction is a system operation '''
+            return self.group == 'System operations'
+
+        @property
+        def uses_block_info(self):
+            ''' True if the instruction access block information'''
+            return self.group == 'Block Information'
+
+        @property
+        def is_arithmetic(self):
+            ''' True if the instruction is an arithmetic operation '''
+            return  self.semantics in ('ADD', 'MUL', 'SUB', 'DIV', 'SDIV', 'MOD', 'SMOD', 'ADDMOD', 'MULMOD', 'EXP', 'SIGNEXTEND')
+ 
     #from http://gavwood.com/paper.pdf
     _table = {#opcode: (name, immediate_operand_size, pops, pushes, gas, description)
                 0x00: ('STOP', 0, 0, 0, 0, 'Halts execution.'),
@@ -500,35 +727,238 @@ class EVMDecoder(object):
                 0xff: ('SELFDESTRUCT', 0, 1, 0, 5000, 'Halt execution and register account for later deletion.')
             }
 
+    @staticmethod
+    @memoized
+    def _get_reverse_table():
+        ''' Build an internal table used in the assembler '''
+        reverse_table = {}
+        for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) in EVMAsm._table.items():
+            mnemonic = name
+            if name == 'PUSH':
+                mnemonic = '%s%d'%(name, (opcode&0x1f) + 1)
+            elif name in ('SWAP', 'LOG', 'DUP'):
+                mnemonic = '%s%d'%(name, (opcode&0xf) + 1)
+
+            reverse_table[mnemonic] = opcode, name, immediate_operand_size, pops, pushes, gas, description
+        return reverse_table
 
     @staticmethod
-    def decode_one(bytecode):
+    def assemble_one(assembler, offset=0):
+        ''' Assemble one EVM instruction from its textual representation. 
+            
+            :param assembler: assembler code for one instruction
+            :param offset: offset of the instruction in the bytecode (optional)
+            :return: An Instruction object
+
+            Example use::
+
+                >>> print evm.EVMAsm.assemble_one('LT')
+            
+
         '''
+        try:
+            _reverse_table = EVMAsm._get_reverse_table()
+            assembler = assembler.strip().split(' ')
+            opcode, name, operand_size, pops, pushes, gas, description = _reverse_table[assembler[0].upper()]
+            if operand_size > 0:
+                assert len(assembler) == 2
+                operand = int(assembler[1],0)
+            else:
+                assert len(assembler) == 1
+                operand = None
+
+            return EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
+        except:
+            raise Exception("Something wrong at offset %d"%offset)
+
+    @staticmethod
+    def assemble_all(assembler, offset=0):
+        ''' Assemble a sequence of textual representation of EVM instructions 
+
+            :param assembler: assembler code for any number of instructions
+            :param offset: offset of the first instruction in the bytecode(optional)
+            :return: An generator of Instruction objects
+
+            Example use::
+            
+                >>> evm.EVMAsm.encode_one("""PUSH1 0x60
+                    PUSH1 0x40
+                    MSTORE
+                    PUSH1 0x2
+                    PUSH2 0x108
+                    PUSH1 0x0
+                    POP
+                    SSTORE
+                    PUSH1 0x40
+                    MLOAD
+                    """)
+
+        '''
+        if isinstance(assembler, str):
+            assembler = assembler.split('\n')
+        assembler = iter(assembler)
+        for line in assembler:
+            if not line.strip():
+                continue
+            instr = EVMAsm.assemble_one(line, offset=offset)
+            yield instr
+            offset += instr.size
+
+    @staticmethod
+    def disassemble_one(bytecode, offset=0):
+        ''' Decode a single instruction from a bytecode
+
+            :param bytecode: the bytecode stream 
+            :param offset: offset of the instruction in the bytecode(optional)
+            :type bytecode: iterator/sequence/str
+            :return: an Instruction object
+
+            Example use::
+            
+                >>> print EVMAsm.assemble_one('PUSH1 0x10')
+
         '''
         bytecode = iter(bytecode)
         opcode = ord(next(bytecode))
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
-        name, operand_size, pops, pushes, gas, description = EVMDecoder._table.get(opcode, invalid)
-        instruction = EVMInstruction(opcode, name, operand_size, pops, pushes, gas, description)
+        name, operand_size, pops, pushes, gas, description = EVMAsm._table.get(opcode, invalid)
+        instruction = EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, offset=offset)
         if instruction.has_operand:
             instruction.parse_operand(bytecode)
 
         return instruction
 
     @staticmethod
-    def decode_all(bytecode):
+    def disassemble_all(bytecode, offset=0):
+        ''' Decode all instructions in bytecode
+
+            :param bytecode: an evm bytecode (binary)
+            :param offset: offset of the first instruction in the bytecode(optional)
+            :type bytecode: iterator/sequence/str
+            :return: An generator of Instruction objects
+
+            Example use::
+            
+                >>> for inst in EVMAsm.decode_all(bytecode):
+                ...    print inst
+
+                ... 
+                PUSH1 0x60
+                PUSH1 0x40
+                MSTORE
+                PUSH1 0x2
+                PUSH2 0x108
+                PUSH1 0x0
+                POP
+                SSTORE
+                PUSH1 0x40
+                MLOAD
+
+
+        '''
+
         bytecode = iter(bytecode)
         while True:
-            yield EVMDecoder.decode_one(bytecode)
+            instr = EVMAsm.disassemble_one(bytecode, offset=offset)
+            offset += instr.size
+            yield instr
 
     @staticmethod
-    def disassemble(bytecode):
-        output = ''
-        address = 0
-        for i in EVMDecoder.decode_all(bytecode) :
-            output += "0x%04x %s\n"%(address, i)
-            address += i.size
-        return output
+    def disassemble(bytecode, offset=0):
+        ''' Disassemble an EVM bytecode 
+
+            :param bytecode: binary representation of an evm bytecode (hexadecimal)
+            :param offset: offset of the first instruction in the bytecode(optional)
+            :type bytecode: str
+            :return: the text representation of the aseembler code
+
+            Example use::
+            
+                >>> EVMAsm.disassemble("\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00")
+                ...
+                PUSH1 0x60
+                BLOCKHASH
+                MSTORE
+                PUSH1 0x2
+                PUSH2 0x100
+
+        '''
+        return '\n'.join(map(str, EVMAsm.disassemble_all(bytecode, offset=offset)))
+
+    @staticmethod
+    def assemble(asmcode, offset=0):
+        ''' Assemble an EVM program 
+
+            :param asmcode: an evm assembler program
+            :param offset: offset of the first instruction in the bytecode(optional)
+            :type asmcode: str
+            :return: the hex representation of the bytecode
+
+            Example use::
+            
+                >>> EVMAsm.assemble(  """PUSH1 0x60
+                                           BLOCKHASH
+                                           MSTORE
+                                           PUSH1 0x2
+                                           PUSH2 0x100
+                                        """
+                                     )
+                ...
+                "\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00"
+        '''
+        return ''.join(map(lambda x:x.bytes, EVMAsm.assemble_all(asmcode, offset=offset)))
+
+    @staticmethod
+    def disassemble_hex(bytecode, offset=0):
+        ''' Disassemble an EVM bytecode 
+
+            :param bytecode: canonical representation of an evm bytecode (hexadecimal)
+            :param int offset: offset of the first instruction in the bytecode(optional)
+            :type bytecode: str
+            :return: the text representation of the aseembler code
+
+            Example use::
+            
+                >>> EVMAsm.disassemble_hex("0x6060604052600261010")
+                ...
+                PUSH1 0x60
+                BLOCKHASH
+                MSTORE
+                PUSH1 0x2
+                PUSH2 0x100
+
+        '''
+        if bytecode.startswith('0x'):
+            bytecode = bytecode[2:]
+        bytecode = bytecode.decode('hex')
+        return EVMAsm.disassemble(bytecode, offset=offset)
+
+    @staticmethod
+    def assemble_hex(asmcode, offset=0):
+        ''' Assemble an EVM program 
+
+            :param asmcode: an evm assembler program
+            :param offset: offset of the first instruction in the bytecode(optional)
+            :type asmcode: str
+            :return: the hex representation of the bytecode
+
+            Example use::
+            
+                >>> EVMAsm.assemble_hex(  """PUSH1 0x60
+                                           BLOCKHASH
+                                           MSTORE
+                                           PUSH1 0x2
+                                           PUSH2 0x100
+                                        """
+                                     )
+                ...
+                "0x6060604052600261010"
+        '''
+        return '0x' + EVMAsm.assemble(asmcode, offset=offset).encode('hex')
+
+
+
+#Exceptions...
 
 class EVMException(Exception):
     pass
@@ -567,7 +997,6 @@ class Call(EVMException):
 
     def __reduce__(self):
         return (self.__class__, (self.gas, self.to, self.value, self.data, self.out_offset, self.out_size) )
-
 
 class Create(Call):
     def __init__(self, value, offset, size):
@@ -619,10 +1048,12 @@ class EVM(Eventful):
         from position 0), and the stack contents. The memory
         contents are a series of zeroes of bitsize 256
     '''
-
-    _published_events = {'read_code', 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} #    _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction'}
-
-
+    _published_events = {'evm_execute_instruction', 
+                         'evm_read_storage', 'evm_write_storage',
+                         'evm_read_memory',
+                         'evm_write_memory', 
+                         'evm_read_code',
+                         'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
     def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
@@ -652,7 +1083,7 @@ class EVM(Eventful):
         self.value = value
         self.depth = depth
         self.bytecode = code
-        self.suicide = set()
+        self.suicides = set()
         self.logs = []
         self.gas=gas
         #FIXME parse decode and mark invalid instructions
@@ -698,7 +1129,7 @@ class EVM(Eventful):
         state['stack'] = self.stack
         state['gas'] = self.gas
         state['allocated'] = self.allocated
-        state['suicide'] = self.suicide
+        state['suicides'] = self.suicides
         state['logs'] = self.logs
 
         return state
@@ -723,15 +1154,11 @@ class EVM(Eventful):
         self.stack = state['stack']
         self.gas = state['gas']
         self.allocated = state['allocated']
-        self.suicide = state['suicide']
+        self.suicides = state['suicides']
         super(EVM, self).__setstate__(state)
 
     #Memory related
     def _allocate(self, address):
-        #print pretty_print (address)
-        #if address > 100000:
-        #    raise NotEnoughGas()
-
         if address > self.memory._allocated:
             GMEMORY = 3
             GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
@@ -746,10 +1173,9 @@ class EVM(Eventful):
     def _store(self, address, value):
         #CHECK ADDRESS IS A 256 BIT INT OR BITVEC
         #CHECK VALUE IS A 256 BIT INT OR BITVEC
-        #if address > 100000:
-        #    raise NotEnoughGas()
         self._allocate(address)
         self.memory.write(address, [value])
+        self._publish('did_evm_write_memory', address, value)
 
 
     def _load(self, address):
@@ -758,6 +1184,8 @@ class EVM(Eventful):
         value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
+        self._publish('did_evm_read_memory', address, value)
+
         return value
 
     @staticmethod
@@ -776,7 +1204,7 @@ class EVM(Eventful):
         return value
 
     def disassemble(self):
-        return EVMDecoder.disassemble(self.bytecode)
+        return EVMAsm.disassemble(self.bytecode)
 
 
     @property
@@ -800,7 +1228,7 @@ class EVM(Eventful):
             while True:
                 yield '\x00'
 
-        return EVMDecoder.decode_one(getcode())
+        return EVMAsm.disassemble_one(getcode())
 
     #auxiliar funcs
     #Stack related
@@ -839,11 +1267,11 @@ class EVM(Eventful):
                                 setstate=setstate,
                                 policy='ALL')
 
-        self._publish( 'will_decode_instruction', self.pc)
+        self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
 
-        self._publish( 'will_execute_instruction', current)
+        self._publish('will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
 
@@ -855,10 +1283,9 @@ class EVM(Eventful):
         arguments = []
         if self.instruction.has_operand:
             arguments.append(current.operand)
+
         for _ in range(current.pops):
             arguments.append(self._pop())
-
-        self._publish( 'did_execute_instruction', last_pc, self.pc, current)
 
         #simplify stack arguments
         for i in range(len(arguments)):
@@ -867,10 +1294,13 @@ class EVM(Eventful):
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
+        self._publish('will_evm_execute_instruction', current, arguments)
+
         last_pc = self.pc
         #Execute
         try:
             result = implementation(*arguments)
+            self._publish('did_evm_execute_instruction', current, arguments, result)
         except ConcretizeStack as ex:
             for arg in reversed(arguments):
                 self._push(arg)
@@ -1157,7 +1587,7 @@ class EVM(Eventful):
                 self._store(mem_offset+i, 0)
             else:
                 self._store(mem_offset+i, Operators.ORD(self.bytecode[code_offset+i]))
-        self._publish( 'did_read_code', code_offset, size)
+        self._publish( 'did_evm_read_code', code_offset, size)
 
     def GASPRICE(self):
         '''Get price of gas in current environment'''
@@ -1239,13 +1669,16 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
-        return self.global_storage[self.address]['storage'].get(offset,0)
+        value = self.global_storage[self.address]['storage'].get(offset,0)
+        self._publish('did_evm_read_storage', offset, value)
+        return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
         self.global_storage[self.address]['storage'][offset] = value
         if value is 0:
             del self.global_storage[self.address]['storage'][offset]
+        self._publish('did_evm_write_storage', offset, value)
 
     def JUMP(self, dest):
         '''Alter the program counter'''
@@ -1297,13 +1730,13 @@ class EVM(Eventful):
     ##########################################################################
     ##Logging Operations
     def LOG(self, address, size, *topics):
+
         if issymbolic(size):
             raise ConcretizeStack(2, policy='ONE')
 
-        memlog = []
-        for i in range(size):
-            memlog.append(self._load(address+i))
-        self.logs.append((self.address, memlog, topics))
+        memlog = self.read_buffer(address, size)
+
+        self.logs.append(EVMLog(self.address, memlog, topics))
         logger.info('LOG %r %r', memlog, topics)
 
     ##########################################################################
@@ -1311,10 +1744,20 @@ class EVM(Eventful):
     def read_buffer(self, offset, size):
         if size:
             self._allocate(offset+size)
-        buf = []
+
+        data = []
         for i in xrange(size):
-            buf.append(Operators.CHR(self._load(offset+i)))
-        return buf
+            data.append(Operators.CHR(self._load(offset+i)))
+
+        if any(map(issymbolic, data)):
+            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
+            for i in range(len(data)):
+                data_symb[i] = Operators.ORD(data[i])
+            data = data_symb
+        else:
+            data = ''.join(data)
+
+        return data
 
     def write_buffer(self, offset, buf):
         count = 0
@@ -1428,7 +1871,7 @@ class EVM(Eventful):
 ################################################################################
 ################################################################################
 class EVMWorld(Platform):
-    _published_events = {'read_code', 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} 
+    _published_events = {'evm_read_storage', 'evm_write_storage', 'evm_read_code', 'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'} 
 
     def __init__(self, constraints, storage=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
@@ -1439,6 +1882,7 @@ class EVMWorld(Platform):
         self._logs = list()
         self._sha3 = {}
         self._pending_transaction = None
+        self._transactions = list()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1449,6 +1893,8 @@ class EVMWorld(Platform):
         state['constraints'] = self._constraints
         state['callstack'] = self._callstack
         state['deleted_address'] = self._deleted_address
+        state['transactions'] = self._transactions
+
         return state
 
     def __setstate__(self, state):
@@ -1460,6 +1906,7 @@ class EVMWorld(Platform):
         self._constraints = state['constraints']
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
+        self._transactions = state['transactions']
         self._do_events()
 
     def _do_events(self):
@@ -1488,6 +1935,14 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
+    @property
+    def transactions(self):
+        return self._transactions
+
+    @property
+    def last_return_data(self):
+        return self.transactions[-1].return_data
+
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
@@ -1506,11 +1961,28 @@ class EVMWorld(Platform):
             return None
 
     @property
-    def suicide(self):
-        if self.depth:
-            return self.current.suicide
-        else:
-            return self._suicide
+    def accounts(self):
+        return self.storage.keys()
+
+    @property
+    def normal_accounts(self):
+        accs = []
+        for address in self.accounts:
+            if len(self.get_code(address)) == 0:
+                accs.append(address)
+        return accs
+
+    @property
+    def contract_accounts(self):
+        accs = []
+        for address in self.accounts:
+            if len(self.get_code(address)) > 0:
+                accs.append(address)
+        return accs
+
+    @property
+    def deleted_addresses(self):
+        return self._deleted_address
 
     @property
     def storage(self):
@@ -1519,14 +1991,73 @@ class EVMWorld(Platform):
         else:
             return self._global_storage
 
-    @storage.setter
-    def storage(self, value):
-        if self.depth:
-            self.current.global_storage = value
-        else:
-            self._global_storage = value
+    def set_storage_data(self, address, offset, value):
+        self.storage[address]['storage'][offset] = value
 
-    def _push(self, vm):
+    def get_storage_data(self, address, offset):
+        return self.storage[address]['storage'].get(offset)
+
+    def get_storage_items(self, address):
+        return self.storage[address]['storage'].items()
+
+    def has_storage(self, address):
+        return len(self.storage[address]['storage'].items()) != 0
+
+    def set_balance(self, address, value):
+        self.storage[int(address)]['balance'] = value
+
+    def get_balance(self, address):
+        return self.storage[address]['balance']
+
+    def add_to_balance(self, address, value):
+        self.storage[address]['balance'] += value
+
+    def get_code(self, address):
+        return self.storage[address]['code']
+
+    def set_code(self, address, data):
+        self.storage[address]['code'] = data
+
+    def has_code(self, address):
+        return len(self.storage[address]['code']) > 0
+
+
+    def log(self, address, topic, data):
+        self.logs.append((address, data, topics))
+        logger.info('LOG %r %r', memlog, topics)
+
+    def log_storage(self, addr):
+        pass
+
+    def add_refund(self, value):
+        pass
+
+    def block_prevhash(self):
+        return 0
+
+    def block_coinbase(self):
+        return 0
+
+    def block_timestamp(self):
+        return 0
+
+    def block_number(self):
+        return  0
+
+    def block_difficulty(self):
+        return 0
+
+    def block_gas_limit(self):
+        return 0
+
+    def tx_origin(self):
+        return self.current_vm.origin
+
+    def tx_gasprice(self):
+        return 0
+
+    #CALLSTACK
+    def _push_vm(self, vm):
         #Storage address ->  account(value, local_storage)
         vm.global_storage = self.storage
         vm.global_storage[vm.address]['storage'] = copy.copy(self.storage[vm.address]['storage'])
@@ -1543,16 +2074,21 @@ class EVMWorld(Platform):
                 self._pop(rollback=True)
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
-    def _pop(self, rollback=False):
+    def _pop_vm(self, rollback=False):
         vm = self._callstack.pop()
         assert self.constraints == vm.constraints
         if self.current:
             self.current.constraints = vm.constraints
+
         if not rollback:
-            self.storage = vm.global_storage
-            self._deleted_address = self._deleted_address.union(vm.suicide)
-            self._logs += vm.logs
-            if not self.depth:
+            if self.depth:
+                self.current.global_storage = vm.global_storage
+                self.current.logs += vm.logs
+                self.current.suicides = self.current.suicides.union(vm.suicides)
+            else:
+                self._global_storage = vm.global_storage
+                self._deleted_address = self._deleted_address.union(vm.suicides)
+                self._logs += vm.logs
                 for address in self._deleted_address:
                     del self.storage[address]
         return vm
@@ -1601,11 +2137,6 @@ class EVMWorld(Platform):
         except TerminateState as e:
             if self.depth == 0 and e.message == 'RETURN':
                 return self.last_return
-            '''import traceback
-            print "Exception in user code:"
-            print '-'*60
-            traceback.print_exc(file=sys.stdout)
-            print '-'*60'''
             raise e
 
     def create_account(self, address=None, balance=0, code='', storage=None):
@@ -1651,8 +2182,7 @@ class EVMWorld(Platform):
 
         self.storage[address]['storage'] = EVMMemory(self.constraints, 256, 256)
 
-
-        self._pending_transaction = ('Create', address, origin, price, '', origin, balance, init, header)
+        self._pending_transaction = ('Create', address, origin, price, '', origin, balance, ''.join(init), header)
 
         if run:
             assert False
@@ -1671,6 +2201,7 @@ class EVMWorld(Platform):
         caller = self.current.address
         price = self.current.price
         header = {'timestamp': 100}  #FIXME
+
         self.create_contract(origin, price, address=None, balance=value, init=bytecode, run=False)
         self._process_pending_transaction()
 
@@ -1682,22 +2213,28 @@ class EVMWorld(Platform):
         if origin is None and caller is not None:
             origin = caller
 
+        if address not in self.accounts or\
+           caller not in self.accounts or \
+           origin != caller and origin not in self.accounts:
+            raise TerminateState('Account does not exist %x'%address, testcase=True)
+
         if header is None:
             header = {'timestamp':1}
         if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
-            #data_symb = EVMMemory(self.constraints, 256, 8)
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
-        bytecode = self.storage[address]['code']
+        else:
+            data = ''.join(data)
+        bytecode = self.get_code(address)
         self._pending_transaction = ('Call', address, origin, price, data, caller, value, bytecode, header)
 
         if run:
             assert self.depth == 0
             assert  not issymbolic(caller) 
             assert  not issymbolic(address) 
-            assert self.storage[caller]['balance'] >= value
+            assert self.get_balance(caller) >= value
             #run contract
             #Assert everything is concrete?
             try:
@@ -1707,6 +2244,11 @@ class EVMWorld(Platform):
                 pass
 
     def _process_pending_transaction(self):
+        def err():
+            if self.depth == 0:
+                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+
+
         if self._pending_transaction is None:
             return
         assert self.current is None or self.current.last_exception is not None
@@ -1714,39 +2256,68 @@ class EVMWorld(Platform):
         ty, address, origin, price, data, caller, value, bytecode, header = self._pending_transaction
 
 
-        if issymbolic(self.storage[caller]['balance']) or issymbolic(value):
-            res = solver.get_all_values(self._constraints, self.storage[caller]['balance'] < value)
-            if set(res) == set([True, False]): 
-                raise Concretize('Forking on available funds',
-                                 expression = self.storage[caller]['balance'] < value,
-                                 setstate=lambda a,b: None,
-                                 policy='ALL')
-            if set(res) == set([True]): 
-                self._pending_transaction = None
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
-        else:
-            if self.storage[caller]['balance'] < value:
-                self._pending_transaction = None
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
+        src_balance = self.get_balance(caller) #from
+        dst_balance = self.get_balance(address) #to
 
-        self._pending_transaction = None
+        #discarding absurd amount of ether (no ether overflow)
+        self.constraints.add(src_balance + value >= src_balance)
 
-        #discarding absurd amount of ether
-        self.constraints.add(self.storage[address]['balance'] + value >= self.storage[address]['balance'])
+        failed = False
 
-        self.storage[caller]['balance'] -= value
+        if self.depth > 1024:
+            failed=True
+
+        if not failed:
+            enough_balance = src_balance >= value
+            if issymbolic(enough_balance):
+                enough_balance_solutions = solver.get_all_values(self._constraints, enough_balance)
+
+                if set(enough_balance_solutions) == set([True, False]): 
+                    raise Concretize('Forking on available funds',
+                                     expression = src_balance < value,
+                                     setstate=lambda a,b: None,
+                                     policy='ALL')
+
+                if set(enough_balance_solutions) == set([False]):
+                    failed = True
+            else:
+                if not enough_balance:
+                    failed = True
+
+        self._pending_transaction=None
+
+
+        if ty == 'Create': 
+            data = bytecode
+ 
+        is_human_tx = ( self.depth == 0 )
+
+        if failed:
+            if is_human_tx: #human transaction
+                tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
+                self._transactions.append(tx)
+            else:
+                self.current._push(0)
+                return
+
+        #Here we have enoug funds and room in the callstack
+
         self.storage[address]['balance'] += value
+        self.storage[caller]['balance'] -= value
 
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
-        
-        self._push(new_vm)
-        if self.depth == 1:
+        self._push_vm(new_vm)
+
+        if is_human_tx:
             #handle human transactions
             if ty == 'Create':
                 self.current.last_exception = Create(None, None, None)
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
+            tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
+            self._transactions.append(tx)
+ 
 
     def CALL(self, gas, to, value, data):
         address = to
@@ -1754,17 +2325,18 @@ class EVMWorld(Platform):
         caller = self.current.address
         price = self.current.price
         depth = self.depth + 1
-        bytecode = self.storage[to]['code']
+        bytecode = self.get_code(to)
         header = {'timestamp' :1}
         self.transaction(address, origin, price, data, caller, value, header)
         self._process_pending_transaction()
 
 
     def RETURN(self, data):
-        prev_vm = self._pop() #current VM changed!
+        prev_vm = self._pop_vm() #current VM changed!
         if self.depth == 0:
-            self.last_return=data
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=data
+            tx.result = 'RETURN'
             raise TerminateState("RETURN", testcase=True)
 
 
@@ -1774,8 +2346,7 @@ class EVMWorld(Platform):
 
         if isinstance(last_ex, Create):
             self.current._push(prev_vm.address)
-            self.storage[prev_vm.address]['code'] = data
-
+            self.set_code(prev_vm.address, data)
         else:
             size = min(last_ex.out_size, len(data))
             self.current.write_buffer(last_ex.out_offset, data[:size])
@@ -1784,9 +2355,11 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def STOP(self):
-        prev_vm = self._pop(rollback=False)
+        prev_vm = self._pop_vm(rollback=False)
         if self.depth == 0:
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=None
+            tx.result = 'STOP'
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
         self.current._push(1)
@@ -1795,13 +2368,15 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def THROW(self):
-        prev_vm = self._pop(rollback=True)
+        prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
         self.storage[prev_vm.caller]['balance'] += prev_vm.value
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=None
+            tx.result = 'THROW'
             raise TerminateState("THROW", testcase=True)
 
         self.current.last_exception = None
@@ -1810,14 +2385,15 @@ class EVMWorld(Platform):
         self.current.pc += self.current.instruction.size
 
     def REVERT(self, data):
-        prev_vm = self._pop(rollback=True)
+        prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
         self.storage[prev_vm.caller]['balance'] += prev_vm.value
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
-            self.last_return=data
-            self.last_pc = prev_vm.pc
+            tx = self._transactions[-1]
+            tx.return_data=data
+            tx.result = 'REVERT'
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
@@ -1832,12 +2408,14 @@ class EVMWorld(Platform):
             self.create_account(address=recipient, balance=0, code='', storage=None)
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
-        self.suicide.add(address)
-        prev_vm = self._pop(rollback=False)
-        if self.depth == 0:
-            self.last_pc = prev_vm.pc
-            raise TerminateState("SELFDESTRUCT", testcase=True)
+        self.current.suicides.add(address)
+        prev_vm = self._pop_vm(rollback=False)
 
+        if self.depth == 0:
+            tx = self._transactions[-1]
+            tx.result = 'SELFDESTRUCT'
+            raise TerminateState("SELFDESTRUCT", testcase=True)
+            
     def HASH(self, data):
 
         def compare_buffers(a, b):
@@ -1854,7 +2432,7 @@ class EVMWorld(Platform):
         logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         #Broadcast the signal 
-        self._publish( 'on_symbolic_sha3', data, self._sha3.items())
+        self._publish('on_symbolic_sha3', data, self._sha3.items())
 
         results = []
         known_hashes = False
@@ -1881,61 +2459,18 @@ class EVMWorld(Platform):
             
         self.current._push(value)
         self.current.pc += self.current.instruction.size
-        
 
+    def generate_workspace_files(self):
+        ret = {}
+        for i, tx in enumerate(self.transactions):
+            name = 'tx.{}'.format(i)
+            data = {
+                'to': tx.address,
+                'from': tx.caller,
+                'data': solver.get_value(self.constraints, tx.data).encode('hex'),
+                'value': tx.value if not issymbolic(tx.value) else '{symbolic!}'
+            }
+            import json
+            ret[name] = json.dumps(data, indent=4)
 
-if __name__ == '__main__':
-    bytecode='60606040526000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635ec01e4d146044578063e1c7392a146067575bfe5b3415604b57fe5b60516076565b6040518082815260200191505060405180910390f35b3415606e57fe5b60746080565b005b6000600490505b90565b5b5600a165627a7a723058201ee3d4d835c10d46b09531c20dcdfe17b2dcef676a2666d66d0b3dde4969f6e00029'.decode   ('hex')
-    #print EVMDecoder.disassemble(bytecode)
-
-    instructions = list(EVMDecoder.decode_all(bytecode))
-
-    BBs = {}
-    EDGES = {}
-    current_bb = []
-    address = 0
-    for i in instructions:
-        i.address = address
-
-        current_bb.append(i)
-        if i.name in ['JUMPI', 'JUMP', 'STOP', 'INVALID', 'RETURN', 'SELFDESTRUCT', 'REVERT']:
-            BBs[current_bb[0].address] = tuple(current_bb)
-            if i.name in ['JUMP', 'JUMPI']:
-                source = current_bb[0].address
-                if len(current_bb) >= 2:
-                    if current_bb[-2].name.startswith('PUSH'):
-                        dest = current_bb[-2].operand
-                    EDGES.setdefault(source, set()).add(dest)
-                    if i.name  == 'JUMPI':
-                        EDGES[source].add(address + i.size)
-
-            current_bb = list()
-        address += i.size
-
-
-    for addr in sorted(BBs.keys()):
-        print hex(addr), ":",  map(hex, sorted(list(EDGES.get(addr,set()))))
-        print '\n'.join(map(lambda x: "  "+str(x), BBs[addr]))
- 
-    address=0x414141414141
-    origin=0x424242424242
-    price=1
-    data='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-    sender=0x434343434343
-    value=1
-    header={'timestamp':1}
-    depth=0
-
-        
-    from manticore.core.smtlib.constraints import ConstraintSet
-    constraints = ConstraintSet()
-    memory = constraints.new_array(256, 'MEM_%d'%depth)
-    evm = EVM(memory, address, origin, price, data, sender, value, bytecode, header, depth)
-    print evm
-    import pickle
-    a = pickle.dumps(evm)
-    evm = pickle.loads(a)
-    while True:
-        evm.execute()  
-        print evm
-
+        return ret

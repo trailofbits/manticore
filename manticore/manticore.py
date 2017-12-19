@@ -394,7 +394,7 @@ class Manticore(Eventful):
 
     @property
     def running(self):
-        return self._executor._running.value
+        return self._executor.running
 
     def enqueue(self, state):
         ''' Dynamically enqueue states. Users should typically not need to do this '''
@@ -690,7 +690,7 @@ class Manticore(Eventful):
                 continue
 
             symbols = section.get_symbol_by_name(symbol)
-            if len(symbols) == 0:
+            if not symbols:
                 continue
 
             return symbols[0].entry['st_value']
