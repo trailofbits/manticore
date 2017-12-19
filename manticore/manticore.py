@@ -21,8 +21,8 @@ from .core.executor import Executor
 from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
-from .core.workspace import ManticoreOutput, Workspace
-from .platforms import linux, decree, windows, evm
+from .core.workspace import ManticoreOutput
+from .platforms import linux, decree, evm
 from .utils.helpers import issymbolic, is_binja_disassembler
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
@@ -103,48 +103,6 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
     return initial_state
 
 
-def make_windows(args, programs, context, data, offset, maxsymb, workspace, size=None, buffer=None, **kwargs):
-    assert args.size is not None, "Need to specify buffer size"
-    assert args.buffer is not None, "Need to specify buffer base address"
-    logger.debug('Loading program %s (platform: Windows)', args.argv)
-    additional_context = None
-    if args.context:
-        with open(args.context, "r") as addl_context_file:
-            additional_context = cPickle.loads(addl_context_file.read())
-            logger.debug('Additional context loaded with contents {}'.format(additional_context)) #DEBUG
-
-    constraints = ConstraintSet()
-    platform = windows.SWindows(constraints, args.argv[0], additional_context, snapshot_folder=args.workspace)
-
-    #This will interpret the buffer specification written in INTEL ASM. (It may dereference pointers)
-    data_size = parse(args.size, platform.current.read_bytes, platform.current.read_register)
-    data_ptr  = parse(args.buffer, platform.current.read_bytes, platform.current.read_register)
-
-    logger.debug('Buffer at %x size %d bytes)', data_ptr, data_size)
-    buf_str = "".join(platform.current.read_bytes(data_ptr, data_size))
-    logger.debug('Original buffer: %s', buf_str.encode('hex'))
-
-    offset = args.offset
-    concrete_data = args.data.decode('hex')
-    assert data_size >= offset + len(concrete_data)
-    size = min(args.maxsymb, data_size - offset - len(concrete_data))
-    symb = constraints.new_array(name='RAWMSG', index_max=size)
-
-    platform.current.write_bytes(data_ptr + offset, concrete_data)
-    platform.current.write_bytes(data_ptr + offset + len(concrete_data), [symb[i] for i in xrange(size)] )
-
-    logger.debug('First %d bytes are left concrete', offset)
-    logger.debug('followed by %d bytes of concrete start', len(concrete_data))
-    hex_head = "".join(platform.current.read_bytes(data_ptr, offset+len(concrete_data)))
-    logger.debug('Hexdump head: %s', hex_head.encode('hex'))
-    logger.debug('Total symbolic characters inserted: %d', size)
-    logger.debug('followed by %d bytes of unmodified concrete bytes at end.', (data_size-offset-len(concrete_data))-size )
-    hex_tail = "".join(map(chr, platform.current.read_bytes(data_ptr+offset+len(concrete_data)+size, data_size-(offset+len(concrete_data)+size))))
-    logger.debug('Hexdump tail: %s', hex_tail.encode('hex'))
-    logger.info("Starting PC is: {:08x}".format(platform.current.PC))
-
-    return State(constraints, platform)
-
 def make_initial_state(binary_path, **kwargs):
     if 'disasm' in kwargs:
         if kwargs.get('disasm') == "binja-il":
@@ -203,19 +161,27 @@ class Manticore(Eventful):
 
         #sugar for 'will_execute_instruction"
         self._hooks = {}
-        self._executor = Executor(workspace=self._output.descriptor, policy=policy)
+        self._executor = Executor(store=self._output.store, policy=policy)
         self._workers = []
 
         #Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
+
+        if isinstance(path_or_state, str):
+            assert os.path.isfile(path_or_state)
+            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
+        elif isinstance(path_or_state, State):
+            self._initial_state = path_or_state
+
+        if not isinstance(self._initial_state, State):
+            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
 
         self.plugins = set()
 
         #Move the folowing into a plugin
         self._assertions = {}
         self._coverage_file = None
-        self._run_args = (path_or_state, argv, kwargs)
-        self._trace_to_follow = None
+        self.trace = None
 
         #FIXME move the folowing to aplugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
@@ -227,13 +193,6 @@ class Manticore(Eventful):
         self.register_plugin(Tracer())
         self.register_plugin(RecordSymbolicBranches())
 
-    @property
-    def trace(self):
-        return self._trace_to_follow
-
-    @trace.setter
-    def trace(self, trace):
-        self._trace_to_follow = trace
 
     def register_plugin(self, plugin):
         #Global enumeration of valid events
@@ -246,7 +205,6 @@ class Manticore(Eventful):
 
         events = Eventful.all_events()
         prefix = Eventful.prefixes
-
         all_events = [x+y for x, y in itertools.product(prefix, events)]
         for event_name in all_events:
             callback_name = '{}_callback'.format(event_name)
@@ -436,7 +394,7 @@ class Manticore(Eventful):
 
     @property
     def running(self):
-        return self._executor._running.value
+        return self._executor.running
 
     def enqueue(self, state):
         ''' Dynamically enqueue states. Users should typically not need to do this '''
@@ -658,21 +616,9 @@ class Manticore(Eventful):
 
     def _start_run(self):
         assert not self.running
-
-        path_or_state, argv, kwargs = self._run_args
-
-        if isinstance(path_or_state, str):
-            assert os.path.isfile(path_or_state)
-            self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
-        elif isinstance(path_or_state, State):
-            self._initial_state = path_or_state
-
-        if not isinstance(self._initial_state, State):
-            raise TypeError("Manticore must be intialized with either a State or a path to a binary")
-
-        #FIXME this will be self.publish
         if self._initial_state is not None:
             self._publish('will_start_run', self._initial_state)
+
             self.enqueue(self._initial_state)
             self._initial_state = None
 
@@ -744,7 +690,7 @@ class Manticore(Eventful):
                 continue
 
             symbols = section.get_symbol_by_name(symbol)
-            if len(symbols) == 0:
+            if not symbols:
                 continue
 
             return symbols[0].entry['st_value']
@@ -766,6 +712,6 @@ class Manticore(Eventful):
             f.write(' '.join(sys.argv))
 
         elapsed = time.time() - self._time_started
-        logger.info('Results in %s', self._output.uri)
+        logger.info('Results in %s', self._output.store.uri)
         logger.info('Total time: %s', elapsed)
 

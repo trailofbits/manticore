@@ -18,7 +18,7 @@ from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
-from ..platforms.platform import Platform
+from ..platforms.platform import Platform, SyscallNotImplemented
 from ..utils.helpers import issymbolic, is_binja_disassembler
 from . import linux_syscalls
 
@@ -39,6 +39,9 @@ def perms_from_elf(elf_flags):
 def perms_from_protflags(prot_flags):
     return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
 
+def mode_from_flags(file_flags):
+    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags&7]
+
 
 class File(object):
     def __init__(self, *args, **kwargs):
@@ -50,7 +53,11 @@ class File(object):
         state = {}
         state['name'] = self.name
         state['mode'] = self.mode
-        state['pos'] = self.tell()
+        try:
+            state['pos'] = self.tell()
+        except IOError:
+            # This is to handle special files like /dev/tty
+            state['pos'] = None
         return state
 
     def __setstate__(self, state):
@@ -58,7 +65,8 @@ class File(object):
         mode = state['mode']
         pos = state['pos']
         self.file = file(name, mode)
-        self.seek(pos)
+        if pos is not None:
+            self.seek(pos)
 
     @property
     def name(self):
@@ -747,7 +755,7 @@ class Linux(Platform):
         elf = self.elf
         arch = self.arch
         addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
-        logger.debug("Loading %s as a %s elf"%(filename, arch))
+        logger.debug("Loading %s as a %s elf",filename, arch)
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
@@ -839,8 +847,8 @@ class Linux(Platform):
         #cpu.write_bytes(elf_bss, '\x00'*((elf_bss | (align-1))-elf_bss))
 
         logger.debug("Zeroing main elf fractional pages. From %x to %x.", elf_bss, elf_brk)
-        logger.debug("Main elf bss:%x"%elf_bss)
-        logger.debug("Main elf brk %x:"%elf_brk)
+        logger.debug("Main elf bss:%x",elf_bss)
+        logger.debug("Main elf brk %x:",elf_brk)
 
 	#FIXME Need a way to inspect maps and perms so
 	#we can rollback all to the initial state after zeroing
@@ -932,7 +940,7 @@ class Linux(Platform):
 	    try:
 	        cpu.memory[elf_bss:elf_brk] = '\x00'*(elf_brk-elf_bss)
 	    except Exception, e:
-	        logger.debug("Exception zeroing Interpreter fractional pages: %s"%str(e))
+	        logger.debug("Exception zeroing Interpreter fractional pages: %s",str(e))
             #TODO #FIXME mprotect as it was before zeroing?
 
 
@@ -1025,6 +1033,17 @@ class Linux(Platform):
         else:
             return self.files[fd]
 
+    def _transform_write_data(self, data):
+        '''
+        Implement in subclass to transform data written by write(2)/writev(2)
+
+        Nop by default.
+        :param list data: Anything being written to a file descriptor
+        :rtype list
+        :return: Transformed data
+        '''
+        return data
+
     def sys_umask(self, mask):
         '''
         umask - Set file creation mode mask
@@ -1103,7 +1122,6 @@ class Linux(Platform):
                         "Fd not seekable. Returning EBADF"))
             return -errno.EBADF
 
-        logger.debug("LSEEK(%d, 0x%08x (%d), %d)", fd, offset, signed_offset, whence)
         return 0
 
     def sys_read(self, fd, buf, count):
@@ -1124,13 +1142,6 @@ class Linux(Platform):
             self.syscall_trace.append(("_read", fd, data))
             self.current.write_bytes(buf, data)
 
-        logger.debug("READ(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
-                     fd,
-                     buf,
-                     count,
-                     len(data),
-                     repr(data)[:min(count,10)],
-                     len(data))
         return len(data)
 
     def sys_write(self, fd, buf, count):
@@ -1166,6 +1177,7 @@ class Linux(Platform):
                 raise RestartSyscall()
 
             data = cpu.read_bytes(buf, count)
+            data = self._transform_write_data(data)
             write_fd.write(data)
 
             for line in ''.join([str(x) for x in data]).split('\n'):
@@ -1197,10 +1209,6 @@ class Linux(Platform):
                 break
             filename += c
 
-        logger.debug("access(%s, %x) -> %r",
-                     filename,
-                     mode,
-                     os.access(filename, mode))
         if os.access(filename, mode):
             return 0
         else:
@@ -1228,7 +1236,6 @@ class Linux(Platform):
 
         uname_buf = ''.join(pad(pair[1]) for pair in info)
         self.current.write_bytes(old_utsname, uname_buf)
-        logger.debug("sys_newuname(...) -> %s", uname_buf)
         return 0
 
     def sys_brk(self, brk):
@@ -1249,7 +1256,6 @@ class Linux(Platform):
                 addr = mem.mmap(mem._ceil(self.elf_brk), size, perms)
                 assert mem._ceil(self.elf_brk) == addr, "Error in brk!"
             self.elf_brk += size
-        logger.debug("sys_brk(0x%08x) -> 0x%08x", brk, self.elf_brk)
         return self.elf_brk
 
     def sys_arch_prctl(self, code, addr):
@@ -1270,7 +1276,6 @@ class Linux(Platform):
         assert code == ARCH_SET_FS
         self.current.FS = 0x63
         self.current.set_descriptor(self.current.FS, addr, 0x4000, 'rw')
-        logger.debug("sys_arch_prctl(%04x, %016x) -> 0", code, addr)
         return 0
 
     def sys_ioctl(self, fd, request, argp):
@@ -1279,8 +1284,8 @@ class Linux(Platform):
         else:
             return -errno.EINVAL
 
-    def _sys_open_get_file(self, filename, flags, mode):
-        f = File(filename, mode) # TODO (theo) modes, flags
+    def _sys_open_get_file(self, filename, flags):
+        f = File(filename, mode_from_flags(flags))
         return f
 
     def sys_open(self, buf, flags, mode):
@@ -1296,15 +1301,16 @@ class Linux(Platform):
                     filename = os.path.abspath(self.program)
                 else:
                     logger.info("FIXME!")
-            mode = {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[flags&7]
 
-            f = self._sys_open_get_file(filename, flags, mode)
-            logger.debug("Opening file %s for %s real fd %d",
-                         filename, mode, f.fileno())
-        # FIXME(theo) generic exception
-        except Exception as e:
-            logger.info("Could not open file %s. Reason %s" % (filename, str(e)))
-            return -1
+            f = self._sys_open_get_file(filename, flags)
+            logger.debug("Opening file %s for real fd %d",
+                         filename, f.fileno())
+        except IOError as e:
+            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            if e.errno is not None:
+                return -e.errno
+            else:
+                return -errno.EINVAL
 
         return self._open(f)
 
@@ -1324,8 +1330,6 @@ class Linux(Platform):
         except OSError as e:
             ret = -e.errno
 
-        logger.debug("sys_rename('%s', '%s') -> %s", oldname, newname, ret)
-
         return ret
 
     def sys_fsync(self, fd):
@@ -1341,12 +1345,14 @@ class Linux(Platform):
         except BadFd:
             ret = -errno.EINVAL
 
-        logger.debug("sys_fsync(%d) -> %d", fd, ret)
-
         return ret
 
     def sys_getpid(self, v):
         logger.debug("GETPID, warning pid modeled as concrete 1000")
+        return 1000
+
+    def sys_gettid(self, v):
+        logger.debug("GETTID, warning tid modeled as concrete 1000")
         return 1000
 
     def sys_ARM_NR_set_tls(self, val):
@@ -1390,7 +1396,6 @@ class Linux(Platform):
             return -errno.EBADF
         
         newfd = self._dup(fd)
-        logger.debug('sys_dup(%d) -> %d', fd, newfd)
         return newfd
         
     def sys_dup2(self, fd, newfd):
@@ -1420,7 +1425,6 @@ class Linux(Platform):
         
         self.files[newfd] = self.files[fd]
                     
-        logger.debug('sys_dup2(%d,%d) -> %d', fd, newfd, newfd)
         return newfd
     
     def sys_close(self, fd):
@@ -1453,7 +1457,6 @@ class Linux(Platform):
         else:
             data = os.readlink(filename)[:bufsize]
         self.current.write_bytes(buf, data)
-        logger.debug("READLINK %d %x %d -> %s",path,buf,bufsize,data)
         return len(data)
 
     def sys_mmap_pgoff(self, address, size, prot, flags, fd, offset):
@@ -1532,13 +1535,6 @@ class Linux(Platform):
             cpu.memory.munmap(result, size)
             result = -1
 
-        logger.debug("sys_mmap(%s, 0x%x, %s, %x, %d) - (0x%x)",
-                     actually_mapped,
-                     size,
-                     perms,
-                     flags,
-                     fd,
-                     result)
         return result
 
     def sys_mprotect(self, start, size, prot):
@@ -1554,7 +1550,6 @@ class Linux(Platform):
         '''
         perms = perms_from_protflags(prot)
         ret = self.current.memory.mprotect(start, size, perms)
-        logger.debug("sys_mprotect(0x%016x, 0x%x, %s) -> %r (%r)", start, size, perms, ret, prot)
         return 0
 
     def sys_munmap(self, addr, size):
@@ -1628,12 +1623,6 @@ class Linux(Platform):
             total += len(data)
             cpu.write_bytes(buf, data)
             self.syscall_trace.append(("_read", fd, data))
-            logger.debug("READV(%r, %r, %r) -> <%r> (size:%r)",
-                         fd,
-                         buf,
-                         size,
-                         data,
-                         len(data))
         return total
 
     def sys_writev(self, fd, iov, count):
@@ -1650,6 +1639,12 @@ class Linux(Platform):
         ptrsize = cpu.address_bit_size
         sizeof_iovec = 2 * (ptrsize // 8)
         total = 0
+        try:
+            write_fd = self._get_fd(fd)
+        except BadFd:
+            logger.error("writev: Not a valid file descriptor ({})".format(fd))
+            return -errno.EBADF
+
         for i in xrange(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
@@ -1657,8 +1652,8 @@ class Linux(Platform):
             data = ""
             for j in xrange(0,size):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
-            logger.debug("WRITEV(%r, %r, %r) -> <%r> (size:%r)"%(fd, buf, size, data, len(data)))
-            self.files[fd].write(data)
+            data = self._transform_write_data(data)
+            write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))
             total+=size
         return total
@@ -1725,30 +1720,23 @@ class Linux(Platform):
         self.sched()
         self.running.remove(procid)
         #self.procs[procid] = None
-        logger.debug("EXIT_GROUP PROC_%02d %s", procid, error_code)
         if len(self.running) == 0 :
-            raise TerminateState("Program finished with exit status: %r" % error_code, testcase=True)
+            raise TerminateState("Program finished with exit status: %r" % ctypes.c_int32(error_code).value, testcase=True)
         return error_code
 
     def sys_ptrace(self, request, pid, addr, data):
-        logger.debug("sys_ptrace(%016x, %d, %016x, %016x) -> 0", request, pid, addr, data)
         return 0
     def sys_nanosleep(self, req, rem):
-        logger.debug("sys_nanosleep(...)")
         return 0
     def sys_set_tid_address(self, tidptr):
-        logger.debug("sys_set_tid_address(%016x) -> 0", tidptr)
         return 1000 #tha pid
     def sys_faccessat(self, dirfd, pathname, mode, flags):
         filename = self.current.read_string(pathname)
-        logger.debug("sys_faccessat(%016x, %s, %x, %x) -> 0", dirfd, filename, mode, flags)
         return -1
 
     def sys_set_robust_list(self, head, length):
-        logger.debug("sys_set_robust_list(%016x, %d) -> -1", head, length)
         return -1
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
-        logger.debug("sys_futex(...) -> -1")
         return -1
     def sys_getrlimit(self, resource, rlim):
         ret = -1
@@ -1758,14 +1746,11 @@ class Linux(Platform):
             # see the BUGS section in getrlimit(2) man page.
             self.current.write_bytes(rlim, struct.pack('<LL', *rlimit_tup))
             ret = 0
-        logger.debug("sys_getrlimit(%x, %x) -> %d", resource, rlim, ret)
         return ret
 
     def sys_fadvise64(self, fd, offset, length, advice):
-        logger.debug("sys_fadvise64(%x, %x, %x, %x) -> 0", fd, offset, length, advice)
         return 0
     def sys_gettimeofday(self, tv, tz):
-        logger.debug("sys_gettimeofday(%x, %x) -> 0", tv, tz)
         return 0
 
     def sys_socket(self, domain, socket_type, protocol):
@@ -1780,7 +1765,6 @@ class Linux(Platform):
 
         f = SocketDesc(domain, socket_type, protocol)
         fd = self._open(f)
-        logger.debug("socket(%d, %d, %d) -> %d", domain, socket_type, protocol, fd)
         return fd
 
     def _is_sockfd(self, sockfd):
@@ -1793,11 +1777,9 @@ class Linux(Platform):
             return -errno.EBADF
 
     def sys_bind(self, sockfd, address, address_len):
-        logger.debug("bind(%d, %x, %d)", sockfd, address, address_len)
         return self._is_sockfd(sockfd)
 
     def sys_listen(self, sockfd, backlog):
-        logger.debug("listen(%d, %d)", sockfd, backlog)
         return self._is_sockfd(sockfd)
 
     def sys_accept(self, sockfd, addr, addrlen, flags):
@@ -1807,7 +1789,6 @@ class Linux(Platform):
 
         sock = Socket()
         fd = self._open(sock)
-        logger.debug('accept(%d, %x, %d, %d) -> %d', sockfd, addr, addrlen, flags, fd)
         return fd
 
     def sys_recv(self, sockfd, buf, count, flags):
@@ -1822,10 +1803,6 @@ class Linux(Platform):
         data = sock.read(count)
         self.current.write_bytes(buf, data)
         self.syscall_trace.append(("_recv", sockfd, data))
-
-        logger.debug("recv(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)",
-                     sockfd, buf, count, len(data), repr(data)[:min(count,32)],
-                     len(data))
 
         return len(data)
 
@@ -1874,7 +1851,10 @@ class Linux(Platform):
             name = table.get(index, None)
             implementation = getattr(self, name)
         except (AttributeError, KeyError):
-            raise Exception("SyscallNotImplemented %d %d"%(self.current.address_bit_size, index))
+            if name is not None:
+                raise SyscallNotImplemented(index, name)
+            else:
+                raise Exception("Bad syscall index, {}".format(index))
 
         return self._syscall_abi.invoke(implementation)
 
@@ -2029,9 +2009,11 @@ class Linux(Platform):
             if self.clocks % 10000 == 0:
                 self.check_timers()
                 self.sched()
-        except (Interruption, Syscall):
+        except (Interruption, Syscall) as e:
             try:
                 self.syscall()
+                if hasattr(e, 'on_handled'):
+                    e.on_handled()
             except RestartSyscall:
                 pass
 
@@ -2082,8 +2064,6 @@ class Linux(Platform):
         bufstat += to_timespec(nw, stat.st_mtime) # long   st_mtime, nsec;
         bufstat += to_timespec(nw, stat.st_ctime) # long   st_ctime, nsec;
 
-        logger.debug("sys_newfstat(%d, ...) -> %d bytes", fd, len(bufstat))
-
         self.current.write_bytes(buf, bufstat)
         return 0
 
@@ -2108,8 +2088,6 @@ class Linux(Platform):
 
         def to_timespec(ts):
             return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
-
-        logger.debug("sys_fstat %d", fd)
 
         bufstat = add(8, stat.st_dev)    # dev_t st_dev;
         bufstat += add(4, 0)              # __pad1
@@ -2153,8 +2131,6 @@ class Linux(Platform):
 
         def to_timespec(ts):
             return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
-
-        logger.debug("sys_fstat64 %d", fd)
 
         bufstat = add(8, stat.st_dev)        # unsigned long long      st_dev;
         bufstat += add(4, 0)                  # unsigned char   __pad0[4];
@@ -2316,16 +2292,29 @@ class SLinux(Linux):
         self.symbolic_files = state['symbolic_files']
         super(SLinux, self).__setstate__(state)
 
-    def _sys_open_get_file(self, filename, flags, mode):
+    def _sys_open_get_file(self, filename, flags):
         if filename in self.symbolic_files:
             logger.debug("%s file is considered symbolic", filename)
-            assert flags & 7 == os.O_RDWR or flags & 7 == os.O_RDONLY, (
-                "Symbolic files should be readable?")
-            f = SymbolicFile(self.constraints, filename, mode)
+            f = SymbolicFile(self.constraints, filename, mode_from_flags(flags))
         else:
-            f = super(SLinux, self)._sys_open_get_file(filename, flags, mode)
+            f = super(SLinux, self)._sys_open_get_file(filename, flags)
 
         return f
+
+
+    def _transform_write_data(self, data):
+        bytes_concretized = 0;
+        concrete_data = []
+        for c in data:
+            if issymbolic(c):
+                bytes_concretized += 1
+                c = chr(solver.get_value(self.constraints, c))
+            concrete_data.append(c)
+
+        if bytes_concretized > 0:
+            logger.debug("Concretized {} written bytes.".format(bytes_concretized))
+
+        return super(SLinux, self)._transform_write_data(concrete_data)
 
     #Dispatchers...
 

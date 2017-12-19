@@ -3,10 +3,10 @@ CFLAGS=-O3 -static
 
 all: CFLAGS=-O3 -static 
 all: NOSTDLIBFLAGS=-m32 -fno-builtin -static -nostdlib  -fomit-frame-pointer
-all: nostdlib  basic  sindex  strncmp  arguments ibranch sendmail crackme indexhell baby-re helloworld
+all: nostdlib  basic  sindex  strncmp  arguments ibranch sendmail crackme indexhell baby-re helloworld simpleassert
 
 arm: CC=arm-linux-gnueabi-gcc
-arm: basic  sindex  strncmp  arguments ibranch sendmail crackme indexhell helloworld simple_copy
+arm: basic  sindex  strncmp  arguments ibranch sendmail crackme indexhell helloworld simple_copy simpleassert
 
 clean:
 		rm -rf nostdlib  basic  sindex strncmp arguments sendmail server ibranch crackme indexhell crackme.c simple_copy helloworld nostdlib32 nostdlib64
@@ -22,6 +22,9 @@ simple_copy: simple_copy.c
 		$(CC) $(CFLAGS) simple_copy.c -static -o simple_copy
 basic: basic.c
 		$(CC) $(CFLAGS) basic.c -static -o basic
+
+simpleassert: simpleassert.c
+		$(CC) $(CFLAGS) -O0 simpleassert.c -static -o simpleassert
 
 sindex: sindex.c
 		$(CC) $(CFLAGS) sindex.c -o sindex

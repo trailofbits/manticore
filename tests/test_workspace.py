@@ -106,5 +106,5 @@ class StateTest(unittest.TestCase):
         self.assertIn('smt', keys)
         self.assertIn('trace', keys)
         self.assertIn('messages', keys)
-        self.assertIn('txt', keys)
+        self.assertIn('input', keys)
         self.assertIn('pkl', keys)

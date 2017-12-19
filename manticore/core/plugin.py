@@ -1,5 +1,4 @@
 import logging
-import json
 
 from capstone import CS_GRP_JUMP
 
@@ -243,7 +242,6 @@ class ConcreteTraceFollower(Plugin):
         # Should direct execution via trace
         if self.saved_flags:
             state.cpu.RFLAGS = self.saved_flags
-
 
 #TODO document all callbacks
 class ExamplePlugin(Plugin):

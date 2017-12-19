@@ -334,8 +334,11 @@ class Workspace(object):
     A workspace maintains a list of states to run and assigns them IDs.
     """
 
-    def __init__(self, lock, desc=None):
-        self._store = Store.fromdescriptor(desc)
+    def __init__(self, lock, store_or_desc=None):
+        if isinstance(store_or_desc, Store):
+            self._store = store_or_desc
+        else:
+            self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
         self._last_id = manager.Value('i', 0)
         self._lock = lock
@@ -390,6 +393,14 @@ class Workspace(object):
         self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix))
         return id_
 
+    def rm_state(self, state_id):
+        """
+        Remove a state from storage identified by `state_id`.
+
+        :param state_id: The state reference of what to load
+        """
+        return self._store.rm('{}{:08x}{}'.format(self._prefix, state_id, self._suffix))
+
 
 class ManticoreOutput(object):
     """
@@ -412,9 +423,26 @@ class ManticoreOutput(object):
         self._id_gen = manager.Value('i', self._last_id)
         self._lock = manager.Condition(manager.RLock())
 
+    def testcase(self, prefix='test'):
+        class Testcase(object):
+            def __init__(self, workspace, prefix):
+                self._num = workspace._increment_id()
+                self._prefix = prefix
+                self._ws = workspace
+
+            @property
+            def num(self):
+                return self._num
+
+            def open_stream(self, suffix=''):
+                stream_name = '{}_{:08x}.{}'.format(self._prefix, self._num, suffix)
+                return self._ws.save_stream(stream_name)
+ 
+        return Testcase(self, prefix)
+
     @property
-    def uri(self):
-        return self._store.uri
+    def store(self):
+        return self._store
 
     @property
     def descriptor(self):
@@ -435,6 +463,7 @@ class ManticoreOutput(object):
     def _increment_id(self):
         self._last_id = self._id_gen.value
         self._id_gen.value += 1
+        return self._last_id
 
     def _named_key(self, suffix):
         return '{}_{:08x}.{}'.format(self._named_key_prefix, self._last_id, suffix)
@@ -525,7 +554,7 @@ class ManticoreOutput(object):
             f.write(str(state.constraints))
 
     def save_input_symbols(self, state):
-        with self._named_stream('txt') as f:
+        with self._named_stream('input') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
                 f.write('%s: %s\n' % (symbol.name, repr(buf)))

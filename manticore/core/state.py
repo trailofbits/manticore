@@ -139,7 +139,7 @@ class State(Eventful):
         except ConcretizeMemory as e:
             expression = self.cpu.read_int(e.address, e.size)
             def setstate(state, value):
-                state.cpu.write_int(e.reg_name, value, e.size)
+                state.cpu.write_int(e.address, value, e.size)
             raise Concretize(e.message,
                                 expression=expression,
                                 setstate=setstate,
@@ -192,7 +192,7 @@ class State(Eventful):
         introduce it into the program state.
 
         :param int nbytes: Length of the new buffer
-        :param str name: (keyword arg only) The name to assign to the buffer
+        :param str label: (keyword arg only) The label to assign to the buffer
         :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
                  (i.e. no \0 bytes, except for the last byte). (bool)
         :param taint: Taint identifier of the new buffer
@@ -200,9 +200,9 @@ class State(Eventful):
 
         :return: :class:`~manticore.core.smtlib.expression.Expression` representing the buffer.
         '''
-        name = options.get('label', 'buffer')
+        label = options.get('label', 'buffer')
         taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=name, index_max=nbytes, taint=taint)
+        expr = self._constraints.new_array(name=label, index_max=nbytes, taint=taint)
         self._input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -297,6 +297,10 @@ class State(Eventful):
         from .smtlib import solver
         return solver
 
+
+    def can_be_true(self, expr):
+        return self._solver.can_be_true(self._constraints, expr)
+
     def solve_one(self, expr):
         '''
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
@@ -308,7 +312,7 @@ class State(Eventful):
         '''
         return self._solver.get_value(self._constraints, expr)
 
-    def solve_n(self, expr, nsolves, policy='minmax'):
+    def solve_n(self, expr, nsolves):
         '''
         Concretize a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
         `nsolves` solutions.

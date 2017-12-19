@@ -9,7 +9,7 @@ def ORD(s):
             return s
         else:
             return BitVecExtract(s, 0, 7)
-    elif isinstance(s, int):
+    elif isinstance(s, (int, long)):
         return s & 0xff
     else:
         return ord(s)
@@ -254,7 +254,7 @@ def simplify(value):
 
 
 def SAR(size, a, b):
-    assert isinstance(size, int)
+    assert isinstance(size, (int, long))
     if isinstance(b, BitVec) and b.size != size:
         b = ZEXTEND(b, size)
     if isinstance(a, BitVec):

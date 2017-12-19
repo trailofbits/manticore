@@ -124,7 +124,7 @@ class BranchLimited(Policy):
     def _register(self, *args):
         self._executor.subscribe('will_execute_instruction', self._visited_callback)
 
-    def _visited_callback(self, state, instr):
+    def _visited_callback(self, state, pc, instr):
         ''' Maintain our own copy of the visited set
         '''
         pc = state.platform.current.PC
@@ -164,7 +164,7 @@ class Executor(Eventful):
 
     _published_events = {'enqueue_state', 'generate_testcase', 'fork_state', 'load_state', 'terminate_state'}
 
-    def __init__(self, initial=None, workspace=None, policy='random', context=None, **kwargs):
+    def __init__(self, initial=None, store=None, policy='random', context=None, **kwargs):
         super(Executor, self).__init__(**kwargs)
 
 
@@ -185,7 +185,7 @@ class Executor(Eventful):
         # Number of currently running workers. Initially no running workers
         self._running = manager.Value('i', 0 )
 
-        self._workspace = Workspace(self._lock, workspace)
+        self._workspace = Workspace(self._lock, store)
 
         # Executor wide shared context
         if context is None:
@@ -380,11 +380,9 @@ class Executor(Eventful):
         #Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
 
-        # this is to keep the constrains as minimal as possible
         if len(solutions) == 1:
             setstate(state, solutions[0])
             return state
-
 
         logger.info("Forking, about to store. (policy: %s, values: %s)",
                     policy,
@@ -429,23 +427,26 @@ class Executor(Eventful):
 
 
             while not self.is_shutdown():
-                try:
-                    #select a suitable state to analyze
-                    if current_state is None:
-                        with self._lock:
-                            #notify siblings we are about to stop this run
-                            self._notify_stop_run()
-                            #Select a single state_id
-                            current_state_id = self.get()
-                            #load selected state from secondary storage
-                            if current_state_id is not None:
-                                self._publish('will_load_state', current_state_id)
-                                current_state = self._workspace.load_state(current_state_id)
-                                self.forward_events_from(current_state, True)
-                                self._publish('did_load_state', current_state, current_state_id)
-                                logger.info("load state %r", current_state_id)
-                            #notify siblings we have a state to play with
-                            self._notify_start_run()
+                try:  # handle fatal errors: exceptions in Manticore
+                    try:  # handle external (e.g. solver) errors, and executor control exceptions
+                        #select a suitable state to analyze
+                        if current_state is None:
+                            with self._lock:
+                                #notify siblings we are about to stop this run
+                                self._notify_stop_run()
+                                try:
+                                    #Select a single state_id
+                                    current_state_id = self.get()
+                                    #load selected state from secondary storage
+                                    if current_state_id is not None:
+                                        self._publish('will_load_state', current_state_id)
+                                        current_state = self._workspace.load_state(current_state_id)
+                                        self.forward_events_from(current_state, True)
+                                        self._publish('did_load_state', current_state, current_state_id)
+                                        logger.info("load state %r", current_state_id)
+                                    #notify siblings we have a state to play with
+                                finally:
+                                    self._notify_start_run()
 
                         #If current_state is still None. We are done.
                         if current_state is None:
@@ -455,7 +456,7 @@ class Executor(Eventful):
                         assert current_state is not None
                         assert current_state.constraints is current_state.platform.constraints
 
-                    try:
+
 
                         # Allows to terminate manticore worker on user request
                         while not self.is_shutdown():
@@ -474,7 +475,7 @@ class Executor(Eventful):
                         #setstate()
 
                         logger.debug("Generic state fork on condition")
-                        current_state =  self.fork(current_state, e.expression, e.policy, e.setstate)
+                        current_state = self.fork(current_state, e.expression, e.policy, e.setstate)
 
                     except TerminateState as e:
                         #Notify this worker is done
@@ -501,7 +502,6 @@ class Executor(Eventful):
                     import traceback
                     trace = traceback.format_exc()
                     logger.error("Exception: %s\n%s", str(e), trace)
-                    print "Exception: %s\n%s"%( str(e), trace)
                     #Notify this worker is done
                     self._publish('will_terminate_state', current_state, current_state_id, e)
                     current_state = None
