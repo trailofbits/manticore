@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 function install_solc {
-    wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.19/solc-static-linux
-    chmod +x /usr/bin/solc
+    sudo wget -O /usr/bin/solc https://github.com/ethereum/solidity/releases/download/v0.4.19/solc-static-linux
+    sudo chmod +x /usr/bin/solc
 }
 
 install_solc
