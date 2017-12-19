@@ -358,43 +358,9 @@ class Manticore(Eventful):
         ''' Dynamically enqueue states. Users should typically not need to do this '''
         self._executor.add(state)
 
-    ###########################################################################
-    # Workers                                                                 #
-    ###########################################################################
-    def _start_workers(self, num_processes, profiling=False):
-        assert num_processes > 0, "Must have more than 0 worker processes"
-
-        logger.info("Starting %d processes.", num_processes)
-
-        if profiling:
-            def profile_this(func):
-                @functools.wraps(func)
-                def wrapper(*args, **kwargs):
-                    profile = cProfile.Profile()
-                    profile.enable()
-                    result = func(*args, **kwargs)
-                    profile.disable()
-                    profile.create_stats()
-                    with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(profile.stats.items())
-                    return result
-                return wrapper
-
-            target = profile_this(self._executor.run)
-        else:
-            target = self._executor.run
-
-        if num_processes == 1:
-            target()
-        else:
-            for _ in range(num_processes):
-                p = Process(target=target, args=())
-                self._workers.append(p)
-                p.start()
-
     @property
     def running(self):
-        return self._executor._running.value
+        return self._executor.running
 
     def enqueue(self, state):
         ''' Dynamically enqueue states. Users should typically not need to do this '''
@@ -407,7 +373,7 @@ class Manticore(Eventful):
     def _start_workers(self, num_processes, profiling=False):
         assert num_processes > 0, "Must have more than 0 worker processes"
 
-        logger.info("Starting %d processes.", num_processes)
+        logger.debug("Starting %d processes.", num_processes)
 
         if profiling:
             def profile_this(func):
@@ -690,7 +656,7 @@ class Manticore(Eventful):
                 continue
 
             symbols = section.get_symbol_by_name(symbol)
-            if len(symbols) == 0:
+            if not symbols:
                 continue
 
             return symbols[0].entry['st_value']
