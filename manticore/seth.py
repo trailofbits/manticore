@@ -436,6 +436,10 @@ class EVMAccount(object):
     def __str__(self):
         return str(self._address)
 
+    @property
+    def address(self):
+        return self._address
+
     def __getattribute__(self, name):
         ''' If this is a contract account of which we know the functions hashes
             this will build the transaction for the function call.
@@ -729,37 +733,43 @@ class ManticoreEVM(Manticore):
     def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
 
-            :param source_code: solidity source code
-            :type source_code: str
+            :param src source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
             :param balance: balance to be transfered on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
-            :param args: constructor arguments
-            :type args: tuple
+            :param tuple args: constructor arguments
             :return: an EVMAccount
+            :rtype: EVMAccount
         '''
-        name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings = self._compile(source_code)
-        address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
+        name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings = \
+            self._compile(source_code)
+
+        account = self.create_contract(owner=owner,
+                                       balance=balance,
+                                       address=address,
+                                       init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
+
         #FIXME different states "could"(VERY UNLIKELY) have different contracts 
-        # asociated with the same address 
-        self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings)
+        # asociated with the same address
+        self.metadata[account.address] = SolidityMetadata(name, source_code, init_bytecode, runtime_bytecode, metadata,
+                                                          metadata_runtime, hashes, abi, warnings)
 
-        return EVMAccount(address, self, default_caller=owner)
+        return account
 
-    def create_contract(self, owner, balance=0, init=None, address=None):
+    def create_contract(self, owner, balance=0, address=None, init=None):
         ''' Creates a contract 
 
-            :param init: initializing evm bytecode and arguments
-            :type init: str
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
-            :param balance: balance to be transfered on creation
+            :param balance: balance to be transferred on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
             :type address: int
+            :param init: initializing evm bytecode and arguments
+            :type init: str
             :return: an EVMAccount
         '''
         assert len(self.running_state_ids) == 1, "No forking yet"
@@ -768,12 +778,14 @@ class ManticoreEVM(Manticore):
         assert init is not None
         if address is None:
             address = self.world._new_address()
-        self.context['seth']['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
+        with self.locked_context('seth') as context:
+            context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
         self.run(procs=self._config_procs)
 
         self.contract_accounts.add(address)
-        return address
+
+        return EVMAccount(address, self, default_caller=owner)
 
     def create_account(self, balance=0, address=None, code=''):
         ''' Creates a normal account

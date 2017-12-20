@@ -6,7 +6,7 @@
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
 [![Bountysource](https://img.shields.io/bountysource/team/trailofbits/activity.svg)](https://www.bountysource.com/teams/trailofbits)
 
-Manticore is a prototyping tool for dynamic binary and smart contract analysis, with support for symbolic execution, taint analysis, and instrumentation.
+Manticore is a prototyping tool for dynamic analysis of binaries and smart contracts, with support for symbolic execution, taint analysis, and instrumentation.
 
 ## Features
 
