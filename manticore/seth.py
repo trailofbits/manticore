@@ -547,17 +547,26 @@ class ManticoreEVM(Manticore):
             temp.write(source_code)
             temp.flush()
             p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', temp.name], stdout=PIPE, stderr=PIPE)
-            outp = json.loads(p.stdout.read())
-            assert len(outp['contracts']), "Only one contract by file supported"
-            name, outp = outp['contracts'].items()[0]
+
+            try:
+                output = json.loads(p.stdout.read())
+            except ValueError:
+                raise Exception('Solidity compilation error')
+
+            contracts = output.get('contracts', [])
+            if len(contracts) != 1:
+                raise Exception('Solidity file must contain exactly one contract')
+
+            name, contract = contracts.items()[0]
             name = name.split(':')[1]
-            bytecode = outp['bin'].decode('hex')
-            srcmap = outp['srcmap'].split(';')
-            srcmap_runtime = outp['srcmap-runtime'].split(';')
-            hashes = outp['hashes']
-            abi = json.loads(outp['abi'])
-            runtime = outp['bin-runtime'].decode('hex')
+            bytecode = contract['bin'].decode('hex')
+            srcmap = contract['srcmap'].split(';')
+            srcmap_runtime = contract['srcmap-runtime'].split(';')
+            hashes = contract['hashes']
+            abi = json.loads(contract['abi'])
+            runtime = contract['bin-runtime'].decode('hex')
             warnings = p.stderr.read()
+
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1):
