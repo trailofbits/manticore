@@ -32,7 +32,7 @@ class Detector(Plugin):
 
         with self.manticore.locked_context('seth.global_findings', set) as global_findings:
             global_findings.add((address, pc, finding))
-        logger.info(finding)
+        logger.warning(finding)
 
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
@@ -547,17 +547,26 @@ class ManticoreEVM(Manticore):
             temp.write(source_code)
             temp.flush()
             p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', temp.name], stdout=PIPE, stderr=PIPE)
-            outp = json.loads(p.stdout.read())
-            assert len(outp['contracts']), "Only one contract by file supported"
-            name, outp = outp['contracts'].items()[0]
+
+            try:
+                output = json.loads(p.stdout.read())
+            except ValueError:
+                raise Exception('Solidity compilation error')
+
+            contracts = output.get('contracts', [])
+            if len(contracts) != 1:
+                raise Exception('Solidity file must contain exactly one contract')
+
+            name, contract = contracts.items()[0]
             name = name.split(':')[1]
-            bytecode = outp['bin'].decode('hex')
-            srcmap = outp['srcmap'].split(';')
-            srcmap_runtime = outp['srcmap-runtime'].split(';')
-            hashes = outp['hashes']
-            abi = json.loads(outp['abi'])
-            runtime = outp['bin-runtime'].decode('hex')
+            bytecode = contract['bin'].decode('hex')
+            srcmap = contract['srcmap'].split(';')
+            srcmap_runtime = contract['srcmap-runtime'].split(';')
+            hashes = contract['hashes']
+            abi = json.loads(contract['abi'])
+            runtime = contract['bin-runtime'].decode('hex')
             warnings = p.stderr.read()
+
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1):
@@ -803,14 +812,14 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
 
+        logger.info("Starting symbolic transaction: %d", self.completed_transactions + 1)
+
         status = self.run(procs=self._config_procs)
 
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
-        logger.info("Coverage after %d transactions: %d%%", self.completed_transactions, self.global_coverage(address))
-        logger.info("There are %d reverted states now", len(self.terminated_state_ids))
-        logger.info("There are %d alive states now", len(self.running_state_ids))
+        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Reverted States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
 
         return status
 
@@ -1240,7 +1249,7 @@ class ManticoreEVM(Manticore):
                         f.write('0x%x\n'%o)
 
 
-        logger.info("Look for results in %s", self.workspace )
+        logger.info("Results in %s", self.workspace )
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
@@ -1270,7 +1279,8 @@ class ManticoreEVM(Manticore):
 
         return count*100.0/total
 
-    #TODO: find a better way to suppress execution of Manticore._did_finish_run_callback    
+    # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
+    # We suppress because otherwise we log it many times and it looks weird.
     def _did_finish_run_callback(self):
-        _shared_context = self.context
+        pass
 
