@@ -1191,7 +1191,7 @@ class ManticoreEVM(Manticore):
                 global_src.write(md.source_code)
             with self._output.save_stream('global_%s_runtime.bytecode'%md.name) as global_runtime_bytecode :
                 global_runtime_bytecode.write(md.runtime_bytecode)
-            with self._output.save_stream('global_%s.init_bytecode'%md.name) as global_init_bytecode :
+            with self._output.save_stream('global_%s_init.bytecode'%md.name) as global_init_bytecode :
                 global_init_bytecode.write(md.init_bytecode)
 
 
