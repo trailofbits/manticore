@@ -1189,7 +1189,7 @@ class ManticoreEVM(Manticore):
         for address, md in self.metadata.items():
             with self._output.save_stream('global_%s.sol'%md.name) as global_src :
                 global_src.write(md.source_code)
-            with self._output.save_stream('global_%s.runtime_bytecode'%md.name) as global_runtime_bytecode :
+            with self._output.save_stream('global_%s_runtime.bytecode'%md.name) as global_runtime_bytecode :
                 global_runtime_bytecode.write(md.runtime_bytecode)
             with self._output.save_stream('global_%s.init_bytecode'%md.name) as global_init_bytecode :
                 global_init_bytecode.write(md.init_bytecode)
