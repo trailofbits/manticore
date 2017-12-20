@@ -19,4 +19,4 @@ class EthDetectors(unittest.TestCase):
         all_findings = ''.join(map(lambda x: x[2], mevm.global_findings))
         self.assertIn('underflow at SUB', all_findings)
         self.assertIn('overflow at ADD', all_findings)
-        self.assertIn('overflw at MUL', all_findings)
+        self.assertIn('overflow at MUL', all_findings)
