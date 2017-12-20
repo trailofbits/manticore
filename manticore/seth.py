@@ -831,10 +831,10 @@ class ManticoreEVM(Manticore):
         contract_account = self.solidity_create_contract(source_code, owner=user_account)
         attacker_account = self.create_account(balance=1000)
 
+        prev_coverage = 0
+        current_coverage = 0
 
-        last_coverage = None
-        new_coverage = 0
-        while new_coverage != last_coverage and new_coverage < 100:
+        while current_coverage < 100:
 
             symbolic_data = self.make_symbolic_buffer(320)
             symbolic_value = self.make_symbolic_value()
@@ -844,8 +844,12 @@ class ManticoreEVM(Manticore):
                           data=symbolic_data,
                           value=symbolic_value )
 
-            last_coverage = new_coverage
-            new_coverage = self.global_coverage(contract_account)
+            prev_coverage = current_coverage
+            current_coverage = self.global_coverage(contract_account)
+            found_new_coverage = prev_coverage != current_coverage
+
+            if not found_new_coverage:
+                break
 
         self.finalize()
 
