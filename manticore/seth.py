@@ -846,7 +846,7 @@ class ManticoreEVM(Manticore):
 
             prev_coverage = current_coverage
             current_coverage = self.global_coverage(contract_account)
-            found_new_coverage = prev_coverage != current_coverage
+            found_new_coverage = prev_coverage < current_coverage
 
             if not found_new_coverage:
                 break
