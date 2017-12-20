@@ -6,7 +6,7 @@
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
 [![Bountysource](https://img.shields.io/bountysource/team/trailofbits/activity.svg)](https://www.bountysource.com/teams/trailofbits)
 
-Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
+Manticore is a prototyping tool for dynamic binary and smart contract analysis, with support for symbolic execution, taint analysis, and instrumentation.
 
 ## Features
 
@@ -19,7 +19,7 @@ Manticore supports binaries of the following formats, operating systems, and
 architectures. It has been primarily used on binaries compiled from C and C++.
 Examples of practical manticore usage are also [on github](https://github.com/trailofbits/manticore-examples).
 
-- OS/Formats: Linux ELF
+- OS/Formats: Linux ELF, [Solidity](https://solidity.readthedocs.io/).
 - Architectures: x86, x86_64, ARMv7, and Ethereum Virtual Machine (EVM)
 
 ## Requirements
@@ -123,6 +123,15 @@ def hook(state):
   m.terminate()  # tell Manticore to stop
 
 m.run()
+```
+
+### Ethereum
+
+Manticore includes experimental support for Ethereum smart contracts written in Solidity.
+To analyze a smart contract, make sure it has a `.sol` extension and simply pass it to Manticore:
+
+```
+$ manticore contract.sol   # symbolically explores a smart contract, creating a mcore_* directory with results
 ```
 
 Further documentation is available in several places:
