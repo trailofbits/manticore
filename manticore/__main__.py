@@ -84,29 +84,7 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    with open(args.argv[0]) as f:
-        source_code = f.read()
-
-    user_account = m.create_account(balance=1000)
-    contract_account = m.solidity_create_contract(source_code, owner=user_account)
-    attacker_account = m.create_account(balance=1000)
-
-    last_coverage = None
-    new_coverage = 0
-    while new_coverage != last_coverage and new_coverage < 100:
-
-        symbolic_data = m.make_symbolic_buffer(320)
-        symbolic_value = m.make_symbolic_value()
-
-        m.transaction(caller=attacker_account,
-                         address=contract_account,
-                         data=symbolic_data,
-                         value=symbolic_value )
-
-        last_coverage = new_coverage
-        new_coverage = m.global_coverage(contract_account)
-
-    m.finalize()
+    m.multi_tx_analysis(args.argv[0])
 
 def main():
     log.init_logging()

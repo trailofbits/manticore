@@ -54,13 +54,13 @@ class IntegerOverflow(Detector):
         Detects any it overflow on instructions ADD and SUB.
     '''
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-        if instruction.semantics == 'ADD':
+        mnemonic = instruction.semantics
+        if mnemonic in ('ADD', 'MUL'):
             if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
-                self.add_finding(state, "Integer overflow at ADD instruction")
-        if instruction.semantics == 'SUB':
+                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+        elif mnemonic == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
-                src = self._get_src(state)
-                self.add_finding(state, "Integer underflow at SUB instruction")
+                self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
             
 class UnitializedMemory(Detector):
     '''
@@ -822,6 +822,37 @@ class ManticoreEVM(Manticore):
         logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Reverted States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
 
         return status
+
+    def multi_tx_analysis(self, solidity_filename):
+        with open(solidity_filename) as f:
+            source_code = f.read()
+
+        user_account = self.create_account(balance=1000)
+        contract_account = self.solidity_create_contract(source_code, owner=user_account)
+        attacker_account = self.create_account(balance=1000)
+
+        prev_coverage = 0
+        current_coverage = 0
+
+        while current_coverage < 100:
+
+            symbolic_data = self.make_symbolic_buffer(320)
+            symbolic_value = self.make_symbolic_value()
+
+            self.transaction(caller=attacker_account,
+                          address=contract_account,
+                          data=symbolic_data,
+                          value=symbolic_value )
+
+            prev_coverage = current_coverage
+            current_coverage = self.global_coverage(contract_account)
+            found_new_coverage = prev_coverage < current_coverage
+
+            if not found_new_coverage:
+                break
+
+        self.finalize()
+
 
     def run(self, **kwargs):
         ''' Run any pending transaction on any running state '''
