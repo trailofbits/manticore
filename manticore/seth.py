@@ -736,12 +736,11 @@ class ManticoreEVM(Manticore):
             :param src source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
-            :param balance: balance to be transfered on creation
+            :param balance: balance to be transferred on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
-            :return: an EVMAccount
             :rtype: EVMAccount
         '''
         name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings = \
@@ -766,11 +765,9 @@ class ManticoreEVM(Manticore):
             :type owner: int or EVMAccount
             :param balance: balance to be transferred on creation
             :type balance: int or SValue
-            :param address: the address for the new contract (optional)
-            :type address: int
-            :param init: initializing evm bytecode and arguments
-            :type init: str
-            :return: an EVMAccount
+            :param int address: the address for the new contract (optional)
+            :param str init: initializing evm bytecode and arguments
+            :rtype: EVMAccount
         '''
         assert len(self.running_state_ids) == 1, "No forking yet"
         with self.locked_context('seth') as context:
