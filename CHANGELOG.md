@@ -24,17 +24,26 @@ Thanks to our external contributors to this release!
 ### Added
 
 - Command line interface support for Solidity files
+- --version flag to command line
 - [alpha] Ethereum EVM dis/assembly APIs
 - [alpha] Ethereum EVM analysis APIs
+- x86 pcmpxstrx
+- Optimization to suppress redundant forking
+- 
 
 
 
 ### Changed
-
+- emit .input file in workspace
 
 
 ### Fixed
 
+- Unserializing Linux states with special files open
+- decree syscall tracking
+- except bug in fallback emu
+- arm thumb mode instruction fixes
+- issue with z3 version
 
 
 ### Removed
