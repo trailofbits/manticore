@@ -23,6 +23,10 @@ Thanks to our external contributors to this release!
 
 ### Added
 
+- Command line interface support for Solidity files
+- [alpha] Ethereum EVM dis/assembly APIs
+- [alpha] Ethereum EVM analysis APIs
+
 
 
 ### Changed
