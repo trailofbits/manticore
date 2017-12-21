@@ -582,7 +582,7 @@ class ManticoreEVM(Manticore):
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1):
-        ''' A Manticere EVM manager
+        ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         '''
         self.normal_accounts = set()
@@ -741,7 +741,7 @@ class ManticoreEVM(Manticore):
     def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
 
-            :param src source_code: solidity source code
+            :param str source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
             :param balance: balance to be transferred on creation
@@ -751,8 +751,8 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-        name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings = \
-            self._compile(source_code)
+        compile_results = self._compile(source_code)
+        init_bytecode = compile_results[2]
 
         account = self.create_contract(owner=owner,
                                        balance=balance,
@@ -761,8 +761,7 @@ class ManticoreEVM(Manticore):
 
         #FIXME different states "could"(VERY UNLIKELY) have different contracts 
         # asociated with the same address
-        self.metadata[account.address] = SolidityMetadata(name, source_code, init_bytecode, runtime_bytecode, metadata,
-                                                          metadata_runtime, hashes, abi, warnings)
+        self.metadata[account.address] = SolidityMetadata(*compile_results)
 
         return account
 
