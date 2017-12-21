@@ -19,37 +19,25 @@ Thanks to our external contributors to this release!
 
 ### Deprecated
 
-
-
 ### Added
 
 - Command line interface support for Solidity files
 - --version flag to command line
+- x64/64: Improved support for PCMPXSTRX instruction family
 - [alpha] Ethereum EVM dis/assembly APIs
 - [alpha] Ethereum EVM analysis APIs
-- x86 pcmpxstrx
-- Optimization to suppress redundant forking
-- 
-
-
 
 ### Changed
-- emit .input file in workspace
 
+- Workspace .txt file extension changed to .input
 
 ### Fixed
 
-- Unserializing Linux states with special files open
-- decree syscall tracking
-- except bug in fallback emu
-- arm thumb mode instruction fixes
-- issue with z3 version
-
+- Unserializing Linux states with special files opened
+- Redundant forking performance issue fixed
+- Various bugfixes in Decree, Linux, ARMv7 Thumb, Unicorn fallback emulation, Z3 Solver interface
 
 ### Removed
-
-
-
 
 ## 0.1.5 - 2017-10-19
 
