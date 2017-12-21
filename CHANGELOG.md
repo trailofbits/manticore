@@ -21,7 +21,7 @@ Thanks to our external contributors to this release!
 
 ### Added
 
-- Command line interface support for Solidity files
+- Ethereum support in the command line (Solidity files)
 - --version flag to command line
 - x64/64: Improved support for PCMPXSTRX instruction family
 - [alpha] Ethereum EVM dis/assembly APIs
