@@ -72,7 +72,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from seth import ManticoreEVM, IntegerOverflow, UnitializedStorage, UnitializedMemory
+    from ethereum import ManticoreEVM, IntegerOverflow, UnitializedStorage, UnitializedMemory
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
