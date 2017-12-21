@@ -17,6 +17,27 @@ Thanks to our external contributors to this release!
 - [HighW4y2H3ll](https://github.com/HighW4y2H3ll)
 - [chowdaryd](https://github.com/chowdaryd)
 
+### Deprecated
+
+
+
+### Added
+
+
+
+### Changed
+
+
+
+### Fixed
+
+
+
+### Removed
+
+
+
+
 ## 0.1.5 - 2017-10-19
 
 Thanks to our external contributors to this release!
