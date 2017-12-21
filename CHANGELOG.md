@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.6...HEAD)
 
+## 0.1.6 - 2017-12-22
+
+Thanks to our external contributors to this release!
+
+- [cole-lightfighter](https://github.com/cole-lightfighter)
+- [arunjohnkuruvilla](https://github.com/arunjohnkuruvilla)
+- [Srinivas11789](https://github.com/Srinivas11789)
+- [sidhant-gupta-004](https://github.com/sidhant-gupta-004)
+- [roachspray](https://github.com/roachspray)
+- [dbogs425](https://github.com/dbogs425)
+- [HighW4y2H3ll](https://github.com/HighW4y2H3ll)
+- [chowdaryd](https://github.com/chowdaryd)
+
 ## 0.1.5 - 2017-10-19
 
 Thanks to our external contributors to this release!
