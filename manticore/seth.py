@@ -689,7 +689,8 @@ class ManticoreEVM(Manticore):
                 seth_context['_saved_states'] = lst
 
         state = self.load(state_id)
-        self._generate_testcase_callback(state, 'test', 'Still Running')
+        last_exc = state.context['last_exception']
+        self._generate_testcase_callback(state, 'test', last_exc.message)
 
         if state_id == -1:
             state_id = self.save(state, final=True)
