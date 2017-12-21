@@ -51,7 +51,7 @@ class Detector(Plugin):
 
 class IntegerOverflow(Detector):
     '''
-        Detects any it overflow on instructions ADD and SUB.
+        Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         mnemonic = instruction.semantics
@@ -64,7 +64,7 @@ class IntegerOverflow(Detector):
             
 class UnitializedMemory(Detector):
     '''
-        detects the use of not initialized memory
+        Detects uses of uninitialized memory
     '''
     def did_evm_read_memory(self, state, offset, value):
         if not state.can_be_true(value != 0):
@@ -85,7 +85,7 @@ class UnitializedMemory(Detector):
 
 class UnitializedStorage(Detector):
     '''
-        UnitializedStorage: detects the use of not initialized storage
+        Detects uses of uninitialized storage
     '''
     def did_evm_read_storage(self, state, offset, value):
         if not state.can_be_true(value != 0):
@@ -105,7 +105,7 @@ class UnitializedStorage(Detector):
 
 
 def calculate_coverage(code, seen):
-    ''' Calculates what % of code have been seen '''
+    ''' Calculates what percentage of code has been seen '''
     runtime_bytecode = code
     end = None
     if  ''.join(runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
@@ -122,7 +122,7 @@ def calculate_coverage(code, seen):
 
 class SolidityMetadata(object):
     def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings):
-        ''' Contract metadata for solidity based contracts '''
+        ''' Contract metadata for Solidity-based contracts '''
         self.name = name
         self.source_code = source_code
         self._init_bytecode = init_bytecode
@@ -171,15 +171,16 @@ class SolidityMetadata(object):
 
     @property
     def runtime_bytecode(self):
-        ''' Removes metadata from the tail of bytecode '''
+        # Removes metadata from the tail of bytecode
         end = None
         if  ''.join(self._runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and  ''.join(self._runtime_bytecode[-2:]) =='\x00\x29':
             end = -9-33-2  #Size of metadata at the end of most contracts
         return self._runtime_bytecode[:end]
+
     @property
     def init_bytecode(self):
-        ''' Removes metadata from the tail of bytecode '''
+        # Removes metadata from the tail of bytecode
         end = None
         if  ''.join(self._init_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and  ''.join(self._init_bytecode[-2:]) =='\x00\x29':
@@ -188,8 +189,8 @@ class SolidityMetadata(object):
 
 
     def get_source_for(self, asm_offset, runtime=True):
-        ''' Solidity source code snippet related to `asm_pos` evm bytecode offset
-            if runtime is False it uses initialization bytecode source map
+        ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
+            If runtime is False, initialization bytecode source map is used
         '''
         if runtime:
             srcmap = self.srcmap_runtime
@@ -238,7 +239,7 @@ class ABI(object):
 
     '''
     class SByte():
-        ''' Unconstrained symbolic byte, not asociated with any constraint set '''
+        ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
         def __init__(self, size=1):
             self.size=size
         def __mul__(self, reps):
@@ -250,8 +251,9 @@ class ABI(object):
 
     @staticmethod
     def serialize(value):
-        ''' Translates a python object to its EVM ABI serialization.
-            It supports s '''
+        '''
+        Translates a Python object to its EVM ABI serialization.
+        '''
         if isinstance(value, (str,tuple)):
             return ABI.serialize_string(value)
         if isinstance(value, (list)):
@@ -265,7 +267,9 @@ class ABI(object):
 
     @staticmethod
     def serialize_uint(value, size=32):
-        '''Translates a python int into a 32 byte string, msb first''' 
+        '''
+        Translates a Python int into a 32 byte string, MSB first
+        '''
         assert size >=1
         bytes = []
         for position in range(size):
@@ -275,7 +279,9 @@ class ABI(object):
 
     @staticmethod
     def serialize_string(value):
-        '''Translates a string or a tuple of chars its EVM ABI serialization''' 
+        '''
+        Translates a string or a tuple of chars its EVM ABI serialization
+        '''
         assert isinstance(value, (str,tuple))
         return ABI.serialize_uint(len(value)) + tuple(value) + tuple('\x00'*(32-(len(value)%32)))
 
@@ -290,7 +296,9 @@ class ABI(object):
 
     @staticmethod
     def make_function_id( method_name_and_signature):
-        ''' Makes function hash id from method signature '''
+        '''
+        Makes a function hash id from a method signature
+        '''
         s = sha3.keccak_256()
         s.update(method_name_and_signature)
         return s.hexdigest()[:8].decode('hex')
@@ -414,7 +422,7 @@ class EVMAccount(object):
 
             :param address: the address of this account
             :type address: 160 bit long integer
-            :param seth: the controlling manticore
+            :param seth: the controlling Manticore
             :param default_caller: the default caller address for any transaction
 
         '''
@@ -436,8 +444,12 @@ class EVMAccount(object):
     def __str__(self):
         return str(self._address)
 
+    @property
+    def address(self):
+        return self._address
+
     def __getattribute__(self, name):
-        ''' If this is a contract account of which we know the functions hashes
+        ''' If this is a contract account of which we know the functions hashes,
             this will build the transaction for the function call.
 
             Example use::
@@ -531,13 +543,13 @@ class ManticoreEVM(Manticore):
 
     @staticmethod
     def compile(source_code):
-        ''' Get initialization bytecode from a solidity source code '''
+        ''' Get initialization bytecode from a Solidity source code '''
         name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code)
         return bytecode
 
     @staticmethod
     def _compile(source_code):
-        """ Compile a solidity contract, used internally
+        """ Compile a Solidity contract, used internally
             
             :param source_code: a solidity source code
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
@@ -570,8 +582,8 @@ class ManticoreEVM(Manticore):
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1):
-        ''' A manticere EVM manager 
-            :param procs: number of workers to use in the exploration  
+        ''' A Manticore EVM manager
+            :param int procs: number of workers to use in the exploration
         '''
         self.normal_accounts = set()
         self.contract_accounts = set()
@@ -729,38 +741,40 @@ class ManticoreEVM(Manticore):
     def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
 
-            :param source_code: solidity source code
-            :type source_code: str
+            :param str source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
-            :param balance: balance to be transfered on creation
+            :param balance: balance to be transferred on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
             :type address: int or EVMAccount
-            :param args: constructor arguments
-            :type args: tuple
-            :return: an EVMAccount
+            :param tuple args: constructor arguments
+            :rtype: EVMAccount
         '''
-        name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings = self._compile(source_code)
-        address = self.create_contract(owner=owner, address=address, balance=balance, init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
+        compile_results = self._compile(source_code)
+        init_bytecode = compile_results[2]
+
+        account = self.create_contract(owner=owner,
+                                       balance=balance,
+                                       address=address,
+                                       init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
+
         #FIXME different states "could"(VERY UNLIKELY) have different contracts 
-        # asociated with the same address 
-        self.metadata[address] = SolidityMetadata(name, source_code, init_bytecode, runtime_bytecode, metadata, metadata_runtime, hashes, abi, warnings)
+        # asociated with the same address
+        self.metadata[account.address] = SolidityMetadata(*compile_results)
 
-        return EVMAccount(address, self, default_caller=owner)
+        return account
 
-    def create_contract(self, owner, balance=0, init=None, address=None):
+    def create_contract(self, owner, balance=0, address=None, init=None):
         ''' Creates a contract 
 
-            :param init: initializing evm bytecode and arguments
-            :type init: str
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
-            :param balance: balance to be transfered on creation
+            :param balance: balance to be transferred on creation
             :type balance: int or SValue
-            :param address: the address for the new contract (optional)
-            :type address: int
-            :return: an EVMAccount
+            :param int address: the address for the new contract (optional)
+            :param str init: initializing evm bytecode and arguments
+            :rtype: EVMAccount
         '''
         assert len(self.running_state_ids) == 1, "No forking yet"
         with self.locked_context('seth') as context:
@@ -768,12 +782,14 @@ class ManticoreEVM(Manticore):
         assert init is not None
         if address is None:
             address = self.world._new_address()
-        self.context['seth']['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
+        with self.locked_context('seth') as context:
+            context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
         self.run(procs=self._config_procs)
 
         self.contract_accounts.add(address)
-        return address
+
+        return EVMAccount(address, self, default_caller=owner)
 
     def create_account(self, balance=0, address=None, code=''):
         ''' Creates a normal account
@@ -796,10 +812,11 @@ class ManticoreEVM(Manticore):
 
             :param caller: the address of the account sending the transaction
             :type caller: int or EVMAccount
-            :param value: balance to be transfered on creation
-            :type value: int or SValue
             :param address: the address of the contract to call
             :type address: int or EVMAccount
+            :param value: balance to be transfered on creation
+            :type value: int or SValue
+            :param data: initial data
             :return: an EVMAccount
         '''
         if isinstance(address, EVMAccount):
@@ -1229,9 +1246,9 @@ class ManticoreEVM(Manticore):
         for address, md in self.metadata.items():
             with self._output.save_stream('global_%s.sol'%md.name) as global_src :
                 global_src.write(md.source_code)
-            with self._output.save_stream('global_%s.runtime_bytecode'%md.name) as global_runtime_bytecode :
+            with self._output.save_stream('global_%s_runtime.bytecode'%md.name) as global_runtime_bytecode :
                 global_runtime_bytecode.write(md.runtime_bytecode)
-            with self._output.save_stream('global_%s.init_bytecode'%md.name) as global_init_bytecode :
+            with self._output.save_stream('global_%s_init.bytecode'%md.name) as global_init_bytecode :
                 global_init_bytecode.write(md.init_bytecode)
 
 
