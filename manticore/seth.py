@@ -837,7 +837,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
-        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Reverted States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
+        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Terminated States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
 
         return status
 
