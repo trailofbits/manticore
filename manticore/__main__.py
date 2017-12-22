@@ -13,7 +13,7 @@ sys.setrecursionlimit(10000)
 
 
 def parse_arguments():
-    def check_positive(value):
+    def positive(value):
         ivalue = int(value)
         if ivalue <= 0:
             raise argparse.ArgumentTypeError("Argument must be positive")
@@ -62,7 +62,7 @@ def parse_arguments():
                               "(default mcore_?????)"))
     parser.add_argument('--version', action='version', version='Manticore 0.1.5',
                          help='Show program version information')
-    parser.add_argument('--txlimit', type=check_positive,
+    parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
 
 
