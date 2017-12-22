@@ -40,7 +40,7 @@ Models
 EVM
 ---
 .. automodule:: manticore.platforms.evm
-.. automodule:: manticore.seth
+.. automodule:: manticore.ethereum
     :members: 
 EVM Assembler
 ---------
