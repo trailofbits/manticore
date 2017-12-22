@@ -485,7 +485,7 @@ class ManticoreEVM(Manticore):
     
         Usage Ex::
 
-            from manticore.seth import ManticoreEVM, ABI
+            from manticore.ethereum import ManticoreEVM, ABI
             seth = ManticoreEVM()
             #And now make the contract account to analyze
             source_code = """
