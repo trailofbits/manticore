@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## 0.1.6 - 2017-12-22
 
-Thanks to our external contributors to this release!
+This release brings improved EVM support, performance improvements, and numerous bug fixes. Thanks to our external contributors!
 
 - [cole-lightfighter](https://github.com/cole-lightfighter)
 - [arunjohnkuruvilla](https://github.com/arunjohnkuruvilla)
@@ -17,27 +17,23 @@ Thanks to our external contributors to this release!
 - [HighW4y2H3ll](https://github.com/HighW4y2H3ll)
 - [chowdaryd](https://github.com/chowdaryd)
 
-### Deprecated
-
 ### Added
 
 - Ethereum support in the command line (Solidity files)
-- --version flag to command line
-- x64/64: Improved support for PCMPXSTRX instruction family
-- [alpha] Ethereum EVM dis/assembly APIs
-- [alpha] Ethereum EVM analysis APIs
+- --version, --txlimit flags to command line
+- x86/64: Improved support for PCMPXSTRX instruction family
+- Ethereum EVM assembly/disassembly APIs
 
 ### Changed
 
 - Workspace .txt file extension changed to .input
+- Ethereum EVM analysis APIs
 
 ### Fixed
 
-- Unserializing Linux states with special files opened
+- Deserializing Linux states with special files (/dev) opened
 - Redundant forking performance issue fixed
 - Various bugfixes in Decree, Linux, ARMv7 Thumb, Unicorn fallback emulation, Z3 Solver interface
-
-### Removed
 
 ## 0.1.5 - 2017-10-19
 
