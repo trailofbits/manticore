@@ -1,55 +1,58 @@
 CC=gcc
 CFLAGS=-O3 -static
+NOSTDLIBFLAGS=-fno-builtin -static -nostdlib -fomit-frame-pointer
 
 all: CFLAGS=-O3 -static 
-all: NOSTDLIBFLAGS=-m32 -fno-builtin -static -nostdlib  -fomit-frame-pointer
-all: nostdlib  basic  sindex  strncmp  arguments ibranch sendmail crackme indexhell baby-re helloworld simpleassert
+all: NOSTDLIBFLAGS=-fno-builtin -static -nostdlib  -fomit-frame-pointer
+all: nostdlib basic  sindex  strncmp  arguments ibranch sendmail crackme indexhell baby-re helloworld simple_copy simpleassert
 
 arm: CC=arm-linux-gnueabi-gcc
 arm: basic  sindex  strncmp  arguments ibranch sendmail crackme indexhell helloworld simple_copy simpleassert
 
-clean:
-		rm -rf nostdlib  basic  sindex strncmp arguments sendmail server ibranch crackme indexhell crackme.c simple_copy helloworld nostdlib32 nostdlib64
+.PHONY: list
+list:
+	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' -e clean | xargs
 
-nostdlib: nostdlib.c
-		$(CC) -m32 -fno-builtin -static -nostdlib  -fomit-frame-pointer  nostdlib.c  -o nostdlib32
-		$(CC) -m32 -fno-builtin -static -nostdlib  -fomit-frame-pointer  nostdlib.c  -o nostdlib64
+
+clean:
+	rm -rf nostdlib  basic  sindex strncmp arguments sendmail ibranch crackme indexhell crackme.c simple_copy helloworld nostdlib32 nostdlib64
+
+nostdlib: nostdlib.c 
+	$(CC) -m32 $(NOSTDLIBFLAGS) $< -o $@
 
 helloworld: helloworld.c
-		$(CC) $(CFLAGS) $< -static -o $@
+	$(CC) $(CFLAGS) $< -static -o $@
 
 simple_copy: simple_copy.c
-		$(CC) $(CFLAGS) simple_copy.c -static -o simple_copy
+	$(CC) $(CFLAGS) $< -static -o $@
+
 basic: basic.c
-		$(CC) $(CFLAGS) basic.c -static -o basic
+	$(CC) $(CFLAGS) $< -static -o $@
 
 simpleassert: simpleassert.c
-		$(CC) $(CFLAGS) -O0 simpleassert.c -static -o simpleassert
+	$(CC) $(CFLAGS) -O0 $< -static -o $@
 
 sindex: sindex.c
-		$(CC) $(CFLAGS) sindex.c -o sindex
+	$(CC) $(CFLAGS) $< -o $@
 
 ibranch: ibranch.c
-		$(CC) $(CFLAGS) ibranch.c -o ibranch
+	$(CC) $(CFLAGS) $< -o $@
 
 strncmp: strncmp.c
-		$(CC) $(CFLAGS) strncmp.c -o strncmp
+	$(CC) $(CFLAGS) $< -o $@
 
 arguments: arguments.c
-		$(CC) $(CFLAGS) arguments.c  -o arguments
+	$(CC) $(CFLAGS) $< -o $@
 
 sendmail: sendmail.c
-		gcc -static sendmail.c -o sendmail
-
-server: server.c
-		gcc -static server.c -o server
+	gcc -static $< -o $@
 
 crackme: crackme.py 
 	python crackme.py  >crackme.c
-	gcc -static -Os crackme.c -o crackme
+	gcc -static -Os crackme.c -o $@
 
 indexhell: indexhell.c
-	gcc -static indexhell.c -o indexhell
+	gcc -static $< -o $@
 
 baby-re: baby-re.c
 	$(CC) $(CFLAGS) -o $@ $< -Wno-unused-result
