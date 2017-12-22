@@ -19,7 +19,7 @@ def parse_arguments():
             raise argparse.ArgumentTypeError("Argument must be positive")
         return ivalue
 
-    parser = argparse.ArgumentParser(description='Dynamic binary analysis tool')
+    parser = argparse.ArgumentParser(description='Symbolic execution tool')
     parser.add_argument('--assertions', type=str, default=None,
                         help=argparse.SUPPRESS)
     parser.add_argument('--buffer', type=str,
