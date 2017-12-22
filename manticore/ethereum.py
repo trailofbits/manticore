@@ -841,7 +841,7 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, tx_count=None):
+    def multi_tx_analysis(self, solidity_filename, tx_limit=None):
         with open(solidity_filename) as f:
             source_code = f.read()
 
@@ -852,29 +852,28 @@ class ManticoreEVM(Manticore):
         def run_symbolic_tx():
             symbolic_data = self.make_symbolic_buffer(320)
             symbolic_value = self.make_symbolic_value()
-
             self.transaction(caller=attacker_account,
                              address=contract_account,
                              data=symbolic_data,
                              value=symbolic_value )
 
-        if tx_count is None:
-            prev_coverage = 0
-            current_coverage = 0
+        prev_coverage = 0
+        current_coverage = 0
 
-            while current_coverage < 100:
-                run_symbolic_tx()
+        while current_coverage < 100:
+            run_symbolic_tx()
 
-                prev_coverage = current_coverage
-                current_coverage = self.global_coverage(contract_account)
-                found_new_coverage = prev_coverage < current_coverage
-
-                if not found_new_coverage:
+            if tx_limit is not None:
+                tx_limit -= 1
+                if tx_limit == 0:
                     break
-        else:
-            while tx_count:
-                run_symbolic_tx()
-                tx_count -= 1
+
+            prev_coverage = current_coverage
+            current_coverage = self.global_coverage(contract_account)
+            found_new_coverage = prev_coverage < current_coverage
+
+            if not found_new_coverage:
+                break
 
         self.finalize()
 
