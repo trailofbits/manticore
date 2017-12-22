@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='manticore',
-    description='Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.',
+    description='Manticore is a symbolic execution tool for analysis of binaries and smart contracts.',
     url='https://github.com/trailofbits/manticore',
     author='Trail of Bits',
     version='0.1.6',
