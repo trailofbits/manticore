@@ -1044,6 +1044,13 @@ class Linux(Platform):
         '''
         return data
 
+    def _exit(self, message):
+        procid = self.procs.index(self.current)
+        self.sched()
+        self.running.remove(procid)
+        if len(self.running) == 0 :
+            raise TerminateState(message, testcase=True)
+
     def sys_umask(self, mask):
         '''
         umask - Set file creation mode mask
@@ -1716,13 +1723,7 @@ class Linux(Platform):
         Exits all threads in a process
         :raises Exception: 'Finished'
         '''
-        procid = self.procs.index(self.current)
-        self.sched()
-        self.running.remove(procid)
-        #self.procs[procid] = None
-        if len(self.running) == 0 :
-            raise TerminateState("Program finished with exit status: %r" % ctypes.c_int32(error_code).value, testcase=True)
-        return error_code
+        return self._exit("Program finished with exit status: {}".format(ctypes.c_int32(error_code).value))
 
     def sys_ptrace(self, request, pid, addr, data):
         return 0
@@ -2317,6 +2318,13 @@ class SLinux(Linux):
         return super(SLinux, self)._transform_write_data(concrete_data)
 
     #Dispatchers...
+
+    def sys_exit_group(self, error_code):
+        if issymbolic(error_code):
+            error_code = solver.get_value(self.constraints, error_code)
+            return self._exit("Program finished with exit status: {} (*)".format(ctypes.c_int32(error_code).value))
+        else:
+            return super(SLinux, self).sys_exit_group(error_code)
 
     def sys_read(self, fd, buf, count):
         if issymbolic(fd):
