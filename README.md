@@ -91,7 +91,7 @@ Manticore has a command line interface which can be used to easily symbolically 
 $ manticore ./path/to/binary        # runs, and creates a mcore_* directory with analysis results
 $ manticore ./path/to/binary ab cd  # use concrete strings "ab", "cd" as program arguments
 $ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as program arguments
-$ manticore ./path/to/contract.sol
+$ manticore ./path/to/contract.sol  # runs, and creates a mcore_* directory with analysis results
 ```
 
 ### API
