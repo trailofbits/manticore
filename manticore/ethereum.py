@@ -1065,6 +1065,8 @@ class ManticoreEVM(Manticore):
         # each object knows its secrets, each class should be able to report its
         # final state
         #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
+        # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
+        #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         def flagged(flag):
             return '(*)' if flag else '' 
         testcase = self._output.testcase()
