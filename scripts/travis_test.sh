@@ -1,13 +1,20 @@
 #!/bin/bash
 RV=0
-cd examples/linux
+pushd examples/linux
 if make; then
     echo "Successfully built Linux examples"
+    for example in $(make list); do
+        if ! ./$example < /dev/zero ; then
+            echo "Failed to run $example"
+            RV=1
+            break
+        fi
+    done
 else
     echo "Failed to build Linux examples"
     RV=1
 fi
-cd ../..
+popd
 
 coverage erase
 coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
