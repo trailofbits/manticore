@@ -689,7 +689,8 @@ class ManticoreEVM(Manticore):
                 seth_context['_saved_states'] = lst
 
         state = self.load(state_id)
-        self._generate_testcase_callback(state, 'test', 'Still Running')
+        last_exc = state.context['last_exception']
+        self._generate_testcase_callback(state, 'test', last_exc.message)
 
         if state_id == -1:
             state_id = self.save(state, final=True)
@@ -836,7 +837,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
-        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Reverted States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
+        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Terminated States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
 
         return status
 
@@ -961,7 +962,7 @@ class ManticoreEVM(Manticore):
         state.context['last_exception'] = e
         # TODO(mark): This will break if we ever change the message text. Use a less
         # brittle check.
-        if e.message not in {'REVERT', 'Not Enough Funds for transaction'}:
+        if e.message not in {'REVERT', 'THROW', 'Not Enough Funds for transaction'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
