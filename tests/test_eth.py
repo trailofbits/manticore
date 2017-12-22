@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from manticore.seth import ManticoreEVM, IntegerOverflow
+from manticore.ethereum import ManticoreEVM, IntegerOverflow
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
