@@ -13,8 +13,12 @@ sys.setrecursionlimit(10000)
 
 
 def parse_arguments():
-    ###########################################################################
-    # parse arguments
+    def positive(value):
+        ivalue = int(value)
+        if ivalue <= 0:
+            raise argparse.ArgumentTypeError("Argument must be positive")
+        return ivalue
+
     parser = argparse.ArgumentParser(description='Dynamic binary analysis tool')
     parser.add_argument('--assertions', type=str, default=None,
                         help=argparse.SUPPRESS)
@@ -58,6 +62,9 @@ def parse_arguments():
                               "(default mcore_?????)"))
     parser.add_argument('--version', action='version', version='Manticore 0.1.5',
                          help='Show program version information')
+    parser.add_argument('--txlimit', type=positive,
+                        help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
+
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
@@ -84,7 +91,7 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0])
+    m.multi_tx_analysis(args.argv[0], args.txlimit)
 
 def main():
     log.init_logging()
