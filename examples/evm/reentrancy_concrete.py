@@ -1,4 +1,4 @@
-from manticore.seth import ManticoreEVM, ABI
+from manticore.ethereum import ManticoreEVM, ABI
 ################ Script #######################
 
 m = ManticoreEVM()

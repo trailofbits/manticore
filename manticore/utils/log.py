@@ -64,13 +64,13 @@ def set_verbosity(setting):
         [
             ('manticore.manticore', logging.INFO),
             ('manticore.main', logging.INFO),
-            ('manticore.seth', logging.INFO),
+            ('manticore.ethereum', logging.INFO),
         ],
         # 2 (-v)
         [
             ('manticore.core.executor', logging.INFO),
             ('manticore.platforms.*', logging.DEBUG),
-            ('manticore.seth', logging.DEBUG),
+            ('manticore.ethereum', logging.DEBUG),
             ('manticore.core.plugin', logging.DEBUG),
         ],
         # 3 (-vv)
