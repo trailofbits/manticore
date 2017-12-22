@@ -6,7 +6,7 @@
 [![Documentation Status](https://readthedocs.org/projects/manticore/badge/?version=latest)](http://manticore.readthedocs.io/en/latest/?badge=latest)
 [![Bountysource](https://img.shields.io/bountysource/team/trailofbits/activity.svg)](https://www.bountysource.com/teams/trailofbits)
 
-Manticore is a prototyping tool for dynamic binary analysis, with support for symbolic execution, taint analysis, and binary instrumentation.
+Manticore is a symbolic execution tool for analysis of binaries and smart contracts.
 
 ## Features
 
@@ -15,17 +15,15 @@ Manticore is a prototyping tool for dynamic binary analysis, with support for sy
 - **Execution Tracing**: Manticore records an instruction-level trace of execution for each generated input
 - **Programmatic Interface**: Manticore exposes programmatic access to its analysis engine via a Python API
 
-Manticore supports binaries of the following formats, operating systems, and
-architectures. It has been primarily used on binaries compiled from C and C++.
-Examples of practical manticore usage are also [on github](https://github.com/trailofbits/manticore-examples).
+Manticore can analyze the following types of programs:
 
-- OS/Formats: Linux ELF
-- Architectures: x86, x86_64, ARMv7, and Ethereum Virtual Machine (EVM)
+- Linux ELF binaries (x86, x86_64 and ARMv7)
+- Ethereum smart contracts (EVM bytecode) ([release announcement](https://github.com/trailofbits/manticore/releases/tag/0.1.6))
 
 ## Requirements
 
-Manticore is supported on Linux, and requires Python 2.7. Ubuntu 16.04 is strongly recommended.
-Ethereum APIs which compile Solidity source code require the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
+Manticore is supported on Linux and requires Python 2.7. Ubuntu 16.04 is strongly recommended.
+Ethereum smart contract analysis requires the [`solc`](https://github.com/ethereum/solidity) program in your `$PATH`.
 
 ## Quick Start
 
@@ -34,10 +32,9 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 ```
 # Install system dependencies
 sudo apt-get update && sudo apt-get install python-pip -y
-python -m pip install -U pip
 
 # Install manticore and its dependencies
-sudo pip install manticore
+sudo pip2 install manticore
 
 # Download and build the examples
 git clone https://github.com/trailofbits/manticore.git && cd manticore/examples/linux
@@ -83,28 +80,24 @@ Once installed, the `manticore` CLI tool and Python API will be available.
 
 For installing a development version of Manticore, see our [wiki](https://github.com/trailofbits/manticore/wiki/Hacking-on-Manticore).
 
-### Redis
-
-If you'd like to use redis for state serialization (instead of disk), install
-redis using your host package manager, then install manticore as above, but
-with `[redis]` appended to the name of the package, e.g.
-
-```
-pip install manticore[redis]
-```
-
-Note that this does not make manticore use redis automatically, and you'll still
-have to manually set the workspace to the redis URI.
-
 ## Usage
+
+### CLI
+
+Manticore has a command line interface which can be used to easily symbolically execute a supported program. Analysis results will be placed into a new directory beginning with `mcore_`. Solidity files must have a .sol extension.
+
 
 ```
 $ manticore ./path/to/binary        # runs, and creates a mcore_* directory with analysis results
 $ manticore ./path/to/binary ab cd  # use concrete strings "ab", "cd" as program arguments
 $ manticore ./path/to/binary ++ ++  # use two symbolic strings of length two as program arguments
+$ manticore ./path/to/contract.sol
 ```
 
-or
+### API
+
+Manticore has a Python programming interface which can be used to implement custom analyses.
+
 
 ```python
 # example Manticore script
@@ -139,3 +132,4 @@ Further documentation is available in several places:
   * The [API reference](http://manticore.readthedocs.io/en/latest/) has more
     thorough and in-depth documentation on our API
 
+Manticore is beta software. It is actively developed and maintained, and users should expect improvements, interface changes, and of course, some bugs.
