@@ -2459,18 +2459,3 @@ class EVMWorld(Platform):
             
         self.current._push(value)
         self.current.pc += self.current.instruction.size
-
-    def generate_workspace_files(self):
-        ret = {}
-        for i, tx in enumerate(self.transactions):
-            name = 'tx.{}'.format(i)
-            data = {
-                'to': tx.address,
-                'from': tx.caller,
-                'data': solver.get_value(self.constraints, tx.data).encode('hex'),
-                'value': tx.value if not issymbolic(tx.value) else '{symbolic!}'
-            }
-            import json
-            ret[name] = json.dumps(data, indent=4)
-
-        return ret
