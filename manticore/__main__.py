@@ -63,7 +63,7 @@ def parse_arguments():
     parser.add_argument('--version', action='version', version='Manticore 0.1.5',
                          help='Show program version information')
     parser.add_argument('--tx', type=check_positive,
-                        help='Set number of symbolic transactions (Ethereum only)')
+                        help='Number of symbolic transactions to run (positive integer) (Ethereum only)')
 
 
     parsed = parser.parse_args(sys.argv[1:])
