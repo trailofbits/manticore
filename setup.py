@@ -1,4 +1,15 @@
+import os
 from setuptools import setup, find_packages
+
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
+
+
+def rtd_dependent_deps():
+    # RTD tries to build z3, ooms, and fails to build.
+    if on_rtd:
+        return []
+    else:
+        return ['z3-solver']
 
 setup(
     name='manticore',
@@ -13,8 +24,7 @@ setup(
         'unicorn',
         'ply',
         'pysha3',
-        'z3-solver',
-    ],
+    ] + rtd_dependent_deps(),
     extras_require={
         'dev': [
             'keystone-engine',
