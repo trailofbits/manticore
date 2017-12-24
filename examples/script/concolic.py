@@ -13,6 +13,7 @@ Bugs
 
 '''
 
+import sys
 import Queue
 import struct
 import itertools
@@ -250,6 +251,11 @@ def concrete_input_to_constraints(ci, prev=None):
 
 
 def main():
+    global endd
+
+    if len(sys.argv) > 1:
+        endd = int(sys.argv[1], 0)
+        log("Got end of main: {:x}".format(endd))
 
     q = Queue.Queue()
 
