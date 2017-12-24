@@ -666,6 +666,10 @@ class Manticore(Eventful):
     def coverage_file(self):
         return self._coverage_file
 
+    @property
+    def workspace(self):
+         return self._output.store.uri
+
     @coverage_file.setter
     def coverage_file(self, path):
         assert not self.running, "Can't set coverage file if Manticore is running."

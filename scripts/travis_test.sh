@@ -1,10 +1,43 @@
 #!/bin/bash
 RV=0
+
+# Run all examples; this assumes PWD is examples/script
+run_examples() {
+    # concolic assumes presence of ../linux/simpleassert
+    HW=../linux/helloworld
+    python ./concolic.py
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    python ./count_instructions.py $HW |grep -q Executed
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    gcc -static -g src/state_explore.c -o state_explore
+    ADDRESS=0x$(objdump -S state_explore | grep -A 1 '((value & 0xff) != 0)' |
+            tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
+    python ./introduce_symbolic_bytes.py state_explore $ADDRESS
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+
+    MAIN_ADDR=$(nm $HW|grep 'T main' | awk '{print "0x"$1}')
+    python ./run_hook.py $HW $MAIN_ADDR
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    return 0
+}
+
 pushd examples/linux
 if make; then
     echo "Successfully built Linux examples"
     for example in $(make list); do
-        if ! ./$example < /dev/zero ; then
+        if ! ./$example < /dev/zero > /dev/null ; then
             echo "Failed to run $example"
             RV=1
             break
@@ -15,6 +48,16 @@ else
     RV=1
 fi
 popd
+
+if [ "$RV" -eq "0" ]; then
+    echo "Successfully ran Linux examples"
+    pushd examples/script
+    run_examples
+    RV=$?
+    popd
+fi
+
+exit 
 
 coverage erase
 coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
