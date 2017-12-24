@@ -5,7 +5,9 @@ RV=0
 run_examples() {
     # concolic assumes presence of ../linux/simpleassert
     HW=../linux/helloworld
-    python ./concolic.py
+    SA=../linux/simpleassert
+    END_OF_MAIN=$(objdump -d $SA|awk -v RS= '/^[[:xdigit:]].*<main>/'|grep ret|tr  -d ' ' | awk -F: '{print "0x" $1}')
+    python ./concolic.py $END_OF_MAIN
     if [ $? -ne 0 ]; then
         return 1
     fi
@@ -56,8 +58,6 @@ if [ "$RV" -eq "0" ]; then
     RV=$?
     popd
 fi
-
-exit 
 
 coverage erase
 coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
