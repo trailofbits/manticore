@@ -9,6 +9,7 @@ import tempfile
 from subprocess import Popen, PIPE
 import sha3
 import json
+import types
 import logging
 import StringIO
 import cPickle as pickle
@@ -429,14 +430,8 @@ class EVMAccount(object):
         self._default_caller = default_caller
         self._seth=seth
         self._address=address
-        self._hashes = {}
-
-        if self._seth:
-            md = self._seth.get_metadata(address)
-            if md is not None:
-                for signature, func_id in md.hashes.items():
-                    func_name = str(signature.split('(')[0])
-                    self._hashes[func_name] = signature, func_id
+        self._hashes = None
+        self._init_hashes()
 
     def __int__(self):
         return self._address
@@ -448,6 +443,17 @@ class EVMAccount(object):
     def address(self):
         return self._address
 
+    def _init_hashes(self):
+        #initializes self._hashes lazy
+        if self._hashes is None and self._seth is not None:
+            self._hashes = {}
+            md = self._seth.get_metadata(self._address)
+            if md is not None:
+                for signature, func_id in md.hashes.items():
+                    func_name = str(signature.split('(')[0])
+                    self._hashes[func_name] = signature, func_id
+            self._init_hashes = types.MethodType(lambda *args: None, self)
+
     def __getattribute__(self, name):
         ''' If this is a contract account of which we know the functions hashes,
             this will build the transaction for the function call.
@@ -458,25 +464,27 @@ class EVMAccount(object):
                 contract_account.add(1000)
          
         '''
-        if not name.startswith('_') and name in self._hashes.keys():
-            def f(*args, **kwargs):
-                caller = kwargs.get('caller', None)
-                value = kwargs.get('value', 0)
-                tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
-                if caller is not None:
-                    caller = int(caller)
-                else:
-                    caller = self._default_caller
-                self._seth.transaction(caller=caller,
-                                        address=self._address,
-                                        value=value,
-                                        data=tx_data
-                                     )
-                self._caller = None
-                self._value = 0
-            return f
-        else:
-            return object.__getattribute__(self, name)            
+        if not name.startswith('_'):
+            self._init_hashes()
+            if self._hashes is not None and name in self._hashes.keys() :
+                def f(*args, **kwargs):
+                    caller = kwargs.get('caller', None)
+                    value = kwargs.get('value', 0)
+                    tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
+                    if caller is not None:
+                        caller = int(caller)
+                    else:
+                        caller = self._default_caller
+                    self._seth.transaction(caller=caller,
+                                            address=self._address,
+                                            value=value,
+                                            data=tx_data
+                                         )
+                    self._caller = None
+                    self._value = 0
+                return f
+
+        return object.__getattribute__(self, name)            
 
 
 
