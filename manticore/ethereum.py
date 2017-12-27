@@ -578,7 +578,6 @@ class ManticoreEVM(Manticore):
             abi = json.loads(contract['abi'])
             runtime = contract['bin-runtime'].decode('hex')
             warnings = p.stderr.read()
-
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1):
@@ -755,14 +754,17 @@ class ManticoreEVM(Manticore):
         compile_results = self._compile(source_code)
         init_bytecode = compile_results[2]
 
+        if address is None:
+            address = self.world._new_address()
+
+        #FIXME different states "could"(VERY UNLIKELY) have different contracts 
+        # asociated with the same address
+        self.metadata[address] = SolidityMetadata(*compile_results)
+
         account = self.create_contract(owner=owner,
                                        balance=balance,
                                        address=address,
                                        init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
-
-        #FIXME different states "could"(VERY UNLIKELY) have different contracts 
-        # asociated with the same address
-        self.metadata[account.address] = SolidityMetadata(*compile_results)
 
         return account
 
