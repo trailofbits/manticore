@@ -361,7 +361,7 @@ class ABI(object):
             return simplify(value)
         if ty == u'uint256':
             return get_uint(256, offset), offset+32
-        if ty == u'bool':
+        elif ty in (u'bool', u'uint8'):
             return get_uint(8, offset), offset+32
         elif ty == u'address':
             return get_uint(160, offset), offset+32
