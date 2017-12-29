@@ -377,7 +377,7 @@ class ABI(object):
             size = get_uint(256, dyn_offset)
             return data[dyn_offset+32:dyn_offset+32+size], offset+4
         else:
-            raise NotImplemented(ty)
+            raise NotImplementedError(ty)
 
     @staticmethod
     def parse(signature, data):
