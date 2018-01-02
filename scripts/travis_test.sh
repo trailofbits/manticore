@@ -25,9 +25,26 @@ run_examples() {
         return 1
     fi
 
+    gcc -x c -static -o hello - <<-EOF
+    #include <stdio.h>
+    int main(){return 0;}
+	EOF
+    python ./run_simple.py hello
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
 
     MAIN_ADDR=$(nm $HW|grep 'T main' | awk '{print "0x"$1}')
     python ./run_hook.py $HW $MAIN_ADDR
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    # Straight from the header of state_control.py
+    gcc -static -g src/state_explore.c -o state_explore
+    SE_ADDR=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' |
+               tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
+    python ./state_control.py state_explore $SE_ADDR
     if [ $? -ne 0 ]; then
         return 1
     fi
