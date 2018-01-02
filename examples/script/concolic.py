@@ -28,7 +28,7 @@ import copy
 from manticore.core.smtlib.expression import *
 
 prog = '../linux/simpleassert'
-endd = 0x400ae9
+main_end = 0x400ae9
 VERBOSITY = 0
 
 def _partition(pred, iterable):
@@ -164,7 +164,7 @@ def symbolic_run_get_cons(trace):
     m2.verbosity(VERBOSITY)
     m2.register_plugin(f)
 
-    @m2.hook(endd)
+    @m2.hook(main_end)
     def x(s):
         with m2.locked_context() as ctx:
             readdata = []
@@ -251,11 +251,12 @@ def concrete_input_to_constraints(ci, prev=None):
 
 
 def main():
-    global endd
+    global main_end
 
+    # Read the address of main's `ret` from cmdline if we're passed it. Used for testing.
     if len(sys.argv) > 1:
-        endd = int(sys.argv[1], 0)
-        log("Got end of main: {:x}".format(endd))
+        main_end = int(sys.argv[1], 0)
+        log("Got end of main: {:x}".format(main_end))
 
     q = Queue.Queue()
 
