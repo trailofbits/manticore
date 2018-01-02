@@ -8,7 +8,7 @@ import capstone as cs
 from .abstractcpu import (
     Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
     ConcretizeRegister, ConcretizeRegister, ConcretizeArgument, Interruption,
-    Syscall
+    Syscall, DivideError
 )
 
 
