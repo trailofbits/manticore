@@ -10,8 +10,8 @@ all: $(EXAMPLES) $(OTHER_EXAMPLES)
 arm: CC=arm-linux-gnueabi-gcc
 arm: $(EXAMPLES)
 
-.PHONY: list
-list: all
+.PHONY: list clean
+list:
 	@echo $(EXAMPLES)
 
 clean:
