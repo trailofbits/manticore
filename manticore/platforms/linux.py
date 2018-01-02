@@ -18,20 +18,12 @@ from ..core.memory import SMemory32, SMemory64, Memory32, Memory64
 from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
-from ..platforms.platform import Platform, SyscallNotImplemented
+from ..platforms.platform import Platform 
+from ..platforms.platform import RestartSyscall, Deadlock, BadFd, SyscallNotImplemented
 from ..utils.helpers import issymbolic, is_binja_disassembler
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
-
-class RestartSyscall(Exception):
-    pass
-
-class Deadlock(Exception):
-    pass
-
-class BadFd(Exception):
-    pass
 
 def perms_from_elf(elf_flags):
     return ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][elf_flags&7]

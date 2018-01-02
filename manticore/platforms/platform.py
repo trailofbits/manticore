@@ -3,6 +3,15 @@ from manticore.utils.event import Eventful
 from itertools import islice, imap
 import inspect
 
+class RestartSyscall(Exception):
+    pass
+
+class Deadlock(Exception):
+    pass
+
+class BadFd(Exception):
+    pass
+
 class OSException(Exception):
     pass
 
