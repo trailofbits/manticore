@@ -454,13 +454,13 @@ class Z3Solver(Solver):
         if not issymbolic(expression):
             if expression is None:
                 return
-            if isinstance(expression, str):
-                if len(expression) == 1:
-                    expression = ord(expression)
-                else:
-                    expression = map(ord, expression)  
-            if isinstance(expression, (list, tuple)):
+            if isinstance(expression, (list, tuple, str)):
                 if not any(map(issymbolic, expression)):
+                    #if len(expression) == 1:
+                    #    expression = ord(expression)
+                    #else:
+                    #    expression = map(lambda x: ord(x) if type(x) == str else x, expression)  
+                    #print "RET", expression
                     return expression
                 if len(expression) == 0:
                     return expression
