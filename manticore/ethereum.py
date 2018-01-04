@@ -1139,10 +1139,11 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_summary.write("Data: %s %s\n"% (state.solve_one(tx.data).encode('hex'), flagged(issymbolic(tx.data))))
+                tx_data = ''.join(map(chr, state.solve_one(tx.data)))
+                tx_summary.write("Data: %s %s\n"% tx_data.encode('hex'), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
-                    return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
+                    return_data = ''.join(map(chr, state.solve_one(tx.return_data)))
+                    tx_summary.write("Return_data: %s %s\n" % return_data.encode('hex'), flagged(issymbolic(tx.return_data))))
 
                 
                 metadata = self.get_metadata(tx.address)

@@ -460,6 +460,8 @@ class Z3Solver(Solver):
                 else:
                     expression = map(ord, expression)  
             if isinstance(expression, (list, tuple)):
+                if not any(map(issymbolic, expression)):
+                    return expression
                 if len(expression) == 0:
                     return expression
                 arr = constraints.new_array(index_max=len(expression))
