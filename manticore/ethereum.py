@@ -581,7 +581,7 @@ class ManticoreEVM(Manticore):
 
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
-    def __init__(self, procs=1):
+    def __init__(self, procs=1, **kwargs):
         ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         '''
@@ -594,7 +594,7 @@ class ManticoreEVM(Manticore):
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
         initial_state.context['tx'] = []
-        super(ManticoreEVM, self).__init__(initial_state)
+        super(ManticoreEVM, self).__init__(initial_state, **kwargs)
 
         self.detectors = {}
         self.metadata = {}
