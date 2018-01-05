@@ -376,9 +376,8 @@ class ABI(object):
             dyn_offset = 4 + get_uint(256,offset)
             size = get_uint(256, dyn_offset)
             return data[dyn_offset+32:dyn_offset+32+size], offset+4
-        elif ty.startswith('bytes') and int(ty[5:]) in range(33):
+        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
-            assert size <= 32 
             return data[offset:offset+size], offset+32
         else:
             raise NotImplemented(ty)
