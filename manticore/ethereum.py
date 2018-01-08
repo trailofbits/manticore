@@ -432,14 +432,8 @@ class EVMAccount(object):
         self._default_caller = default_caller
         self._seth=seth
         self._address=address
-        self._hashes = {}
-
-        if self._seth:
-            md = self._seth.get_metadata(address)
-            if md is not None:
-                for signature, func_id in md.hashes.items():
-                    func_name = str(signature.split('(')[0])
-                    self._hashes[func_name] = signature, func_id
+        self._hashes = None
+        self._init_hashes()
 
     def __int__(self):
         return self._address
@@ -451,6 +445,22 @@ class EVMAccount(object):
     def address(self):
         return self._address
 
+    def _null_func():
+        pass
+
+
+    def _init_hashes(self):
+        #initializes self._hashes lazy
+        if self._hashes is None and self._seth is not None:
+            self._hashes = {}
+            md = self._seth.get_metadata(self._address)
+            if md is not None:
+                for signature, func_id in md.hashes.items():
+                    func_name = str(signature.split('(')[0])
+                    self._hashes[func_name] = signature, func_id
+            #It was successful, no need to re-run. _init_hashes disabled
+            self._init_hashes = self._null_func
+
     def __getattribute__(self, name):
         ''' If this is a contract account of which we know the functions hashes,
             this will build the transaction for the function call.
@@ -461,25 +471,27 @@ class EVMAccount(object):
                 contract_account.add(1000)
          
         '''
-        if not name.startswith('_') and name in self._hashes.keys():
-            def f(*args, **kwargs):
-                caller = kwargs.get('caller', None)
-                value = kwargs.get('value', 0)
-                tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
-                if caller is not None:
-                    caller = int(caller)
-                else:
-                    caller = self._default_caller
-                self._seth.transaction(caller=caller,
-                                        address=self._address,
-                                        value=value,
-                                        data=tx_data
-                                     )
-                self._caller = None
-                self._value = 0
-            return f
-        else:
-            return object.__getattribute__(self, name)            
+        if not name.startswith('_'):
+            self._init_hashes()
+            if self._hashes is not None and name in self._hashes.keys() :
+                def f(*args, **kwargs):
+                    caller = kwargs.get('caller', None)
+                    value = kwargs.get('value', 0)
+                    tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
+                    if caller is not None:
+                        caller = int(caller)
+                    else:
+                        caller = self._default_caller
+                    self._seth.transaction(caller=caller,
+                                            address=self._address,
+                                            value=value,
+                                            data=tx_data
+                                         )
+                    self._caller = None
+                    self._value = 0
+                return f
+
+        return object.__getattribute__(self, name)            
 
 
 
@@ -581,7 +593,6 @@ class ManticoreEVM(Manticore):
             abi = json.loads(contract['abi'])
             runtime = contract['bin-runtime'].decode('hex')
             warnings = p.stderr.read()
-
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1, **kwargs):
@@ -758,14 +769,17 @@ class ManticoreEVM(Manticore):
         compile_results = self._compile(source_code)
         init_bytecode = compile_results[2]
 
+        if address is None:
+            address = self.world.new_address()
+
+        #FIXME different states "could"(VERY UNLIKELY) have different contracts 
+        # asociated with the same address
+        self.metadata[address] = SolidityMetadata(*compile_results)
+
         account = self.create_contract(owner=owner,
                                        balance=balance,
                                        address=address,
                                        init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
-
-        #FIXME different states "could"(VERY UNLIKELY) have different contracts 
-        # asociated with the same address
-        self.metadata[account.address] = SolidityMetadata(*compile_results)
 
         return account
 
@@ -785,7 +799,7 @@ class ManticoreEVM(Manticore):
             assert context['_pending_transaction'] is None
         assert init is not None
         if address is None:
-            address = self.world._new_address()
+            address = self.world.new_address()
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
