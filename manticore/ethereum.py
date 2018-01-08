@@ -9,7 +9,6 @@ import tempfile
 from subprocess import Popen, PIPE
 import sha3
 import json
-import types
 import logging
 import StringIO
 import cPickle as pickle
@@ -443,6 +442,10 @@ class EVMAccount(object):
     def address(self):
         return self._address
 
+    def _null_func():
+        pass
+
+
     def _init_hashes(self):
         #initializes self._hashes lazy
         if self._hashes is None and self._seth is not None:
@@ -452,7 +455,8 @@ class EVMAccount(object):
                 for signature, func_id in md.hashes.items():
                     func_name = str(signature.split('(')[0])
                     self._hashes[func_name] = signature, func_id
-            self._init_hashes = types.MethodType(lambda *args: None, self)
+            #It was successful, no need to re-run. _init_hashes disabled
+            self._init_hashes = self._null_func
 
     def __getattribute__(self, name):
         ''' If this is a contract account of which we know the functions hashes,
