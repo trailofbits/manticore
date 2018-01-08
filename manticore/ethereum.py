@@ -2,7 +2,7 @@ import string
 
 from . import Manticore
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
-from .core.smtlib.visitors import arithmetic_simplifier
+from .core.smtlib.visitors import arithmetanticore/core/smtlib/solver.pyic_simplifier
 from .platforms import evm
 from .core.state import State
 import tempfile
@@ -763,7 +763,7 @@ class ManticoreEVM(Manticore):
         init_bytecode = compile_results[2]
 
         if address is None:
-            address = self.world._new_address()
+            address = self.world.new_address()
 
         #FIXME different states "could"(VERY UNLIKELY) have different contracts 
         # asociated with the same address
@@ -792,7 +792,7 @@ class ManticoreEVM(Manticore):
             assert context['_pending_transaction'] is None
         assert init is not None
         if address is None:
-            address = self.world._new_address()
+            address = self.world.new_address()
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
