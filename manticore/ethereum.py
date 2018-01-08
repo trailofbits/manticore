@@ -1163,7 +1163,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write('\n')
                         tx_summary.write( "Function call:\n")
                         tx_summary.write("%s(" % state.solve_one(function_name ))
-                        tx_summary.write(','.join(map(str, map(state.solve_one, arguments))))
+                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
