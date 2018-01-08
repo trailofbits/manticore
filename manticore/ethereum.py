@@ -2,7 +2,7 @@ import string
 
 from . import Manticore
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
-from .core.smtlib.visitors import arithmetanticore/core/smtlib/solver.pyic_simplifier
+from .core.smtlib.visitors import arithmetic_simplifier
 from .platforms import evm
 from .core.state import State
 import tempfile
