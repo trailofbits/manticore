@@ -7,6 +7,7 @@ from .platforms import evm
 from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
+from multiprocessing import Process
 import sha3
 import json
 import logging
@@ -1214,8 +1215,26 @@ class ManticoreEVM(Manticore):
         #move runnign states to final states list
         # and generate a testcase for each
         lst = tuple(self.running_state_ids)
-        for state_id in lst:
-            self.terminate_state_id(state_id)
+
+        def chunks(l, n):
+            """
+            Yield successive n-sized chunks from l.
+            https://stackoverflow.com/a/312464
+            """
+            for i in xrange(0, len(l), n):
+                yield l[i:i + n]
+
+        for lst_chunk in chunks(lst, self._config_procs):
+
+            self.finalize_workers = []
+
+            for state_id in lst_chunk:
+                p = Process(target=self.terminate_state_id, args=(state_id,))
+                self.finalize_workers.append(p)
+                p.start()
+
+            while len(self.finalize_workers) > 0:
+                self.finalize_workers.pop().join()
 
         #delete actual streams from storage
         for state_id in self.all_state_ids:
