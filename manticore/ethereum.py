@@ -445,7 +445,7 @@ class EVMAccount(object):
     def address(self):
         return self._address
 
-    def _null_func():
+    def _null_func(self):
         pass
 
 
