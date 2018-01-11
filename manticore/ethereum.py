@@ -357,8 +357,12 @@ class ABI(object):
             offset = simplify(offset)
             byte_size = size/8
             padding = 32 - byte_size # for 160
+            if offset+padding+byte_size > len(data):
+                raise Exception("Not enough data in argument or return")
+
             value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size])))
             return simplify(value)
+
         if ty == u'uint256':
             return get_uint(256, offset), offset+32
         elif ty in (u'bool', u'uint8'):
@@ -1140,6 +1144,11 @@ class ManticoreEVM(Manticore):
                     summary.write("Coverage %d%% (on this state)\n" %  calculate_coverage(code, trace)) #coverage % for address in this account/state
                 summary.write("\n")
 
+
+            if blockchain._sha3.items():
+                summary.write("Known hashes:\n")
+            for key,value in blockchain._sha3.items():
+                summary.write('%s::%x\n'%(key.encode('hex'), value))
 
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
