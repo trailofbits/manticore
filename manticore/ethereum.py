@@ -8,6 +8,7 @@ from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
 from multiprocessing import Process, Queue
+from Queue import Empty as EmptyQueue
 import sha3
 import json
 import logging
@@ -1217,14 +1218,22 @@ class ManticoreEVM(Manticore):
         q = Queue()
         map(q.put, self.running_state_ids)
         def f(q):
-            state_id = q.get_nowait()
-            while state_id is not None:
-                self.terminate_state_id(state_id)
-                state_id = q.get_nowait()
- 
-        ps = [ Process(target=f)] * self._config_procs
-        ( p.start() for p in ps )
-        ( p.join() for p in ps )
+            try:
+                while True:
+                    state_id = q.get_nowait()
+                    self.terminate_state_id(state_id)
+            except EmptyQueue:
+                pass
+
+        ps = []
+
+        for _ in range(self._config_procs):
+            p = Process(target=f, args=(q,))
+            p.start()
+            ps.append(p)
+
+        for p in ps:
+            p.join()            
                 
         #delete actual streams from storage
         for state_id in self.all_state_ids:
