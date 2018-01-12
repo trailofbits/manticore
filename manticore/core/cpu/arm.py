@@ -10,7 +10,8 @@ import capstone as cs
 from capstone.arm import *
 
 from .abstractcpu import (
-    Abi, SyscallAbi, Cpu, RegisterFile, Operand, Interruption
+    Abi, SyscallAbi, Cpu, RegisterFile, Operand,
+    CpuException, Interruption
 )
 
 from .abstractcpu import instruction as abstract_instruction
@@ -27,6 +28,17 @@ OP_NAME_MAP = {
 
 def HighBit(n):
     return Bit(n, 31)
+
+class ConcretizeMode(CpuException):
+    '''
+    Raised when a symbolic mode needs to be concretized.
+    '''
+    def __init__(self, cpu, mode, message=None, policy='MINMAX'):
+        self.message = message if message else "Concretizing mode"
+
+        self.cpu = cpu
+        self.mode = mode
+        self.policy = policy
 
 def instruction(body):
     @wraps(body)
@@ -787,10 +799,10 @@ class Armv7Cpu(Cpu):
         else:
             word = Operators.ZEXTEND(mem, cpu.address_bit_size)
         if dest.reg in ('PC', 'R15'):
-            if word & 0x1:
-                cpu._set_mode(cs.CS_MODE_THUMB)
-            else:
-                cpu._set_mode(cs.CS_MODE_ARM)
+            mode = Operators.ITE(0x1 == (word & 0x1), cs.CS_MODE_THUMB, cs.CS_MODE_ARM)
+            if issymbolic(mode):
+                raise ConcretizeMode(cpu, mode, "Concretizing mode on LDR instruction")
+            cpu._set_mode(mode)
             word &= ~0x1
             logger.debug("LDR writing 0x{:x} -> PC".format(word))
         dest.write(word)
@@ -963,10 +975,10 @@ class Armv7Cpu(Cpu):
         for reg in regs:
             val = cpu.stack_pop(cpu.address_bit_size / 8)
             if reg.reg in ('PC', 'R15'):
-                if val & 0x1:
-                    cpu._set_mode(cs.CS_MODE_THUMB)
-                else:
-                    cpu._set_mode(cs.CS_MODE_ARM)
+                mode = Operators.ITE(0x1 == (val & 0x1), cs.CS_MODE_THUMB, cs.CS_MODE_ARM)
+                if issymbolic(mode):
+                    raise ConcretizeMode(cpu, mode, "Concretizing mode on POP instruction")
+                cpu._set_mode(mode)
                 val = val & ~0x1
             reg.write(val)
 
