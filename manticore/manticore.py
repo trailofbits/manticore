@@ -354,10 +354,6 @@ class Manticore(Eventful):
     def running(self):
         return self._executor._running.value
 
-    def enqueue(self, state):
-        ''' Dynamically enqueue states. Users should typically not need to do this '''
-        self._executor.add(state)
-
     @property
     def running(self):
         return self._executor.running
