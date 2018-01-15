@@ -557,16 +557,17 @@ class ManticoreEVM(Manticore):
         return ABI.SValue
 
     @staticmethod
-    def compile(source_code):
+    def compile(source_code, contract_name = None):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code)
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name)
         return bytecode
 
     @staticmethod
-    def _compile(source_code):
+    def _compile(source_code, contract_name):
         """ Compile a Solidity contract, used internally
             
             :param source_code: a solidity source code
+            :param contract_name: a string with the name of the contract to analyze
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
@@ -581,10 +582,19 @@ class ManticoreEVM(Manticore):
                 raise Exception('Solidity compilation error')
 
             contracts = output.get('contracts', [])
-            if len(contracts) != 1:
-                raise Exception('Solidity file must contain exactly one contract')
+            if len(contracts) != 1 and contract_name is None:
+                raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
-            name, contract = contracts.items()[0]
+            name, contract = None, None
+            if contract_name is None:
+                name, contract = contracts.items()[0]
+            else:
+                for n, c in contracts.items():
+                    if n.split(":")[1] == contract_name:
+                        name, contract = n, c
+                        break
+
+            assert(name is not None)
             name = name.split(':')[1]
             bytecode = contract['bin'].decode('hex')
             srcmap = contract['srcmap'].split(';')
@@ -753,12 +763,14 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
+    def solidity_create_contract(self, source_code, owner, contract_name=None, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
 
             :param str source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
+            :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
+            :type contract_name: str
             :param balance: balance to be transferred on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
@@ -766,7 +778,7 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-        compile_results = self._compile(source_code)
+        compile_results = self._compile(source_code, contract_name)
         init_bytecode = compile_results[2]
 
         if address is None:
@@ -858,12 +870,12 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, tx_limit=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name, tx_limit=None):
         with open(solidity_filename) as f:
             source_code = f.read()
 
         user_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, owner=user_account)
+        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=user_account)
         attacker_account = self.create_account(balance=1000)
 
         def run_symbolic_tx():
@@ -1160,7 +1172,6 @@ class ManticoreEVM(Manticore):
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
-
                 
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'Call':
