@@ -870,7 +870,7 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, contract_name, tx_limit=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None):
         with open(solidity_filename) as f:
             source_code = f.read()
 
