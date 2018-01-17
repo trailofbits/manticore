@@ -1328,6 +1328,8 @@ class UnicornConcretization(unittest.TestCase):
         self.cpu, self.state = self.__class__.get_state()
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
+        for r in self.cpu.regfile.canonical_registers:
+            self.cpu.write_register(r, 0)
 
     def _setupCpu(self, asm):
         self.code = self.mem.mmap(0x1000, 0x1000, 'rwx')
@@ -1397,4 +1399,13 @@ class UnicornConcretization(unittest.TestCase):
 
         self.assertEqual(self.rf.read('PC'), self.code+8)
         self.assertEqual(self.rf.read('R0'), 0x12345678)
+
+
+    @itest_custom("mov r1, r2")
+    def test_concretize_register_isnt_consumed(self):
+        val = self.state.new_symbolic_value(32)
+        self.rf.write('R2', val)
+
+        with self.assertRaises(ConcretizeRegister):
+            self.cpu.emulate(self.cpu.decode_instruction(self.cpu.PC))
 

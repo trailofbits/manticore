@@ -841,7 +841,7 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename):
+    def multi_tx_analysis(self, solidity_filename, tx_limit=None):
         with open(solidity_filename) as f:
             source_code = f.read()
 
@@ -849,18 +849,24 @@ class ManticoreEVM(Manticore):
         contract_account = self.solidity_create_contract(source_code, owner=user_account)
         attacker_account = self.create_account(balance=1000)
 
+        def run_symbolic_tx():
+            symbolic_data = self.make_symbolic_buffer(320)
+            symbolic_value = self.make_symbolic_value()
+            self.transaction(caller=attacker_account,
+                             address=contract_account,
+                             data=symbolic_data,
+                             value=symbolic_value )
+
         prev_coverage = 0
         current_coverage = 0
 
         while current_coverage < 100:
+            run_symbolic_tx()
 
-            symbolic_data = self.make_symbolic_buffer(320)
-            symbolic_value = self.make_symbolic_value()
-
-            self.transaction(caller=attacker_account,
-                          address=contract_account,
-                          data=symbolic_data,
-                          value=symbolic_value )
+            if tx_limit is not None:
+                tx_limit -= 1
+                if tx_limit == 0:
+                    break
 
             prev_coverage = current_coverage
             current_coverage = self.global_coverage(contract_account)
@@ -1065,6 +1071,8 @@ class ManticoreEVM(Manticore):
         # each object knows its secrets, each class should be able to report its
         # final state
         #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
+        # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
+        #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         def flagged(flag):
             return '(*)' if flag else '' 
         testcase = self._output.testcase()
