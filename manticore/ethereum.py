@@ -1265,7 +1265,7 @@ class ManticoreEVM(Manticore):
                                 tx_summary.write( ','.join(map(repr, map(state.solve_one, argument))))
                                 tx_summary.write('}')
                             else:
-                                tx_summary.write(repr, map(state.solve_one, argument))
+                                tx_summary.write(repr( state.solve_one( argument)))
                             if not argument is arguments[-1]:
                                 tx_summary.write(', ')
                             else:
