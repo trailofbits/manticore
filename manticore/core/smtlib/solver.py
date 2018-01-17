@@ -324,6 +324,7 @@ class Z3Solver(Solver):
             if expression == False:
                 return expression
             else:
+                #Still need to check if the constraints are feasible
                 expression = BoolConstant(expression)
         assert isinstance(expression, Bool)
 

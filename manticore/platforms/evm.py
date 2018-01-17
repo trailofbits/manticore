@@ -1159,15 +1159,26 @@ class EVM(Eventful):
 
     #Memory related
     def _allocate(self, address):
-        if address > self.memory._allocated:
+        cond = address > self.memory._allocated
+
+        if issymbolic(cond):
+            #FIXME we should explore the other case too
+            if solver.can_be_true(self.constraints, cond):
+                self.constraints.add(cond)
+                cond = True
+            else:
+                cond = False
+
+
+        if cond:
             GMEMORY = 3
             GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
 
             old_size = ceil32(self.memory._allocated) // 32
-            old_totalfee = old_size * GMEMORY + old_size ** 2 // GQUADRATICMEMDENOM
+            old_totalfee = old_size * GMEMORY + old_size * old_size // GQUADRATICMEMDENOM
             new_size = ceil32(address) // 32
             increased = new_size - old_size 
-            fee = increased * GMEMORY + increased**2 // GQUADRATICMEMDENOM
+            fee = increased * GMEMORY + increased*increased // GQUADRATICMEMDENOM
             self._consume(fee)
 
     def _store(self, address, value):
@@ -1250,8 +1261,11 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        assert fee>=0
-        if self.gas < fee:
+        assert issymbolic(fee) or fee>=0  
+        if solver.can_be_true(self.constraints, self.gas > fee):
+            #FIXME We go for maximun gas only
+            self.constraints.add(self.gas > fee)
+        else:
             raise NotEnoughGas()
         self.gas -= fee
 
@@ -1270,7 +1284,6 @@ class EVM(Eventful):
         self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
-
         self._publish('will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
@@ -1529,7 +1542,7 @@ class EVM(Eventful):
 
     def CALLER(self): 
         '''Get caller address'''
-        return Operators.ZEXTEND(self.caller, 256)
+        return Operators.ZEXTEND(self.caller, 256)  
 
     def CALLVALUE(self):
         '''Get deposited value by the instruction/transaction responsible for this execution'''
@@ -1542,6 +1555,11 @@ class EVM(Eventful):
         #    self._constraints.add(Operators.ULE(offset, len(self.data)+32))
             #self._constraints.add(0 == offset%32)
         #    raise ConcretizeStack(3, expression=offset, policy='ALL')
+
+        #FIXME Document and make it configurable
+        #Do not explore offsets much bigger than actual data
+        if issymbolic(offset):
+            self.constraints.add(offset<len(self.data)+32)
 
         bytes = list(self.data[offset:offset+32])
         bytes += list('\x00'*( 32-len(bytes)))
@@ -2227,6 +2245,7 @@ class EVMWorld(Platform):
             data = data_symb
         else:
             data = ''.join(data)
+
         bytecode = self.get_code(address)
         self._pending_transaction = ('Call', address, origin, price, data, caller, value, bytecode, header)
 

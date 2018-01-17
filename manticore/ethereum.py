@@ -2,7 +2,7 @@ import string
 
 from . import Manticore
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
-from .core.smtlib.visitors import arithmetic_simplifier
+from .core.smtlib.visitors import arithmetic_simplifier, pretty_print
 from .platforms import evm
 from .core.state import State
 import tempfile
@@ -239,7 +239,7 @@ class ABI(object):
 
     '''
     class SByte():
-        ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
+        ''' Unconstrained symbolic byte string, not associated with any ConstraintSet '''
         def __init__(self, size=1):
             self.size=size
         def __mul__(self, reps):
@@ -342,6 +342,22 @@ class ABI(object):
         result.append(ABI.make_function_arguments(*args))
         return reduce(lambda x,y: x+y, result)
 
+    @staticmethod
+    def get_uint(data, offset, size):
+        def simplify(x):
+            value = arithmetic_simplifier(x)
+            if isinstance(value, Constant) and not value.taint:
+                return value.value
+            else:
+                return value
+
+        size = simplify(size)
+        offset = simplify(offset)
+        byte_size = size/8
+        padding = 32 - byte_size # for 160
+        value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size])))
+        return simplify(value)
+
     @staticmethod        
     def _consume_type(ty, data, offset):
         ''' INTERNAL parses a value of type from data '''
@@ -373,32 +389,56 @@ class ABI(object):
         elif ty == u'':
             return None, offset
         elif ty in (u'bytes', u'string'):
-            dyn_offset = 4 + get_uint(256,offset)
+            dyn_offset = get_uint(256,offset)
             size = get_uint(256, dyn_offset)
-            return data[dyn_offset+32:dyn_offset+32+size], offset+4
+            return data[dyn_offset+32:dyn_offset+32+size], offset+32
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
             return data[offset:offset+size], offset+32
+        if ty == u'address[]':
+            dyn_offset = arithmetic_simplifier((get_uint(256,offset)))
+            size = arithmetic_simplifier(get_uint(256, dyn_offset))
+            result = []
+            for i in range(size):
+                x = get_uint(160, dyn_offset+32 + 32*i)
+                result.append(x)
+            return result, offset+32
         else:
             raise NotImplementedError(ty)
 
     @staticmethod
-    def parse(signature, data):
-        ''' Deserialize function ID and arguments specified in `signature` from `data` '''
-
+    def parse_signature_spec(signature):
         is_multiple = '(' in signature
         if is_multiple:
             func_name = signature.split('(')[0]
             types = signature.split('(')[1][:-1].split(',')
-            if len(func_name) > 0:
-                off = 4
-            else:
+            if len(func_name) == 0:
                 func_name = None
-                off = 0
         else:
             func_name = None
             types = (signature,)
+        return is_multiple, func_name, types
+
+    @staticmethod
+    def parse(signature, data):
+        ''' Deserialize function ID and arguments specified in `signature` from `data` '''
+        '''
+        is_multiple = '(' in signature
+        if is_multiple:
+            func_name = signature.split('(')[0]
+            types = signature.split('(')[1][:-1].split(',')
+        else:
+            func_name = None
+            types = (signature,)
+        '''
+        is_multiple, func_name, types = ABI.parse_signature_spec(signature)
+
+        #If it parsed the function name from the spec, skip 4 bytes from the data
+        if func_name:
+            off = 4
+        else:
             off = 0
+
 
         arguments = []
         for ty in types:
@@ -844,6 +884,7 @@ class ManticoreEVM(Manticore):
         
         if isinstance(data, self.SByte):
             data = (None,)*data.size
+
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
 
@@ -890,6 +931,8 @@ class ManticoreEVM(Manticore):
             found_new_coverage = prev_coverage < current_coverage
 
             if not found_new_coverage:
+                break
+            if not self.running_state_ids:
                 break
 
         self.finalize()
@@ -1026,6 +1069,8 @@ class ManticoreEVM(Manticore):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
                 data = symbolic_data
+
+        
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value)
         else:
@@ -1077,6 +1122,38 @@ class ManticoreEVM(Manticore):
     @property
     def workspace(self):
         return self._executor._workspace._store.uri
+
+    def _concretize_offsets_and_sizes(self, state, signature, data):
+        ''' Using signature spec this function browse the data and concretize 
+            all the offsets to dynamic arguments and all the size of the dynamic
+            arguments so it all fits into data.
+            The available space is fairly divided among all the dynamic arguments.
+        '''
+        is_multiple, func_name, types = ABI.parse_signature_spec(signature)
+        dyn_arguments = []
+        for pos, t in enumerate(types):
+            dynamic = t in (u'bytes', u'string') or t.endswith(']')
+            if dynamic:
+                dyn_arguments.append(pos)
+
+        used = 4 + len(types)*32 
+        available = len(data) -used -len(dyn_arguments)*32
+
+        for i in range(0, len(dyn_arguments)):
+            #get, constraint and concretize dyn_offset to some reasonable value
+            dyn_offset = ABI.get_uint(data, 4 + dyn_arguments[i]*32, 256)
+            assert solver.can_be_true(state.constraints, dyn_offset == used)
+            state.constrain(dyn_offset == used)
+            data[used:used+32] = ("%064x"%(available/32/len(dyn_arguments))).decode('hex')
+
+            #get, constraint and concretize dyn_size to some reasonable value
+            dyn_size = ABI.get_uint(data, used, 256)
+            assert solver.can_be_true(state.constraints, dyn_size == available/32/len(dyn_arguments))
+            state.constrain(dyn_size == available/32/len(dyn_arguments))
+            data[4+dyn_arguments[i]*32:4+dyn_arguments[i]*32+32]= ("%064x"%used).decode('hex')
+
+            used += 32 + available/len(dyn_arguments)
+
 
     def _generate_testcase_callback(self, state, name, message):
         '''
@@ -1168,6 +1245,10 @@ class ManticoreEVM(Manticore):
                         function_id = tx.data[:4]  #hope there is enough data
                         function_id = state.solve_one(function_id).encode('hex')
                         signature = metadata.get_func_signature(function_id)
+
+
+
+                        self._concretize_offsets_and_sizes(state, signature, tx.data)
                         function_name, arguments = ABI.parse(signature, tx.data)
 
                         if tx.result == 'RETURN':
@@ -1177,7 +1258,19 @@ class ManticoreEVM(Manticore):
                         tx_summary.write('\n')
                         tx_summary.write( "Function call:\n")
                         tx_summary.write("%s(" % state.solve_one(function_name ))
-                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
+
+                        for argument in arguments:
+                            if isinstance(argument, (list, tuple)):
+                                tx_summary.write('{')
+                                tx_summary.write( ','.join(map(repr, map(state.solve_one, argument))))
+                                tx_summary.write('}')
+                            else:
+                                tx_summary.write(repr, map(state.solve_one, argument))
+                            if not argument is arguments[-1]:
+                                tx_summary.write(', ')
+                            else:
+                                tx_summary.write('\n')
+
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
