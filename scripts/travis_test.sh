@@ -4,6 +4,7 @@ RV=0
 # Run all examples; this assumes PWD is examples/script
 run_examples() {
     # concolic assumes presence of ../linux/simpleassert
+    echo "Running concolic.py..."
     HW=../linux/helloworld
     SA=../linux/simpleassert
     END_OF_MAIN=$(objdump -d $SA|awk -v RS= '/^[[:xdigit:]].*<main>/'|grep ret|tr  -d ' ' | awk -F: '{print "0x" $1}')
@@ -12,11 +13,13 @@ run_examples() {
         return 1
     fi
 
+    echo "Running count_instructions.py..."
     python ./count_instructions.py $HW |grep -q Executed
     if [ $? -ne 0 ]; then
         return 1
     fi
 
+    echo "Running introduce_symbolic_bytes.py..."
     gcc -static -g src/state_explore.c -o state_explore
     ADDRESS=0x$(objdump -S state_explore | grep -A 1 '((value & 0xff) != 0)' |
             tail -n 1 | sed 's|^\s*||g' | cut -f1 -d:)
@@ -25,6 +28,7 @@ run_examples() {
         return 1
     fi
 
+    echo "Running run_simple.py..."
     gcc -x c -static -o hello - <<-EOF
     #include <stdio.h>
     int main(){return 0;}
@@ -34,12 +38,14 @@ run_examples() {
         return 1
     fi
 
+    echo "Running run_hook.py..."
     MAIN_ADDR=$(nm $HW|grep 'T main' | awk '{print "0x"$1}')
     python ./run_hook.py $HW $MAIN_ADDR
     if [ $? -ne 0 ]; then
         return 1
     fi
 
+    echo "Running state_control.py..."
     # Straight from the header of state_control.py
     gcc -static -g src/state_explore.c -o state_explore
     SE_ADDR=0x$(objdump -S state_explore | grep -A 1 'value == 0x41' |
@@ -63,17 +69,25 @@ if make; then
         fi
     done
 else
-    echo "Failed to build Linux examples"
+    echo "Failed to build Linux example binaries"
     RV=1
 fi
 popd
 
 if [ "$RV" -eq "0" ]; then
-    echo "Successfully ran Linux examples"
+    echo "Successfully ran Linux examples binaries"
     pushd examples/script
     run_examples
     RV=$?
     popd
+else
+    echo "Failed to run Linux example binaries"
+fi
+
+if [ "$RV" -eq "0" ]; then
+    echo "Successfully ran example scripts"
+else
+    echo "Failed to run example scripts"
 fi
 
 coverage erase
