@@ -136,6 +136,11 @@ class SolidityMetadata(object):
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
+
+        # Do nothing for an empty srcmap
+        if len(srcmap) == 0:
+            return new_srcmap
+
         end = None
         if  ''.join(bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and  ''.join(bytecode[-2:]) =='\x00\x29':
@@ -173,6 +178,9 @@ class SolidityMetadata(object):
     def runtime_bytecode(self):
         # Removes metadata from the tail of bytecode
         end = None
+        if len(self._runtime_bytecode) == 0:
+            return self._runtime_bytecode
+
         if  ''.join(self._runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and  ''.join(self._runtime_bytecode[-2:]) =='\x00\x29':
             end = -9-33-2  #Size of metadata at the end of most contracts
@@ -563,6 +571,11 @@ class ManticoreEVM(Manticore):
         return bytecode
 
     @staticmethod
+    def compile_many(source_code):
+        metadata = ManticoreEVM._compile_many(source_code)
+        bytecode = [c['bytecode'] for c in metadata]
+
+    @staticmethod
     def _compile(source_code):
         """ Compile a Solidity contract, used internally
             
@@ -594,6 +607,46 @@ class ManticoreEVM(Manticore):
             runtime = contract['bin-runtime'].decode('hex')
             warnings = p.stderr.read()
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+
+    @staticmethod
+    def _compile_many(source_code):
+        """ Compile a Solidity contract, used internally
+            
+            :param source_code: a solidity source code
+            :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
+        """
+        solc = "solc"
+        with tempfile.NamedTemporaryFile() as temp:
+            temp.write(source_code)
+            temp.flush()
+            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', temp.name], stdout=PIPE, stderr=PIPE)
+
+            try:
+                output = json.loads(p.stdout.read())
+            except ValueError:
+                raise Exception('Solidity compilation error')
+
+            contracts = output.get('contracts', [])
+            contract_metadata = []
+            for name, contract in contracts.items():
+                md = {}
+
+                # skip contracts without binary code (e.g. libraries, interfaces, etc.)
+                if len(contract['bin']) == 0:
+                    continue
+
+                md['name'] = name.split(':')[1]
+                md['source_code'] = source_code
+                md['bytecode'] = contract['bin'].decode('hex')
+                md['srcmap'] = contract['srcmap'].split(';')
+                md['srcmap_runtime'] = contract['srcmap-runtime'].split(';')
+                md['hashes'] = contract['hashes']
+                md['abi'] = json.loads(contract['abi'])
+                md['runtime'] = contract['bin-runtime'].decode('hex')
+                md['warnings'] = p.stderr.read()
+                contract_metadata.append(md)
+                md = {}
+            return contract_metadata
 
     def __init__(self, procs=1, **kwargs):
         ''' A Manticore EVM manager
@@ -783,6 +836,62 @@ class ManticoreEVM(Manticore):
 
         return account
 
+    def solidity_create_many_contracts(self, source_code, owners, balances=[], addresses=[], args=[]):
+        ''' Creates a solidity contract 
+
+            :param str source_code: solidity source code
+            :param owner: owner account for each contract (will be default caller in any transactions)
+            :type owner: int or EVMAccount
+            :param balance: balance to be transferred on creation
+            :type balance: int or SValue
+            :param addresses: the addresses for the new contracts (optional)
+            :type address: int or EVMAccount
+            :param tuple args: constructor arguments
+            :rtype: EVMAccount
+        '''
+        contracts = self._compile_many(source_code)
+        bytecodes = [c['bytecode'] for c in contracts] 
+
+        lc = len(contracts)
+        if len(owners) < lc:
+            raise Exception('Solidity contracts need an owner for each contract')
+
+        if len(balances) < lc:
+            for i in range(0, lc):
+                try:
+                    balances[i]
+                except IndexError:
+                    balances.append(0)
+
+        if len(addresses) < lc:
+            for i in range(0, lc):
+                try:
+                    addresses[i]
+                except IndexError:
+                    addresses.append(self.world.new_address())
+
+        if len(args) < lc:
+            for i in range(0, lc):
+                try:
+                    args[i]
+                except IndexError:
+                    args.append(())
+
+
+        #FIXME different states "could"(VERY UNLIKELY) have different contracts 
+        # asociated with the same address
+        accounts = []
+        for i, ct in enumerate(contracts):
+            _md = ct['name'], ct['source_code'], ct['bytecode'], ct['runtime'], ct['srcmap'], ct['srcmap_runtime'], ct['hashes'], ct['abi'], ct['warnings']
+            self.metadata[addresses[i]] = SolidityMetadata(*_md)
+
+            accounts.append(self.create_contract(owner=owners[i],
+                                          balance=balances[i],
+                                          address=addresses[i],
+                                          init=tuple(bytecodes[i])+tuple(ABI.make_function_arguments(*args[i]))))
+
+        return accounts
+    
     def create_contract(self, owner, balance=0, address=None, init=None):
         ''' Creates a contract 
 
