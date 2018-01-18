@@ -1,5 +1,9 @@
 #!/bin/bash
+
 RV=0
+
+set -o errexit
+set -o pipefail
 
 # Run all examples; this assumes PWD is examples/script
 run_examples() {
