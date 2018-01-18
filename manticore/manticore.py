@@ -218,6 +218,15 @@ class Manticore(Eventful):
                     event_name = callback_name[:-9]
                     if event_name not in all_events:
                         logger.warning("There is no event name %s for callback on plugin type %s", event_name, type(plugin) )
+            for event_name in all_events:
+                for plugin_method_name in dir(plugin):
+                    if event_name in plugin_method_name:
+                        if not plugin_method_name.endswith('_callback'):
+                            logger.warning("Pluging methods name '%s()'should end with '_callback' on plugin type %s", plugin_method_name, type(plugin) )
+                        if not plugin_method_name.startswith('on_') and \
+                            not plugin_method_name.startswith('will_') and \
+                            not plugin_method_name.startswith('did_'):
+                            logger.warning("Pluging methods name '%s()'should start with 'on_', 'will_' or 'did_'  on plugin type %s", plugin_method_name, type(plugin) )
 
 
 
