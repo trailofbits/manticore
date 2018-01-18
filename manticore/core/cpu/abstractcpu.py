@@ -862,8 +862,6 @@ class Cpu(Eventful):
                 logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                   insn.address, text_bytes, insn.mnemonic, insn.op_str)
             raise InstructionEmulationError(str(e))
-        except Exception as e:
-            raise InstructionEmulationError(str(e))
         finally:
             # We have been seeing occasional Unicorn issues with it not clearing
             # the backing unicorn instance. Saw fewer issues with the following

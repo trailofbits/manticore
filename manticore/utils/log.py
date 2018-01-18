@@ -29,7 +29,7 @@ all_loggers = []
 
 def init_logging():
     global all_loggers
-    all_loggers = logging.getLogger().manager.loggerDict.keys()
+    loggers = logging.getLogger().manager.loggerDict.keys()
         
     ctxfilter = ContextFilter()
     logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
@@ -37,15 +37,19 @@ def init_logging():
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(logfmt)
     handler.setFormatter(formatter)
-    for name in all_loggers:
+    for name in loggers:
         logger = logging.getLogger(name)
         if not name.startswith('manticore'):
+            continue
+        if name in all_loggers:
             continue
         logger.addHandler(handler)
         logger.propagate = False
         logger.setLevel(logging.WARNING)
         logger.addFilter(ctxfilter)
         logger.setState = types.MethodType(loggerSetState, logger)
+        all_loggers.append(name)
+    set_verbosity(manticore_verbosity)
 
 def loggerSetState(logger, stateid):
     logger.filters[0].stateid = stateid
@@ -58,12 +62,16 @@ def set_verbosity(setting):
         zero,
         # 1
         [
-            ('manticore.manticore', logging.INFO)
+            ('manticore.manticore', logging.INFO),
+            ('manticore.main', logging.INFO),
+            ('manticore.ethereum', logging.INFO),
         ],
         # 2 (-v)
         [
             ('manticore.core.executor', logging.INFO),
-            ('manticore.platforms.*', logging.DEBUG)
+            ('manticore.platforms.*', logging.DEBUG),
+            ('manticore.ethereum', logging.DEBUG),
+            ('manticore.core.plugin', logging.DEBUG),
         ],
         # 3 (-vv)
         [
@@ -111,4 +119,5 @@ def set_verbosity(setting):
             for logger_name in glob(all_loggers, pattern):
                 logger = logging.getLogger(logger_name)
                 logger.setLevel(log_level)
+
     manticore_verbosity = clamped

@@ -1,8 +1,8 @@
-from manticore.seth import ManticoreEVM
+from manticore.ethereum import ManticoreEVM
 ################ Script #######################
 
-seth = ManticoreEVM()
-seth.verbosity(0)
+m = ManticoreEVM()
+m.verbosity(0)
 #The contract account to analyze
 contract_source_code = '''
 pragma solidity ^0.4.15;
@@ -76,10 +76,10 @@ contract GenericReentranceExploit {
 
 
 #Initialize user and contracts
-user_account = seth.create_account(balance=100000000000000000)
-attacker_account = seth.create_account(balance=100000000000000000)
-contract_account = seth.solidity_create_contract(contract_source_code, owner=user_account) #Not payable
-exploit_account = seth.solidity_create_contract(exploit_source_code, owner=attacker_account)
+user_account = m.create_account(balance=100000000000000000)
+attacker_account = m.create_account(balance=100000000000000000)
+contract_account = m.solidity_create_contract(contract_source_code, owner=user_account) #Not payable
+exploit_account = m.solidity_create_contract(exploit_source_code, owner=attacker_account)
 
 
 #User deposits all in contract
@@ -87,10 +87,10 @@ print "[+] user deposited some."
 contract_account.addToBalance(value=100000000000000000)
 
 print "[+] Initial world state"
-print "     attacker_account %x balance: %d"% (attacker_account, seth.get_balance(attacker_account))
-print "     exploit_account %x balance: %d"%  (exploit_account, seth.get_balance(exploit_account))
-print "     user_account %x balance: %d"%  (user_account, seth.get_balance(user_account))
-print "     contract_account %x balance: %d"%  (contract_account, seth.get_balance(contract_account))
+print "     attacker_account %x balance: %d"% (attacker_account, m.get_balance(attacker_account))
+print "     exploit_account %x balance: %d"%  (exploit_account, m.get_balance(exploit_account))
+print "     user_account %x balance: %d"%  (user_account, m.get_balance(user_account))
+print "     contract_account %x balance: %d"%  (contract_account, m.get_balance(contract_account))
 
 
 
@@ -101,28 +101,20 @@ print "\t Setting 30 reply reps"
 exploit_account.set_reentry_reps(30)
 
 print "\t Setting reply string"
-exploit_account.set_reentry_attack_string(seth.SByte(4))
+exploit_account.set_reentry_attack_string(m.SByte(4))
 
 #Attacker is
 print "[+] Attacker first transaction"
-exploit_account.proxycall(seth.SByte(4), value=seth.SValue)
+exploit_account.proxycall(m.SByte(4), value=m.SValue)
 
 print "[+] Attacker second transaction" 
-exploit_account.proxycall(seth.SByte(4))
+exploit_account.proxycall(m.SByte(4))
 
 print "[+] The attacker destroys the exploit contract and profit" 
 exploit_account.get_money()
 
-#print "[+] There are %d reverted states now"% len(seth.final_state_ids)
-#for state_id in seth.final_state_ids:
-#     seth.report(state_id)
-
-print "[+] There are %d alive states now"% (len(seth.running_state_ids))
-for state_id in seth.running_state_ids:
-    seth.report(state_id)
-
-print "[+] Global coverage:"
-print seth.coverage(contract_account, ty='SUICIDE')
-
-
+#Let seth know we are not sending more transactions so it can output 
+# info about running states and global statistics
+m.finalize()
+print "[+] Look for results in %s"% m.workspace
 
