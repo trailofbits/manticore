@@ -63,36 +63,17 @@ run_examples() {
 }
 
 pushd examples/linux
-if make; then
-    echo "Successfully built Linux examples"
-    for example in $(make list); do
-        if ! ./$example < /dev/zero > /dev/null ; then
-            echo "Failed to run $example"
-            RV=1
-            break
-        fi
-    done
-else
-    echo "Failed to build Linux example binaries"
-    RV=1
-fi
+make
+for example in $(make list); do
+    ./$example < /dev/zero > /dev/null
+done
+echo Built and ran Linux examples
 popd
 
-if [ "$RV" -eq "0" ]; then
-    echo "Successfully ran Linux examples binaries"
-    pushd examples/script
-    run_examples
-    RV=$?
-    popd
-else
-    echo "Failed to run Linux example binaries"
-fi
-
-if [ "$RV" -eq "0" ]; then
-    echo "Successfully ran example scripts"
-else
-    echo "Failed to run example scripts"
-fi
+pushd examples/script
+run_examples
+echo Ran example scripts
+popd
 
 coverage erase
 coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
@@ -102,7 +83,7 @@ then
     echo "All functionality tests passed :)"
 else
     echo "Some functionality tests failed :("
-    RV=1
+    exit 2
 fi
 
 measure_cov() {
@@ -112,8 +93,7 @@ measure_cov() {
     if [ "${HAS_COV}" = "No data to report" ]
     then
         echo "    FAIL: No coverage for ${PYFILE}"
-        RV=1
-        return
+        return 1
     fi
     
     local COV_AMT=$(coverage report --include=${PYFILE} | tail -n1 | sed "s/.* \([0-9]*\)%/\1/g")
@@ -122,8 +102,9 @@ measure_cov() {
         echo "    PASS: coverage for ${PYFILE} at ${COV_AMT}%"
     else
         echo "    FAIL: coverage for ${PYFILE} at ${COV_AMT}%"
-        RV=1
+        return 1
     fi
+    return 0
 }
 
 #coverage report
