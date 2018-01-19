@@ -178,7 +178,7 @@ class SolidityMetadata(object):
     def runtime_bytecode(self):
         # Removes metadata from the tail of bytecode
         end = None
-        if len(self._runtime_bytecode) == 0:
+        if len(self._runtime_bytecode) < 44:
             return self._runtime_bytecode
 
         if  ''.join(self._runtime_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
@@ -190,6 +190,9 @@ class SolidityMetadata(object):
     def init_bytecode(self):
         # Removes metadata from the tail of bytecode
         end = None
+        if len(self._init_bytecode) < 44:
+            return self._init_bytecode
+
         if  ''.join(self._init_bytecode[-44: -34]) =='\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and  ''.join(self._init_bytecode[-2:]) =='\x00\x29':
             end = -9-33-2  #Size of metadata at the end of most contracts
