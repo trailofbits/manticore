@@ -574,7 +574,7 @@ class ManticoreEVM(Manticore):
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', temp.name], stdout=PIPE, stderr=PIPE)
+            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths','.', temp.name], stdout=PIPE, stderr=PIPE)
 
             try:
                 output = json.loads(p.stdout.read())
