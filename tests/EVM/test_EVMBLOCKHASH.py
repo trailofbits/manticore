@@ -86,7 +86,8 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+            #Currently the hash("1NONCE")
+            self.assertEqual(new_vm.stack, [4191156306509761637738076877631970127621839175651556722833009931314104461609L])
 
     def test_BLOCKHASH_3(self):
             #Make the constraint store
