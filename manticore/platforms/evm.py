@@ -2095,11 +2095,11 @@ class EVMWorld(Platform):
     def depth(self):
         return len(self._callstack)
 
-    def _new_address(self):
+    def new_address(self):
         ''' create a fresh 160bit address '''
         new_address = random.randint(100, pow(2, 160))
         if new_address in self._global_storage.keys():
-            return self._new_address()
+            return self.new_address()
         return new_address
 
     def execute(self):
@@ -2142,7 +2142,7 @@ class EVMWorld(Platform):
         storage = {} if storage is None else storage
 
         if address is None:
-            address = self._new_address()
+            address = self.new_address()
         assert address not in self.storage.keys(), 'The account already exists'
         self.storage[address] = {}
         self.storage[address]['nonce'] = 0L

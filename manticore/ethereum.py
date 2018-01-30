@@ -361,7 +361,7 @@ class ABI(object):
             return simplify(value)
         if ty == u'uint256':
             return get_uint(256, offset), offset+32
-        if ty == u'bool':
+        elif ty in (u'bool', u'uint8'):
             return get_uint(8, offset), offset+32
         elif ty == u'address':
             return get_uint(160, offset), offset+32
@@ -376,8 +376,11 @@ class ABI(object):
             dyn_offset = 4 + get_uint(256,offset)
             size = get_uint(256, dyn_offset)
             return data[dyn_offset+32:dyn_offset+32+size], offset+4
+        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
+            size = int(ty[5:])
+            return data[offset:offset+size], offset+32
         else:
-            raise NotImplemented(ty)
+            raise NotImplementedError(ty)
 
     @staticmethod
     def parse(signature, data):
@@ -429,14 +432,8 @@ class EVMAccount(object):
         self._default_caller = default_caller
         self._seth=seth
         self._address=address
-        self._hashes = {}
-
-        if self._seth:
-            md = self._seth.get_metadata(address)
-            if md is not None:
-                for signature, func_id in md.hashes.items():
-                    func_name = str(signature.split('(')[0])
-                    self._hashes[func_name] = signature, func_id
+        self._hashes = None
+        self._init_hashes()
 
     def __int__(self):
         return self._address
@@ -448,6 +445,22 @@ class EVMAccount(object):
     def address(self):
         return self._address
 
+    def _null_func(self):
+        pass
+
+
+    def _init_hashes(self):
+        #initializes self._hashes lazy
+        if self._hashes is None and self._seth is not None:
+            self._hashes = {}
+            md = self._seth.get_metadata(self._address)
+            if md is not None:
+                for signature, func_id in md.hashes.items():
+                    func_name = str(signature.split('(')[0])
+                    self._hashes[func_name] = signature, func_id
+            #It was successful, no need to re-run. _init_hashes disabled
+            self._init_hashes = self._null_func
+
     def __getattribute__(self, name):
         ''' If this is a contract account of which we know the functions hashes,
             this will build the transaction for the function call.
@@ -458,25 +471,27 @@ class EVMAccount(object):
                 contract_account.add(1000)
          
         '''
-        if not name.startswith('_') and name in self._hashes.keys():
-            def f(*args, **kwargs):
-                caller = kwargs.get('caller', None)
-                value = kwargs.get('value', 0)
-                tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
-                if caller is not None:
-                    caller = int(caller)
-                else:
-                    caller = self._default_caller
-                self._seth.transaction(caller=caller,
-                                        address=self._address,
-                                        value=value,
-                                        data=tx_data
-                                     )
-                self._caller = None
-                self._value = 0
-            return f
-        else:
-            return object.__getattribute__(self, name)            
+        if not name.startswith('_'):
+            self._init_hashes()
+            if self._hashes is not None and name in self._hashes.keys() :
+                def f(*args, **kwargs):
+                    caller = kwargs.get('caller', None)
+                    value = kwargs.get('value', 0)
+                    tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
+                    if caller is not None:
+                        caller = int(caller)
+                    else:
+                        caller = self._default_caller
+                    self._seth.transaction(caller=caller,
+                                            address=self._address,
+                                            value=value,
+                                            data=tx_data
+                                         )
+                    self._caller = None
+                    self._value = 0
+                return f
+
+        return object.__getattribute__(self, name)            
 
 
 
@@ -542,23 +557,24 @@ class ManticoreEVM(Manticore):
         return ABI.SValue
 
     @staticmethod
-    def compile(source_code):
+    def compile(source_code, contract_name = None):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code)
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name)
         return bytecode
 
     @staticmethod
-    def _compile(source_code):
+    def _compile(source_code, contract_name):
         """ Compile a Solidity contract, used internally
             
             :param source_code: a solidity source code
+            :param contract_name: a string with the name of the contract to analyze
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', temp.name], stdout=PIPE, stderr=PIPE)
+            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths','.', temp.name], stdout=PIPE, stderr=PIPE)
 
             try:
                 output = json.loads(p.stdout.read())
@@ -566,10 +582,19 @@ class ManticoreEVM(Manticore):
                 raise Exception('Solidity compilation error')
 
             contracts = output.get('contracts', [])
-            if len(contracts) != 1:
-                raise Exception('Solidity file must contain exactly one contract')
+            if len(contracts) != 1 and contract_name is None:
+                raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
-            name, contract = contracts.items()[0]
+            name, contract = None, None
+            if contract_name is None:
+                name, contract = contracts.items()[0]
+            else:
+                for n, c in contracts.items():
+                    if n.split(":")[1] == contract_name:
+                        name, contract = n, c
+                        break
+
+            assert(name is not None)
             name = name.split(':')[1]
             bytecode = contract['bin'].decode('hex')
             srcmap = contract['srcmap'].split(';')
@@ -578,10 +603,9 @@ class ManticoreEVM(Manticore):
             abi = json.loads(contract['abi'])
             runtime = contract['bin-runtime'].decode('hex')
             warnings = p.stderr.read()
-
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
-    def __init__(self, procs=1):
+    def __init__(self, procs=1, **kwargs):
         ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         '''
@@ -594,7 +618,7 @@ class ManticoreEVM(Manticore):
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
         initial_state.context['tx'] = []
-        super(ManticoreEVM, self).__init__(initial_state)
+        super(ManticoreEVM, self).__init__(initial_state, **kwargs)
 
         self.detectors = {}
         self.metadata = {}
@@ -739,12 +763,14 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
+    def solidity_create_contract(self, source_code, owner, contract_name=None, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
 
             :param str source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
+            :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
+            :type contract_name: str
             :param balance: balance to be transferred on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
@@ -752,17 +778,20 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-        compile_results = self._compile(source_code)
+        compile_results = self._compile(source_code, contract_name)
         init_bytecode = compile_results[2]
+
+        if address is None:
+            address = self.world.new_address()
+
+        #FIXME different states "could"(VERY UNLIKELY) have different contracts 
+        # asociated with the same address
+        self.metadata[address] = SolidityMetadata(*compile_results)
 
         account = self.create_contract(owner=owner,
                                        balance=balance,
                                        address=address,
                                        init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
-
-        #FIXME different states "could"(VERY UNLIKELY) have different contracts 
-        # asociated with the same address
-        self.metadata[account.address] = SolidityMetadata(*compile_results)
 
         return account
 
@@ -782,7 +811,7 @@ class ManticoreEVM(Manticore):
             assert context['_pending_transaction'] is None
         assert init is not None
         if address is None:
-            address = self.world._new_address()
+            address = self.world.new_address()
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
@@ -841,12 +870,12 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, tx_limit=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None):
         with open(solidity_filename) as f:
             source_code = f.read()
 
         user_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, owner=user_account)
+        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=user_account)
         attacker_account = self.create_account(balance=1000)
 
         def run_symbolic_tx():
@@ -1142,9 +1171,8 @@ class ManticoreEVM(Manticore):
                 tx_data = ''.join(state.solve_one(tx.data))
                 tx_summary.write("Data: %s %s\n"% (tx_data.encode('hex'), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
-                    return_data = ''.join(state.solve_one(tx.return_data))
-                    tx_summary.write("Return_data: %s %s\n" % (return_data.encode('hex'), flagged(issymbolic(tx.return_data))))
-
+                    return_data = state.solve_one(tx.return_data)
+                    tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
                 
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'Call':
@@ -1161,7 +1189,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write('\n')
                         tx_summary.write( "Function call:\n")
                         tx_summary.write("%s(" % state.solve_one(function_name ))
-                        tx_summary.write(','.join(map(str, map(state.solve_one, arguments))))
+                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
