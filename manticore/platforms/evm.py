@@ -1622,10 +1622,15 @@ class EVM(Eventful):
     ##Block Information
     def BLOCKHASH(self, a):
         '''Get the hash of one of the 256 most recent complete blocks'''
-        #FIXME! 
-        #90743482286830539503240959006302832933333810038750515972785732718729991261126L,
-        value = sha3.keccak_256(repr(a)+'FIXTHIS').hexdigest()
+
+        # We are not maintaining an actual -block-chain- so we just generate 
+        # some hashes for each virtual block
+        value = sha3.keccak_256(repr(a)+'NONCE').hexdigest()
         value = int('0x'+value,0)
+
+        # 0 is left on the stack if the looked for block number is greater than the current block number
+        # or more than 256 blocks behind the current block.
+        value = Operators.ITEBV(256, Operators.OR( a > self.header['number'], a < max(0, self.header['number']-256)), 0 , value)
         return value
 
     def COINBASE(self):
