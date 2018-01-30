@@ -1693,6 +1693,73 @@ class MemoryTest(unittest.TestCase):
         # Make sure erroring writes don't get recorded
         self.assertEqual(len(trace), 0)
 
+    def test_force_access(self):
+        mem = Memory32()
+
+        ro = mem.mmap(0x1000, 0x1000, 'r')
+        wo = mem.mmap(0x2000, 0x1000, 'w')
+        xo = mem.mmap(0x3000, 0x1000, 'x')
+        nul = mem.mmap(0x4000, 0x1000, '')
+
+        self.assertEqual(len(mem.mappings()), 4)
+        self.assertItemsEqual((ro,wo,xo, nul), (0x1000,0x2000,0x3000, 0x4000))
+
+        self.assertTrue(mem.access_ok(ro, 'r'))
+        self.assertFalse(mem.access_ok(ro, 'w'))
+        with self.assertRaises(InvalidMemoryAccess):
+            mem.write(ro, 'hello')
+        mem.write(ro, 'hello', force=True) # Would raise if fails, failing this test
+
+        with self.assertRaises(InvalidMemoryAccess):
+            mem.read(wo, 4)
+        mem.read(wo, 4, force=True) # Would raise if fails, failing this test
+
+        with self.assertRaises(InvalidMemoryAccess):
+            mem.read(nul, 4)
+            mem.write(nul, 'hello')
+        mem.read(nul, 4, force=True)
+        mem.write(nul, 'hello', force=True)
+
+    def test_symbolic_force_access(self):
+        cs = ConstraintSet()
+        mem = SMemory32(cs)
+        msg = 'hello'
+
+        ro = mem.mmap(0x1000, 0x1000, 'r')
+        nul = mem.mmap(0x2000, 0x1000, '')
+        nul_end = nul + 0x1000
+
+        # 1. Should raise if a value is entirely outside of mapped memory
+        addr1 = cs.new_bitvec(32)
+        cs.add(addr1 > (ro-16)) # 16 > len(msg)
+        cs.add(addr1 <= (ro+16))
+
+        # Can write to unmapped memory, should raise despite force
+        with self.assertRaises(InvalidSymbolicMemoryAccess):
+            mem.write(addr1, msg, force=True)
+
+        # 2. Force write to mapped memory, should not raise; no force should
+        addr2 = cs.new_bitvec(32)
+        cs.add(addr2 > (nul_end - 16))
+        cs.add(addr2 <= (nul_end-len(msg)))
+        mem.write(addr2, msg, force=True)
+        with self.assertRaises(InvalidSymbolicMemoryAccess):
+            mem.write(addr2, msg)
+
+        # 3. Forced write spans from unmapped to mapped memory, should raise
+        addr3 = cs.new_bitvec(32)
+        cs.add(addr3 > (nul_end - 16))
+        # single byte into unmapped memory
+        cs.add(addr3 <= (nul_end-len(msg)+1))
+        with self.assertRaises(InvalidSymbolicMemoryAccess):
+            mem.write(addr3, msg, force=True)
+
+        # 4. Try to force-read a span from mapped, but unreadable memory, should not raise
+        mem.read(addr2, 5, force=True)
+        # , but without force should
+        with self.assertRaises(InvalidSymbolicMemoryAccess):
+            mem.read(addr2, 5)
+
 
 if __name__ == '__main__':
     unittest.main()
