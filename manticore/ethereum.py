@@ -348,7 +348,7 @@ class ABI(object):
         Access `size` number of LSB out of a big endian 256 bit number starting at
         `offset` into `data.
 
-        :param data: sliceable buffer of Eth ABI encoded data
+        :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
         :param offset: byte offset of 256 bit element
         :param size: number of bits to read out of 256 bit element
         :rtype: int or Expression
