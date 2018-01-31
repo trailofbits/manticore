@@ -303,6 +303,7 @@ class Linux(Platform):
 
     # from /usr/include/asm-generic/resource.h
     RLIMIT_NOFILE = 7 #/* max number of open files */
+    FCNTL_FDCWD   = -100 #/* Special value used to indicate openat should use the cwd */
 
     def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
         '''
@@ -1331,7 +1332,7 @@ class Linux(Platform):
         if os.path.isabs(filename):
             return self.sys_open(buf, flags, mode)
 
-        if dirfd == -100: # Value of AT_FDCWD
+        if dirfd == self.FCNTL_FDCWD:
             return self.sys_open(buf, flags, mode)
 
         try:
@@ -1870,6 +1871,45 @@ class Linux(Platform):
         #XXX(yan): sendfile(2) is currently a nop; we don't communicate yet
 
         return count
+
+    def sys_getrandom(self, buf, size, flags):
+        '''
+        The getrandom system call fills the buffer with random bytes of buflen.
+        The source of random (/dev/random or /dev/urandom) is decided based on the flags value.
+
+        :param buf: address of buffer to be filled with random bytes
+        :param size: number of random bytes
+        :param flags: source of random (/dev/random or /dev/urandom)
+        :return: number of bytes copied to buf
+        '''
+
+        GRND_NONBLOCK = 0x0001
+        GRND_RANDOM   = 0x0002
+
+        if size == 0:
+            return 0
+
+        if buf not in self.current.memory:
+            logger.info("getrandom: Provided an invalid address. Returning EFAULT")
+            return -errno.EFAULT
+
+        try:
+            if flag & GRND_RANDOM:
+                with open('/dev/random', 'rb') as rnd:
+                    data = rnd.read(size)
+            else:
+                data = os.urandom(size)
+        except (NotImplementedError, IOError): # NIE can be raised from os.urandom()
+            if flag & GRND_NONBLOCK:
+                logger.info("GETRANDOM: Entropy Pool Initialization Error. Returning EAGAIN")
+                return -errno.EAGAIN
+            else:
+                logger.info("GETRANDOM: Call interrupted by signal handler. Returning EINTR")
+                return -errno.EINTR
+
+        self.current.write_bytes(buf, data)
+
+        return len(data)
 
     #Distpatchers...
     def syscall(self):
@@ -2466,12 +2506,12 @@ class SLinux(Linux):
         The getrandom system call fills the buffer with random bytes of buflen.
         The source of random (/dev/random or /dev/urandom) is decided based on the flags value.
 
-        :param buf: buffer to be filled with random bytes
-        :param size: size of the random bytes to be filled
+        :param buf: address of buffer to be filled with random bytes
+        :param size: number of random bytes
         :param flags: source of random (/dev/random or /dev/urandom)
         :return: number of bytes copied to buf
         '''
-        data = ''
+
         if issymbolic(buf):
             logger.debug("Ask to generate random to a symbolic buffer")
             raise ConcretizeArgument(self, 0)
@@ -2480,40 +2520,7 @@ class SLinux(Linux):
             logger.debug("Ask to generate random of symbolic number of bytes ")
             raise ConcretizeArgument(self, 1)
 
-        try:
-          flag = ['', 'GRND_NONBLOCK', 'GRND_RANDOM'][flags & 7]
-        except:
-          logger.info(("GETRANDOM: Invalid Flag Specified. Returning EINVAL"))
-          return -errno.EINVAL
-
-        if size != 0:
-            if not buf in self.current.memory:
-                logger.info("GETRANDOM: buf points to invalid address. Returning EFAULT")
-                return -errno.EFAULT
-
-            try:
-                if flag == "GRND_RANDOM":
-                    try:
-                      data = random.getrandbits(size)
-                    except:
-                      if flag == "GRND_NONBLOCK":
-                          logger.info("GETRANDOM: No Random Bytes Available. Returning EAGAIN")
-                          return -errno.EAGAIN
-                else:
-                    try:
-                        data = random.SystemRandom.getrandbits(size)  # or could also use os.urandom
-                    except:
-                        if flag == "GRND_NONBLOCK":
-                            logger.info("GETRANDOM: Entropy Pool Initialization Error. Returning EAGAIN")
-                            return -errno.EAGAIN
-
-            except:
-                logger.info("GETRANDOM: Call interrupted by signal handler. Returning EINTR")
-                return -errno.EINTR
-
-            self.current.write_bytes(buf, str(data))
-
-        return len(str(data))
+        return super(SLinux, self).sys_getrandom(buf, size, flags)
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
