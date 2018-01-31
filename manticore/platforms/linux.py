@@ -1894,13 +1894,13 @@ class Linux(Platform):
             return -errno.EFAULT
 
         try:
-            if flag & GRND_RANDOM:
+            if flags & GRND_RANDOM:
                 with open('/dev/random', 'rb') as rnd:
                     data = rnd.read(size)
             else:
                 data = os.urandom(size)
         except (NotImplementedError, IOError): # NIE can be raised from os.urandom()
-            if flag & GRND_NONBLOCK:
+            if flags & GRND_NONBLOCK:
                 logger.info("GETRANDOM: Entropy Pool Initialization Error. Returning EAGAIN")
                 return -errno.EAGAIN
             else:
