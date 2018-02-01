@@ -2167,10 +2167,8 @@ class EVMWorld(Platform):
         try:
             self.current.execute()
         except EVMInstructionException as iex:
-            try:
-                handle_evm_instruction_exception(iex)
-            finally:
-                iex.on_handled()
+            iex.on_handled()
+            handle_evm_instruction_exception(iex)
         except EVMException as e:
             self.THROW()
         except Exception:
