@@ -966,6 +966,9 @@ class EVMAsm(object):
 class EVMException(Exception):
     pass
 
+class EVMInstructionException(EVMException):
+    pass
+
 class ConcretizeStack(EVMException):
     '''
     Raised when a symbolic memory cell needs to be concretized.
@@ -989,7 +992,7 @@ class InvalidOpcode(EVMException):
     pass
 
 
-class Call(EVMException):
+class Call(EVMInstructionException):
     def __init__(self, gas, to, value, data, out_offset=None, out_size=None):
         self.gas = gas
         self.to = to
@@ -1008,25 +1011,25 @@ class Create(Call):
 class DelegateCall(Call):
     pass
 
-class Stop(EVMException):
+class Stop(EVMInstructionException):
     ''' Program reached a STOP instruction '''
     pass
 
-class Return(EVMException):
+class Return(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
         return (self.__class__, (self.data,) )
 
-class Revert(EVMException):
+class Revert(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
         return (self.__class__, (self.data,) )
 
-class SelfDestruct(EVMException):
+class SelfDestruct(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, to):
         self.to = to
@@ -1277,7 +1280,6 @@ class EVM(Eventful):
         last_pc = self.pc
         current = self.instruction
 
-        self._publish('will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
 
@@ -1300,13 +1302,18 @@ class EVM(Eventful):
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
+        self._publish('will_execute_instruction', self.pc, current)
         self._publish('will_evm_execute_instruction', current, arguments)
+
+        def emit_did_execute_signals():
+            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._publish('did_execute_instruction', last_pc, self.pc, current)
 
         last_pc = self.pc
         #Execute
         try:
             result = implementation(*arguments)
-            self._publish('did_evm_execute_instruction', current, arguments, result)
+            emit_did_execute_signals()
         except ConcretizeStack as ex:
             for arg in reversed(arguments):
                 self._push(arg)
@@ -1318,10 +1325,11 @@ class EVM(Eventful):
                                 policy=ex.policy)
         except EVMException as e:
             self.last_exception = e
+            if isinstance(e, EVMInstructionException):
+                # FIXME(mark) this should also publish did_execute_instruction, but that causes some crashes
+                e.on_handled = lambda: self._publish('did_evm_execute_instruction', current, arguments, None)
             raise
-        self._publish( 'did_execute_instruction', last_pc, self.pc, current)
 
-        
         #Check result (push)
         if current.pushes > 1:
             assert len(result) == current.pushes
@@ -2139,23 +2147,30 @@ class EVMWorld(Platform):
         return new_address
 
     def execute(self):
+        def handle_evm_instruction_exception(ex):
+            if isinstance(ex, Create):
+                self.CREATE(ex.value, ex.data)
+            elif isinstance(ex, Call):
+                self.CALL(ex.gas, ex.to, ex.value, ex.data)
+            elif isinstance(ex, Stop):
+                self.STOP()
+            elif isinstance(ex, Return):
+                self.RETURN(ex.data)
+            elif isinstance(ex, Revert):
+                self.REVERT(ex.data)
+            elif isinstance(ex, SelfDestruct):
+                self.SELFDESTRUCT(ex.to)
+            elif isinstance(ex, Sha3):
+                self.HASH(ex.data)
+
         self._process_pending_transaction()
         try:
             self.current.execute()
-        except Create as ex:
-            self.CREATE(ex.value, ex.data)
-        except Call as ex:
-            self.CALL(ex.gas, ex.to, ex.value, ex.data)
-        except Stop as ex:
-            self.STOP()
-        except Return as ex:
-            self.RETURN(ex.data)
-        except Revert as ex:
-            self.REVERT(ex.data)
-        except SelfDestruct as ex:
-            self.SELFDESTRUCT(ex.to)
-        except Sha3 as ex:
-            self.HASH(ex.data)
+        except EVMInstructionException as iex:
+            try:
+                handle_evm_instruction_exception(iex)
+            finally:
+                iex.on_handled()
         except EVMException as e:
             self.THROW()
         except Exception:
