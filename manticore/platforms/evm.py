@@ -2145,10 +2145,8 @@ class EVMWorld(Platform):
                 raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current.execute()
         except EVMInstructionException as iex:
-            try:
-                handle_evm_instruction_exception(iex)
-            finally:
-                iex.on_handled()
+            iex.on_handled()
+            handle_evm_instruction_exception(iex)
         except EVMException as e:
             self.THROW()
         except Exception:
