@@ -1310,6 +1310,8 @@ class EVM(Eventful):
             self._publish('did_execute_instruction', last_pc, self.pc, current)
 
         last_pc = self.pc
+        result = None
+
         #Execute
         try:
             result = implementation(*arguments)
@@ -1326,8 +1328,7 @@ class EVM(Eventful):
         except EVMException as e:
             self.last_exception = e
             if isinstance(e, EVMInstructionException):
-                # FIXME(mark) this should also publish did_execute_instruction, but that causes some crashes
-                e.on_handled = lambda: self._publish('did_evm_execute_instruction', current, arguments, None)
+                emit_did_execute_signals()
             raise
 
         #Check result (push)
@@ -2147,7 +2148,12 @@ class EVMWorld(Platform):
         return new_address
 
     def execute(self):
-        def handle_evm_instruction_exception(ex):
+        self._process_pending_transaction()
+        try:
+            if self.current is None:
+                raise TerminateState("Trying to execute an empty transaction", testcase=False)
+            self.current.execute()
+        except EVMInstructionException as ex:
             if isinstance(ex, Create):
                 self.CREATE(ex.value, ex.data)
             elif isinstance(ex, Call):
@@ -2162,13 +2168,6 @@ class EVMWorld(Platform):
                 self.SELFDESTRUCT(ex.to)
             elif isinstance(ex, Sha3):
                 self.HASH(ex.data)
-
-        self._process_pending_transaction()
-        try:
-            self.current.execute()
-        except EVMInstructionException as iex:
-            iex.on_handled()
-            handle_evm_instruction_exception(iex)
         except EVMException as e:
             self.THROW()
         except Exception:
