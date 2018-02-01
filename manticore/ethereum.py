@@ -919,7 +919,7 @@ class ManticoreEVM(Manticore):
             assert len(self._executor.list()) == 0
 
             for state_id in context['_saved_states']:
-                self._executor.put(state_id)
+                self._executor.enqueue(state_id)
             context['_saved_states'] = []
 
         #A callback will use _pending_transaction and issue the transaction 
