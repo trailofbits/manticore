@@ -2117,8 +2117,6 @@ class EVMWorld(Platform):
     def execute(self):
         self._process_pending_transaction()
         try:
-            if self.current is None:
-                raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current.execute()
         except Create as ex:
             self.CREATE(ex.value, ex.data)
@@ -2260,11 +2258,6 @@ class EVMWorld(Platform):
                 pass
 
     def _process_pending_transaction(self):
-        def err():
-            if self.depth == 0:
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
-
-
         if self._pending_transaction is None:
             return
         assert self.current is None or self.current.last_exception is not None
@@ -2312,6 +2305,7 @@ class EVMWorld(Platform):
             if is_human_tx: #human transaction
                 tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
                 self._transactions.append(tx)
+                raise TerminateState('TXERROR')
             else:
                 self.current._push(0)
                 return
