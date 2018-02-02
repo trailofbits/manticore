@@ -1326,8 +1326,15 @@ class EVM(Eventful):
                                 policy=ex.policy)
         except EVMException as e:
             self.last_exception = e
+
+            # Technically, this is not the right place to emit these events because the
+            # instruction hasn't execute yet; it executes in the EVM platform class (EVMWorld).
+            # However, when I tried that, in the event handlers, `state.platform.current`
+            # ends up being None, which caused issues. So, as a pragmatic solution, we emit
+            # the event before technically executing the instruction.
             if isinstance(e, EVMInstructionException):
                 emit_did_execute_signals()
+
             raise
 
         #Check result (push)
