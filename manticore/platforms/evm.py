@@ -1305,14 +1305,13 @@ class EVM(Eventful):
         self._publish('will_execute_instruction', self.pc, current)
         self._publish('will_evm_execute_instruction', current, arguments)
 
+        last_pc = self.pc
+        result = None
+
         def emit_did_execute_signals():
             self._publish('did_evm_execute_instruction', current, arguments, result)
             self._publish('did_execute_instruction', last_pc, self.pc, current)
 
-        last_pc = self.pc
-        result = None
-
-        #Execute
         try:
             result = implementation(*arguments)
             emit_did_execute_signals()
