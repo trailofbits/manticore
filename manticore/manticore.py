@@ -354,10 +354,6 @@ class Manticore(Eventful):
     def running(self):
         return self._executor._running.value
 
-    def enqueue(self, state):
-        ''' Dynamically enqueue states. Users should typically not need to do this '''
-        self._executor.add(state)
-
     @property
     def running(self):
         return self._executor.running
@@ -665,6 +661,10 @@ class Manticore(Eventful):
     @property
     def coverage_file(self):
         return self._coverage_file
+
+    @property
+    def workspace(self):
+         return self._output.store.uri
 
     @coverage_file.setter
     def coverage_file(self, path):

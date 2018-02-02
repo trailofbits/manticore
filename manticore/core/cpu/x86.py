@@ -8,7 +8,7 @@ import capstone as cs
 from .abstractcpu import (
     Abi, SyscallAbi, Cpu, RegisterFile, Operand, instruction,
     ConcretizeRegister, ConcretizeRegister, ConcretizeArgument, Interruption,
-    Syscall
+    Syscall, DivideByZeroError
 )
 
 
@@ -1591,14 +1591,14 @@ class X86Cpu(Cpu):
 
         #TODO make symbol friendly
         if isinstance(divisor, (int, long)) and divisor == 0:
-            raise DivideError()
+            raise DivideByZeroError()
         quotient = Operators.UDIV(dividend, divisor)
 
         MASK = (1 << size) - 1
 
         #TODO make symbol friendly
         if isinstance(quotient, (int, long)) and quotient > MASK:
-            raise DivideError()
+            raise DivideByZeroError()
         remainder = Operators.UREM(dividend, divisor)
 
         cpu.write_register(reg_name_l, Operators.EXTRACT(quotient, 0, size))
@@ -1668,7 +1668,7 @@ class X86Cpu(Cpu):
 
         divisor = src.read()
         if isinstance(divisor, (int, long)) and divisor == 0:
-            raise DivideError()
+            raise DivideByZeroError()
 
         dst_size = src.size * 2
 
