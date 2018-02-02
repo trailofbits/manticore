@@ -7,6 +7,8 @@ from .platforms import evm
 from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
+from multiprocessing import Process, Queue
+from Queue import Empty as EmptyQueue
 import sha3
 import json
 import logging
@@ -1238,10 +1240,26 @@ class ManticoreEVM(Manticore):
     def finalize(self):
         #move runnign states to final states list
         # and generate a testcase for each
-        lst = tuple(self.running_state_ids)
-        for state_id in lst:
-            self.terminate_state_id(state_id)
+        q = Queue()
+        map(q.put, self.running_state_ids)
+        def f(q):
+            try:
+                while True:
+                    state_id = q.get_nowait()
+                    self.terminate_state_id(state_id)
+            except EmptyQueue:
+                pass
 
+        ps = []
+
+        for _ in range(self._config_procs):
+            p = Process(target=f, args=(q,))
+            p.start()
+            ps.append(p)
+
+        for p in ps:
+            p.join()            
+                
         #delete actual streams from storage
         for state_id in self.all_state_ids:
             self._executor._workspace.rm_state(state_id)
