@@ -919,7 +919,7 @@ class ManticoreEVM(Manticore):
             assert len(self._executor.list()) == 0
 
             for state_id in context['_saved_states']:
-                self._executor.put(state_id)
+                self._executor.enqueue(state_id)
             context['_saved_states'] = []
 
         #A callback will use _pending_transaction and issue the transaction 
@@ -997,7 +997,7 @@ class ManticoreEVM(Manticore):
         state.context['last_exception'] = e
         # TODO(mark): This will break if we ever change the message text. Use a less
         # brittle check.
-        if e.message not in {'REVERT', 'THROW', 'Not Enough Funds for transaction'}:
+        if e.message not in {'REVERT', 'THROW', 'TXERROR'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
@@ -1111,7 +1111,7 @@ class ManticoreEVM(Manticore):
             summary.write("Last exception: %s\n" %state.context['last_exception'])
 
             address, offset = state.context['seth.trace'][-1]
-            
+
             #Last instruction
             metadata = self.get_metadata(blockchain.transactions[-1].address)
             if metadata is not None:
