@@ -1145,10 +1145,10 @@ class ManticoreEVM(Manticore):
                 summary.write("\n")
 
 
-            if blockchain._sha3.items():
+            if blockchain._sha3:
                 summary.write("Known hashes:\n")
-            for key,value in blockchain._sha3.items():
-                summary.write('%s::%x\n'%(key.encode('hex'), value))
+                for key, value in blockchain._sha3.items():
+                    summary.write('%s::%x\n'%(key.encode('hex'), value))
 
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')

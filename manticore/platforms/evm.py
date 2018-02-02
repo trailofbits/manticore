@@ -2464,7 +2464,7 @@ class EVMWorld(Platform):
                 a_buffer = solver.get_value(temp_cs, data)
                 cond = compare_buffers(a_buffer, data)
                 #Get the sha3 for a_buffer
-                a_value = int('0x'+sha3.keccak_256(a_buffer).hexdigest(),0)
+                a_value = int(sha3.keccak_256(a_buffer).hexdigest(), 16)
                 #add the new sha3 pair to the known_hashes and result
                 self._publish('on_concrete_sha3', a_buffer, a_value)
                 results.append((cond, a_value))
@@ -2476,7 +2476,7 @@ class EVMWorld(Platform):
             for cond, sha in results:
                 value = Operators.ITEBV(256, cond, sha, value)
         else:
-            raise TerminateState("Not known hash")
+            raise TerminateState("Unknown hash")
             
         self.current._push(value)
         self.current.pc += self.current.instruction.size
