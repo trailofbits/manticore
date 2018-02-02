@@ -206,7 +206,7 @@ class ConstraintSet(object):
         name = self._get_new_name(name)
         return BitVecVariable(size, name, taint=taint)
 
-    def new_array(self, index_bits=32, name='A', index_max=None, taint=frozenset()):
+    def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset()):
         ''' Declares a free symbolic array of 8 bits long bitvectors in the constraint store.
             :param index_bit_size: size in bits for the array indexes one of [32, 64]
             :param name: try to assign name to internal variable representation,
@@ -216,6 +216,6 @@ class ConstraintSet(object):
         '''
         assert index_bits in (8, 16, 32, 64, 128, 256)
         name = self._get_new_name(name)
-        return ArrayProxy(ArrayVariable(index_bits, index_max, name, taint=taint))
+        return ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
 
 
