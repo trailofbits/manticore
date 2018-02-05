@@ -1948,8 +1948,8 @@ class EVMWorld(Platform):
 
     @property
     def internal_transactions(self):
-        n = len(self._transactions)
-        for _ in range( len (self._internal_transactions), n):
+        number_of_transactions = len(self._transactions)
+        for _ in range( len (self._internal_transactions), number_of_transactions):
             self._internal_transactions.append([])
         return self._internal_transactions
 
