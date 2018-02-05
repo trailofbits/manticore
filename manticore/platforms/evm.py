@@ -1054,7 +1054,7 @@ class EVM(Eventful):
                          'evm_write_memory', 
                          'evm_read_code',
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
-    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000, **kwargs):
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=100000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -1188,7 +1188,6 @@ class EVM(Eventful):
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
         self._publish('did_evm_read_memory', address, value)
-
         return value
 
     @staticmethod
@@ -1253,8 +1252,9 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        assert fee>=0
+        assert fee >= 0
         if self.gas < fee:
+            logger.debug("Not enough gas for instruction")
             raise NotEnoughGas()
         self.gas -= fee
 
@@ -1273,7 +1273,6 @@ class EVM(Eventful):
         self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
-
         self._publish('will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
@@ -1754,11 +1753,10 @@ class EVM(Eventful):
     def read_buffer(self, offset, size):
         if size:
             self._allocate(offset+size)
-
         data = []
         for i in xrange(size):
-            data.append(Operators.CHR(self._load(offset+i)))
-
+            data.append(self._load(offset+i))
+        data = map(Operators.CHR, data)
         if any(map(issymbolic, data)):
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
             for i in range(len(data)):
