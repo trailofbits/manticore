@@ -357,9 +357,6 @@ class ABI(object):
             offset = simplify(offset)
             byte_size = size/8
             padding = 32 - byte_size # for 160
-            if offset+padding+byte_size > len(data):
-                raise Exception("Not enough data in argument or return")
-
             value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size])))
             return simplify(value)
 
