@@ -225,12 +225,12 @@ class Manticore(Eventful):
                             if plugin_method_name.startswith('on_') or \
                                plugin_method_name.startswith('will_') or \
                                plugin_method_name.startswith('did_'):
-                                logger.warning("Plugin methods name '%s()'should end with '_callback' on plugin type %s", plugin_method_name, type(plugin) )
+                                logger.warning("Plugin methods name '%s()'should end with '_callback' on plugin type %s", plugin_method_name, type(plugin).__name__ )
                         if plugin_method_name.endswith('_callback') and \
                             not plugin_method_name.startswith('on_') and \
                             not plugin_method_name.startswith('will_') and \
                             not plugin_method_name.startswith('did_'):
-                                logger.warning("Plugin methods name '%s()'should start with 'on_', 'will_' or 'did_' on plugin type %s", plugin_method_name, type(plugin) )
+                                logger.warning("Plugin methods name '%s()'should start with 'on_', 'will_' or 'did_' on plugin type %s", plugin_method_name, type(plugin).__name__)
 
 
     def unregister_plugin(self, plugin):
