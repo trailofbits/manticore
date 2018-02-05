@@ -61,11 +61,11 @@ class EVMUseDef(Plugin):
 
         offsets = state.solve_n(offset, 3000)
         with self.locked_context('storage_writes', dict) as storage_writes:
-            contract_name, function_name = (md.name, md.get_func_name(r))
-            if (contract_name, function_name) not in storage_writes:
-                storage_writes[(contract_name, function_name)] = set()
+            contract_function = (md.name, md.get_func_name(r))
+            if contract_function not in storage_writes:
+                storage_writes[contract_function] = set()
             for off in offsets:
-                storage_writes[(contract_name, function_name)].add(off)
+                storage_writes[contract_function].add(off)
 
     def did_evm_read_storage_callback(self, state, offset, value, **kwargs):
         m = self.manticore
@@ -79,11 +79,11 @@ class EVMUseDef(Plugin):
 
         offsets = state.solve_n(offset, 3000)
         with self.locked_context('storage_reads', dict) as storage_reads:
-            contract_name, function_name = (md.name, md.get_func_name(r))
-            if (contract_name, function_name) not in storage_reads:
-                storage_reads[(contract_name, function_name)] = set()
+            contract_function = (md.name, md.get_func_name(r))
+            if contract_function not in storage_reads:
+                storage_reads[contract_function] = set()
             for off in offsets:
-                storage_reads[(contract_name, function_name)].add(off)
+                storage_reads[contract_function].add(off)
 
 #Initialize accounts
 user_account = m.create_account(balance=1000)
