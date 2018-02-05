@@ -181,7 +181,6 @@ class BoolITE(BoolOperation):
 class BitVec(Expression):
     ''' This adds a bitsize to the Expression class '''
     def __init__(self, size, *operands, **kwargs):
-        #assert size in (1, 8, 16, 32, 64, 128, 256)
         super(BitVec, self).__init__(*operands, **kwargs)
         self.size = size
 
@@ -553,6 +552,8 @@ class Array(Expression):
         return index
 
     def cast_value(self, value):
+        if isinstance(value, str) and len(value) == 1:
+            value = ord(value)
         if isinstance(value, (int, long)):
             return BitVecConstant(self.value_bits, value)
         assert isinstance(value, BitVec) and value.size == self.value_bits
@@ -729,7 +730,7 @@ class ArraySelect(BitVec, Operation):
     def __init__(self, array, index, *args, **kwargs):
         assert isinstance(array, Array)
         assert isinstance(index, BitVec) and index.size == array.index_bits
-        super(ArraySelect, self).__init__(8, array, index, *args, **kwargs)
+        super(ArraySelect, self).__init__(array.value_bits, array, index, *args, **kwargs)
 
     @property
     def array(self):

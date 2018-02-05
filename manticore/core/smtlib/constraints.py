@@ -208,13 +208,13 @@ class ConstraintSet(object):
 
     def new_array(self, index_bits=32, name='A', index_max=None, value_bits=8, taint=frozenset()):
         ''' Declares a free symbolic array of 8 bits long bitvectors in the constraint store.
-            :param index_bit_size: size in bits for the array indexes one of [32, 64]
+            :param index_bits: size in bits for the array indexes one of [32, 64]
+            :param value_bits: size in bits for the array values
             :param name: try to assign name to internal variable representation,
                          if not uniq a numeric nonce will be appended
             :param index_max: upper limit for indexes on ths array (#FIXME)
-            :return: a fresh BitVecVariable
+            :return: a fresh ArrayProxy
         '''
-        assert index_bits in (8, 16, 32, 64, 128, 256)
         name = self._get_new_name(name)
         return ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
 
