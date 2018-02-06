@@ -69,6 +69,9 @@ class Visitor(object):
         :param use_fixed_point: if True, it runs _methods until a fixed point is found
         :type use_fixed_point: Bool
         '''
+        if isinstance(node, ArrayProxy):
+            node = node.array
+
         cache = self._cache
 
         visited = set()
