@@ -79,18 +79,16 @@ evm.subscribe('will_execute_instruction', callbacks.will_execute_instruction)
 print "CODE:"
 while not evm.instruction.is_terminator:
     print '\t',evm.pc, evm.instruction
-    print evm.gas
-    print '\t',evm.constraints
-
     evm.execute()
 
 #print translate_to_smtlib(arithmetic_simplifier(evm.stack[0]))
 print "STORAGE =",  translate_to_smtlib(global_storage[address]['storage'])
 print "MEM =",  translate_to_smtlib(evm.memory)
 
+
 for i in range(len(callbacks.initial_stack)):
     print "STACK[%d] ="%i,  translate_to_smtlib(callbacks.initial_stack[i])
 print "CONSTRAINTS:"
-print constraints
+print   constraints
 
 

@@ -90,12 +90,10 @@ class ConstraintSet(object):
         result = ''
         for var in related_variables:
             result += var.declaration + '\n'
-#        for prop in related_constraints:
-#            result += '(assert %s)\n' % translate_to_smtlib(prop, bindings=True)
 
         translator = TranslatorSmtlib(use_bindings=True)
-        for expression in related_constraints:
-            translator.visit(expression)
+        for prop in related_constraints:
+            translator.visit(prop)
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
@@ -146,9 +144,9 @@ class ConstraintSet(object):
     def __str__(self):
         ''' Returns a smtlib representation of the current state '''
         result = ''
-        translator = TranslatorSmtlib(use_bindings=True)
+        translator = TranslatorSmtlib()
         for expression in self.constraints:
-            translator.visit(expression)
+            translator.visit(arithmetic_simplifier(expression))
 
         # band aid hack around the fact that we are double declaring stuff :( :(
         tmp = set()
@@ -176,14 +174,6 @@ class ConstraintSet(object):
 
         return result
 
-        buf = ''
-        for d in self.declarations:
-            buf += d.declaration + '\n'
-        for constraint in self.constraints:
-            constraint_str = translate_to_smtlib(constraint, use_bindings=True)
-            if not constraint_str is 'true':
-                buf += '(assert %s)\n' % constraint_str
-        return buf
 
     def _get_new_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
