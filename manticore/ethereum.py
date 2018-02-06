@@ -344,6 +344,15 @@ class ABI(object):
 
     @staticmethod
     def get_uint(data, offset, size):
+        """
+        Access `size` number of LSB out of a big endian 256 bit number starting at
+        `offset` into `data.
+
+        :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
+        :param offset: byte offset of 256 bit element
+        :param size: number of bits to read out of 256 bit element
+        :rtype: int or Expression
+        """
         def simplify(x):
             value = arithmetic_simplifier(x)
             if isinstance(value, Constant) and not value.taint:
@@ -354,7 +363,7 @@ class ABI(object):
         size = simplify(size)
         offset = simplify(offset)
         byte_size = size/8
-        padding = 32 - byte_size # for 160
+        padding = 32 - byte_size
         value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size])))
         return simplify(value)
 
