@@ -1227,8 +1227,8 @@ class ManticoreEVM(Manticore):
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write("Topics:\n")
-                for topic in log_item.topics:
-                    logs_summary.write("\t%d) %x %s" %(log_item.topics.index(topic), state.solve_one(topic), flagged(issymbolic(topic))))
+                for i, topic in enumerate(log_item.topics):
+                    logs_summary.write("\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
