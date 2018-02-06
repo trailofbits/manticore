@@ -1503,7 +1503,7 @@ class EVM(Eventful):
         value = sha3.keccak_256(buf).hexdigest()
         value = int('0x'+value,0)
         self._publish('on_concrete_sha3', buf, value)
-        logger.info("Found new SHA3 example %r -> %x", buf, value)
+        logger.info("Found a concrete SHA3 example %r -> %x", buf, value)
         return value
 
 
@@ -1922,7 +1922,7 @@ class EVMWorld(Platform):
             self.forward_events_from(self.current)
             self.subscribe('on_concrete_sha3', self._concrete_sha3_callback)
 
-    def _concrete_sha3_callback(self,buf, value):
+    def _concrete_sha3_callback(self, buf, value):
         if buf in self._sha3:
             assert self._sha3[buf] == value
         self._sha3[buf] = value
@@ -2115,8 +2115,6 @@ class EVMWorld(Platform):
     def execute(self):
         self._process_pending_transaction()
         try:
-            if self.current is None:
-                raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current.execute()
         except Create as ex:
             self.CREATE(ex.value, ex.data)
@@ -2258,11 +2256,6 @@ class EVMWorld(Platform):
                 pass
 
     def _process_pending_transaction(self):
-        def err():
-            if self.depth == 0:
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
-
-
         if self._pending_transaction is None:
             return
         assert self.current is None or self.current.last_exception is not None
@@ -2310,6 +2303,7 @@ class EVMWorld(Platform):
             if is_human_tx: #human transaction
                 tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
                 self._transactions.append(tx)
+                raise TerminateState('TXERROR')
             else:
                 self.current._push(0)
                 return
@@ -2448,27 +2442,49 @@ class EVMWorld(Platform):
         self._publish('on_symbolic_sha3', data, self._sha3.items())
 
         results = []
+
+        #If know_hashes is true then there is a _known_ solution for the hash
         known_hashes = False
         for key, value in self._sha3.items():
+            assert not any( map(issymbolic, key))
             cond = compare_buffers(key, data)
             if solver.can_be_true(self._constraints, cond):
                 results.append((cond, value))  
                 known_hashes = Operators.OR(cond, known_hashes)
+        #results contains all the possible and known solutions
 
+
+        #If known_hashes can be False then data can take at least one concrete 
+        #value of which we do not know a hash for.
+
+        #Calculate the sha3 of one extra example solution and add this as a 
+        #potential result
+        #This is an incomplete result:
+        # Intead of choosing one single extra concrete solution we should save 
+        # the state and when a new sha3 example is found load it back and try 
+        #the new concretization for sha3.
+        
         with self._constraints as temp_cs:
             if solver.can_be_true(temp_cs, Operators.NOT(known_hashes)):
                 temp_cs.add(Operators.NOT(known_hashes))
+                #a_buffer is different from all strings we know a hash for 
                 a_buffer = solver.get_value(temp_cs, data)
                 cond = compare_buffers(a_buffer, data)
+                #Get the sha3 for a_buffer
+                a_value = int(sha3.keccak_256(a_buffer).hexdigest(), 16)
+                #add the new sha3 pair to the known_hashes and result
+                self._publish('on_concrete_sha3', a_buffer, a_value)
+                results.append((cond, a_value))
                 known_hashes = Operators.OR(cond, known_hashes)
-
+        
         if solver.can_be_true(self._constraints, known_hashes):
             self._constraints.add(known_hashes)
             value = 0 #never used
             for cond, sha in results:
                 value = Operators.ITEBV(256, cond, sha, value)
         else:
-            raise TerminateState()
+            raise TerminateState("Unknown hash")
             
         self.current._push(value)
         self.current.pc += self.current.instruction.size
+

@@ -7,6 +7,8 @@ from .platforms import evm
 from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
+from multiprocessing import Process, Queue
+from Queue import Empty as EmptyQueue
 import sha3
 import json
 import logging
@@ -359,6 +361,7 @@ class ABI(object):
             padding = 32 - byte_size # for 160
             value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size])))
             return simplify(value)
+
         if ty == u'uint256':
             return get_uint(256, offset), offset+32
         elif ty in (u'bool', u'uint8'):
@@ -919,7 +922,7 @@ class ManticoreEVM(Manticore):
             assert len(self._executor.list()) == 0
 
             for state_id in context['_saved_states']:
-                self._executor.put(state_id)
+                self._executor.enqueue(state_id)
             context['_saved_states'] = []
 
         #A callback will use _pending_transaction and issue the transaction 
@@ -997,7 +1000,7 @@ class ManticoreEVM(Manticore):
         state.context['last_exception'] = e
         # TODO(mark): This will break if we ever change the message text. Use a less
         # brittle check.
-        if e.message not in {'REVERT', 'THROW', 'Not Enough Funds for transaction'}:
+        if e.message not in {'REVERT', 'THROW', 'TXERROR'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
@@ -1111,7 +1114,7 @@ class ManticoreEVM(Manticore):
             summary.write("Last exception: %s\n" %state.context['last_exception'])
 
             address, offset = state.context['seth.trace'][-1]
-            
+
             #Last instruction
             metadata = self.get_metadata(blockchain.transactions[-1].address)
             if metadata is not None:
@@ -1152,6 +1155,11 @@ class ManticoreEVM(Manticore):
                     summary.write("Coverage %d%% (on this state)\n" %  calculate_coverage(code, trace)) #coverage % for address in this account/state
                 summary.write("\n")
 
+
+            if blockchain._sha3:
+                summary.write("Known hashes:\n")
+                for key, value in blockchain._sha3.items():
+                    summary.write('%s::%x\n'%(key.encode('hex'), value))
 
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
@@ -1239,10 +1247,26 @@ class ManticoreEVM(Manticore):
     def finalize(self):
         #move runnign states to final states list
         # and generate a testcase for each
-        lst = tuple(self.running_state_ids)
-        for state_id in lst:
-            self.terminate_state_id(state_id)
+        q = Queue()
+        map(q.put, self.running_state_ids)
+        def f(q):
+            try:
+                while True:
+                    state_id = q.get_nowait()
+                    self.terminate_state_id(state_id)
+            except EmptyQueue:
+                pass
 
+        ps = []
+
+        for _ in range(self._config_procs):
+            p = Process(target=f, args=(q,))
+            p.start()
+            ps.append(p)
+
+        for p in ps:
+            p.join()            
+                
         #delete actual streams from storage
         for state_id in self.all_state_ids:
             self._executor._workspace.rm_state(state_id)

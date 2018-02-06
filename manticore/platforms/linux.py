@@ -839,31 +839,13 @@ class Linux(Platform):
         entry = elf_entry
         real_elf_brk = elf_brk
 
-        # We need to explicitly zero any fractional pages
-        # after the data section (i.e. bss).  This would
-        # contain the junk from the file that should not
-        # be in memory
-        #TODO:
-        #cpu.write_bytes(elf_bss, '\x00'*((elf_bss | (align-1))-elf_bss))
 
-        logger.debug("Zeroing main elf fractional pages. From %x to %x.", elf_bss, elf_brk)
-        logger.debug("Main elf bss:%x",elf_bss)
-        logger.debug("Main elf brk %x:",elf_brk)
-
-	#FIXME Need a way to inspect maps and perms so
-	#we can rollback all to the initial state after zeroing
-        #if elf_brk-elf_bss > 0:
-        #    saved_perms = cpu.mem.perms(elf_bss)
-        #    cpu.memory.mprotect(cpu.mem._ceil(elf_bss), elf_brk-elf_bss, 'rw ')
-        #    logger.debug("Zeroing main elf fractional pages (%d bytes)", elf_brk-elf_bss)
-        #    cpu.write_bytes(elf_bss, ['\x00'] * (elf_brk-elf_bss))
-        #    cpu.memory.mprotect(cpu.memory._ceil(elf_bss), elf_brk-elf_bss, saved_perms)
-
-
-        if cpu.memory.access_ok(slice(elf_bss, elf_brk), 'w'):
-            cpu.memory[elf_bss:elf_brk] = '\x00'*(elf_brk-elf_bss)
-        else:
-            logger.warning("Failing to zerify the trailing: elf_brk-elf_bss")
+        # We need to explicitly clear bss, as fractional pages will have data from the file
+        bytes_to_clear = elf_brk - elf_bss
+        if bytes_to_clear > 0:
+            logger.debug("Zeroing main elf fractional pages. From bss(%x) to brk(%x), %d bytes.",
+                    elf_bss, elf_brk, bytes_to_clear)
+            cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
         stack_size = 0x21000
 
@@ -932,16 +914,11 @@ class Linux(Platform):
                 entry += base
             interpreter_base = base
 
-            logger.debug("Zeroing interpreter elf fractional pages. From %x to %x.", elf_bss, elf_brk)
-            logger.debug("Interpreter bss:%x", elf_bss)
-            logger.debug("Interpreter brk %x:", elf_brk)
-
-            cpu.memory.mprotect(cpu.memory._floor(elf_bss), elf_brk-elf_bss, 'rw ')
-	    try:
-	        cpu.memory[elf_bss:elf_brk] = '\x00'*(elf_brk-elf_bss)
-	    except Exception, e:
-	        logger.debug("Exception zeroing Interpreter fractional pages: %s",str(e))
-            #TODO #FIXME mprotect as it was before zeroing?
+            bytes_to_clear = elf_brk - elf_bss
+            if bytes_to_clear > 0:
+                logger.debug("Zeroing interpreter elf fractional pages. From bss(%x) to brk(%x), %d bytes.",
+                        elf_bss, elf_brk, bytes_to_clear)
+                cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
 
         #free reserved brk space
