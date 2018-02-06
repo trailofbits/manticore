@@ -1133,7 +1133,7 @@ class ManticoreEVM(Manticore):
                 balance = state.solve_one(balance)
                 summary.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
-                if blockchain.has_storage(account_address):
+                '''if blockchain.has_storage(account_address):
                     summary.write("Storage:\n")
                     for offset, value in blockchain.get_storage_items(account_address):
                         is_storage_symbolic = issymbolic(offset) or issymbolic(value) 
@@ -1141,7 +1141,7 @@ class ManticoreEVM(Manticore):
                         value = state.solve_one(value)
                         summary.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
-
+                '''
                 code = blockchain.get_code(account_address)
                 if len(code):
                     summary.write("Code:\n")

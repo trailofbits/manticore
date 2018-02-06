@@ -30,7 +30,6 @@ from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Vis
 import logging
 from .utils import log
 
-
 logger = logging.getLogger(__name__)
 log.init_logging()
 

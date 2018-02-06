@@ -2,8 +2,8 @@
 import random, copy
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
-    SolverException
+from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, \
+     Array, Operators, Constant, BitVecConstant, ConstraintSet, SolverException
 from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
@@ -51,250 +51,6 @@ class EVMLog():
         self.topics = topics
 
 
-
-class EVMMemory(object):
-    def __init__(self, constraints, address_size=256, value_size=8, *args, **kwargs):
-        '''
-        A symbolic memory manager for EVM. 
-        This is internally used to provide memory to an Ethereum Virtual Machine.
-        It maps address_size bits wide bitvectors to value_size wide bitvectors.
-        Normally BitVec(256) -> BitVec(8)
-
-        Example use::
-            cs = ConstraintSet()
-            mem = EVMMemory(cs)
-            mem[16] = 0x41
-            assert (mem.allocated == 1)
-            assert (mem[16] == 0x41)
-
-        :param constraints: a set of constraints
-        :type constraints: ConstraintSet
-        :param address_size: address bit width
-        :param values_size: value bit width
-        '''
-        assert isinstance(constraints, (ConstraintSet, type(None)))
-        self._constraints = constraints
-        self._symbols = {}
-        self._memory = {}
-        self._address_size=address_size
-        self._value_size=value_size
-        self._allocated = 0
-
-    def __copy__(self):
-        ''' Makes a copy of itself '''
-        new_mem = EVMMemory(self._constraints, self._address_size,  self._value_size)
-        new_mem._memory = dict(self._memory)
-        new_mem._symbols = dict(self._symbols)
-        return new_mem
-
-    def __reduce__(self):
-        ''' Implements serialization/pickle '''
-        return (self.__class__, (self._constraints, self._address_size,  self._value_size), {'_symbols':self._symbols, '_memory':self._memory, '_allocated': self._allocated } )
-
-    @property
-    def constraints(self):
-        return self._constraints
-
-    @constraints.setter
-    def constraints(self, constraints):
-        self._constraints = constraints
-
-    def _get_size(self, index):
-        ''' Calculates the size of a slice 
-            :param index: a slice 
-            :type index: slice
-        '''
-        size = index.stop - index.start
-        if isinstance(size, BitVec):
-            size = arithmetic_simplifier(size)
-        else:
-            size = BitVecConstant(self._address_size, size)
-        assert isinstance(size, BitVecConstant)
-        return size.value
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            size = self._get_size(index)
-            return self.read(index.start, size)
-        else:
-            return self.read(index, 1)[0]
-
-    def __setitem__(self, index, value):
-        if isinstance(index, slice):
-            size = self._get_size(index)
-            assert len(value) == size
-            for i in xrange(size):
-                self.write(index.start+i, [value[i]])
-        else:
-            self.write(index, [value])
-
-    def __delitem__(self, index):
-        def delete(offset):
-            if offset in self.memory:
-                del self._memory[offset]
-            if offset in self._symbol:
-                del self._symbols[offset]
-
-        if isinstance(index, slice):
-            for offset in xrange(index.start, index.end):
-                delete(offset)
-        else:
-            delete(index)
-
-    def __contains__(self, offset):
-        return offset in self._memory or \
-               offset in self._symbols
-
-    def items(self):
-        offsets = set( self._symbols.keys() + self._memory.keys())
-        return [(x, self[x]) for x in offsets]
-
-    def get(self, offset, default=0):
-        result = self.read(offset, 1)
-        if not result:
-            return default
-        return result[0]
-
-    def __getitem__(self, index):
-        if isinstance(index, slice):
-            size = self._get_size(index)
-            return self.read(index.start, size)
-        else:
-            return self.read(index, 1)[0]
-
-    def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
-        m = {}
-        for key in self._memory.keys():
-            c = self.read(key,1)[0]
-            if issymbolic(c):
-                m[key] = '?'
-            else:
-                m[key] = hex(c)
-        return str(m)
-
-
-    def __len__(self):
-        return self._allocated
-
-    @property
-    def allocated(self):
-        return self._allocated
-
-    def _allocate(self, address):
-        '''
-            Allocate more memory
-        '''
-        new_max = ceil32(address) // 32
-        self._allocated = Operators.ITEBV(256, self._allocated < new_max, new_max, self._allocated)
-
-    def _concrete_read(self, address):
-        return self._memory.get(address, 0)
-
-    def _concrete_write(self, address, value):
-        assert not issymbolic(address) 
-        assert not issymbolic(value)
-        assert value & ~(pow(2,self._value_size)-1) == 0 , "Not the correct size for a value"
-        self._memory[address] = value
-
-    def read(self, address, size):
-        '''
-        Read size items from address.
-        Address can by a symbolic value.
-        The result is a sequence the requested size.
-        Resultant items can by symbolic.
-
-        :param address: Where to read from
-        :param size: How many items
-        :rtype: list
-        '''
-        assert not issymbolic(size)
-        self._allocate(address+size)
-
-        if issymbolic(address):
-            address = arithmetic_simplifier(address)
-            assert solver.check(self.constraints)
-            logger.debug('Reading %d items from symbolic offset %s', size, address)
-            try:
-                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
-            except TooManySolutions as e:
-                m, M = solver.minmax(self.constraints, address)
-                logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
-                logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
-                condition = False
-                for base in e.solutions:
-                    condition = Operators.OR(address == base, condition )
-                raise ForkState('address too high', condition)
-
-            #So here we have all potential solutions of symbolic address (complete set)
-            assert len(solutions) > 0            
-
-            condition = False
-            for base in solutions:
-                condition = Operators.OR(address == base, condition )
-
-            result = []
-            #consider size ==1 to read following code
-            for offset in range(size):
-                #Given ALL solutions for the symbolic address
-                for base in solutions:
-                    addr_value = base + offset
-                    item = self._concrete_read(addr_value)
-                    if addr_value in self._symbols:
-                        for condition, value in self._symbols[addr_value]:
-                            item = Operators.ITEBV(self._value_size, condition, value, item)
-                    if len(result) > offset:
-                        result[offset] = Operators.ITEBV(self._value_size, address == base, item, result[offset])
-                    else:
-                        result.append(item)
-                    assert len(result) == offset+1
-            return result
-        else:
-            result = []
-            for i in range(size):
-                result.append(self._concrete_read(address+i))
-            for offset in range(size):
-                if address+offset in self._symbols:
-                    for condition, value in self._symbols[address+offset]:
-                        if condition is True:
-                            result[offset] = value
-                        else:
-                            result[offset] = Operators.ITEBV(self._value_size, condition, value, result[offset])
-            return result
-
-    def write(self, address, value):
-        '''
-        Write a value at address.
-        :param address: The address at which to write
-        :type address: int or long or Expression
-        :param value: Bytes to write
-        :type value: tuple or list
-        '''
-        size = len(value)
-        self._allocate(address+size)
-
-        if issymbolic(address):
-
-            solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
-
-            for offset in xrange(size):
-                for base in solutions:
-                    condition = base == address
-                    self._symbols.setdefault(base+offset, []).append((condition, value[offset]))
-
-        else:
-
-            for offset in xrange(size):
-                if issymbolic(value[offset]):
-                    self._symbols[address+offset] = [(True, value[offset])]
-                else:
-                    # overwrite all previous items
-                    if address+offset in self._symbols:
-                        del self._symbols[address+offset]
-                    self._concrete_write(address+offset, value[offset])
-        
 class EVMAsm(object):
     ''' 
         EVM Instruction factory
@@ -1073,7 +829,7 @@ class EVM(Eventful):
         super(EVM, self).__init__(**kwargs)
         self._constraints = constraints
         self.last_exception = None
-        self.memory = EVMMemory(constraints)
+        self.memory = self._constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
         self.address = address
         self.origin = origin # always an account with empty associated code
         self.caller = caller # address of the account that is directly responsible for this execution
@@ -1162,29 +918,28 @@ class EVM(Eventful):
 
     #Memory related
     def _allocate(self, address):
-        if address > self.memory._allocated:
-            GMEMORY = 3
-            GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
+        allocated = self.allocated
 
-            old_size = ceil32(self.memory._allocated) // 32
-            old_totalfee = old_size * GMEMORY + old_size ** 2 // GQUADRATICMEMDENOM
-            new_size = ceil32(address) // 32
-            increased = new_size - old_size 
-            fee = increased * GMEMORY + increased**2 // GQUADRATICMEMDENOM
-            self._consume(fee)
+        GMEMORY = 3
+        GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
+        old_size = ceil32(allocated) // 32
+        old_totalfee = old_size * GMEMORY + old_size *old_size // GQUADRATICMEMDENOM
+        new_size = ceil32(address) // 32
+        increased = Operators.ITEBV(256, address > allocated, new_size - old_size, 0)
+        fee = increased * GMEMORY + increased*increased // GQUADRATICMEMDENOM
+        self.constraints.add(fee>=0) #FIXME document. Ignore fee overflow
+        self._consume(fee)
 
     def _store(self, address, value):
         #CHECK ADDRESS IS A 256 BIT INT OR BITVEC
         #CHECK VALUE IS A 256 BIT INT OR BITVEC
-        self._allocate(address)
-        self.memory.write(address, [value])
+        self.memory[address] = value
         self._publish('did_evm_write_memory', address, value)
 
 
     def _load(self, address):
         self._allocate(address)
-        value = self.memory.read(address,1)[0]
-        value = arithmetic_simplifier(value)
+        value = arithmetic_simplifier(self.memory[address])
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
         self._publish('did_evm_read_memory', address, value)
@@ -1253,9 +1008,13 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        assert fee>=0
-        if self.gas < fee:
-            raise NotEnoughGas()
+        assert not solver.can_be_true(self.constraints, fee<0)
+
+        #FIXME document we are assuming max gas always and potentialy generating
+        # imposible constraints (should be configurable)
+        #if not solver.can_be_true(self.constraints, self.gas >= fee):            
+        #    raise NotEnoughGas()
+        self.constraints.add( self.gas >= fee)
         self.gas -= fee
 
     #Execute an instruction from current pc
@@ -1570,6 +1329,7 @@ class EVM(Eventful):
         if issymbolic(size):
             raise ConcretizeStack(3, policy='ALL')
 
+        self._allocate(address+size)
         for i in range(size):
             c = Operators.ITEBV(8,data_offset+i < len(self.data), Operators.ORD(self.data[data_offset+i]), 0)
             self._store(mem_offset+i, c)
@@ -1585,6 +1345,7 @@ class EVM(Eventful):
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(size) // 32)
 
+        self._allocate(mem_offset+size)
         for i in range(size):
             if (code_offset+i > len(self.bytecode)):
                 self._store(mem_offset+i, 0)
@@ -1611,6 +1372,8 @@ class EVM(Eventful):
         extbytecode = self.global_storage[account& TT256M1]['code']
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
+
+        self._allocate(address+size)
 
         for i in range(size):
             if offset + i < len(extbytecode):
@@ -1670,16 +1433,18 @@ class EVM(Eventful):
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
+        self._allocate(address+32)
         for offset in xrange(32):
             self._store(address+offset, Operators.EXTRACT(value, (31-offset)*8, 8))
 
     def MSTORE8(self, address, value):
         '''Save byte to memory'''
+        self._allocate(address)
         self._store(address, Operators.EXTRACT(value, 0, 8))
 
     def SLOAD(self, offset):
         '''Load word from storage'''
-        value = self.global_storage[self.address]['storage'].get(offset,0)
+        value = self.global_storage[self.address]['storage'][offset]
         self._publish('did_evm_read_storage', offset, value)
         return value
 
@@ -1760,7 +1525,7 @@ class EVM(Eventful):
             data.append(Operators.CHR(self._load(offset+i)))
 
         if any(map(issymbolic, data)):
-            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
+            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data), value_bits=8)
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
@@ -1771,6 +1536,8 @@ class EVM(Eventful):
 
     def write_buffer(self, offset, buf):
         count = 0
+        self._allocate(offset+len(buf))
+
         for c in buf:
             self._store(offset+count, c)
             count +=1 
@@ -1956,9 +1723,6 @@ class EVMWorld(Platform):
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
-        for addr in self.storage:
-            if isinstance(self.storage[addr]['storage'], EVMMemory): 
-                self.storage[addr]['storage'].constraints = constraints
         if self.current:
             self.current.constraints = constraints
 
@@ -2192,8 +1956,7 @@ class EVMWorld(Platform):
         assert  not issymbolic(address) 
         assert  not issymbolic(origin) 
         address = self.create_account(address, 0)
-  
-        self.storage[address]['storage'] = EVMMemory(self.constraints, 256, 256)
+        self.storage[address]['storage'] = self._constraints.new_array(index_bits=256, value_bits=256)
 
         self._pending_transaction = ('Create', address, origin, price, '', origin, balance, ''.join(init), header)
 
@@ -2237,7 +2000,7 @@ class EVMWorld(Platform):
                       'difficulty':0
                 }
         if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
-            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
+            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data), value_bits=8)
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
