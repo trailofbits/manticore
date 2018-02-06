@@ -626,10 +626,30 @@ class ArrayStore(ArrayOperation):
 
 class ArrayProxy(Array):
     def __init__(self, array):
-        assert isinstance(array, ArrayVariable)
-        super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
-        self._array = array
-        self._name = array.name
+        assert isinstance(array, Array)
+
+        if isinstance (array, ArrayProxy):
+            #copy constructor
+            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            self._array = array._array
+            self._name = array._name
+        elif isinstance(array, ArrayVariable):
+            #fresh array proxy
+            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            self._array = array
+            self._name = array.name
+        else:
+            #arrayproxy for an prepopulated array
+            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            self._array = array
+            while not isinstance(array, ArrayVariable):
+                array=array.array
+            self._name = array.name
+            
+            
+    @property
+    def array(self):
+        return self._array
 
     @property
     def name(self):
@@ -702,7 +722,6 @@ class ArrayProxy(Array):
             return self._array.select(index)
 
     def __setitem__(self, index, value):
-
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
@@ -722,9 +741,10 @@ class ArrayProxy(Array):
     def __setstate__(self, state):
         self._array = state['_array']
         self._name = state['name']
-        self._index_bits = self._array.index_bits
-        self._index_max = self._array.index_max
 
+    def __copy__(self):
+        return ArrayProxy(self)
+        
 
 class ArraySelect(BitVec, Operation):
     def __init__(self, array, index, *args, **kwargs):
