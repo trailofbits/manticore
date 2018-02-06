@@ -1077,7 +1077,6 @@ class EVM(Eventful):
         self.address = address
         self.origin = origin # always an account with empty associated code
         self.caller = caller # address of the account that is directly responsible for this execution
-        self.coinbase = 0
         self.data = data
         self.price = price #This is gas price specified by the originating transaction
         self.value = value
@@ -1089,7 +1088,11 @@ class EVM(Eventful):
         #FIXME parse decode and mark invalid instructions
         #self.invalid = set()
 
+        assert 'coinbase' in header
+        assert 'gaslimit' in header
+        assert 'difficulty' in header
         assert 'timestamp' in header
+        assert 'number' in header
         self.header=header
 
         #Machine state
@@ -1119,12 +1122,12 @@ class EVM(Eventful):
         state['address'] = self.address
         state['origin'] = self.origin
         state['caller'] = self.caller
-        state['coinbase'] = self.coinbase
         state['data'] = self.data
         state['price'] = self.price
         state['value'] = self.value
         state['depth'] = self.depth
         state['bytecode'] = self.bytecode
+        state['header'] = self.header
         state['pc'] = self.pc
         state['stack'] = self.stack
         state['gas'] = self.gas
@@ -1144,12 +1147,12 @@ class EVM(Eventful):
         self.address = state['address']
         self.origin = state['origin']
         self.caller = state['caller']
-        self.coinbase = state['coinbase']
         self.data = state['data']
         self.price = state['price']
         self.value = state['value']
         self.depth = state['depth']
         self.bytecode = state['bytecode']
+        self.header = state['header']
         self.pc = state['pc']
         self.stack = state['stack']
         self.gas = state['gas']
@@ -1618,9 +1621,16 @@ class EVM(Eventful):
     ##Block Information
     def BLOCKHASH(self, a):
         '''Get the hash of one of the 256 most recent complete blocks'''
-        #FIXME! 
-        #90743482286830539503240959006302832933333810038750515972785732718729991261126L,
-        return 0
+
+        # We are not maintaining an actual -block-chain- so we just generate 
+        # some hashes for each virtual block
+        value = sha3.keccak_256(repr(a)+'NONCE').hexdigest()
+        value = int('0x'+value,0)
+
+        # 0 is left on the stack if the looked for block number is greater than the current block number
+        # or more than 256 blocks behind the current block.
+        value = Operators.ITEBV(256, Operators.OR( a > self.header['number'], a < max(0, self.header['number']-256)), 0 , value)
+        return value
 
     def COINBASE(self):
         '''Get the block's beneficiary address'''
@@ -2170,14 +2180,17 @@ class EVMWorld(Platform):
             origin = caller
         assert caller == origin
         if header is None:
-            header = {'timestamp':1}
+            header = {'timestamp' : 0,
+                      'number': 0,
+                      'coinbase': 0,
+                      'gaslimit': 0,
+                      'difficulty':0
+                }
+
         assert  not issymbolic(address) 
         assert  not issymbolic(origin) 
         address = self.create_account(address, 0)
-        if header is None:
-            header = {'timestamp' : 0,
-                      'number': 0,}
-
+  
         self.storage[address]['storage'] = EVMMemory(self.constraints, 256, 256)
 
         self._pending_transaction = ('Create', address, origin, price, '', origin, balance, ''.join(init), header)
@@ -2198,8 +2211,6 @@ class EVMWorld(Platform):
         origin = self.current.origin
         caller = self.current.address
         price = self.current.price
-        header = {'timestamp': 100}  #FIXME
-
         self.create_contract(origin, price, address=None, balance=value, init=bytecode, run=False)
         self._process_pending_transaction()
 
@@ -2217,7 +2228,12 @@ class EVMWorld(Platform):
             raise TerminateState('Account does not exist %x'%address, testcase=True)
 
         if header is None:
-            header = {'timestamp':1}
+            header = {'timestamp' : 0,
+                      'number': 0,
+                      'coinbase': 0,
+                      'gaslimit': 0,
+                      'difficulty':0
+                }
         if any([ isinstance(data[i], Expression) for i in range(len(data))]): 
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
             for i in range(len(data)):
@@ -2324,8 +2340,7 @@ class EVMWorld(Platform):
         price = self.current.price
         depth = self.depth + 1
         bytecode = self.get_code(to)
-        header = {'timestamp' :1}
-        self.transaction(address, origin, price, data, caller, value, header)
+        self.transaction(address, origin, price, data, caller, value)
         self._process_pending_transaction()
 
 
