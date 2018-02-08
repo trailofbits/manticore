@@ -2081,7 +2081,7 @@ class EVMWorld(Platform):
         self._do_events()
         if self.depth > 1024:
             while self.depth >0:
-                self._pop(rollback=True)
+                self._pop_vm(rollback=True)
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
     def _pop_vm(self, rollback=False):
