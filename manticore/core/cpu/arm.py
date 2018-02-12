@@ -29,17 +29,6 @@ OP_NAME_MAP = {
 def HighBit(n):
     return Bit(n, 31)
 
-class ConcretizeMode(CpuException):
-    '''
-    Raised when a symbolic mode needs to be concretized.
-    '''
-    def __init__(self, cpu, mode, message=None, policy='MINMAX'):
-        self.message = message if message else "Concretizing mode"
-
-        self.cpu = cpu
-        self.mode = mode
-        self.policy = policy
-
 def instruction(body):
     @wraps(body)
     def instruction_implementation(cpu, *args, **kwargs):
@@ -373,10 +362,23 @@ class Armv7Cpu(Cpu):
 
     def _set_mode(self, new_mode):
         assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
+
         if self.mode != new_mode:
-            logger.debug("swapping into {} mode".format({cs.CS_MODE_ARM:"ARM", cs.CS_MODE_THUMB:"THUMB"}[new_mode]))
+            logger.debug("swapping into {} mode".format("ARM" if new_mode == cs.CS_MODE_ARM else "THUMB"))
+
         self.mode = new_mode
         self.disasm.disasm.mode = new_mode
+
+    def _set_mode_by_val(self, val):
+        new_mode = Operators.ITEBV(self.address_bit_size, (val & 0x1) == 0x1, cs.CS_MODE_THUMB, cs.CS_MODE_ARM)
+
+        if issymbolic(new_mode):
+            from ..state import Concretize
+            def set_concrete_mode(state, value):
+                state.cpu._set_mode(value)
+            raise Concretize("Concretizing ARMv7 mode", expression=new_mode, setstate=set_concrete_mode)
+
+        self._set_mode(new_mode)
 
     def _swap_mode(self):
         #swap from arm to thumb or back
@@ -799,10 +801,7 @@ class Armv7Cpu(Cpu):
         else:
             word = Operators.ZEXTEND(mem, cpu.address_bit_size)
         if dest.reg in ('PC', 'R15'):
-            mode = Operators.ITE(0x1 == (word & 0x1), cs.CS_MODE_THUMB, cs.CS_MODE_ARM)
-            if issymbolic(mode):
-                raise ConcretizeMode(cpu, mode, "Concretizing mode on LDR instruction")
-            cpu._set_mode(mode)
+            cpu._set_mode_by_val(word)
             word &= ~0x1
             logger.debug("LDR writing 0x{:x} -> PC".format(word))
         dest.write(word)
@@ -916,11 +915,9 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def BX(cpu, dest):
-        if dest.read() & 0x1:
-            cpu._set_mode(cs.CS_MODE_THUMB)
-        else:
-            cpu._set_mode(cs.CS_MODE_ARM)
-        cpu.PC = dest.read() & ~1
+        dest_val = dest.read()
+        cpu._set_mode_by_val(dest_val)
+        cpu.PC = dest_val & ~1
 
     @instruction
     def BLE(cpu, dest):
@@ -960,10 +957,7 @@ class Armv7Cpu(Cpu):
             logger.debug("swapping mode due to BLX at inst 0x{:x}".format(address))
             cpu._swap_mode()
         elif dest.type=='register':
-            if dest.read() & 0x1:
-                cpu._set_mode(cs.CS_MODE_THUMB)
-            else:
-                cpu._set_mode(cs.CS_MODE_ARM)
+            cpu._set_mode_by_val(dest.read())
 
     @instruction
     def CMP(cpu, reg, compare):
@@ -975,10 +969,7 @@ class Armv7Cpu(Cpu):
         for reg in regs:
             val = cpu.stack_pop(cpu.address_bit_size / 8)
             if reg.reg in ('PC', 'R15'):
-                mode = Operators.ITE(0x1 == (val & 0x1), cs.CS_MODE_THUMB, cs.CS_MODE_ARM)
-                if issymbolic(mode):
-                    raise ConcretizeMode(cpu, mode, "Concretizing mode on POP instruction")
-                cpu._set_mode(mode)
+                cpu._set_mode_by_val(val)
                 val = val & ~0x1
             reg.write(val)
 

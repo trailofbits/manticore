@@ -3,7 +3,9 @@ import struct
 from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
-from manticore.core.memory import Memory32
+from manticore.core.memory import Memory32, SMemory32
+from manticore.core.smtlib import *
+from manticore.core.state import Concretize
 
 from capstone.arm import *
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
@@ -33,7 +35,8 @@ class Armv7CpuTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
-        self.c = Cpu(Memory32())
+        cs = ConstraintSet()
+        self.c = Cpu(SMemory32(cs))
         self.rf = self.c.regfile
         self._setupStack()
 
@@ -182,7 +185,8 @@ def itest_thumb_multiple(asms):
 
 class Armv7CpuInstructions(unittest.TestCase):
     def setUp(self):
-        self.cpu = Cpu(Memory32())
+        cs = ConstraintSet()
+        self.cpu = Cpu(SMemory32(cs))
         self.mem = self.cpu.memory
         self.rf = self.cpu.regfile
 
@@ -1625,3 +1629,28 @@ class Armv7CpuInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R1'), 0x0708)
         self.assertEqual(self.rf.read('R3'), 0xFFFFF001)
         self.assertEqual(self.rf.read('R5'), 0xF0)
+
+    @itest_custom("blx  r1")
+    def test_blx_reg_sym(self):
+        dest = BitVecVariable(32, 'dest')
+        self.cpu.memory.constraints.add(dest >= 0x1000)
+        self.cpu.memory.constraints.add(dest <= 0x1001)
+        self.cpu.R1 = dest
+
+        # First, make sure we raise when the mode is symbolic and ambiguous
+        with self.assertRaises(Concretize) as cm:
+            self.cpu.execute()
+
+        # Then, make sure we have the correct expression
+        e = cm.exception
+        all_modes = solver.get_all_values(self.cpu.memory.constraints, e.expression)
+        self.assertIn(CS_MODE_THUMB, all_modes)
+        self.assertIn(CS_MODE_ARM, all_modes)
+
+        # Assuming we're in ARM mode, ensure the callback toggles correctly.
+        self.assertEqual(self.cpu.mode, CS_MODE_ARM)
+        # The setstate callback expects a State as its first argument; since we
+        # don't have a state, the unit test itself is an okay approximation, since
+        # the cpu lives in self.cpu
+        e.setstate(self, CS_MODE_THUMB)
+        self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
