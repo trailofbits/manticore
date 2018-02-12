@@ -30,10 +30,11 @@ class RestartSyscall(Exception):
 class Deadlock(Exception):
     pass
 
+class EnvironmentError(RuntimeError):
+    pass
+
 class FdError(Exception):
-    def __init__(self, message='', err=None):
-        if err is None:
-            err = errno.EBADF
+    def __init__(self, message='', err=errno.EBADF):
         self.err = err
         super(FdError, self).__init__(message)
 
@@ -375,6 +376,10 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
+        # Setting this to True would cause sys_getrandom() to return bytes from the host's
+        # entropy pool; currently, just fill the requested buffer with zeroes to maintain
+        # determinism.
+        self._true_random = False
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -1039,10 +1044,13 @@ class Linux(Platform):
         }
 
     def _to_signed_dword(self, dword):
-        if self.current.address_bit_size == 32:
+        arch_width = self.current.address_bit_size
+        if arch_width == 32:
             sdword = ctypes.c_int32(dword).value
-        else:
+        elif arch_width == 64:
             sdword = ctypes.c_int64(dword).value
+        else:
+            raise EnvironmentError("Corrupted internal CPU state (arch width is {})".format(arch_width))
         return sdword
 
 
@@ -1089,7 +1097,7 @@ class Linux(Platform):
 
     def _get_fd(self, fd):
         if not self._is_fd_open(fd):
-            raise FdError()
+            raise FdError
         else:
             return self.files[fd]
 
@@ -1345,6 +1353,8 @@ class Linux(Platform):
         if os.path.abspath(filename).startswith('/proc/self'):
             if filename == '/proc/self/exe':
                 filename = os.path.abspath(self.program)
+            else:
+                raise EnvironmentError("/proc/self is largely unsupported")
 
         if os.path.isdir(filename):
             f = Directory(filename, flags)
@@ -1366,7 +1376,7 @@ class Linux(Platform):
                          filename, f.fileno())
         except IOError as e:
             logger.info("Could not open file %s. Reason: %s", filename, str(e))
-            return -e.errno if e.errno else -errno.EINVAL
+            return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
 
@@ -1409,7 +1419,7 @@ class Linux(Platform):
             logger.debug("Opening file %s for real fd %d", filename, f.fileno())
         except IOError as e:
             logger.info("Could not open file %s. Reason: %s", filename, str(e))
-            return -e.errno if e.errno else -errno.EINVAL
+            return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
 
@@ -1959,12 +1969,18 @@ class Linux(Platform):
             logger.info("getrandom: Provided an invalid address. Returning EFAULT")
             return -errno.EFAULT
 
+        if flags & ~(GRND_NONBLOCK|GRND_RANDOM) != 0:
+            return -errno.EINVAL
+
         try:
-            if flags & GRND_RANDOM:
-                with open('/dev/random', 'rb') as rnd:
-                    data = rnd.read(size)
+            if self._true_random:
+                if flags & GRND_RANDOM:
+                    with open('/dev/random', 'rb') as rnd:
+                        data = rnd.read(size)
+                else:
+                    data = os.urandom(size)
             else:
-                data = os.urandom(size)
+                data = '\x00' * size
         except (NotImplementedError, IOError): # NIE can be raised from os.urandom()
             if flags & GRND_NONBLOCK:
                 logger.info("GETRANDOM: Entropy Pool Initialization Error. Returning EAGAIN")
