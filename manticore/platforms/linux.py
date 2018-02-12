@@ -30,8 +30,12 @@ class RestartSyscall(Exception):
 class Deadlock(Exception):
     pass
 
-class BadFd(Exception):
-    pass
+class FdError(Exception):
+    def __init__(self, message='', err=None):
+        if err is None:
+            err = errno.EBADF
+        self.err = err
+        super(FdError, self).__init__(message)
 
 def perms_from_elf(elf_flags):
     return ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][elf_flags&7]
@@ -290,10 +294,10 @@ class Socket(object):
         return len(buf)
 
     def sync(self):
-        raise BadFd("Invalid sync() operation on Socket")
+        raise FdError("Invalid sync() operation on Socket", errno.EINVAL)
 
     def seek(self, *args):
-        raise BadFd("Invalid lseek() operation on Socket")
+        raise FdError("Invalid lseek() operation on Socket", errno.EINVAL)
 
 class Linux(Platform):
     '''
@@ -1030,7 +1034,7 @@ class Linux(Platform):
 
     def _get_fd(self, fd):
         if not self._is_fd_open(fd):
-            raise BadFd()
+            raise FdError()
         else:
             return self.files[fd]
 
@@ -1118,10 +1122,10 @@ class Linux(Platform):
 
         try:
             self._get_fd(fd).seek(signed_offset, whence)
-        except BadFd:
+        except FdError as e:
             logger.info(("LSEEK: Not valid file descriptor on lseek."
                         "Fd not seekable. Returning EBADF"))
-            return -errno.EBADF
+            return -e.err
 
         return 0
 
@@ -1136,10 +1140,10 @@ class Linux(Platform):
             try:
                 # Read the data and put in tin memory
                 data = self._get_fd(fd).read(count)
-            except BadFd:
+            except FdError as e:
                 logger.info(("READ: Not valid file descriptor on read."
                              " Returning EBADF"))
-                return -errno.EBADF
+                return -e.err
             self.syscall_trace.append(("_read", fd, data))
             self.current.write_bytes(buf, data)
 
@@ -1308,10 +1312,7 @@ class Linux(Platform):
                          filename, f.fileno())
         except IOError as e:
             logger.info("Could not open file %s. Reason: %s", filename, str(e))
-            if e.errno is not None:
-                return -e.errno
-            else:
-                return -errno.EINVAL
+            return -e.errno if e.errno else -errno.EINVAL
 
         return self._open(f)
 
@@ -1376,7 +1377,7 @@ class Linux(Platform):
             self.files[fd].sync()
         except IndexError:
             ret = -errno.EBADF
-        except BadFd:
+        except FdError:
             ret = -errno.EINVAL
 
         return ret
@@ -1442,9 +1443,9 @@ class Linux(Platform):
         '''
         try:
             file = self._get_fd(fd)
-        except BadFd:
+        except FdError as e:
             logger.info("DUP2: Passed fd is not open. Returning EBADF")
-            return -errno.EBADF
+            return -e.err
 
         soft_max, hard_max = self._rlimits[self.RLIMIT_NOFILE]
         if newfd >= soft_max:
@@ -1675,9 +1676,9 @@ class Linux(Platform):
         total = 0
         try:
             write_fd = self._get_fd(fd)
-        except BadFd:
+        except FdError as e:
             logger.error("writev: Not a valid file descriptor ({})".format(fd))
-            return -errno.EBADF
+            return -e.err
 
         for i in xrange(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
@@ -2106,9 +2107,9 @@ class Linux(Platform):
 
         try:
             stat = self._get_fd(fd).stat()
-        except BadFd:
+        except FdError as e:
             logger.info("Calling fstat with invalid fd, returning EBADF")
-            return -errno.EBADF
+            return -e.err
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -2151,9 +2152,9 @@ class Linux(Platform):
 
         try:
             stat = self._get_fd(fd).stat()
-        except BadFd:
-            logger.info("Calling fstat with invalid fd, returning EBADF")
-            return -errno.EBADF
+        except FdError as e:
+            logger.info("Calling fstat with invalid fd")
+            return -e.err
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -2194,9 +2195,9 @@ class Linux(Platform):
 
         try:
             stat = self._get_fd(fd).stat()
-        except BadFd:
+        except FdError as e:
             logger.info("Calling fstat with invalid fd, returning EBADF")
-            return -errno.EBADF
+            return -e.err
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
