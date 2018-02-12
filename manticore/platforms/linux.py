@@ -150,10 +150,10 @@ class Directory(File):
         return 0
 
     def write(self, buf):
-        return FdErrno("Is a directory", errno.EBADF)
+        raise FdError("Is a directory", errno.EBADF)
 
     def read(self, *args):
-        raise FdError("Is directory", errno.EISDIR)
+        raise FdError("Is a directory", errno.EISDIR)
 
     def close(self, *args):
         return os.close(self.fd)
@@ -1219,7 +1219,7 @@ class Linux(Platform):
             try:
                 write_fd = self._get_fd(fd)
             except FdError as e:
-                logger.error("WRITE: Not valid file descriptor. Returning EFdError %d", fd)
+                logger.error("WRITE: Not valid file descriptor (%d). Returning -%d", fd, e.err)
                 return -e.err
 
             # TODO check count bytes from buf
