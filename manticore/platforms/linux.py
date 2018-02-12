@@ -48,10 +48,11 @@ def mode_from_flags(file_flags):
 
 
 class File(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, path, flags):
         # TODO: assert file is seekable otherwise we should save what was
         # read/write to the state
-        self.file = file(*args,**kwargs)
+        mode = mode_from_flags(flags)
+        self.file = file(path, mode)
 
     def __getstate__(self):
         state = {}
@@ -1167,9 +1168,9 @@ class Linux(Platform):
         if count != 0:
             try:
                 write_fd = self._get_fd(fd)
-            except BadFd:
-                logger.error("WRITE: Not valid file descriptor. Returning EBADFD %d", fd)
-                return -errno.EBADF
+            except FdError as e:
+                logger.error("WRITE: Not valid file descriptor. Returning EFdError %d", fd)
+                return -e.err
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf + count not in cpu.memory:
@@ -2369,7 +2370,7 @@ class SLinux(Linux):
     def _sys_open_get_file(self, filename, flags):
         if filename in self.symbolic_files:
             logger.debug("%s file is considered symbolic", filename)
-            f = SymbolicFile(self.constraints, filename, mode_from_flags(flags))
+            f = SymbolicFile(self.constraints, filename, flags)
         else:
             f = super(SLinux, self)._sys_open_get_file(filename, flags)
 
