@@ -36,3 +36,17 @@ Models
    .. function:: strlen
 
    .. function:: strcmp
+
+EVM
+---
+.. automodule:: manticore.platforms.evm
+.. automodule:: manticore.ethereum
+    :members:
+
+EVM Assembler
+-------------
+.. autoclass:: manticore.platforms.evm::EVMAsm.Instruction
+    :members: 
+.. autoclass:: manticore.platforms.evm.EVMAsm
+    :members: 
+

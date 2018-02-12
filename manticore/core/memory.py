@@ -371,7 +371,6 @@ class COWMap(Map):
 
     def __setitem__(self, index, value):
         assert self._in_range(index)
-        assert self.access_ok('w')
         if isinstance(index, slice):
             for i in xrange(index.stop-index.start):
                 self._cow[index.start+i] = value[i]
@@ -380,7 +379,6 @@ class COWMap(Map):
 
     def __getitem__(self, index):
         assert self._in_range(index)
-        assert self.access_ok('r')
 
         if isinstance(index, slice):
             result = []
@@ -653,7 +651,6 @@ class Memory(object):
             raise MemoryException("Page not mapped", address)
         return self._page2map[page_offset]
 
-
     def mappings(self):
         '''
         Returns a sorted list of all the mappings for this memory.
@@ -689,7 +686,6 @@ class Memory(object):
                 m = self._page2map[self._page(addr)]
                 yield m
                 addr = m.end
-
 
     def munmap(self, start, size):
         '''
@@ -736,7 +732,6 @@ class Memory(object):
             if tail:
                 self._add(tail)
 
-
     #Permissions
     def __contains__(self, address):
         return self._page(address) in self._page2map
@@ -749,7 +744,7 @@ class Memory(object):
         else:
             return self.map_containing(index).perms
 
-    def access_ok(self, index, access):
+    def access_ok(self, index, access, force=False):
         if isinstance(index, slice):
             assert index.stop - index.start >= 0
             addr = index.start
@@ -757,27 +752,27 @@ class Memory(object):
                 if addr not in self:
                     return False
                 m = self.map_containing(addr)
-                size = min(m.end-addr, index.stop-addr)
 
-                if not m.access_ok(access):
+                if not force and not m.access_ok(access):
                     return False
-                addr += size
+
+                until_next_page = min(m.end-addr, index.stop-addr)
+                addr += until_next_page
             assert addr == index.stop
             return True
         else:
             if index not in self:
                 return False
             m = self.map_containing(index)
-            return m.access_ok(access)
+            return force or m.access_ok(access)
 
     #write and read potentially symbolic bytes at symbolic indexes
-    def read(self, addr, size):
-        if not self.access_ok(slice(addr, addr+size), 'r'):
+    def read(self, addr, size, force=False):
+        if not self.access_ok(slice(addr, addr+size), 'r', force):
             raise InvalidMemoryAccess(addr, 'r')
 
         assert size > 0
         result = []
-        start = addr
         stop = addr+size
         p = addr
         while p < stop:
@@ -824,9 +819,9 @@ class Memory(object):
             self._recording_stack[-1].extend(lst)
         return lst
 
-    def write(self, addr, buf):
+    def write(self, addr, buf, force=False):
         size = len(buf)
-        if not self.access_ok(slice(addr, addr + size), 'w'):
+        if not self.access_ok(slice(addr, addr + size), 'w', force):
             raise InvalidMemoryAccess(addr, 'w')
         assert size > 0
         stop = addr + size
@@ -917,13 +912,14 @@ class SMemory(Memory):
                 del self._symbols[addr]
         super(SMemory, self).munmap(start,size)
 
-    def read(self, address, size):
+    def read(self, address, size, force=False):
         '''
         Read a stream of potentially symbolic bytes from a potentially symbolic
         address
 
         :param address: Where to read from
         :param size: How many bytes
+        :param force: Whether to ignore permissions
         :rtype: list
         '''
         size = self._get_size(size)
@@ -933,11 +929,13 @@ class SMemory(Memory):
             assert solver.check(self.constraints)
             logger.debug('Reading %d bytes from symbolic address %s', size, address)
             try:
-                solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
+                solutions = self._try_get_solutions(address, size, 'r', force=force)
+                assert len(solutions) > 0
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
                 logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
 
+                # The force param shouldn't affect this, as this is checking for unmapped reads, not bad perms
                 crashing_condition = True
                 for start, end, perms, offset, name  in self.mappings():
                     if start <= M+size and end >= m :
@@ -957,16 +955,6 @@ class SMemory(Memory):
                 raise ForkState("Forking state on incomplete result", condition)
 
             #So here we have all potential solutions to address
-            assert len(solutions) > 0
-
-
-            crashing_condition = False
-            for base in solutions:
-                if any(not self.access_ok(i, 'r') for i in xrange(base, base + size, self.page_size)):
-                    crashing_condition = Operators.OR(address == base, crashing_condition)
-
-            if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess(address, 'r', size, crashing_condition)
 
             condition = False
             for base in solutions:
@@ -989,7 +977,7 @@ class SMemory(Memory):
                     assert len(result) == offset+1
             return map(Operators.CHR, result)
         else:
-            result = map(Operators.ORD, super(SMemory, self).read(address, size))
+            result = map(Operators.ORD, super(SMemory, self).read(address, size, force))
             for offset in range(size):
                 if address+offset in self._symbols:
                     for condition, value in self._symbols[address+offset]:
@@ -999,44 +987,62 @@ class SMemory(Memory):
                             result[offset] = Operators.ITEBV(8, condition, Operators.ORD(value), result[offset])
             return map(Operators.CHR, result)
 
-    def write(self, address, value):
+    def write(self, address, value, force=False):
         '''
         Write a value at address.
         :param address: The address at which to write
         :type address: int or long or Expression
         :param value: Bytes to write
         :type value: str or list
+        :param force: Whether to ignore permissions
         '''
         size = len(value)
         if issymbolic(address):
 
-            solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
-
-            crashing_condition = False
-            for base in solutions:
-                if any(not self.access_ok(i, 'w') for i in xrange(base, base + size, self.page_size)):
-                    crashing_condition = Operators.OR(address == base, crashing_condition)
-
-            if solver.can_be_true(self.constraints, crashing_condition):
-                raise InvalidSymbolicMemoryAccess(address, 'w', size, crashing_condition)
+            solutions = self._try_get_solutions(address, size, 'w', force=force)
 
             for offset in xrange(size):
                 for base in solutions:
                     condition = base == address
                     self._symbols.setdefault(base+offset, []).append((condition, value[offset]))
-
         else:
 
             for offset in xrange(size):
                 if issymbolic(value[offset]):
-                    if not self.access_ok(address+offset, 'w'):
+                    if not self.access_ok(address+offset, 'w', force):
                         raise InvalidMemoryAccess(address+offset, 'w')
                     self._symbols[address+offset] = [(True, value[offset])]
                 else:
                     # overwrite all previous items
                     if address+offset in self._symbols:
                         del self._symbols[address+offset]
-                    super(SMemory, self).write(address+offset, [value[offset]])
+                    super(SMemory, self).write(address+offset, [value[offset]], force)
+
+    def _try_get_solutions(self, address, size, access, max_solutions=0x1000, force=False):
+        '''
+        Try to solve for a symbolic address, checking permissions when reading/writing size bytes.
+
+        :param Expression address: The address to solve for
+        :param int size: How many bytes to check permissions for
+        :param str access: 'r' or 'w'
+        :param int max_solutions: Will raise if more solutions are found
+        :param force: Whether to ignore permission failure
+        :rtype: list
+        '''
+        assert issymbolic(address)
+
+        solutions = solver.get_all_values(self.constraints, address, maxcnt=max_solutions)
+
+        crashing_condition = False
+        for base in solutions:
+            if not self.access_ok(slice(base,base+size), access, force):
+                crashing_condition = Operators.OR(address == base, crashing_condition)
+
+        if solver.can_be_true(self.constraints, crashing_condition):
+            raise InvalidSymbolicMemoryAccess(address, access, size, crashing_condition)
+
+        return solutions
+
 
 
 class Memory32(Memory):

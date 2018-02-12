@@ -1,20 +1,31 @@
 import sys
-import argparse
 import logging
-from manticore import Manticore, log, make_initial_state
+import argparse
+
+from . import Manticore
+from .utils import log
+
+# XXX(yan): This would normally be __name__, but then logger output will be pre-
+# pended by 'm.__main__: ', which is not very pleasing. hard-coding to 'main'
+logger = logging.getLogger('manticore.main')
 
 sys.setrecursionlimit(10000)
 
+
 def parse_arguments():
-    ###########################################################################
-    # parse arguments
-    parser = argparse.ArgumentParser(description='Symbolically analyze a program')
+    def positive(value):
+        ivalue = int(value)
+        if ivalue <= 0:
+            raise argparse.ArgumentTypeError("Argument must be positive")
+        return ivalue
+
+    parser = argparse.ArgumentParser(description='Symbolic execution tool')
     parser.add_argument('--assertions', type=str, default=None,
-                        help='File with additional assertions')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--buffer', type=str,
-                        help='Specify buffer to make symbolic')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--context', type=str, default=None,
-                        help='path to file with additional context')
+                        help=argparse.SUPPRESS)
     parser.add_argument('--coverage', type=str, default=None,
                         help='where to write the coverage data')
     parser.add_argument('--data', type=str, default='',
@@ -28,10 +39,9 @@ def parse_arguments():
     parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
-                        help=("File with function addresses to replace "
-                              "with known models"))
+                        help=argparse.SUPPRESS)
     parser.add_argument('--offset', type=int, default=16,
-                        help='Buffer header size to leave concrete')
+                        help=argparse.SUPPRESS)
     # FIXME (theo) Add some documentation on the different search policy options
     parser.add_argument('--policy', type=str, default='random',
                         help=("Search policy. random|adhoc|uncovered|dicount"
@@ -43,9 +53,6 @@ def parse_arguments():
                         help='Number of parallel processes to spawn')
     parser.add_argument('argv', type=str, nargs='+',
                         help="Path to program, and arguments ('+' in arguments indicates symbolic byte).")
-    parser.add_argument('--replay', type=str, default=None,
-                        help='The trace filename to replay')
-    parser.add_argument('--size', type=str, help='Specify buffer full size')
     parser.add_argument('--timeout', type=int, default=0,
                         help='Timeout. Abort exploration aftr TIMEOUT seconds')
     parser.add_argument('-v', action='count', default=1,
@@ -53,8 +60,12 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.1.5',
+    parser.add_argument('--version', action='version', version='Manticore 0.1.6',
                          help='Show program version information')
+    parser.add_argument('--txlimit', type=positive,
+                        help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
+    parser.add_argument('--contract', type=str,
+                        help='Contract name to analyze in case of multiple ones (Ethereum only)')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
@@ -67,12 +78,34 @@ def parse_arguments():
 
     return parsed
 
+
+def ethereum_cli(args):
+    from ethereum import ManticoreEVM, IntegerOverflow, UnitializedStorage, UnitializedMemory
+    log.init_logging()
+
+    m = ManticoreEVM(procs=args.procs)
+
+    ################ Default? Detectors #######################
+    m.register_detector(IntegerOverflow())
+    m.register_detector(UnitializedStorage())
+    m.register_detector(UnitializedMemory())
+
+    logger.info("Beginning analysis")
+
+    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit)
+
 def main():
+    log.init_logging()
     args = parse_arguments()
 
-    env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
-
     Manticore.verbosity(args.v)
+
+    # TODO(mark): Temporarily hack ethereum support into manticore cli
+    if args.argv[0].endswith('.sol'):
+        ethereum_cli(args)
+        return
+
+    env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
 

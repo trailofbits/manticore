@@ -194,7 +194,7 @@ class State(Eventful):
         :param int nbytes: Length of the new buffer
         :param str label: (keyword arg only) The label to assign to the buffer
         :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
-                 (i.e. no \0 bytes, except for the last byte). (bool)
+                 (i.e. no NULL bytes, except for the last byte). (bool)
         :param taint: Taint identifier of the new buffer
         :type taint: tuple or frozenset
 
@@ -234,7 +234,7 @@ class State(Eventful):
                 this is the identity function on the first argument.
         :param str label: The label to assign to the value
         :param str wildcard: The byte that is considered a wildcard
-        :param bool string: Ensure bytes returned can not be \0
+        :param bool string: Ensure bytes returned can not be NULL
         :param taint: Taint identifier of the symbolicated data
         :type taint: tuple or frozenset
 
@@ -296,6 +296,10 @@ class State(Eventful):
     def _solver(self):
         from .smtlib import solver
         return solver
+
+
+    def can_be_true(self, expr):
+        return self._solver.can_be_true(self._constraints, expr)
 
     def solve_one(self, expr):
         '''
