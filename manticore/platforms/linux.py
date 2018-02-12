@@ -1077,6 +1077,8 @@ class Linux(Platform):
         :param fd: the file descriptor to close.
         :return: C{0} on success.
         '''
+        assert fd in self.files
+        self.files[fd].close()
         self.files[fd] = None
 
     def _dup(self, fd):
