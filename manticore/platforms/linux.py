@@ -116,6 +116,52 @@ class File(object):
         '''
         return
 
+class Directory(File):
+    def __init__(self, path, flags):
+        assert(os.path.isdir(path))
+
+        self.fd = os.open(path, flags)
+        self.path = path
+        self.flags = flags
+
+    def __getstate__(self):
+        state = {}
+        state['path'] = self.path
+        state['flags'] = self.flags
+        return state
+
+    def __setstate__(self, state):
+        self.path = state['path']
+        self.flags = state['flags']
+        self.fd = os.open(self.path, self.flags)
+
+    @property
+    def name(self):
+        return self.path
+
+    @property
+    def mode(self):
+        return mode_from_flags(self.flags)
+
+    def tell(self, *args):
+        return 0
+
+    def seek(self, *args):
+        return 0
+
+    def write(self, buf):
+        return FdErrno("Is a directory", errno.EBADF)
+
+    def read(self, *args):
+        raise FdError("Is directory", errno.EISDIR)
+
+    def close(self, *args):
+        return os.close(self.fd)
+
+    def fileno(self, *args):
+        return self.fd
+
+
 class SymbolicFile(File):
     '''
     Represents a symbolic file.
@@ -992,6 +1038,14 @@ class Linux(Platform):
             'AT_EXECFN' : at_execfn,                    # Filename of executable.
         }
 
+    def _to_signed_dword(self, dword):
+        if self.current.address_bit_size == 32:
+            sdword = ctypes.c_int32(dword).value
+        else:
+            sdword = ctypes.c_int64(dword).value
+        return sdword
+
+
     def _open(self, f):
         '''
         Adds a file descriptor to the current file descriptor list
@@ -1116,11 +1170,7 @@ class Linux(Platform):
         :return: 0 (Success), or EBADF (fd is not a valid file descriptor or is not open)
 
         '''
-        if self.current.address_bit_size == 32:
-            signed_offset = ctypes.c_int32(offset).value
-        else:
-            signed_offset = ctypes.c_int64(offset).value
-
+        signed_offset = self._to_signed_dword(offset)
         try:
             self._get_fd(fd).seek(signed_offset, whence)
         except FdError as e:
@@ -1291,7 +1341,16 @@ class Linux(Platform):
             return -errno.EINVAL
 
     def _sys_open_get_file(self, filename, flags):
-        f = File(filename, mode_from_flags(flags))
+        # TODO(yan): Remove this special case
+        if os.path.abspath(filename).startswith('/proc/self'):
+            if filename == '/proc/self/exe':
+                filename = os.path.abspath(self.program)
+
+        if os.path.isdir(filename):
+            f = Directory(filename, flags)
+        else:
+            f = File(filename, flags)
+
         return f
 
     def sys_open(self, buf, flags, mode):
@@ -1302,12 +1361,6 @@ class Linux(Platform):
         '''
         filename = self.current.read_string(buf)
         try:
-            if os.path.abspath(filename).startswith('/proc/self'):
-                if filename == '/proc/self/exe':
-                    filename = os.path.abspath(self.program)
-                else:
-                    logger.info("FIXME!")
-
             f = self._sys_open_get_file(filename, flags)
             logger.debug("Opening file %s for real fd %d",
                          filename, f.fileno())
@@ -1330,26 +1383,37 @@ class Linux(Platform):
         '''
 
         filename = self.current.read_string(buf)
-
+        
         if os.path.isabs(filename):
             return self.sys_open(buf, flags, mode)
 
+        dirfd = self._to_signed_dword(dirfd)
         if dirfd == self.FCNTL_FDCWD:
-            return self.sys_open(buf, flags, mode)
-
-        try:
-            directory_file_descriptor = self._get_fd(dirfd)
-        except BadFd:
-            logger.info("OPENAT: Not valid file descriptor. Returning EBADF")
-            return -errno.EBADF
-
-        if os.path.isdir(directory_file_descriptor.name):
-            buf = os.path.relpath(buf,directory_file_descriptor.name)
-            return self.sys_open(buf, flags, mode)
+            dir_path = os.path.curdir
         else:
-            logger.info("OPENAT: Not directory descriptor. Returning ENOTDIR")
-            return -errno.ENOTDIR
- 
+            try:
+                dir_entry = self._get_fd(dirfd)
+            except FdError as e:
+                logger.info("openat: Not valid file descriptor. Returning EBADF")
+                return -e.err
+
+            if not isinstance(dir_entry, Directory):
+                logger.info("openat: Not directory descriptor. Returning ENOTDIR")
+                return -errno.ENOTDIR
+
+            dir_path = dir_entry.name
+
+        filename = os.path.join(dir_path, filename)
+        try:
+            f = self._sys_open_get_file(filename, flags)
+            logger.debug("Opening file %s for real fd %d", filename, f.fileno())
+        except IOError as e:
+            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            return -e.errno if e.errno else -errno.EINVAL
+
+        return self._open(f)
+
+            
     def sys_rename(self, oldnamep, newnamep):
         '''
         Rename filename `oldnamep` to `newnamep`.
@@ -2109,7 +2173,7 @@ class Linux(Platform):
         try:
             stat = self._get_fd(fd).stat()
         except FdError as e:
-            logger.info("Calling fstat with invalid fd, returning EBADF")
+            logger.info("Calling fstat with invalid fd")
             return -e.err
 
         def add(width, val):
@@ -2154,7 +2218,7 @@ class Linux(Platform):
         try:
             stat = self._get_fd(fd).stat()
         except FdError as e:
-            logger.info("Calling fstat with invalid fd")
+            logger.info("Calling fstat with invalid fd, returning EBADF")
             return -e.err
 
         def add(width, val):
@@ -2515,12 +2579,16 @@ class SLinux(Linux):
         '''
 
         if issymbolic(buf):
-            logger.debug("Ask to generate random to a symbolic buffer")
+            logger.debug("sys_getrandom: Asked to generate random to a symbolic buffer address")
             raise ConcretizeArgument(self, 0)
 
         if issymbolic(size):
-            logger.debug("Ask to generate random of symbolic number of bytes ")
+            logger.debug("sys_getrandom: Asked to generate random of symbolic number of bytes")
             raise ConcretizeArgument(self, 1)
+
+        if issymbolic(flags):
+            logger.debug("sys_getrandom: Passed symbolic flags")
+            raise ConcretizeArgument(self, 2)
 
         return super(SLinux, self).sys_getrandom(buf, size, flags)
 
