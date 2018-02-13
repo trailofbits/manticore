@@ -10,6 +10,7 @@ Manticore is a symbolic execution tool for analysis of binaries and smart contra
    :caption: Contents:
 
    api
+   syminput
    models
    gotchas
 
