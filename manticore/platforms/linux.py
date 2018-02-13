@@ -376,10 +376,6 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
-        # Setting this to True would cause sys_getrandom() to return bytes from the host's
-        # entropy pool; currently, just fill the requested buffer with zeroes to maintain
-        # determinism.
-        self._true_random = False
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -1077,9 +1073,11 @@ class Linux(Platform):
         :param fd: the file descriptor to close.
         :return: C{0} on success.
         '''
-        assert fd in self.files
-        self.files[fd].close()
-        self.files[fd] = None
+        try:
+            self.files[fd].close()
+            self.files[fd] = None
+        except IndexError:
+            raise FdError("Bad file descriptor ({})".format(fd))
 
     def _dup(self, fd):
         '''
@@ -1395,25 +1393,22 @@ class Linux(Platform):
         '''
 
         filename = self.current.read_string(buf)
+        dirfd = self._to_signed_dword(dirfd)
         
-        if os.path.isabs(filename):
+        if os.path.isabs(filename) or dirfd == self.FCNTL_FDCWD:
             return self.sys_open(buf, flags, mode)
 
-        dirfd = self._to_signed_dword(dirfd)
-        if dirfd == self.FCNTL_FDCWD:
-            dir_path = os.path.curdir
-        else:
-            try:
-                dir_entry = self._get_fd(dirfd)
-            except FdError as e:
-                logger.info("openat: Not valid file descriptor. Returning EBADF")
-                return -e.err
+        try:
+            dir_entry = self._get_fd(dirfd)
+        except FdError as e:
+            logger.info("openat: Not valid file descriptor. Returning EBADF")
+            return -e.err
 
-            if not isinstance(dir_entry, Directory):
-                logger.info("openat: Not directory descriptor. Returning ENOTDIR")
-                return -errno.ENOTDIR
+        if not isinstance(dir_entry, Directory):
+            logger.info("openat: Not directory descriptor. Returning ENOTDIR")
+            return -errno.ENOTDIR
 
-            dir_path = dir_entry.name
+        dir_path = dir_entry.name
 
         filename = os.path.join(dir_path, filename)
         try:
@@ -1530,7 +1525,7 @@ class Linux(Platform):
             return -errno.EBADF
           
         if  self._is_fd_open(newfd):
-            self.sys_close(newfd)
+            self._close(newfd)
         
         if newfd >= len(self.files):
             self.files.extend([None]*(newfd+1-len(self.files)))
@@ -1546,8 +1541,10 @@ class Linux(Platform):
         :param fd: the file descriptor to close.
         :return: C{0} on success.
         '''
-        if fd > 0 :
+        if self._is_fd_open(fd)
             self._close(fd)
+        else:
+            return -errno.EBADF
         logger.debug('sys_close(%d)', fd)
         return 0
 
@@ -1622,12 +1619,12 @@ class Linux(Platform):
             address = None
 
         cpu = self.current
-        if flags & 0x10 != 0:
+        if flags & 0x10:
             cpu.memory.munmap(address,size)
 
         perms = perms_from_protflags(prot)
 
-        if flags & 0x20 != 0:
+        if flags & 0x20:
             result = cpu.memory.mmap(address, size, perms)
         elif fd == 0:
             assert offset == 0
@@ -1953,7 +1950,11 @@ class Linux(Platform):
     def sys_getrandom(self, buf, size, flags):
         '''
         The getrandom system call fills the buffer with random bytes of buflen.
-        The source of random (/dev/random or /dev/urandom) is decided based on the flags value.
+        The source of random (/dev/random or /dev/urandom) is decided based on
+        the flags value.
+
+        Manticore's implementation simply fills a buffer with zeroes -- chosing
+        determinism over true randomness.
 
         :param buf: address of buffer to be filled with random bytes
         :param size: number of random bytes
@@ -1971,29 +1972,12 @@ class Linux(Platform):
             logger.info("getrandom: Provided an invalid address. Returning EFAULT")
             return -errno.EFAULT
 
-        if flags & ~(GRND_NONBLOCK|GRND_RANDOM) != 0:
+        if flags & ~(GRND_NONBLOCK|GRND_RANDOM):
             return -errno.EINVAL
 
-        try:
-            if self._true_random:
-                if flags & GRND_RANDOM:
-                    with open('/dev/random', 'rb') as rnd:
-                        data = rnd.read(size)
-                else:
-                    data = os.urandom(size)
-            else:
-                data = '\x00' * size
-        except (NotImplementedError, IOError): # NIE can be raised from os.urandom()
-            if flags & GRND_NONBLOCK:
-                logger.info("GETRANDOM: Entropy Pool Initialization Error. Returning EAGAIN")
-                return -errno.EAGAIN
-            else:
-                logger.info("GETRANDOM: Call interrupted by signal handler. Returning EINTR")
-                return -errno.EINTR
+        self.current.write_bytes(buf, '\x00' * size)
 
-        self.current.write_bytes(buf, data)
-
-        return len(data)
+        return size
 
     #Distpatchers...
     def syscall(self):
