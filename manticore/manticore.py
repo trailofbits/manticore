@@ -151,7 +151,7 @@ class Manticore(Eventful):
                 ws_path = workspace_url
         else:
             if workspace_url is not None:
-                raise Exception('Invalid workspace')
+                raise Exception('Invalid workspace_url')
             ws_path = None
 
 
