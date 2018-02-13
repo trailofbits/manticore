@@ -14,7 +14,7 @@ Manticore
 ---------
 
 .. autoclass:: manticore.Manticore
-   :members: add_hook, hook, run, terminate, verbosity, locked_context, linux, decree, evm
+   :members: add_hook, hook, run, terminate, verbosity, locked_context, linux, decree, evm, init
 
 State
 -----

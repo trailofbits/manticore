@@ -19,18 +19,19 @@ Symbolic arguments/environment
 To provide a symbolic argument or environment variable on the Manticore command line,
 use the wildcard byte where arguments and environment are specified.::
 
-    $ manticore binary +++++ +++++
-    $ manticore binary --env VAR1=+++++ --env VAR2=++++++
+    $ manticore ./binary +++++ +++++
+    $ manticore ./binary --env VAR1=+++++ --env VAR2=++++++
 
-For API use, use the ``argv`` and ``envp`` arguments to the ``Manticore.linux`` classmethod.::
+For API use, use the ``argv`` and ``envp`` arguments to the :meth:`manticore.Manticore.linux` classmethod.::
 
-    Manticore.linux('binary', ['++++++', '++++++'], dict(VAR1='+++++', VAR2='++++++'))
+    Manticore.linux('./binary', ['++++++', '++++++'], dict(VAR1='+++++', VAR2='++++++'))
 
 Symbolic stdin
 --------------
 
 Manticore by default is configured with 256 of symbolic stdin data, after an optional
-concrete data prefix, which can be provided with the ``concrete_data`` kwarg.
+concrete data prefix, which can be provided with the ``concrete_start`` kwarg of
+:meth:`manticore.Manticore.linux`.
 
 Symbolic file input
 -------------------
@@ -41,15 +42,14 @@ to be.
 
 For command line use, invoke Manticore with the ``--file`` argument.::
 
-    $ manticore binary --file my_symbolic_file1.txt --file my_symbolic_file2.txt
+    $ manticore ./binary --file my_symbolic_file1.txt --file my_symbolic_file2.txt
 
 For API use, use the ``SLinux.add_symbolic_file`` interface to customize the initial
-execution state from an ``init`` hook.::
+execution state from an :meth:`~manticore.Manticore.init` ``init`` hook.::
 
     @m.init
     def init(initial_state):
         initial_state.platform.add_symbolic_file('my_symbolic_file1.txt')
-
 
 Symbolic sockets
 ----------------
