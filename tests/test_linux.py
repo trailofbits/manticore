@@ -1,7 +1,12 @@
 import os
+import shutil
+import tempfile
 import unittest
 
 from manticore.platforms import linux, linux_syscalls
+from manticore.core.smtlib import *
+from manticore.core.smtlib import *
+from manticore.core.cpu.abstractcpu import ConcretizeRegister
 
 
 class LinuxTest(unittest.TestCase):
@@ -128,3 +133,54 @@ class LinuxTest(unittest.TestCase):
 
         self.assertEquals(pre_icount+1, post_icount)
         self.assertEquals(r.nevents, 2)
+
+    def _create_openat_state(self):
+        nr_openat = 322
+
+        # Create a minimal state
+        model = self.symbolic_linux
+        model.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        model.current.SP = 0x2000-4
+
+        dir_path = tempfile.mkdtemp()
+        file_name = "file"
+        file_path = os.path.join(dir_path, file_name)
+        with open(file_path, 'w') as f:
+            f.write('test')
+
+        # open a file + directory
+        dirname = model.current.push_bytes(dir_path+'\x00')
+        dirfd = model.sys_open(dirname, os.O_RDONLY, 0700)
+        filename = model.current.push_bytes(file_name+'\x00')
+
+        stat = model.current.SP - 0x100
+        model.current.R0 = dirfd
+        model.current.R1 = filename
+        model.current.R2 = os.O_RDONLY
+        model.current.R3 = 0700
+        model.current.R7 = nr_openat
+        self.assertEquals(linux_syscalls.armv7[nr_openat], 'sys_openat')
+
+        return model
+
+    def test_syscall_openat_concrete(self):
+        model = self._create_openat_state()
+
+        model.syscall()
+
+        self.assertGreater(model.current.R0, 2)
+
+    def test_syscall_openat_symbolic(self):
+        model = self._create_openat_state()
+
+        model.current.R0 = BitVecVariable(32, 'fd')
+
+        with self.assertRaises(ConcretizeRegister) as cm:
+            model.syscall()
+
+        e = cm.exception
+
+        _min, _max = solver.minmax(model.constraints, e.cpu.read_register(e.reg_name))
+        self.assertLess(_min, len(model.files))
+        self.assertGreater(_max, len(model.files)-1)
+
