@@ -8,15 +8,15 @@ Wildcard byte
 -------------
 
 Throughout these various interfaces, the '+' character is defined to designate a byte
-of input as symbolic. This allows the user to make input partially symbolic, and partially
-concrete (e.g. known file magic bytes).::
+of input as symbolic. This allows the user to make input that mixes symbolic and concrete
+bytes (e.g. known file magic bytes).::
 
 For example: "concretedata++++++++moreconcretedata++++++++++"
 
 Symbolic arguments/environment
 ------------------------------
 
-To provide a symbolic argument or environment variable on the Manticore command line,
+To provide a symbolic argument or environment variable on the command line,
 use the wildcard byte where arguments and environment are specified.::
 
     $ manticore ./binary +++++ +++++
@@ -29,7 +29,7 @@ For API use, use the ``argv`` and ``envp`` arguments to the :meth:`manticore.Man
 Symbolic stdin
 --------------
 
-Manticore by default is configured with 256 of symbolic stdin data, after an optional
+Manticore by default is configured with 256 bytes of symbolic stdin data, after an optional
 concrete data prefix, which can be provided with the ``concrete_start`` kwarg of
 :meth:`manticore.Manticore.linux`.
 
@@ -37,7 +37,7 @@ Symbolic file input
 -------------------
 
 To provide symbolic input from a file, first create the files that will be opened by the
-analyzed program, and filling them with wildcard bytes where you would like symbolic data
+analyzed program, and fill them with wildcard bytes where you would like symbolic data
 to be.
 
 For command line use, invoke Manticore with the ``--file`` argument.::
