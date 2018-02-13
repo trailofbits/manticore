@@ -421,7 +421,7 @@ class Linux(Platform):
             self.elf = ELFFile(open(program, 'rb'))
             # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
             # make things consistent and perhaps utilize a global mapping for this
-            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
+            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7', 'AArch64': 'aarch64'}[self.elf.get_machine_arch()]
 
             self._init_cpu(self.arch)
             self._init_std_fds()
@@ -888,7 +888,7 @@ class Linux(Platform):
         elf = self.elf
         arch = self.arch
         env = dict(var.split('=') for var in env if '=' in var)
-        addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32}[elf.get_machine_arch()]
+        addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32, 'AArch64': 64}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
@@ -910,6 +910,7 @@ class Linux(Platform):
                         interpreter = ELFFile(open(interpreter_path_filename, 'rb'))
                         break
             break
+
         if interpreter is not None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()
             assert interpreter.header.e_type in ['ET_DYN', 'ET_EXEC']
@@ -2405,7 +2406,7 @@ class Linux(Platform):
         return ret
 
     def _arch_specific_init(self):
-        assert self.arch in {'i386', 'amd64', 'armv7'}
+        assert self.arch in {'i386', 'amd64', 'armv7', 'aarch64'}
 
         if self.arch == 'i386':
             self._uname_machine = 'i386'
