@@ -1,10 +1,10 @@
 from ..smtlib import Operators, BitVec, Bool
 
 class Register(object):
-    '''
+    """
     Generic variable width register. For 1 bit registers, allows writes of types
     bool and int, but always reads back bools.
-    '''
+    """
 
     def __init__(self, width):
         self.width = width

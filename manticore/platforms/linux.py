@@ -382,11 +382,11 @@ class Linux(Platform):
             self.RLIMIT_NOFILE: (256, 1024)
         }
 
-        if program != None:
+        if program is not None:
             self.elf = ELFFile(file(program))
             # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
             # make things consistent and perhaps utilize a global mapping for this
-            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
+            self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7', 'AArch64': 'aarch64'}[self.elf.get_machine_arch()]
 
             self._init_cpu(self.arch)
             self._init_std_fds()
@@ -790,9 +790,8 @@ class Linux(Platform):
         #ARGC
         cpu.push_int(len(argvlst))
 
-
     def load(self, filename):
-        '''
+        """
         Loads and an ELF program in memory and prepares the initial CPU state.
         Creates the stack and loads the environment variables and the arguments in it.
 
@@ -801,39 +800,41 @@ class Linux(Platform):
             - 'Not matching cpu': if the program is compiled for a different architecture
             - 'Not matching memory': if the program is compiled for a different address size
         :todo: define va_randomize and read_implies_exec personality
-        '''
-        #load elf See binfmt_elf.c
-        #read the ELF object file
+        """
+        # load elf See binfmt_elf.c
+        # read the ELF object file
         cpu = self.current
         elf = self.elf
         arch = self.arch
-        addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
-        logger.debug("Loading %s as a %s elf",filename, arch)
+        addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32, 'AArch64': 64}[elf.get_machine_arch()]
+        logger.debug("Loading %s as a %s elf", filename, arch)
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
-        #Get interpreter elf
+        # Get interpreter elf
         interpreter = None
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != 'PT_INTERP':
                 continue
-            interpreter_filename = elf_segment.data()[:-1]
-            logger.info('Interpreter filename: %s', interpreter_filename)
-            interpreter = ELFFile(file(interpreter_filename))
+            interpreter_filepath = elf_segment.data()[:-1]
+            logger.info('Interpreter filepath: %s', interpreter_filepath)
+
+            try:
+                interpreter = ELFFile(open(interpreter_filepath, 'rb'))
+            except IOError:
+                logger.debug('No interpreter file: %s', interpreter_filepath)
             break
-        if not interpreter is None:
+
+        if interpreter is not None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()
             assert interpreter.header.e_type in ['ET_DYN', 'ET_EXEC']
 
-        #Stack Executability
+        # Stack Executability
         executable_stack = False
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != 'PT_GNU_STACK':
                 continue
-            if elf_segment.header.p_flags & 0x01:
-                executable_stack = True
-            else:
-                executable_stack = False
+            executable_stack = bool(elf_segment.header.p_flags & 0x01)
             break
 
         base = 0
@@ -847,7 +848,7 @@ class Linux(Platform):
             if elf_segment.header.p_type != 'PT_LOAD':
                 continue
 
-            align = 0x1000 #elf_segment.header.p_align
+            align = 0x1000 # elf_segment.header.p_align
 
             ELF_PAGEOFFSET = elf_segment.header.p_vaddr & (align-1)
 
@@ -875,9 +876,9 @@ class Linux(Platform):
             if load_addr == 0 :
                 load_addr = base + vaddr
 
-            k = base + vaddr + filesz;
+            k = base + vaddr + filesz
             if k > elf_bss :
-                elf_bss = k;
+                elf_bss = k
             if (flags & 4) and end_code < k: #PF_X
                 end_code = k
             if end_data < k:
@@ -891,7 +892,6 @@ class Linux(Platform):
             elf_entry += load_addr
         entry = elf_entry
         real_elf_brk = elf_brk
-
 
         # We need to explicitly clear bss, as fractional pages will have data from the file
         bytes_to_clear = elf_brk - elf_bss
@@ -910,7 +910,7 @@ class Linux(Platform):
         stack = cpu.memory.mmap(stack_base, stack_size, 'rwx', name='stack') + stack_size
         assert stack_top == stack
 
-        reserved = cpu.memory.mmap(base+vaddr+memsz,0x1000000, '   ')
+        reserved = cpu.memory.mmap(base+vaddr+memsz, 0x1000000, '   ')
         interpreter_base = 0
         if interpreter is not None:
             base = 0
@@ -922,7 +922,7 @@ class Linux(Platform):
             for elf_segment in interpreter.iter_segments():
                 if elf_segment.header.p_type != 'PT_LOAD':
                     continue
-                align = 0x1000#elf_segment.header.p_align
+                align = 0x1000  # elf_segment.header.p_align
                 vaddr = elf_segment.header.p_vaddr
                 filesz = elf_segment.header.p_filesz
                 flags = elf_segment.header.p_flags
@@ -952,10 +952,10 @@ class Linux(Platform):
                 base -= vaddr
                 logger.debug("Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %(offset, base+vaddr, base+vaddr+memsz, (flags&1 and 'r' or ' '), (flags&2 and 'w' or ' '), (flags&4 and 'x' or ' ')))
 
-                k = base + vaddr + filesz;
+                k = base + vaddr + filesz
                 if k > elf_bss:
                     elf_bss = k
-                if (flags & 4) and end_code < k: #PF_X
+                if (flags & 4) and end_code < k:  # PF_X
                     end_code = k
                 if end_data < k:
                     end_data = k
@@ -973,12 +973,11 @@ class Linux(Platform):
                         elf_bss, elf_brk, bytes_to_clear)
                 cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
-
-        #free reserved brk space
+        # free reserved brk space
         cpu.memory.munmap(reserved, 0x1000000)
 
-        #load vdso
-        #vdso_addr = load_vdso(addressbitsize)
+        # load vdso
+        # vdso_addr = load_vdso(addressbitsize)
 
         cpu.STACK = stack
         cpu.PC = entry
@@ -2301,7 +2300,7 @@ class Linux(Platform):
         return ret
 
     def _arch_specific_init(self):
-        assert self.arch in {'i386', 'amd64', 'armv7'}
+        assert self.arch in {'i386', 'amd64', 'armv7', 'aarch64'}
 
         if self.arch == 'i386':
             self._uname_machine = 'i386'
