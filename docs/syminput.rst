@@ -44,7 +44,7 @@ For command line use, invoke Manticore with the ``--file`` argument.::
 
     $ manticore ./binary --file my_symbolic_file1.txt --file my_symbolic_file2.txt
 
-For API use, use the ``SLinux.add_symbolic_file`` interface to customize the initial
+For API use, use the :meth:`~manticore.platforms.linux.SLinux.add_symbolic_file` interface to customize the initial
 execution state from an :meth:`~manticore.Manticore.init` ``init`` hook.::
 
     @m.init
