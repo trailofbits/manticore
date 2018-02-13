@@ -1,11 +1,14 @@
 from .x86 import AMD64Cpu, I386Cpu, AMD64LinuxSyscallAbi, I386LinuxSyscallAbi, I386CdeclAbi, SystemVAbi
 from .arm import Armv7Cpu, Armv7CdeclAbi, Armv7LinuxSyscallAbi
+from .aarch64 import Aarch64Cpu
+
 
 class CpuFactory(object):
     _cpus = {
         'i386': I386Cpu,
         'amd64': AMD64Cpu,
         'armv7': Armv7Cpu,
+        'aarch64': Aarch64Cpu
     }
 
     @staticmethod
