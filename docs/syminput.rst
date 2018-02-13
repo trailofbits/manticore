@@ -11,6 +11,8 @@ Throughout these various interfaces, the '+' character is defined to designate a
 of input as symbolic. This allows the user to make input partially symbolic, and partially
 concrete (e.g. known file magic bytes).
 
+For example: "concretedata++++++++moreconcretedata++++++++++"
+
 Symbolic arguments/environment
 ------------------------------
 
@@ -20,6 +22,9 @@ use the wildcard byte where arguments and environment are specified.
     $ manticore binary +++++ +++++
     $ manticore binary --env VAR1=+++++ --env VAR2=++++++
 
+For API use, use the ``argv`` and ``envp`` arguments to the ``Manticore.linux`` classmethod.
+
+    Manticore.linux('binary', ['++++++', '++++++'], dict(VAR1='+++++', VAR2='++++++'))
 
 Symbolic stdin
 --------------
@@ -36,14 +41,14 @@ to be.
 
 For command line use, invoke Manticore with the ``--file`` argument.
 
-    $ manticore binary --file my_symbolic_file.txt
+    $ manticore binary --file my_symbolic_file1.txt --file my_symbolic_file2.txt
 
 For API use, use the ``SLinux.add_symbolic_file`` interface to customize the initial
 execution state from an ``init`` hook.
 
     @m.init
     def init(initial_state):
-        initial_state.platform.add_symbolic_file('my_symbolic_file.txt')
+        initial_state.platform.add_symbolic_file('my_symbolic_file1.txt')
 
 
 Symbolic sockets
