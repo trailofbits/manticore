@@ -1541,7 +1541,7 @@ class Linux(Platform):
         :param fd: the file descriptor to close.
         :return: C{0} on success.
         '''
-        if self._is_fd_open(fd)
+        if self._is_fd_open(fd):
             self._close(fd)
         else:
             return -errno.EBADF
@@ -2561,6 +2561,9 @@ class SLinux(Linux):
 
         if issymbolic(dirfd):
             logger.debug("Ask to read from a symbolic directory file descriptor!!")
+            # Constraint to a valid fd and one past the end of fds
+            self.constraints.add(dirfd >= 0)
+            self.constraints.add(dirfd <= len(self.files))
             raise ConcretizeArgument(self, 0)
 
         if issymbolic(buf):
