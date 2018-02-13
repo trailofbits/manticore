@@ -1212,7 +1212,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('R2'), 2)
 
     def test_flag_state_continuity(self):
-        '''If an instruction only partially updates flags, cpu.setFlags should
+        '''If an instruction only partially updates flags, cpu.set_flags should
         ensure unupdated flags are preserved.
 
         For example:
