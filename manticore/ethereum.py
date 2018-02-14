@@ -662,7 +662,10 @@ class ManticoreEVM(Manticore):
 
     @property
     def all_state_ids(self):
-        ''' IDs of the all states ''' 
+        ''' IDs of the all states 
+
+            Note: state with id -1 is already in memory and it is not backed on the storage
+        ''' 
         return self.running_state_ids + self.terminated_state_ids
 
     @property
@@ -1268,7 +1271,9 @@ class ManticoreEVM(Manticore):
                 
         #delete actual streams from storage
         for state_id in self.all_state_ids:
-            self._executor._workspace.rm_state(state_id)
+            #state_id -1 is always only on memory
+            if state_id != -1:
+                self._executor._workspace.rm_state(state_id)
 
         #clean up lists
         with self.locked_context('seth') as seth_context:
