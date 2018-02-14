@@ -2159,21 +2159,20 @@ class EVMWorld(Platform):
             if self.current is None:
                 raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current.execute()
-        except EVMInstructionException as ex:
-            if isinstance(ex, Create):
-                self.CREATE(ex.value, ex.data)
-            elif isinstance(ex, Call):
-                self.CALL(ex.gas, ex.to, ex.value, ex.data)
-            elif isinstance(ex, Stop):
-                self.STOP()
-            elif isinstance(ex, Return):
-                self.RETURN(ex.data)
-            elif isinstance(ex, Revert):
-                self.REVERT(ex.data)
-            elif isinstance(ex, SelfDestruct):
-                self.SELFDESTRUCT(ex.to)
-            elif isinstance(ex, Sha3):
-                self.HASH(ex.data)
+        except Create as ex:
+            self.CREATE(ex.value, ex.data)
+        except Call as ex:
+            self.CALL(ex.gas, ex.to, ex.value, ex.data)
+        except Stop as ex:
+            self.STOP()
+        except Return as ex:
+            self.RETURN(ex.data)
+        except Revert as ex:
+            self.REVERT(ex.data)
+        except SelfDestruct as ex:
+            self.SELFDESTRUCT(ex.to)
+        except Sha3 as ex:
+            self.HASH(ex.data)
         except EVMException as e:
             self.THROW()
         except Exception:
