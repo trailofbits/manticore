@@ -212,13 +212,26 @@ class Manticore(Eventful):
             if callback is not None:
                 self.subscribe(event_name, callback)
 
-        if logger.isEnabledFor(logging.DEBUG):
-            for callback_name in dir(plugin):
-                if callback_name.endswith('_callback'):
-                    event_name = callback_name[:-9]
-                    if event_name not in all_events:
-                        logger.warning("There is no event name %s for callback on plugin type %s", event_name, type(plugin) )
+        #Safety checks
+        for callback_name in dir(plugin):
+            if callback_name.endswith('_callback'):
+                event_name = callback_name[:-9]
+                if event_name not in all_events:
+                    logger.warning("There is no event named %s for callback on plugin %s", event_name, type(plugin).__name__ )
 
+        for event_name in all_events:
+            for plugin_method_name in dir(plugin):
+                if event_name in plugin_method_name:
+                    if not plugin_method_name.endswith('_callback') :
+                        if plugin_method_name.startswith('on_') or \
+                           plugin_method_name.startswith('will_') or \
+                           plugin_method_name.startswith('did_'):
+                            logger.warning("Plugin methods named '%s()' should end with '_callback' on plugin %s", plugin_method_name, type(plugin).__name__ )
+                    if plugin_method_name.endswith('_callback') and \
+                        not plugin_method_name.startswith('on_') and \
+                        not plugin_method_name.startswith('will_') and \
+                        not plugin_method_name.startswith('did_'):
+                            logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s", plugin_method_name, type(plugin).__name__)
 
 
     def unregister_plugin(self, plugin):

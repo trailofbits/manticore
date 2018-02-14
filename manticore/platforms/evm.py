@@ -44,6 +44,9 @@ class Transaction(object):
         ''' Implements serialization/pickle '''
         return (self.__class__,  (self.sort,  self.address, self.origin, self.price, self.data, self.caller, self.value, self.return_data, self.result))
 
+    def __str__(self):
+        return 'Transaction(%s, from=0x%x, to=0x%x, value=%r, data=%r..)' %(self.sort, self.caller, self.address, self.value, self.data)
+
 class EVMLog():
     def __init__(self, address, memlog, topics):
         self.address = address
@@ -1679,12 +1682,14 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
+        self._publish('will_evm_read_storage', offset)
         value = self.global_storage[self.address]['storage'].get(offset,0)
         self._publish('did_evm_read_storage', offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
+        self._publish('will_evm_write_storage', offset, value)
         self.global_storage[self.address]['storage'][offset] = value
         if value is 0:
             del self.global_storage[self.address]['storage'][offset]
@@ -1893,6 +1898,7 @@ class EVMWorld(Platform):
         self._sha3 = {}
         self._pending_transaction = None
         self._transactions = list()
+        self._internal_transactions = list()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1904,7 +1910,7 @@ class EVMWorld(Platform):
         state['callstack'] = self._callstack
         state['deleted_address'] = self._deleted_address
         state['transactions'] = self._transactions
-
+        state['internal_transactions'] = self._internal_transactions
         return state
 
     def __setstate__(self, state):
@@ -1917,6 +1923,7 @@ class EVMWorld(Platform):
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
         self._transactions = state['transactions']
+        self._internal_transactions = state['internal_transactions']
         self._do_events()
 
     def _do_events(self):
@@ -1948,6 +1955,23 @@ class EVMWorld(Platform):
     @property
     def transactions(self):
         return self._transactions
+
+    @property
+    def internal_transactions(self):
+        number_of_transactions = len(self._transactions)
+        for _ in range( len (self._internal_transactions), number_of_transactions):
+            self._internal_transactions.append([])
+        return self._internal_transactions
+
+    @property
+    def all_transactions(self):
+        txs = []
+        for tx in self._transactions:
+            txs.append(tx)
+            for txi in self.internal_transactions[self._transactions.index(tx)]:
+                txs.append(txi)
+        return txs
+
 
     @property
     def last_return_data(self):
@@ -2318,6 +2342,8 @@ class EVMWorld(Platform):
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
         self._push_vm(new_vm)
 
+
+        tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
         if is_human_tx:
             #handle human transactions
             if ty == 'Create':
@@ -2325,9 +2351,13 @@ class EVMWorld(Platform):
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
-            tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
             self._transactions.append(tx)
- 
+        else:            
+            n = len(self._transactions)
+            if len (self._internal_transactions) < n:
+                self._internal_transactions.append([])
+            self._internal_transactions[n].append(tx)
+
 
     def CALL(self, gas, to, value, data):
         address = to

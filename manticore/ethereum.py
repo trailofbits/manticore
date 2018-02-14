@@ -64,11 +64,11 @@ class IntegerOverflow(Detector):
             if state.can_be_true(arguments[1] > arguments[0]):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
             
-class UnitializedMemory(Detector):
+class UninitializedMemory(Detector):
     '''
         Detects uses of uninitialized memory
     '''
-    def did_evm_read_memory(self, state, offset, value):
+    def did_evm_read_memory_callback(self, state, offset, value):
         if not state.can_be_true(value != 0):
             #Not initialized memory should be zero
             return 
@@ -80,16 +80,16 @@ class UnitializedMemory(Detector):
         if state.can_be_true(cbu):
             self.add_finding(state, "Potentially reading uninitialized memory at instruction")
  
-    def did_evm_write_memory(self, state, offset, value):
+    def did_evm_write_memory_callback(self, state, offset, value):
         #concrete or symbolic write
         state.context.setdefault('seth.detectors.initialized_memory',set()).add(offset)
 
 
-class UnitializedStorage(Detector):
+class UninitializedStorage(Detector):
     '''
         Detects uses of uninitialized storage
     '''
-    def did_evm_read_storage(self, state, offset, value):
+    def did_evm_read_storage_callback(self, state, offset, value):
         if not state.can_be_true(value != 0):
             #Not initialized memory should be zero
             return 
@@ -101,7 +101,7 @@ class UnitializedStorage(Detector):
         if state.can_be_true(cbu):
             self.add_finding(state, "Potentially reading uninitialized storage")
  
-    def did_evm_write_storage(self, state, offset, value):
+    def did_evm_write_storage_callback(self, state, offset, value):
         #concrete or symbolic write
         state.context.setdefault('seth.detectors.initialized_storage',set()).add(offset)
 
