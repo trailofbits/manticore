@@ -2561,7 +2561,7 @@ class SLinux(Linux):
 
         if issymbolic(dirfd):
             logger.debug("Ask to read from a symbolic directory file descriptor!!")
-            # Constraint to a valid fd and one past the end of fds
+            # Constrain to a valid fd and one past the end of fds
             self.constraints.add(dirfd >= 0)
             self.constraints.add(dirfd <= len(self.files))
             raise ConcretizeArgument(self, 0)
