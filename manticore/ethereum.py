@@ -662,7 +662,10 @@ class ManticoreEVM(Manticore):
 
     @property
     def all_state_ids(self):
-        ''' IDs of the all states ''' 
+        ''' IDs of the all states 
+
+            Note: state with id -1 is already in memory and it is not backed on the storage
+        ''' 
         return self.running_state_ids + self.terminated_state_ids
 
     @property
