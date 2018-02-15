@@ -1,21 +1,14 @@
+from functools import wraps
 import logging
 import struct
-import sys
-
-from functools import wraps
-from bitwise import *
 
 import capstone as cs
-# FIXME (theo) wildcard import
-from capstone.arm import *
 
-from .abstractcpu import (
-    Abi, SyscallAbi, Cpu, RegisterFile, Operand, Interruption
-)
-
+from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
 from .abstractcpu import instruction as abstract_instruction
+from .bitwise import *
 from .register import Register
-from ..smtlib import Operators, Expression, BitVecConstant
+from ..smtlib import Operators, BitVecConstant
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -86,9 +79,10 @@ class Armv7Operand(Operand):
         carry = self.cpu.regfile.read('APSR_C')
         if self.type == 'register':
             value = self.cpu.regfile.read(self.reg)
-            # XXX This can be an offset of 8, depending on ARM mode
+            # PC in this case has to be set to the instruction after next. PC at this point
+            # is already pointing to next instruction; we bump it one more.
             if self.reg in ('PC', 'R15'):
-                value += 4
+                value += cpu.instruction.size
             if self.is_shifted():
                 shift = self.op.shift
                 value, carry = self.cpu._Shift(value, shift.type, shift.value, carry)
@@ -129,8 +123,7 @@ class Armv7Operand(Operand):
         elif self.type == 'memory':
             self.cpu.regfile.write(self.mem.base, value)
         else:
-            raise NotImplementedError("writeback Operand unknown type",
-                                      self.op.type)
+            raise NotImplementedError("writeback Operand unknown type", self.op.type)
 
     def is_shifted(self):
         return self.op.shift.type != cs.arm.ARM_SFT_INVALID
@@ -160,10 +153,26 @@ class Armv7Operand(Operand):
 
         base = self.cpu.regfile.read(self.mem.base)
 
-        # If pc is the base, we need to correct for the fact that the ARM
-        # spec defines PC to point to the current insn + 8, which we are not
-        # compliant with (we do current insn + 4)
-        return base+4 if self.mem.base in ('PC', 'R15')  else base
+        # PC relative addressing is fun in ARM:
+        # In ARM mode, the spec defines the base value as current insn + 8
+        # In thumb mode, the spec defines the base value as ALIGN(current insn address) + 4,
+        # where ALIGN(current insn address) => <current insn address> & 0xFFFFFFFC
+        #
+        # Regardless of mode, our implementation of read(PC) will return the address
+        # of the instruction following the next instruction.
+        if self.mem.base in ('PC', 'R15'):
+            if self.cpu.mode == cs.CS_MODE_ARM:
+                logger.debug("ARM mode PC relative addressing: PC + offset: 0x{:x} + 0x{:x}".format(base, 4))
+                return base + 4
+            else:
+                #base currently has the value PC + len(current_instruction)
+                #we need (PC & 0xFFFFFFFC) + 4
+                #thus:
+                new_base = (base - self.cpu.instruction.size) & 0xFFFFFFFC
+                logger.debug("THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{:x} + 0x{:x}".format(new_base, 4))
+                return new_base + 4
+        else:
+            return base
 
     def _getExpandImmCarry(self, carryIn):
         '''Manually compute the carry bit produced by expanding an immediate
@@ -322,19 +331,22 @@ class Armv7Cpu(Cpu):
     max_instr_width = 4
     machine = 'armv7'
     arch = cs.CS_ARCH_ARM
-    mode = cs.CS_MODE_ARM
+    # 'mode' is usually defined here as a class member, but it can change, so
+    # it's an instance property.
 
     def __init__(self, memory):
-        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._it_conditional = list()
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = False
+        self._mode = cs.CS_MODE_ARM
+        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()
         state['_last_flags'] = self._last_flags
         state['at_symbolic_conditional'] = self._at_symbolic_conditional
         state['_it_conditional'] = self._it_conditional
+        state['_mode'] = self._mode
         return state
 
     def __setstate__(self, state):
@@ -342,21 +354,40 @@ class Armv7Cpu(Cpu):
         self._last_flags = state['_last_flags']
         self._at_symbolic_conditional = state['at_symbolic_conditional']
         self._it_conditional = state['_it_conditional']
+        self._mode = state['_mode']
 
-    def _set_mode(self, new_mode):
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, new_mode):
         assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
-        if self.mode != new_mode:
-            logger.debug("swapping into {} mode".format({cs.CS_MODE_ARM:"ARM", cs.CS_MODE_THUMB:"THUMB"}[new_mode]))
-        self.mode = new_mode
+
+        if self._mode != new_mode:
+            logger.debug("swapping into {} mode".format("ARM" if new_mode == cs.CS_MODE_ARM else "THUMB"))
+
+        self._mode = new_mode
         self.disasm.disasm.mode = new_mode
 
+    def _set_mode_by_val(self, val):
+        new_mode = Operators.ITEBV(self.address_bit_size, (val & 0x1) == 0x1, cs.CS_MODE_THUMB, cs.CS_MODE_ARM)
+
+        if issymbolic(new_mode):
+            from ..state import Concretize
+            def set_concrete_mode(state, value):
+                state.cpu.mode = value
+            raise Concretize("Concretizing ARMv7 mode", expression=new_mode, setstate=set_concrete_mode)
+
+        self.mode = new_mode
+
     def _swap_mode(self):
-        #swap from arm to thumb or back
+        'Toggle between ARM and Thumb mode'
         assert self.mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
         if self.mode == cs.CS_MODE_ARM:
-            self._set_mode(cs.CS_MODE_THUMB)
+            self.mode = cs.CS_MODE_THUMB
         else:
-            self._set_mode(cs.CS_MODE_ARM)
+            self.mode = cs.CS_MODE_ARM
 
 
     # Flags that are the result of arithmetic instructions. Unconditionally
@@ -388,7 +419,6 @@ class Armv7Cpu(Cpu):
             flag_name = 'APSR_{}'.format(flag)
             self.regfile.write(flag_name, val)
 
-
     def _Shift(cpu, value, _type, amount, carry):
         assert(_type > cs.arm.ARM_SFT_INVALID and _type <= cs.arm.ARM_SFT_RRX_REG)
 
@@ -398,15 +428,19 @@ class Armv7Cpu(Cpu):
             amount = 1
 
         elif _type in range(cs.arm.ARM_SFT_ASR_REG, cs.arm.ARM_SFT_RRX_REG + 1):
-            amount = cpu.instruction.reg_name(amount).upper()
-            amount = Operators.EXTRACT(cpu.regfile.read(amount), 0, 8)
+            if cpu.mode == cs.CS_MODE_THUMB:
+                src = amount.read()
+            else:
+                src_reg = cpu.instruction.reg_name(amount).upper()
+                src = cpu.regfile.read(src_reg)
+            amount = Operators.EXTRACT(src, 0, 8)
 
         if amount == 0:
             return value, carry
 
         width = cpu.address_bit_size
 
-        if   _type in (cs.arm.ARM_SFT_ASR, cs.arm.ARM_SFT_ASR_REG):
+        if _type in   (cs.arm.ARM_SFT_ASR, cs.arm.ARM_SFT_ASR_REG):
             return ASR_C(value, amount, width)
         elif _type in (cs.arm.ARM_SFT_LSL, cs.arm.ARM_SFT_LSL_REG):
             return LSL_C(value, amount, width)
@@ -418,7 +452,6 @@ class Armv7Cpu(Cpu):
             return RRX_C(value, carry, width)
 
         raise NotImplementedError("Bad shift value")
-
 
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
     def stack_push(self, data, nbytes=None):
@@ -477,7 +510,7 @@ class Armv7Cpu(Cpu):
     def shouldCommitFlags(cpu):
         #workaround for a capstone bug (issue #980);
         #the bug has been fixed the 'master' and 'next' branches of capstone as of 2017-07-31
-        if cpu.instruction.id == ARM_INS_UADD8:
+        if cpu.instruction.id == cs.arm.ARM_INS_UADD8:
             return True
 
         return cpu.instruction.update_flags
@@ -485,7 +518,7 @@ class Armv7Cpu(Cpu):
     def shouldExecuteConditional(cpu):
         #for the IT instuction, the cc applies to the subsequent instructions,
         #so the IT instruction should be executed regardless of its cc
-        if cpu.instruction.id == ARM_INS_IT:
+        if cpu.instruction.id == cs.arm.ARM_INS_IT:
             return True
 
         #support for the it[x[y[z]]] <op> instructions
@@ -740,6 +773,10 @@ class Armv7Cpu(Cpu):
             word = Operators.SEXTEND(mem, width, cpu.address_bit_size)
         else:
             word = Operators.ZEXTEND(mem, cpu.address_bit_size)
+        if dest.reg in ('PC', 'R15'):
+            cpu._set_mode_by_val(word)
+            word &= ~0x1
+            logger.debug("LDR writing 0x{:x} -> PC".format(word))
         dest.write(word)
         cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
 
@@ -791,9 +828,12 @@ class Armv7Cpu(Cpu):
         return result, carry_out, overflow
 
     @instruction
-    def ADC(cpu, dest, op1, op2):
+    def ADC(cpu, dest, op1, op2=None):
         carry = cpu.regfile.read('APSR_C')
-        result, carry, overflow = cpu._ADD(op1.read(), op2.read(), carry)
+        if op2 is not None:
+            result, carry, overflow = cpu._ADD(op1.read(), op2.read(), carry)
+        else:
+            result, carry, overflow = cpu._ADD(dest.read(), op1.read(), carry)
         dest.write(result)
         return result, carry, overflow
 
@@ -828,14 +868,17 @@ class Armv7Cpu(Cpu):
             result, carry, overflow = cpu._ADD(src.read(), ~add.read(), 1)
         else:
             #support for the thumb mode version of sub <dest>, <immediate>
-            result, carry, overflow = cpu._ADD(dest.read(), ~src.read())
+            result, carry, overflow = cpu._ADD(dest.read(), ~src.read(), 1)
         dest.write(result)
         return result, carry, overflow
 
     @instruction
-    def SBC(cpu, dest, src, add):
+    def SBC(cpu, dest, op1, op2=None):
         carry = cpu.regfile.read('APSR_C')
-        result, carry, overflow = cpu._ADD(src.read(), ~add.read(), carry)
+        if op2 is not None:
+            result, carry, overflow = cpu._ADD(op1.read(), ~op2.read(), carry)
+        else:
+            result, carry, overflow = cpu._ADD(dest.read(), ~op1.read(), carry)
         dest.write(result)
         return result, carry, overflow
 
@@ -845,11 +888,9 @@ class Armv7Cpu(Cpu):
 
     @instruction
     def BX(cpu, dest):
-        if dest.read() & 0x1:
-            cpu._set_mode(cs.CS_MODE_THUMB)
-        else:
-            cpu._set_mode(cs.CS_MODE_ARM)
-        cpu.PC = dest.read() & ~1
+        dest_val = dest.read()
+        cpu._set_mode_by_val(dest_val)
+        cpu.PC = dest_val & ~1
 
     @instruction
     def BLE(cpu, dest):
@@ -866,7 +907,10 @@ class Armv7Cpu(Cpu):
     @instruction
     def BL(cpu, label):
         next_instr_addr = cpu.regfile.read('PC')
-        cpu.regfile.write('LR', next_instr_addr)
+        if cpu.mode == cs.CS_MODE_THUMB:
+            cpu.regfile.write('LR', next_instr_addr + 1)
+        else:
+            cpu.regfile.write('LR', next_instr_addr)
         cpu.regfile.write('PC', label.read())
 
     @instruction
@@ -886,10 +930,7 @@ class Armv7Cpu(Cpu):
             logger.debug("swapping mode due to BLX at inst 0x{:x}".format(address))
             cpu._swap_mode()
         elif dest.type=='register':
-            if dest.read() & 0x1:
-                cpu._set_mode(cs.CS_MODE_THUMB)
-            else:
-                cpu._set_mode(cs.CS_MODE_ARM)
+            cpu._set_mode_by_val(dest.read())
 
     @instruction
     def CMP(cpu, reg, compare):
@@ -900,6 +941,9 @@ class Armv7Cpu(Cpu):
     def POP(cpu, *regs):
         for reg in regs:
             val = cpu.stack_pop(cpu.address_bit_size / 8)
+            if reg.reg in ('PC', 'R15'):
+                cpu._set_mode_by_val(val)
+                val = val & ~0x1
             reg.write(val)
 
     @instruction
@@ -1003,20 +1047,32 @@ class Armv7Cpu(Cpu):
         cpu.setFlags(C=carry, N=HighBit(result), Z=(result == 0))
 
     @instruction
-    def ORR(cpu, dest, op1, op2):
-        cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
+    def ORR(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            cpu._bitwise_instruction(lambda x, y: x | y, dest, op1, op2)
+        else:
+            cpu._bitwise_instruction(lambda x, y: x | y, dest, dest, op1)
 
     @instruction
-    def ORN(cpu, dest, op1, op2):
-        cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
+    def ORN(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            cpu._bitwise_instruction(lambda x, y: x | ~y, dest, op1, op2)
+        else:
+            cpu._bitwise_instruction(lambda x, y: x | ~y, dest, dest, op1)
 
     @instruction
-    def EOR(cpu, dest, op1, op2):
-        cpu._bitwise_instruction(lambda x, y: x ^ y, dest, op1, op2)
+    def EOR(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, op1, op2)
+        else:
+            cpu._bitwise_instruction(lambda x, y: x ^ y, dest, dest, op1)
 
     @instruction
-    def AND(cpu, dest, op1, op2):
-        cpu._bitwise_instruction(lambda x, y: x & y, dest, op1, op2)
+    def AND(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            cpu._bitwise_instruction(lambda x, y: x & y, dest, op1, op2)
+        else:
+            cpu._bitwise_instruction(lambda x, y: x & y, dest, dest, op1)
 
     @instruction
     def TEQ(cpu, *operands):
@@ -1041,7 +1097,13 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     def _SR(cpu, insn_id, dest, op, *rest):
-        '''In ARM mode, _SR reg has @rest, but _SR imm does not, its baked into @op.
+        '''
+        Notes on Capstone behavior:
+        - In ARM mode, _SR reg has `rest`, but _SR imm does not, its baked into `op`.
+        - In ARM mode, `lsr r1, r2` will have a `rest[0]`
+        - In Thumb mode, `lsr r1, r2` will have an empty `rest`
+        - In ARM mode, something like `lsr r1, 3` will not have `rest` and op will be
+            the immediate.
         '''
         assert insn_id in (cs.arm.ARM_INS_ASR, cs.arm.ARM_INS_LSL, cs.arm.ARM_INS_LSR)
 
@@ -1068,6 +1130,8 @@ class Armv7Cpu(Cpu):
         elif rest and rest[0].type=='immediate':
             amount = rest[0].read()
             result, carry = cpu._Shift(op.read(), srtype, amount, carry)
+        elif cpu.mode == cs.CS_MODE_THUMB:
+            result, carry = cpu._Shift(dest.read(), srtype, op, carry)
         else:
             result, carry = op.read(withCarry=True)
         dest.write(result)
@@ -1118,8 +1182,11 @@ class Armv7Cpu(Cpu):
         cpu.setFlags(N=HighBit(result), Z=(result==0))
 
     @instruction
-    def BIC(cpu, dest, reg, imm):
-        result = (reg.read() & ~imm.read()) & Mask(cpu.address_bit_size)
+    def BIC(cpu, dest, op1, op2=None):
+        if op2 is not None:
+            result = (op1.read() & ~op2.read()) & Mask(cpu.address_bit_size)
+        else:
+            result = (dest.read() & ~op1.read()) & Mask(cpu.address_bit_size)
         dest.write(result)
         cpu.setFlags(N=HighBit(result), Z=(result==0))
 
