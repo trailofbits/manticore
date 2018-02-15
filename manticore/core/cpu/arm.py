@@ -79,9 +79,10 @@ class Armv7Operand(Operand):
         carry = self.cpu.regfile.read('APSR_C')
         if self.type == 'register':
             value = self.cpu.regfile.read(self.reg)
-            # We set PC to point to the next instruction after the current
+            # PC in this case has to be set to the instruction after next. PC at this point
+            # is already pointing to next instruction; we bump it one more.
             if self.reg in ('PC', 'R15'):
-                value += len(self.cpu.instruction.bytes)
+                value += cpu.instruction.size
             if self.is_shifted():
                 shift = self.op.shift
                 value, carry = self.cpu._Shift(value, shift.type, shift.value, carry)
@@ -154,12 +155,12 @@ class Armv7Operand(Operand):
         base = self.cpu.regfile.read(self.mem.base)
 
         # PC relative addressing is fun in ARM:
-        # In arm mode, the spec defines the base value as current insn + 8
+        # In ARM mode, the spec defines the base value as current insn + 8
         # In thumb mode, the spec defines the base value as ALIGN(current insn address) + 4,
         # where ALIGN(current insn address) => <current insn address> & 0xFFFFFFFC
         #
         # Regardless of mode, our implementation of read(PC) will return the address
-        # of the instruction following the current instruction.
+        # of the instruction following the next instruction.
         if self.mem.base in ('PC', 'R15'):
             if self.cpu.mode == cs.CS_MODE_ARM:
                 logger.debug("ARM mode PC relative addressing: PC + offset: 0x{:x} + 0x{:x}".format(base, 4))
@@ -168,7 +169,7 @@ class Armv7Operand(Operand):
                 #base currently has the value PC + len(current_instruction)
                 #we need (PC & 0xFFFFFFFC) + 4
                 #thus:
-                new_base = (base - len(self.cpu.instruction.bytes)) & 0xFFFFFFFC
+                new_base = (base - self.cpu.instruction.size) & 0xFFFFFFFC
                 logger.debug("THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{:x} + 0x{:x}".format(new_base, 4))
                 return new_base + 4
         else:
