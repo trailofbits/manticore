@@ -1097,7 +1097,13 @@ class Armv7Cpu(Cpu):
         return result, carry, overflow
 
     def _SR(cpu, insn_id, dest, op, *rest):
-        '''In ARM mode, _SR reg has @rest, but _SR imm does not, its baked into @op.
+        '''
+        Notes on Capstone behavior:
+        - In ARM mode, _SR reg has `rest`, but _SR imm does not, its baked into `op`.
+        - In ARM mode, `lsr r1, r2` will have a `rest[0]`
+        - In Thumb mode, `lsr r1, r2` will have an empty `rest`
+        - In ARM mode, something like `lsr r1, 3` will not have `rest` and op will be
+            the immediate.
         '''
         assert insn_id in (cs.arm.ARM_INS_ASR, cs.arm.ARM_INS_LSL, cs.arm.ARM_INS_LSR)
 
@@ -1125,7 +1131,6 @@ class Armv7Cpu(Cpu):
             amount = rest[0].read()
             result, carry = cpu._Shift(op.read(), srtype, amount, carry)
         elif cpu.mode == cs.CS_MODE_THUMB:
-            #lsr r1, r2 is a perfectly valid instruction in thumb mode
             result, carry = cpu._Shift(dest.read(), srtype, op, carry)
         else:
             result, carry = op.read(withCarry=True)
