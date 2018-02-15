@@ -205,7 +205,7 @@ class Armv7CpuInstructions(unittest.TestCase):
             self.mem.write(start, assemble(asm, mode))
         self.rf.write('PC', start)
         self.rf.write('SP', self.stack + 0x1000)
-        self.cpu._set_mode(mode)
+        self.cpu.mode = mode
 
     def _checkFlagsNZCV(self, n, z, c, v):
         self.assertEqual(self.rf.read('APSR_N'), n)

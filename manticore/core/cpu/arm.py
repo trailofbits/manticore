@@ -331,19 +331,22 @@ class Armv7Cpu(Cpu):
     max_instr_width = 4
     machine = 'armv7'
     arch = cs.CS_ARCH_ARM
-    mode = cs.CS_MODE_ARM
+    # 'mode' is usually defined here as a class member, but it can change, so
+    # it's an instance property.
 
     def __init__(self, memory):
-        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
         self._it_conditional = list()
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
         self._at_symbolic_conditional = False
+        self._mode = cs.CS_MODE_ARM
+        super(Armv7Cpu, self).__init__(Armv7RegisterFile(), memory)
 
     def __getstate__(self):
         state = super(Armv7Cpu, self).__getstate__()
         state['_last_flags'] = self._last_flags
         state['at_symbolic_conditional'] = self._at_symbolic_conditional
         state['_it_conditional'] = self._it_conditional
+        state['_mode'] = self._mode
         return state
 
     def __setstate__(self, state):
@@ -351,14 +354,20 @@ class Armv7Cpu(Cpu):
         self._last_flags = state['_last_flags']
         self._at_symbolic_conditional = state['at_symbolic_conditional']
         self._it_conditional = state['_it_conditional']
+        self._mode = state['_mode']
 
-    def _set_mode(self, new_mode):
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, new_mode):
         assert new_mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
 
-        if self.mode != new_mode:
+        if self._mode != new_mode:
             logger.debug("swapping into {} mode".format("ARM" if new_mode == cs.CS_MODE_ARM else "THUMB"))
 
-        self.mode = new_mode
+        self._mode = new_mode
         self.disasm.disasm.mode = new_mode
 
     def _set_mode_by_val(self, val):
@@ -367,18 +376,18 @@ class Armv7Cpu(Cpu):
         if issymbolic(new_mode):
             from ..state import Concretize
             def set_concrete_mode(state, value):
-                state.cpu._set_mode(value)
+                state.cpu.mode = value
             raise Concretize("Concretizing ARMv7 mode", expression=new_mode, setstate=set_concrete_mode)
 
-        self._set_mode(new_mode)
+        self.mode = new_mode
 
     def _swap_mode(self):
-        #swap from arm to thumb or back
+        'Toggle between ARM and Thumb mode'
         assert self.mode in (cs.CS_MODE_ARM, cs.CS_MODE_THUMB)
         if self.mode == cs.CS_MODE_ARM:
-            self._set_mode(cs.CS_MODE_THUMB)
+            self.mode = cs.CS_MODE_THUMB
         else:
-            self._set_mode(cs.CS_MODE_ARM)
+            self.mode = cs.CS_MODE_ARM
 
 
     # Flags that are the result of arithmetic instructions. Unconditionally
