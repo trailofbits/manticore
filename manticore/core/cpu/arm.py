@@ -1,22 +1,14 @@
+from functools import wraps
 import logging
 import struct
-import sys
-
-from functools import wraps
-from bitwise import *
 
 import capstone as cs
-# FIXME (theo) wildcard import
-from capstone.arm import *
 
-from .abstractcpu import (
-    Abi, SyscallAbi, Cpu, RegisterFile, Operand,
-    CpuException, Interruption
-)
-
+from .abstractcpu import Abi, Cpu, Interruption, Operand, RegisterFile, SyscallAbi
 from .abstractcpu import instruction as abstract_instruction
+from .bitwise import *
 from .register import Register
-from ..smtlib import Operators, Expression, BitVecConstant
+from ..smtlib import Operators, BitVecConstant
 from ...utils.helpers import issymbolic
 
 logger = logging.getLogger(__name__)
@@ -537,7 +529,7 @@ class Armv7Cpu(Cpu):
     def shouldCommitFlags(cpu):
         #workaround for a capstone bug (issue #980);
         #the bug has been fixed the 'master' and 'next' branches of capstone as of 2017-07-31
-        if cpu.instruction.id == ARM_INS_UADD8:
+        if cpu.instruction.id == cs.arm.ARM_INS_UADD8:
             return True
 
         return cpu.instruction.update_flags
@@ -545,7 +537,7 @@ class Armv7Cpu(Cpu):
     def shouldExecuteConditional(cpu):
         #for the IT instuction, the cc applies to the subsequent instructions,
         #so the IT instruction should be executed regardless of its cc
-        if cpu.instruction.id == ARM_INS_IT:
+        if cpu.instruction.id == cs.arm.ARM_INS_IT:
             return True
 
         #support for the it[x[y[z]]] <op> instructions
