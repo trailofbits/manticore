@@ -1291,7 +1291,7 @@ class EVM(Eventful):
             arguments.append(current.operand)
 
         for _ in range(current.pops):
-            arguments.append(self._pop())
+            arguments.append(self._pop_vm())
 
         #simplify stack arguments
         for i in range(len(arguments)):
