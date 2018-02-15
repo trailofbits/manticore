@@ -123,8 +123,7 @@ class Armv7Operand(Operand):
         elif self.type == 'memory':
             self.cpu.regfile.write(self.mem.base, value)
         else:
-            raise NotImplementedError("writeback Operand unknown type",
-                                      self.op.type)
+            raise NotImplementedError("writeback Operand unknown type", self.op.type)
 
     def is_shifted(self):
         return self.op.shift.type != cs.arm.ARM_SFT_INVALID
@@ -411,37 +410,6 @@ class Armv7Cpu(Cpu):
             flag_name = 'APSR_{}'.format(flag)
             self.regfile.write(flag_name, val)
 
-    def _Shift_thumb(cpu, value, _type, amount, carry):
-        assert(_type > cs.arm.ARM_SFT_INVALID and _type <= cs.arm.ARM_SFT_RRX_REG)
-
-        # XXX: Capstone should set the value of an RRX shift to 1, which is
-        # asserted in the manual, but it sets it to 0, so we have to check
-        if _type in (cs.arm.ARM_SFT_RRX, cs.arm.ARM_SFT_RRX_REG) and amount != 1:
-            amount = 1
-
-        elif _type in range(cs.arm.ARM_SFT_ASR_REG, cs.arm.ARM_SFT_RRX_REG + 1):
-            amount = Operators.EXTRACT(amount.read(), 0, 8)
-
-        if amount == 0:
-            return value, carry
-
-        width = cpu.address_bit_size
-
-        if   _type in (cs.arm.ARM_SFT_ASR, cs.arm.ARM_SFT_ASR_REG):
-            return ASR_C(value, amount, width)
-        elif _type in (cs.arm.ARM_SFT_LSL, cs.arm.ARM_SFT_LSL_REG):
-            return LSL_C(value, amount, width)
-        elif _type in (cs.arm.ARM_SFT_LSR, cs.arm.ARM_SFT_LSR_REG):
-            return LSR_C(value, amount, width)
-        elif _type in (cs.arm.ARM_SFT_ROR, cs.arm.ARM_SFT_ROR_REG):
-            return ROR_C(value, amount, width)
-        elif _type in (cs.arm.ARM_SFT_RRX, cs.arm.ARM_SFT_RRX_REG):
-            return RRX_C(value, carry, width)
-
-        raise NotImplementedError("Bad shift value")
-
-
-
     def _Shift(cpu, value, _type, amount, carry):
         assert(_type > cs.arm.ARM_SFT_INVALID and _type <= cs.arm.ARM_SFT_RRX_REG)
 
@@ -451,15 +419,19 @@ class Armv7Cpu(Cpu):
             amount = 1
 
         elif _type in range(cs.arm.ARM_SFT_ASR_REG, cs.arm.ARM_SFT_RRX_REG + 1):
-            amount = cpu.instruction.reg_name(amount).upper()
-            amount = Operators.EXTRACT(cpu.regfile.read(amount), 0, 8)
+            if cpu.mode == cs.CS_MODE_THUMB:
+                src = amount.read()
+            else:
+                src_reg = cpu.instruction.reg_name(amount).upper()
+                src = cpu.regfile.read(src_reg)
+            amount = Operators.EXTRACT(src, 0, 8)
 
         if amount == 0:
             return value, carry
 
         width = cpu.address_bit_size
 
-        if   _type in (cs.arm.ARM_SFT_ASR, cs.arm.ARM_SFT_ASR_REG):
+        if _type in   (cs.arm.ARM_SFT_ASR, cs.arm.ARM_SFT_ASR_REG):
             return ASR_C(value, amount, width)
         elif _type in (cs.arm.ARM_SFT_LSL, cs.arm.ARM_SFT_LSL_REG):
             return LSL_C(value, amount, width)
@@ -471,7 +443,6 @@ class Armv7Cpu(Cpu):
             return RRX_C(value, carry, width)
 
         raise NotImplementedError("Bad shift value")
-
 
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
     def stack_push(self, data, nbytes=None):
@@ -1146,7 +1117,7 @@ class Armv7Cpu(Cpu):
             result, carry = cpu._Shift(op.read(), srtype, amount, carry)
         elif cpu.mode == cs.CS_MODE_THUMB:
             #lsr r1, r2 is a perfectly valid instruction in thumb mode
-            result, carry = cpu._Shift_thumb(dest.read(), srtype, op, carry)
+            result, carry = cpu._Shift(dest.read(), srtype, op, carry)
         else:
             result, carry = op.read(withCarry=True)
         dest.write(result)
