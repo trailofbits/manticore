@@ -424,6 +424,7 @@ class Armv7Cpu(Cpu):
             self.regfile.write(flag_name, val)
 
     def _shift(cpu, value, _type, amount, carry):
+        """See Shift() and Shift_C() in the ARM manual"""
         assert(cs.arm.ARM_SFT_INVALID < _type <= cs.arm.ARM_SFT_RRX_REG)
 
         # XXX: Capstone should set the value of an RRX shift to 1, which is
