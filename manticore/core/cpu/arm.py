@@ -299,8 +299,7 @@ class Armv7LinuxSyscallAbi(SyscallAbi):
         return self._cpu.R7
 
     def get_arguments(self):
-        for i in range(6):
-            yield 'R{}'.format(i)
+        return ('R{}'.format(i) for i in range(6))
 
     def write_result(self, result):
         self._cpu.R0 = result
