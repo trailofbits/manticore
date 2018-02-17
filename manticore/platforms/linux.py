@@ -2417,6 +2417,8 @@ class Linux(Platform):
             self._init_arm_kernel_helpers()
             self.current._set_mode_by_val(self.current.PC)
             self.current.PC &= ~1
+        elif self.arch == 'aarch64':
+            self._uname_machine = 'aarch64'
 
         # Establish segment registers for x86 architectures
         if self.arch in {'i386', 'amd64'}:
