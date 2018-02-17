@@ -450,10 +450,13 @@ class AMD64RegFile(RegisterFile):
         for name in ('AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'):
             self.write(name, False)
 
+        self._all_registers = tuple(self._table.keys()) + \
+            ('FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'EFLAGS', 'RFLAGS') + \
+            tuple(self._aliases.keys())
+
     @property
     def all_registers(self):
-        return tuple( self._table.keys() +
-                      ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7'] + ['EFLAGS', 'RFLAGS'] + self._aliases.keys() )
+        return self._all_registers
 
     @property
     def canonical_registers(self):
