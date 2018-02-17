@@ -293,7 +293,7 @@ class Armv7LinuxSyscallAbi(SyscallAbi):
 
     # EABI standards:
     #  syscall # is in R7
-    #  arguments are passed in R0-R6
+    #  arguments are passed in R0-R5
     #  retval is passed in R0
     def syscall_number(self):
         return self._cpu.R7
