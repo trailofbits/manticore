@@ -1,6 +1,6 @@
-from .x86 import AMD64Cpu, I386Cpu, AMD64LinuxSyscallAbi, I386LinuxSyscallAbi, I386CdeclAbi, SystemVAbi
+from .aarch64 import Aarch64Cpu, Aarch64CdeclAbi, Aarch64LinuxSyscallAbi
 from .arm import Armv7Cpu, Armv7CdeclAbi, Armv7LinuxSyscallAbi
-from .aarch64 import Aarch64Cpu
+from .x86 import AMD64Cpu, I386Cpu, AMD64LinuxSyscallAbi, I386LinuxSyscallAbi, I386CdeclAbi, SystemVAbi
 
 
 
@@ -12,28 +12,34 @@ class CpuFactory:
         'aarch64': Aarch64Cpu
     }
 
+    _linux_abis = {
+        'i386': I386CdeclAbi,
+        'amd64': SystemVAbi,
+        'armv7': Armv7CdeclAbi,
+        'aarch64': Aarch64CdeclAbi,
+    }
+
+    _linux_syscalls_abis = {
+        'i386': I386LinuxSyscallAbi,
+        'amd64': AMD64LinuxSyscallAbi,
+        'armv7': Armv7LinuxSyscallAbi,
+        'aarch64': Aarch64LinuxSyscallAbi
+    }
+
     @staticmethod
     def get_cpu(mem, machine):
         return CpuFactory._cpus[machine](mem)
 
     @staticmethod
     def get_function_abi(cpu, os, machine):
-        if os == 'linux' and machine == 'i386':
-            return I386CdeclAbi(cpu)
-        elif os == 'linux' and machine == 'amd64':
-            return SystemVAbi(cpu)
-        elif os == 'linux' and machine == 'armv7':
-            return Armv7CdeclAbi(cpu)
-        else:
-            return NotImplementedError(f"OS and machine combination not supported: {os}/{machine}")
+        if os != 'linux' or machine not in CpuFactory._linux_abis:
+            raise NotImplementedError(f"OS and machine combination not supported: {os}/{machine}")
+
+        return CpuFactory._linux_abis[machine](cpu)
 
     @staticmethod
     def get_syscall_abi(cpu, os, machine):
-        if os == 'linux' and machine == 'i386':
-            return I386LinuxSyscallAbi(cpu)
-        elif os == 'linux' and machine == 'amd64':
-            return AMD64LinuxSyscallAbi(cpu)
-        elif os == 'linux' and machine == 'armv7':
-            return Armv7LinuxSyscallAbi(cpu)
-        else:
-            return NotImplementedError(f"OS and machine combination not supported: {os}/{machine}")
+        if os != 'linux' or machine not in CpuFactory._linux_syscalls_abis:
+            raise NotImplementedError(f"OS and machine combination not supported: {os}/{machine}")
+
+        return CpuFactory._linux_syscalls_abis[machine](cpu)

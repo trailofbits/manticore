@@ -2,7 +2,7 @@ import warnings
 
 import capstone as cs
 
-from .abstractcpu import Cpu, RegisterFile
+from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi
 from .register import Register
 
 
@@ -84,3 +84,40 @@ class Aarch64Cpu(Cpu):
     def __init__(self, memory):
         warnings.warn('Aarch64 support is experimental')
         super(Aarch64Cpu, self).__init__(Aarch64RegisterFile(), memory)
+
+
+class Aarch64CdeclAbi(Abi):
+    """Aarch64/arm64 cdecl function call ABI"""
+
+    def get_arguments(self):
+        # TODO / FIXME: Is this valid? As this might be just lower part of X0-X7 = W0-W7
+
+        # First eight arguments are passed via X0-X7 (or W0-W7 if they are 32bit), then on stack
+        for reg in ('X0', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7'):
+            yield reg
+
+        for address in self.values_from(self._cpu.STACK):
+            yield address
+
+    def write_result(self, result):
+        self._cpu.W0 = result
+
+    def ret(self):
+        self._cpu.PC = self._cpu.LR
+
+
+class Aarch64LinuxSyscallAbi(SyscallAbi):
+    """Aarch64/arm64 Linux system call ABI"""
+
+    # EABI standards:
+    #  syscall # is in X8
+    #  arguments are passed in X0-R5
+    #  retval is passed in R0
+    def syscall_number(self):
+        return self._cpu.X8
+
+    def get_arguments(self):
+        return ('X{}'.format(i) for i in range(6))
+
+    def write_result(self, result):
+        self._cpu.R0 = result
