@@ -2309,6 +2309,8 @@ class Linux(Platform):
         elif self.arch == 'armv7':
             self._uname_machine = 'armv71'
             self._init_arm_kernel_helpers()
+        elif self.arch == 'aarch64':
+            self._uname_machine = 'aarch64'
 
         # Establish segment registers for x86 architectures
         if self.arch in {'i386', 'amd64'}:
