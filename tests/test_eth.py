@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from manticore.ethereum import ManticoreEVM, IntegerOverflow
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -20,3 +20,23 @@ class EthDetectors(unittest.TestCase):
         self.assertIn('underflow at SUB', all_findings)
         self.assertIn('overflow at ADD', all_findings)
         self.assertIn('overflow at MUL', all_findings)
+
+class EthTests(unittest.TestCase):
+    def test_emit_did_execute_end_instructions(self):
+        class TestDetector(Detector):
+            def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+                if instruction.semantics in ('REVERT', 'STOP'):
+                    with self.locked_context('insns', dict) as d:
+                        d[instruction.semantics] = True
+
+        mevm = ManticoreEVM()
+        p = TestDetector()
+        mevm.register_detector(p)
+
+        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=1)
+
+        self.assertIn('insns', p.context)
+        context = p.context['insns']
+        self.assertIn('STOP', context)
+        self.assertIn('REVERT', context)

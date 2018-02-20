@@ -966,6 +966,9 @@ class EVMAsm(object):
 class EVMException(Exception):
     pass
 
+class EVMInstructionException(EVMException):
+    pass
+
 class ConcretizeStack(EVMException):
     '''
     Raised when a symbolic memory cell needs to be concretized.
@@ -989,7 +992,7 @@ class InvalidOpcode(EVMException):
     pass
 
 
-class Call(EVMException):
+class Call(EVMInstructionException):
     def __init__(self, gas, to, value, data, out_offset=None, out_size=None):
         self.gas = gas
         self.to = to
@@ -1008,25 +1011,25 @@ class Create(Call):
 class DelegateCall(Call):
     pass
 
-class Stop(EVMException):
+class Stop(EVMInstructionException):
     ''' Program reached a STOP instruction '''
     pass
 
-class Return(EVMException):
+class Return(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
         return (self.__class__, (self.data,) )
 
-class Revert(EVMException):
+class Revert(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
         return (self.__class__, (self.data,) )
 
-class SelfDestruct(EVMException):
+class SelfDestruct(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, to):
         self.to = to
@@ -1277,7 +1280,6 @@ class EVM(Eventful):
         last_pc = self.pc
         current = self.instruction
 
-        self._publish('will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
 
@@ -1300,13 +1302,15 @@ class EVM(Eventful):
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
+        self._publish('will_execute_instruction', self.pc, current)
         self._publish('will_evm_execute_instruction', current, arguments)
 
         last_pc = self.pc
-        #Execute
+        result = None
+
         try:
             result = implementation(*arguments)
-            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._emit_did_execute_signals(current, arguments, result, last_pc)
         except ConcretizeStack as ex:
             for arg in reversed(arguments):
                 self._push(arg)
@@ -1318,10 +1322,17 @@ class EVM(Eventful):
                                 policy=ex.policy)
         except EVMException as e:
             self.last_exception = e
-            raise
-        self._publish( 'did_execute_instruction', last_pc, self.pc, current)
 
-        
+            # Technically, this is not the right place to emit these events because the
+            # instruction hasn't executed yet; it executes in the EVM platform class (EVMWorld).
+            # However, when I tried that, in the event handlers, `state.platform.current`
+            # ends up being None, which caused issues. So, as a pragmatic solution, we emit
+            # the event before technically executing the instruction.
+            if isinstance(e, EVMInstructionException):
+                self._emit_did_execute_signals(current, arguments, result, last_pc)
+
+            raise
+
         #Check result (push)
         if current.pushes > 1:
             assert len(result) == current.pushes
@@ -1336,6 +1347,9 @@ class EVM(Eventful):
             #advance pc pointer
             self.pc += self.instruction.size
 
+    def _emit_did_execute_signals(self, current, arguments, result, last_pc):
+        self._publish('did_evm_execute_instruction', current, arguments, result)
+        self._publish('did_execute_instruction', last_pc, self.pc, current)
 
     #INSTRUCTIONS
     def INVALID(self):
@@ -2141,6 +2155,8 @@ class EVMWorld(Platform):
     def execute(self):
         self._process_pending_transaction()
         try:
+            if self.current is None:
+                raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current.execute()
         except Create as ex:
             self.CREATE(ex.value, ex.data)
