@@ -1308,13 +1308,9 @@ class EVM(Eventful):
         last_pc = self.pc
         result = None
 
-        def emit_did_execute_signals():
-            self._publish('did_evm_execute_instruction', current, arguments, result)
-            self._publish('did_execute_instruction', last_pc, self.pc, current)
-
         try:
             result = implementation(*arguments)
-            emit_did_execute_signals()
+            self._emit_did_execute_signals(current, arguments, result, last_pc)
         except ConcretizeStack as ex:
             for arg in reversed(arguments):
                 self._push(arg)
@@ -1333,7 +1329,7 @@ class EVM(Eventful):
             # ends up being None, which caused issues. So, as a pragmatic solution, we emit
             # the event before technically executing the instruction.
             if isinstance(e, EVMInstructionException):
-                emit_did_execute_signals()
+                self._emit_did_execute_signals(current, arguments, result, last_pc)
 
             raise
 
@@ -1351,6 +1347,9 @@ class EVM(Eventful):
             #advance pc pointer
             self.pc += self.instruction.size
 
+    def _emit_did_execute_signals(self, current, arguments, result, last_pc):
+        self._publish('did_evm_execute_instruction', current, arguments, result)
+        self._publish('did_execute_instruction', last_pc, self.pc, current)
 
     #INSTRUCTIONS
     def INVALID(self):
