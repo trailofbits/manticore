@@ -15,6 +15,7 @@ from multiprocessing.managers import SyncManager
 
 from .smtlib import solver
 from .smtlib.solver import SolverException
+from .state import State
 
 logger = logging.getLogger(__name__)
 
@@ -389,6 +390,7 @@ class Workspace(object):
         :return: New state id
         :rtype: int
         """
+        assert isinstance(state, State)
         id_ = self._get_id()
         self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix))
         return id_
