@@ -466,11 +466,15 @@ class ArithmeticSimplifier(Visitor):
 
 #FIXME this should forget old expressions lru?
 arithmetic_simplifier_cache = {}
-def arithmetic_simplifier(expression):
+def arithmetic_simplify(expression):
     global arithmetic_simplifier_cache    
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
-    return simp.result
+    value = simp.result
+    if isinstance(value, Constant) and not value.taint:
+        return value.value
+    else:
+        return value
 
 class TranslatorSmtlib(Visitor):
     ''' Simple visitor to translate an expression to its smtlib representation

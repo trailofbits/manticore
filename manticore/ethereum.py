@@ -2,7 +2,7 @@ import string
 
 from . import Manticore
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
-from .core.smtlib.visitors import arithmetic_simplifier, pretty_print
+from .core.smtlib.visitors import arithmetic_simplify, pretty_print
 from .platforms import evm
 from .core.state import State
 import tempfile
@@ -343,76 +343,52 @@ class ABI(object):
         return reduce(lambda x,y: x+y, result)
 
     @staticmethod
-    def get_uint(data, offset, size):
-        def simplify(x):
-            value = arithmetic_simplifier(x)
-            if isinstance(value, Constant) and not value.taint:
-                return value.value
-            else:
-                return value
-
-        size = simplify(size)
-        offset = simplify(offset)
-        byte_size = size/8
+    def get_uint(data, offset, byte_size):
+        ''' Unpack an unsigned of byte_size*8 bits from data at offset '''
+        byte_size = arithmetic_simplify(byte_size)
+        offset = arithmetic_simplify(offset)
         padding = 32 - byte_size # for 160
-        value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size])))
-        return simplify(value)
+        value = Operators.CONCAT(byte_size*8, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size]))
+        return arithmetic_simplify(value)
 
     @staticmethod        
     def _consume_type(ty, data, offset):
         ''' INTERNAL parses a value of type from data '''
-        def get_uint(size, offset):
-            def simplify(x):
-                value = arithmetic_simplifier(x)
-                if isinstance(value, Constant) and not value.taint:
-                    return value.value
-                else:
-                    return value
-
-            size = simplify(size)
-            offset = simplify(offset)
-            byte_size = size/8
-            padding = 32 - byte_size # for 160
-            value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size])))
-            return simplify(value)
         if ty == u'uint256':
-            return get_uint(256, offset), offset+32
+            return ABI.get_uint(data, 32, offset), offset+32 #256 bits
         elif ty in (u'bool', u'uint8'):
-            return get_uint(8, offset), offset+32
+            return ABI.get_uint(data, 1, offset), offset+32 #8 bits
         elif ty == u'address':
-            return get_uint(160, offset), offset+32
+            return ABI.get_uint(data, 20, offset), offset+32 #160 bits
         elif ty == u'int256':
-            value = get_uint(256, offset)
+            value = ABI.get_uint(data, 32, offset) #256 bits
             mask = 2**(256 - 1)
             value = -(value & mask) + (value & ~mask)
             return value, offset+32
         elif ty == u'':
             return None, offset
         elif ty in (u'bytes', u'string'):
-            dyn_offset = get_uint(256,offset)
-            size = get_uint(256, dyn_offset)
+            dyn_offset = ABI.get_uint(data, 32,offset)  #256 bits
+            size = ABI.get_uint(data, 32, dyn_offset)  #256 bits
             return data[dyn_offset+32:dyn_offset+32+size], offset+32
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
             return data[offset:offset+size], offset+32
         if ty == u'address[]':
-            dyn_offset = arithmetic_simplifier((get_uint(256,offset)))
-            size = arithmetic_simplifier(get_uint(256, dyn_offset))
-            result = []
-            for i in range(size):
-                x = get_uint(160, dyn_offset+32 + 32*i)
-                result.append(x)
+            dyn_offset = arithmetic_arithmetic_simplify((get_uint(256,offset)))
+            size = arithmetic_arithmetic_simplify(get_uint(256, dyn_offset))
+            result = [ABI.get_uint(data, 20, dyn_offset+32 + 32*i) for i in range(size)]
             return result, offset+32
         else:
             raise NotImplementedError(ty)
 
     @staticmethod
-    def parse_signature_spec(signature):
+    def parse_type_spec(signature):
         is_multiple = '(' in signature
         if is_multiple:
             func_name = signature.split('(')[0]
             types = signature.split('(')[1][:-1].split(',')
-            if len(func_name) == 0:
+            if not func_name:
                 func_name = None
         else:
             func_name = None
@@ -422,16 +398,7 @@ class ABI(object):
     @staticmethod
     def parse(signature, data):
         ''' Deserialize function ID and arguments specified in `signature` from `data` '''
-        '''
-        is_multiple = '(' in signature
-        if is_multiple:
-            func_name = signature.split('(')[0]
-            types = signature.split('(')[1][:-1].split(',')
-        else:
-            func_name = None
-            types = (signature,)
-        '''
-        is_multiple, func_name, types = ABI.parse_signature_spec(signature)
+        is_multiple, func_name, types = ABI.parse_type_spec(signature)
 
         #If it parsed the function name from the spec, skip 4 bytes from the data
         if func_name:
@@ -1129,30 +1096,36 @@ class ManticoreEVM(Manticore):
             arguments so it all fits into data.
             The available space is fairly divided among all the dynamic arguments.
         '''
-        is_multiple, func_name, types = ABI.parse_signature_spec(signature)
+        is_multiple, func_name, types = ABI.parse_type_spec(signature)
         dyn_arguments = []
         for pos, t in enumerate(types):
             dynamic = t in (u'bytes', u'string') or t.endswith(']')
             if dynamic:
                 dyn_arguments.append(pos)
 
-        used = 4 + len(types)*32 
-        available = len(data) -used -len(dyn_arguments)*32
+        free_pointer = 4 + len(types)*32 
+        available = len(data) -free_pointer -len(dyn_arguments)*32
 
-        for i in range(0, len(dyn_arguments)):
+
+        #This will try certain partition of the data into arguments.
+        #It may generate an unsolvable core. Other feasible partitions may exist. 
+        number_dyn_arguments = len(dyn_arguments)
+        argument_size = available/number_dyn_arguments
+        for index in dyn_arguments
             #get, constraint and concretize dyn_offset to some reasonable value
-            dyn_offset = ABI.get_uint(data, 4 + dyn_arguments[i]*32, 256)
-            assert solver.can_be_true(state.constraints, dyn_offset == used)
-            state.constrain(dyn_offset == used)
-            data[used:used+32] = ("%064x"%(available/32/len(dyn_arguments))).decode('hex')
+            dyn_offset = ABI.get_uint(data, 4 + index*32, 256)
+            state.constrain(dyn_offset+4 == free_pointer)
+            data[4 + index*32 : 4 + index*32 + 32] = ("%064x"%(free_pointer-4)).decode('hex')
+
 
             #get, constraint and concretize dyn_size to some reasonable value
-            dyn_size = ABI.get_uint(data, used, 256)
-            assert solver.can_be_true(state.constraints, dyn_size == available/32/len(dyn_arguments))
-            state.constrain(dyn_size == available/32/len(dyn_arguments))
-            data[4+dyn_arguments[i]*32:4+dyn_arguments[i]*32+32]= ("%064x"%used).decode('hex')
+            dyn_size = ABI.get_uint(data, free_pointer, 256)
+            state.constrain(dyn_size == argument_size/32)
+            data[free_pointer:free_pointer+32]= ("%064x"%(argument_size/32)).decode('hex')
 
-            used += 32 + available/len(dyn_arguments)
+
+            free_pointer += 32 + argument_size
+            #free_pointer points to the first unused byte in the dinamic argument area
 
 
     def _generate_testcase_callback(self, state, name, message):

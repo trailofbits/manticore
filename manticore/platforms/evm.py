@@ -6,7 +6,7 @@ from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Ar
     SolverException
 from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
-from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
+from ..core.smtlib.visitors import pretty_print, arithmetic_simplify, translate_to_smtlib
 from ..core.state import Concretize,TerminateState
 import logging
 import sys, hashlib
@@ -106,7 +106,7 @@ class EVMMemory(object):
         '''
         size = index.stop - index.start
         if isinstance(size, BitVec):
-            size = arithmetic_simplifier(size)
+            size = arithmetic_simplify(size)
         else:
             size = BitVecConstant(self._address_size, size)
         assert isinstance(size, BitVecConstant)
@@ -214,7 +214,7 @@ class EVMMemory(object):
         self._allocate(address+size)
 
         if issymbolic(address):
-            address = arithmetic_simplifier(address)
+            address = arithmetic_simplify(address)
             assert solver.check(self.constraints)
             logger.debug('Reading %d items from symbolic offset %s', size, address)
             try:
@@ -1192,7 +1192,7 @@ class EVM(Eventful):
     def _load(self, address):
         self._allocate(address)
         value = self.memory.read(address,1)[0]
-        value = arithmetic_simplifier(value)
+        value = arithmetic_simplify(value)
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
         self._publish('did_evm_read_memory', address, value)
@@ -1303,7 +1303,7 @@ class EVM(Eventful):
         #simplify stack arguments
         for i in range(len(arguments)):
             if isinstance(arguments[i], Expression):           
-                arguments[i] = arithmetic_simplifier(arguments[i])
+                arguments[i] = arithmetic_simplify(arguments[i])
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
@@ -1542,7 +1542,7 @@ class EVM(Eventful):
 
     def CALLER(self): 
         '''Get caller address'''
-        return Operators.ZEXTEND(self.caller, 256)  
+        return Operators.ZEXTEND(self.caller, 256)
 
     def CALLVALUE(self):
         '''Get deposited value by the instruction/transaction responsible for this execution'''
@@ -1550,12 +1550,6 @@ class EVM(Eventful):
 
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
-        #FIXME concretize offset?
-        #if issymbolic(offset):
-        #    self._constraints.add(Operators.ULE(offset, len(self.data)+32))
-            #self._constraints.add(0 == offset%32)
-        #    raise ConcretizeStack(3, expression=offset, policy='ALL')
-
         #FIXME Document and make it configurable
         #Do not explore offsets much bigger than actual data
         if issymbolic(offset):

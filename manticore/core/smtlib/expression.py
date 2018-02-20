@@ -662,8 +662,8 @@ class ArrayProxy(Array):
         size = stop - start
         if isinstance(size, BitVec):
             import visitors
-            from manticore.core.smtlib.visitors import arithmetic_simplifier
-            size = arithmetic_simplifier(size)
+            from manticore.core.smtlib.visitors import arithmetic_simplify
+            size = arithmetic_simplify(size)
         else:
             size = BitVecConstant(self._array.index_bits, size)
         assert isinstance(size, BitVecConstant)
@@ -675,10 +675,12 @@ class ArrayProxy(Array):
             size = self._get_size(index)
 
             if isinstance(start, Expression) or isinstance(stop,Expression):
-                new_array = ArrayVariable(self.index_bits, size, name='%s_sliced'%(self.name), taint=self.taint)        
+                name='%s_sliced'%(self.name)
             else:
-                new_array = ArrayVariable(self.index_bits, size, name='%s_sliced_b%d_e%d'%(self.name, start, stop), taint=self.taint)
-            new_array = ArrayProxy(new_array)
+                name='%s_sliced_b%d_e%d'%(self.name, start, stop)
+
+            new_array_var = ArrayVariable(self.index_bits, size, name=name, taint=self.taint)
+            new_array = ArrayProxy(new_array_var)
             for i in xrange(size):
                 if self.index_max is not None and not isinstance(i+start, Expression) and i+start >= self.index_max:
                     new_array[i] = 0
