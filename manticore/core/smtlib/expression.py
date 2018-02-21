@@ -561,7 +561,7 @@ class Array(Expression):
 
     def __len__(self):
         if self.index_max is None:
-            raise Exception()
+            raise Exception("Array max index not set")
         return self.index_max
 
     @property
@@ -643,7 +643,7 @@ class ArrayProxy(Array):
             super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
             self._array = array
             while not isinstance(array, ArrayVariable):
-                array=array.array
+                array = array.array
             self._name = array.name
             
             

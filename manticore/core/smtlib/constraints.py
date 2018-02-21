@@ -110,7 +110,7 @@ class ConstraintSet(object):
 
         constraint_str = translator.pop()
         while constraint_str is not None:
-            if not constraint_str is 'true':
+            if constraint_str != 'true':
                 result += '(assert %s)\n' % constraint_str
             constraint_str = translator.pop()
 
@@ -181,7 +181,7 @@ class ConstraintSet(object):
             buf += d.declaration + '\n'
         for constraint in self.constraints:
             constraint_str = translate_to_smtlib(constraint, use_bindings=True)
-            if not constraint_str is 'true':
+            if constraint_str != 'true':
                 buf += '(assert %s)\n' % constraint_str
         return buf
 
