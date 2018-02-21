@@ -2418,6 +2418,7 @@ class Linux(Platform):
             self.current._set_mode_by_val(self.current.PC)
             self.current.PC &= ~1
         elif self.arch == 'aarch64':
+            # TODO / FIXME / REVIEW PLS: is that okay? Seems some machines might have it set as armv8
             self._uname_machine = 'aarch64'
 
         # Establish segment registers for x86 architectures
