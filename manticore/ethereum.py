@@ -391,22 +391,22 @@ class ABI(object):
             raise NotImplementedError(ty)
 
     @staticmethod
-    def parse_type_spec(signature):
-        is_multiple = '(' in signature
+    def parse_type_spec(type_spec):
+        is_multiple = '(' in type_spec
         if is_multiple:
-            func_name = signature.split('(')[0]
-            types = signature.split('(')[1][:-1].split(',')
+            func_name = type_spec.split('(')[0]
+            types = type_spec.split('(')[1][:-1].split(',')
             if not func_name:
                 func_name = None
         else:
             func_name = None
-            types = (signature,)
+            types = (type_spec,)
         return is_multiple, func_name, types
 
     @staticmethod
-    def parse(signature, data):
-        ''' Deserialize function ID and arguments specified in `signature` from `data` '''
-        is_multiple, func_name, types = ABI.parse_type_spec(signature)
+    def parse(type_spec, data):
+        ''' Deserialize function ID and arguments specified in `type_spec` from `data` '''
+        is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
 
         #If it parsed the function name from the spec, skip 4 bytes from the data
         if func_name:
