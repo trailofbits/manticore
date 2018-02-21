@@ -694,7 +694,6 @@ class ArrayProxy(Array):
             return self._array.select(index)
 
     def __setitem__(self, index, value):
-
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
