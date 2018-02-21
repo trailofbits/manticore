@@ -2310,6 +2310,7 @@ class Linux(Platform):
             self._uname_machine = 'armv71'
             self._init_arm_kernel_helpers()
         elif self.arch == 'aarch64':
+            # TODO / FIXME / REVIEW PLS: is that okay? Seems some machines might have it set as armv8
             self._uname_machine = 'aarch64'
 
         # Establish segment registers for x86 architectures
