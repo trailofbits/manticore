@@ -471,10 +471,16 @@ def arithmetic_simplify(expression):
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     value = simp.result
+    return value
+
+
+def to_constant(expression):
+    value = arithmetic_simplify(expression)
     if isinstance(value, Constant) and not value.taint:
         return value.value
     else:
         return value
+
 
 class TranslatorSmtlib(Visitor):
     ''' Simple visitor to translate an expression to its smtlib representation
