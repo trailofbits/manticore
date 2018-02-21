@@ -108,7 +108,7 @@ class ConstraintSet(object):
 
         constraint_str = translator.pop()
         while constraint_str is not None:
-            if not constraint_str is 'true':
+            if constraint_str != 'true':
                 result += '(assert %s)\n' % constraint_str
             constraint_str = translator.pop()
 
@@ -168,12 +168,11 @@ class ConstraintSet(object):
 
         constraint_str = translator.pop()
         while constraint_str is not None:
-            if not constraint_str is 'true':
+            if constraint_str != 'true':
                 result += '(assert %s)\n' % constraint_str
             constraint_str = translator.pop()
 
         return result
-
 
     def _get_new_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
