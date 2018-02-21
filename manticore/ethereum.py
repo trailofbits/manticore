@@ -1111,13 +1111,15 @@ class ManticoreEVM(Manticore):
             if dynamic:
                 dyn_arguments.append(pos)
 
+        number_dyn_arguments = len(dyn_arguments)
+        if not number_dyn_arguments:
+            return
         free_pointer = 4 + len(types)*32 
-        available = len(data) -free_pointer -len(dyn_arguments)*32
+        available = len(data) -free_pointer - number_dyn_arguments*32
 
 
         #This will try certain partition of the data into arguments.
         #It may generate an unsolvable core. Other feasible partitions may exist. 
-        number_dyn_arguments = len(dyn_arguments)
         argument_size = available/number_dyn_arguments
         for index in dyn_arguments:
             #get, constraint and concretize dyn_offset to some reasonable value
