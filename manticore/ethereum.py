@@ -343,20 +343,19 @@ class ABI(object):
         return reduce(lambda x,y: x+y, result)
 
     @staticmethod
-    def get_uint(data, offset, byte_size):
+    def get_uint(data, offset, nbytes):
         """
-        Access `size` number of LSB out of a big endian 256 bit number starting at
-        `offset` into `data.
+        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
 
         :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
-        :param offset: byte offset of 256 bit element
-        :param size: number of bits to read out of 256 bit element
+        :param offset: byte offset
+        :param nbytes: number of bytes to read starting from least significant byte
         :rtype: int or Expression
         """
-        byte_size = arithmetic_simplify(byte_size)
+        nbytes = arithmetic_simplify(nbytes)
         offset = arithmetic_simplify(offset)
-        padding = 32 - byte_size # for 160
-        value = Operators.CONCAT(byte_size*8, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size]))
+        padding = 32 - nbytes # for 160
+        value = Operators.CONCAT(nbytes*8, *map(Operators.ORD, data[offset+padding:offset+padding+nbytes]))
         return arithmetic_simplify(value)
 
     @staticmethod        
@@ -383,8 +382,8 @@ class ABI(object):
             size = int(ty[5:])
             return data[offset:offset+size], offset+32
         if ty == u'address[]':
-            dyn_offset = arithmetic_arithmetic_simplify((get_uint(256,offset)))
-            size = arithmetic_arithmetic_simplify(get_uint(256, dyn_offset))
+            dyn_offset = arithmetic_simplify((get_uint(256,offset)))
+            size = arithmetic_simplify(get_uint(256, dyn_offset))
             result = [ABI.get_uint(data, 20, dyn_offset+32 + 32*i) for i in range(size)]
             return result, offset+32
         else:
