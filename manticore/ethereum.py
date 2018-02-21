@@ -1119,7 +1119,7 @@ class ManticoreEVM(Manticore):
         #It may generate an unsolvable core. Other feasible partitions may exist. 
         number_dyn_arguments = len(dyn_arguments)
         argument_size = available/number_dyn_arguments
-        for index in dyn_arguments
+        for index in dyn_arguments:
             #get, constraint and concretize dyn_offset to some reasonable value
             dyn_offset = ABI.get_uint(data, 4 + index*32, 256)
             state.constrain(dyn_offset+4 == free_pointer)
