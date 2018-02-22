@@ -2,7 +2,30 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.6...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.7...HEAD)
+
+## 0.1.7 - 2018-02-23
+
+This release brings EVM, performance, Linux emulation, and API improvements, along with numerous bug fixes. Thanks again to our external contributors!
+
+- [jean](https://github.com/jean)
+- [disconnect3d](https://github.com/disconnect3d)
+- [arunjohnkuruvilla](https://github.com/arunjohnkuruvilla)
+- [alexanderholman](https://github.com/alexanderholman)
+
+### Added
+
+- Improved documentation on symbolic input
+
+### Changed
+
+- New "force" flag on memory APIs
+
+### Fixed
+
+- Improved ARMv7 Thumb support
+- Numerous EVM bug fixes
+- Improved x86/64 emulation performance
 
 ## 0.1.6 - 2017-12-22
 
