@@ -94,6 +94,7 @@ def ethereum_cli(args):
 
     m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit)
 
+
 def main():
     log.init_logging()
     args = parse_arguments()
@@ -105,11 +106,11 @@ def main():
         ethereum_cli(args)
         return
 
-    env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
+    env = {key: val for key, val in map(lambda env: env[0].split('='), args.env)}
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
 
-    #Fixme(felipe) remove this, move to plugin
+    # Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
 
     if args.names is not None:
