@@ -51,7 +51,6 @@ class IntegrationTest(unittest.TestCase):
         filename = os.path.abspath(os.path.join(dirname, 'binaries/arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        data = file(filename,'rb').read()
         workspace = '%s/workspace'%self.test_dir
         t = time.time()
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
@@ -88,7 +87,6 @@ class IntegrationTest(unittest.TestCase):
         filename = os.path.abspath(os.path.join(dirname, 'binaries/arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        data = file(filename,'rb').read()
         workspace = '%s/workspace'%self.test_dir
         assertions = '%s/assertions.txt'%self.test_dir
         file(assertions,'w').write('0x0000000000401003 ZF == 1')
@@ -108,8 +106,6 @@ class IntegrationTest(unittest.TestCase):
         filename = os.path.abspath(os.path.join(dirname, 'binaries/cadet_decree_x86'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        SE = os.path.join(dirname, '../main.py')
-        data = file(filename,'rb').read()
         workspace = '%s/workspace'%self.test_dir
         self._runWithTimeout(['python', '-m', 'manticore',
                     '--workspace', workspace,
