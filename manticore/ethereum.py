@@ -6,7 +6,7 @@ from .core.smtlib.visitors import arithmetic_simplifier
 from .platforms import evm
 from .core.state import State
 import tempfile
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
 import sha3
@@ -577,12 +577,13 @@ class ManticoreEVM(Manticore):
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths','.', temp.name], stdout=PIPE, stderr=PIPE)
+            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths','.', temp.name], stdout=PIPE, stderr=STDOUT)
 
+            out = p.stdout.read()
             try:
-                output = json.loads(p.stdout.read())
+                output = json.loads(out)
             except ValueError:
-                raise Exception('Solidity compilation error')
+                raise Exception('Solidity compilation error: {}'.format(out))
 
             contracts = output.get('contracts', [])
             if len(contracts) != 1 and contract_name is None:
