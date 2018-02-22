@@ -39,7 +39,7 @@ class IntegrationTest(unittest.TestCase):
         """
         dirname = os.path.dirname(__file__)
         filename = '{}/binaries/{}'.format(dirname, filename)
-        subprocess.check_output(['python', '-m', 'manticore', filename])
+        subprocess.check_call(['python', '-m', 'manticore', filename])
 
     def _runWithTimeout(self, procargs, logfile, timeout=1200):
 
