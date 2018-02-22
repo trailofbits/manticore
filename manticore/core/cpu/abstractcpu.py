@@ -794,9 +794,7 @@ class Cpu(Eventful):
         raise NotImplemented
 
     def execute(self):
-        '''
-        Decode, and execute one instruction pointed by register PC
-        '''
+        """Decode, and execute one instruction pointed by register PC"""
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
