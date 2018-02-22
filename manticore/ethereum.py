@@ -582,7 +582,7 @@ class ManticoreEVM(Manticore):
             try:
                 output = json.loads(p.stdout.read())
             except ValueError:
-                raise Exception('Solidity compilation error: {}'.format(p.stderr.read()))
+                raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
 
             contracts = output.get('contracts', [])
             if len(contracts) != 1 and contract_name is None:
