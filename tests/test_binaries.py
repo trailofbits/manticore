@@ -127,8 +127,26 @@ class IntegrationTest(unittest.TestCase):
         actual = self._loadVisitedSet(os.path.join(dirname, '%s/visited.txt'%workspace))
         self.assertTrue(len(actual) > 100 )
 
-    def test_basic_eth(self):
-        self._simple_cli_run('basic.sol')
+    def test_eth_676(self):
+        self._simple_cli_run('676.sol')
+
+    def test_eth_678(self):
+        self._simple_cli_run('678.sol')
+
+    def test_eth_701(self):
+        self._simple_cli_run('701.sol')
+
+    def test_eth_705(self):
+        self._simple_cli_run('705.sol')
+
+    def test_eth_714(self):
+        self._simple_cli_run('714.sol')
+
+    def test_eth_735(self):
+        self._simple_cli_run('735.sol')
+
+    def test_eth_760(self):
+        self._simple_cli_run('760.sol')
 
 if __name__ == '__main__':
     unittest.main()
