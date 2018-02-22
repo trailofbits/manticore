@@ -1179,8 +1179,7 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_data = ''.join(state.solve_one(tx.data))
-                tx_summary.write("Data: %s %s\n"% (tx_data.encode('hex'), flagged(issymbolic(tx.data))))
+                tx_summary.write("Data: %s %s\n"% (state.solve_one(tx.data).encode('hex'), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
@@ -1230,8 +1229,8 @@ class ManticoreEVM(Manticore):
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write("Topics:\n")
-                for i, topic in enumerate(log_item.topics):
-                    logs_summary.write("\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
+                for topic in log_item.topics:
+                    logs_summary.write("\t%d) %x %s" %(log_item.topics.index(topic), state.solve_one(topic), flagged(issymbolic(topic))))
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
