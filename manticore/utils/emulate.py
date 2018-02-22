@@ -9,6 +9,7 @@ from .helpers import issymbolic
 from unicorn import *
 from unicorn.x86_const import *
 from unicorn.arm_const import *
+from unicorn.arm64_const import *
 
 from capstone import *
 
@@ -89,11 +90,15 @@ class UnicornEmulator:
     def get_unicorn_pc(self):
         if self._cpu.arch == CS_ARCH_ARM:
             return self._emu.reg_read(UC_ARM_REG_R15)
+        elif self._cpu.arch == CS_ARCH_ARM64:
+            return self._emu.reg_read(UC_ARM64_REG_PC)
         elif self._cpu.arch == CS_ARCH_X86:
             if self._cpu.mode == CS_MODE_32:
                 return self._emu.reg_read(UC_X86_REG_EIP)
             elif self._cpu.mode == CS_MODE_64:
                 return self._emu.reg_read(UC_X86_REG_RIP)
+        else:
+            raise Exception(f"Getting PC after unicorn emulation for {self._cpu.arch} architecture is not implemented")
 
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
         '''
@@ -148,12 +153,14 @@ class UnicornEmulator:
     def _to_unicorn_id(self, reg_name):
         if self._cpu.arch == CS_ARCH_ARM:
             return globals()['UC_ARM_REG_' + reg_name]
+        elif self._cpu.arch == CS_ARCH_ARM64:
+            return globals()['UC_ARM64_REG_' + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
             return globals()['UC_X86_REG_' + reg_name]
         else:
             # TODO(yan): raise a more appropriate exception
-            raise TypeError
+            raise TypeError(f"Cannot convert {reg_name} to unicorn register id")
 
     def emulate(self, instruction):
         '''
@@ -275,6 +282,9 @@ class UnicornEmulator:
         mu_pc = self.get_unicorn_pc()
         if saved_PC == mu_pc:
             self._cpu.PC = saved_PC + instruction.size
+
+        else:
+            self._cpu.PC = mu_pc
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:

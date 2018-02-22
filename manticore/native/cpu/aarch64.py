@@ -14,20 +14,20 @@ INSTRUCTION_MAPPINGS = {
 
 
 class Aarch64RegisterFile(RegisterFile):
-    _R_REGS = tuple('R%d' % i for i in range(31))  # R0-R30 31 general-purpose registers
+    _X_REGS = tuple('X%d' % i for i in range(31))  # R0-R30 31 general-purpose registers (called X registers for 64bit)
     _V_REGS = tuple('V%d' % i for i in range(32))  # V0-V31 32 SIMD & FP registers
 
     def __init__(self):
         # TODO / FIXME: This is probably valid only for 'aarch32 state'
         alias_regs = {
-            # 'SB': 'R9',
-            # 'SL': 'R10',
-            # 'FP': 'R11',
-            # 'IP': 'R12',
-            'STACK': 'R13',
-            # 'SP': 'R13',
-            # 'LR': 'R14',
-            'PC': 'R15',
+            # 'SB': 'X9',
+            # 'SL': 'X10',
+            # 'FP': 'X11',
+            # 'IP': 'X12',
+            'STACK': 'X13',
+            # 'SP': 'X13',
+            # 'LR': 'X14',
+            'PC': 'X15',
         }
 
         # Via ARM Architecture Reference Manual - ARMv8, for ARMv8-A architecture profile
@@ -40,13 +40,13 @@ class Aarch64RegisterFile(RegisterFile):
         # * A 64-bit general-purpose register named X0 to X30
         # * A 32-bit general-purpose register named W0 to W30.
         alias_regs.update(
-            ('R%d' % i, 'X%d' % i) for i in range(len(self._R_REGS))
+            ('R%d' % i, 'X%d' % i) for i in range(len(self._X_REGS))
         )
 
         # V0-V31 32 SIMD&FP registers, V0 to V31.
         # Each of those can be accessed as 128-bit registers named Q0 to Q31.
         alias_regs.update(
-            ('V%d' % i, 'Q%d' % i) for i in range(len(self._V_REGS))
+            ('Q%d' % i, 'V%d' % i) for i in range(len(self._V_REGS))
         )
 
         super(Aarch64RegisterFile, self).__init__(alias_regs)
@@ -54,14 +54,14 @@ class Aarch64RegisterFile(RegisterFile):
         self._regs = {}
 
         # 64 bit registers.
-        for reg_name in self._R_REGS:
+        for reg_name in self._X_REGS:
             self._regs[reg_name] = Register(64)
 
         # 128 bit SIMD registers.
         for reg_name in self._V_REGS:
             self._regs[reg_name] = Register(128)
 
-        self._all_registers = super(Aarch64RegisterFile, self).all_registers + self._R_REGS + self._V_REGS
+        self._all_registers = super(Aarch64RegisterFile, self).all_registers + self._X_REGS + self._V_REGS
 
     def read(self, register):
         register = self._alias(register)
@@ -73,7 +73,7 @@ class Aarch64RegisterFile(RegisterFile):
 
     @property
     def canonical_registers(self):
-        return self._R_REGS
+        return self._X_REGS
 
     @property
     def all_registers(self):
