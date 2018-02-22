@@ -10,6 +10,7 @@ from .helpers import issymbolic
 from unicorn import *
 from unicorn.x86_const import *
 from unicorn.arm_const import *
+from unicorn.arm64_const import *
 
 from capstone import *
 from capstone.arm import *
@@ -85,11 +86,15 @@ class UnicornEmulator(object):
     def get_unicorn_pc(self):
         if self._cpu.arch == CS_ARCH_ARM:
             return self._emu.reg_read(UC_ARM_REG_R15)
+        elif self._cpu.arch == CS_ARCH_ARM64:
+            return self._emu.reg_read(UC_ARM64_REG_PC)
         elif self._cpu.arch == CS_ARCH_X86:
             if self._cpu.mode == CS_MODE_32:
                 return self._emu.reg_read(UC_X86_REG_EIP)
             elif self._cpu.mode == CS_MODE_64:
                 return self._emu.reg_read(UC_X86_REG_RIP)
+        else:
+            raise Exception("Getting PC after unicorn emulation for %s architecture is not implemented" % self._cpu.arch)
 
 
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
@@ -151,12 +156,13 @@ class UnicornEmulator(object):
             reg_name = 'CPSR'
         if self._cpu.arch == CS_ARCH_ARM:
             return globals()['UC_ARM_REG_' + reg_name]
+        elif self._cpu.arch == CS_ARCH_ARM64:
+            return globals()['UC_ARM64_REG_' + reg_name]
         elif self._cpu.arch == CS_ARCH_X86:
             # TODO(yan): This needs to handle AF register
             return globals()['UC_X86_REG_' + reg_name]
         else:
-            # TODO(yan): raise a more appropriate exception
-            raise TypeError
+            raise TypeError("Can't convert %s to unicorn register id." % reg_name)
 
     def emulate(self, instruction):
         '''
@@ -266,14 +272,16 @@ class UnicornEmulator(object):
             val = self._emu.reg_read(self._to_unicorn_id(reg))
             self._cpu.write_register(reg, val)
 
-        #Unicorn hack. On single step unicorn wont advance the PC register
+        # Unicorn hack. On single step unicorn wont advance the PC register
         mu_pc = self.get_unicorn_pc()
         if saved_PC == mu_pc:
             self._cpu.PC = saved_PC + instruction.size
+
+        else:
+            self._cpu.PC = mu_pc
 
         # Raise the exception from a hook that Unicorn would have eaten
         if self._to_raise:
             raise self._to_raise
 
         return
-
