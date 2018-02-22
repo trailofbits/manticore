@@ -1,7 +1,7 @@
 import string
 
 from . import Manticore
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import arithmetic_simplifier
 from .platforms import evm
 from .core.state import State
@@ -57,9 +57,38 @@ class IntegerOverflow(Detector):
     '''
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         mnemonic = instruction.semantics
-        if mnemonic in ('ADD', 'MUL'):
+        if mnemonic == 'ADD':
+            # TODO signed or unsigne cmp?
             if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+        elif mnemonic == 'MUL':
+
+            # print hex(state.platform.current.pc), mnemonic
+            # if state.platform.current.pc == 0x8b:
+            #     print 'fuc-'
+            #     print (result < arguments[0]) & (result > 0)
+            #
+            #     state.constrain(result.ult(arguments[0]))
+            #     print 'fuck arg0', hex(arguments[0])
+            #
+            #     state.constrain(result.ult(arguments[1]))
+            #     print 'fuck arg1', arguments[1]
+            #
+            #     print hex(state.solve_one(result))
+            # else:
+            #     return
+
+            if state.can_be_true(operators.ULT(result, arguments[0]) & operators.ULT(result, arguments[1])):
+                print 'FUCKK'
+                print 'result', result
+                print 'arguments', arguments
+                print 'found at', hex(state.platform.current.pc)
+                print state.constrain(result < arguments[0])
+                print 'yooooo', state.solve_one(arguments[0])
+                # state.generate_testcase('found dat overflow')
+                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+            else:
+                print 'MUL WAS ABD'
         elif mnemonic == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
