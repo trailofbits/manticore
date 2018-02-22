@@ -39,19 +39,23 @@ class UnicornEmulator(object):
         self._to_raise = None
 
     def _unicorn(self):
-        if self._cpu.arch == CS_ARCH_ARM:
+        if self._cpu.arch in (CS_ARCH_ARM, CS_ARCH_ARM64):
+            uc_arch = UC_ARCH_ARM if self._cpu.arch == CS_ARCH_ARM else UC_ARCH_ARM64
+
             if self._cpu.mode == CS_MODE_ARM:
-                return Uc(UC_ARCH_ARM, UC_MODE_ARM)
+                return Uc(uc_arch, UC_MODE_ARM)
+
             elif self._cpu.mode == CS_MODE_THUMB:
-                return Uc(UC_ARCH_ARM, UC_MODE_THUMB)
+                return Uc(uc_arch, UC_MODE_THUMB)
+
         elif self._cpu.arch == CS_ARCH_X86:
             if self._cpu.mode == CS_MODE_32:
                 return Uc(UC_ARCH_X86, UC_MODE_32)
+
             elif self._cpu.mode == CS_MODE_64:
                 return Uc(UC_ARCH_X86, UC_MODE_64)
 
         raise RuntimeError("Unsupported architecture")
-
 
     def _create_emulated_mapping(self, uc, address):
         '''
