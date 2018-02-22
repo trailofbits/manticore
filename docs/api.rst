@@ -14,13 +14,21 @@ Manticore
 ---------
 
 .. autoclass:: manticore.Manticore
-   :members: add_hook, hook, run, terminate, verbosity, locked_context, linux, decree, evm
+   :members: add_hook, hook, run, terminate, verbosity, locked_context, linux, decree, evm, init
 
 State
 -----
 
 .. autoclass:: manticore.core.state.State
    :members: abandon, constrain, new_symbolic_buffer, new_symbolic_value, solve_n, solve_one, solve_buffer, symbolicate_buffer, invoke_model, generate_testcase
+
+SLinux
+------
+
+Symbolic Linux
+
+.. autoclass:: manticore.platforms.linux.SLinux
+   :members: add_symbolic_file
 
 Cpu
 ---
