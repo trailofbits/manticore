@@ -2,8 +2,15 @@ import warnings
 
 import capstone as cs
 
-from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi
+from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi, Operand
 from .register import Register
+
+
+# TODO / FIXME / REVIEWME: This is probably missing a lot of instructions
+# map different instructions to a single impl here
+INSTRUCTION_MAPPINGS = {
+    'MOVW': 'MOV'
+}
 
 
 class Aarch64RegisterFile(RegisterFile):
@@ -87,6 +94,22 @@ class Aarch64Cpu(Cpu):
         warnings.warn('Aarch64 support is experimental')
         super(Aarch64Cpu, self).__init__(Aarch64RegisterFile(), memory)
 
+    def _wrap_operands(self, ops):
+        return [Aarch64Operand(self, op) for op in ops]
+
+    @staticmethod
+    def canonicalize_instruction_name(instr):
+        name = instr.insn_name().upper()
+        # XXX bypass a capstone bug that incorrectly labels some insns as mov
+        if name == 'MOV':
+            if instr.mnemonic.startswith('lsr'):
+                return 'LSR'
+            elif instr.mnemonic.startswith('lsl'):
+                return 'LSL'
+            elif instr.mnemonic.startswith('asr'):
+                return 'ASR'
+        return INSTRUCTION_MAPPINGS.get(name, name)
+
 
 class Aarch64CdeclAbi(Abi):
     """Aarch64/arm64 cdecl function call ABI"""
@@ -123,3 +146,10 @@ class Aarch64LinuxSyscallAbi(SyscallAbi):
 
     def write_result(self, result):
         self._cpu.R0 = result
+
+
+class Aarch64Operand(Operand):
+    def __init__(self, cpu, op):
+        super(Aarch64Operand, self).__init__(cpu, op)
+
+    # TODO / FIXME : Implement this!
