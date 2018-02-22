@@ -31,6 +31,16 @@ class IntegrationTest(unittest.TestCase):
 
         return set(vitems)
 
+    def _simple_cli_run(self, filename):
+        """
+        Simply run the Manticore command line with `filename`
+        :param filename: Name of file inside the `tests/binaries` directory
+        :return:
+        """
+        dirname = os.path.dirname(__file__)
+        filename = '{}/binaries/{}'.format(dirname, filename)
+        subprocess.check_output(['python', '-m', 'manticore', filename])
+
     def _runWithTimeout(self, procargs, logfile, timeout=1200):
 
         with open(os.path.join(os.pardir, logfile), "w") as output:
@@ -117,6 +127,8 @@ class IntegrationTest(unittest.TestCase):
         actual = self._loadVisitedSet(os.path.join(dirname, '%s/visited.txt'%workspace))
         self.assertTrue(len(actual) > 100 )
 
+    def test_basic_eth(self):
+        self._simple_cli_run('basic.sol')
 
 if __name__ == '__main__':
     unittest.main()
