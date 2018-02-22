@@ -794,9 +794,7 @@ class Cpu(Eventful):
         raise NotImplemented
 
     def execute(self):
-        '''
-        Decode, and execute one instruction pointed by register PC
-        '''
+        """Decode, and execute one instruction pointed by register PC"""
         if issymbolic(self.PC):
             raise ConcretizeRegister(self, 'PC', policy='ALL')
 
@@ -825,7 +823,7 @@ class Cpu(Eventful):
             try:
                 getattr(self, name)(*insn.operands)
             except AttributeError:
-                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
                 logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
                 self.emulate(insn)
