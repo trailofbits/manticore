@@ -253,7 +253,7 @@ class Executor(Eventful):
         '''
         #save the state to secondary storage
         state_id = self._workspace.save_state(state)
-        self._put(state_id)
+        self.put(state_id)
         self._publish('did_enqueue_state', state_id, state)
         return state_id
 
@@ -304,7 +304,7 @@ class Executor(Eventful):
     ###############################################
     # Priority queue
     @sync
-    def _put(self, state_id):
+    def put(self, state_id):
         ''' Enqueue it for processing '''
         self._states.append(state_id)
         self._lock.notify_all()
