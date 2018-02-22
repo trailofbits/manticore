@@ -579,9 +579,8 @@ class ManticoreEVM(Manticore):
             temp.flush()
             p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths','.', temp.name], stdout=PIPE, stderr=PIPE)
 
-            out = p.stdout.read()
             try:
-                output = json.loads(out)
+                output = json.loads(p.stdout.read())
             except ValueError:
                 raise Exception('Solidity compilation error: {}'.format(p.stderr.read()))
 
