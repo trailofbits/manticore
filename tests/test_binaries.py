@@ -137,7 +137,13 @@ class IntegrationTest(unittest.TestCase):
         self._simple_cli_run('701.sol')
 
     def test_eth_705(self):
+        # This test needs to run inside tests/binaries because the contract imports a file
+        # that is in the tests/binaries dir
+        dirname = os.path.dirname(__file__)
+        old_cwd = os.getcwd()
+        os.chdir('{}/binaries'.format(dirname))
         self._simple_cli_run('705.sol')
+        os.chdir(old_cwd)
 
     def test_eth_714(self):
         self._simple_cli_run('714.sol')
