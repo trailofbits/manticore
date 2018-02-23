@@ -1659,3 +1659,10 @@ class Armv7CpuInstructions(unittest.TestCase):
     @itest("add pc, pc, r1")
     def test_add_to_pc(self):
         self.assertEqual(self.rf.read('R15'), 0x1014)
+
+    # Make sure a cpu will survive a round trip through pickling/unpickling
+    def test_arm_save_restore_cpu(self):
+        import pickle
+        dumped_s = pickle.dumps(self.cpu)
+        self.cpu = pickle.loads(dumped_s)
+
