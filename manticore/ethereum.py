@@ -57,7 +57,6 @@ class IntegerOverflow(Detector):
     '''
     def _can_mul_overflow(self, state, arguments, result):
         return state.can_be_true(operators.ULT(result, arguments[0]) & operators.ULT(result, arguments[1]))
-        return state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1])
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         mnemonic = instruction.semantics
