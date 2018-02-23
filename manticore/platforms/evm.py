@@ -1785,6 +1785,9 @@ class EVMWorld(Platform):
     def has_storage(self, address):
         return True #len(self.world_state[address]['storage'].items()) != 0
 
+    def get_storage(self, address):
+        return self.world_state[address]['storage']
+
     def set_balance(self, address, value):
         self.world_state[int(address)]['balance'] = value
 

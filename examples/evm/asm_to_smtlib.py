@@ -37,9 +37,11 @@ origin = constraints.new_bitvec(256, name='origin')
 price = constraints.new_bitvec(256, name='price')
 caller = constraints.new_bitvec(256, name='caller')
 value = constraints.new_bitvec(256, name='value')
+balance = constraints.new_bitvec(256, name='balance')
+
 
 code = EVMAsm.assemble(
-('''
+'''
 PUSH1 0x60
 PUSH1 0x40 
 MSTORE 
@@ -90,11 +92,17 @@ class callbacks():
 
 callbacks = callbacks()
 
+'''
 global_storage = {}
 global_storage[address] = {}
 global_storage[address]['storage'] = ArrayProxy(ArrayVariable(index_bits=256, value_bits=256, name='EMPTY_STORAGE', index_max=None))
+'''
 
-evm = EVM(constraints, address, origin, price, data, caller, value, code, header, global_storage=global_storage, depth=0, gas=1000000)
+world = EVMWorld(constraints)
+address = world.create_account(balance=balance, code='')
+
+
+evm = EVM(constraints, address, origin, price, data, caller, value, code, header, world=world, depth=0, gas=1000000)
 evm.subscribe('will_execute_instruction', callbacks.will_execute_instruction)
 
 
@@ -102,10 +110,9 @@ print "CODE:"
 while not issymbolic(evm.pc):
     print '\t',evm.pc, evm.instruction
     evm.execute()
-    break
 
 #print translate_to_smtlib(arithmetic_simplifier(evm.stack[0]))
-print "STORAGE =",  translate_to_smtlib(global_storage[address]['storage'])
+print "STORAGE =",  translate_to_smtlib(world.get_storage(address))
 print "MEM =",  translate_to_smtlib(evm.memory)
 
 
