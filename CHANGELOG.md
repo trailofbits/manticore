@@ -20,9 +20,6 @@ This release brings EVM, performance, Linux emulation, and API improvements, alo
  - "[force](http://manticore.readthedocs.io/en/latest/api.html#manticore.core.cpu.abstractcpu.Cpu.write_bytes)" keyword argument in `cpu.write_bytes/read_bytes` etc.
  - Linux syscalls: getrandom(), openat()
 
-
-### Changed
-
 ### Fixed
 
 - Improved ARMv7 Thumb support
