@@ -26,6 +26,11 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 
 
 class EthDetectors(unittest.TestCase):
+    def setUp(self):
+        self.io = IntegerOverflow()
+        self.state = self.make_mock_evm_state()
+
+
     @staticmethod
     def make_mock_evm_state():
         cs = ConstraintSet()
@@ -36,48 +41,35 @@ class EthDetectors(unittest.TestCase):
         """
         Regression test added for issue 714, where we were using the ADD ovf check for MUL
         """
-        io = IntegerOverflow()
-        state = self.make_mock_evm_state()
-        arguments = [1 << (8 * 31), state.new_symbolic_value(256)]
-        state.constrain(operators.ULT(arguments[1],256))
+        arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1],256))
 
+        # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
+        # effectively copy pasting what the MUL does
         result = arguments[0] * arguments[1]
-        result = result & (2**256 - 1)
 
-        check = io._can_mul_overflow(state, arguments, result)
+        check = self.io._can_mul_overflow(self.state, arguments, result)
         self.assertFalse(check)
 
     def test_mul_overflow0(self):
-        """
-        overflow to 0 if you multiple by 2
-        """
-        io = IntegerOverflow()
-        state = self.make_mock_evm_state()
-        arguments = [1 << 255, state.new_symbolic_value(256)]
-        state.constrain(operators.ULT(arguments[1],256))
+        arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
 
         result = arguments[0] * arguments[1]
-        result = result & (2**256 - 1)
 
-        check = io._can_mul_overflow(state, arguments, result)
+        check = self.io._can_mul_overflow(self.state, arguments, result)
         self.assertTrue(check)
 
     def test_mul_overflow1(self):
         """
-        hmmmm this should overflow
-        maybe it's possibel for it to overflow, but not for it to be under both arguments?
-        :return:
+        overflow to 0 if you multiple by 2
         """
-        io = IntegerOverflow()
-        state = self.make_mock_evm_state()
-        arguments = [2 << (8 * 31), state.new_symbolic_value(256)]
-        state.constrain(operators.ULT(arguments[1],256))
+        arguments = [1 << 255, self.state.new_symbolic_value(256)]
 
         result = arguments[0] * arguments[1]
-        result = result & (2**256 - 1)
 
-        check = io._can_mul_overflow(state, arguments, result)
+        check = self.io._can_mul_overflow(self.state, arguments, result)
         self.assertTrue(check)
+
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
