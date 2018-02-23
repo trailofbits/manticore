@@ -1654,3 +1654,15 @@ class Armv7CpuInstructions(unittest.TestCase):
         # the cpu lives in self.cpu
         e.setstate(self, CS_MODE_THUMB)
         self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
+
+    @itest_setregs("R1=0x00000008") # pc/r15 is set to 0x1004 in _setupCpu()
+    @itest("add pc, pc, r1")
+    def test_add_to_pc(self):
+        self.assertEqual(self.rf.read('R15'), 0x1014)
+
+    # Make sure a cpu will survive a round trip through pickling/unpickling
+    def test_arm_save_restore_cpu(self):
+        import pickle
+        dumped_s = pickle.dumps(self.cpu)
+        self.cpu = pickle.loads(dumped_s)
+

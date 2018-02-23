@@ -141,6 +141,17 @@ class IntegrationTest(unittest.TestCase):
         self._simple_cli_run('705.sol')
         os.chdir(old_cwd)
 
+    def test_basic_arm(self):
+        dirname = os.path.dirname(__file__)
+        filename = os.path.abspath(os.path.join(dirname, 'binaries/basic_linux_armv7'))
+        workspace = '%s/workspace' % self.test_dir
+        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+
+        with open(os.path.join(workspace, "test_00000000.stdout")) as f:
+            self.assertIn("Message", f.read())
+        with open(os.path.join(workspace, "test_00000001.stdout")) as f:
+            self.assertIn("Message", f.read())
+
 if __name__ == '__main__':
     unittest.main()
 
