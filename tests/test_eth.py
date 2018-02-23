@@ -54,6 +54,7 @@ class EthDetectors(unittest.TestCase):
 
     def test_mul_overflow0(self):
         arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
 
         result = arguments[0] * arguments[1]
 
@@ -61,9 +62,6 @@ class EthDetectors(unittest.TestCase):
         self.assertTrue(check)
 
     def test_mul_overflow1(self):
-        """
-        overflow to 0 if you multiple by 2
-        """
         arguments = [1 << 255, self.state.new_symbolic_value(256)]
 
         result = arguments[0] * arguments[1]
