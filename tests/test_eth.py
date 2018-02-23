@@ -1,7 +1,10 @@
 import unittest
 import os
 
+from manticore.core.smtlib import ConstraintSet
+from manticore.core.state import State
 from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
+from manticore.platforms.evm import EVMWorld
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -10,6 +13,12 @@ from manticore.utils.log import init_logging
 init_logging()
 
 class EthDetectors(unittest.TestCase):
+    @staticmethod
+    def make_mock_evm_state():
+        cs = ConstraintSet()
+        fakestate = State(cs, EVMWorld(cs))
+        return fakestate
+
     def test_int_ovf(self):
         mevm = ManticoreEVM()
         mevm.register_detector(IntegerOverflow())
@@ -20,6 +29,18 @@ class EthDetectors(unittest.TestCase):
         self.assertIn('underflow at SUB', all_findings)
         self.assertIn('overflow at ADD', all_findings)
         self.assertIn('overflow at MUL', all_findings)
+
+    def test_mul_no_overflow(self):
+        """
+        Regression test added for issue 714, where we were using the ADD ovf check for MUL
+        """
+        io = IntegerOverflow()
+        state = self.make_mock_evm_state()
+        arguments = [1 << (8 * 31), state.new_symbolic_value(8, 'test')]
+        result = arguments[0] * arguments[1]
+
+        check = io._mul_overflow_check(state, arguments, result)
+        self.assertFalse(check)
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):

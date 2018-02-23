@@ -55,6 +55,10 @@ class IntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
+    def _mul_overflow_check(self, state, arguments, result):
+        return state.can_be_true(operators.ULT(result, arguments[0]) & operators.ULT(result, arguments[1]))
+        return state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1])
+
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         mnemonic = instruction.semantics
         if mnemonic == 'ADD':
@@ -62,6 +66,9 @@ class IntegerOverflow(Detector):
             if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'MUL':
+            if self._mul_overflow_check(state, arguments, result):
+                self.add_finding(state, "Integer overflow at MUL instruction")
+
 
             # print hex(state.platform.current.pc), mnemonic
             # if state.platform.current.pc == 0x8b:
@@ -78,17 +85,6 @@ class IntegerOverflow(Detector):
             # else:
             #     return
 
-            if state.can_be_true(operators.ULT(result, arguments[0]) & operators.ULT(result, arguments[1])):
-                print 'FUCKK'
-                print 'result', result
-                print 'arguments', arguments
-                print 'found at', hex(state.platform.current.pc)
-                print state.constrain(result < arguments[0])
-                print 'yooooo', state.solve_one(arguments[0])
-                # state.generate_testcase('found dat overflow')
-                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
-            else:
-                print 'MUL WAS ABD'
         elif mnemonic == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
