@@ -68,23 +68,6 @@ class IntegerOverflow(Detector):
         elif mnemonic == 'MUL':
             if self._mul_overflow_check(state, arguments, result):
                 self.add_finding(state, "Integer overflow at MUL instruction")
-
-
-            # print hex(state.platform.current.pc), mnemonic
-            # if state.platform.current.pc == 0x8b:
-            #     print 'fuc-'
-            #     print (result < arguments[0]) & (result > 0)
-            #
-            #     state.constrain(result.ult(arguments[0]))
-            #     print 'fuck arg0', hex(arguments[0])
-            #
-            #     state.constrain(result.ult(arguments[1]))
-            #     print 'fuck arg1', arguments[1]
-            #
-            #     print hex(state.solve_one(result))
-            # else:
-            #     return
-
         elif mnemonic == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
