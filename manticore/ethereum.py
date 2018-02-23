@@ -65,7 +65,7 @@ class IntegerOverflow(Detector):
         return state.can_be_true(operators.ULT(result, arguments[0]) & operators.ULT(result, arguments[1]))
 
     @staticmethod
-    def _can_sub_overflow(state, arguments):
+    def _can_sub_underflow(state, arguments):
         return state.can_be_true(arguments[1] > arguments[0])
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
@@ -78,7 +78,7 @@ class IntegerOverflow(Detector):
             if self._can_mul_overflow(state, arguments, result):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'SUB':
-            if self._can_sub_overflow(state, arguments):
+            if self._can_sub_underflow(state, arguments):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
             
 class UninitializedMemory(Detector):
