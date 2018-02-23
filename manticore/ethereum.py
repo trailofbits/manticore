@@ -60,13 +60,14 @@ class IntegerOverflow(Detector):
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         mnemonic = instruction.semantics
+
         if mnemonic == 'ADD':
-            # TODO signed or unsigne cmp?
+            # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
             if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'MUL':
             if self._can_mul_overflow(state, arguments, result):
-                self.add_finding(state, "Integer overflow at MUL instruction")
+                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
