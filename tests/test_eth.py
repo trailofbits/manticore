@@ -49,7 +49,7 @@ class EthDetectors(unittest.TestCase):
         # effectively copy pasting what the MUL does
         result = arguments[0] * arguments[1]
 
-        check = self.io._can_mul_overflow(self.state, arguments, result)
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
         self.assertFalse(check)
 
     def test_mul_overflow0(self):
@@ -58,7 +58,7 @@ class EthDetectors(unittest.TestCase):
 
         result = arguments[0] * arguments[1]
 
-        check = self.io._can_mul_overflow(self.state, arguments, result)
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
         self.assertTrue(check)
 
     def test_mul_overflow1(self):
@@ -66,7 +66,7 @@ class EthDetectors(unittest.TestCase):
 
         result = arguments[0] * arguments[1]
 
-        check = self.io._can_mul_overflow(self.state, arguments, result)
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
         self.assertTrue(check)
 
 

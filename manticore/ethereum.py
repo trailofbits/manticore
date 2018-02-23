@@ -56,29 +56,29 @@ class IntegerOverflow(Detector):
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
     @staticmethod
-    def _can_add_overflow(state, arguments, result):
+    def _can_add_overflow(state, result, a, b):
         # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
-        return state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1])
+        return state.can_be_true(result < a) or state.can_be_true(result < b)
 
     @staticmethod
-    def _can_mul_overflow(state, arguments, result):
-        return state.can_be_true(operators.ULT(result, arguments[0]) & operators.ULT(result, arguments[1]))
+    def _can_mul_overflow(state, result, a, b):
+        return state.can_be_true(operators.ULT(result, a) & operators.ULT(result, b))
 
     @staticmethod
-    def _can_sub_underflow(state, arguments):
-        return state.can_be_true(arguments[1] > arguments[0])
+    def _can_sub_underflow(state, a, b):
+        return state.can_be_true(b > a)
 
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         mnemonic = instruction.semantics
 
         if mnemonic == 'ADD':
-            if self._can_add_overflow(state, arguments, result):
+            if self._can_add_overflow(state, result, *arguments):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'MUL':
-            if self._can_mul_overflow(state, arguments, result):
+            if self._can_mul_overflow(state, result, *arguments):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'SUB':
-            if self._can_sub_underflow(state, arguments):
+            if self._can_sub_underflow(state, *arguments):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
             
 class UninitializedMemory(Detector):
