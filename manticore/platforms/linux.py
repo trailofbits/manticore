@@ -2584,14 +2584,13 @@ class SLinux(Linux):
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
-            """
-            `data` should be an iterable of concrete chars or an `expression.Array`
-            """
+            def make_chr(c):
+                if isinstance(c, int):
+                    return chr(c)
+                return c
             try:
                 for c in data:
-                    if issymbolic(c):
-                        c = solver.get_value(self.constraints, c)
-                    fd.write(c)
+                    fd.write(make_chr(solver.get_value(self.constraints, c)))
             except SolverException:
                 fd.write('{SolverException}')
 
