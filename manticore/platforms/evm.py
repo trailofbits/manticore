@@ -873,6 +873,9 @@ class EVM(Eventful):
         self._constraints = constraints
         self.memory.constraints = constraints
 
+    @property
+    def gas(self):
+        return self._gas
 
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
