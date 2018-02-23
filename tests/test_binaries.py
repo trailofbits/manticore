@@ -146,7 +146,6 @@ class IntegrationTest(unittest.TestCase):
         filename = os.path.abspath(os.path.join(dirname, 'binaries/basic_linux_armv7'))
         workspace = '%s/workspace' % self.test_dir
         output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
-        lines = output.splitlines()
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
             self.assertIn("Message", f.read())
