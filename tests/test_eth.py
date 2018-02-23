@@ -36,10 +36,10 @@ class EthDetectors(unittest.TestCase):
         """
         io = IntegerOverflow()
         state = self.make_mock_evm_state()
-        arguments = [1 << (8 * 31), state.new_symbolic_value(8, 'test')]
+        arguments = [1 << (8 * 31), state.new_symbolic_value(8)]
         result = arguments[0] * arguments[1]
 
-        check = io._mul_overflow_check(state, arguments, result)
+        check = io._can_mul_overflow(state, arguments, result)
         self.assertFalse(check)
 
 class EthTests(unittest.TestCase):

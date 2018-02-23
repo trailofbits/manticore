@@ -55,7 +55,7 @@ class IntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
-    def _mul_overflow_check(self, state, arguments, result):
+    def _can_mul_overflow(self, state, arguments, result):
         return state.can_be_true(operators.ULT(result, arguments[0]) & operators.ULT(result, arguments[1]))
         return state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1])
 
@@ -66,7 +66,7 @@ class IntegerOverflow(Detector):
             if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'MUL':
-            if self._mul_overflow_check(state, arguments, result):
+            if self._can_mul_overflow(state, arguments, result):
                 self.add_finding(state, "Integer overflow at MUL instruction")
         elif mnemonic == 'SUB':
             if state.can_be_true(arguments[1] > arguments[0]):
