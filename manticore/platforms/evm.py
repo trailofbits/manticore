@@ -44,6 +44,9 @@ class Transaction(object):
         ''' Implements serialization/pickle '''
         return (self.__class__,  (self.sort,  self.address, self.origin, self.price, self.data, self.caller, self.value, self.return_data, self.result))
 
+    def __str__(self):
+        return 'Transaction(%s, from=0x%x, to=0x%x, value=%r, data=%r..)' %(self.sort, self.caller, self.address, self.value, self.data)
+
 class EVMLog():
     def __init__(self, address, memlog, topics):
         self.address = address
@@ -963,6 +966,9 @@ class EVMAsm(object):
 class EVMException(Exception):
     pass
 
+class EVMInstructionException(EVMException):
+    pass
+
 class ConcretizeStack(EVMException):
     '''
     Raised when a symbolic memory cell needs to be concretized.
@@ -986,7 +992,7 @@ class InvalidOpcode(EVMException):
     pass
 
 
-class Call(EVMException):
+class Call(EVMInstructionException):
     def __init__(self, gas, to, value, data, out_offset=None, out_size=None):
         self.gas = gas
         self.to = to
@@ -1005,25 +1011,25 @@ class Create(Call):
 class DelegateCall(Call):
     pass
 
-class Stop(EVMException):
+class Stop(EVMInstructionException):
     ''' Program reached a STOP instruction '''
     pass
 
-class Return(EVMException):
+class Return(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
         return (self.__class__, (self.data,) )
 
-class Revert(EVMException):
+class Revert(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
         return (self.__class__, (self.data,) )
 
-class SelfDestruct(EVMException):
+class SelfDestruct(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, to):
         self.to = to
@@ -1054,7 +1060,7 @@ class EVM(Eventful):
                          'evm_write_memory', 
                          'evm_read_code',
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
-    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000, **kwargs):
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -1273,7 +1279,7 @@ class EVM(Eventful):
         self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction
-        self._publish('will_execute_instruction', self.pc, current)
+
         #Consume some gas
         self._consume(current.fee)
 
@@ -1296,13 +1302,15 @@ class EVM(Eventful):
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
+        self._publish('will_execute_instruction', self.pc, current)
         self._publish('will_evm_execute_instruction', current, arguments)
 
         last_pc = self.pc
-        #Execute
+        result = None
+
         try:
             result = implementation(*arguments)
-            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._emit_did_execute_signals(current, arguments, result, last_pc)
         except ConcretizeStack as ex:
             for arg in reversed(arguments):
                 self._push(arg)
@@ -1314,10 +1322,17 @@ class EVM(Eventful):
                                 policy=ex.policy)
         except EVMException as e:
             self.last_exception = e
-            raise
-        self._publish( 'did_execute_instruction', last_pc, self.pc, current)
 
-        
+            # Technically, this is not the right place to emit these events because the
+            # instruction hasn't executed yet; it executes in the EVM platform class (EVMWorld).
+            # However, when I tried that, in the event handlers, `state.platform.current`
+            # ends up being None, which caused issues. So, as a pragmatic solution, we emit
+            # the event before technically executing the instruction.
+            if isinstance(e, EVMInstructionException):
+                self._emit_did_execute_signals(current, arguments, result, last_pc)
+
+            raise
+
         #Check result (push)
         if current.pushes > 1:
             assert len(result) == current.pushes
@@ -1332,6 +1347,9 @@ class EVM(Eventful):
             #advance pc pointer
             self.pc += self.instruction.size
 
+    def _emit_did_execute_signals(self, current, arguments, result, last_pc):
+        self._publish('did_evm_execute_instruction', current, arguments, result)
+        self._publish('did_execute_instruction', last_pc, self.pc, current)
 
     #INSTRUCTIONS
     def INVALID(self):
@@ -1678,12 +1696,14 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
+        self._publish('will_evm_read_storage', offset)
         value = self.global_storage[self.address]['storage'].get(offset,0)
         self._publish('did_evm_read_storage', offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
+        self._publish('will_evm_write_storage', offset, value)
         self.global_storage[self.address]['storage'][offset] = value
         if value is 0:
             del self.global_storage[self.address]['storage'][offset]
@@ -1891,6 +1911,7 @@ class EVMWorld(Platform):
         self._sha3 = {}
         self._pending_transaction = None
         self._transactions = list()
+        self._internal_transactions = list()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1902,7 +1923,7 @@ class EVMWorld(Platform):
         state['callstack'] = self._callstack
         state['deleted_address'] = self._deleted_address
         state['transactions'] = self._transactions
-
+        state['internal_transactions'] = self._internal_transactions
         return state
 
     def __setstate__(self, state):
@@ -1915,6 +1936,7 @@ class EVMWorld(Platform):
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
         self._transactions = state['transactions']
+        self._internal_transactions = state['internal_transactions']
         self._do_events()
 
     def _do_events(self):
@@ -1946,6 +1968,23 @@ class EVMWorld(Platform):
     @property
     def transactions(self):
         return self._transactions
+
+    @property
+    def internal_transactions(self):
+        number_of_transactions = len(self._transactions)
+        for _ in range( len (self._internal_transactions), number_of_transactions):
+            self._internal_transactions.append([])
+        return self._internal_transactions
+
+    @property
+    def all_transactions(self):
+        txs = []
+        for tx in self._transactions:
+            txs.append(tx)
+            for txi in self.internal_transactions[self._transactions.index(tx)]:
+                txs.append(txi)
+        return txs
+
 
     @property
     def last_return_data(self):
@@ -2079,7 +2118,7 @@ class EVMWorld(Platform):
         self._do_events()
         if self.depth > 1024:
             while self.depth >0:
-                self._pop(rollback=True)
+                self._pop_vm(rollback=True)
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
     def _pop_vm(self, rollback=False):
@@ -2115,6 +2154,8 @@ class EVMWorld(Platform):
     def execute(self):
         self._process_pending_transaction()
         try:
+            if self.current is None:
+                raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current.execute()
         except Create as ex:
             self.CREATE(ex.value, ex.data)
@@ -2316,6 +2357,8 @@ class EVMWorld(Platform):
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
         self._push_vm(new_vm)
 
+
+        tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
         if is_human_tx:
             #handle human transactions
             if ty == 'Create':
@@ -2323,9 +2366,13 @@ class EVMWorld(Platform):
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
-            tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
             self._transactions.append(tx)
- 
+        else:            
+            n = len(self._transactions)
+            if len (self._internal_transactions) < n:
+                self._internal_transactions.append([])
+            self._internal_transactions[n].append(tx)
+
 
     def CALL(self, gas, to, value, data):
         address = to

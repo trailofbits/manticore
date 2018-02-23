@@ -1,7 +1,7 @@
 import string
 
 from . import Manticore
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import arithmetic_simplifier
 from .platforms import evm
 from .core.state import State
@@ -55,20 +55,37 @@ class IntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
+    @staticmethod
+    def _can_add_overflow(state, result, a, b):
+        # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
+        return state.can_be_true(result < a) or state.can_be_true(result < b)
+
+    @staticmethod
+    def _can_mul_overflow(state, result, a, b):
+        return state.can_be_true(operators.ULT(result, a) & operators.ULT(result, b))
+
+    @staticmethod
+    def _can_sub_underflow(state, a, b):
+        return state.can_be_true(b > a)
+
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         mnemonic = instruction.semantics
-        if mnemonic in ('ADD', 'MUL'):
-            if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
+
+        if mnemonic == 'ADD':
+            if self._can_add_overflow(state, result, *arguments):
+                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+        elif mnemonic == 'MUL':
+            if self._can_mul_overflow(state, result, *arguments):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'SUB':
-            if state.can_be_true(arguments[1] > arguments[0]):
+            if self._can_sub_underflow(state, *arguments):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
             
-class UnitializedMemory(Detector):
+class UninitializedMemory(Detector):
     '''
         Detects uses of uninitialized memory
     '''
-    def did_evm_read_memory(self, state, offset, value):
+    def did_evm_read_memory_callback(self, state, offset, value):
         if not state.can_be_true(value != 0):
             #Not initialized memory should be zero
             return 
@@ -80,16 +97,16 @@ class UnitializedMemory(Detector):
         if state.can_be_true(cbu):
             self.add_finding(state, "Potentially reading uninitialized memory at instruction")
  
-    def did_evm_write_memory(self, state, offset, value):
+    def did_evm_write_memory_callback(self, state, offset, value):
         #concrete or symbolic write
         state.context.setdefault('seth.detectors.initialized_memory',set()).add(offset)
 
 
-class UnitializedStorage(Detector):
+class UninitializedStorage(Detector):
     '''
         Detects uses of uninitialized storage
     '''
-    def did_evm_read_storage(self, state, offset, value):
+    def did_evm_read_storage_callback(self, state, offset, value):
         if not state.can_be_true(value != 0):
             #Not initialized memory should be zero
             return 
@@ -101,7 +118,7 @@ class UnitializedStorage(Detector):
         if state.can_be_true(cbu):
             self.add_finding(state, "Potentially reading uninitialized storage")
  
-    def did_evm_write_storage(self, state, offset, value):
+    def did_evm_write_storage_callback(self, state, offset, value):
         #concrete or symbolic write
         state.context.setdefault('seth.detectors.initialized_storage',set()).add(offset)
 
@@ -582,7 +599,7 @@ class ManticoreEVM(Manticore):
             try:
                 output = json.loads(p.stdout.read())
             except ValueError:
-                raise Exception('Solidity compilation error')
+                raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
 
             contracts = output.get('contracts', [])
             if len(contracts) != 1 and contract_name is None:
@@ -662,7 +679,10 @@ class ManticoreEVM(Manticore):
 
     @property
     def all_state_ids(self):
-        ''' IDs of the all states ''' 
+        ''' IDs of the all states 
+
+            Note: state with id -1 is already in memory and it is not backed on the storage
+        ''' 
         return self.running_state_ids + self.terminated_state_ids
 
     @property
@@ -922,7 +942,7 @@ class ManticoreEVM(Manticore):
             assert len(self._executor.list()) == 0
 
             for state_id in context['_saved_states']:
-                self._executor.enqueue(state_id)
+                self._executor.put(state_id)
             context['_saved_states'] = []
 
         #A callback will use _pending_transaction and issue the transaction 
@@ -1269,7 +1289,9 @@ class ManticoreEVM(Manticore):
                 
         #delete actual streams from storage
         for state_id in self.all_state_ids:
-            self._executor._workspace.rm_state(state_id)
+            #state_id -1 is always only on memory
+            if state_id != -1:
+                self._executor._workspace.rm_state(state_id)
 
         #clean up lists
         with self.locked_context('seth') as seth_context:
