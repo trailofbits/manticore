@@ -10,7 +10,9 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # FIXME(mark): Remove these two lines when logging works for ManticoreEVM
 from manticore.utils.log import init_logging
+
 init_logging()
+
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
@@ -30,7 +32,6 @@ class EthDetectors(unittest.TestCase):
         self.io = IntegerOverflow()
         self.state = self.make_mock_evm_state()
 
-
     @staticmethod
     def make_mock_evm_state():
         cs = ConstraintSet()
@@ -42,7 +43,7 @@ class EthDetectors(unittest.TestCase):
         Regression test added for issue 714, where we were using the ADD ovf check for MUL
         """
         arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
-        self.state.constrain(operators.ULT(arguments[1],256))
+        self.state.constrain(operators.ULT(arguments[1], 256))
 
         # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
         # effectively copy pasting what the MUL does
