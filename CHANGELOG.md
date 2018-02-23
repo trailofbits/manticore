@@ -12,19 +12,21 @@ This release brings EVM, performance, Linux emulation, and API improvements, alo
 - [disconnect3d](https://github.com/disconnect3d)
 - [arunjohnkuruvilla](https://github.com/arunjohnkuruvilla)
 - [alexanderholman](https://github.com/alexanderholman)
+- [Srinivas11789](https://github.com/Srinivas11789)
 
 ### Added
 
-- Improved documentation on symbolic input
+ - [Documentation](https://github.com/trailofbits/manticore/blob/master/docs/syminput.rst) on symbolic input
+ - "[force](http://manticore.readthedocs.io/en/latest/api.html#manticore.core.cpu.abstractcpu.Cpu.write_bytes)" keyword argument in `cpu.write_bytes/read_bytes` etc.
+ - Linux syscalls: getrandom(), openat()
+
 
 ### Changed
-
-- New "force" flag on memory APIs
 
 ### Fixed
 
 - Improved ARMv7 Thumb support
-- Numerous EVM bug fixes
+- Numerous EVM bug fixes and improvements (transaction generation, SHA3 handling, instruction tracing)
 - Improved x86/64 emulation performance
 
 ## 0.1.6 - 2017-12-22
