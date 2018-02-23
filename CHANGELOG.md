@@ -23,7 +23,7 @@ This release brings EVM, performance, Linux emulation, and API improvements, alo
 ### Fixed
 
 - Improved ARMv7 Thumb support
-- Numerous EVM bug fixes and improvements (transaction generation, SHA3 handling, instruction tracing)
+- Numerous EVM bug fixes and improvements (transaction generation, SHA3 handling, instruction tracing, int overflow detection)
 - Improved x86/64 emulation performance
 
 ## 0.1.6 - 2017-12-22
