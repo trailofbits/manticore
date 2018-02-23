@@ -825,6 +825,7 @@ class EVM(Eventful):
         :param bytecode: the byte array that is the machine code to be executed.
         :param header: the block header of the present block.
         :param depth: the depth of the present message-call or contract-creation (i.e. the number of CALLs or CREATEs being executed at present).
+        :param gas: gas budget for this transaction.
 
         '''
         super(EVM, self).__init__(**kwargs)
@@ -841,7 +842,6 @@ class EVM(Eventful):
         self.bytecode = code
         self.suicides = set()
         self.logs = []
-        self.gas=gas
         #FIXME parse decode and mark invalid instructions
         #self.invalid = set()
 
@@ -856,7 +856,7 @@ class EVM(Eventful):
         self.pc = 0
         self.stack = []
         self._gas = gas
-        self.world = world
+        self.world_state = world
         self._allocated = 0
 
 
@@ -876,9 +876,8 @@ class EVM(Eventful):
 
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
-        state['gas'] = self.gas
         state['memory'] = self.memory
-        state['world'] = self.world
+        state['world'] = self.world_state
         state['constraints'] = self.constraints
         state['last_exception'] = self.last_exception
         state['address'] = self.address
@@ -900,10 +899,10 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
-        self.gas = state['gas']
+        self._gas = state['gas']
         self.memory = state['memory']
         self.logs = state['logs'] 
-        self.world = state['world']
+        self.world_state = state['world']
         self.constraints = state['constraints']
         self.last_exception = state['last_exception']
         self.address = state['address']
@@ -1287,12 +1286,7 @@ class EVM(Eventful):
         '''Get balance of the given account'''
         BALANCE_SUPPLEMENTAL_GAS = 380
         self._consume(BALANCE_SUPPLEMENTAL_GAS)
-        if account & TT256M1 not in self.world:
-            return 0
-        value = self.world[account & TT256M1 ]['balance']
-        if value is None:
-            return 0
-        return value
+        return self.world_state.get_balance(account)
 
     def ORIGIN(self): 
         '''Get execution origination address'''
@@ -1368,16 +1362,16 @@ class EVM(Eventful):
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
         #FIXME
-        if not account & TT256M1 in self.world:
+        if not account & TT256M1 in self.world_state:
             return 0
-        return len(self.world[account & TT256M1]['code'])
+        return len(self.world_state[account & TT256M1]['code'])
 
     def EXTCODECOPY(self, account, address, offset, size): 
         '''Copy an account's code to memory'''
         #FIXME STOP! if not enough data
-        if not account & TT256M1 in self.world:
+        if not account & TT256M1 in self.world_state:
             return
-        extbytecode = self.world[account& TT256M1]['code']
+        extbytecode = self.world_state[account& TT256M1]['code']
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
 
@@ -1452,15 +1446,13 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
-        value = self.global_storage[self.address]['storage'][offset]
+        value = self.world_state.get_storage_data(self.address, offset)
         self._publish('did_evm_read_storage', offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
-        self.world[self.address]['storage'][offset] = value
-        if value is 0:
-            del self.world[self.address]['storage'][offset]
+        value = self.world_state.set_storage_data(self.address, offset, value)
         self._publish('did_evm_write_storage', offset, value)
 
     def JUMP(self, dest):
@@ -1483,7 +1475,7 @@ class EVM(Eventful):
     def GAS(self):
         '''Get the amount of available gas, including the corresponding reduction the amount of available gas'''
         #fixme calculate gas consumption
-        return self.gas
+        return self._gas
 
     def JUMPDEST(self):
         '''Mark a valid destination for jumps'''
@@ -1659,7 +1651,7 @@ class EVMWorld(Platform):
 
     def __init__(self, constraints, storage=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
-        self._world = {} if storage is None else storage
+        self._world_state = {} if storage is None else storage
         self._constraints = constraints
         self._callstack = [] 
         self._deleted_address = set()
@@ -1673,7 +1665,7 @@ class EVMWorld(Platform):
         state['sha3'] = self._sha3
         state['pending_transaction'] = self._pending_transaction
         state['logs'] = self._logs
-        state['storage'] = self._world
+        state['world_state'] = self._world_state
         state['constraints'] = self._constraints
         state['callstack'] = self._callstack
         state['deleted_address'] = self._deleted_address
@@ -1686,7 +1678,7 @@ class EVMWorld(Platform):
         self._sha3 = state['sha3']
         self._pending_transaction = state['pending_transaction']
         self._logs = state['logs'] 
-        self._world = state['storage']
+        self._world_state = state['world_state']
         self._constraints = state['constraints']
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
@@ -1704,12 +1696,12 @@ class EVMWorld(Platform):
         self._sha3[buf] = value
 
     def __getitem__(self, index):
-        print "GETITEM!", index
         assert isinstance(index, (int,long))
-        return self.world[index]
+        return self.world_state[index]
 
     def __contains__(self, key):
-        return key in self.world
+        assert not issymbolic(key), "Symbolic address not supported"
+        return key in self.world_state
 
     def __str__(self):
         return "WORLD:" + str(self._world)
@@ -1746,7 +1738,7 @@ class EVMWorld(Platform):
 
     @property
     def accounts(self):
-        return self.world.keys()
+        return self.world_state.keys()
 
     @property
     def normal_accounts(self):
@@ -1769,21 +1761,20 @@ class EVMWorld(Platform):
         return self._deleted_address
 
     @property
-    def world(self):
+    def world_state(self):
         if self.depth:
             return self.current.world
         else:
-            return self._world
+            return self._world_state
 
     def set_storage_data(self, address, offset, value):
-        self.world[address]['storage'][offset] = value
+        self.world_state[address]['storage'][offset] = value
 
     def get_storage_data(self, address, offset):
-        return self.world[address]['storage'].get(offset)
+        return self.world_state[address]['storage'][offset]
 
     def get_storage_items(self, address):
-        storage = self.world[address]['storage']
-        print storage, type(storage)
+        storage = self.world_state[address]['storage']
         items = []
         array = storage.array
         while not isinstance(array, ArrayVariable):
@@ -1792,25 +1783,29 @@ class EVMWorld(Platform):
         return items
 
     def has_storage(self, address):
-        return True #len(self.world[address]['storage'].items()) != 0
+        return True #len(self.world_state[address]['storage'].items()) != 0
 
     def set_balance(self, address, value):
-        self.world[int(address)]['balance'] = value
+        self.world_state[int(address)]['balance'] = value
 
     def get_balance(self, address):
-        return self.world[address]['balance']
+        return self.world_state[address]['balance']
 
     def add_to_balance(self, address, value):
-        self.world[address]['balance'] += value
+        self.world_state[address]['balance'] += value
+
+    def send_funds(self, sender, recipient, value):
+        self.world_state[sender]['balance'] -= value
+        self.world_state[recipient]['balance'] += value
 
     def get_code(self, address):
-        return self.world[address]['code']
+        return self.world_state[address]['code']
 
     def set_code(self, address, data):
-        self.world[address]['code'] = data
+        self.world_state[address]['code'] = data
 
     def has_code(self, address):
-        return len(self.world[address]['code']) > 0
+        return len(self.world_state[address]['code']) > 0
 
 
     def log(self, address, topic, data):
@@ -1850,10 +1845,8 @@ class EVMWorld(Platform):
     #CALLSTACK
     def _push_vm(self, vm):
         #Storage address ->  account(value, local_storage)
-        vm.world = self.world
-
-        print self.world[vm.address]['storage'], type(self.world[vm.address]['storage']), copy
-        vm.world[vm.address]['storage'] = copy(self.world[vm.address]['storage'])
+        vm.world = self.world_state
+        vm.world[vm.address]['storage'] = copy(self.world_state[vm.address]['storage'])
         if self.depth:
             self.current.constraints = None
         #MAKE A DEEP COPY OF THE SPECIFIC ACCOUNT
@@ -1883,7 +1876,7 @@ class EVMWorld(Platform):
                 self._deleted_address = self._deleted_address.union(vm.suicides)
                 self._logs += vm.logs
                 for address in self._deleted_address:
-                    del self.world[address]
+                    del self.world_state[address]
         return vm
 
     @property
@@ -1893,7 +1886,7 @@ class EVMWorld(Platform):
     def new_address(self):
         ''' create a fresh 160bit address '''
         new_address = random.randint(100, pow(2, 160))
-        if new_address in self._world.keys():
+        if new_address in self:
             return self.new_address()
         return new_address
 
@@ -1934,17 +1927,18 @@ class EVMWorld(Platform):
 
     def create_account(self, address=None, balance=0, code='', storage=None):
         ''' code is the runtime code '''
+        assert not issymbolic(address)
         #storage = {} if storage is None else storage
         storage = ArrayProxy(ArrayVariable(index_bits=256, value_bits=256, name='STORAGE', index_max=None)) if storage is None else storage
 
         if address is None:
             address = self.new_address()
-        assert address not in self.world, 'The account already exists'
-        self.world[address] = {}
-        self.world[address]['nonce'] = 0L
-        self.world[address]['balance'] = balance
-        self.world[address]['storage'] = storage
-        self.world[address]['code'] = code
+        assert address not in self.world_state, 'The account already exists'
+        self.world_state[address] = {}
+        self.world_state[address]['nonce'] = 0L
+        self.world_state[address]['balance'] = balance
+        self.world_state[address]['storage'] = storage
+        self.world_state[address]['code'] = code
 
         return address
 
@@ -1976,7 +1970,7 @@ class EVMWorld(Platform):
         assert  not issymbolic(address) 
         assert  not issymbolic(origin) 
         address = self.create_account(address, 0)
-        self.storage[address]['storage'] = self._constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
+        self.world_state[address]['storage'] = self._constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
 
         self._pending_transaction = ('Create', address, origin, price, '', origin, balance, ''.join(init), header)
 
@@ -1986,9 +1980,9 @@ class EVMWorld(Platform):
             #Assert everything is concrete?
             assert  not issymbolic(origin) 
             assert  not issymbolic(address) 
-            assert self.world[origin]['balance'] >= balance
+            assert self.world_state.get_balance(origin) >= balance
             runtime = self.run()
-            self.world[address]['code'] = ''.join(runtime)
+            self.world_state[address]['code'] = ''.join(runtime)
 
         return address
 
@@ -2010,7 +2004,6 @@ class EVMWorld(Platform):
         assert not issymbolic(address), "Symbolic target address not supported yet. (need to fork on all available addresses)"
         assert not issymbolic(caller), "Symbolic caller address not supported yet."
         assert not issymbolic(origin), "Symbolic origin address not supported yet."
-        print address, caller, origin, self.accounts
         if address not in self.accounts or\
            caller not in self.accounts or \
            origin != caller and origin not in self.accounts:
@@ -2103,12 +2096,10 @@ class EVMWorld(Platform):
                 self.current._push(0)
                 return
 
-        #Here we have enoug funds and room in the callstack
+        #Here we have enough funds and room in the callstack
+        self.send_funds(caller, address, value)
 
-        self.world[address]['balance'] += value
-        self.world[caller]['balance'] -= value
-
-        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self.world)
+        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self.world_state)
         self._push_vm(new_vm)
 
         if is_human_tx:
@@ -2172,8 +2163,7 @@ class EVMWorld(Platform):
     def THROW(self):
         prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
-        self.world[prev_vm.caller]['balance'] += prev_vm.value
-        self.world[prev_vm.address]['balance'] -= prev_vm.value
+        self.world_state.send_funds(prev_vm.address, prev_vm.caller, prev_vm.value)
 
         if self.depth == 0:
             tx = self._transactions[-1]
@@ -2189,8 +2179,7 @@ class EVMWorld(Platform):
     def REVERT(self, data):
         prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
-        self.world[prev_vm.caller]['balance'] += prev_vm.value
-        self.world[prev_vm.address]['balance'] -= prev_vm.value
+        self.send_funds(prev_vm.address, prev_vm.caller, prev_vm.value)
 
         if self.depth == 0:
             tx = self._transactions[-1]
@@ -2206,10 +2195,17 @@ class EVMWorld(Platform):
         #This may create a user account
         recipient = Operators.EXTRACT(recipient, 0, 160)
         address = self.current.address
-        if recipient not in self.world:
+
+        #FIXME for on the known addresses
+        if issymbolic(recipient):
+            logger.info("Symbolic recipient on self destruct")
+            recipient = solver.get_value(self.constraints, recipient) 
+            
+        if recipient not in self.world_state:
             self.create_account(address=recipient, balance=0, code='', storage=None)
-        self.world[recipient]['balance'] += self.world[address]['balance']
-        self.world[address]['balance'] = 0
+
+        self.world_state.send_funds(address, recipient, self.world_state.get_balance(address))
+
         self.current.suicides.add(address)
         prev_vm = self._pop_vm(rollback=False)
 

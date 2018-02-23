@@ -582,6 +582,15 @@ class Array(Expression):
     def store(self, index, value):
         return ArrayStore(self, self.cast_index(index), self.cast_value(value))
 
+    def __getitem__(self, index):
+        return ArraySelect(self, self.cast_index(index))
+
+    @property
+    def underlying_variable(self):
+        array = self
+        while not isinstance(array, ArrayVariable):
+            array = array.array
+        return array
 
 class ArrayVariable(Array, Variable):
     def __init__(self, index_bits, index_max, value_bits, name, *operands, **kwargs):
@@ -590,10 +599,6 @@ class ArrayVariable(Array, Variable):
     @property
     def declaration(self):
         return '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (self.name, self.index_bits, self.value_bits)
-
-    def __getitem__(self, index):
-        return ArraySelect(self, self.cast_index(index))
-
 
 class ArrayOperation(Array, Operation):
     def __init__(self, array, *operands, **kwargs):
@@ -641,11 +646,7 @@ class ArrayProxy(Array):
         else:
             #arrayproxy for an prepopulated array
             super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
-            self._array = array
-            while not isinstance(array, ArrayVariable):
-                array = array.array
-            self._name = array.name
-            
+            self._name = array.underlying_variable.name            
             
     @property
     def array(self):
@@ -669,7 +670,7 @@ class ArrayProxy(Array):
 
     @property
     def value_bits(self):
-        return self._array._value_bits
+        return self._array.value_bits
    
     @property
     def taint(self):

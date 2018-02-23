@@ -379,6 +379,10 @@ class ABI(object):
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
             return data[offset:offset+size], offset+32
+        elif ty == u'address[]':
+            dyn_offset = 4 + get_uint(256,offset)
+            size = get_uint(256, dyn_offset)
+            return data[dyn_offset+32:dyn_offset+32+size], offset+4
         else:
             raise NotImplementedError(ty)
 
@@ -751,7 +755,7 @@ class ManticoreEVM(Manticore):
         ''' Storage data for `offset` on account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world(state_id).storage[address]['code']
+        return self.get_world(state_id)[address]['code']
 
     def last_return(self, state_id=None):
         ''' Last returned buffer for state `state_id` '''
@@ -793,6 +797,8 @@ class ManticoreEVM(Manticore):
                                        address=address,
                                        init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
 
+        if len(self.running_state_ids) ==0 or self.get_code(account) == '':
+            return None
         return account
 
     def create_contract(self, owner, balance=0, address=None, init=None):
@@ -875,9 +881,8 @@ class ManticoreEVM(Manticore):
             source_code = f.read()
 
         user_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=user_account)
         attacker_account = self.create_account(balance=1000)
-
+        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=user_account)
         def run_symbolic_tx():
             symbolic_data = self.make_symbolic_buffer(320)
             symbolic_value = self.make_symbolic_value()
@@ -885,6 +890,11 @@ class ManticoreEVM(Manticore):
                              address=contract_account,
                              data=symbolic_data,
                              value=symbolic_value )
+
+
+        if contract_account is None:
+            logger.info("Failed to create contract. Exception in constructor")
+            return
 
         prev_coverage = 0
         current_coverage = 0
@@ -1349,7 +1359,6 @@ class ManticoreEVM(Manticore):
         world=None
         for state_id in self.all_state_ids:
             world = self.get_world(state_id)
-            print "AAAAAAA", account_address
             if account_address in world:
                 break
 
