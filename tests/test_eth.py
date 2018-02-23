@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from manticore.core.smtlib import ConstraintSet
+from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.state import State
 from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
 from manticore.platforms.evm import EVMWorld
@@ -12,13 +12,7 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 from manticore.utils.log import init_logging
 init_logging()
 
-class EthDetectors(unittest.TestCase):
-    @staticmethod
-    def make_mock_evm_state():
-        cs = ConstraintSet()
-        fakestate = State(cs, EVMWorld(cs))
-        return fakestate
-
+class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
         mevm = ManticoreEVM()
         mevm.register_detector(IntegerOverflow())
@@ -30,17 +24,60 @@ class EthDetectors(unittest.TestCase):
         self.assertIn('overflow at ADD', all_findings)
         self.assertIn('overflow at MUL', all_findings)
 
+
+class EthDetectors(unittest.TestCase):
+    @staticmethod
+    def make_mock_evm_state():
+        cs = ConstraintSet()
+        fakestate = State(cs, EVMWorld(cs))
+        return fakestate
+
     def test_mul_no_overflow(self):
         """
         Regression test added for issue 714, where we were using the ADD ovf check for MUL
         """
         io = IntegerOverflow()
         state = self.make_mock_evm_state()
-        arguments = [1 << (8 * 31), state.new_symbolic_value(8)]
+        arguments = [1 << (8 * 31), state.new_symbolic_value(256)]
+        state.constrain(operators.ULT(arguments[1],256))
+
         result = arguments[0] * arguments[1]
+        result = result & (2**256 - 1)
 
         check = io._can_mul_overflow(state, arguments, result)
         self.assertFalse(check)
+
+    def test_mul_overflow0(self):
+        """
+        overflow to 0 if you multiple by 2
+        """
+        io = IntegerOverflow()
+        state = self.make_mock_evm_state()
+        arguments = [1 << 255, state.new_symbolic_value(256)]
+        state.constrain(operators.ULT(arguments[1],256))
+
+        result = arguments[0] * arguments[1]
+        result = result & (2**256 - 1)
+
+        check = io._can_mul_overflow(state, arguments, result)
+        self.assertTrue(check)
+
+    def test_mul_overflow1(self):
+        """
+        hmmmm this should overflow
+        maybe it's possibel for it to overflow, but not for it to be under both arguments?
+        :return:
+        """
+        io = IntegerOverflow()
+        state = self.make_mock_evm_state()
+        arguments = [2 << (8 * 31), state.new_symbolic_value(256)]
+        state.constrain(operators.ULT(arguments[1],256))
+
+        result = arguments[0] * arguments[1]
+        result = result & (2**256 - 1)
+
+        check = io._can_mul_overflow(state, arguments, result)
+        self.assertTrue(check)
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
