@@ -1654,3 +1654,8 @@ class Armv7CpuInstructions(unittest.TestCase):
         # the cpu lives in self.cpu
         e.setstate(self, CS_MODE_THUMB)
         self.assertEqual(self.cpu.mode, CS_MODE_THUMB)
+
+    @itest_setregs("R1=0x00000008") # pc/r15 is set to 0x1004 in _setupCpu()
+    @itest("add pc, pc, r1")
+    def test_add_to_pc(self):
+        self.assertEqual(self.rf.read('R15'), 0x1014)
