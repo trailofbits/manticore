@@ -85,7 +85,7 @@ class Armv7Operand(Operand):
             # PC in this case has to be set to the instruction after next. PC at this point
             # is already pointing to next instruction; we bump it one more.
             if self.reg in ('PC', 'R15'):
-                value += cpu.instruction.size
+                value += self.cpu.instruction.size
             if self.is_shifted():
                 shift = self.op.shift
                 value, carry = self.cpu._shift(value, shift.type, shift.value, carry)
@@ -355,11 +355,11 @@ class Armv7Cpu(Cpu):
         return state
 
     def __setstate__(self, state):
-        super(Armv7Cpu, self).__setstate__(state)
         self._last_flags = state['_last_flags']
         self._at_symbolic_conditional = state['at_symbolic_conditional']
         self._it_conditional = state['_it_conditional']
         self._mode = state['_mode']
+        super(Armv7Cpu, self).__setstate__(state)
 
     @property
     def mode(self):

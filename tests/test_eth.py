@@ -1,15 +1,20 @@
 import unittest
 import os
 
+from manticore.core.smtlib import ConstraintSet, operators
+from manticore.core.state import State
 from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
+from manticore.platforms.evm import EVMWorld
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # FIXME(mark): Remove these two lines when logging works for ManticoreEVM
 from manticore.utils.log import init_logging
+
 init_logging()
 
-class EthDetectors(unittest.TestCase):
+
+class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
         mevm = ManticoreEVM()
         mevm.register_detector(IntegerOverflow())
@@ -20,6 +25,50 @@ class EthDetectors(unittest.TestCase):
         self.assertIn('underflow at SUB', all_findings)
         self.assertIn('overflow at ADD', all_findings)
         self.assertIn('overflow at MUL', all_findings)
+
+
+class EthDetectors(unittest.TestCase):
+    def setUp(self):
+        self.io = IntegerOverflow()
+        self.state = self.make_mock_evm_state()
+
+    @staticmethod
+    def make_mock_evm_state():
+        cs = ConstraintSet()
+        fakestate = State(cs, EVMWorld(cs))
+        return fakestate
+
+    def test_mul_no_overflow(self):
+        """
+        Regression test added for issue 714, where we were using the ADD ovf check for MUL
+        """
+        arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
+        # effectively copy pasting what the MUL does
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertFalse(check)
+
+    def test_mul_overflow0(self):
+        arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertTrue(check)
+
+    def test_mul_overflow1(self):
+        arguments = [1 << 255, self.state.new_symbolic_value(256)]
+
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertTrue(check)
+
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
