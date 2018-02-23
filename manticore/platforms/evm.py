@@ -10,6 +10,7 @@ from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translat
 from ..core.state import Concretize,TerminateState
 import logging
 import sys, hashlib
+from manticore.core.smtlib import *
 if sys.version_info < (3, 6):
     import sha3
 
@@ -22,7 +23,7 @@ TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
 
 def ceil32(x):
-    return Operators.ITEBV(256, (x % 32) == 0, x , x + 32 - (x % 32))
+    return Operators.ITEBV(256, Operators.UREM(x, 32) == 0, x , x + 32 - Operators.UREM(x, 32))
 
 def to_signed(i):
     return Operators.ITEBV(256, i<TT255, i, i-TT256)
@@ -810,7 +811,7 @@ class EVM(Eventful):
                          'evm_write_memory', 
                          'evm_read_code',
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
-    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000, **kwargs):
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, world=None, depth=0, gas=1000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -829,7 +830,7 @@ class EVM(Eventful):
         super(EVM, self).__init__(**kwargs)
         self._constraints = constraints
         self.last_exception = None
-        self.memory = self._constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
+        self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
         self.address = address
         self.origin = origin # always an account with empty associated code
         self.caller = caller # address of the account that is directly responsible for this execution
@@ -854,9 +855,14 @@ class EVM(Eventful):
         #Machine state
         self.pc = 0
         self.stack = []
-        self.gas = gas
-        self.global_storage = global_storage
-        self.allocated = 0
+        self._gas = gas
+        self.world = world
+        self._allocated = 0
+
+
+    @property
+    def gas(self):
+        return self._gas
 
     @property
     def constraints(self):
@@ -872,7 +878,7 @@ class EVM(Eventful):
         state = super(EVM, self).__getstate__()
         state['gas'] = self.gas
         state['memory'] = self.memory
-        state['global_storage'] = self.global_storage
+        state['world'] = self.world
         state['constraints'] = self.constraints
         state['last_exception'] = self.last_exception
         state['address'] = self.address
@@ -886,8 +892,8 @@ class EVM(Eventful):
         state['header'] = self.header
         state['pc'] = self.pc
         state['stack'] = self.stack
-        state['gas'] = self.gas
-        state['allocated'] = self.allocated
+        state['gas'] = self._gas
+        state['allocated'] = self._allocated
         state['suicides'] = self.suicides
         state['logs'] = self.logs
 
@@ -897,7 +903,7 @@ class EVM(Eventful):
         self.gas = state['gas']
         self.memory = state['memory']
         self.logs = state['logs'] 
-        self.global_storage = state['global_storage']
+        self.world = state['world']
         self.constraints = state['constraints']
         self.last_exception = state['last_exception']
         self.address = state['address']
@@ -911,35 +917,43 @@ class EVM(Eventful):
         self.header = state['header']
         self.pc = state['pc']
         self.stack = state['stack']
-        self.gas = state['gas']
-        self.allocated = state['allocated']
+        self._gas = state['gas']
+        self._allocated = state['allocated']
         self.suicides = state['suicides']
         super(EVM, self).__setstate__(state)
 
-    #Memory related
     def _allocate(self, address):
         allocated = self.allocated
 
         GMEMORY = 3
         GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
-        old_size = ceil32(allocated) // 32
-        old_totalfee = old_size * GMEMORY + old_size *old_size // GQUADRATICMEMDENOM
-        new_size = ceil32(address) // 32
-        increased = Operators.ITEBV(256, address > allocated, new_size - old_size, 0)
-        fee = increased * GMEMORY + increased*increased // GQUADRATICMEMDENOM
-        self.constraints.add(fee>=0) #FIXME document. Ignore fee overflow
-        self._consume(fee)
+        old_size = Operators.ZEXTEND(Operators.UDIV(ceil32(allocated), 32), 512)
+        new_size = Operators.ZEXTEND(Operators.UDIV(ceil32(address), 32), 512)
+
+        old_totalfee = old_size * GMEMORY # + old_size*old_size // GQUADRATICMEMDENOM
+        new_totalfee = new_size * GMEMORY #+ new_size*new_size // GQUADRATICMEMDENOM
+        memfee = new_totalfee - old_totalfee
+
+        flag = Operators.UGT(new_totalfee, old_totalfee)
+        self._consume(Operators.ITEBV(512, flag, memfee, 0))
+
+        self._allocated=Operators.ITEBV(512, flag, Operators.ZEXTEND( address, 512), Operators.ZEXTEND(allocated,512))
+
+    @property
+    def allocated(self):
+        return self._allocated
 
     def _store(self, address, value):
         #CHECK ADDRESS IS A 256 BIT INT OR BITVEC
         #CHECK VALUE IS A 256 BIT INT OR BITVEC
-        self.memory[address] = value
+        self._allocate(address)
+        self.memory[address]=value
         self._publish('did_evm_write_memory', address, value)
-
 
     def _load(self, address):
         self._allocate(address)
-        value = arithmetic_simplifier(self.memory[address])
+        value = self.memory[address]
+        value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
         self._publish('did_evm_read_memory', address, value)
@@ -1008,14 +1022,9 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        assert not solver.can_be_true(self.constraints, fee<0)
-
-        #FIXME document we are assuming max gas always and potentialy generating
-        # imposible constraints (should be configurable)
-        #if not solver.can_be_true(self.constraints, self.gas >= fee):            
-        #    raise NotEnoughGas()
-        self.constraints.add( self.gas >= fee)
-        self.gas -= fee
+        self.constraints.add(Operators.UGE(fee, 0))
+        self.constraints.add(Operators.UGE(self.gas, fee) )
+        self._gas -= fee
 
     #Execute an instruction from current pc
     def execute(self):
@@ -1278,9 +1287,9 @@ class EVM(Eventful):
         '''Get balance of the given account'''
         BALANCE_SUPPLEMENTAL_GAS = 380
         self._consume(BALANCE_SUPPLEMENTAL_GAS)
-        if account & TT256M1 not in self.global_storage:
+        if account & TT256M1 not in self.world:
             return 0
-        value = self.global_storage[account & TT256M1 ]['balance']
+        value = self.world[account & TT256M1 ]['balance']
         if value is None:
             return 0
         return value
@@ -1340,17 +1349,16 @@ class EVM(Eventful):
 
     def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
-        if issymbolic(size):
-            raise ConcretizeStack(3)
-        GCOPY = 3             # cost to copy one 32 byte word
-        self._consume(GCOPY * ceil32(size) // 32)
+                     # cost to copy one 32 byte word
 
-        self._allocate(mem_offset+size)
-        for i in range(size):
-            if (code_offset+i > len(self.bytecode)):
-                self._store(mem_offset+i, 0)
-            else:
-                self._store(mem_offset+i, Operators.ORD(self.bytecode[code_offset+i]))
+        if issymbolic(size):
+            max_size = solver.min(self.constraints, size)
+        else:
+            max_size = size
+
+        for i in range(max_size):
+            value = Operators.ITEBV(256, code_offset+i > len(self.bytecode), 0, Operators.ORD(self.bytecode[code_offset+i]))
+            self._store(mem_offset+i, value)
         self._publish( 'did_evm_read_code', code_offset, size)
 
     def GASPRICE(self):
@@ -1360,16 +1368,16 @@ class EVM(Eventful):
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
         #FIXME
-        if not account & TT256M1 in self.global_storage:
+        if not account & TT256M1 in self.world:
             return 0
-        return len(self.global_storage[account & TT256M1]['code'])
+        return len(self.world[account & TT256M1]['code'])
 
     def EXTCODECOPY(self, account, address, offset, size): 
         '''Copy an account's code to memory'''
         #FIXME STOP! if not enough data
-        if not account & TT256M1 in self.global_storage:
+        if not account & TT256M1 in self.world:
             return
-        extbytecode = self.global_storage[account& TT256M1]['code']
+        extbytecode = self.world[account& TT256M1]['code']
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
 
@@ -1450,9 +1458,9 @@ class EVM(Eventful):
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
-        self.global_storage[self.address]['storage'][offset] = value
+        self.world[self.address]['storage'][offset] = value
         if value is 0:
-            del self.global_storage[self.address]['storage'][offset]
+            del self.world[self.address]['storage'][offset]
         self._publish('did_evm_write_storage', offset, value)
 
     def JUMP(self, dest):
@@ -1463,7 +1471,6 @@ class EVM(Eventful):
     def JUMPI(self, dest, cond):
         '''Conditionally alter the program counter'''
         self.pc = Operators.ITEBV(256, cond!=0, dest, self.pc + self.instruction.size)
-        assert self.bytecode[dest] == '\x5b', "Must be jmpdest instruction" #fixme what if dest == self.pc + self.instruction.size?
 
     def GETPC(self):
         '''Get the value of the program counter prior to the increment'''
@@ -1652,7 +1659,7 @@ class EVMWorld(Platform):
 
     def __init__(self, constraints, storage=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
-        self._global_storage = {} if storage is None else storage
+        self._world = {} if storage is None else storage
         self._constraints = constraints
         self._callstack = [] 
         self._deleted_address = set()
@@ -1666,7 +1673,7 @@ class EVMWorld(Platform):
         state['sha3'] = self._sha3
         state['pending_transaction'] = self._pending_transaction
         state['logs'] = self._logs
-        state['storage'] = self._global_storage
+        state['storage'] = self._world
         state['constraints'] = self._constraints
         state['callstack'] = self._callstack
         state['deleted_address'] = self._deleted_address
@@ -1679,7 +1686,7 @@ class EVMWorld(Platform):
         self._sha3 = state['sha3']
         self._pending_transaction = state['pending_transaction']
         self._logs = state['logs'] 
-        self._global_storage = state['storage']
+        self._world = state['storage']
         self._constraints = state['constraints']
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
@@ -1697,12 +1704,15 @@ class EVMWorld(Platform):
         self._sha3[buf] = value
 
     def __getitem__(self, index):
+        print "GETITEM!", index
         assert isinstance(index, (int,long))
-        return self.storage[index]
+        return self.world[index]
 
+    def __contains__(self, key):
+        return key in self.world
 
     def __str__(self):
-        return "WORLD:" + str(self._global_storage)
+        return "WORLD:" + str(self._world)
         
     @property
     def logs(self):
@@ -1736,7 +1746,7 @@ class EVMWorld(Platform):
 
     @property
     def accounts(self):
-        return self.storage.keys()
+        return self.world.keys()
 
     @property
     def normal_accounts(self):
@@ -1759,41 +1769,48 @@ class EVMWorld(Platform):
         return self._deleted_address
 
     @property
-    def storage(self):
+    def world(self):
         if self.depth:
-            return self.current.global_storage
+            return self.current.world
         else:
-            return self._global_storage
+            return self._world
 
     def set_storage_data(self, address, offset, value):
-        self.storage[address]['storage'][offset] = value
+        self.world[address]['storage'][offset] = value
 
     def get_storage_data(self, address, offset):
-        return self.storage[address]['storage'].get(offset)
+        return self.world[address]['storage'].get(offset)
 
     def get_storage_items(self, address):
-        return self.storage[address]['storage'].items()
+        storage = self.world[address]['storage']
+        print storage, type(storage)
+        items = []
+        array = storage.array
+        while not isinstance(array, ArrayVariable):
+            items.append((array.index,array.value))
+            array = array.array
+        return items
 
     def has_storage(self, address):
-        return len(self.storage[address]['storage'].items()) != 0
+        return True #len(self.world[address]['storage'].items()) != 0
 
     def set_balance(self, address, value):
-        self.storage[int(address)]['balance'] = value
+        self.world[int(address)]['balance'] = value
 
     def get_balance(self, address):
-        return self.storage[address]['balance']
+        return self.world[address]['balance']
 
     def add_to_balance(self, address, value):
-        self.storage[address]['balance'] += value
+        self.world[address]['balance'] += value
 
     def get_code(self, address):
-        return self.storage[address]['code']
+        return self.world[address]['code']
 
     def set_code(self, address, data):
-        self.storage[address]['code'] = data
+        self.world[address]['code'] = data
 
     def has_code(self, address):
-        return len(self.storage[address]['code']) > 0
+        return len(self.world[address]['code']) > 0
 
 
     def log(self, address, topic, data):
@@ -1833,8 +1850,10 @@ class EVMWorld(Platform):
     #CALLSTACK
     def _push_vm(self, vm):
         #Storage address ->  account(value, local_storage)
-        vm.global_storage = self.storage
-        vm.global_storage[vm.address]['storage'] = copy.copy(self.storage[vm.address]['storage'])
+        vm.world = self.world
+
+        print self.world[vm.address]['storage'], type(self.world[vm.address]['storage']), copy
+        vm.world[vm.address]['storage'] = copy(self.world[vm.address]['storage'])
         if self.depth:
             self.current.constraints = None
         #MAKE A DEEP COPY OF THE SPECIFIC ACCOUNT
@@ -1856,15 +1875,15 @@ class EVMWorld(Platform):
 
         if not rollback:
             if self.depth:
-                self.current.global_storage = vm.global_storage
+                self.current.world = vm.world
                 self.current.logs += vm.logs
                 self.current.suicides = self.current.suicides.union(vm.suicides)
             else:
-                self._global_storage = vm.global_storage
+                self._world = vm.world
                 self._deleted_address = self._deleted_address.union(vm.suicides)
                 self._logs += vm.logs
                 for address in self._deleted_address:
-                    del self.storage[address]
+                    del self.world[address]
         return vm
 
     @property
@@ -1874,7 +1893,7 @@ class EVMWorld(Platform):
     def new_address(self):
         ''' create a fresh 160bit address '''
         new_address = random.randint(100, pow(2, 160))
-        if new_address in self._global_storage.keys():
+        if new_address in self._world.keys():
             return self.new_address()
         return new_address
 
@@ -1915,16 +1934,17 @@ class EVMWorld(Platform):
 
     def create_account(self, address=None, balance=0, code='', storage=None):
         ''' code is the runtime code '''
-        storage = {} if storage is None else storage
+        #storage = {} if storage is None else storage
+        storage = ArrayProxy(ArrayVariable(index_bits=256, value_bits=256, name='STORAGE', index_max=None)) if storage is None else storage
 
         if address is None:
             address = self.new_address()
-        assert address not in self.storage.keys(), 'The account already exists'
-        self.storage[address] = {}
-        self.storage[address]['nonce'] = 0L
-        self.storage[address]['balance'] = balance
-        self.storage[address]['storage'] = storage
-        self.storage[address]['code'] = code
+        assert address not in self.world, 'The account already exists'
+        self.world[address] = {}
+        self.world[address]['nonce'] = 0L
+        self.world[address]['balance'] = balance
+        self.world[address]['storage'] = storage
+        self.world[address]['code'] = code
 
         return address
 
@@ -1956,7 +1976,7 @@ class EVMWorld(Platform):
         assert  not issymbolic(address) 
         assert  not issymbolic(origin) 
         address = self.create_account(address, 0)
-        self.storage[address]['storage'] = self._constraints.new_array(index_bits=256, value_bits=256)
+        self.storage[address]['storage'] = self._constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
 
         self._pending_transaction = ('Create', address, origin, price, '', origin, balance, ''.join(init), header)
 
@@ -1966,9 +1986,9 @@ class EVMWorld(Platform):
             #Assert everything is concrete?
             assert  not issymbolic(origin) 
             assert  not issymbolic(address) 
-            assert self.storage[origin]['balance'] >= balance
+            assert self.world[origin]['balance'] >= balance
             runtime = self.run()
-            self.storage[address]['code'] = ''.join(runtime)
+            self.world[address]['code'] = ''.join(runtime)
 
         return address
 
@@ -1987,6 +2007,10 @@ class EVMWorld(Platform):
         if origin is None and caller is not None:
             origin = caller
 
+        assert not issymbolic(address), "Symbolic target address not supported yet. (need to fork on all available addresses)"
+        assert not issymbolic(caller), "Symbolic caller address not supported yet."
+        assert not issymbolic(origin), "Symbolic origin address not supported yet."
+        print address, caller, origin, self.accounts
         if address not in self.accounts or\
            caller not in self.accounts or \
            origin != caller and origin not in self.accounts:
@@ -2081,10 +2105,10 @@ class EVMWorld(Platform):
 
         #Here we have enoug funds and room in the callstack
 
-        self.storage[address]['balance'] += value
-        self.storage[caller]['balance'] -= value
+        self.world[address]['balance'] += value
+        self.world[caller]['balance'] -= value
 
-        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, global_storage=self.storage)
+        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self.world)
         self._push_vm(new_vm)
 
         if is_human_tx:
@@ -2148,8 +2172,8 @@ class EVMWorld(Platform):
     def THROW(self):
         prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
-        self.storage[prev_vm.caller]['balance'] += prev_vm.value
-        self.storage[prev_vm.address]['balance'] -= prev_vm.value
+        self.world[prev_vm.caller]['balance'] += prev_vm.value
+        self.world[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
             tx = self._transactions[-1]
@@ -2165,8 +2189,8 @@ class EVMWorld(Platform):
     def REVERT(self, data):
         prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
-        self.storage[prev_vm.caller]['balance'] += prev_vm.value
-        self.storage[prev_vm.address]['balance'] -= prev_vm.value
+        self.world[prev_vm.caller]['balance'] += prev_vm.value
+        self.world[prev_vm.address]['balance'] -= prev_vm.value
 
         if self.depth == 0:
             tx = self._transactions[-1]
@@ -2182,10 +2206,10 @@ class EVMWorld(Platform):
         #This may create a user account
         recipient = Operators.EXTRACT(recipient, 0, 160)
         address = self.current.address
-        if recipient not in self.storage.keys():
+        if recipient not in self.world:
             self.create_account(address=recipient, balance=0, code='', storage=None)
-        self.storage[recipient]['balance'] += self.storage[address]['balance']
-        self.storage[address]['balance'] = 0
+        self.world[recipient]['balance'] += self.world[address]['balance']
+        self.world[address]['balance'] = 0
         self.current.suicides.add(address)
         prev_vm = self._pop_vm(rollback=False)
 

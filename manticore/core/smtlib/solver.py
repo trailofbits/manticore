@@ -329,7 +329,7 @@ class Z3Solver(Solver):
 
         with constraints as temp_cs:
             temp_cs.add(expression)
-            self._reset(temp_cs.related_to(expression))
+            self._reset(temp_cs.to_string(related_to=expression))
             return self._check() == 'sat'
 
 
@@ -351,7 +351,7 @@ class Z3Solver(Solver):
                 raise NotImplementedError("get_all_values only implemted for Bool and BitVec")
 
             temp_cs.add(var==expression)
-            self._reset(temp_cs.related_to(var))
+            self._reset(temp_cs.to_string(related_to=var))
 
             result = []
             val = None
@@ -364,7 +364,7 @@ class Z3Solver(Solver):
                 # Yet, if the number of solution is large, sending back
                 # the whole formula is more expensive
                 if len(result) < 50:
-                    self._reset(temp_cs.related_to(var) )
+                    self._reset(temp_cs.to_string(related_to=var) )
                     for value in result:
                         self._assert( var != value )
                 else:
@@ -396,7 +396,7 @@ class Z3Solver(Solver):
             X = temp_cs.new_bitvec(x.size)
             temp_cs.add(X == x)
             aux = temp_cs.new_bitvec(X.size, name='optimized_')
-            self._reset(temp_cs)
+            self._reset(temp_cs.to_string(related_to=X))
             self._send(aux.declaration)
 
             if getattr(self, 'support_{}'.format(goal)):

@@ -39,14 +39,36 @@ caller = constraints.new_bitvec(256, name='caller')
 value = constraints.new_bitvec(256, name='value')
 
 code = EVMAsm.assemble(
+('''
+PUSH1 0x60
+PUSH1 0x40 
+MSTORE 
+PUSH1 0x0 
+DUP1 
+PUSH1 0x14 
+PUSH2 0x100 
+EXP
+DUP2 
+SLOAD 
+DUP2 
+PUSH1 0xFF 
+MUL 
+NOT 
+AND 
+SWAP1 
+DUP4 
+ISZERO 
+ISZERO 
+MUL 
+OR 
+SWAP1 
+SSTORE 
+POP 
+CALLVALUE 
+ISZERO 
+PUSH2 0x29 
+JUMPI 
 '''
-DUP1
-PUSH1 0x2
-ADD
-DUP1
-SSTORE
-DUP1
-MSTORE'''
 )
 
 
@@ -77,9 +99,10 @@ evm.subscribe('will_execute_instruction', callbacks.will_execute_instruction)
 
 
 print "CODE:"
-while not evm.instruction.is_terminator:
+while not issymbolic(evm.pc):
     print '\t',evm.pc, evm.instruction
     evm.execute()
+    break
 
 #print translate_to_smtlib(arithmetic_simplifier(evm.stack[0]))
 print "STORAGE =",  translate_to_smtlib(global_storage[address]['storage'])
@@ -89,6 +112,8 @@ print "MEM =",  translate_to_smtlib(evm.memory)
 for i in range(len(callbacks.initial_stack)):
     print "STACK[%d] ="%i,  translate_to_smtlib(callbacks.initial_stack[i])
 print "CONSTRAINTS:"
-print   constraints
+print constraints
 
+
+print "PC:", solver.get_all_values(constraints, evm.pc)
 

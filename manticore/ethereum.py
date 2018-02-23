@@ -1005,7 +1005,7 @@ class ManticoreEVM(Manticore):
                     ty, caller, address, value, data = context['_pending_transaction']
                     if ty == 'CREATE_CONTRACT':
                         world = state.platform
-                        world.storage[address]['code'] = world.last_return_data
+                        world[address]['code'] = world.last_return_data
 
             self.save(state)
             e.testcase = False  #Do not generate a testcase file
@@ -1126,7 +1126,9 @@ class ManticoreEVM(Manticore):
             is_something_symbolic = False
             summary.write("%d accounts.\n" % len(blockchain.accounts))
             for account_address in blockchain.accounts:
-                summary.write("Address: 0x%x\n" % account_address)
+                is_account_address_symbolic = issymbolic(account_address)
+                account_address = state.solve_one(account_address)
+                summary.write("Address: 0x%x %s\n" % (account_address, flagged(is_account_address_symbolic)))
                 balance = blockchain.get_balance(account_address)
                 is_balance_symbolic = issymbolic(balance)
                 is_something_symbolic = is_something_symbolic or is_balance_symbolic
@@ -1347,7 +1349,8 @@ class ManticoreEVM(Manticore):
         world=None
         for state_id in self.all_state_ids:
             world = self.get_world(state_id)
-            if account_address in world.storage:
+            print "AAAAAAA", account_address
+            if account_address in world:
                 break
 
 

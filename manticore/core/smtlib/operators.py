@@ -246,6 +246,13 @@ def SREM(a, b):
         return b.rsrem(a)
     return a % b
 
+def UREM(a, b):
+    if isinstance(a, BitVec):
+        return a.urem(b)
+    elif isinstance(a, BitVec):
+        return b.rurem(a)
+    return a % b
+
 
 def simplify(value):
     if issymbolic(value):

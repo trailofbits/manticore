@@ -458,7 +458,7 @@ class ArithmeticSimplifier(Visitor):
             and isinstance(arr, ArrayStore) \
             and isinstance(arr.index, BitVecConstant):
             if arr.index.value == index.value:
-                return arr.byte
+                return arr.value
             else:
                 return arr.array.select(index)
 
@@ -474,6 +474,12 @@ def arithmetic_simplifier(expression):
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     return simp.result
+
+
+def simplify(expression):
+    expression = arithmetic_simplifier(expression)
+    expression = constant_folder(expression)
+    return expression
 
 class TranslatorSmtlib(Visitor):
     ''' Simple visitor to translate an expression to its smtlib representation
@@ -594,4 +600,23 @@ def translate_to_smtlib(expression, **kwargs):
     translator.visit(expression)
     return translator.result
 
+class Replace(Visitor):
+    ''' Simple visitor to replaces expresions '''
+    def __init__(self, bindings, **kwargs):
+        super(GetDeclarations, self).__init__(**kwargs)
+        self.bindings = bindings
 
+    def visit_Variable(self, expression):
+        if expression in self.bindings:
+            return self.bindings[expression]
+        return expression
+
+def replace(expression, bindings):
+    visitor = Replace(bindings)
+    visitor.visit(expression)
+    return visitor.result
+
+def get_variables(expression):
+    visitor = GetDeclarations()
+    visitor.visit(expression)
+    return visitor.result

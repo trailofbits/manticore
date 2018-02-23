@@ -621,7 +621,7 @@ class ArrayStore(ArrayOperation):
         return self.operands[1]
 
     @property
-    def byte(self):
+    def value(self):
         return self.operands[2]
 
 class ArrayProxy(Array):
@@ -707,7 +707,7 @@ class ArrayProxy(Array):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
-            new_array = ArrayVariable(self.index_bits, size, self.value_bits, name='%s_b%d_e%d'%(self.name, start, stop), taint=self.taint)
+            new_array = ArrayVariable(self.index_bits, size, self.value_bits, name='%s_slice'%(self.name), taint=self.taint)
             new_array = ArrayProxy(new_array)
             for i in xrange(size):
                 if self.index_max is not None and not isinstance(i+start, Expression) and i+start >= self.index_max:

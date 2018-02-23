@@ -1,5 +1,5 @@
 from expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BitVecConstant, BoolConstant, ArrayProxy
-from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplifier
+from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplifier, replace
 import logging, weakref
 
 logger = logging.getLogger(__name__)
@@ -66,34 +66,56 @@ class ConstraintSet(object):
         self._sid += 1
         return self._sid
 
-    def related_to(self, expression):
-        if isinstance(expression, BoolConstant) and expression.value is True:
-            return str(self)
+    def to_string(self, related_to=None, replace_constants=False):
 
-        N = len(self.constraints)
-        related_variables = get_variables(expression)
-        related_constraints = set()
-        remaining_constraints = set(self.constraints)
+        if related_to is not None:
+            number_of_constraints = len(self.constraints)
+            remaining_constraints = set(self.constraints)
+            related_variables = get_variables(related_to)
+            related_constraints = set()
 
-        added = True
-        while added:
-            added = False
-            logger.debug('Related variables %r', map(lambda x: x.name, related_variables))
-            for constraint in list(remaining_constraints):
-                variables = get_variables(constraint)
-                if related_variables & variables:
-                    remaining_constraints.remove(constraint)
-                    related_constraints.add(constraint)
-                    related_variables |= variables
-                    added = True
+            added = True
+            while added:
+                added = False
+                logger.debug('Related variables %r', map(lambda x: x.name, related_variables))
+                for constraint in list(remaining_constraints):
+                    variables = get_variables(constraint)
+                    if related_variables & variables:
+                        remaining_constraints.remove(constraint)
+                        related_constraints.add(constraint)
+                        related_variables |= variables
+                        added = True
+        else:
+            related_variables = set()
+            for constraint in self.constraints:
+                related_variables |= get_variables(constraint)
+            related_constraints = set(self.constraints)
+
+
+        if replace_constants:
+            constant_bindings = {}
+            for expression in self.constraints:
+                if isinstance(expression, BitVecEq) and \
+                    isinstance(expression.operands[0], BitVecVar) and \
+                    isinstance(expression.operands[1], BitVecConstant):
+                    constant_bindings[expression.operands[0]] = expression.operands[1]
+
                     
+        tmp = set()
         result = ''
         for var in related_variables:
+            # band aid hack around the fact that we are double declaring stuff :( :(
+            if var.declaration in tmp:
+                logger.warning("Variable '%d' was copied twice somewhere", var.name)
+                continue
+            tmp.add(var.declaration)
             result += var.declaration + '\n'
 
         translator = TranslatorSmtlib(use_bindings=True)
-        for prop in related_constraints:
-            translator.visit(prop)
+        for constraint in related_constraints:
+            if replace_constants:
+                constraint = replace(constraint, constant_bindings)
+            translator.visit(constraint)
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
@@ -112,7 +134,8 @@ class ConstraintSet(object):
                 result += '(assert %s)\n' % constraint_str
             constraint_str = translator.pop()
 
-        logger.debug('Reduced %d constraints!!', N - len(related_constraints))
+        if related_to is not None:
+            logger.debug('Reduced %d constraints!!', number_of_constraints - len(related_constraints))
 
         return result
 
@@ -172,7 +195,7 @@ class ConstraintSet(object):
                 result += '(assert %s)\n' % constraint_str
             constraint_str = translator.pop()
 
-        return result
+        return self.to_string()
 
     def _get_new_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
@@ -194,7 +217,7 @@ class ConstraintSet(object):
                          if not uniq a numeric nonce will be appended
             :return: a fresh BitVecVariable
         '''
-        assert size in (1, 4, 8, 16, 32, 64, 128, 160, 256)
+        assert size in (1, 4, 8, 16, 32, 64, 128, 160, 256, 512)
         name = self._get_new_name(name)
         return BitVecVariable(size, name, taint=taint)
 
