@@ -456,13 +456,16 @@ class ArithmeticSimplifier(Visitor):
         arr = expression.array
         index = expression.index
 
-        if isinstance(index, BitVecConstant) \
+        while  isinstance(index, BitVecConstant) \
             and isinstance(arr, ArrayStore) \
-            and isinstance(arr.index, BitVecConstant):
-            if arr.index.value == index.value:
-                return arr.value
-            else:
-                return arr.array.select(index)
+            and isinstance(arr.index, BitVecConstant)\
+            and arr.index.value != index.value:
+            arr = arr.array
+
+        if  isinstance(arr, ArrayStore) and arr.index.value == index.value:
+            return arr.value
+
+        return arr.select(index)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
@@ -479,8 +482,8 @@ def arithmetic_simplifier(expression):
 
 
 def simplify(expression):
-    expression = arithmetic_simplifier(expression)
     expression = constant_folder(expression)
+    expression = arithmetic_simplifier(expression)
     return expression
 
 class TranslatorSmtlib(Visitor):

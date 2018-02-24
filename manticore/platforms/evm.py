@@ -6,7 +6,7 @@ from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, \
      Array, Operators, Constant, BitVecConstant, ConstraintSet, SolverException
 from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
-from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
+from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib, simplify
 from ..core.state import Concretize,TerminateState
 import logging
 import sys, hashlib
@@ -1305,7 +1305,7 @@ class EVM(Eventful):
 
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
-        #FIXME concretize offset?
+        #FIXME concretize offset read metadata
         #if issymbolic(offset):
         #    self._constraints.add(Operators.ULE(offset, len(self.data)+32))
             #self._constraints.add(0 == offset%32)
@@ -1519,21 +1519,9 @@ class EVM(Eventful):
     ##########################################################################
     ##System operations
     def read_buffer(self, offset, size):
-        if size:
-            self._allocate(offset+size)
-
-        data = []
-        for i in xrange(size):
-            data.append(Operators.CHR(self._load(offset+i)))
-
-        if any(map(issymbolic, data)):
-            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data), value_bits=8)
-            for i in range(len(data)):
-                data_symb[i] = Operators.ORD(data[i])
-            data = data_symb
-        else:
-            data = ''.join(data)
-
+        self._allocate(offset+size)
+        data = self.memory[offset:offset+size]
+        self._publish('did_evm_read_memory', offset, data)
         return data
 
     def write_buffer(self, offset, buf):
@@ -1931,17 +1919,17 @@ class EVMWorld(Platform):
                 return self.last_return
             raise e
 
-    def create_account(self, address=None, balance=0, code='', storage=None):
+    def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
         ''' code is the runtime code '''
-        assert not issymbolic(address)
-        #storage = {} if storage is None else storage
-        storage = ArrayProxy(ArrayVariable(index_bits=256, value_bits=256, name='STORAGE', index_max=None)) if storage is None else storage
-
+        assert not issymbolic(address), "Address needs to be concrete"
+        if storage is None:
+            storage = self._constraints.new_array(index_bits=256, value_bits=256, name='STORAGE') 
         if address is None:
             address = self.new_address()
+        assert not issymbolic(address), "Symbolic address not supported"
         assert address not in self.world_state, 'The account already exists'
         self.world_state[address] = {}
-        self.world_state[address]['nonce'] = 0L
+        self.world_state[address]['nonce'] = nonce
         self.world_state[address]['balance'] = balance
         self.world_state[address]['storage'] = storage
         self.world_state[address]['code'] = code
@@ -1973,12 +1961,12 @@ class EVMWorld(Platform):
                       'difficulty':0
                 }
 
-        assert  not issymbolic(address) 
-        assert  not issymbolic(origin) 
+        assert not issymbolic(origin) 
         address = self.create_account(address, 0)
-        self.world_state[address]['storage'] = self._constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
 
-        self._pending_transaction = ('Create', address, origin, price, '', origin, balance, ''.join(init), header)
+        #A pending transaction of type Create will set the code for the account 
+        # with the result of the constructor code
+        self._pending_transaction = ('Create', address, origin, price, '', caller, balance, ''.join(init), header)
 
         if run:
             assert False
@@ -2145,7 +2133,13 @@ class EVMWorld(Platform):
 
         if isinstance(last_ex, Create):
             self.current._push(prev_vm.address)
-            self.set_code(prev_vm.address, data)
+            size = len(data)
+            constant_data = []
+            for i in range(size):
+                constant_data.append(simplify(data[i]).value) #, translate_to_smtlib(data[i])
+
+
+            self.set_code(prev_vm.address, constant_data)
         else:
             size = min(last_ex.out_size, len(data))
             self.current.write_buffer(last_ex.out_offset, data[:size])
