@@ -45,6 +45,9 @@ class Transaction(object):
         ''' Implements serialization/pickle '''
         return (self.__class__,  (self.sort,  self.address, self.origin, self.price, self.data, self.caller, self.value, self.return_data, self.result))
 
+    def __str__(self):
+        return 'Transaction(%s, from=0x%x, to=0x%x, value=%r, data=%r..)' %(self.sort, self.caller, self.address, self.value, self.data)
+
 class EVMLog():
     def __init__(self, address, memlog, topics):
         self.address = address
@@ -720,6 +723,9 @@ class EVMAsm(object):
 class EVMException(Exception):
     pass
 
+class EVMInstructionException(EVMException):
+    pass
+
 class ConcretizeStack(EVMException):
     '''
     Raised when a symbolic memory cell needs to be concretized.
@@ -743,7 +749,7 @@ class InvalidOpcode(EVMException):
     pass
 
 
-class Call(EVMException):
+class Call(EVMInstructionException):
     def __init__(self, gas, to, value, data, out_offset=None, out_size=None):
         self.gas = gas
         self.to = to
@@ -762,25 +768,25 @@ class Create(Call):
 class DelegateCall(Call):
     pass
 
-class Stop(EVMException):
+class Stop(EVMInstructionException):
     ''' Program reached a STOP instruction '''
     pass
 
-class Return(EVMException):
+class Return(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
         return (self.__class__, (self.data,) )
 
-class Revert(EVMException):
+class Revert(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, data):
         self.data = data
     def __reduce__(self):
         return (self.__class__, (self.data,) )
 
-class SelfDestruct(EVMException):
+class SelfDestruct(EVMInstructionException):
     ''' Program reached a RETURN instruction '''
     def __init__(self, to):
         self.to = to
@@ -811,7 +817,7 @@ class EVM(Eventful):
                          'evm_write_memory', 
                          'evm_read_code',
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
-    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, world=None, depth=0, gas=1000000, **kwargs):
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -1044,7 +1050,6 @@ class EVM(Eventful):
         last_pc = self.pc
         current = self.instruction
 
-        self._publish('will_execute_instruction', self.pc, current)
         #Consume some gas
         self._consume(current.fee)
 
@@ -1067,13 +1072,15 @@ class EVM(Eventful):
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
+        self._publish('will_execute_instruction', self.pc, current)
         self._publish('will_evm_execute_instruction', current, arguments)
 
         last_pc = self.pc
-        #Execute
+        result = None
+
         try:
             result = implementation(*arguments)
-            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._emit_did_execute_signals(current, arguments, result, last_pc)
         except ConcretizeStack as ex:
             for arg in reversed(arguments):
                 self._push(arg)
@@ -1085,10 +1092,17 @@ class EVM(Eventful):
                                 policy=ex.policy)
         except EVMException as e:
             self.last_exception = e
-            raise
-        self._publish( 'did_execute_instruction', last_pc, self.pc, current)
 
-        
+            # Technically, this is not the right place to emit these events because the
+            # instruction hasn't executed yet; it executes in the EVM platform class (EVMWorld).
+            # However, when I tried that, in the event handlers, `state.platform.current`
+            # ends up being None, which caused issues. So, as a pragmatic solution, we emit
+            # the event before technically executing the instruction.
+            if isinstance(e, EVMInstructionException):
+                self._emit_did_execute_signals(current, arguments, result, last_pc)
+
+            raise
+
         #Check result (push)
         if current.pushes > 1:
             assert len(result) == current.pushes
@@ -1103,6 +1117,9 @@ class EVM(Eventful):
             #advance pc pointer
             self.pc += self.instruction.size
 
+    def _emit_did_execute_signals(self, current, arguments, result, last_pc):
+        self._publish('did_evm_execute_instruction', current, arguments, result)
+        self._publish('did_execute_instruction', last_pc, self.pc, current)
 
     #INSTRUCTIONS
     def INVALID(self):
@@ -1274,7 +1291,7 @@ class EVM(Eventful):
         value = sha3.keccak_256(buf).hexdigest()
         value = int('0x'+value,0)
         self._publish('on_concrete_sha3', buf, value)
-        logger.info("Found new SHA3 example %r -> %x", buf, value)
+        logger.info("Found a concrete SHA3 example %r -> %x", buf, value)
         return value
 
 
@@ -1449,13 +1466,15 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
+        self._publish('will_evm_read_storage', offset)
         value = self.world_state.get_storage_data(self.address, offset)
         self._publish('did_evm_read_storage', offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
-        value = self.world_state.set_storage_data(self.address, offset, value)
+        self._publish('will_evm_write_storage', offset, value)
+        self.world_state.set_storage_data(self.address, offset, value)
         self._publish('did_evm_write_storage', offset, value)
 
     def JUMP(self, dest):
@@ -1662,6 +1681,7 @@ class EVMWorld(Platform):
         self._sha3 = {}
         self._pending_transaction = None
         self._transactions = list()
+        self._internal_transactions = list()
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1673,7 +1693,7 @@ class EVMWorld(Platform):
         state['callstack'] = self._callstack
         state['deleted_address'] = self._deleted_address
         state['transactions'] = self._transactions
-
+        state['internal_transactions'] = self._internal_transactions
         return state
 
     def __setstate__(self, state):
@@ -1686,6 +1706,7 @@ class EVMWorld(Platform):
         self._callstack = state['callstack']
         self._deleted_address = state['deleted_address']
         self._transactions = state['transactions']
+        self._internal_transactions = state['internal_transactions']
         self._do_events()
 
     def _do_events(self):
@@ -1693,7 +1714,7 @@ class EVMWorld(Platform):
             self.forward_events_from(self.current)
             self.subscribe('on_concrete_sha3', self._concrete_sha3_callback)
 
-    def _concrete_sha3_callback(self,buf, value):
+    def _concrete_sha3_callback(self, buf, value):
         if buf in self._sha3:
             assert self._sha3[buf] == value
         self._sha3[buf] = value
@@ -1720,6 +1741,23 @@ class EVMWorld(Platform):
     @property
     def transactions(self):
         return self._transactions
+
+    @property
+    def internal_transactions(self):
+        number_of_transactions = len(self._transactions)
+        for _ in range( len (self._internal_transactions), number_of_transactions):
+            self._internal_transactions.append([])
+        return self._internal_transactions
+
+    @property
+    def all_transactions(self):
+        txs = []
+        for tx in self._transactions:
+            txs.append(tx)
+            for txi in self.internal_transactions[self._transactions.index(tx)]:
+                txs.append(txi)
+        return txs
+
 
     @property
     def last_return_data(self):
@@ -1863,7 +1901,7 @@ class EVMWorld(Platform):
         self._do_events()
         if self.depth > 1024:
             while self.depth >0:
-                self._pop(rollback=True)
+                self._pop_vm(rollback=True)
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
     def _pop_vm(self, rollback=False):
@@ -2046,11 +2084,6 @@ class EVMWorld(Platform):
                 pass
 
     def _process_pending_transaction(self):
-        def err():
-            if self.depth == 0:
-                raise TerminateState("Not Enough Funds for transaction", testcase=True)
-
-
         if self._pending_transaction is None:
             return
         assert self.current is None or self.current.last_exception is not None
@@ -2098,6 +2131,7 @@ class EVMWorld(Platform):
             if is_human_tx: #human transaction
                 tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
                 self._transactions.append(tx)
+                raise TerminateState('TXERROR')
             else:
                 self.current._push(0)
                 return
@@ -2108,6 +2142,8 @@ class EVMWorld(Platform):
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self.world_state)
         self._push_vm(new_vm)
 
+
+        tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
         if is_human_tx:
             #handle human transactions
             if ty == 'Create':
@@ -2115,9 +2151,13 @@ class EVMWorld(Platform):
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
-            tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
             self._transactions.append(tx)
- 
+        else:            
+            n = len(self._transactions)
+            if len (self._internal_transactions) < n:
+                self._internal_transactions.append([])
+            self._internal_transactions[n].append(tx)
+
 
     def CALL(self, gas, to, value, data):
         address = to
@@ -2239,27 +2279,49 @@ class EVMWorld(Platform):
         self._publish('on_symbolic_sha3', data, self._sha3.items())
 
         results = []
+
+        #If know_hashes is true then there is a _known_ solution for the hash
         known_hashes = False
         for key, value in self._sha3.items():
+            assert not any( map(issymbolic, key))
             cond = compare_buffers(key, data)
             if solver.can_be_true(self._constraints, cond):
                 results.append((cond, value))  
                 known_hashes = Operators.OR(cond, known_hashes)
+        #results contains all the possible and known solutions
 
+
+        #If known_hashes can be False then data can take at least one concrete 
+        #value of which we do not know a hash for.
+
+        #Calculate the sha3 of one extra example solution and add this as a 
+        #potential result
+        #This is an incomplete result:
+        # Intead of choosing one single extra concrete solution we should save 
+        # the state and when a new sha3 example is found load it back and try 
+        #the new concretization for sha3.
+        
         with self._constraints as temp_cs:
             if solver.can_be_true(temp_cs, Operators.NOT(known_hashes)):
                 temp_cs.add(Operators.NOT(known_hashes))
+                #a_buffer is different from all strings we know a hash for 
                 a_buffer = solver.get_value(temp_cs, data)
                 cond = compare_buffers(a_buffer, data)
+                #Get the sha3 for a_buffer
+                a_value = int(sha3.keccak_256(a_buffer).hexdigest(), 16)
+                #add the new sha3 pair to the known_hashes and result
+                self._publish('on_concrete_sha3', a_buffer, a_value)
+                results.append((cond, a_value))
                 known_hashes = Operators.OR(cond, known_hashes)
-
+        
         if solver.can_be_true(self._constraints, known_hashes):
             self._constraints.add(known_hashes)
             value = 0 #never used
             for cond, sha in results:
                 value = Operators.ITEBV(256, cond, sha, value)
         else:
-            raise TerminateState()
+            raise TerminateState("Unknown hash")
             
         self.current._push(value)
         self.current.pc += self.current.instruction.size
+

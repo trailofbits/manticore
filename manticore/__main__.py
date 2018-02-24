@@ -60,7 +60,7 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.1.6',
+    parser.add_argument('--version', action='version', version='Manticore 0.1.7',
                          help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
@@ -80,15 +80,15 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from ethereum import ManticoreEVM, IntegerOverflow, UnitializedStorage, UnitializedMemory
+    from ethereum import ManticoreEVM, IntegerOverflow, UninitializedStorage, UninitializedMemory
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
 
     ################ Default? Detectors #######################
     m.register_detector(IntegerOverflow())
-    m.register_detector(UnitializedStorage())
-    m.register_detector(UnitializedMemory())
+    m.register_detector(UninitializedStorage())
+    m.register_detector(UninitializedMemory())
 
     logger.info("Beginning analysis")
 

@@ -30,8 +30,13 @@ class RestartSyscall(Exception):
 class Deadlock(Exception):
     pass
 
-class BadFd(Exception):
+class EnvironmentError(RuntimeError):
     pass
+
+class FdError(Exception):
+    def __init__(self, message='', err=errno.EBADF):
+        self.err = err
+        super(FdError, self).__init__(message)
 
 def perms_from_elf(elf_flags):
     return ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][elf_flags&7]
@@ -44,10 +49,11 @@ def mode_from_flags(file_flags):
 
 
 class File(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, path, flags):
         # TODO: assert file is seekable otherwise we should save what was
         # read/write to the state
-        self.file = file(*args,**kwargs)
+        mode = mode_from_flags(flags)
+        self.file = file(path, mode)
 
     def __getstate__(self):
         state = {}
@@ -110,6 +116,52 @@ class File(object):
         Flush buffered data. Currently not implemented.
         '''
         return
+
+class Directory(File):
+    def __init__(self, path, flags):
+        assert(os.path.isdir(path))
+
+        self.fd = os.open(path, flags)
+        self.path = path
+        self.flags = flags
+
+    def __getstate__(self):
+        state = {}
+        state['path'] = self.path
+        state['flags'] = self.flags
+        return state
+
+    def __setstate__(self, state):
+        self.path = state['path']
+        self.flags = state['flags']
+        self.fd = os.open(self.path, self.flags)
+
+    @property
+    def name(self):
+        return self.path
+
+    @property
+    def mode(self):
+        return mode_from_flags(self.flags)
+
+    def tell(self, *args):
+        return 0
+
+    def seek(self, *args):
+        return 0
+
+    def write(self, buf):
+        raise FdError("Is a directory", errno.EBADF)
+
+    def read(self, *args):
+        raise FdError("Is a directory", errno.EISDIR)
+
+    def close(self, *args):
+        return os.close(self.fd)
+
+    def fileno(self, *args):
+        return self.fd
+
 
 class SymbolicFile(File):
     '''
@@ -290,10 +342,10 @@ class Socket(object):
         return len(buf)
 
     def sync(self):
-        raise BadFd("Invalid sync() operation on Socket")
+        raise FdError("Invalid sync() operation on Socket", errno.EINVAL)
 
     def seek(self, *args):
-        raise BadFd("Invalid lseek() operation on Socket")
+        raise FdError("Invalid lseek() operation on Socket", errno.EINVAL)
 
 class Linux(Platform):
     '''
@@ -303,6 +355,7 @@ class Linux(Platform):
 
     # from /usr/include/asm-generic/resource.h
     RLIMIT_NOFILE = 7 #/* max number of open files */
+    FCNTL_FDCWD   = -100 #/* Special value used to indicate openat should use the cwd */
 
     def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
         '''
@@ -839,31 +892,13 @@ class Linux(Platform):
         entry = elf_entry
         real_elf_brk = elf_brk
 
-        # We need to explicitly zero any fractional pages
-        # after the data section (i.e. bss).  This would
-        # contain the junk from the file that should not
-        # be in memory
-        #TODO:
-        #cpu.write_bytes(elf_bss, '\x00'*((elf_bss | (align-1))-elf_bss))
 
-        logger.debug("Zeroing main elf fractional pages. From %x to %x.", elf_bss, elf_brk)
-        logger.debug("Main elf bss:%x",elf_bss)
-        logger.debug("Main elf brk %x:",elf_brk)
-
-	#FIXME Need a way to inspect maps and perms so
-	#we can rollback all to the initial state after zeroing
-        #if elf_brk-elf_bss > 0:
-        #    saved_perms = cpu.mem.perms(elf_bss)
-        #    cpu.memory.mprotect(cpu.mem._ceil(elf_bss), elf_brk-elf_bss, 'rw ')
-        #    logger.debug("Zeroing main elf fractional pages (%d bytes)", elf_brk-elf_bss)
-        #    cpu.write_bytes(elf_bss, ['\x00'] * (elf_brk-elf_bss))
-        #    cpu.memory.mprotect(cpu.memory._ceil(elf_bss), elf_brk-elf_bss, saved_perms)
-
-
-        if cpu.memory.access_ok(slice(elf_bss, elf_brk), 'w'):
-            cpu.memory[elf_bss:elf_brk] = '\x00'*(elf_brk-elf_bss)
-        else:
-            logger.warning("Failing to zerify the trailing: elf_brk-elf_bss")
+        # We need to explicitly clear bss, as fractional pages will have data from the file
+        bytes_to_clear = elf_brk - elf_bss
+        if bytes_to_clear > 0:
+            logger.debug("Zeroing main elf fractional pages. From bss(%x) to brk(%x), %d bytes.",
+                    elf_bss, elf_brk, bytes_to_clear)
+            cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
         stack_size = 0x21000
 
@@ -932,16 +967,11 @@ class Linux(Platform):
                 entry += base
             interpreter_base = base
 
-            logger.debug("Zeroing interpreter elf fractional pages. From %x to %x.", elf_bss, elf_brk)
-            logger.debug("Interpreter bss:%x", elf_bss)
-            logger.debug("Interpreter brk %x:", elf_brk)
-
-            cpu.memory.mprotect(cpu.memory._floor(elf_bss), elf_brk-elf_bss, 'rw ')
-	    try:
-	        cpu.memory[elf_bss:elf_brk] = '\x00'*(elf_brk-elf_bss)
-	    except Exception, e:
-	        logger.debug("Exception zeroing Interpreter fractional pages: %s",str(e))
-            #TODO #FIXME mprotect as it was before zeroing?
+            bytes_to_clear = elf_brk - elf_bss
+            if bytes_to_clear > 0:
+                logger.debug("Zeroing interpreter elf fractional pages. From bss(%x) to brk(%x), %d bytes.",
+                        elf_bss, elf_brk, bytes_to_clear)
+                cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
 
         #free reserved brk space
@@ -986,6 +1016,17 @@ class Linux(Platform):
             'AT_EXECFN' : at_execfn,                    # Filename of executable.
         }
 
+    def _to_signed_dword(self, dword):
+        arch_width = self.current.address_bit_size
+        if arch_width == 32:
+            sdword = ctypes.c_int32(dword).value
+        elif arch_width == 64:
+            sdword = ctypes.c_int64(dword).value
+        else:
+            raise EnvironmentError("Corrupted internal CPU state (arch width is {})".format(arch_width))
+        return sdword
+
+
     def _open(self, f):
         '''
         Adds a file descriptor to the current file descriptor list
@@ -1009,7 +1050,11 @@ class Linux(Platform):
         :param fd: the file descriptor to close.
         :return: C{0} on success.
         '''
-        self.files[fd] = None
+        try:
+            self.files[fd].close()
+            self.files[fd] = None
+        except IndexError:
+            raise FdError("Bad file descriptor ({})".format(fd))
 
     def _dup(self, fd):
         '''
@@ -1029,7 +1074,7 @@ class Linux(Platform):
 
     def _get_fd(self, fd):
         if not self._is_fd_open(fd):
-            raise BadFd()
+            raise FdError
         else:
             return self.files[fd]
 
@@ -1117,17 +1162,13 @@ class Linux(Platform):
         :return: 0 (Success), or EBADF (fd is not a valid file descriptor or is not open)
 
         '''
-        if self.current.address_bit_size == 32:
-            signed_offset = ctypes.c_int32(offset).value
-        else:
-            signed_offset = ctypes.c_int64(offset).value
-
+        signed_offset = self._to_signed_dword(offset)
         try:
             self._get_fd(fd).seek(signed_offset, whence)
-        except BadFd:
+        except FdError as e:
             logger.info(("LSEEK: Not valid file descriptor on lseek."
                         "Fd not seekable. Returning EBADF"))
-            return -errno.EBADF
+            return -e.err
 
         return 0
 
@@ -1142,10 +1183,10 @@ class Linux(Platform):
             try:
                 # Read the data and put in tin memory
                 data = self._get_fd(fd).read(count)
-            except BadFd:
+            except FdError as e:
                 logger.info(("READ: Not valid file descriptor on read."
                              " Returning EBADF"))
-                return -errno.EBADF
+                return -e.err
             self.syscall_trace.append(("_read", fd, data))
             self.current.write_bytes(buf, data)
 
@@ -1169,9 +1210,9 @@ class Linux(Platform):
         if count != 0:
             try:
                 write_fd = self._get_fd(fd)
-            except BadFd:
-                logger.error("WRITE: Not valid file descriptor. Returning EBADFD %d", fd)
-                return -errno.EBADF
+            except FdError as e:
+                logger.error("WRITE: Not valid file descriptor (%d). Returning -%d", fd, e.err)
+                return -e.err
 
             # TODO check count bytes from buf
             if buf not in cpu.memory or buf + count not in cpu.memory:
@@ -1254,7 +1295,7 @@ class Linux(Platform):
         :raises error:
                     - "Error in brk!" if there is any error allocating the memory
         '''
-        if brk != 0:
+        if brk != 0 and brk != self.elf_brk:
             assert brk > self.elf_brk
             mem = self.current.memory
             size = brk-self.elf_brk
@@ -1292,7 +1333,18 @@ class Linux(Platform):
             return -errno.EINVAL
 
     def _sys_open_get_file(self, filename, flags):
-        f = File(filename, mode_from_flags(flags))
+        # TODO(yan): Remove this special case
+        if os.path.abspath(filename).startswith('/proc/self'):
+            if filename == '/proc/self/exe':
+                filename = os.path.abspath(self.program)
+            else:
+                raise EnvironmentError("/proc/self is largely unsupported")
+
+        if os.path.isdir(filename):
+            f = Directory(filename, flags)
+        else:
+            f = File(filename, flags)
+
         return f
 
     def sys_open(self, buf, flags, mode):
@@ -1303,24 +1355,56 @@ class Linux(Platform):
         '''
         filename = self.current.read_string(buf)
         try:
-            if os.path.abspath(filename).startswith('/proc/self'):
-                if filename == '/proc/self/exe':
-                    filename = os.path.abspath(self.program)
-                else:
-                    logger.info("FIXME!")
-
             f = self._sys_open_get_file(filename, flags)
             logger.debug("Opening file %s for real fd %d",
                          filename, f.fileno())
         except IOError as e:
             logger.info("Could not open file %s. Reason: %s", filename, str(e))
-            if e.errno is not None:
-                return -e.errno
-            else:
-                return -errno.EINVAL
+            return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
 
+    def sys_openat(self, dirfd, buf, flags, mode):
+        '''
+        Openat SystemCall - Similar to open system call except dirfd argument
+        when path contained in buf is relative, dirfd is referred to set the relative path
+        Special value AT_FDCWD set for dirfd to set path relative to current directory
+
+        :param dirfd: directory file descriptor to refer in case of relative path at buf
+        :param buf: address of zero-terminated pathname
+        :param flags: file access bits
+        :param mode: file permission mode
+        '''
+
+        filename = self.current.read_string(buf)
+        dirfd = self._to_signed_dword(dirfd)
+        
+        if os.path.isabs(filename) or dirfd == self.FCNTL_FDCWD:
+            return self.sys_open(buf, flags, mode)
+
+        try:
+            dir_entry = self._get_fd(dirfd)
+        except FdError as e:
+            logger.info("openat: Not valid file descriptor. Returning EBADF")
+            return -e.err
+
+        if not isinstance(dir_entry, Directory):
+            logger.info("openat: Not directory descriptor. Returning ENOTDIR")
+            return -errno.ENOTDIR
+
+        dir_path = dir_entry.name
+
+        filename = os.path.join(dir_path, filename)
+        try:
+            f = self._sys_open_get_file(filename, flags)
+            logger.debug("Opening file %s for real fd %d", filename, f.fileno())
+        except IOError as e:
+            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            return -e.errno if e.errno is not None else -errno.EINVAL
+
+        return self._open(f)
+
+            
     def sys_rename(self, oldnamep, newnamep):
         '''
         Rename filename `oldnamep` to `newnamep`.
@@ -1349,7 +1433,7 @@ class Linux(Platform):
             self.files[fd].sync()
         except IndexError:
             ret = -errno.EBADF
-        except BadFd:
+        except FdError:
             ret = -errno.EINVAL
 
         return ret
@@ -1415,9 +1499,9 @@ class Linux(Platform):
         '''
         try:
             file = self._get_fd(fd)
-        except BadFd:
+        except FdError as e:
             logger.info("DUP2: Passed fd is not open. Returning EBADF")
-            return -errno.EBADF
+            return -e.err
 
         soft_max, hard_max = self._rlimits[self.RLIMIT_NOFILE]
         if newfd >= soft_max:
@@ -1425,7 +1509,7 @@ class Linux(Platform):
             return -errno.EBADF
           
         if  self._is_fd_open(newfd):
-            self.sys_close(newfd)
+            self._close(newfd)
         
         if newfd >= len(self.files):
             self.files.extend([None]*(newfd+1-len(self.files)))
@@ -1441,8 +1525,10 @@ class Linux(Platform):
         :param fd: the file descriptor to close.
         :return: C{0} on success.
         '''
-        if fd > 0 :
+        if self._is_fd_open(fd):
             self._close(fd)
+        else:
+            return -errno.EBADF
         logger.debug('sys_close(%d)', fd)
         return 0
 
@@ -1517,12 +1603,12 @@ class Linux(Platform):
             address = None
 
         cpu = self.current
-        if flags & 0x10 != 0:
+        if flags & 0x10:
             cpu.memory.munmap(address,size)
 
         perms = perms_from_protflags(prot)
 
-        if flags & 0x20 != 0:
+        if flags & 0x20:
             result = cpu.memory.mmap(address, size, perms)
         elif fd == 0:
             assert offset == 0
@@ -1648,9 +1734,9 @@ class Linux(Platform):
         total = 0
         try:
             write_fd = self._get_fd(fd)
-        except BadFd:
+        except FdError as e:
             logger.error("writev: Not a valid file descriptor ({})".format(fd))
-            return -errno.EBADF
+            return -e.err
 
         for i in xrange(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
@@ -1838,6 +1924,38 @@ class Linux(Platform):
         #XXX(yan): sendfile(2) is currently a nop; we don't communicate yet
 
         return count
+
+    def sys_getrandom(self, buf, size, flags):
+        '''
+        The getrandom system call fills the buffer with random bytes of buflen.
+        The source of random (/dev/random or /dev/urandom) is decided based on
+        the flags value.
+
+        Manticore's implementation simply fills a buffer with zeroes -- chosing
+        determinism over true randomness.
+
+        :param buf: address of buffer to be filled with random bytes
+        :param size: number of random bytes
+        :param flags: source of random (/dev/random or /dev/urandom)
+        :return: number of bytes copied to buf
+        '''
+
+        GRND_NONBLOCK = 0x0001
+        GRND_RANDOM   = 0x0002
+
+        if size == 0:
+            return 0
+
+        if buf not in self.current.memory:
+            logger.info("getrandom: Provided an invalid address. Returning EFAULT")
+            return -errno.EFAULT
+
+        if flags & ~(GRND_NONBLOCK|GRND_RANDOM):
+            return -errno.EINVAL
+
+        self.current.write_bytes(buf, '\x00' * size)
+
+        return size
 
     #Distpatchers...
     def syscall(self):
@@ -2034,9 +2152,9 @@ class Linux(Platform):
 
         try:
             stat = self._get_fd(fd).stat()
-        except BadFd:
-            logger.info("Calling fstat with invalid fd, returning EBADF")
-            return -errno.EBADF
+        except FdError as e:
+            logger.info("Calling fstat with invalid fd")
+            return -e.err
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -2079,9 +2197,9 @@ class Linux(Platform):
 
         try:
             stat = self._get_fd(fd).stat()
-        except BadFd:
+        except FdError as e:
             logger.info("Calling fstat with invalid fd, returning EBADF")
-            return -errno.EBADF
+            return -e.err
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -2122,9 +2240,9 @@ class Linux(Platform):
 
         try:
             stat = self._get_fd(fd).stat()
-        except BadFd:
+        except FdError as e:
             logger.info("Calling fstat with invalid fd, returning EBADF")
-            return -errno.EBADF
+            return -e.err
 
         def add(width, val):
             fformat = {2:'H', 4:'L', 8:'Q'}[width]
@@ -2296,7 +2414,7 @@ class SLinux(Linux):
     def _sys_open_get_file(self, filename, flags):
         if filename in self.symbolic_files:
             logger.debug("%s file is considered symbolic", filename)
-            f = SymbolicFile(self.constraints, filename, mode_from_flags(flags))
+            f = SymbolicFile(self.constraints, filename, flags)
         else:
             f = super(SLinux, self)._sys_open_get_file(filename, flags)
 
@@ -2415,6 +2533,54 @@ class SLinux(Linux):
             self.current.memory.munmap(buf, 1024)
 
         return rv
+
+    def sys_openat(self, dirfd, buf, flags, mode):
+        '''
+        A version of openat that includes a symbolic path and symnbolic directory file descriptor
+
+        :param dirfd: directory file descriptor
+        :param buf: address of zero-terminated pathname
+        :param flags: file access bits
+        :param mode: file permission mode
+        '''
+
+        if issymbolic(dirfd):
+            logger.debug("Ask to read from a symbolic directory file descriptor!!")
+            # Constrain to a valid fd and one past the end of fds
+            self.constraints.add(dirfd >= 0)
+            self.constraints.add(dirfd <= len(self.files))
+            raise ConcretizeArgument(self, 0)
+
+        if issymbolic(buf):
+            logger.debug("Ask to read to a symbolic buffer")
+            raise ConcretizeArgument(self, 1)
+
+        return super(SLinux, self).sys_openat(dirfd, buf, flags, mode)
+
+    def sys_getrandom(self, buf, size, flags):
+        '''
+        The getrandom system call fills the buffer with random bytes of buflen.
+        The source of random (/dev/random or /dev/urandom) is decided based on the flags value.
+
+        :param buf: address of buffer to be filled with random bytes
+        :param size: number of random bytes
+        :param flags: source of random (/dev/random or /dev/urandom)
+        :return: number of bytes copied to buf
+        '''
+
+        if issymbolic(buf):
+            logger.debug("sys_getrandom: Asked to generate random to a symbolic buffer address")
+            raise ConcretizeArgument(self, 0)
+
+        if issymbolic(size):
+            logger.debug("sys_getrandom: Asked to generate random of symbolic number of bytes")
+            raise ConcretizeArgument(self, 1)
+
+        if issymbolic(flags):
+            logger.debug("sys_getrandom: Passed symbolic flags")
+            raise ConcretizeArgument(self, 2)
+
+        return super(SLinux, self).sys_getrandom(buf, size, flags)
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
