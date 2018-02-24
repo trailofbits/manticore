@@ -17,12 +17,12 @@ class Visitor(object):
 
         Other class named visitors are:
 
-        vistit_Constant()
-        vistit_Variable()
-        vistit_Operation()
-        vistit_BitVec()
-        vistit_Bool()
-        vistit_Array()
+        visit_Constant()
+        visit_Variable()
+        visit_Operation()
+        visit_BitVec()
+        visit_Bool()
+        visit_Array()
 
     '''
     def __init__(self, cache=None, **kwargs):

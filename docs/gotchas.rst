@@ -35,9 +35,3 @@ Client code should use the :meth:`~manticore.Manticore.locked_context` API::
 ---------------
 
 The `random` policy, which is the manticore default, is not actually random and is instead deterministically seeded. This means that running the same analysis twice should return the same results (and get stuck in the same places).
-
-
-Symbolic Socket Support
------------------------
-
-The current implementation of the socket family of system calls is very barebones and is deemed to be experimental. All created sockets are assumed to contain 64 bytes of symbolic input.
