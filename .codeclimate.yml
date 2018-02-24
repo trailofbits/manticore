@@ -22,8 +22,6 @@ checks:
   identical-code:
     enabled: false
 plugins:
-  pep8:
-    enabled: true
   sonar-python:
     enabled: true
     config:
