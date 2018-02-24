@@ -8,7 +8,7 @@ python:
 
 env:
   global:
-    - CC_TEST_REPORTER_ID=your_test_reporter_id_goes_here
+    - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
 
 branches:
   only:
