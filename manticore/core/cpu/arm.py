@@ -165,14 +165,14 @@ class Armv7Operand(Operand):
         # of the instruction following the next instruction.
         if self.mem.base in ('PC', 'R15'):
             if self.cpu.mode == cs.CS_MODE_ARM:
-                logger.debug("ARM mode PC relative addressing: PC + offset: 0x{:x} + 0x{:x}".format(base, 4))
+                logger.debug("ARM mode PC relative addressing: PC + offset: 0x%x + 0x%x", base, 4)
                 return base + 4
             else:
                 #base currently has the value PC + len(current_instruction)
                 #we need (PC & 0xFFFFFFFC) + 4
                 #thus:
                 new_base = (base - self.cpu.instruction.size) & 0xFFFFFFFC
-                logger.debug("THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{:x} + 0x{:x}".format(new_base, 4))
+                logger.debug("THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x%x + 0x%x", new_base, 4)
                 return new_base + 4
         else:
             return base
@@ -790,7 +790,7 @@ class Armv7Cpu(Cpu):
         if dest.reg in ('PC', 'R15'):
             cpu._set_mode_by_val(word)
             word &= ~0x1
-            logger.debug("LDR writing 0x{:x} -> PC".format(word))
+            logger.debug("LDR writing 0x%x -> PC", word)
         dest.write(word)
         cpu._cs_hack_ldr_str_writeback(src, offset, writeback)
 
@@ -1102,7 +1102,7 @@ class Armv7Cpu(Cpu):
     @instruction
     def SVC(cpu, op):
         if op.read() != 0:
-            logger.warning("Bad SVC number: {:08}".format(op.read()))
+            logger.warning("Bad SVC number: %08d", op.read())
         raise Interruption(0)
 
     @instruction

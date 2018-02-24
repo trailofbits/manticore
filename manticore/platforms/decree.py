@@ -249,7 +249,7 @@ class Decree(Platform):
         #load elf See https://github.com/CyberdyneNYC/linux-source-3.13.2-cgc/blob/master/fs/binfmt_cgc.c
         #read the ELF object file
         cgc = CGCElf(filename)
-        logger.info("Loading %s as a %s elf"%(filename, cgc.arch))
+        logger.info("Loading %s as a %s elf", filename, cgc.arch)
         #make cpu and memory (Only 1 thread in Decree)
         cpu = self._mk_proc()
 
@@ -296,8 +296,8 @@ class Decree(Platform):
                 cpu.memory.mprotect(lo, hi-lo, 'rw')
                 try:
                     cpu.memory[lo:hi] = '\x00' *(hi-lo)
-                except Exception, e:
-                    logger.debug("Exception zeroing main elf fractional pages: %s"%str(e))
+                except Exception as e:
+                    logger.debug("Exception zeroing main elf fractional pages: %s", e)
                 cpu.memory.mprotect(lo, hi, old_perms)
 
             if addr is None:
@@ -472,7 +472,7 @@ class Decree(Platform):
                 return Decree.CGC_EFAULT
             cpu.write_int(rx_bytes, len(data), 32)
 
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> <%s>)"%(buf, count, rnd_bytes, repr(data[:10])))
+        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> <%s>)", buf, count, rnd_bytes, repr(data[:10]))
         return ret
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
@@ -571,7 +571,7 @@ class Decree(Platform):
                 data.append(value)
             self.files[fd].transmit(data)
 
-            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>"%(fd, buf, count, tx_bytes, ''.join([str(x) for x in data])))
+            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>", fd, buf, count, tx_bytes, ''.join(map(str, data)))
             self.syscall_trace.append(("_transmit", fd, data))
             self.signal_transmit(fd)
 
@@ -629,7 +629,7 @@ class Decree(Platform):
         :param cpu: current CPU.
         :return: C{0} on success.
         '''
-        logger.info("DEALLOCATE(0x%08x, %d)"%(addr, size))
+        logger.info("DEALLOCATE(0x%08x, %d)", addr, size)
 
         if addr & 0xfff != 0:
             logger.info("DEALLOCATE: addr is not page aligned")
@@ -649,7 +649,7 @@ class Decree(Platform):
     def sys_fdwait(self, cpu, nfds, readfds, writefds, timeout, readyfds):
         ''' fdwait - wait for file descriptors to become ready
         '''
-        logger.debug("FDWAIT(%d, 0x%08x, 0x%08x, 0x%08x, 0x%08x)"%(nfds, readfds, writefds, timeout, readyfds))
+        logger.debug("FDWAIT(%d, 0x%08x, 0x%08x, 0x%08x, 0x%08x)", nfds, readfds, writefds, timeout, readyfds)
 
         if timeout:
             if timeout not in cpu.memory : #todo: size

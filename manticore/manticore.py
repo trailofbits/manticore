@@ -64,7 +64,7 @@ def make_decree(program, concrete_data='', **kwargs):
     logger.info('Loading program %s', program)
 
     if concrete_data != '':
-        logger.info('Starting with concrete input: {}'.format(concrete_data))
+        logger.info('Starting with concrete input: %s', concrete_data)
     platform.input.transmit(concrete_data)
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
 
