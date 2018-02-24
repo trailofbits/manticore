@@ -869,7 +869,7 @@ class Linux(Platform):
             if hint == 0:
                 hint = None
 
-            logger.debug("Loading elf offset: %08x addr:%08x %08x %s" %(offset, base+vaddr, base+vaddr+memsz, perms))
+            logger.debug("Loading elf offset: %08x addr:%08x %08x %s", offset, base+vaddr, base+vaddr+memsz, perms)
             base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) - vaddr
 
             if load_addr == 0 :
@@ -950,7 +950,13 @@ class Linux(Platform):
 
                 base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset)
                 base -= vaddr
-                logger.debug("Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %(offset, base+vaddr, base+vaddr+memsz, (flags&1 and 'r' or ' '), (flags&2 and 'w' or ' '), (flags&4 and 'x' or ' ')))
+                logger.debug(
+                    "Loading interpreter offset: %08x addr:%08x %08x %s%s%s",
+                    offset, base+vaddr, base+vaddr+memsz,
+                    'r' if flags & 1 else ' ',
+                    'w' if flags & 2 else ' ',
+                    'x' if flags & 4 else ' '
+                )
 
                 k = base + vaddr + filesz;
                 if k > elf_bss:
@@ -1735,7 +1741,7 @@ class Linux(Platform):
         try:
             write_fd = self._get_fd(fd)
         except FdError as e:
-            logger.error("writev: Not a valid file descriptor ({})".format(fd))
+            logger.error("writev: Not a valid file descriptor (%d)", fd)
             return -e.err
 
         for i in xrange(0, count):
@@ -2431,7 +2437,7 @@ class SLinux(Linux):
             concrete_data.append(c)
 
         if bytes_concretized > 0:
-            logger.debug("Concretized {} written bytes.".format(bytes_concretized))
+            logger.debug("Concretized %d written bytes.", bytes_concretized)
 
         return super(SLinux, self)._transform_write_data(concrete_data)
 

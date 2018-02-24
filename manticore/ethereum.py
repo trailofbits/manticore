@@ -1128,7 +1128,7 @@ class ManticoreEVM(Manticore):
         def flagged(flag):
             return '(*)' if flag else '' 
         testcase = self._output.testcase()
-        logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
+        logger.info("Generated testcase No. %s - %s", testcase.num, message)
         blockchain = state.platform
         with testcase.open_stream('summary') as summary:            
             summary.write("Last exception: %s\n" %state.context['last_exception'])

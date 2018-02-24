@@ -49,7 +49,7 @@ def cmp_regs(cpu, should_print=False):
             name = 'apsr'
         v = cpu.read_register(name.upper())
         if should_print:
-            logger.debug('{} gdb:{:x} mcore:{:x}'.format(name, vg, v))
+            logger.debug('%s gdb:%x mcore:%x', name, vg, v)
         if vg != v:
             if should_print:
                 logger.warning('^^ unequal')
@@ -127,7 +127,7 @@ def sync_svc(state):
     syscall = state.cpu.R7 # Grab idx from manticore since qemu could have exited
     name = linux_syscalls.armv7[syscall]
 
-    logger.debug("Syncing syscall: {}".format(name))
+    logger.debug("Syncing syscall: %s", name)
 
     try:
         # Make sure mmap returns the same address
@@ -146,7 +146,7 @@ def initialize(state):
     '''
     Synchronize the stack and register state (manticore->qemu)
     '''
-    logger.debug("Copying {} bytes in the stack..".format(stack_top - state.cpu.SP))
+    logger.debug("Copying %d bytes in the stack", stack_top - state.cpu.SP)
     stack_bottom = min(state.cpu.SP, gdb.getR('SP'))
     for address in range(stack_bottom, stack_top):
         b = state.cpu.read_int(address, 8)
