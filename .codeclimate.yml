@@ -1,0 +1,40 @@
+version: "2"
+checks:
+checks:
+  argument-count:
+    enabled: false
+  complex-logic:
+    enabled: false
+  file-lines:
+    enabled: false
+  method-complexity:
+    enabled: false
+  method-count:
+    enabled: false
+  method-lines:
+    enabled: false
+  nested-control-flow:
+    enabled: false
+  return-statements:
+    enabled: false
+  similar-code:
+    enabled: false
+  identical-code:
+    enabled: false
+plugins:
+  pep8:
+    enabled: true
+  sonar-python:
+    enabled: true
+    config:
+      minimum_severity: blocker
+  radon:
+    enabled: true
+    config:
+      python_version: 2
+      threshold: "E"
+exclude_patterns:
+  - "docs/"
+  - "examples/"
+  - "scripts/"
+  - "tests/"
