@@ -4,6 +4,7 @@ from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
 
 logger = logging.getLogger(__name__)
 
+
 class EventsGatherMetaclass(type):
     '''
     Metaclass that is used for Eventful to gather events that classes declare to
@@ -33,6 +34,7 @@ class EventsGatherMetaclass(type):
 
         return eventful_sub
 
+
 class Eventful(object):
     '''
         Abstract class for objects emitting and receiving events
@@ -49,7 +51,7 @@ class Eventful(object):
     # Set in subclass to advertise the events it plans to publish
     _published_events = set()
 
-    #Event names prefixes
+    # Event names prefixes
     prefixes = ('will_', 'did_', 'on_')
 
     @classmethod
@@ -94,23 +96,22 @@ class Eventful(object):
             del self._signals[name]
 
     def _get_signal_bucket(self, name):
-        #Each event name has a bucket of callback methods
-        #A bucket is a dictionary obj -> set(method1, method2...)
-        return self._signals.setdefault(name,  dict())
+        # Each event name has a bucket of callback methods
+        # A bucket is a dictionary obj -> set(method1, method2...)
+        return self._signals.setdefault(name, dict())
 
-    def _check_event(self, _name):        
+    def _check_event(self, _name):
         basename = _name
         for prefix in self.prefixes:
             if _name.startswith(prefix):
                 basename = _name[len(prefix):]
-        
+
         cls = self.__class__
         if basename not in cls.__all_events__[cls]:
             logger.warning("Event '%s' not pre-declared. (self: %s)", _name, repr(self))
 
-
     # Wrapper for _publish_impl that also makes sure the event is published from
-    # a class that supports it. 
+    # a class that supports it.
     # The underscore _name is to avoid naming collisions with callback params
     def _publish(self, _name, *args, **kwargs):
         self._check_event(_name)
@@ -124,7 +125,7 @@ class Eventful(object):
             for callback in methods:
                 callback(robj(), *args, **kwargs)
 
-        #The include_source flag indicates to prepend the source of the event in
+        # The include_source flag indicates to prepend the source of the event in
         # the callback signature. This is set on forward_events_from/to
         for sink, include_source in self._forwards.items():
             if include_source:
@@ -137,7 +138,7 @@ class Eventful(object):
             raise TypeError
         obj, callback = method.__self__, method.__func__
         bucket = self._get_signal_bucket(name)
-        robj = ref(obj, self._unref)  #see unref() for explanation
+        robj = ref(obj, self._unref)  # see unref() for explanation
         bucket.setdefault(robj, set()).add(callback)
 
     def forward_events_from(self, source, include_source=False):
