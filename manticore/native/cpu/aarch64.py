@@ -24,10 +24,10 @@ class Aarch64RegisterFile(RegisterFile):
             # 'SL': 'X10',
             # 'FP': 'X11',
             # 'IP': 'X12',
-            'STACK': 'X13',
+            'STACK': 'SP',
             # 'SP': 'X13',
             # 'LR': 'X14',
-            'PC': 'X15',
+            # 'PC': 'X15',
         }
 
         # Via ARM Architecture Reference Manual - ARMv8, for ARMv8-A architecture profile
@@ -61,7 +61,11 @@ class Aarch64RegisterFile(RegisterFile):
         for reg_name in self._V_REGS:
             self._regs[reg_name] = Register(128)
 
-        self._all_registers = super(Aarch64RegisterFile, self).all_registers + self._X_REGS + self._V_REGS
+        self._regs['SP'] = Register(64)
+        self._regs['PC'] = Register(64)
+
+        self._all_registers = super(Aarch64RegisterFile, self).all_registers + self._X_REGS + self._V_REGS + \
+                              ('SP', 'PC')
 
     def read(self, register):
         register = self._alias(register)
@@ -73,7 +77,7 @@ class Aarch64RegisterFile(RegisterFile):
 
     @property
     def canonical_registers(self):
-        return self._X_REGS
+        return self._X_REGS + ('SP', 'PC')
 
     @property
     def all_registers(self):
