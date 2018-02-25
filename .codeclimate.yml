@@ -1,38 +1,62 @@
 version: "2"
 checks:
-checks:
   argument-count:
-    enabled: false
-  complex-logic:
-    enabled: false
-  file-lines:
-    enabled: false
-  method-complexity:
-    enabled: false
-  method-count:
-    enabled: false
-  method-lines:
-    enabled: false
-  nested-control-flow:
-    enabled: false
-  return-statements:
-    enabled: false
-  similar-code:
-    enabled: false
-  identical-code:
-    enabled: false
-plugins:
-  sonar-python:
     enabled: true
     config:
-      minimum_severity: blocker
-  radon:
+      threshold: 7
+  complex-logic:
     enabled: true
+    config:
+      threshold: 4
+  file-lines:
+    enabled: true
+    config:
+      threshold: 1000
+  method-complexity:
+    enabled: true
+    config:
+      threshold: 25
+  method-count:
+    enabled: true
+    config:
+      threshold: 30
+  method-lines:
+    enabled: true
+    config:
+      threshold: 50
+  nested-control-flow:
+    enabled: true
+    config:
+      threshold: 5
+  return-statements:
+    enabled: true
+    config:
+      threshold: 5
+  similar-code:
+    enabled: true
+    config:
+      threshold: 100
+  identical-code:
+    enabled: true
+    config:
+      threshold: 65
+plugins:
+  pep8:
+    enabled: true
+  sonar-python:
+    enabled: false
+    config:
+      minimum_severity: critical
+  radon:
+    enabled: false
     config:
       python_version: 2
-      threshold: "E"
+      threshold: "D"
 exclude_patterns:
   - "docs/"
   - "examples/"
   - "scripts/"
   - "tests/"
+  - "mcore_*/"
+  - ".tox/"
+
