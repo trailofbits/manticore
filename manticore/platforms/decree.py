@@ -1,4 +1,8 @@
 import cgcrandom
+import weakref
+import sys
+import os
+import struct
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
@@ -8,6 +12,8 @@ from ..core.executor import TerminateState
 from ..utils.helpers import issymbolic
 from ..binary import CGCElf
 from ..platforms.platform import Platform
+from contextlib import closing
+import StringIO
 import logging
 import random
 

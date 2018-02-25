@@ -15,6 +15,7 @@
 
 from subprocess import PIPE, Popen, check_output
 from abc import ABCMeta, abstractmethod
+from copy import copy, deepcopy
 import operators as Operators
 from expression import *
 from constraints import *
@@ -60,6 +61,7 @@ class Solver(object):
             :param X: a symbol or expression
             :param M: maximum number of iterations allowed
         '''
+        pass
 
     def check(self, constraints):
         ''' Check if expression can be valid '''
@@ -68,10 +70,12 @@ class Solver(object):
     @abstractmethod
     def can_be_true(self, constraints, expression):
         ''' Check if expression can be valid '''
+        pass
 
     @abstractmethod
     def get_all_values(self, constraints, x, maxcnt=10000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
+        pass
 
     @abstractmethod
     def get_value(self, constraints, expression):
@@ -79,6 +83,7 @@ class Solver(object):
             of constraints.
             The current set of assertions must be sat.
             :param val: an expression or symbol '''
+        pass
 
     def max(self, constraints, X, M=10000):
         ''' Iterativelly finds the maximum value for a symbol.

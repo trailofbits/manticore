@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 from weakref import WeakValueDictionary
+from cStringIO import StringIO
 from .smtlib import *
 import logging
 from ..utils.mappings import _mmap, _munmap
@@ -191,6 +192,7 @@ class Map(object):
         :return: the character or sequence at the specified address.
         :rtype: byte or array
         '''
+        pass
 
     @abstractmethod
     def __setitem__(self, index, value):
@@ -200,6 +202,7 @@ class Map(object):
         :param index: the address or slice where to put the data.
         :param value: byte or sequence of bytes to put in this map.
         '''
+        pass
 
     @abstractmethod
     def split(self, address):
@@ -208,6 +211,7 @@ class Map(object):
 
         :param address: The address at which to split the Map.
         '''
+        pass
 
 
 class AnonMap(Map):

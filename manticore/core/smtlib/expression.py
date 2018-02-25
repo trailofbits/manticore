@@ -1,3 +1,5 @@
+import operator
+import weakref
 from functools import reduce
 
 

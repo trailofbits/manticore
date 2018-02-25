@@ -1,6 +1,7 @@
 # Minimal INTEL assembler expression calculator
 import ply.yacc as yacc
 import copy
+import struct
 from ..smtlib import Operators, Bool
 # Lexer
 # ------------------------------------------------------------

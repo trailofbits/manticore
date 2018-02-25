@@ -1,4 +1,5 @@
 import logging
+import inspect
 
 from ..core.memory import MemoryException, FileMap, AnonMap
 
