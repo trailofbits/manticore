@@ -1,8 +1,5 @@
-import os
 import copy
 import logging
-from collections import OrderedDict
-from weakref import WeakSet
 
 from .smtlib import solver, Bool, ArrayProxy, Array
 from ..utils.helpers import issymbolic
@@ -18,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 class StateException(Exception):
     ''' All state related exceptions '''
-    pass
 
 
 class TerminateState(StateException):

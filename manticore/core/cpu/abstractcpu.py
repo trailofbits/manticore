@@ -2,8 +2,6 @@ import inspect
 import logging
 import StringIO
 import string
-import sys
-import types
 
 from functools import wraps
 from itertools import islice, imap
@@ -29,7 +27,6 @@ register_logger = logging.getLogger('{}.registers'.format(__name__))
 
 class CpuException(Exception):
     ''' Base cpu exception '''
-    pass
 
 
 class DecodeException(CpuException):
@@ -47,19 +44,16 @@ class InstructionNotImplementedError(CpuException):
     Exception raised when you try to execute an instruction that is not yet
     implemented in the emulator. Add it to the Cpu-specific implementation.
     '''
-    pass
 
 
 class InstructionEmulationError(CpuException):
     '''
     Exception raised when failing to emulate an instruction outside of Manticore.
     '''
-    pass
 
 
 class DivideByZeroError(CpuException):
     ''' A division by zero '''
-    pass
 
 
 class Interruption(CpuException):

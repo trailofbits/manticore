@@ -5020,15 +5020,12 @@ class X86Cpu(Cpu):
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 0):
             res2 = res1
-            pass
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 1):
             res2 = ((1 << (128 / stepsize)) - 1) ^ res1
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 2):
             res2 = res1
-            pass
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 3):
             res2 = ((1 << arg2len) - 1) ^ res1
-            pass
         return res2
 
     def _pcmpxstrx_setflags(self, res, varg0, varg1, ctlbyte):
@@ -5164,7 +5161,6 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param arg0: this argument is ignored.
         '''
-        pass
 
     @instruction
     def MOVD(cpu, op0, op1):
@@ -5671,7 +5667,6 @@ class X86Cpu(Cpu):
 
         Performs no operation.
         '''
-        pass
 
     @instruction
     def PREFETCHT1(cpu, arg):
@@ -5680,7 +5675,6 @@ class X86Cpu(Cpu):
 
         Performs no operation.
         '''
-        pass
 
     @instruction
     def PREFETCHT2(cpu, arg):
@@ -5689,7 +5683,6 @@ class X86Cpu(Cpu):
 
         Performs no operation.
         '''
-        pass
 
     @instruction
     def PREFETCHTNTA(cpu, arg):
@@ -5698,7 +5691,6 @@ class X86Cpu(Cpu):
 
         Performs no operation.
         '''
-        pass
 
     @instruction
     def PINSRW(cpu, dest, src, count):

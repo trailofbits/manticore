@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import types
-import binascii
 import functools
 import cProfile
 import pstats
