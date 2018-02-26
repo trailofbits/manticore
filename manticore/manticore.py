@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import types
-import binascii
 import functools
 import cProfile
 import pstats
@@ -18,7 +17,6 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 from .core.executor import Executor
-from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
@@ -527,7 +525,7 @@ class Manticore(Eventful):
         if pc not in self._assertions:
             return
 
-        from core.parser import parse
+        from .core.parser.parser import parse
 
         program = self._assertions[pc]
 

@@ -49,7 +49,6 @@ class Disasm(object):
         :param str code: binary blob to be disassembled
         :param long pc: program counter
         """
-        pass
 
 
 class CapstoneDisasm(Disasm):

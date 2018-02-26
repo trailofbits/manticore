@@ -752,7 +752,6 @@ class Armv7Cpu(Cpu):
     @instruction
     def PLD(cpu, addr, offset=None):
         """PLD instructs the cpu that the address at addr might be loaded soon."""
-        pass
 
     def _compute_writeback(cpu, operand, offset):
         if offset:
@@ -1243,9 +1242,7 @@ class Armv7Cpu(Cpu):
         Used by the the __kuser_dmb ARM Linux user-space handler. This is a nop
         under Manticore's memory and execution model.
         """
-        pass
 
     @instruction
     def LDCL(cpu, *operands):
         """Occasionally used in glibc (longjmp in ld.so). Nop under our execution model."""
-        pass

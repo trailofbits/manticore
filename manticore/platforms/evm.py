@@ -11,7 +11,6 @@ from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translat
 from ..core.state import Concretize, TerminateState
 import logging
 import sys
-import hashlib
 if sys.version_info < (3, 6):
     import sha3
 
@@ -991,17 +990,14 @@ class ConcretizeStack(EVMException):
 
 class StackOverflow(EVMException):
     ''' Attemped to push more than 1024 items '''
-    pass
 
 
 class StackUnderflow(EVMException):
     ''' Attemped to popo from an empty stack '''
-    pass
 
 
 class InvalidOpcode(EVMException):
     ''' Trying to execute invalid opcode '''
-    pass
 
 
 class Call(EVMInstructionException):
@@ -1028,7 +1024,6 @@ class DelegateCall(Call):
 
 class Stop(EVMInstructionException):
     ''' Program reached a STOP instruction '''
-    pass
 
 
 class Return(EVMInstructionException):
@@ -1060,7 +1055,6 @@ class SelfDestruct(EVMInstructionException):
 
 class NotEnoughGas(EVMException):
     ''' Not enough gas for operation '''
-    pass
 
 
 class Sha3(EVMException):
@@ -1697,7 +1691,6 @@ class EVM(Eventful):
         '''Remove item from stack'''
         # Items are automatically removed from stack
         # by the instruction distpatcher
-        pass
 
     def MLOAD(self, address):
         '''Load word from memory'''
@@ -1755,7 +1748,6 @@ class EVM(Eventful):
 
     def JUMPDEST(self):
         '''Mark a valid destination for jumps'''
-        pass
 
     ##########################################################################
     # Push Operations

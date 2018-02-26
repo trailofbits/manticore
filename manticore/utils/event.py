@@ -1,6 +1,6 @@
 import inspect
 import logging
-from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
+from weakref import WeakKeyDictionary, ref
 
 logger = logging.getLogger(__name__)
 

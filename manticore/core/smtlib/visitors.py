@@ -1,5 +1,6 @@
 from expression import *
 import logging
+import operator
 logger = logging.getLogger(__name__)
 
 

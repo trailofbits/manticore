@@ -1,13 +1,7 @@
-import time
 import os
-import cPickle
 import random
 import logging
 import signal
-try:
-    import cStringIO as StringIO
-except BaseException:
-    import StringIO
 
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful

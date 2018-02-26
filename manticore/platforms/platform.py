@@ -1,7 +1,5 @@
 
 from manticore.utils.event import Eventful
-from itertools import islice, imap
-import inspect
 
 class OSException(Exception):
     pass
