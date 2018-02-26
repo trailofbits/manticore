@@ -607,10 +607,7 @@ class AMD64RegFile(RegisterFile):
     def sizeof(self, reg):
         return self._table[reg].size
 
-###########################
 # Operand Wrapper
-
-
 class AMD64Operand(Operand):
     ''' This class deals with capstone X86 operands '''
 
@@ -625,7 +622,6 @@ class AMD64Operand(Operand):
 
         return type_map[self.op.type]
 
-    # 3
     # Operand access
     def address(self):
         cpu, o = self.cpu, self.op
@@ -713,7 +709,6 @@ class X86Cpu(Cpu):
         self._segments = state['segments']
         super(X86Cpu, self).__setstate__(state)
 
-    ####################
     # Segments
     def set_descriptor(self, selector, base, limit, perms):
         assert selector > 0 and selector < 0xffff
@@ -728,7 +723,6 @@ class X86Cpu(Cpu):
     def _wrap_operands(self, operands):
         return [AMD64Operand(self, op) for op in operands]
 
-    #####################
     # Auxiliar stack acess
     def push(cpu, value, size):
         '''
@@ -778,9 +772,6 @@ class X86Cpu(Cpu):
         # Check if we already have an implementation...
         name = OP_NAME_MAP.get(name, name)
         return name
-
-    # 3
-    # instruction implementation
 
     def _calculate_CMP_flags(self, size, res, arg0, arg1):
         SIGN_MASK = 1 << (size - 1)
