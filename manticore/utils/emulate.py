@@ -35,28 +35,24 @@ class UnicornEmulator(object):
         # instruction
         self._should_be_written = {}
 
+        self._uc_arch, cs2_uc_modes = {
+            # cs_arch: (uc_arch, {cs_modes: uc_modes})
+            CS_ARCH_ARM: (UC_ARCH_ARM, {CS_MODE_ARM: UC_MODE_ARM, CS_MODE_THUMB: UC_MODE_THUMB}),
+            CS_ARCH_ARM64: (UC_ARCH_ARM64, {CS_MODE_ARM: UC_MODE_ARM, CS_MODE_THUMB: UC_MODE_THUMB}),
+            CS_ARCH_X86: (UC_ARCH_X86, {CS_MODE_32: UC_MODE_32, CS_MODE_64: UC_MODE_64})
+        }.get(self._cpu.arch, (None, None))
+
+        if self._uc_arch is None:
+            raise RuntimeError('Unsupported architecture: %s' % self._cpu.arch)
+
+        self._uc_mode = cs2_uc_modes.get(self._cpu.mode)
+
+        if self._uc_mode is None:
+            raise RuntimeError('Unsupported CPU mode %s for arch %s' % (self._cpu.mode, self._cpu.arch))
+
     def reset(self):
-        self._emu = self._unicorn()
+        self._emu = Uc(self._uc_arch, self._uc_mode)
         self._to_raise = None
-
-    def _unicorn(self):
-        if self._cpu.arch in (CS_ARCH_ARM, CS_ARCH_ARM64):
-            uc_arch = UC_ARCH_ARM if self._cpu.arch == CS_ARCH_ARM else UC_ARCH_ARM64
-
-            if self._cpu.mode == CS_MODE_ARM:
-                return Uc(uc_arch, UC_MODE_ARM)
-
-            elif self._cpu.mode == CS_MODE_THUMB:
-                return Uc(uc_arch, UC_MODE_THUMB)
-
-        elif self._cpu.arch == CS_ARCH_X86:
-            if self._cpu.mode == CS_MODE_32:
-                return Uc(UC_ARCH_X86, UC_MODE_32)
-
-            elif self._cpu.mode == CS_MODE_64:
-                return Uc(UC_ARCH_X86, UC_MODE_64)
-
-        raise RuntimeError("Unsupported architecture")
 
     def _create_emulated_mapping(self, uc, address):
         '''
