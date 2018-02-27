@@ -290,12 +290,14 @@ class ConstantFolderSimplifier(Visitor):
                 return BoolConstant(value, taint=expression.taint)
         else:
             if any( operands[i] is not expression.operands[i] for i in xrange(len(operands))):
-                expression = type(expression)(*operands, taint=expression.taint)
+                expression = self._rebuild(expression, operands)
         return expression
 
 
+constant_folder_simplifier_cache = {}
 def constant_folder(expression):
-    simp = ConstantFolderSimplifier()
+    global constant_folder_simplifier_cache
+    simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
     simp.visit(expression)
     return simp.result
 
@@ -455,17 +457,14 @@ class ArithmeticSimplifier(Visitor):
         '''
         arr = expression.array
         index = expression.index
-
         while  isinstance(index, BitVecConstant) \
             and isinstance(arr, ArrayStore) \
             and isinstance(arr.index, BitVecConstant)\
             and arr.index.value != index.value:
             arr = arr.array
 
-        if  isinstance(arr, ArrayStore) and arr.index.value == index.value:
+        if  isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
             return arr.value
-
-        return arr.select(index)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0

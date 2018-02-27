@@ -766,19 +766,19 @@ class ManticoreEVM(Manticore):
         ''' Balance for account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world(state_id).storage[address]['balance']
+        return self.get_world(state_id).get_balance()
 
-    def get_storage(self, address, offset, state_id=None):
+    def get_storage_data(self, address, offset, state_id=None):
         ''' Storage data for `offset` on account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world(state_id).storage[address]['storage'].get(offset)
+        return self.get_world(state_id).get_storage_data(address, offset)
 
     def get_code(self, address, state_id=None):
         ''' Storage data for `offset` on account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world(state_id)[address]['code']
+        return self.get_world(state_id).get_code(address)
 
     def last_return(self, state_id=None):
         ''' Last returned buffer for state `state_id` '''
@@ -836,12 +836,12 @@ class ManticoreEVM(Manticore):
             :rtype: EVMAccount
         '''
         assert len(self.running_state_ids) == 1, "No forking yet"
-        with self.locked_context('seth') as context:
-            assert context['_pending_transaction'] is None
         assert init is not None
         if address is None:
             address = self.world.new_address()
+
         with self.locked_context('seth') as context:
+            assert context['_pending_transaction'] is None
             context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
 
         self.run(procs=self._config_procs)
@@ -1027,22 +1027,25 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing last transaction we save it in
             our private list 
         '''
+        world = state.platform
         state.context['last_exception'] = e
+        with self.locked_context('seth') as context:
+            ty, caller, address, value, data = context['_pending_transaction']
         # TODO(mark): This will break if we ever change the message text. Use a less
         # brittle check.
         if e.message not in {'REVERT', 'THROW', 'TXERROR'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
-                with self.locked_context('seth') as context:
-                    ty, caller, address, value, data = context['_pending_transaction']
-                    if ty == 'CREATE_CONTRACT':
-                        world = state.platform
-                        world[address]['code'] = world.last_return_data
+                if ty == 'CREATE_CONTRACT':
+                    world.set_code(address, world.last_return_data)
 
             self.save(state)
             e.testcase = False  #Do not generate a testcase file
         else:
+            #Remove account if constructor failed
+            if ty == 'CREATE_CONTRACT':
+                world.delete_account(address)
             self.save(state, final=True)
 
 
@@ -1411,7 +1414,6 @@ class ManticoreEVM(Manticore):
 
         with self.locked_context('runtime_coverage') as coverage:
             seen = coverage
-        #runtime_bytecode = world.storage[account_address]['code']
         runtime_bytecode = self.get_metadata(account_address).runtime_bytecode
 
         count, total = 0, 0

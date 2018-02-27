@@ -817,7 +817,7 @@ class EVM(Eventful):
                          'evm_write_memory', 
                          'evm_read_code',
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
-    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, global_storage=None, depth=0, gas=1000000000, **kwargs):
+    def __init__(self, constraints, address, origin, price, data, caller, value, code, header, world=None, depth=0, gas=1000000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -862,7 +862,7 @@ class EVM(Eventful):
         self.pc = 0
         self.stack = []
         self._gas = gas
-        self.world_state = world
+        self._world_state = world
         self._allocated = 0
 
 
@@ -886,7 +886,7 @@ class EVM(Eventful):
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
         state['memory'] = self.memory
-        state['world'] = self.world_state
+        state['world'] = self._world_state
         state['constraints'] = self.constraints
         state['last_exception'] = self.last_exception
         state['address'] = self.address
@@ -911,7 +911,7 @@ class EVM(Eventful):
         self._gas = state['gas']
         self.memory = state['memory']
         self.logs = state['logs'] 
-        self.world_state = state['world']
+        self._world_state = state['world']
         self.constraints = state['constraints']
         self.last_exception = state['last_exception']
         self.address = state['address']
@@ -961,7 +961,7 @@ class EVM(Eventful):
     def _load(self, address):
         self._allocate(address)
         value = self.memory[address]
-        value = arithmetic_simplifier(value)
+        #value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
         self._publish('did_evm_read_memory', address, value)
@@ -1068,7 +1068,7 @@ class EVM(Eventful):
         #simplify stack arguments
         for i in range(len(arguments)):
             if isinstance(arguments[i], Expression):           
-                arguments[i] = arithmetic_simplifier(arguments[i])
+                arguments[i] = simplify(arguments[i])
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
 
@@ -1306,7 +1306,7 @@ class EVM(Eventful):
         '''Get balance of the given account'''
         BALANCE_SUPPLEMENTAL_GAS = 380
         self._consume(BALANCE_SUPPLEMENTAL_GAS)
-        return self.world_state.get_balance(account)
+        return self._world_state.get_balance(account)
 
     def ORIGIN(self): 
         '''Get execution origination address'''
@@ -1381,17 +1381,11 @@ class EVM(Eventful):
 
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
-        #FIXME
-        if not account & TT256M1 in self.world_state:
-            return 0
-        return len(self.world_state[account & TT256M1]['code'])
+        return len(self._world_state.get_code(account))
 
     def EXTCODECOPY(self, account, address, offset, size): 
         '''Copy an account's code to memory'''
-        #FIXME STOP! if not enough data
-        if not account & TT256M1 in self.world_state:
-            return
-        extbytecode = self.world_state[account& TT256M1]['code']
+        extbytecode = self._world_state.get_code(account)
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
 
@@ -1716,7 +1710,7 @@ class EVMWorld(Platform):
         return key in self.world_state
 
     def __str__(self):
-        return "WORLD:" + str(self._world)
+        return "WORLD:" + str(self._world_state)
         
     @property
     def logs(self):
@@ -1789,10 +1783,14 @@ class EVMWorld(Platform):
     def deleted_addresses(self):
         return self._deleted_address
 
+    def delete_account(self, address):
+        if address in self.world_state:
+            del self.world_state[address]
+
     @property
     def world_state(self):
         if self.depth:
-            return self.current.world
+            return self.current._world_state
         else:
             return self._world_state
 
@@ -1834,6 +1832,15 @@ class EVMWorld(Platform):
         return self.world_state[address]['code']
 
     def set_code(self, address, data):
+        if issymbolic(data):
+            size = len(data)
+            constant_data = []
+            for i in range(size):
+                c = simplify(data[i])
+                if not isinstance(c, Constant):
+                    raise Exception('Setting symbolic bytecode code')
+                constant_data.append(chr(c.value)) #, translate_to_smtlib(data[i])
+            data = constant_data
         self.world_state[address]['code'] = data
 
     def has_code(self, address):
@@ -1900,11 +1907,11 @@ class EVMWorld(Platform):
 
         if not rollback:
             if self.depth:
-                self.current.world = vm.world
+                self.current._world_state = vm._world_state
                 self.current.logs += vm.logs
                 self.current.suicides = self.current.suicides.union(vm.suicides)
             else:
-                self._world = vm.world
+                self._world_state = vm._world_state
                 self._deleted_address = self._deleted_address.union(vm.suicides)
                 self._logs += vm.logs
                 for address in self._deleted_address:
@@ -2014,17 +2021,9 @@ class EVMWorld(Platform):
             assert  not issymbolic(address) 
             assert self.world_state.get_balance(origin) >= balance
             runtime = self.run()
-            self.world_state[address]['code'] = ''.join(runtime)
+            self.set_code(address, ''.join(runtime))
 
         return address
-
-    def CREATE(self, value, bytecode):
-        origin = self.current.origin
-        caller = self.current.address
-        price = self.current.price
-        self.create_contract(origin, price, address=None, balance=value, init=bytecode, run=False)
-        self._process_pending_transaction()
-
 
     def transaction(self, address, origin=None, price=0, data='', caller=None, value=0, header=None, run=False):
         assert self._pending_transaction is None
@@ -2146,6 +2145,12 @@ class EVMWorld(Platform):
                 self._internal_transactions.append([])
             self._internal_transactions[n].append(tx)
 
+    def CREATE(self, value, bytecode):
+        origin = self.current.origin
+        caller = self.current.address
+        price = self.current.price
+        self.create_contract(origin, price, address=None, balance=value, init=bytecode, run=False)
+        self._process_pending_transaction()
 
     def CALL(self, gas, to, value, data):
         address = to
@@ -2173,12 +2178,6 @@ class EVMWorld(Platform):
 
         if isinstance(last_ex, Create):
             self.current._push(prev_vm.address)
-            size = len(data)
-            constant_data = []
-            for i in range(size):
-                constant_data.append(simplify(data[i]).value) #, translate_to_smtlib(data[i])
-
-
             self.set_code(prev_vm.address, constant_data)
         else:
             size = min(last_ex.out_size, len(data))
