@@ -168,10 +168,13 @@ class Manticore(Eventful):
         self.forward_events_from(self._executor)
 
         if isinstance(path_or_state, str):
-            assert os.path.isfile(path_or_state)
+            if not os.path.isfile(path_or_state):
+                raise Exception("The file %s doesn't exist" % path_or_state)
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
+        else:
+            raise TypeError('path_or_state must be either str or State while it is %s' % type(path_or_state))
 
         if not isinstance(self._initial_state, State):
             raise TypeError("Manticore must be intialized with either a State or a path to a binary")
