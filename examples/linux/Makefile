@@ -1,6 +1,7 @@
 CC=gcc
 CFLAGS=-O3 -static
 NOSTDLIBFLAGS=-fno-builtin -static -nostdlib -fomit-frame-pointer
+PYTHON=python
 
 EXAMPLES=basic sindex  strncmp  arguments ibranch sendmail crackme indexhell  helloworld simple_copy simpleassert
 OTHER_EXAMPLES=nostdlib
@@ -29,5 +30,5 @@ simpleassert: simpleassert.c
 
 # crackme needs to be generated
 crackme.c: crackme.py
-	python crackme.py > $@
+	$(PYTHON) crackme.py > $@
 
