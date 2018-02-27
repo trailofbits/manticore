@@ -452,20 +452,6 @@ class Z3Solver(Solver):
             The current set of assertions must be sat.
             :param val: an expression or symbol '''
         if not issymbolic(expression):
-            if expression is None:
-                return
-            if isinstance(expression, str):
-                if len(expression) == 1:
-                    expression = ord(expression)
-                else:
-                    expression = map(ord, expression)  
-            if isinstance(expression, (list, tuple)):
-                if len(expression) == 0:
-                    return expression
-                arr = constraints.new_array(index_max=len(expression))
-                for i in range(len(expression)):
-                    arr[i] = expression[i]
-                return self.get_value(constraints, arr)
             return expression
         assert isinstance(expression, (Bool, BitVec, Array))
         with constraints as temp_cs:
@@ -477,7 +463,7 @@ class Z3Solver(Solver):
                 var = []
                 result = ''
                 for i in xrange(expression.index_max):
-                    subvar = temp_cs.new_bitvec(8)
+                    subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
                     temp_cs.add(subvar==expression[i])
 

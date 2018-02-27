@@ -1074,6 +1074,7 @@ class EVM(Eventful):
         :param bytecode: the byte array that is the machine code to be executed.
         :param header: the block header of the present block.
         :param depth: the depth of the present message-call or contract-creation (i.e. the number of CALLs or CREATEs being executed at present).
+        :param gas: gas budget for this transaction.
 
         '''
         super(EVM, self).__init__(**kwargs)
@@ -1090,7 +1091,6 @@ class EVM(Eventful):
         self.bytecode = code
         self.suicides = set()
         self.logs = []
-        self.gas=gas
         #FIXME parse decode and mark invalid instructions
         #self.invalid = set()
 
@@ -1104,7 +1104,7 @@ class EVM(Eventful):
         #Machine state
         self.pc = 0
         self.stack = []
-        self.gas = gas
+        self._gas = gas
         self.global_storage = global_storage
         self.allocated = 0
 
@@ -1117,10 +1117,12 @@ class EVM(Eventful):
         self._constraints = constraints
         self.memory.constraints = constraints
 
+    @property
+    def gas(self):
+        return self._gas
 
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
-        state['gas'] = self.gas
         state['memory'] = self.memory
         state['global_storage'] = self.global_storage
         state['constraints'] = self.constraints
@@ -1136,7 +1138,7 @@ class EVM(Eventful):
         state['header'] = self.header
         state['pc'] = self.pc
         state['stack'] = self.stack
-        state['gas'] = self.gas
+        state['gas'] = self._gas
         state['allocated'] = self.allocated
         state['suicides'] = self.suicides
         state['logs'] = self.logs
@@ -1144,7 +1146,7 @@ class EVM(Eventful):
         return state
 
     def __setstate__(self, state):
-        self.gas = state['gas']
+        self._gas = state['gas']
         self.memory = state['memory']
         self.logs = state['logs'] 
         self.global_storage = state['global_storage']
@@ -1161,7 +1163,6 @@ class EVM(Eventful):
         self.header = state['header']
         self.pc = state['pc']
         self.stack = state['stack']
-        self.gas = state['gas']
         self.allocated = state['allocated']
         self.suicides = state['suicides']
         super(EVM, self).__setstate__(state)
@@ -1260,9 +1261,9 @@ class EVM(Eventful):
 
     def _consume(self, fee):
         assert fee>=0
-        if self.gas < fee:
+        if self._gas < fee:
             raise NotEnoughGas()
-        self.gas -= fee
+        self._gas -= fee
 
     #Execute an instruction from current pc
     def execute(self):
@@ -1730,7 +1731,7 @@ class EVM(Eventful):
     def GAS(self):
         '''Get the amount of available gas, including the corresponding reduction the amount of available gas'''
         #fixme calculate gas consumption
-        return self.gas
+        return self._gas
 
     def JUMPDEST(self):
         '''Mark a valid destination for jumps'''

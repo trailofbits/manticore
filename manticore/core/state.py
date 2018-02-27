@@ -202,7 +202,7 @@ class State(Eventful):
         '''
         label = options.get('label', 'buffer')
         taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=label, index_max=nbytes, taint=taint)
+        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint)
         self._input_symbols.append(expr)
 
         if options.get('cstring', False):

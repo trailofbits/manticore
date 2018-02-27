@@ -77,34 +77,73 @@ class ExpressionTest(unittest.TestCase):
         key = cs.new_bitvec(32)
 
         #assert that the array is 'A' at key position
-        cs.add(array[key] == 'A')
+        cs.add(array[key] == ord('A'))
         #lets restrict key to be greater than 1000
         cs.add(key.ugt(1000))
 
         with cs as temp_cs:
             #1001 position of array can be 'A'
-            temp_cs.add(array[1001] == 'A')
+            temp_cs.add(array[1001] == ord('A'))
             self.assertTrue(self.solver.check(temp_cs))
 
         with cs as temp_cs:
             #1001 position of array can also be 'B'
-            temp_cs.add(array[1001] == 'B')
+            temp_cs.add(array[1001] == ord('B'))
             self.assertTrue(self.solver.check(temp_cs))
 
 
         with cs as temp_cs:
             #but if it is 'B' ...
-            temp_cs.add(array[1001] == 'B')
+            temp_cs.add(array[1001] == ord('B'))
             #then key can not be 1001
             temp_cs.add(key == 1001)
             self.assertFalse(self.solver.check(temp_cs))
 
         with cs as temp_cs:
             #If 1001 position is 'B' ...
-            temp_cs.add(array[1001] == 'B')
+            temp_cs.add(array[1001] == ord('B'))
             #then key can be 1000 for ex..
             temp_cs.add(key == 1002)
             self.assertTrue(self.solver.check(temp_cs))
+
+
+    def testBasicArray256(self):
+        cs =  ConstraintSet()
+        #make array of 32->8 bits
+        array = cs.new_array(32, value_bits=256)
+        #make free 32bit bitvector
+        key = cs.new_bitvec(32)
+
+        #assert that the array is 1234567890.. at key position
+        cs.add(array[key] == 11111111111111111111111111111111111111111111)
+        #lets restrict key to be greater than 1000
+        cs.add(key.ugt(1000))
+
+        with cs as temp_cs:
+            #1001 position of array can be 'A'
+            temp_cs.add(array[1001] == 11111111111111111111111111111111111111111111)
+            self.assertTrue(self.solver.check(temp_cs))
+
+        with cs as temp_cs:
+            #1001 position of array can also be 'B'
+            temp_cs.add(array[1001] == 22222222222222222222222222222222222222222222)
+            self.assertTrue(self.solver.check(temp_cs))
+
+
+        with cs as temp_cs:
+            #but if it is 'B' ...
+            temp_cs.add(array[1001] == 22222222222222222222222222222222222222222222)
+            #then key can not be 1001
+            temp_cs.add(key == 1001)
+            self.assertFalse(self.solver.check(temp_cs))
+
+        with cs as temp_cs:
+            #If 1001 position is 'B' ...
+            temp_cs.add(array[1001] == 22222222222222222222222222222222222222222222)
+            #then key can be 1000 for ex..
+            temp_cs.add(key == 1002)
+            self.assertTrue(self.solver.check(temp_cs))
+
 
     def testBasicArrayStore(self):
         name = "bitarray"
@@ -115,29 +154,29 @@ class ExpressionTest(unittest.TestCase):
         key = cs.new_bitvec(32)
 
         #assert that the array is 'A' at key position
-        array = array.store(key, 'A')
+        array = array.store(key, ord('A'))
         #lets restrict key to be greater than 1000
         cs.add(key.ugt(1000))
 
         #1001 position of array can be 'A'
-        self.assertTrue(self.solver.can_be_true(cs, array.select(1001) == 'A'))
+        self.assertTrue(self.solver.can_be_true(cs, array.select(1001) == ord('A')))
 
         #1001 position of array can be 'B'
-        self.assertTrue(self.solver.can_be_true(cs, array.select(1001) == 'B'))
+        self.assertTrue(self.solver.can_be_true(cs, array.select(1001) == ord('B')))
 
         #name is correctly proxied
         self.assertEqual(array.name, name + "_1")
 
         with cs as temp_cs:
             #but if it is 'B' ...
-            temp_cs.add(array.select(1001) == 'B')
+            temp_cs.add(array.select(1001) == ord('B'))
             #then key can not be 1001
             temp_cs.add(key == 1001)
             self.assertFalse(self.solver.check(temp_cs))
 
         with cs as temp_cs:
             #If 1001 position is 'B' ...
-            temp_cs.add(array.select(1001) == 'B')
+            temp_cs.add(array.select(1001) == ord('B'))
             #then key can be 1000 for ex..
             temp_cs.add(key != 1002)
             self.assertTrue(self.solver.check(temp_cs))
@@ -152,7 +191,7 @@ class ExpressionTest(unittest.TestCase):
         key = cs.new_bitvec(32)
 
         #assert that the array is 'A' at key position
-        array = array.store(key, 'A')
+        array = array.store(key, ord('A'))
         #lets restrict key to be greater than 1000
         cs.add(key.ugt(1000))
         cs = pickle.loads(pickle.dumps(cs))
@@ -214,8 +253,8 @@ class ExpressionTest(unittest.TestCase):
         a = cs.new_bitvec(32, name='VAR')
         self.assertEqual(get_depth(a), 1)
         cond = Operators.AND(a < 200, a > 100)
-        arr[0]='a'
-        arr[1]='b'
+        arr[0]=ord('a')
+        arr[1]=ord('b')
 
 
 
