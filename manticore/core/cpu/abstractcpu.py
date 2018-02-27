@@ -816,19 +816,23 @@ class Cpu(Eventful):
 
         name = self.canonicalize_instruction_name(insn)
             
-        if logger.level == logging.DEBUG :
+        if logger.level == logging.DEBUG:
             logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
 
         try:
-            try:
-                getattr(self, name)(*insn.operands)
-            except AttributeError:
-                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+            implementation = getattr(self, name, None)
+
+            if implementation is not None:
+                implementation(*insn.operands)
+
+            else:
+                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
                 logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
                 self.emulate(insn)
+
         except (Interruption, Syscall) as e:
             e.on_handled = lambda: self._publish_instruction_as_executed(insn)
             raise e
