@@ -463,7 +463,7 @@ class ArithmeticSimplifier(Visitor):
             and arr.index.value != index.value:
             arr = arr.array
 
-        if  isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
+        if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
             return arr.value
 
     def visit_Expression(self, expression, *operands):

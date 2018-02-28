@@ -1461,14 +1461,14 @@ class EVM(Eventful):
     def SLOAD(self, offset):
         '''Load word from storage'''
         self._publish('will_evm_read_storage', offset)
-        value = self.world_state.get_storage_data(self.address, offset)
+        value = self._world_state.get_storage_data(self.address, offset)
         self._publish('did_evm_read_storage', offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
         self._publish('will_evm_write_storage', offset, value)
-        self.world_state.set_storage_data(self.address, offset, value)
+        self._world_state.set_storage_data(self.address, offset, value)
         self._publish('did_evm_write_storage', offset, value)
 
     def JUMP(self, dest):
