@@ -1,3 +1,4 @@
+from __future__ import print_function
 import copy
 import traceback
 import os
@@ -68,7 +69,7 @@ class Gdb(subprocess.Popen):
     def getM(self, m):
         try:
             return long(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
-        except Exception,e:
+        except Exception as e:
             raise e
             return 0
     def get_pid(self):
@@ -100,7 +101,7 @@ class Gdb(subprocess.Popen):
             self._arch = 'amd64'
             return 'amd64'
         else:
-            print infotarget
+            print(infotarget)
             raise NotImplementedError()
 
 
@@ -166,14 +167,14 @@ while True:
         instruction = next(md.disasm(text, pc))
 
         if instruction.insn_name().upper() in ['CPUID', 'RDTSC', 'NOP', 'SYSCALL', 'INT', 'SYSENTER']:
-            print "#Skiping:, ", instruction.insn_name().upper()
+            print("#Skiping:, ", instruction.insn_name().upper())
             stepped=True
             gdb.stepi()
             continue
 
         #print instruction
         disassembly = "0x%x:\t%s\t%s" %(instruction.address, instruction.mnemonic, instruction.op_str)
-        print "#INSTRUCTION:", disassembly
+        print("#INSTRUCTION:", disassembly)
         groups = map(instruction.group_name, instruction.groups)
 
 
@@ -385,7 +386,7 @@ while True:
         if instruction.mnemonic.upper() in flags:
             for fl in flags[instruction.mnemonic.upper()]['defined']:
                 if 'OF' in registers and instruction.insn_name().upper() in ['ROL','RCL','ROR','RCR']:
-                    print instruction.insn_name().upper(), read_operand(instruction.operands[1])
+                    print(instruction.insn_name().upper(), read_operand(instruction.operands[1]))
                     del registers['OF']
                     continue
                 registers[fl] = (EFLAGS&flags_maks[fl]) != 0
@@ -399,16 +400,16 @@ while True:
         test['pos']['registers'] = registers
 
         if not 'int' in groups:
-            print test 
+            print(test) 
 
         count += 1
 
         #check if exit
         if instruction.insn_name().upper() in ['SYSCALL', 'INT', 'SYSENTER']:
             if "The program has no registers now." in gdb.correspond("info registers \n"):
-                print "done" 
+                print("done") 
                 break
-    except Exception,e:
+    except Exception as e:
         if "The program has no registers now." in gdb.correspond("info registers\n"):
             break
         #print '-'*60
@@ -416,10 +417,10 @@ while True:
         #print '-'*60
         #import pdb
         #pdb.set_trace()
-        print "# Exception", e
+        print("# Exception", e)
         if not stepped:
             gdb.stepi()
 
-print "# Processed %d instructions." % count
+print("# Processed %d instructions." % count)
 
 
