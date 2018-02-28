@@ -1,4 +1,5 @@
 
+from builtins import zip
 import struct
 import unittest
 import json
