@@ -324,7 +324,7 @@ class Z3Solver(Solver):
             if expression == False:
                 return expression
             else:
-                #if True check if ocnstraints are feasible
+                #if True check if constraints are feasible
                 self._reset(constraints)
                 return self._check() == 'sat'
         assert isinstance(expression, Bool)

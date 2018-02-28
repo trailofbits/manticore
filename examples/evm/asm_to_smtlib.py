@@ -91,13 +91,6 @@ class callbacks():
             evm.stack.append(e)
 
 callbacks = callbacks()
-
-'''
-global_storage = {}
-global_storage[address] = {}
-global_storage[address]['storage'] = ArrayProxy(ArrayVariable(index_bits=256, value_bits=256, name='EMPTY_STORAGE', index_max=None))
-'''
-
 world = EVMWorld(constraints)
 address = world.create_account(balance=balance, code='')
 

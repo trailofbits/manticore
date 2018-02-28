@@ -862,7 +862,7 @@ class EVM(Eventful):
         self.pc = 0
         self.stack = []
         self._gas = gas
-        self._world_state = world
+        self._world = world
         self._allocated = 0
 
 
@@ -886,7 +886,7 @@ class EVM(Eventful):
     def __getstate__(self):
         state = super(EVM, self).__getstate__()
         state['memory'] = self.memory
-        state['world'] = self._world_state
+        state['world'] = self._world
         state['constraints'] = self.constraints
         state['last_exception'] = self.last_exception
         state['address'] = self.address
@@ -911,7 +911,7 @@ class EVM(Eventful):
         self._gas = state['gas']
         self.memory = state['memory']
         self.logs = state['logs'] 
-        self._world_state = state['world']
+        self._world = state['world']
         self.constraints = state['constraints']
         self.last_exception = state['last_exception']
         self.address = state['address']
@@ -950,6 +950,10 @@ class EVM(Eventful):
     @property
     def allocated(self):
         return self._allocated
+
+    @property
+    def world(self):
+        return self._world
 
     def _store(self, address, value):
         #CHECK ADDRESS IS A 256 BIT INT OR BITVEC
@@ -1363,15 +1367,23 @@ class EVM(Eventful):
 
     def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
-                     # cost to copy one 32 byte word
-
+        # cost to copy one 32 byte word
+        bytecode = self.constraints.new_array(index_bits=256, value_bits=8, index_max=len(self.bytecode))
+        bytecode[0: bytecode.index_max] = map( ord, self.bytecode)
         if issymbolic(size):
-            max_size = solver.min(self.constraints, size)
+            max_size = solver.max(self.constraints, size)
         else:
             max_size = size
 
         for i in range(max_size):
-            value = Operators.ITEBV(256, code_offset+i > len(self.bytecode), 0, Operators.ORD(self.bytecode[code_offset+i]))
+
+            if not issymbolic(code_offset+i):
+                if code_offset+i >= len(self.bytecode):
+                    value = 0
+                else:
+                    value = Operators.ORD(self.bytecode[code_offset+i])
+            else:
+                value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), 0, Operators.ORD(self.bytecode[code_offset+i]))
             self._store(mem_offset+i, value)
         self._publish( 'did_evm_read_code', code_offset, size)
 
@@ -1381,11 +1393,11 @@ class EVM(Eventful):
 
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
-        return len(self._world_state.get_code(account))
+        return len(self.world_state.get_code(account))
 
     def EXTCODECOPY(self, account, address, offset, size): 
         '''Copy an account's code to memory'''
-        extbytecode = self._world_state.get_code(account)
+        extbytecode = self.world_state.get_code(account)
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
 
@@ -1461,14 +1473,14 @@ class EVM(Eventful):
     def SLOAD(self, offset):
         '''Load word from storage'''
         self._publish('will_evm_read_storage', offset)
-        value = self._world_state.get_storage_data(self.address, offset)
+        value = self.world.get_storage_data(self.address, offset)
         self._publish('did_evm_read_storage', offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
         self._publish('will_evm_write_storage', offset, value)
-        self._world_state.set_storage_data(self.address, offset, value)
+        self.world.set_storage_data(self.address, offset, value)
         self._publish('did_evm_write_storage', offset, value)
 
     def JUMP(self, dest):
@@ -1486,7 +1498,7 @@ class EVM(Eventful):
 
     def MSIZE(self):
         '''Get the size of active memory in bytes'''
-        return self.memory._allocated * 32
+        return self._allocated * 32
 
     def GAS(self):
         '''Get the amount of available gas, including the corresponding reduction the amount of available gas'''
@@ -1606,6 +1618,7 @@ class EVM(Eventful):
                 lines.append("%04x  %-*s  %s" % (c, length*3, hex, printable))
             return lines
 
+        '''
         m = []
         if len(self.memory._memory.keys()):
             for i in range(max([0] + self.memory._memory.keys())+1):
@@ -1613,6 +1626,8 @@ class EVM(Eventful):
                 m.append(c)
 
         hd = hexdump(m)
+        '''
+        hd = '' #str(self.memory)
         result = ['-'*147]
         if issymbolic(self.pc):
             result.append( '<Symbolic PC>')
@@ -1658,7 +1673,7 @@ class EVMWorld(Platform):
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
         self._callstack = [] 
-        self._deleted_address = set()
+        self._deleted_accounts = []
         self._logs = list()
         self._sha3 = {}
         self._pending_transaction = None
@@ -1673,20 +1688,20 @@ class EVMWorld(Platform):
         state['world_state'] = self._world_state
         state['constraints'] = self._constraints
         state['callstack'] = self._callstack
-        state['deleted_address'] = self._deleted_address
+        state['deleted_accounts'] = self._deleted_accounts
         state['transactions'] = self._transactions
         state['internal_transactions'] = self._internal_transactions
         return state
 
     def __setstate__(self, state):
         super(EVMWorld, self).__setstate__(state)
+        self._constraints = state['constraints']
         self._sha3 = state['sha3']
         self._pending_transaction = state['pending_transaction']
-        self._logs = state['logs'] 
         self._world_state = state['world_state']
-        self._constraints = state['constraints']
+        self._deleted_accounts = state['deleted_accounts']
+        self._logs = state['logs'] 
         self._callstack = state['callstack']
-        self._deleted_address = state['deleted_address']
         self._transactions = state['transactions']
         self._internal_transactions = state['internal_transactions']
         self._do_events()
@@ -1701,13 +1716,17 @@ class EVMWorld(Platform):
             assert self._sha3[buf] == value
         self._sha3[buf] = value
 
+    @property
+    def world_state(self):
+        return self._world_state
+
     def __getitem__(self, index):
         assert isinstance(index, (int,long))
         return self.world_state[index]
 
     def __contains__(self, key):
         assert not issymbolic(key), "Symbolic address not supported"
-        return key in self.world_state
+        return key in self.accounts
 
     def __str__(self):
         return "WORLD:" + str(self._world_state)
@@ -1715,6 +1734,10 @@ class EVMWorld(Platform):
     @property
     def logs(self):
         return self._logs
+
+    @property 
+    def deleted_accounts(self):
+        return self._deleted_accounts
 
     @property
     def constraints(self):
@@ -1755,7 +1778,8 @@ class EVMWorld(Platform):
     @property
     def current(self):
         try:
-            return self._callstack[-1]
+            _,_,_,vm = self._callstack[-1]
+            return vm
         except IndexError:
             return None
 
@@ -1780,19 +1804,14 @@ class EVMWorld(Platform):
         return accs
 
     @property
-    def deleted_addresses(self):
-        return self._deleted_address
+    def deleted_accounts(self):
+        return self._deleted_accounts
 
     def delete_account(self, address):
         if address in self.world_state:
+            deleted_account = (address, self.world_state[address])
             del self.world_state[address]
-
-    @property
-    def world_state(self):
-        if self.depth:
-            return self.current._world_state
-        else:
-            return self._world_state
+            self._deleted_accounts.append(deleted_account)
 
     def set_storage_data(self, address, offset, value):
         self.world_state[address]['storage'][offset] = value
@@ -1883,14 +1902,13 @@ class EVMWorld(Platform):
 
     #CALLSTACK
     def _push_vm(self, vm):
-        #Storage address ->  account(value, local_storage)
-        vm.world = self.world_state
-        vm.world[vm.address]['storage'] = copy(self.world_state[vm.address]['storage'])
+        assert vm.world is self
+
         if self.depth:
             self.current.constraints = None
         #MAKE A DEEP COPY OF THE SPECIFIC ACCOUNT
-        self._callstack.append(vm)
-        self.current.depth = self.depth
+        self._callstack.append( ( self.logs, self.deleted_accounts, copy(self.world_state[vm.address]['storage']) , vm ) )
+
         self.current.constraints = self.constraints
         #self.forward_events_from(self.current)
         self._do_events()
@@ -1900,22 +1918,17 @@ class EVMWorld(Platform):
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
     def _pop_vm(self, rollback=False):
-        vm = self._callstack.pop()
+        logs, deleted_accounts, account_storage, vm = self._callstack.pop()
         assert self.constraints == vm.constraints
-        if self.current:
-            self.current.constraints = vm.constraints
+        assert not self.current or self.current.constraints == vm.constraints
 
-        if not rollback:
-            if self.depth:
-                self.current._world_state = vm._world_state
-                self.current.logs += vm.logs
-                self.current.suicides = self.current.suicides.union(vm.suicides)
-            else:
-                self._world_state = vm._world_state
-                self._deleted_address = self._deleted_address.union(vm.suicides)
-                self._logs += vm.logs
-                for address in self._deleted_address:
-                    del self.world_state[address]
+        if rollback:
+            for address, account in self._deleted_accounts:
+                self.world_state[address] = account
+            self.world_state[vm.address]['storage'] = account_storage
+            self._deleted_accounts = self._deleted_accounts
+            self._logs = logs
+
         return vm
 
     @property
@@ -1959,6 +1972,7 @@ class EVMWorld(Platform):
         try:
             while True:
                 self.execute()
+    
         except TerminateState as e:
             if self.depth == 0 and e.message == 'RETURN':
                 return self.last_return
@@ -2126,7 +2140,7 @@ class EVMWorld(Platform):
         #Here we have enough funds and room in the callstack
         self.send_funds(caller, address, value)
 
-        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, world=self.world_state)
+        new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, depth=self.depth, world=self)
         self._push_vm(new_vm)
 
 
@@ -2245,7 +2259,7 @@ class EVMWorld(Platform):
 
         self.world_state.send_funds(address, recipient, self.world_state.get_balance(address))
 
-        self.current.suicides.add(address)
+        self.world_state.delete_account(address)
         prev_vm = self._pop_vm(rollback=False)
 
         if self.depth == 0:

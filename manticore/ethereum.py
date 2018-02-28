@@ -215,7 +215,6 @@ class SolidityMetadata(object):
             srcmap = self.srcmap_runtime
         else:
             srcmap = self.srcmap
-        
         beg, size, _, _ = srcmap[asm_offset]
 
         output = ''
@@ -979,7 +978,6 @@ class ManticoreEVM(Manticore):
         '''
         #save the state to secondary storage
         state_id = self._executor._workspace.save_state(state)
-
         with self.locked_context('seth') as context:
             if final:
                 #Keep it on a private list
@@ -1039,7 +1037,6 @@ class ManticoreEVM(Manticore):
             if e.message == 'RETURN':
                 if ty == 'CREATE_CONTRACT':
                     world.set_code(address, world.last_return_data)
-
             self.save(state)
             e.testcase = False  #Do not generate a testcase file
         else:
@@ -1047,6 +1044,7 @@ class ManticoreEVM(Manticore):
             if ty == 'CREATE_CONTRACT':
                 world.delete_account(address)
             self.save(state, final=True)
+            e.testcase = True #Do generate a testcase file
 
 
 
@@ -1148,13 +1146,14 @@ class ManticoreEVM(Manticore):
 
             address, offset = state.context['seth.trace'][-1]
 
-            #Last instruction
-            metadata = self.get_metadata(blockchain.transactions[-1].address)
-            if metadata is not None:
-                summary.write('Last instruction at contract %x offset %x\n' %(address, offset))
-                at_runtime = blockchain.transactions[-1].sort != 'Create'
-                summary.write(metadata.get_source_for(offset, at_runtime))
-                summary.write('\n')
+            #Last instruction if last tx vas valid
+            if state.context['last_exception'].message != 'TXERROR':
+                metadata = self.get_metadata(blockchain.transactions[-1].address)
+                if metadata is not None:
+                    summary.write('Last instruction at contract %x offset %x\n' %(address, offset))
+                    at_runtime = blockchain.transactions[-1].sort != 'Create'
+                    summary.write(metadata.get_source_for(offset, at_runtime))
+                    summary.write('\n')
 
 
 
