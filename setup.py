@@ -34,6 +34,7 @@ setup(
             'nose',
             'Sphinx',
             'redis',
+            'future',
         ],
         'redis': [
             'redis',
