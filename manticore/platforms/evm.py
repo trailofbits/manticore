@@ -1195,7 +1195,6 @@ class EVM(Eventful):
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
         self._publish('did_evm_read_memory', address, value)
-
         return value
 
     @staticmethod
@@ -1260,8 +1259,9 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        assert fee>=0
+        assert fee >= 0
         if self._gas < fee:
+            logger.debug("Not enough gas for instruction")
             raise NotEnoughGas()
         self._gas -= fee
 
@@ -1774,11 +1774,10 @@ class EVM(Eventful):
     def read_buffer(self, offset, size):
         if size:
             self._allocate(offset+size)
-
         data = []
         for i in xrange(size):
-            data.append(Operators.CHR(self._load(offset+i)))
-
+            data.append(self._load(offset+i))
+        data = map(Operators.CHR, data)
         if any(map(issymbolic, data)):
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
             for i in range(len(data)):
