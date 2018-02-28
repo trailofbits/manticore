@@ -865,11 +865,6 @@ class EVM(Eventful):
         self._world = world
         self._allocated = 0
 
-
-    @property
-    def gas(self):
-        return self._gas
-
     @property
     def constraints(self):
         return self._constraints
@@ -901,7 +896,11 @@ class EVM(Eventful):
         state['pc'] = self.pc
         state['stack'] = self.stack
         state['gas'] = self._gas
+<<<<<<< HEAD
         state['allocated'] = self._allocated
+=======
+        state['allocated'] = self.allocated
+>>>>>>> master
         state['suicides'] = self.suicides
         state['logs'] = self.logs
 
@@ -925,8 +924,12 @@ class EVM(Eventful):
         self.header = state['header']
         self.pc = state['pc']
         self.stack = state['stack']
+<<<<<<< HEAD
         self._gas = state['gas']
         self._allocated = state['allocated']
+=======
+        self.allocated = state['allocated']
+>>>>>>> master
         self.suicides = state['suicides']
         super(EVM, self).__setstate__(state)
 
@@ -969,7 +972,6 @@ class EVM(Eventful):
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
         self._publish('did_evm_read_memory', address, value)
-
         return value
 
     @staticmethod
@@ -1034,8 +1036,15 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
+<<<<<<< HEAD
         self.constraints.add(Operators.UGE(fee, 0))
         self.constraints.add(Operators.UGE(self.gas, fee) )
+=======
+        assert fee >= 0
+        if self._gas < fee:
+            logger.debug("Not enough gas for instruction")
+            raise NotEnoughGas()
+>>>>>>> master
         self._gas -= fee
 
     #Execute an instruction from current pc
@@ -1544,9 +1553,26 @@ class EVM(Eventful):
     ##########################################################################
     ##System operations
     def read_buffer(self, offset, size):
+<<<<<<< HEAD
         self._allocate(offset+size)
         data = self.memory[offset:offset+size]
         self._publish('did_evm_read_memory', offset, data)
+=======
+        if size:
+            self._allocate(offset+size)
+        data = []
+        for i in xrange(size):
+            data.append(self._load(offset+i))
+        data = map(Operators.CHR, data)
+        if any(map(issymbolic, data)):
+            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
+            for i in range(len(data)):
+                data_symb[i] = Operators.ORD(data[i])
+            data = data_symb
+        else:
+            data = ''.join(data)
+
+>>>>>>> master
         return data
 
     def write_buffer(self, offset, buf):
