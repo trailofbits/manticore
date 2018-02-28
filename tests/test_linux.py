@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import object
 import os
 import shutil
 import tempfile
@@ -30,7 +31,7 @@ class LinuxTest(unittest.TestCase):
         }
         cpu = self.linux.current
 
-        for reg, val in x86_defaults.iteritems():
+        for reg, val in x86_defaults.items():
             self.assertEqual(cpu.regfile.read(reg), val)
 
     def test_stack_init(self):

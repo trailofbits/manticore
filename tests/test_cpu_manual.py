@@ -1,4 +1,8 @@
 from __future__ import absolute_import
+from __future__ import division
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import struct
 import unittest
 from manticore.core.cpu.x86 import *
@@ -451,7 +455,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(0x1000,64), 0x5556575845464748)
 
         #cpu.writeback()
-        for i in xrange(0x10):
+        for i in range(0x10):
             self.assertEqual(mem[i+0x1000], 'HGFEXWVUhgfedcba'[i])
         self.assertItemsEqual(mem.read(0x1000,0x10), 'HGFEXWVUhgfedcba')
 
@@ -476,7 +480,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(0x1000,64), 0x5556575845464748)
 
         #cpu.writeback()
-        for i in xrange(0x10):
+        for i in range(0x10):
             self.assertEqual(mem[i+0x1000], 'HGFEXWVUhgfedcba'[i])
 
     def test_cache_003(self):
@@ -533,7 +537,7 @@ class SymCPUTest(unittest.TestCase):
 
         memory = ['\x00'] *0x1000
         written = set()
-        for _ in xrange(1000):
+        for _ in range(1000):
             address = random.randint(0x1000,0x2000-8)
             [written.add(i) for i in range(address,address+8)]
             value = random.randint(0x0,0xffffffffffffffff)
@@ -546,10 +550,10 @@ class SymCPUTest(unittest.TestCase):
         random.shuffle(written)
         for address in written:
             size = random.choice([8,16,32,64])
-            if address > 0x2000-size/8:
+            if address > 0x2000-old_div(size,8):
                 continue
             pattern = {8:'B', 16:'<H', 32:'<L', 64:'<Q'} [size]
-            self.assertEqual(cpu.read_int(address,size), struct.unpack(pattern, ''.join(memory[address-0x1000:address-0x1000+size/8]))[0] )
+            self.assertEqual(cpu.read_int(address,size), struct.unpack(pattern, ''.join(memory[address-0x1000:address-0x1000+old_div(size,8)]))[0] )
 
 
 

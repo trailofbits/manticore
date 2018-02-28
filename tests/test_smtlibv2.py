@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 from manticore.core.smtlib import *
 import unittest
 import fcntl
@@ -439,7 +442,7 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86) #-122
         cs.add(c == 0x11) #17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b/c)
+        cs.add(d == old_div(b,c))
         cs.add(a == d)
 
         self.assertTrue(solver.check(cs))
@@ -448,7 +451,7 @@ class ExpressionTest(unittest.TestCase):
 
     def test_SAR(self):
         A = 0xbadf00d
-        for B in xrange(32):
+        for B in range(32):
             cs = ConstraintSet()
             a = cs.new_bitvec(32)
             b = cs.new_bitvec(32)
@@ -484,87 +487,87 @@ class ExpressionTest(unittest.TestCase):
 
         with cs as cs_up:
             cs_up.add(y.uge(0x80))
-            self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
+            self.assertItemsEqual(solver.get_all_values(cs_up, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_up, y), list(range(0x80,0x100)))
 
             saved_up = pickle.dumps((x,y,cs_up))
 
-            self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
+            self.assertItemsEqual(solver.get_all_values(cs_up, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_up, y), list(range(0x80,0x100)))
 
             with cs_up as cs_up_right:
                 cs_up_right.add(x.uge(0x80))
                 saved_up_right = pickle.dumps((x,y,cs_up_right))
-                self.assertItemsEqual(solver.get_all_values(cs_up_right, x), range(0x80, 0x100))
-                self.assertItemsEqual(solver.get_all_values(cs_up_right, y), range(0x80, 0x100))
+                self.assertItemsEqual(solver.get_all_values(cs_up_right, x), list(range(0x80, 0x100)))
+                self.assertItemsEqual(solver.get_all_values(cs_up_right, y), list(range(0x80, 0x100)))
 
-            self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
+            self.assertItemsEqual(solver.get_all_values(cs_up, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_up, y), list(range(0x80,0x100)))
 
             with cs_up as cs_up_left:
                 cs_up_left.add(x.ult(0x80))
                 saved_up_left = pickle.dumps((x,y,cs_up_left))
-                self.assertItemsEqual(solver.get_all_values(cs_up_left, x), range(0, 0x80))
-                self.assertItemsEqual(solver.get_all_values(cs_up_left, y), range(0x80, 0x100))
+                self.assertItemsEqual(solver.get_all_values(cs_up_left, x), list(range(0, 0x80)))
+                self.assertItemsEqual(solver.get_all_values(cs_up_left, y), list(range(0x80, 0x100)))
 
-            self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
+            self.assertItemsEqual(solver.get_all_values(cs_up, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_up, y), list(range(0x80,0x100)))
 
 
         with cs as cs_down:
             cs_down.add(y.ult(0x80))
 
-            self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
+            self.assertItemsEqual(solver.get_all_values(cs_down, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_down, y), list(range(0, 0x80)))
 
             saved_down = pickle.dumps((x,y,cs_down))
 
-            self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
+            self.assertItemsEqual(solver.get_all_values(cs_down, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_down, y), list(range(0, 0x80)))
 
 
             with cs_down as cs_down_right:
                 cs_down_right.add(x.uge(0x80))
                 saved_down_right = pickle.dumps((x,y,cs_down_right))
-                self.assertItemsEqual(solver.get_all_values(cs_down_right, x), range(0x80, 0x100))
-                self.assertItemsEqual(solver.get_all_values(cs_down_right, y), range(0, 0x80))
+                self.assertItemsEqual(solver.get_all_values(cs_down_right, x), list(range(0x80, 0x100)))
+                self.assertItemsEqual(solver.get_all_values(cs_down_right, y), list(range(0, 0x80)))
 
-            self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
+            self.assertItemsEqual(solver.get_all_values(cs_down, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_down, y), list(range(0, 0x80)))
 
             with cs_down as cs_down_left:
                 cs_down_left.add(x.ult(0x80))
                 saved_down_left = pickle.dumps((x,y,cs_down_left))
-                self.assertItemsEqual(solver.get_all_values(cs_down_left, x), range(0, 0x80))
-                self.assertItemsEqual(solver.get_all_values(cs_down_left, y), range(0, 0x80))
+                self.assertItemsEqual(solver.get_all_values(cs_down_left, x), list(range(0, 0x80)))
+                self.assertItemsEqual(solver.get_all_values(cs_down_left, y), list(range(0, 0x80)))
 
-            self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
+            self.assertItemsEqual(solver.get_all_values(cs_down, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_down, y), list(range(0, 0x80)))
 
 
             x,y,cs_up= pickle.loads(saved_up)
-            self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80, 0x100))
+            self.assertItemsEqual(solver.get_all_values(cs_up, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_up, y), list(range(0x80, 0x100)))
 
             x,y,cs_up_right= pickle.loads(saved_up_right)
-            self.assertItemsEqual(solver.get_all_values(cs_up_right, x), range(0x80, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_up_right, y), range(0x80, 0x100))
+            self.assertItemsEqual(solver.get_all_values(cs_up_right, x), list(range(0x80, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_up_right, y), list(range(0x80, 0x100)))
 
             x,y,cs_up_left= pickle.loads(saved_up_left)
-            self.assertItemsEqual(solver.get_all_values(cs_up_left, x), range(0x00, 0x80))
-            self.assertItemsEqual(solver.get_all_values(cs_up_left, y), range(0x80, 0x100))
+            self.assertItemsEqual(solver.get_all_values(cs_up_left, x), list(range(0x00, 0x80)))
+            self.assertItemsEqual(solver.get_all_values(cs_up_left, y), list(range(0x80, 0x100)))
 
             x,y, cs_down= pickle.loads(saved_down)
-            self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0x0, 0x80))
+            self.assertItemsEqual(solver.get_all_values(cs_down, x), list(range(0x0, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_down, y), list(range(0x0, 0x80)))
 
             x,y,cs_down_right= pickle.loads(saved_down_right)
-            self.assertItemsEqual(solver.get_all_values(cs_down_right, x), range(0x80, 0x100))
-            self.assertItemsEqual(solver.get_all_values(cs_down_right, y), range(0x00, 0x80))
+            self.assertItemsEqual(solver.get_all_values(cs_down_right, x), list(range(0x80, 0x100)))
+            self.assertItemsEqual(solver.get_all_values(cs_down_right, y), list(range(0x00, 0x80)))
 
             x,y,cs_down_left= pickle.loads(saved_down_left)
-            self.assertItemsEqual(solver.get_all_values(cs_down_left, x), range(0x00, 0x80))
-            self.assertItemsEqual(solver.get_all_values(cs_down_left, y), range(0x00, 0x80))
+            self.assertItemsEqual(solver.get_all_values(cs_down_left, x), list(range(0x00, 0x80)))
+            self.assertItemsEqual(solver.get_all_values(cs_down_left, y), list(range(0x00, 0x80)))
 
     def test_ORD(self):
         cs = ConstraintSet()
@@ -692,7 +695,7 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86) #-122
         cs.add(c == 0x11) #17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b/c)
+        cs.add(d == old_div(b,c))
         cs.add(a == d)
 
         self.assertTrue(solver.check(cs))

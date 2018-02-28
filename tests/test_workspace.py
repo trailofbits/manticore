@@ -1,3 +1,6 @@
+from builtins import zip
+from builtins import str
+from builtins import object
 import signal
 import unittest
 
@@ -92,12 +95,12 @@ class StateTest(unittest.TestCase):
         workspace = out._store._data
 
         # Make sure names are constructed correctly
-        for entry, data in workspace.items():
+        for entry, data in list(workspace.items()):
             self.assertTrue(entry.startswith(name))
             if 'messages' in entry:
                 self.assertTrue(message in data)
 
-        keys = [x.split('.')[1] for x in workspace.keys()]
+        keys = [x.split('.')[1] for x in list(workspace.keys())]
 
         for key in self.state.platform.generate_workspace_files():
             self.assertIn(key, keys)
