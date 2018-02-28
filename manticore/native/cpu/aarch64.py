@@ -2,7 +2,8 @@ import warnings
 
 import capstone as cs
 
-from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi, Operand
+from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi, Operand, instruction
+from .arm import HighBit
 from .register import Register
 
 
@@ -64,6 +65,13 @@ class Aarch64RegisterFile(RegisterFile):
         self._regs['SP'] = Register(64)
         self._regs['PC'] = Register(64)
 
+        # Flags
+        self._regs['APSR_N'] = Register(1)
+        self._regs['APSR_Z'] = Register(1)
+        self._regs['APSR_C'] = Register(1)
+        self._regs['APSR_V'] = Register(1)
+        self._regs['APSR_GE'] = Register(4)
+
         self._all_registers = super(Aarch64RegisterFile, self).all_registers + self._X_REGS + self._V_REGS + \
                               ('SP', 'PC')
 
@@ -96,10 +104,33 @@ class Aarch64Cpu(Cpu):
 
     def __init__(self, memory):
         warnings.warn('Aarch64 support is experimental')
+        self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
+        self._mode = cs.CS_MODE_ARM
         super(Aarch64Cpu, self).__init__(Aarch64RegisterFile(), memory)
 
     def _wrap_operands(self, ops):
         return [Aarch64Operand(self, op) for op in ops]
+
+    @instruction
+    def MOV(cpu, dest, src):
+        """
+        Implement the MOV{S} instruction.
+
+        Note: If src operand is PC, temporarily release our logical PC
+        view and conform to the spec, which dictates PC = curr instr + 8
+
+        :param Armv7Operand dest: The destination operand; register.
+        :param Armv7Operand src: The source operand; register or immediate.
+        """
+        if cpu.mode == cs.CS_MODE_ARM:
+            result, carry_out = src.read(with_carry=True)
+            dest.write(result)
+            cpu.set_flags(C=carry_out, N=HighBit(result), Z=(result == 0))
+        else:
+            # thumb mode cannot do wonky things to the operand, so no carry calculation
+            result = src.read()
+            dest.write(result)
+            cpu.set_flags(N=HighBit(result), Z=(result == 0))
 
     @staticmethod
     def canonicalize_instruction_name(instr):
@@ -113,6 +144,27 @@ class Aarch64Cpu(Cpu):
             elif instr.mnemonic.startswith('asr'):
                 return 'ASR'
         return INSTRUCTION_MAPPINGS.get(name, name)
+
+    # Flags that are the result of arithmetic instructions. Unconditionally
+    # set, but conditionally committed.
+    #
+    # Register file has the actual CPU flags
+    def set_flags(self, **flags):
+        """
+        Note: For any unmodified flags, update _last_flags with the most recent
+        committed value. Otherwise, for example, this could happen:
+
+            overflow=0
+            instr1 computes overflow=1, updates _last_flags, doesn't commit
+            instr2 updates all flags in _last_flags except overflow (overflow remains 1 in _last_flags)
+            instr2 commits all in _last_flags
+            now overflow=1 even though it should still be 0
+        """
+        unupdated_flags = self._last_flags.viewkeys() - flags.viewkeys()
+        for flag in unupdated_flags:
+            flag_name = 'APSR_{}'.format(flag)
+            self._last_flags[flag] = self.regfile.read(flag_name)
+        self._last_flags.update(flags)
 
 
 class Aarch64CdeclAbi(Abi):
@@ -156,4 +208,48 @@ class Aarch64Operand(Operand):
     def __init__(self, cpu, op):
         super(Aarch64Operand, self).__init__(cpu, op)
 
-    # TODO / FIXME : Implement this!
+    @property
+    def type(self):
+        type_map = {
+            cs.arm.ARM_OP_REG: 'register',
+            cs.arm.ARM_OP_MEM: 'memory',
+            cs.arm.ARM_OP_IMM: 'immediate',
+            cs.arm.ARM_OP_PIMM: 'coprocessor',
+            cs.arm.ARM_OP_CIMM: 'immediate'
+        }
+
+        return type_map[self.op.type]
+
+    def read(self, nbits=None, with_carry=False):
+        carry = self.cpu.regfile.read('APSR_C')
+        if self.type == 'register':
+            value = self.cpu.regfile.read(self.reg)
+            # PC in this case has to be set to the instruction after next. PC at this point
+            # is already pointing to next instruction; we bump it one more.
+            if self.reg in ('PC', 'R15'):
+                value += self.cpu.instruction.size
+            if self.is_shifted():
+                shift = self.op.shift
+                value, carry = self.cpu._shift(value, shift.type, shift.value, carry)
+            if self.op.subtracted:
+                value = -value
+            if with_carry:
+                return value, carry
+            return value
+        elif self.type == 'immediate':
+            imm = self.op.imm
+            if self.op.subtracted:
+                imm = -imm
+            if with_carry:
+                return imm, self._get_expand_imm_carry(carry)
+            return imm
+        elif self.type == 'coprocessor':
+            imm = self.op.imm
+            return imm
+        elif self.type == 'memory':
+            val = self.cpu.read_int(self.address(), nbits)
+            if with_carry:
+                return val, carry
+            return val
+        else:
+            raise NotImplementedError("readOperand unknown type", self.op.type)
