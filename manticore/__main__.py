@@ -107,7 +107,7 @@ def main():
 
     env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 
     #Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
