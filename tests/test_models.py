@@ -1,3 +1,4 @@
+from builtins import range
 import unittest
 
 from manticore.core.smtlib import ConstraintSet, solver
@@ -139,7 +140,7 @@ class StrlenTest(ModelTest):
         s = self._push_string(sy)
 
         ret = strlen(self.state, s)
-        self.assertItemsEqual(range(4), solver.get_all_values(self.state.constraints, ret))
+        self.assertItemsEqual(list(range(4)), solver.get_all_values(self.state.constraints, ret))
 
         self.state.constrain(sy[0] == 0)
         ret = strlen(self.state, s)

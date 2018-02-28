@@ -1,4 +1,6 @@
-import StringIO
+from future import standard_library
+standard_library.install_aliases()
+import io
 import unittest
 import sys
 import shutil
@@ -27,7 +29,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(os.path.exists(visited))
         vitems = open(visited, 'r').read().splitlines()
 
-        vitems = map(lambda x: int(x[2:], 16), vitems)
+        vitems = [int(x[2:], 16) for x in vitems]
 
         return set(vitems)
 

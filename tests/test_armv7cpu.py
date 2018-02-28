@@ -1,3 +1,5 @@
+from builtins import map
+from builtins import range
 import unittest
 import struct
 from functools import wraps
