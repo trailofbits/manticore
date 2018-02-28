@@ -49,12 +49,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de438d], '\xc1')
         self.assertEqual(mem[0x7ffff7de438e], '\x01')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RCX, 140737349552827L)
+        self.assertEqual(cpu.RCX, 140737349552827)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926671L)
+        self.assertEqual(cpu.RIP, 140737351926671)
         self.assertEqual(cpu.SF, False)
 
     def test_ADD_2(self):
@@ -84,13 +84,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de4397], '\x01')
         self.assertEqual(cpu.SF, False)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.RAX, 210704415902L)
+        self.assertEqual(cpu.RAX, 210704415902)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926681L)
-        self.assertEqual(cpu.RDX, 101L)
+        self.assertEqual(cpu.RIP, 140737351926681)
+        self.assertEqual(cpu.RDX, 101)
 
     def test_ADD_3(self):
         ''' Instruction ADD_3
@@ -124,8 +124,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351934252L)
-        self.assertEqual(cpu.RDX, 140737348159888L)
+        self.assertEqual(cpu.RIP, 140737351934252)
+        self.assertEqual(cpu.RDX, 140737348159888)
 
     def test_ADD_4(self):
         ''' Instruction ADD_4
@@ -154,12 +154,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3962], '\xc4')
         self.assertEqual(mem[0x7ffff7de3963], '\x01')
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.R12, 1L)
+        self.assertEqual(cpu.R12, 1)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351924068L)
+        self.assertEqual(cpu.RIP, 140737351924068)
         self.assertEqual(cpu.SF, False)
 
     def test_ADD_5(self):
@@ -208,13 +208,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6127], '\x10')
         self.assertEqual(cpu.SF, False)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.RAX, 140737349565221L)
+        self.assertEqual(cpu.RAX, 140737349565221)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351934248L)
-        self.assertEqual(cpu.RDX, 140737348145344L)
+        self.assertEqual(cpu.RIP, 140737351934248)
+        self.assertEqual(cpu.RDX, 140737348145344)
 
     def test_ADD_6(self):
         ''' Instruction ADD_6
@@ -262,13 +262,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6127], '\x10')
         self.assertEqual(cpu.SF, False)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 140737348528320L)
+        self.assertEqual(cpu.RAX, 140737348528320)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351934248L)
-        self.assertEqual(cpu.RDX, 140737348156600L)
+        self.assertEqual(cpu.RIP, 140737351934248)
+        self.assertEqual(cpu.RDX, 140737348156600)
 
     def test_AND_1(self):
         ''' Instruction AND_1
@@ -298,9 +298,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737349259059L)
+        self.assertEqual(cpu.RIP, 140737349259059)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.R9D, 2L)
+        self.assertEqual(cpu.R9D, 2)
         self.assertEqual(cpu.SF, False)
 
     def test_AND_2(self):
@@ -335,9 +335,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737348533206L)
+        self.assertEqual(cpu.RIP, 140737348533206)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.EDX, 2048L)
+        self.assertEqual(cpu.EDX, 2048)
         self.assertEqual(cpu.SF, False)
 
     def test_AND_3(self):
@@ -368,9 +368,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737349259059L)
+        self.assertEqual(cpu.RIP, 140737349259059)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.R9D, 2L)
+        self.assertEqual(cpu.R9D, 2)
         self.assertEqual(cpu.SF, False)
 
     def test_AND_4(self):
@@ -398,12 +398,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3931], '!')
         self.assertEqual(mem[0x7ffff7de3932], '\xf0')
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.RSI, 19L)
+        self.assertEqual(cpu.RSI, 19)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RAX, 1L)
+        self.assertEqual(cpu.RAX, 1)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351924019L)
+        self.assertEqual(cpu.RIP, 140737351924019)
         self.assertEqual(cpu.SF, False)
 
     def test_AND_5(self):
@@ -434,9 +434,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737349259059L)
+        self.assertEqual(cpu.RIP, 140737349259059)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.R9D, 2L)
+        self.assertEqual(cpu.R9D, 2)
         self.assertEqual(cpu.SF, False)
 
     def test_AND_6(self):
@@ -479,12 +479,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de390d], '\x00')
         self.assertEqual(mem[0x7ffff7de390e], '\x00')
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.RBX, 140737354102360L)
+        self.assertEqual(cpu.RBX, 140737354102360)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 67L)
+        self.assertEqual(cpu.ECX, 67)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351923983L)
+        self.assertEqual(cpu.RIP, 140737351923983)
         self.assertEqual(cpu.SF, False)
 
     def test_BSF_1(self):
@@ -507,10 +507,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4184cd], '\x0f')
         self.assertEqual(mem[0x4184ce], '\xbc')
         self.assertEqual(mem[0x4184cf], '\xc2')
-        self.assertEqual(cpu.EAX, 7L)
+        self.assertEqual(cpu.EAX, 7)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.EDX, 128L)
-        self.assertEqual(cpu.RIP, 4293840L)
+        self.assertEqual(cpu.EDX, 128)
+        self.assertEqual(cpu.RIP, 4293840)
 
     def test_BSF_2(self):
         ''' Instruction BSF_2
@@ -532,10 +532,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4183ed], '\x0f')
         self.assertEqual(mem[0x4183ee], '\xbc')
         self.assertEqual(mem[0x4183ef], '\xc2')
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.EAX, 0)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.EDX, 5L)
-        self.assertEqual(cpu.RIP, 4293616L)
+        self.assertEqual(cpu.EDX, 5)
+        self.assertEqual(cpu.RIP, 4293616)
 
     def test_BSF_3(self):
         ''' Instruction BSF_3
@@ -557,10 +557,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4184bd], '\x0f')
         self.assertEqual(mem[0x4184be], '\xbc')
         self.assertEqual(mem[0x4184bf], '\xc2')
-        self.assertEqual(cpu.EAX, 7L)
+        self.assertEqual(cpu.EAX, 7)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.EDX, 128L)
-        self.assertEqual(cpu.RIP, 4293824L)
+        self.assertEqual(cpu.EDX, 128)
+        self.assertEqual(cpu.RIP, 4293824)
 
     def test_BSF_4(self):
         ''' Instruction BSF_4
@@ -585,9 +585,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x41850c], '\xbc')
         self.assertEqual(mem[0x41850d], '\xc2')
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RAX, 17L)
-        self.assertEqual(cpu.RIP, 4293902L)
-        self.assertEqual(cpu.RDX, 140746078420992L)
+        self.assertEqual(cpu.RAX, 17)
+        self.assertEqual(cpu.RIP, 4293902)
+        self.assertEqual(cpu.RDX, 140746078420992)
 
     def test_BSF_5(self):
         ''' Instruction BSF_5
@@ -612,9 +612,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab5d0c], '\xbc')
         self.assertEqual(mem[0x7ffff7ab5d0d], '\xc2')
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RAX, 19L)
-        self.assertEqual(cpu.RIP, 140737348590862L)
-        self.assertEqual(cpu.RDX, 16204198715949842432L)
+        self.assertEqual(cpu.RAX, 19)
+        self.assertEqual(cpu.RIP, 140737348590862)
+        self.assertEqual(cpu.RDX, 16204198715949842432)
 
     def test_BSF_6(self):
         ''' Instruction BSF_6
@@ -636,10 +636,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4183ed], '\x0f')
         self.assertEqual(mem[0x4183ee], '\xbc')
         self.assertEqual(mem[0x4183ef], '\xc2')
-        self.assertEqual(cpu.EAX, 7L)
+        self.assertEqual(cpu.EAX, 7)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.EDX, 128L)
-        self.assertEqual(cpu.RIP, 4293616L)
+        self.assertEqual(cpu.EDX, 128)
+        self.assertEqual(cpu.RIP, 4293616)
 
     def test_BSR_1(self):
         ''' Instruction BSR_1
@@ -661,8 +661,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008b9], '\xf6')
         self.assertEqual(mem[0x4008b7], '\x0f')
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ESI, 3L)
-        self.assertEqual(cpu.RIP, 4196538L)
+        self.assertEqual(cpu.ESI, 3)
+        self.assertEqual(cpu.RIP, 4196538)
 
     def test_BSR_2(self):
         ''' Instruction BSR_2
@@ -684,8 +684,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400909], '\xf6')
         self.assertEqual(mem[0x400907], '\x0f')
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ESI, 3L)
-        self.assertEqual(cpu.RIP, 4196618L)
+        self.assertEqual(cpu.ESI, 3)
+        self.assertEqual(cpu.RIP, 4196618)
 
     def test_BSR_3(self):
         ''' Instruction BSR_3
@@ -709,8 +709,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457aca], '\xbd')
         self.assertEqual(mem[0x457acb], '\xf6')
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSI, 26L)
-        self.assertEqual(cpu.RIP, 4553420L)
+        self.assertEqual(cpu.RSI, 26)
+        self.assertEqual(cpu.RIP, 4553420)
 
     def test_BSR_4(self):
         ''' Instruction BSR_4
@@ -732,8 +732,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400849], '\xf6')
         self.assertEqual(mem[0x400847], '\x0f')
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ESI, 3L)
-        self.assertEqual(cpu.RIP, 4196426L)
+        self.assertEqual(cpu.ESI, 3)
+        self.assertEqual(cpu.RIP, 4196426)
 
     def test_BSR_5(self):
         ''' Instruction BSR_5
@@ -757,8 +757,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457c1a], '\xbd')
         self.assertEqual(mem[0x457c1b], '\xf6')
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSI, 30L)
-        self.assertEqual(cpu.RIP, 4553756L)
+        self.assertEqual(cpu.RSI, 30)
+        self.assertEqual(cpu.RIP, 4553756)
 
     def test_BSR_6(self):
         ''' Instruction BSR_6
@@ -782,8 +782,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457dba], '\xbd')
         self.assertEqual(mem[0x457dbb], '\xf6')
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSI, 26L)
-        self.assertEqual(cpu.RIP, 4554172L)
+        self.assertEqual(cpu.RSI, 26)
+        self.assertEqual(cpu.RIP, 4554172)
 
     def test_BT_1(self):
         ''' Instruction BT_1
@@ -807,10 +807,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de36b5], 'A')
         self.assertEqual(mem[0x7ffff7de36b6], '\x0f')
         self.assertEqual(mem[0x7ffff7de36b7], '\xa3')
-        self.assertEqual(cpu.EAX, 1L)
+        self.assertEqual(cpu.EAX, 1)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351923385L)
-        self.assertEqual(cpu.R8D, 1127L)
+        self.assertEqual(cpu.RIP, 140737351923385)
+        self.assertEqual(cpu.R8D, 1127)
 
     def test_BT_2(self):
         ''' Instruction BT_2
@@ -834,10 +834,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de36b5], 'A')
         self.assertEqual(mem[0x7ffff7de36b6], '\x0f')
         self.assertEqual(mem[0x7ffff7de36b7], '\xa3')
-        self.assertEqual(cpu.EAX, 2L)
+        self.assertEqual(cpu.EAX, 2)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351923385L)
-        self.assertEqual(cpu.R8D, 1127L)
+        self.assertEqual(cpu.RIP, 140737351923385)
+        self.assertEqual(cpu.R8D, 1127)
 
     def test_BT_3(self):
         ''' Instruction BT_3
@@ -861,10 +861,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de36b5], 'A')
         self.assertEqual(mem[0x7ffff7de36b6], '\x0f')
         self.assertEqual(mem[0x7ffff7de36b7], '\xa3')
-        self.assertEqual(cpu.EAX, 2L)
+        self.assertEqual(cpu.EAX, 2)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351923385L)
-        self.assertEqual(cpu.R8D, 1127L)
+        self.assertEqual(cpu.RIP, 140737351923385)
+        self.assertEqual(cpu.R8D, 1127)
 
     def test_BT_4(self):
         ''' Instruction BT_4
@@ -888,10 +888,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de36b5], 'A')
         self.assertEqual(mem[0x7ffff7de36b6], '\x0f')
         self.assertEqual(mem[0x7ffff7de36b7], '\xa3')
-        self.assertEqual(cpu.EAX, 1L)
+        self.assertEqual(cpu.EAX, 1)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351923385L)
-        self.assertEqual(cpu.R8D, 1127L)
+        self.assertEqual(cpu.RIP, 140737351923385)
+        self.assertEqual(cpu.R8D, 1127)
 
     def test_BT_5(self):
         ''' Instruction BT_5
@@ -915,10 +915,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de36b5], 'A')
         self.assertEqual(mem[0x7ffff7de36b6], '\x0f')
         self.assertEqual(mem[0x7ffff7de36b7], '\xa3')
-        self.assertEqual(cpu.EAX, 1L)
+        self.assertEqual(cpu.EAX, 1)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351923385L)
-        self.assertEqual(cpu.R8D, 1127L)
+        self.assertEqual(cpu.RIP, 140737351923385)
+        self.assertEqual(cpu.R8D, 1127)
 
     def test_BT_6(self):
         ''' Instruction BT_6
@@ -942,10 +942,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de36b5], 'A')
         self.assertEqual(mem[0x7ffff7de36b6], '\x0f')
         self.assertEqual(mem[0x7ffff7de36b7], '\xa3')
-        self.assertEqual(cpu.EAX, 2L)
+        self.assertEqual(cpu.EAX, 2)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351923385L)
-        self.assertEqual(cpu.R8D, 1127L)
+        self.assertEqual(cpu.RIP, 140737351923385)
+        self.assertEqual(cpu.R8D, 1127)
 
     def test_CALL_1(self):
         ''' Instruction CALL_1
@@ -1005,9 +1005,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de447d], '\xff')
         self.assertEqual(mem[0x7ffff7de447e], '\xff')
         self.assertEqual(mem[0x7fffffffd87f], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345208L)
-        self.assertEqual(cpu.RIP, 140737351923712L)
-        self.assertEqual(cpu.RBP, 140737488345504L)
+        self.assertEqual(cpu.RSP, 140737488345208)
+        self.assertEqual(cpu.RIP, 140737351923712)
+        self.assertEqual(cpu.RBP, 140737488345504)
 
     def test_CALL_2(self):
         ''' Instruction CALL_2
@@ -1083,10 +1083,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7dd257d], '\x7f')
         self.assertEqual(mem[0x7ffff7dd257e], '\x00')
         self.assertEqual(mem[0x7ffff7dd257f], '\x00')
-        self.assertEqual(cpu.R8, 140737351853376L)
-        self.assertEqual(cpu.RSP, 140737488338360L)
-        self.assertEqual(cpu.RIP, 140737348540000L)
-        self.assertEqual(cpu.RBP, 140737488339760L)
+        self.assertEqual(cpu.R8, 140737351853376)
+        self.assertEqual(cpu.RSP, 140737488338360)
+        self.assertEqual(cpu.RIP, 140737348540000)
+        self.assertEqual(cpu.RBP, 140737488339760)
 
     def test_CALL_3(self):
         ''' Instruction CALL_3
@@ -1146,9 +1146,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4554b2], 'r')
         self.assertEqual(mem[0x4554b3], '\x00')
         self.assertEqual(mem[0x4554b4], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345624L)
-        self.assertEqual(cpu.RIP, 4573088L)
-        self.assertEqual(cpu.RBP, 140737488345808L)
+        self.assertEqual(cpu.RSP, 140737488345624)
+        self.assertEqual(cpu.RIP, 4573088)
+        self.assertEqual(cpu.RBP, 140737488345808)
 
     def test_CALL_4(self):
         ''' Instruction CALL_4
@@ -1208,9 +1208,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de447d], '\xff')
         self.assertEqual(mem[0x7ffff7de447e], '\xff')
         self.assertEqual(mem[0x7fffffffd87f], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345208L)
-        self.assertEqual(cpu.RIP, 140737351923712L)
-        self.assertEqual(cpu.RBP, 140737488345504L)
+        self.assertEqual(cpu.RSP, 140737488345208)
+        self.assertEqual(cpu.RIP, 140737351923712)
+        self.assertEqual(cpu.RBP, 140737488345504)
 
     def test_CALL_5(self):
         ''' Instruction CALL_5
@@ -1270,9 +1270,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de40a8], '\xf5')
         self.assertEqual(mem[0x7ffff7de40a9], '\xff')
         self.assertEqual(mem[0x7ffff7de40aa], '\xff')
-        self.assertEqual(cpu.RSP, 140737488345096L)
-        self.assertEqual(cpu.RIP, 140737351923296L)
-        self.assertEqual(cpu.RBP, 140737488345344L)
+        self.assertEqual(cpu.RSP, 140737488345096)
+        self.assertEqual(cpu.RIP, 140737351923296)
+        self.assertEqual(cpu.RBP, 140737488345344)
 
     def test_CALL_6(self):
         ''' Instruction CALL_6
@@ -1332,9 +1332,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdafd], '\x00')
         self.assertEqual(mem[0x7fffffffdafe], '\x00')
         self.assertEqual(mem[0x7fffffffdaff], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345848L)
-        self.assertEqual(cpu.RIP, 4273296L)
-        self.assertEqual(cpu.RBP, 140737488345888L)
+        self.assertEqual(cpu.RSP, 140737488345848)
+        self.assertEqual(cpu.RIP, 4273296)
+        self.assertEqual(cpu.RBP, 140737488345888)
 
     def test_CDQE_1(self):
         ''' Instruction CDQE_1
@@ -1352,8 +1352,8 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400aa0], 'H')
         self.assertEqual(mem[0x400aa1], '\x98')
-        self.assertEqual(cpu.RAX, 146L)
-        self.assertEqual(cpu.RIP, 4197026L)
+        self.assertEqual(cpu.RAX, 146)
+        self.assertEqual(cpu.RIP, 4197026)
 
     def test_CDQE_2(self):
         ''' Instruction CDQE_2
@@ -1371,8 +1371,8 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400aa0], 'H')
         self.assertEqual(mem[0x400aa1], '\x98')
-        self.assertEqual(cpu.RAX, 90L)
-        self.assertEqual(cpu.RIP, 4197026L)
+        self.assertEqual(cpu.RAX, 90)
+        self.assertEqual(cpu.RIP, 4197026)
 
     def test_CDQE_3(self):
         ''' Instruction CDQE_3
@@ -1390,8 +1390,8 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400aa0], 'H')
         self.assertEqual(mem[0x400aa1], '\x98')
-        self.assertEqual(cpu.RAX, 128L)
-        self.assertEqual(cpu.RIP, 4197026L)
+        self.assertEqual(cpu.RAX, 128)
+        self.assertEqual(cpu.RIP, 4197026)
 
     def test_CDQE_4(self):
         ''' Instruction CDQE_4
@@ -1409,8 +1409,8 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400ad0], '\x98')
         self.assertEqual(mem[0x400acf], 'H')
-        self.assertEqual(cpu.RAX, 152L)
-        self.assertEqual(cpu.RIP, 4197073L)
+        self.assertEqual(cpu.RAX, 152)
+        self.assertEqual(cpu.RIP, 4197073)
 
     def test_CDQE_5(self):
         ''' Instruction CDQE_5
@@ -1428,8 +1428,8 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400aa0], 'H')
         self.assertEqual(mem[0x400aa1], '\x98')
-        self.assertEqual(cpu.RAX, 115L)
-        self.assertEqual(cpu.RIP, 4197026L)
+        self.assertEqual(cpu.RAX, 115)
+        self.assertEqual(cpu.RIP, 4197026)
 
     def test_CDQE_6(self):
         ''' Instruction CDQE_6
@@ -1447,8 +1447,8 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400b08], '\x98')
         self.assertEqual(mem[0x400b07], 'H')
-        self.assertEqual(cpu.RAX, 198L)
-        self.assertEqual(cpu.RIP, 4197129L)
+        self.assertEqual(cpu.RAX, 198)
+        self.assertEqual(cpu.RIP, 4197129)
 
     def test_CLC_1(self):
         ''' Instruction CLC_1
@@ -1465,7 +1465,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x46a9fc], '\xf8')
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4631037L)
+        self.assertEqual(cpu.RIP, 4631037)
 
     def test_CLC_2(self):
         ''' Instruction CLC_2
@@ -1482,7 +1482,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7542c8], '\xf8')
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 7684809L)
+        self.assertEqual(cpu.RIP, 7684809)
 
     def test_CLC_3(self):
         ''' Instruction CLC_3
@@ -1499,7 +1499,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x4b473c], '\xf8')
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4933437L)
+        self.assertEqual(cpu.RIP, 4933437)
 
     def test_CLC_4(self):
         ''' Instruction CLC_4
@@ -1516,7 +1516,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x49d4dd], '\xf8')
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4838622L)
+        self.assertEqual(cpu.RIP, 4838622)
 
     def test_CLC_5(self):
         ''' Instruction CLC_5
@@ -1533,7 +1533,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x4fd621], '\xf8')
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 5232162L)
+        self.assertEqual(cpu.RIP, 5232162)
 
     def test_CLC_6(self):
         ''' Instruction CLC_6
@@ -1550,7 +1550,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x4fadef], '\xf8')
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 5221872L)
+        self.assertEqual(cpu.RIP, 5221872)
 
     def test_CMOVAE_1(self):
         ''' Instruction CMOVAE_1
@@ -1574,9 +1574,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4117e9], '\x0f')
         self.assertEqual(mem[0x4117ea], 'C')
         self.assertEqual(mem[0x4117eb], '\xc2')
-        self.assertEqual(cpu.RAX, 32L)
-        self.assertEqual(cpu.RIP, 4265964L)
-        self.assertEqual(cpu.R10, 32L)
+        self.assertEqual(cpu.RAX, 32)
+        self.assertEqual(cpu.RIP, 4265964)
+        self.assertEqual(cpu.R10, 32)
 
     def test_CMOVAE_2(self):
         ''' Instruction CMOVAE_2
@@ -1600,9 +1600,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x414319], '\x0f')
         self.assertEqual(mem[0x41431a], 'C')
         self.assertEqual(mem[0x41431b], '\xc2')
-        self.assertEqual(cpu.RAX, 32L)
-        self.assertEqual(cpu.RIP, 4277020L)
-        self.assertEqual(cpu.R10, 32L)
+        self.assertEqual(cpu.RAX, 32)
+        self.assertEqual(cpu.RIP, 4277020)
+        self.assertEqual(cpu.R10, 32)
 
     def test_CMOVAE_3(self):
         ''' Instruction CMOVAE_3
@@ -1626,9 +1626,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x5555555662c9], '\x0f')
         self.assertEqual(mem[0x5555555662ca], 'C')
         self.assertEqual(mem[0x5555555662cb], '\xd3')
-        self.assertEqual(cpu.RDX, 7L)
-        self.assertEqual(cpu.RIP, 93824992305868L)
-        self.assertEqual(cpu.RBX, 7L)
+        self.assertEqual(cpu.RDX, 7)
+        self.assertEqual(cpu.RIP, 93824992305868)
+        self.assertEqual(cpu.RBX, 7)
 
     def test_CMOVAE_4(self):
         ''' Instruction CMOVAE_4
@@ -1652,9 +1652,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x411779], '\x0f')
         self.assertEqual(mem[0x41177a], 'C')
         self.assertEqual(mem[0x41177b], '\xc2')
-        self.assertEqual(cpu.RAX, 1184L)
-        self.assertEqual(cpu.RIP, 4265852L)
-        self.assertEqual(cpu.R10, 1184L)
+        self.assertEqual(cpu.RAX, 1184)
+        self.assertEqual(cpu.RIP, 4265852)
+        self.assertEqual(cpu.R10, 1184)
 
     def test_CMOVAE_5(self):
         ''' Instruction CMOVAE_5
@@ -1678,9 +1678,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x411779], '\x0f')
         self.assertEqual(mem[0x41177a], 'C')
         self.assertEqual(mem[0x41177b], '\xc2')
-        self.assertEqual(cpu.RAX, 32L)
-        self.assertEqual(cpu.RIP, 4265852L)
-        self.assertEqual(cpu.R10, 32L)
+        self.assertEqual(cpu.RAX, 32)
+        self.assertEqual(cpu.RIP, 4265852)
+        self.assertEqual(cpu.R10, 32)
 
     def test_CMOVAE_6(self):
         ''' Instruction CMOVAE_6
@@ -1704,9 +1704,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x411b59], '\x0f')
         self.assertEqual(mem[0x411b5a], 'C')
         self.assertEqual(mem[0x411b5b], '\xc2')
-        self.assertEqual(cpu.RAX, 80L)
-        self.assertEqual(cpu.RIP, 4266844L)
-        self.assertEqual(cpu.R10, 80L)
+        self.assertEqual(cpu.RAX, 80)
+        self.assertEqual(cpu.RIP, 4266844)
+        self.assertEqual(cpu.R10, 80)
 
     def test_CMOVA_1(self):
         ''' Instruction CMOVA_1
@@ -1731,9 +1731,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de0ab1], '\x0f')
         self.assertEqual(mem[0x7ffff7de0ab2], 'G')
         self.assertEqual(mem[0x7ffff7de0ab3], '\xc0')
-        self.assertEqual(cpu.R8, 140737351881624L)
-        self.assertEqual(cpu.RAX, 140737351864320L)
-        self.assertEqual(cpu.RIP, 140737351912116L)
+        self.assertEqual(cpu.R8, 140737351881624)
+        self.assertEqual(cpu.RAX, 140737351864320)
+        self.assertEqual(cpu.RIP, 140737351912116)
 
     def test_CMOVA_2(self):
         ''' Instruction CMOVA_2
@@ -1758,9 +1758,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a9d405], '\x0f')
         self.assertEqual(mem[0x7ffff7a9d406], 'G')
         self.assertEqual(mem[0x7ffff7a9d407], '\xd8')
-        self.assertEqual(cpu.RAX, 2147483647L)
-        self.assertEqual(cpu.RIP, 140737348490248L)
-        self.assertEqual(cpu.RBX, 20L)
+        self.assertEqual(cpu.RAX, 2147483647)
+        self.assertEqual(cpu.RIP, 140737348490248)
+        self.assertEqual(cpu.RBX, 20)
 
     def test_CMOVA_3(self):
         ''' Instruction CMOVA_3
@@ -1785,9 +1785,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4082a5], '\x0f')
         self.assertEqual(mem[0x4082a6], 'G')
         self.assertEqual(mem[0x4082a7], '\xd8')
-        self.assertEqual(cpu.RAX, 2147483647L)
-        self.assertEqual(cpu.RIP, 4227752L)
-        self.assertEqual(cpu.RBX, 11L)
+        self.assertEqual(cpu.RAX, 2147483647)
+        self.assertEqual(cpu.RIP, 4227752)
+        self.assertEqual(cpu.RBX, 11)
 
     def test_CMOVA_4(self):
         ''' Instruction CMOVA_4
@@ -1812,9 +1812,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x41462b], '\x0f')
         self.assertEqual(mem[0x41462c], 'G')
         self.assertEqual(mem[0x41462d], '\xd5')
-        self.assertEqual(cpu.RDX, 1184L)
-        self.assertEqual(cpu.RIP, 4277806L)
-        self.assertEqual(cpu.R13, 138736L)
+        self.assertEqual(cpu.RDX, 1184)
+        self.assertEqual(cpu.RIP, 4277806)
+        self.assertEqual(cpu.R13, 138736)
 
     def test_CMOVA_5(self):
         ''' Instruction CMOVA_5
@@ -1839,9 +1839,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x41424b], '\x0f')
         self.assertEqual(mem[0x41424c], 'G')
         self.assertEqual(mem[0x41424d], '\xd5')
-        self.assertEqual(cpu.RDX, 1184L)
-        self.assertEqual(cpu.RIP, 4276814L)
-        self.assertEqual(cpu.R13, 138736L)
+        self.assertEqual(cpu.RDX, 1184)
+        self.assertEqual(cpu.RIP, 4276814)
+        self.assertEqual(cpu.R13, 138736)
 
     def test_CMOVA_6(self):
         ''' Instruction CMOVA_6
@@ -1866,9 +1866,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4142bb], '\x0f')
         self.assertEqual(mem[0x4142bc], 'G')
         self.assertEqual(mem[0x4142bd], '\xd5')
-        self.assertEqual(cpu.RDX, 1184L)
-        self.assertEqual(cpu.RIP, 4276926L)
-        self.assertEqual(cpu.R13, 138736L)
+        self.assertEqual(cpu.RDX, 1184)
+        self.assertEqual(cpu.RIP, 4276926)
+        self.assertEqual(cpu.R13, 138736)
 
     def test_CMOVBE_1(self):
         ''' Instruction CMOVBE_1
@@ -1893,9 +1893,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40d234], '\x0f')
         self.assertEqual(mem[0x40d235], 'F')
         self.assertEqual(mem[0x40d236], '\xde')
-        self.assertEqual(cpu.R14, 32L)
-        self.assertEqual(cpu.RIP, 4248119L)
-        self.assertEqual(cpu.RBX, 32L)
+        self.assertEqual(cpu.R14, 32)
+        self.assertEqual(cpu.RIP, 4248119)
+        self.assertEqual(cpu.RBX, 32)
 
     def test_CMOVBE_2(self):
         ''' Instruction CMOVBE_2
@@ -1920,9 +1920,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7aa96b4], '\x0f')
         self.assertEqual(mem[0x7ffff7aa96b5], 'F')
         self.assertEqual(mem[0x7ffff7aa96b6], '\xde')
-        self.assertEqual(cpu.R14, 4L)
-        self.assertEqual(cpu.RIP, 140737348540087L)
-        self.assertEqual(cpu.RBX, 4L)
+        self.assertEqual(cpu.R14, 4)
+        self.assertEqual(cpu.RIP, 140737348540087)
+        self.assertEqual(cpu.RBX, 4)
 
     def test_CMOVBE_3(self):
         ''' Instruction CMOVBE_3
@@ -1947,9 +1947,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7aa96b4], '\x0f')
         self.assertEqual(mem[0x7ffff7aa96b5], 'F')
         self.assertEqual(mem[0x7ffff7aa96b6], '\xde')
-        self.assertEqual(cpu.R14, 19L)
-        self.assertEqual(cpu.RIP, 140737348540087L)
-        self.assertEqual(cpu.RBX, 19L)
+        self.assertEqual(cpu.R14, 19)
+        self.assertEqual(cpu.RIP, 140737348540087)
+        self.assertEqual(cpu.RBX, 19)
 
     def test_CMOVBE_4(self):
         ''' Instruction CMOVBE_4
@@ -1974,9 +1974,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40d264], '\x0f')
         self.assertEqual(mem[0x40d265], 'F')
         self.assertEqual(mem[0x40d266], '\xde')
-        self.assertEqual(cpu.R14, 19L)
-        self.assertEqual(cpu.RIP, 4248167L)
-        self.assertEqual(cpu.RBX, 19L)
+        self.assertEqual(cpu.R14, 19)
+        self.assertEqual(cpu.RIP, 4248167)
+        self.assertEqual(cpu.RBX, 19)
 
     def test_CMOVBE_5(self):
         ''' Instruction CMOVBE_5
@@ -2001,9 +2001,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7aa96b4], '\x0f')
         self.assertEqual(mem[0x7ffff7aa96b5], 'F')
         self.assertEqual(mem[0x7ffff7aa96b6], '\xde')
-        self.assertEqual(cpu.R14, 19L)
-        self.assertEqual(cpu.RIP, 140737348540087L)
-        self.assertEqual(cpu.RBX, 19L)
+        self.assertEqual(cpu.R14, 19)
+        self.assertEqual(cpu.RIP, 140737348540087)
+        self.assertEqual(cpu.RBX, 19)
 
     def test_CMOVBE_6(self):
         ''' Instruction CMOVBE_6
@@ -2028,9 +2028,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40fde4], '\x0f')
         self.assertEqual(mem[0x40fde5], 'F')
         self.assertEqual(mem[0x40fde6], '\xde')
-        self.assertEqual(cpu.R14, 576L)
-        self.assertEqual(cpu.RIP, 4259303L)
-        self.assertEqual(cpu.RBX, 576L)
+        self.assertEqual(cpu.R14, 576)
+        self.assertEqual(cpu.RIP, 4259303)
+        self.assertEqual(cpu.RBX, 576)
 
     def test_CMOVB_1(self):
         ''' Instruction CMOVB_1
@@ -2054,9 +2054,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7deb981], 'B')
         self.assertEqual(mem[0x7ffff7deb982], '\xe0')
         self.assertEqual(mem[0x7ffff7deb97f], 'D')
-        self.assertEqual(cpu.EAX, 10L)
-        self.assertEqual(cpu.R12D, 26L)
-        self.assertEqual(cpu.RIP, 140737351956867L)
+        self.assertEqual(cpu.EAX, 10)
+        self.assertEqual(cpu.R12D, 26)
+        self.assertEqual(cpu.RIP, 140737351956867)
 
     def test_CMOVB_2(self):
         ''' Instruction CMOVB_2
@@ -2078,9 +2078,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df45ad], '\x0f')
         self.assertEqual(mem[0x7ffff7df45ae], 'B')
         self.assertEqual(mem[0x7ffff7df45af], '\xc1')
-        self.assertEqual(cpu.EAX, 4294967295L)
-        self.assertEqual(cpu.RIP, 140737351992752L)
-        self.assertEqual(cpu.ECX, 4294967295L)
+        self.assertEqual(cpu.EAX, 4294967295)
+        self.assertEqual(cpu.RIP, 140737351992752)
+        self.assertEqual(cpu.ECX, 4294967295)
 
     def test_CMOVB_3(self):
         ''' Instruction CMOVB_3
@@ -2102,9 +2102,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df45ad], '\x0f')
         self.assertEqual(mem[0x7ffff7df45ae], 'B')
         self.assertEqual(mem[0x7ffff7df45af], '\xc1')
-        self.assertEqual(cpu.EAX, 1L)
-        self.assertEqual(cpu.RIP, 140737351992752L)
-        self.assertEqual(cpu.ECX, 4294967295L)
+        self.assertEqual(cpu.EAX, 1)
+        self.assertEqual(cpu.RIP, 140737351992752)
+        self.assertEqual(cpu.ECX, 4294967295)
 
     def test_CMOVB_4(self):
         ''' Instruction CMOVB_4
@@ -2128,9 +2128,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7deb981], 'B')
         self.assertEqual(mem[0x7ffff7deb982], '\xe0')
         self.assertEqual(mem[0x7ffff7deb97f], 'D')
-        self.assertEqual(cpu.EAX, 18L)
-        self.assertEqual(cpu.R12D, 26L)
-        self.assertEqual(cpu.RIP, 140737351956867L)
+        self.assertEqual(cpu.EAX, 18)
+        self.assertEqual(cpu.R12D, 26)
+        self.assertEqual(cpu.RIP, 140737351956867)
 
     def test_CMOVB_5(self):
         ''' Instruction CMOVB_5
@@ -2152,9 +2152,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df45ad], '\x0f')
         self.assertEqual(mem[0x7ffff7df45ae], 'B')
         self.assertEqual(mem[0x7ffff7df45af], '\xc1')
-        self.assertEqual(cpu.EAX, 1L)
-        self.assertEqual(cpu.RIP, 140737351992752L)
-        self.assertEqual(cpu.ECX, 4294967295L)
+        self.assertEqual(cpu.EAX, 1)
+        self.assertEqual(cpu.RIP, 140737351992752)
+        self.assertEqual(cpu.ECX, 4294967295)
 
     def test_CMOVB_6(self):
         ''' Instruction CMOVB_6
@@ -2176,9 +2176,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df45ad], '\x0f')
         self.assertEqual(mem[0x7ffff7df45ae], 'B')
         self.assertEqual(mem[0x7ffff7df45af], '\xc1')
-        self.assertEqual(cpu.EAX, 1L)
-        self.assertEqual(cpu.RIP, 140737351992752L)
-        self.assertEqual(cpu.ECX, 4294967295L)
+        self.assertEqual(cpu.EAX, 1)
+        self.assertEqual(cpu.RIP, 140737351992752)
+        self.assertEqual(cpu.ECX, 4294967295)
 
     def test_CMOVE_1(self):
         ''' Instruction CMOVE_1
@@ -2202,9 +2202,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6261], '\xc0')
         self.assertEqual(mem[0x7ffff7de625e], 'L')
         self.assertEqual(mem[0x7ffff7de625f], '\x0f')
-        self.assertEqual(cpu.R8, 140737354103880L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RIP, 140737351934562L)
+        self.assertEqual(cpu.R8, 140737354103880)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RIP, 140737351934562)
 
     def test_CMOVE_2(self):
         ''' Instruction CMOVE_2
@@ -2228,9 +2228,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x415f05], 'H')
         self.assertEqual(mem[0x415f06], '\x0f')
         self.assertEqual(mem[0x415f07], 'D')
-        self.assertEqual(cpu.RAX, 7209408L)
-        self.assertEqual(cpu.RIP, 4284169L)
-        self.assertEqual(cpu.RDX, 0L)
+        self.assertEqual(cpu.RAX, 7209408)
+        self.assertEqual(cpu.RIP, 4284169)
+        self.assertEqual(cpu.RDX, 0)
 
     def test_CMOVE_3(self):
         ''' Instruction CMOVE_3
@@ -2254,9 +2254,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6261], '\xc0')
         self.assertEqual(mem[0x7ffff7de625e], 'L')
         self.assertEqual(mem[0x7ffff7de625f], '\x0f')
-        self.assertEqual(cpu.R8, 140737354103880L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RIP, 140737351934562L)
+        self.assertEqual(cpu.R8, 140737354103880)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RIP, 140737351934562)
 
     def test_CMOVE_4(self):
         ''' Instruction CMOVE_4
@@ -2304,8 +2304,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ffe0b5], '\x7f')
         self.assertEqual(mem[0x7ffff7ffe0b6], '\x00')
         self.assertEqual(mem[0x7ffff7ffe0b7], '\x00')
-        self.assertEqual(cpu.RDI, 140737353973760L)
-        self.assertEqual(cpu.RIP, 140737351985194L)
+        self.assertEqual(cpu.RDI, 140737353973760)
+        self.assertEqual(cpu.RIP, 140737351985194)
 
     def test_CMOVE_5(self):
         ''' Instruction CMOVE_5
@@ -2329,9 +2329,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6261], '\xc0')
         self.assertEqual(mem[0x7ffff7de625e], 'L')
         self.assertEqual(mem[0x7ffff7de625f], '\x0f')
-        self.assertEqual(cpu.R8, 140737354103880L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RIP, 140737351934562L)
+        self.assertEqual(cpu.R8, 140737354103880)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RIP, 140737351934562)
 
     def test_CMOVE_6(self):
         ''' Instruction CMOVE_6
@@ -2355,9 +2355,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6261], '\xc0')
         self.assertEqual(mem[0x7ffff7de625e], 'L')
         self.assertEqual(mem[0x7ffff7de625f], '\x0f')
-        self.assertEqual(cpu.R8, 140737354103880L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RIP, 140737351934562L)
+        self.assertEqual(cpu.R8, 140737354103880)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RIP, 140737351934562)
 
     def test_CMOVNE_1(self):
         ''' Instruction CMOVNE_1
@@ -2381,9 +2381,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x462435], 'H')
         self.assertEqual(mem[0x462436], '\x0f')
         self.assertEqual(mem[0x462437], 'E')
-        self.assertEqual(cpu.RAX, 4871233L)
-        self.assertEqual(cpu.RIP, 4596793L)
-        self.assertEqual(cpu.RBX, 7075504L)
+        self.assertEqual(cpu.RAX, 4871233)
+        self.assertEqual(cpu.RIP, 4596793)
+        self.assertEqual(cpu.RBX, 7075504)
 
     def test_CMOVNE_2(self):
         ''' Instruction CMOVNE_2
@@ -2407,9 +2407,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de5779], '\xf0')
         self.assertEqual(mem[0x7ffff7de5776], 'D')
         self.assertEqual(mem[0x7ffff7de5777], '\x0f')
-        self.assertEqual(cpu.EAX, 16L)
-        self.assertEqual(cpu.R14D, 0L)
-        self.assertEqual(cpu.RIP, 140737351931770L)
+        self.assertEqual(cpu.EAX, 16)
+        self.assertEqual(cpu.R14D, 0)
+        self.assertEqual(cpu.RIP, 140737351931770)
 
     def test_CMOVNE_3(self):
         ''' Instruction CMOVNE_3
@@ -2433,9 +2433,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de57f9], '\xd8')
         self.assertEqual(mem[0x7ffff7de57f6], 'H')
         self.assertEqual(mem[0x7ffff7de57f7], '\x0f')
-        self.assertEqual(cpu.RAX, 140737354102336L)
-        self.assertEqual(cpu.RIP, 140737351931898L)
-        self.assertEqual(cpu.RBX, 140737354102336L)
+        self.assertEqual(cpu.RAX, 140737354102336)
+        self.assertEqual(cpu.RIP, 140737351931898)
+        self.assertEqual(cpu.RBX, 140737354102336)
 
     def test_CMOVNE_4(self):
         ''' Instruction CMOVNE_4
@@ -2459,9 +2459,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457ba5], '\x0f')
         self.assertEqual(mem[0x457ba6], 'E')
         self.assertEqual(mem[0x457ba7], '\xf2')
-        self.assertEqual(cpu.RSI, 1090551808L)
-        self.assertEqual(cpu.RIP, 4553640L)
-        self.assertEqual(cpu.RDX, 1090551808L)
+        self.assertEqual(cpu.RSI, 1090551808)
+        self.assertEqual(cpu.RIP, 4553640)
+        self.assertEqual(cpu.RDX, 1090551808)
 
     def test_CMOVNE_5(self):
         ''' Instruction CMOVNE_5
@@ -2483,9 +2483,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de0910], '\x0f')
         self.assertEqual(mem[0x7ffff7de0911], 'E')
         self.assertEqual(mem[0x7ffff7de0912], '\xf0')
-        self.assertEqual(cpu.EAX, 1L)
-        self.assertEqual(cpu.ESI, 1L)
-        self.assertEqual(cpu.RIP, 140737351911699L)
+        self.assertEqual(cpu.EAX, 1)
+        self.assertEqual(cpu.ESI, 1)
+        self.assertEqual(cpu.RIP, 140737351911699)
 
     def test_CMOVNE_6(self):
         ''' Instruction CMOVNE_6
@@ -2509,9 +2509,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457db1], '\x0f')
         self.assertEqual(mem[0x457db2], 'E')
         self.assertEqual(mem[0x457db3], '\xcf')
-        self.assertEqual(cpu.RDI, 140737488347200L)
-        self.assertEqual(cpu.RCX, 140737488347200L)
-        self.assertEqual(cpu.RIP, 4554164L)
+        self.assertEqual(cpu.RDI, 140737488347200)
+        self.assertEqual(cpu.RCX, 140737488347200)
+        self.assertEqual(cpu.RIP, 4554164)
 
     def test_CMOVNS_1(self):
         ''' Instruction CMOVNS_1
@@ -2535,9 +2535,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x448555], 'I')
         self.assertEqual(mem[0x448556], '\x0f')
         self.assertEqual(mem[0x448557], 'I')
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RIP, 4490585L)
-        self.assertEqual(cpu.R11, 0L)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RIP, 4490585)
+        self.assertEqual(cpu.R11, 0)
 
     def test_CMOVNS_2(self):
         ''' Instruction CMOVNS_2
@@ -2561,9 +2561,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x448555], 'I')
         self.assertEqual(mem[0x448556], '\x0f')
         self.assertEqual(mem[0x448557], 'I')
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RIP, 4490585L)
-        self.assertEqual(cpu.R11, 0L)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RIP, 4490585)
+        self.assertEqual(cpu.R11, 0)
 
     def test_CMPSB_1(self):
         ''' Instruction CMPSB_1
@@ -2617,10 +2617,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40065b], '\xf3')
         self.assertEqual(mem[0x40065c], '\xa6')
         self.assertEqual(mem[0x7fffffffda85], '\xe0')
-        self.assertEqual(cpu.RCX, 6L)
-        self.assertEqual(cpu.RDI, 4789765L)
-        self.assertEqual(cpu.RSI, 140737488345729L)
-        self.assertEqual(cpu.RIP, 4195931L)
+        self.assertEqual(cpu.RCX, 6)
+        self.assertEqual(cpu.RDI, 4789765)
+        self.assertEqual(cpu.RSI, 140737488345729)
+        self.assertEqual(cpu.RIP, 4195931)
 
     def test_CMPSB_2(self):
         ''' Instruction CMPSB_2
@@ -2674,10 +2674,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x49181c], 't')
         self.assertEqual(mem[0x49181d], 'u')
         self.assertEqual(mem[0x49181e], 'f')
-        self.assertEqual(cpu.RCX, 9L)
-        self.assertEqual(cpu.RDI, 4790296L)
-        self.assertEqual(cpu.RSI, 140737488347243L)
-        self.assertEqual(cpu.RIP, 4195929L)
+        self.assertEqual(cpu.RCX, 9)
+        self.assertEqual(cpu.RDI, 4790296)
+        self.assertEqual(cpu.RSI, 140737488347243)
+        self.assertEqual(cpu.RIP, 4195929)
 
     def test_CMPSB_3(self):
         ''' Instruction CMPSB_3
@@ -2731,10 +2731,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40065b], '\xf3')
         self.assertEqual(mem[0x40065c], '\xa6')
         self.assertEqual(mem[0x7fffffffda85], '\xe0')
-        self.assertEqual(cpu.RCX, 5L)
-        self.assertEqual(cpu.RDI, 4789766L)
-        self.assertEqual(cpu.RSI, 140737488345730L)
-        self.assertEqual(cpu.RIP, 4195933L)
+        self.assertEqual(cpu.RCX, 5)
+        self.assertEqual(cpu.RDI, 4789766)
+        self.assertEqual(cpu.RSI, 140737488345730)
+        self.assertEqual(cpu.RIP, 4195933)
 
     def test_CMPSB_4(self):
         ''' Instruction CMPSB_4
@@ -2788,10 +2788,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x49181c], 't')
         self.assertEqual(mem[0x49181d], 'u')
         self.assertEqual(mem[0x49181e], 'f')
-        self.assertEqual(cpu.RCX, 9L)
-        self.assertEqual(cpu.RDI, 4790296L)
-        self.assertEqual(cpu.RSI, 140737488347238L)
-        self.assertEqual(cpu.RIP, 4195929L)
+        self.assertEqual(cpu.RCX, 9)
+        self.assertEqual(cpu.RDI, 4790296)
+        self.assertEqual(cpu.RSI, 140737488347238)
+        self.assertEqual(cpu.RIP, 4195929)
 
     def test_CMPSB_5(self):
         ''' Instruction CMPSB_5
@@ -2844,10 +2844,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x55555555499d], 'A')
         self.assertEqual(mem[0x55555555499e], '\x00')
         self.assertEqual(mem[0x55555555499f], 'M')
-        self.assertEqual(cpu.RCX, 6L)
-        self.assertEqual(cpu.RDI, 93824992233881L)
-        self.assertEqual(cpu.RSI, 140737488345729L)
-        self.assertEqual(cpu.RIP, 93824992233357L)
+        self.assertEqual(cpu.RCX, 6)
+        self.assertEqual(cpu.RDI, 93824992233881)
+        self.assertEqual(cpu.RSI, 140737488345729)
+        self.assertEqual(cpu.RIP, 93824992233357)
 
     def test_CMPSB_6(self):
         ''' Instruction CMPSB_6
@@ -2900,10 +2900,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x5555555549af], 'M')
         self.assertEqual(mem[0x7fffffffda80], '\x91')
         self.assertEqual(mem[0x5555555549ab], 'A')
-        self.assertEqual(cpu.RCX, 6L)
-        self.assertEqual(cpu.RDI, 93824992233897L)
-        self.assertEqual(cpu.RSI, 140737488345729L)
-        self.assertEqual(cpu.RIP, 93824992233666L)
+        self.assertEqual(cpu.RCX, 6)
+        self.assertEqual(cpu.RDI, 93824992233897)
+        self.assertEqual(cpu.RSI, 140737488345729)
+        self.assertEqual(cpu.RIP, 93824992233666)
 
     def test_CMPXCHG8B_1(self):
         ''' Instruction CMPXCHG8B_1
@@ -2950,12 +2950,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb9], '\x80')
         self.assertEqual(mem[0x7fffffffccba], '\x00')
         self.assertEqual(mem[0x7fffffffccbb], '\x00')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 6056145L)
-        self.assertEqual(cpu.EAX, 128L)
-        self.assertEqual(cpu.EDX, 32769L)
-        self.assertEqual(cpu.EBX, 2147483649L)
-        self.assertEqual(cpu.ECX, 128L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 6056145)
+        self.assertEqual(cpu.EAX, 128)
+        self.assertEqual(cpu.EDX, 32769)
+        self.assertEqual(cpu.EBX, 2147483649)
+        self.assertEqual(cpu.ECX, 128)
 
     def test_CMPXCHG8B_2(self):
         ''' Instruction CMPXCHG8B_2
@@ -3000,12 +3000,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x80')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5792174L)
-        self.assertEqual(cpu.EAX, 2147483648L)
-        self.assertEqual(cpu.EDX, 2147483648L)
-        self.assertEqual(cpu.EBX, 2147483648L)
-        self.assertEqual(cpu.ECX, 2147483648L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5792174)
+        self.assertEqual(cpu.EAX, 2147483648)
+        self.assertEqual(cpu.EDX, 2147483648)
+        self.assertEqual(cpu.EBX, 2147483648)
+        self.assertEqual(cpu.ECX, 2147483648)
 
     def test_CMPXCHG8B_3(self):
         ''' Instruction CMPXCHG8B_3
@@ -3050,12 +3050,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x00')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5824010L)
-        self.assertEqual(cpu.EAX, 2147483649L)
-        self.assertEqual(cpu.EDX, 64L)
-        self.assertEqual(cpu.EBX, 2147483649L)
-        self.assertEqual(cpu.ECX, 64L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5824010)
+        self.assertEqual(cpu.EAX, 2147483649)
+        self.assertEqual(cpu.EDX, 64)
+        self.assertEqual(cpu.EBX, 2147483649)
+        self.assertEqual(cpu.ECX, 64)
 
     def test_CMPXCHG8B_4(self):
         ''' Instruction CMPXCHG8B_4
@@ -3100,12 +3100,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x59b477], '$')
         self.assertEqual(mem[0x7fffffffccb4], '\x80')
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5878904L)
-        self.assertEqual(cpu.EAX, 4294967295L)
-        self.assertEqual(cpu.EDX, 128L)
-        self.assertEqual(cpu.EBX, 4294967295L)
-        self.assertEqual(cpu.ECX, 128L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5878904)
+        self.assertEqual(cpu.EAX, 4294967295)
+        self.assertEqual(cpu.EDX, 128)
+        self.assertEqual(cpu.EBX, 4294967295)
+        self.assertEqual(cpu.ECX, 128)
 
     def test_CMPXCHG8B_5(self):
         ''' Instruction CMPXCHG8B_5
@@ -3152,12 +3152,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccbd], '\x00')
         self.assertEqual(mem[0x7fffffffccbe], '\x00')
         self.assertEqual(mem[0x7fffffffccbf], '\x00')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 6442522L)
-        self.assertEqual(cpu.EAX, 2147483648L)
-        self.assertEqual(cpu.EDX, 64L)
-        self.assertEqual(cpu.EBX, 64L)
-        self.assertEqual(cpu.ECX, 32769L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 6442522)
+        self.assertEqual(cpu.EAX, 2147483648)
+        self.assertEqual(cpu.EDX, 64)
+        self.assertEqual(cpu.EBX, 64)
+        self.assertEqual(cpu.ECX, 32769)
 
     def test_CMPXCHG8B_6(self):
         ''' Instruction CMPXCHG8B_6
@@ -3204,12 +3204,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccba], '\x00')
         self.assertEqual(mem[0x7fffffffccbb], '\x00')
         self.assertEqual(mem[0x7fffffffccb5], '\x80')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 6027897L)
-        self.assertEqual(cpu.EAX, 32769L)
-        self.assertEqual(cpu.EDX, 127L)
-        self.assertEqual(cpu.EBX, 2147483648L)
-        self.assertEqual(cpu.ECX, 32769L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 6027897)
+        self.assertEqual(cpu.EAX, 32769)
+        self.assertEqual(cpu.EDX, 127)
+        self.assertEqual(cpu.EBX, 2147483648)
+        self.assertEqual(cpu.ECX, 32769)
 
     def test_CMPXCHG_1(self):
         ''' Instruction CMPXCHG_1
@@ -3254,13 +3254,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a6536c], '6')
         self.assertEqual(mem[0x7ffff7a6536d], '\x00')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 0L)
+        self.assertEqual(cpu.RAX, 0)
         self.assertEqual(cpu.AF, False)
-        self.assertEqual(cpu.ESI, 1L)
+        self.assertEqual(cpu.ESI, 1)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737348260718L)
+        self.assertEqual(cpu.RIP, 140737348260718)
         self.assertEqual(cpu.SF, False)
 
     def test_CMPXCHG_2(self):
@@ -3300,14 +3300,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x6be760], '\x01')
         self.assertEqual(cpu.SF, False)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 0L)
+        self.assertEqual(cpu.RAX, 0)
         self.assertEqual(cpu.AF, False)
-        self.assertEqual(cpu.ESI, 1L)
+        self.assertEqual(cpu.ESI, 1)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4238274L)
-        self.assertEqual(cpu.RDX, 7071584L)
+        self.assertEqual(cpu.RIP, 4238274)
+        self.assertEqual(cpu.RDX, 7071584)
 
     def test_CMPXCHG_3(self):
         ''' Instruction CMPXCHG_3
@@ -3345,14 +3345,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x413647], '\xb1')
         self.assertEqual(mem[0x413648], '3')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 0L)
+        self.assertEqual(cpu.RAX, 0)
         self.assertEqual(cpu.AF, False)
-        self.assertEqual(cpu.ESI, 1L)
+        self.assertEqual(cpu.ESI, 1)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
-        self.assertEqual(cpu.RBX, 7051328L)
+        self.assertEqual(cpu.RBX, 7051328)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4273737L)
+        self.assertEqual(cpu.RIP, 4273737)
         self.assertEqual(cpu.SF, False)
 
     def test_CMPXCHG_4(self):
@@ -3402,14 +3402,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x435a28], ':')
         self.assertEqual(cpu.SF, False)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 0L)
+        self.assertEqual(cpu.RAX, 0)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
-        self.assertEqual(cpu.RDI, 7059392L)
+        self.assertEqual(cpu.RDI, 7059392)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4413993L)
-        self.assertEqual(cpu.RDX, 7066496L)
+        self.assertEqual(cpu.RIP, 4413993)
+        self.assertEqual(cpu.RDX, 7066496)
 
     def test_CMPXCHG_5(self):
         ''' Instruction CMPXCHG_5
@@ -3448,14 +3448,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x410870], '\n')
         self.assertEqual(cpu.SF, False)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 0L)
+        self.assertEqual(cpu.RAX, 0)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
-        self.assertEqual(cpu.ECX, 1L)
+        self.assertEqual(cpu.ECX, 1)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4262001L)
-        self.assertEqual(cpu.RDX, 7071584L)
+        self.assertEqual(cpu.RIP, 4262001)
+        self.assertEqual(cpu.RDX, 7071584)
 
     def test_CMPXCHG_6(self):
         ''' Instruction CMPXCHG_6
@@ -3493,14 +3493,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7aafa07], '\xb1')
         self.assertEqual(mem[0x7ffff7aafa08], '3')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 0L)
+        self.assertEqual(cpu.RAX, 0)
         self.assertEqual(cpu.AF, False)
-        self.assertEqual(cpu.ESI, 1L)
+        self.assertEqual(cpu.ESI, 1)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
-        self.assertEqual(cpu.RBX, 140737351859072L)
+        self.assertEqual(cpu.RBX, 140737351859072)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737348565513L)
+        self.assertEqual(cpu.RIP, 140737348565513)
         self.assertEqual(cpu.SF, False)
 
     def test_CMP_1(self):
@@ -3530,13 +3530,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7b58f45], '\xcc')
         self.assertEqual(cpu.SF, True)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.R12, 140737348571008L)
+        self.assertEqual(cpu.R12, 140737348571008)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737349259078L)
-        self.assertEqual(cpu.R9, 140737349041152L)
+        self.assertEqual(cpu.RIP, 140737349259078)
+        self.assertEqual(cpu.R9, 140737349041152)
 
     def test_CMP_2(self):
         ''' Instruction CMP_2
@@ -3570,14 +3570,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x406e1d], 'f')
         self.assertEqual(mem[0x406e1e], 'D')
         self.assertEqual(mem[0x406e1f], ';')
-        self.assertEqual(cpu.R14W, 17484L)
+        self.assertEqual(cpu.R14W, 17484)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RBX, 140737488350825L)
+        self.assertEqual(cpu.RBX, 140737488350825)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4222497L)
+        self.assertEqual(cpu.RIP, 4222497)
         self.assertEqual(cpu.SF, True)
 
     def test_CMP_3(self):
@@ -3604,13 +3604,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40d168], '\xf8')
         self.assertEqual(mem[0x40d169], '\xff')
         self.assertEqual(mem[0x40d167], '\x83')
-        self.assertEqual(cpu.EAX, 1L)
+        self.assertEqual(cpu.EAX, 1)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, True)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4247914L)
+        self.assertEqual(cpu.RIP, 4247914)
         self.assertEqual(cpu.SF, False)
 
     def test_CMP_4(self):
@@ -3670,8 +3670,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926928L)
-        self.assertEqual(cpu.RBP, 140737488345648L)
+        self.assertEqual(cpu.RIP, 140737351926928)
+        self.assertEqual(cpu.RBP, 140737488345648)
 
     def test_CMP_5(self):
         ''' Instruction CMP_5
@@ -3700,12 +3700,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6113], '\xf8')
         self.assertEqual(mem[0x7ffff7de6114], '&')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 8L)
+        self.assertEqual(cpu.RAX, 8)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351934229L)
+        self.assertEqual(cpu.RIP, 140737351934229)
         self.assertEqual(cpu.SF, True)
 
     def test_CMP_6(self):
@@ -3735,12 +3735,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de620d], '\xfc')
         self.assertEqual(mem[0x7ffff7de620e], '$')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.R12, 6L)
+        self.assertEqual(cpu.R12, 6)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351934479L)
+        self.assertEqual(cpu.RIP, 140737351934479)
         self.assertEqual(cpu.SF, True)
 
     def test_CQO_1(self):
@@ -3760,9 +3760,9 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400794], 'H')
         self.assertEqual(mem[0x400795], '\x99')
-        self.assertEqual(cpu.RAX, 6291456L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4196246L)
+        self.assertEqual(cpu.RAX, 6291456)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4196246)
 
     def test_CQO_2(self):
         ''' Instruction CQO_2
@@ -3781,9 +3781,9 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x4006d4], 'H')
         self.assertEqual(mem[0x4006d5], '\x99')
-        self.assertEqual(cpu.RAX, 6291456L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4196054L)
+        self.assertEqual(cpu.RAX, 6291456)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4196054)
 
     def test_CQO_3(self):
         ''' Instruction CQO_3
@@ -3802,9 +3802,9 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7a4e234], 'H')
         self.assertEqual(mem[0x7ffff7a4e235], '\x99')
-        self.assertEqual(cpu.RAX, 6291456L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 140737348166198L)
+        self.assertEqual(cpu.RAX, 6291456)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 140737348166198)
 
     def test_CQO_4(self):
         ''' Instruction CQO_4
@@ -3823,9 +3823,9 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7a4e234], 'H')
         self.assertEqual(mem[0x7ffff7a4e235], '\x99')
-        self.assertEqual(cpu.RAX, 6291456L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 140737348166198L)
+        self.assertEqual(cpu.RAX, 6291456)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 140737348166198)
 
     def test_CQO_5(self):
         ''' Instruction CQO_5
@@ -3844,9 +3844,9 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x4006d4], 'H')
         self.assertEqual(mem[0x4006d5], '\x99')
-        self.assertEqual(cpu.RAX, 6291456L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4196054L)
+        self.assertEqual(cpu.RAX, 6291456)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4196054)
 
     def test_CQO_6(self):
         ''' Instruction CQO_6
@@ -3865,9 +3865,9 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7a4e234], 'H')
         self.assertEqual(mem[0x7ffff7a4e235], '\x99')
-        self.assertEqual(cpu.RAX, 6291456L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 140737348166198L)
+        self.assertEqual(cpu.RAX, 6291456)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 140737348166198)
 
     def test_DEC_1(self):
         ''' Instruction DEC_1
@@ -3893,10 +3893,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 4317452L)
+        self.assertEqual(cpu.RIP, 4317452)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.ECX, 12L)
+        self.assertEqual(cpu.ECX, 12)
 
     def test_DEC_2(self):
         ''' Instruction DEC_2
@@ -3922,10 +3922,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992878L)
+        self.assertEqual(cpu.RIP, 140737351992878)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.ECX, 3L)
+        self.assertEqual(cpu.ECX, 3)
 
     def test_DEC_3(self):
         ''' Instruction DEC_3
@@ -3951,10 +3951,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992878L)
+        self.assertEqual(cpu.RIP, 140737351992878)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.ECX, 1L)
+        self.assertEqual(cpu.ECX, 1)
 
     def test_DEC_4(self):
         ''' Instruction DEC_4
@@ -3996,7 +3996,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
-        self.assertEqual(cpu.RIP, 140737348260942L)
+        self.assertEqual(cpu.RIP, 140737348260942)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -4024,10 +4024,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992878L)
+        self.assertEqual(cpu.RIP, 140737351992878)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.ECX, 3L)
+        self.assertEqual(cpu.ECX, 3)
 
     def test_DEC_6(self):
         ''' Instruction DEC_6
@@ -4053,10 +4053,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
-        self.assertEqual(cpu.RIP, 140737351992878L)
+        self.assertEqual(cpu.RIP, 140737351992878)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_DIV_1(self):
         ''' Instruction DIV_1
@@ -4078,10 +4078,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3ff8], 'H')
         self.assertEqual(mem[0x7ffff7de3ff9], '\xf7')
         self.assertEqual(mem[0x7ffff7de3ffa], '\xf1')
-        self.assertEqual(cpu.RAX, 1026799L)
-        self.assertEqual(cpu.RCX, 1011L)
-        self.assertEqual(cpu.RDX, 234L)
-        self.assertEqual(cpu.RIP, 140737351925755L)
+        self.assertEqual(cpu.RAX, 1026799)
+        self.assertEqual(cpu.RCX, 1011)
+        self.assertEqual(cpu.RDX, 234)
+        self.assertEqual(cpu.RIP, 140737351925755)
 
     def test_DIV_2(self):
         ''' Instruction DIV_2
@@ -4103,10 +4103,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3ff8], 'H')
         self.assertEqual(mem[0x7ffff7de3ff9], '\xf7')
         self.assertEqual(mem[0x7ffff7de3ffa], '\xf1')
-        self.assertEqual(cpu.RAX, 1026799L)
-        self.assertEqual(cpu.RCX, 1011L)
-        self.assertEqual(cpu.RDX, 234L)
-        self.assertEqual(cpu.RIP, 140737351925755L)
+        self.assertEqual(cpu.RAX, 1026799)
+        self.assertEqual(cpu.RCX, 1011)
+        self.assertEqual(cpu.RDX, 234)
+        self.assertEqual(cpu.RIP, 140737351925755)
 
     def test_DIV_3(self):
         ''' Instruction DIV_3
@@ -4128,10 +4128,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3ff8], 'H')
         self.assertEqual(mem[0x7ffff7de3ff9], '\xf7')
         self.assertEqual(mem[0x7ffff7de3ffa], '\xf1')
-        self.assertEqual(cpu.RAX, 2629628L)
-        self.assertEqual(cpu.RCX, 1011L)
-        self.assertEqual(cpu.RDX, 136L)
-        self.assertEqual(cpu.RIP, 140737351925755L)
+        self.assertEqual(cpu.RAX, 2629628)
+        self.assertEqual(cpu.RCX, 1011)
+        self.assertEqual(cpu.RDX, 136)
+        self.assertEqual(cpu.RIP, 140737351925755)
 
     def test_DIV_4(self):
         ''' Instruction DIV_4
@@ -4153,10 +4153,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3ff8], 'H')
         self.assertEqual(mem[0x7ffff7de3ff9], '\xf7')
         self.assertEqual(mem[0x7ffff7de3ffa], '\xf1')
-        self.assertEqual(cpu.RAX, 276450L)
-        self.assertEqual(cpu.RCX, 1011L)
-        self.assertEqual(cpu.RDX, 970L)
-        self.assertEqual(cpu.RIP, 140737351925755L)
+        self.assertEqual(cpu.RAX, 276450)
+        self.assertEqual(cpu.RCX, 1011)
+        self.assertEqual(cpu.RDX, 970)
+        self.assertEqual(cpu.RIP, 140737351925755)
 
     def test_DIV_5(self):
         ''' Instruction DIV_5
@@ -4178,10 +4178,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3ff8], 'H')
         self.assertEqual(mem[0x7ffff7de3ff9], '\xf7')
         self.assertEqual(mem[0x7ffff7de3ffa], '\xf1')
-        self.assertEqual(cpu.RAX, 20379587L)
-        self.assertEqual(cpu.RCX, 50L)
-        self.assertEqual(cpu.RDX, 13L)
-        self.assertEqual(cpu.RIP, 140737351925755L)
+        self.assertEqual(cpu.RAX, 20379587)
+        self.assertEqual(cpu.RCX, 50)
+        self.assertEqual(cpu.RDX, 13)
+        self.assertEqual(cpu.RIP, 140737351925755)
 
     def test_DIV_6(self):
         ''' Instruction DIV_6
@@ -4203,10 +4203,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3ff8], 'H')
         self.assertEqual(mem[0x7ffff7de3ff9], '\xf7')
         self.assertEqual(mem[0x7ffff7de3ffa], '\xf1')
-        self.assertEqual(cpu.RAX, 772240L)
-        self.assertEqual(cpu.RCX, 1011L)
-        self.assertEqual(cpu.RDX, 552L)
-        self.assertEqual(cpu.RIP, 140737351925755L)
+        self.assertEqual(cpu.RAX, 772240)
+        self.assertEqual(cpu.RCX, 1011)
+        self.assertEqual(cpu.RDX, 552)
+        self.assertEqual(cpu.RIP, 140737351925755)
 
     def test_IDIV_1(self):
         ''' Instruction IDIV_1
@@ -4228,10 +4228,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a4e238], '\xf8')
         self.assertEqual(mem[0x7ffff7a4e236], 'I')
         self.assertEqual(mem[0x7ffff7a4e237], '\xf7')
-        self.assertEqual(cpu.RAX, 786432L)
-        self.assertEqual(cpu.R8, 8L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 140737348166201L)
+        self.assertEqual(cpu.RAX, 786432)
+        self.assertEqual(cpu.R8, 8)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 140737348166201)
 
     def test_IDIV_2(self):
         ''' Instruction IDIV_2
@@ -4253,10 +4253,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006d8], '\xf8')
         self.assertEqual(mem[0x4006d6], 'I')
         self.assertEqual(mem[0x4006d7], '\xf7')
-        self.assertEqual(cpu.RAX, 786432L)
-        self.assertEqual(cpu.R8, 8L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4196057L)
+        self.assertEqual(cpu.RAX, 786432)
+        self.assertEqual(cpu.R8, 8)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4196057)
 
     def test_IDIV_3(self):
         ''' Instruction IDIV_3
@@ -4278,10 +4278,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a4e238], '\xf8')
         self.assertEqual(mem[0x7ffff7a4e236], 'I')
         self.assertEqual(mem[0x7ffff7a4e237], '\xf7')
-        self.assertEqual(cpu.RAX, 786432L)
-        self.assertEqual(cpu.R8, 8L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 140737348166201L)
+        self.assertEqual(cpu.RAX, 786432)
+        self.assertEqual(cpu.R8, 8)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 140737348166201)
 
     def test_IDIV_4(self):
         ''' Instruction IDIV_4
@@ -4303,10 +4303,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006d8], '\xf8')
         self.assertEqual(mem[0x4006d6], 'I')
         self.assertEqual(mem[0x4006d7], '\xf7')
-        self.assertEqual(cpu.RAX, 786432L)
-        self.assertEqual(cpu.R8, 8L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4196057L)
+        self.assertEqual(cpu.RAX, 786432)
+        self.assertEqual(cpu.R8, 8)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4196057)
 
     def test_IDIV_5(self):
         ''' Instruction IDIV_5
@@ -4328,10 +4328,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006d8], '\xf8')
         self.assertEqual(mem[0x4006d6], 'I')
         self.assertEqual(mem[0x4006d7], '\xf7')
-        self.assertEqual(cpu.RAX, 786432L)
-        self.assertEqual(cpu.R8, 8L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4196057L)
+        self.assertEqual(cpu.RAX, 786432)
+        self.assertEqual(cpu.R8, 8)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4196057)
 
     def test_IDIV_6(self):
         ''' Instruction IDIV_6
@@ -4353,10 +4353,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a4e238], '\xf8')
         self.assertEqual(mem[0x7ffff7a4e236], 'I')
         self.assertEqual(mem[0x7ffff7a4e237], '\xf7')
-        self.assertEqual(cpu.RAX, 786432L)
-        self.assertEqual(cpu.R8, 8L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 140737348166201L)
+        self.assertEqual(cpu.RAX, 786432)
+        self.assertEqual(cpu.R8, 8)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 140737348166201)
 
     def test_IMUL_1(self):
         ''' Instruction IMUL_1
@@ -4383,11 +4383,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7acfec6], '\xc2')
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737348697799L)
-        self.assertEqual(cpu.RDX, 1L)
-        self.assertEqual(cpu.EAX, 6291456L)
-        self.assertEqual(cpu.EDX, 1L)
-        self.assertEqual(cpu.RAX, 6291456L)
+        self.assertEqual(cpu.RIP, 140737348697799)
+        self.assertEqual(cpu.RDX, 1)
+        self.assertEqual(cpu.EAX, 6291456)
+        self.assertEqual(cpu.EDX, 1)
+        self.assertEqual(cpu.RAX, 6291456)
 
     def test_IMUL_2(self):
         ''' Instruction IMUL_2
@@ -4414,11 +4414,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7acfeb5], '\xc2')
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737348697782L)
-        self.assertEqual(cpu.RDX, 8L)
-        self.assertEqual(cpu.EAX, 512L)
-        self.assertEqual(cpu.EDX, 8L)
-        self.assertEqual(cpu.RAX, 512L)
+        self.assertEqual(cpu.RIP, 140737348697782)
+        self.assertEqual(cpu.RDX, 8)
+        self.assertEqual(cpu.EAX, 512)
+        self.assertEqual(cpu.EDX, 8)
+        self.assertEqual(cpu.RAX, 512)
 
     def test_IMUL_3(self):
         ''' Instruction IMUL_3
@@ -4442,10 +4442,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43230d], '\xea')
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4399886L)
-        self.assertEqual(cpu.RDX, 1L)
-        self.assertEqual(cpu.EDX, 1L)
-        self.assertEqual(cpu.RAX, 2L)
+        self.assertEqual(cpu.RIP, 4399886)
+        self.assertEqual(cpu.RDX, 1)
+        self.assertEqual(cpu.EDX, 1)
+        self.assertEqual(cpu.RAX, 2)
 
     def test_IMUL_4(self):
         ''' Instruction IMUL_4
@@ -4469,10 +4469,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43230d], '\xea')
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4399886L)
-        self.assertEqual(cpu.RDX, 1L)
-        self.assertEqual(cpu.EDX, 1L)
-        self.assertEqual(cpu.RAX, 2L)
+        self.assertEqual(cpu.RIP, 4399886)
+        self.assertEqual(cpu.RDX, 1)
+        self.assertEqual(cpu.EDX, 1)
+        self.assertEqual(cpu.RAX, 2)
 
     def test_IMUL_5(self):
         ''' Instruction IMUL_5
@@ -4499,13 +4499,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x41403d], '\x0f')
         self.assertEqual(mem[0x41403e], '\xaf')
         self.assertEqual(mem[0x41403f], '\xe6')
-        self.assertEqual(cpu.R12, 1169L)
-        self.assertEqual(cpu.RSI, 1L)
+        self.assertEqual(cpu.R12, 1169)
+        self.assertEqual(cpu.RSI, 1)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4276288L)
-        self.assertEqual(cpu.RDX, 1169L)
-        self.assertEqual(cpu.RAX, 4294967295L)
+        self.assertEqual(cpu.RIP, 4276288)
+        self.assertEqual(cpu.RDX, 1169)
+        self.assertEqual(cpu.RAX, 4294967295)
 
     def test_IMUL_6(self):
         ''' Instruction IMUL_6
@@ -4532,13 +4532,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x413fdd], '\x0f')
         self.assertEqual(mem[0x413fde], '\xaf')
         self.assertEqual(mem[0x413fdf], '\xe6')
-        self.assertEqual(cpu.R12, 1169L)
-        self.assertEqual(cpu.RSI, 1L)
+        self.assertEqual(cpu.R12, 1169)
+        self.assertEqual(cpu.RSI, 1)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4276192L)
-        self.assertEqual(cpu.RDX, 1169L)
-        self.assertEqual(cpu.RAX, 4294967295L)
+        self.assertEqual(cpu.RIP, 4276192)
+        self.assertEqual(cpu.RDX, 1169)
+        self.assertEqual(cpu.RAX, 4294967295)
 
     def test_INC_1(self):
         ''' Instruction INC_1
@@ -4566,9 +4566,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992729L)
+        self.assertEqual(cpu.RIP, 140737351992729)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.RDI, 140737348126506L)
+        self.assertEqual(cpu.RDI, 140737348126506)
         self.assertEqual(cpu.SF, False)
 
     def test_INC_2(self):
@@ -4597,9 +4597,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992729L)
+        self.assertEqual(cpu.RIP, 140737351992729)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RDI, 140737351886317L)
+        self.assertEqual(cpu.RDI, 140737351886317)
         self.assertEqual(cpu.SF, False)
 
     def test_INC_3(self):
@@ -4625,11 +4625,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df4599], 'H')
         self.assertEqual(mem[0x7ffff7df459a], '\xff')
         self.assertEqual(mem[0x7ffff7df459b], '\xc6')
-        self.assertEqual(cpu.RSI, 140737348126507L)
+        self.assertEqual(cpu.RSI, 140737348126507)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992732L)
+        self.assertEqual(cpu.RIP, 140737351992732)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -4659,9 +4659,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992729L)
+        self.assertEqual(cpu.RIP, 140737351992729)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.RDI, 140737348126511L)
+        self.assertEqual(cpu.RDI, 140737348126511)
         self.assertEqual(cpu.SF, False)
 
     def test_INC_5(self):
@@ -4687,11 +4687,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df4599], 'H')
         self.assertEqual(mem[0x7ffff7df459a], '\xff')
         self.assertEqual(mem[0x7ffff7df459b], '\xc6')
-        self.assertEqual(cpu.RSI, 93824992234684L)
+        self.assertEqual(cpu.RSI, 93824992234684)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992732L)
+        self.assertEqual(cpu.RIP, 140737351992732)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
 
@@ -4718,11 +4718,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df4599], 'H')
         self.assertEqual(mem[0x7ffff7df459a], '\xff')
         self.assertEqual(mem[0x7ffff7df459b], '\xc6')
-        self.assertEqual(cpu.RSI, 140737348126503L)
+        self.assertEqual(cpu.RSI, 140737348126503)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 140737351992732L)
+        self.assertEqual(cpu.RIP, 140737351992732)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -4742,7 +4742,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7aa96ab], 's')
         self.assertEqual(mem[0x7ffff7aa96ac], ';')
-        self.assertEqual(cpu.RIP, 140737348540077L)
+        self.assertEqual(cpu.RIP, 140737348540077)
 
     def test_JAE_2(self):
         ''' Instruction JAE_2
@@ -4760,7 +4760,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400c11], 's')
         self.assertEqual(mem[0x400c12], 'V')
-        self.assertEqual(cpu.RIP, 4197481L)
+        self.assertEqual(cpu.RIP, 4197481)
 
     def test_JAE_3(self):
         ''' Instruction JAE_3
@@ -4778,7 +4778,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x432400], 's')
         self.assertEqual(mem[0x432401], '>')
-        self.assertEqual(cpu.RIP, 4400130L)
+        self.assertEqual(cpu.RIP, 4400130)
 
     def test_JAE_4(self):
         ''' Instruction JAE_4
@@ -4804,7 +4804,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x411d5d], '\xf4')
         self.assertEqual(mem[0x411d5e], '\x03')
         self.assertEqual(mem[0x411d5f], '\x00')
-        self.assertEqual(cpu.RIP, 4268373L)
+        self.assertEqual(cpu.RIP, 4268373)
 
     def test_JAE_5(self):
         ''' Instruction JAE_5
@@ -4822,7 +4822,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7b58f5d], 's')
         self.assertEqual(mem[0x7ffff7b58f5e], '\xa1')
-        self.assertEqual(cpu.RIP, 140737349259008L)
+        self.assertEqual(cpu.RIP, 140737349259008)
 
     def test_JAE_6(self):
         ''' Instruction JAE_6
@@ -4840,7 +4840,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400b82], 's')
         self.assertEqual(mem[0x400b83], '\x1b')
-        self.assertEqual(cpu.RIP, 4197252L)
+        self.assertEqual(cpu.RIP, 4197252)
 
     def test_JA_1(self):
         ''' Instruction JA_1
@@ -4859,7 +4859,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de6132], 'w')
         self.assertEqual(mem[0x7ffff7de6133], '\xd4')
-        self.assertEqual(cpu.RIP, 140737351934216L)
+        self.assertEqual(cpu.RIP, 140737351934216)
 
     def test_JA_2(self):
         ''' Instruction JA_2
@@ -4878,7 +4878,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7ddf066], 'w')
         self.assertEqual(mem[0x7ffff7ddf067], 'J')
-        self.assertEqual(cpu.RIP, 140737351905384L)
+        self.assertEqual(cpu.RIP, 140737351905384)
 
     def test_JA_3(self):
         ''' Instruction JA_3
@@ -4897,7 +4897,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de6132], 'w')
         self.assertEqual(mem[0x7ffff7de6133], '\xd4')
-        self.assertEqual(cpu.RIP, 140737351934216L)
+        self.assertEqual(cpu.RIP, 140737351934216)
 
     def test_JA_4(self):
         ''' Instruction JA_4
@@ -4916,7 +4916,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de6132], 'w')
         self.assertEqual(mem[0x7ffff7de6133], '\xd4')
-        self.assertEqual(cpu.RIP, 140737351934216L)
+        self.assertEqual(cpu.RIP, 140737351934216)
 
     def test_JA_5(self):
         ''' Instruction JA_5
@@ -4935,7 +4935,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de6132], 'w')
         self.assertEqual(mem[0x7ffff7de6133], '\xd4')
-        self.assertEqual(cpu.RIP, 140737351934216L)
+        self.assertEqual(cpu.RIP, 140737351934216)
 
     def test_JA_6(self):
         ''' Instruction JA_6
@@ -4954,7 +4954,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de6132], 'w')
         self.assertEqual(mem[0x7ffff7de6133], '\xd4')
-        self.assertEqual(cpu.RIP, 140737351934216L)
+        self.assertEqual(cpu.RIP, 140737351934216)
 
     def test_JBE_1(self):
         ''' Instruction JBE_1
@@ -4981,7 +4981,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x411890], '\x06')
         self.assertEqual(mem[0x411891], '\x00')
         self.assertEqual(mem[0x411892], '\x00')
-        self.assertEqual(cpu.RIP, 4267712L)
+        self.assertEqual(cpu.RIP, 4267712)
 
     def test_JBE_2(self):
         ''' Instruction JBE_2
@@ -5008,7 +5008,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4325e6], '\x00')
         self.assertEqual(mem[0x4325e7], '\x00')
         self.assertEqual(mem[0x4325e8], '\x00')
-        self.assertEqual(cpu.RIP, 4400617L)
+        self.assertEqual(cpu.RIP, 4400617)
 
     def test_JBE_3(self):
         ''' Instruction JBE_3
@@ -5027,7 +5027,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x432388], 'v')
         self.assertEqual(mem[0x432389], ' ')
-        self.assertEqual(cpu.RIP, 4400010L)
+        self.assertEqual(cpu.RIP, 4400010)
 
     def test_JBE_4(self):
         ''' Instruction JBE_4
@@ -5054,7 +5054,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4325e6], '\x00')
         self.assertEqual(mem[0x4325e7], '\x00')
         self.assertEqual(mem[0x4325e8], '\x00')
-        self.assertEqual(cpu.RIP, 4400617L)
+        self.assertEqual(cpu.RIP, 4400617)
 
     def test_JBE_5(self):
         ''' Instruction JBE_5
@@ -5073,7 +5073,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df1269], 'v')
         self.assertEqual(mem[0x7ffff7df126a], '\x1e')
-        self.assertEqual(cpu.RIP, 140737351979627L)
+        self.assertEqual(cpu.RIP, 140737351979627)
 
     def test_JBE_6(self):
         ''' Instruction JBE_6
@@ -5100,7 +5100,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7acff56], '\x00')
         self.assertEqual(mem[0x7ffff7acff57], '\x00')
         self.assertEqual(mem[0x7ffff7acff58], '\x00')
-        self.assertEqual(cpu.RIP, 140737348697945L)
+        self.assertEqual(cpu.RIP, 140737348697945)
 
     def test_JB_1(self):
         ''' Instruction JB_1
@@ -5118,7 +5118,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7b58f46], 'r')
         self.assertEqual(mem[0x7ffff7b58f47], '\xb8')
-        self.assertEqual(cpu.RIP, 140737349259008L)
+        self.assertEqual(cpu.RIP, 140737349259008)
 
     def test_JB_2(self):
         ''' Instruction JB_2
@@ -5136,7 +5136,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7b58f46], 'r')
         self.assertEqual(mem[0x7ffff7b58f47], '\xb8')
-        self.assertEqual(cpu.RIP, 140737349259080L)
+        self.assertEqual(cpu.RIP, 140737349259080)
 
     def test_JB_3(self):
         ''' Instruction JB_3
@@ -5162,7 +5162,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400bae], '\xff')
         self.assertEqual(mem[0x400baf], '\xff')
         self.assertEqual(mem[0x400bb0], '\xff')
-        self.assertEqual(cpu.RIP, 4197044L)
+        self.assertEqual(cpu.RIP, 4197044)
 
     def test_JB_4(self):
         ''' Instruction JB_4
@@ -5180,7 +5180,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7b58f46], 'r')
         self.assertEqual(mem[0x7ffff7b58f47], '\xb8')
-        self.assertEqual(cpu.RIP, 140737349259008L)
+        self.assertEqual(cpu.RIP, 140737349259008)
 
     def test_JB_5(self):
         ''' Instruction JB_5
@@ -5198,7 +5198,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7ddeff1], 'r')
         self.assertEqual(mem[0x7ffff7ddeff2], '\xdd')
-        self.assertEqual(cpu.RIP, 140737351905232L)
+        self.assertEqual(cpu.RIP, 140737351905232)
 
     def test_JB_6(self):
         ''' Instruction JB_6
@@ -5216,7 +5216,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7b58f46], 'r')
         self.assertEqual(mem[0x7ffff7b58f47], '\xb8')
-        self.assertEqual(cpu.RIP, 140737349259008L)
+        self.assertEqual(cpu.RIP, 140737349259008)
 
     def test_JE_1(self):
         ''' Instruction JE_1
@@ -5242,7 +5242,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3a9d], '\x0f')
         self.assertEqual(mem[0x7ffff7de3a9e], '\x84')
         self.assertEqual(mem[0x7ffff7de3a9f], '.')
-        self.assertEqual(cpu.RIP, 140737351924387L)
+        self.assertEqual(cpu.RIP, 140737351924387)
 
     def test_JE_2(self):
         ''' Instruction JE_2
@@ -5268,7 +5268,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de61c3], '\x00')
         self.assertEqual(mem[0x7ffff7de61be], '\x0f')
         self.assertEqual(mem[0x7ffff7de61bf], '\x84')
-        self.assertEqual(cpu.RIP, 140737351934404L)
+        self.assertEqual(cpu.RIP, 140737351934404)
 
     def test_JE_3(self):
         ''' Instruction JE_3
@@ -5294,7 +5294,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de38c9], '\x00')
         self.assertEqual(mem[0x7ffff7de38ca], '\x00')
         self.assertEqual(mem[0x7ffff7de38cb], '\x00')
-        self.assertEqual(cpu.RIP, 140737351923916L)
+        self.assertEqual(cpu.RIP, 140737351923916)
 
     def test_JE_4(self):
         ''' Instruction JE_4
@@ -5320,7 +5320,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de440e], '\x02')
         self.assertEqual(mem[0x7ffff7de440f], '\x00')
         self.assertEqual(mem[0x7ffff7de4410], '\x00')
-        self.assertEqual(cpu.RIP, 140737351926801L)
+        self.assertEqual(cpu.RIP, 140737351926801)
 
     def test_JE_5(self):
         ''' Instruction JE_5
@@ -5338,7 +5338,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de6115], 't')
         self.assertEqual(mem[0x7ffff7de6116], '\n')
-        self.assertEqual(cpu.RIP, 140737351934231L)
+        self.assertEqual(cpu.RIP, 140737351934231)
 
     def test_JE_6(self):
         ''' Instruction JE_6
@@ -5356,7 +5356,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x406e0b], 't')
         self.assertEqual(mem[0x406e0c], '\xb9')
-        self.assertEqual(cpu.RIP, 4222477L)
+        self.assertEqual(cpu.RIP, 4222477)
 
     def test_JGE_1(self):
         ''' Instruction JGE_1
@@ -5383,7 +5383,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab5b05], '\x00')
         self.assertEqual(mem[0x7ffff7ab5b06], '\x00')
         self.assertEqual(mem[0x7ffff7ab5b07], '\x00')
-        self.assertEqual(cpu.RIP, 140737348590344L)
+        self.assertEqual(cpu.RIP, 140737348590344)
 
     def test_JGE_2(self):
         ''' Instruction JGE_2
@@ -5402,7 +5402,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7b09879], '}')
         self.assertEqual(mem[0x7ffff7b0987a], '\x04')
-        self.assertEqual(cpu.RIP, 140737348933759L)
+        self.assertEqual(cpu.RIP, 140737348933759)
 
     def test_JGE_3(self):
         ''' Instruction JGE_3
@@ -5429,7 +5429,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab5b05], '\x00')
         self.assertEqual(mem[0x7ffff7ab5b06], '\x00')
         self.assertEqual(mem[0x7ffff7ab5b07], '\x00')
-        self.assertEqual(cpu.RIP, 140737348590344L)
+        self.assertEqual(cpu.RIP, 140737348590344)
 
     def test_JG_1(self):
         ''' Instruction JG_1
@@ -5449,7 +5449,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x403684], '\x7f')
         self.assertEqual(mem[0x403685], '\x94')
-        self.assertEqual(cpu.RIP, 4208154L)
+        self.assertEqual(cpu.RIP, 4208154)
 
     def test_JG_2(self):
         ''' Instruction JG_2
@@ -5477,7 +5477,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40c123], '\x02')
         self.assertEqual(mem[0x40c124], '\x00')
         self.assertEqual(mem[0x40c125], '\x00')
-        self.assertEqual(cpu.RIP, 4243750L)
+        self.assertEqual(cpu.RIP, 4243750)
 
     def test_JG_3(self):
         ''' Instruction JG_3
@@ -5497,7 +5497,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df1358], 'G')
         self.assertEqual(mem[0x7ffff7df1357], '\x7f')
-        self.assertEqual(cpu.RIP, 140737351979865L)
+        self.assertEqual(cpu.RIP, 140737351979865)
 
     def test_JG_4(self):
         ''' Instruction JG_4
@@ -5525,7 +5525,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ddc9fd], '\x15')
         self.assertEqual(mem[0x7ffff7ddc9fe], '\x04')
         self.assertEqual(mem[0x7ffff7ddc9ff], '\x00')
-        self.assertEqual(cpu.RIP, 140737351896598L)
+        self.assertEqual(cpu.RIP, 140737351896598)
 
     def test_JG_5(self):
         ''' Instruction JG_5
@@ -5553,7 +5553,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ddc9fd], '\x15')
         self.assertEqual(mem[0x7ffff7ddc9fe], '\x04')
         self.assertEqual(mem[0x7ffff7ddc9ff], '\x00')
-        self.assertEqual(cpu.RIP, 140737351896598L)
+        self.assertEqual(cpu.RIP, 140737351896598)
 
     def test_JG_6(self):
         ''' Instruction JG_6
@@ -5581,7 +5581,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40c2e7], '\xff')
         self.assertEqual(mem[0x40c2e8], '\xff')
         self.assertEqual(mem[0x40c2e9], '\xff')
-        self.assertEqual(cpu.RIP, 4244202L)
+        self.assertEqual(cpu.RIP, 4244202)
 
     def test_JLE_1(self):
         ''' Instruction JLE_1
@@ -5601,7 +5601,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x400b2b], '~')
         self.assertEqual(mem[0x400b2c], '\xd4')
-        self.assertEqual(cpu.RIP, 4197121L)
+        self.assertEqual(cpu.RIP, 4197121)
 
     def test_JLE_2(self):
         ''' Instruction JLE_2
@@ -5629,7 +5629,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a4e1ce], '\x02')
         self.assertEqual(mem[0x7ffff7a4e1cf], '\x00')
         self.assertEqual(mem[0x7ffff7a4e1d0], '\x00')
-        self.assertEqual(cpu.RIP, 140737348166097L)
+        self.assertEqual(cpu.RIP, 140737348166097)
 
     def test_JLE_3(self):
         ''' Instruction JLE_3
@@ -5649,7 +5649,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x437c08], '~')
         self.assertEqual(mem[0x437c09], '\x15')
-        self.assertEqual(cpu.RIP, 4422666L)
+        self.assertEqual(cpu.RIP, 4422666)
 
     def test_JLE_4(self):
         ''' Instruction JLE_4
@@ -5669,7 +5669,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de4486], '~')
         self.assertEqual(mem[0x7ffff7de4487], '\xa8')
-        self.assertEqual(cpu.RIP, 140737351926920L)
+        self.assertEqual(cpu.RIP, 140737351926920)
 
     def test_JLE_5(self):
         ''' Instruction JLE_5
@@ -5689,7 +5689,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de4486], '~')
         self.assertEqual(mem[0x7ffff7de4487], '\xa8')
-        self.assertEqual(cpu.RIP, 140737351926920L)
+        self.assertEqual(cpu.RIP, 140737351926920)
 
     def test_JLE_6(self):
         ''' Instruction JLE_6
@@ -5709,7 +5709,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de4486], '~')
         self.assertEqual(mem[0x7ffff7de4487], '\xa8')
-        self.assertEqual(cpu.RIP, 140737351926920L)
+        self.assertEqual(cpu.RIP, 140737351926920)
 
     def test_JL_1(self):
         ''' Instruction JL_1
@@ -5728,7 +5728,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x555555556f00], '|')
         self.assertEqual(mem[0x555555556f01], '\xe0')
-        self.assertEqual(cpu.RIP, 93824992243426L)
+        self.assertEqual(cpu.RIP, 93824992243426)
 
     def test_JL_2(self):
         ''' Instruction JL_2
@@ -5747,7 +5747,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x555555556f00], '|')
         self.assertEqual(mem[0x555555556f01], '\xe0')
-        self.assertEqual(cpu.RIP, 93824992243458L)
+        self.assertEqual(cpu.RIP, 93824992243458)
 
     def test_JL_3(self):
         ''' Instruction JL_3
@@ -5766,7 +5766,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x555555556f00], '|')
         self.assertEqual(mem[0x555555556f01], '\xe0')
-        self.assertEqual(cpu.RIP, 93824992243426L)
+        self.assertEqual(cpu.RIP, 93824992243426)
 
     def test_JMP_1(self):
         ''' Instruction JMP_1
@@ -5789,7 +5789,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de427b], '\xf8')
         self.assertEqual(mem[0x7ffff7de427c], '\xff')
         self.assertEqual(mem[0x7ffff7de427d], '\xff')
-        self.assertEqual(cpu.RIP, 140737351924376L)
+        self.assertEqual(cpu.RIP, 140737351924376)
 
     def test_JMP_2(self):
         ''' Instruction JMP_2
@@ -5806,7 +5806,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7b58ee8], "'")
         self.assertEqual(mem[0x7ffff7b58ee7], '\xeb')
-        self.assertEqual(cpu.RIP, 140737349259024L)
+        self.assertEqual(cpu.RIP, 140737349259024)
 
     def test_JMP_3(self):
         ''' Instruction JMP_3
@@ -5829,7 +5829,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df28e3], '\x81')
         self.assertEqual(mem[0x7ffff7df28e4], '\xfe')
         self.assertEqual(mem[0x7ffff7df28e5], '\xff')
-        self.assertEqual(cpu.RIP, 140737351887360L)
+        self.assertEqual(cpu.RIP, 140737351887360)
 
     def test_JMP_4(self):
         ''' Instruction JMP_4
@@ -5847,8 +5847,8 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de62ee], '\xff')
         self.assertEqual(mem[0x7ffff7de62ef], '\xe2')
-        self.assertEqual(cpu.RDX, 140737351934904L)
-        self.assertEqual(cpu.RIP, 140737351934904L)
+        self.assertEqual(cpu.RDX, 140737351934904)
+        self.assertEqual(cpu.RIP, 140737351934904)
 
     def test_JMP_5(self):
         ''' Instruction JMP_5
@@ -5865,7 +5865,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de4042], '\xeb')
         self.assertEqual(mem[0x7ffff7de4043], '\x10')
-        self.assertEqual(cpu.RIP, 140737351925844L)
+        self.assertEqual(cpu.RIP, 140737351925844)
 
     def test_JMP_6(self):
         ''' Instruction JMP_6
@@ -5882,7 +5882,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7b58ee8], "'")
         self.assertEqual(mem[0x7ffff7b58ee7], '\xeb')
-        self.assertEqual(cpu.RIP, 140737349259024L)
+        self.assertEqual(cpu.RIP, 140737349259024)
 
     def test_JNE_1(self):
         ''' Instruction JNE_1
@@ -5900,7 +5900,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df459e], 'u')
         self.assertEqual(mem[0x7ffff7df459f], '\xf0')
-        self.assertEqual(cpu.RIP, 140737351992720L)
+        self.assertEqual(cpu.RIP, 140737351992720)
 
     def test_JNE_2(self):
         ''' Instruction JNE_2
@@ -5918,7 +5918,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7de5a4b], 'u')
         self.assertEqual(mem[0x7ffff7de5a4c], '\xf3')
-        self.assertEqual(cpu.RIP, 140737351932480L)
+        self.assertEqual(cpu.RIP, 140737351932480)
 
     def test_JNE_3(self):
         ''' Instruction JNE_3
@@ -5944,7 +5944,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de611d], '\x8c')
         self.assertEqual(mem[0x7ffff7de611e], '\x12')
         self.assertEqual(mem[0x7ffff7de611f], '\x00')
-        self.assertEqual(cpu.RIP, 140737351934241L)
+        self.assertEqual(cpu.RIP, 140737351934241)
 
     def test_JNE_4(self):
         ''' Instruction JNE_4
@@ -5962,7 +5962,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7aab198], '\xef')
         self.assertEqual(mem[0x7ffff7aab197], 'u')
-        self.assertEqual(cpu.RIP, 140737348546952L)
+        self.assertEqual(cpu.RIP, 140737348546952)
 
     def test_JNE_5(self):
         ''' Instruction JNE_5
@@ -5980,7 +5980,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df4594], 'u')
         self.assertEqual(mem[0x7ffff7df4595], '\r')
-        self.assertEqual(cpu.RIP, 140737351992726L)
+        self.assertEqual(cpu.RIP, 140737351992726)
 
     def test_JNE_6(self):
         ''' Instruction JNE_6
@@ -5998,7 +5998,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df459e], 'u')
         self.assertEqual(mem[0x7ffff7df459f], '\xf0')
-        self.assertEqual(cpu.RIP, 140737351992720L)
+        self.assertEqual(cpu.RIP, 140737351992720)
 
     def test_JNS_1(self):
         ''' Instruction JNS_1
@@ -6016,7 +6016,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df1390], '\xbf')
         self.assertEqual(mem[0x7ffff7df138f], 'y')
-        self.assertEqual(cpu.RIP, 140737351979921L)
+        self.assertEqual(cpu.RIP, 140737351979921)
 
     def test_JNS_2(self):
         ''' Instruction JNS_2
@@ -6042,7 +6042,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x555555565fb5], '\xfa')
         self.assertEqual(mem[0x555555565fb6], '\xff')
         self.assertEqual(mem[0x555555565fb7], '\xff')
-        self.assertEqual(cpu.RIP, 93824992303596L)
+        self.assertEqual(cpu.RIP, 93824992303596)
 
     def test_JNS_3(self):
         ''' Instruction JNS_3
@@ -6060,7 +6060,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df1390], '\xbf')
         self.assertEqual(mem[0x7ffff7df138f], 'y')
-        self.assertEqual(cpu.RIP, 140737351979921L)
+        self.assertEqual(cpu.RIP, 140737351979921)
 
     def test_JNS_4(self):
         ''' Instruction JNS_4
@@ -6078,7 +6078,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df1390], '\xbf')
         self.assertEqual(mem[0x7ffff7df138f], 'y')
-        self.assertEqual(cpu.RIP, 140737351979856L)
+        self.assertEqual(cpu.RIP, 140737351979856)
 
     def test_JNS_5(self):
         ''' Instruction JNS_5
@@ -6096,7 +6096,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df1390], '\xbf')
         self.assertEqual(mem[0x7ffff7df138f], 'y')
-        self.assertEqual(cpu.RIP, 140737351979921L)
+        self.assertEqual(cpu.RIP, 140737351979921)
 
     def test_JNS_6(self):
         ''' Instruction JNS_6
@@ -6114,7 +6114,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x7ffff7df1390], '\xbf')
         self.assertEqual(mem[0x7ffff7df138f], 'y')
-        self.assertEqual(cpu.RIP, 140737351979856L)
+        self.assertEqual(cpu.RIP, 140737351979856)
 
     def test_JS_1(self):
         ''' Instruction JS_1
@@ -6140,7 +6140,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4326b5], '\x02')
         self.assertEqual(mem[0x4326b6], '\x00')
         self.assertEqual(mem[0x4326b7], '\x00')
-        self.assertEqual(cpu.RIP, 4400824L)
+        self.assertEqual(cpu.RIP, 4400824)
 
     def test_JS_2(self):
         ''' Instruction JS_2
@@ -6166,7 +6166,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4322d5], '\x02')
         self.assertEqual(mem[0x4322d6], '\x00')
         self.assertEqual(mem[0x4322d7], '\x00')
-        self.assertEqual(cpu.RIP, 4399832L)
+        self.assertEqual(cpu.RIP, 4399832)
 
     def test_JS_3(self):
         ''' Instruction JS_3
@@ -6192,7 +6192,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x555555565078], '\x11')
         self.assertEqual(mem[0x555555565079], '\x00')
         self.assertEqual(mem[0x55555556507a], '\x00')
-        self.assertEqual(cpu.RIP, 93824992301179L)
+        self.assertEqual(cpu.RIP, 93824992301179)
 
     def test_JS_4(self):
         ''' Instruction JS_4
@@ -6210,7 +6210,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x40dd40], 'x')
         self.assertEqual(mem[0x40dd41], '\n')
-        self.assertEqual(cpu.RIP, 4250956L)
+        self.assertEqual(cpu.RIP, 4250956)
 
     def test_JS_5(self):
         ''' Instruction JS_5
@@ -6228,7 +6228,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x555555559cb6], 'x')
         self.assertEqual(mem[0x555555559cb7], '\x17')
-        self.assertEqual(cpu.RIP, 93824992255183L)
+        self.assertEqual(cpu.RIP, 93824992255183)
 
     def test_JS_6(self):
         ''' Instruction JS_6
@@ -6246,7 +6246,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x5555555673d5], 'x')
         self.assertEqual(mem[0x5555555673d6], 'y')
-        self.assertEqual(cpu.RIP, 93824992310231L)
+        self.assertEqual(cpu.RIP, 93824992310231)
 
     def test_LEAVE_1(self):
         ''' Instruction LEAVE_1
@@ -6330,9 +6330,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdab6], '\x00')
         self.assertEqual(mem[0x7fffffffdab7], '\x00')
         self.assertEqual(mem[0x7fffffffdab8], '\xb3')
-        self.assertEqual(cpu.RSP, 140737488345784L)
-        self.assertEqual(cpu.RIP, 140737349094422L)
-        self.assertEqual(cpu.RBP, 140737488345792L)
+        self.assertEqual(cpu.RSP, 140737488345784)
+        self.assertEqual(cpu.RIP, 140737349094422)
+        self.assertEqual(cpu.RBP, 140737488345792)
 
     def test_LEAVE_2(self):
         ''' Instruction LEAVE_2
@@ -6416,9 +6416,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffcaf7], '\x00')
         self.assertEqual(mem[0x7fffffffcaf8], '+')
         self.assertEqual(mem[0x7fffffffcaf4], '\xff')
-        self.assertEqual(cpu.RSP, 140737488341752L)
-        self.assertEqual(cpu.RIP, 4290293L)
-        self.assertEqual(cpu.RBP, 140737488345888L)
+        self.assertEqual(cpu.RSP, 140737488341752)
+        self.assertEqual(cpu.RIP, 4290293)
+        self.assertEqual(cpu.RBP, 140737488345888)
 
     def test_LEAVE_3(self):
         ''' Instruction LEAVE_3
@@ -6504,9 +6504,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd9e8], '\xf0')
         self.assertEqual(mem[0x7fffffffd9e6], '\x00')
         self.assertEqual(mem[0x7fffffffd9e4], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345624L)
-        self.assertEqual(cpu.RIP, 140737349262105L)
-        self.assertEqual(cpu.RBP, 140737488345664L)
+        self.assertEqual(cpu.RSP, 140737488345624)
+        self.assertEqual(cpu.RIP, 140737349262105)
+        self.assertEqual(cpu.RBP, 140737488345664)
 
     def test_LEAVE_4(self):
         ''' Instruction LEAVE_4
@@ -6592,9 +6592,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdb76], '\x00')
         self.assertEqual(mem[0x7fffffffdb77], '\x00')
         self.assertEqual(mem[0x7fffffffdb78], 'P')
-        self.assertEqual(cpu.RSP, 140737488346024L)
-        self.assertEqual(cpu.RIP, 140737349262105L)
-        self.assertEqual(cpu.RBP, 140737488346096L)
+        self.assertEqual(cpu.RSP, 140737488346024)
+        self.assertEqual(cpu.RIP, 140737349262105)
+        self.assertEqual(cpu.RBP, 140737488346096)
 
     def test_LEAVE_5(self):
         ''' Instruction LEAVE_5
@@ -6680,9 +6680,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd9b6], '\x00')
         self.assertEqual(mem[0x7fffffffd9b7], '\x00')
         self.assertEqual(mem[0x7fffffffd9b8], '\xf8')
-        self.assertEqual(cpu.RSP, 140737488345528L)
-        self.assertEqual(cpu.RIP, 140737348764994L)
-        self.assertEqual(cpu.RBP, 140737488345824L)
+        self.assertEqual(cpu.RSP, 140737488345528)
+        self.assertEqual(cpu.RIP, 140737348764994)
+        self.assertEqual(cpu.RBP, 140737488345824)
 
     def test_LEAVE_6(self):
         ''' Instruction LEAVE_6
@@ -6768,9 +6768,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffda70], '\x00')
         self.assertEqual(mem[0x7fffffffda69], '\x00')
         self.assertEqual(mem[0x7fffffffda6a], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345912L)
-        self.assertEqual(cpu.RIP, 140737348249294L)
-        self.assertEqual(cpu.RBP, 140737488346160L)
+        self.assertEqual(cpu.RSP, 140737488345912)
+        self.assertEqual(cpu.RIP, 140737348249294)
+        self.assertEqual(cpu.RBP, 140737488346160)
 
     def test_LEA_1(self):
         ''' Instruction LEA_1
@@ -6810,9 +6810,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd97d], '\x7f')
         self.assertEqual(mem[0x7fffffffd97e], '\x00')
         self.assertEqual(mem[0x7fffffffd97f], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345464L)
-        self.assertEqual(cpu.RIP, 140737351927031L)
-        self.assertEqual(cpu.RBP, 140737488345504L)
+        self.assertEqual(cpu.RSP, 140737488345464)
+        self.assertEqual(cpu.RIP, 140737351927031)
+        self.assertEqual(cpu.RBP, 140737488345504)
 
     def test_LEA_2(self):
         ''' Instruction LEA_2
@@ -6852,9 +6852,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7b58ee6], '\x90')
         self.assertEqual(mem[0x7ffff7a2fde7], 'P')
         self.assertEqual(mem[0x7ffff7a2fde6], '\x92')
-        self.assertEqual(cpu.R8, 140737348042208L)
-        self.assertEqual(cpu.RDX, 217L)
-        self.assertEqual(cpu.RIP, 140737349258983L)
+        self.assertEqual(cpu.R8, 140737348042208)
+        self.assertEqual(cpu.RDX, 217)
+        self.assertEqual(cpu.RIP, 140737349258983)
 
     def test_LEA_3(self):
         ''' Instruction LEA_3
@@ -6894,9 +6894,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd8ca], '\x00')
         self.assertEqual(mem[0x7fffffffd8cb], '\x00')
         self.assertEqual(mem[0x7fffffffd8c4], '\x00')
-        self.assertEqual(cpu.RSI, 140737488345284L)
-        self.assertEqual(cpu.RIP, 140737351923781L)
-        self.assertEqual(cpu.RBP, 140737488345344L)
+        self.assertEqual(cpu.RSI, 140737488345284)
+        self.assertEqual(cpu.RIP, 140737351923781)
+        self.assertEqual(cpu.RBP, 140737488345344)
 
     def test_LEA_4(self):
         ''' Instruction LEA_4
@@ -6936,9 +6936,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a34275], '\x00')
         self.assertEqual(mem[0x7ffff7a34276], '\x0b')
         self.assertEqual(mem[0x7ffff7a34277], '\x00')
-        self.assertEqual(cpu.RDX, 140737348059760L)
-        self.assertEqual(cpu.RIP, 140737349259032L)
-        self.assertEqual(cpu.RBX, 140737348050280L)
+        self.assertEqual(cpu.RDX, 140737348059760)
+        self.assertEqual(cpu.RIP, 140737349259032)
+        self.assertEqual(cpu.RBX, 140737348050280)
 
     def test_LEA_5(self):
         ''' Instruction LEA_5
@@ -6983,8 +6983,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a652bb], '\xe3')
         self.assertEqual(mem[0x7ffff7a652bc], '6')
         self.assertEqual(mem[0x7ffff7a652bd], '\x00')
-        self.assertEqual(cpu.RSI, 140737351857688L)
-        self.assertEqual(cpu.RIP, 140737348260542L)
+        self.assertEqual(cpu.RSI, 140737351857688)
+        self.assertEqual(cpu.RIP, 140737348260542)
 
     def test_LEA_6(self):
         ''' Instruction LEA_6
@@ -7030,9 +7030,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de441c], '\xff')
         self.assertEqual(mem[0x7ffff7de441d], '\xff')
         self.assertEqual(mem[0x7ffff7de441e], '\xff')
-        self.assertEqual(cpu.RDI, 140737488345360L)
-        self.assertEqual(cpu.RIP, 140737351926815L)
-        self.assertEqual(cpu.RBP, 140737488345520L)
+        self.assertEqual(cpu.RDI, 140737488345360)
+        self.assertEqual(cpu.RIP, 140737351926815)
+        self.assertEqual(cpu.RBP, 140737488345520)
 
     def test_MOVABS_1(self):
         ''' Instruction MOVABS_1
@@ -7066,8 +7066,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ddc5e7], '\x00')
         self.assertEqual(mem[0x7ffff7ddc5e8], '\x00')
         self.assertEqual(mem[0x7ffff7ddc5df], 'I')
-        self.assertEqual(cpu.R8, 15032381856L)
-        self.assertEqual(cpu.RIP, 140737351894505L)
+        self.assertEqual(cpu.R8, 15032381856)
+        self.assertEqual(cpu.RIP, 140737351894505)
 
     def test_MOVABS_2(self):
         ''' Instruction MOVABS_2
@@ -7101,8 +7101,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ddc5e7], '\x00')
         self.assertEqual(mem[0x7ffff7ddc5e8], '\x00')
         self.assertEqual(mem[0x7ffff7ddc5df], 'I')
-        self.assertEqual(cpu.R8, 15032381856L)
-        self.assertEqual(cpu.RIP, 140737351894505L)
+        self.assertEqual(cpu.R8, 15032381856)
+        self.assertEqual(cpu.RIP, 140737351894505)
 
     def test_MOVABS_3(self):
         ''' Instruction MOVABS_3
@@ -7136,8 +7136,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df143c], '\x00')
         self.assertEqual(mem[0x7ffff7df143d], '\x00')
         self.assertEqual(mem[0x7ffff7df143e], '\x80')
-        self.assertEqual(cpu.RCX, 9223372036854775808L)
-        self.assertEqual(cpu.RIP, 140737351980095L)
+        self.assertEqual(cpu.RCX, 9223372036854775808)
+        self.assertEqual(cpu.RIP, 140737351980095)
 
     def test_MOVABS_4(self):
         ''' Instruction MOVABS_4
@@ -7171,8 +7171,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x45f85a], '\xcc')
         self.assertEqual(mem[0x45f85b], '\xcc')
         self.assertEqual(mem[0x45f85c], '\xcc')
-        self.assertEqual(cpu.RDX, 14757395258967641293L)
-        self.assertEqual(cpu.RIP, 4585565L)
+        self.assertEqual(cpu.RDX, 14757395258967641293)
+        self.assertEqual(cpu.RIP, 4585565)
 
     def test_MOVABS_5(self):
         ''' Instruction MOVABS_5
@@ -7206,8 +7206,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df4637], '\xfe')
         self.assertEqual(mem[0x7ffff7df4638], '\xfe')
         self.assertEqual(mem[0x7ffff7df4639], '\xfe')
-        self.assertEqual(cpu.R8, 18374403900871474943L)
-        self.assertEqual(cpu.RIP, 140737351992890L)
+        self.assertEqual(cpu.R8, 18374403900871474943)
+        self.assertEqual(cpu.RIP, 140737351992890)
 
     def test_MOVABS_6(self):
         ''' Instruction MOVABS_6
@@ -7241,8 +7241,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ddc5e7], '\x00')
         self.assertEqual(mem[0x7ffff7ddc5e8], '\x00')
         self.assertEqual(mem[0x7ffff7ddc5df], 'I')
-        self.assertEqual(cpu.R8, 15032381856L)
-        self.assertEqual(cpu.RIP, 140737351894505L)
+        self.assertEqual(cpu.R8, 15032381856)
+        self.assertEqual(cpu.RIP, 140737351894505)
 
     def test_MOVDQA_1(self):
         ''' Instruction MOVDQA_1
@@ -7265,9 +7265,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0b0c], '\x0f')
         self.assertEqual(mem[0x7ffff7ac0b0d], 'o')
         self.assertEqual(mem[0x7ffff7ac0b0e], '\xe0')
-        self.assertEqual(cpu.XMM0, 129461857641668707752067115693843837733L)
-        self.assertEqual(cpu.XMM4, 129461857641668707752067115693843837733L)
-        self.assertEqual(cpu.RIP, 140737348635407L)
+        self.assertEqual(cpu.XMM0, 129461857641668707752067115693843837733)
+        self.assertEqual(cpu.XMM4, 129461857641668707752067115693843837733)
+        self.assertEqual(cpu.RIP, 140737348635407)
 
     def test_MOVDQA_2(self):
         ''' Instruction MOVDQA_2
@@ -7290,9 +7290,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457d39], '\x0f')
         self.assertEqual(mem[0x457d3a], 'o')
         self.assertEqual(mem[0x457d3b], '\xc2')
-        self.assertEqual(cpu.XMM2, 86799630564512926596007573190145487463L)
-        self.assertEqual(cpu.XMM0, 86799630564512926596007573190145487463L)
-        self.assertEqual(cpu.RIP, 4554044L)
+        self.assertEqual(cpu.XMM2, 86799630564512926596007573190145487463)
+        self.assertEqual(cpu.XMM0, 86799630564512926596007573190145487463)
+        self.assertEqual(cpu.RIP, 4554044)
 
     def test_MOVDQA_3(self):
         ''' Instruction MOVDQA_3
@@ -7315,9 +7315,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457ab1], 'o')
         self.assertEqual(mem[0x457ab2], '\xeb')
         self.assertEqual(mem[0x457aaf], 'f')
-        self.assertEqual(cpu.XMM3, 152110698530748498584558466992035428691L)
-        self.assertEqual(cpu.RIP, 4553395L)
-        self.assertEqual(cpu.XMM5, 152110698530748498584558466992035428691L)
+        self.assertEqual(cpu.XMM3, 152110698530748498584558466992035428691)
+        self.assertEqual(cpu.RIP, 4553395)
+        self.assertEqual(cpu.XMM5, 152110698530748498584558466992035428691)
 
     def test_MOVDQA_4(self):
         ''' Instruction MOVDQA_4
@@ -7375,9 +7375,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffe07d], 'P')
         self.assertEqual(mem[0x7fffffffe07e], 'A')
         self.assertEqual(mem[0x7fffffffe07f], 'T')
-        self.assertEqual(cpu.XMM2, 111994279734512279219280163309057165124L)
-        self.assertEqual(cpu.RDI, 140737488347200L)
-        self.assertEqual(cpu.RIP, 4553229L)
+        self.assertEqual(cpu.XMM2, 111994279734512279219280163309057165124)
+        self.assertEqual(cpu.RDI, 140737488347200)
+        self.assertEqual(cpu.RIP, 4553229)
 
     def test_MOVDQA_5(self):
         ''' Instruction MOVDQA_5
@@ -7400,9 +7400,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457b39], '\x0f')
         self.assertEqual(mem[0x457b3a], 'o')
         self.assertEqual(mem[0x457b3b], '\xc2')
-        self.assertEqual(cpu.XMM2, 106744563275012473217874926561820694528L)
-        self.assertEqual(cpu.XMM0, 106744563275012473217874926561820694528L)
-        self.assertEqual(cpu.RIP, 4553532L)
+        self.assertEqual(cpu.XMM2, 106744563275012473217874926561820694528)
+        self.assertEqual(cpu.XMM0, 106744563275012473217874926561820694528)
+        self.assertEqual(cpu.RIP, 4553532)
 
     def test_MOVDQA_6(self):
         ''' Instruction MOVDQA_6
@@ -7425,9 +7425,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0b0c], '\x0f')
         self.assertEqual(mem[0x7ffff7ac0b0d], 'o')
         self.assertEqual(mem[0x7ffff7ac0b0e], '\xe0')
-        self.assertEqual(cpu.XMM0, 272658687529688827910500737779280903936L)
-        self.assertEqual(cpu.XMM4, 272658687529688827910500737779280903936L)
-        self.assertEqual(cpu.RIP, 140737348635407L)
+        self.assertEqual(cpu.XMM0, 272658687529688827910500737779280903936)
+        self.assertEqual(cpu.XMM4, 272658687529688827910500737779280903936)
+        self.assertEqual(cpu.RIP, 140737348635407)
 
     def test_MOVDQU_1(self):
         ''' Instruction MOVDQU_1
@@ -7485,9 +7485,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccbd], '\x7f')
         self.assertEqual(mem[0x7fffffffccbe], '\x00')
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
-        self.assertEqual(cpu.XMM0, 2596108815186175128840666836140031L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 6976729L)
+        self.assertEqual(cpu.XMM0, 2596108815186175128840666836140031)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 6976729)
 
     def test_MOVDQU_2(self):
         ''' Instruction MOVDQU_2
@@ -7545,9 +7545,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccbd], 'V')
         self.assertEqual(mem[0x7fffffffccbe], '4')
         self.assertEqual(mem[0x7fffffffccbf], '\x12')
-        self.assertEqual(cpu.XMM0, 24197857155378316985685775704845997688L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5672881L)
+        self.assertEqual(cpu.XMM0, 24197857155378316985685775704845997688)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5672881)
 
     def test_MOVDQU_3(self):
         ''' Instruction MOVDQU_3
@@ -7607,9 +7607,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccc1], '\x7f')
         self.assertEqual(mem[0x7fffffffccc2], '\x00')
         self.assertEqual(mem[0x7fffffffccc3], '\x00')
-        self.assertEqual(cpu.XMM1, 2596069201105508292482224474849279L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 7293976L)
+        self.assertEqual(cpu.XMM1, 2596069201105508292482224474849279)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 7293976)
 
     def test_MOVDQU_4(self):
         ''' Instruction MOVDQU_4
@@ -7669,9 +7669,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x56fa53], 'L')
         self.assertEqual(mem[0x56fa54], '$')
         self.assertEqual(mem[0x56fa55], '\x04')
-        self.assertEqual(cpu.XMM1, 2577204095297418371658275618848L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5700182L)
+        self.assertEqual(cpu.XMM1, 2577204095297418371658275618848)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5700182)
 
     def test_MOVDQU_5(self):
         ''' Instruction MOVDQU_5
@@ -7731,9 +7731,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x60664c], 'L')
         self.assertEqual(mem[0x60664d], '$')
         self.assertEqual(mem[0x60664e], '\x04')
-        self.assertEqual(cpu.XMM1, 340282366841710905430466961972599455743L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 6317647L)
+        self.assertEqual(cpu.XMM1, 340282366841710905430466961972599455743)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 6317647)
 
     def test_MOVDQU_6(self):
         ''' Instruction MOVDQU_6
@@ -7791,9 +7791,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccbd], '\x00')
         self.assertEqual(mem[0x6fc91e], '\xf3')
         self.assertEqual(mem[0x6fc91f], '\x0f')
-        self.assertEqual(cpu.XMM0, 5110216482197719890898444091456L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 7325987L)
+        self.assertEqual(cpu.XMM0, 5110216482197719890898444091456)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 7325987)
 
     def test_MOVD_1(self):
         ''' Instruction MOVD_1
@@ -7817,8 +7817,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df4372], 'n')
         self.assertEqual(mem[0x7ffff7df4373], '\xce')
         self.assertEqual(cpu.XMM1, 47)
-        self.assertEqual(cpu.ESI, 47L)
-        self.assertEqual(cpu.RIP, 140737351992180L)
+        self.assertEqual(cpu.ESI, 47)
+        self.assertEqual(cpu.RIP, 140737351992180)
 
     def test_MOVD_2(self):
         ''' Instruction MOVD_2
@@ -7842,8 +7842,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab7982], 'n')
         self.assertEqual(mem[0x7ffff7ab7983], '\xce')
         self.assertEqual(cpu.XMM1, 47)
-        self.assertEqual(cpu.ESI, 47L)
-        self.assertEqual(cpu.RIP, 140737348598148L)
+        self.assertEqual(cpu.ESI, 47)
+        self.assertEqual(cpu.RIP, 140737348598148)
 
     def test_MOVD_3(self):
         ''' Instruction MOVD_3
@@ -7867,8 +7867,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4578e2], 'n')
         self.assertEqual(mem[0x4578e3], '\xce')
         self.assertEqual(cpu.XMM1, 47)
-        self.assertEqual(cpu.ESI, 47L)
-        self.assertEqual(cpu.RIP, 4552932L)
+        self.assertEqual(cpu.ESI, 47)
+        self.assertEqual(cpu.RIP, 4552932)
 
     def test_MOVD_4(self):
         ''' Instruction MOVD_4
@@ -7892,8 +7892,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x421b12], 'n')
         self.assertEqual(mem[0x421b13], '\xce')
         self.assertEqual(cpu.XMM1, 37)
-        self.assertEqual(cpu.ESI, 37L)
-        self.assertEqual(cpu.RIP, 4332308L)
+        self.assertEqual(cpu.ESI, 37)
+        self.assertEqual(cpu.RIP, 4332308)
 
     def test_MOVD_5(self):
         ''' Instruction MOVD_5
@@ -7917,8 +7917,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457da2], 'n')
         self.assertEqual(mem[0x457da3], '\xce')
         self.assertEqual(cpu.XMM1, 47)
-        self.assertEqual(cpu.ESI, 47L)
-        self.assertEqual(cpu.RIP, 4554148L)
+        self.assertEqual(cpu.ESI, 47)
+        self.assertEqual(cpu.RIP, 4554148)
 
     def test_MOVD_6(self):
         ''' Instruction MOVD_6
@@ -7942,8 +7942,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0ae2], 'n')
         self.assertEqual(mem[0x7ffff7ac0ae3], '\xce')
         self.assertEqual(cpu.XMM1, 37)
-        self.assertEqual(cpu.ESI, 37L)
-        self.assertEqual(cpu.RIP, 140737348635364L)
+        self.assertEqual(cpu.ESI, 37)
+        self.assertEqual(cpu.RIP, 140737348635364)
 
     def test_MOVLPD_1(self):
         ''' Instruction MOVLPD_1
@@ -7985,9 +7985,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x00')
-        self.assertEqual(cpu.XMM1, 10141204803006426833240792760384L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5305892L)
+        self.assertEqual(cpu.XMM1, 10141204803006426833240792760384)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5305892)
 
     def test_MOVLPD_2(self):
         ''' Instruction MOVLPD_2
@@ -8029,9 +8029,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x00')
-        self.assertEqual(cpu.XMM1, 179971562989262549322269247393805714209L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 4892822L)
+        self.assertEqual(cpu.XMM1, 179971562989262549322269247393805714209)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 4892822)
 
     def test_MOVLPD_3(self):
         ''' Instruction MOVLPD_3
@@ -8073,9 +8073,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x80')
-        self.assertEqual(cpu.XMM1, 340282366802096219719648217160606547966L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 4906892L)
+        self.assertEqual(cpu.XMM1, 340282366802096219719648217160606547966)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 4906892)
 
     def test_MOVLPD_4(self):
         ''' Instruction MOVLPD_4
@@ -8117,9 +8117,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x80')
-        self.assertEqual(cpu.XMM1, 2596108815186184352212566251962367L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 4902797L)
+        self.assertEqual(cpu.XMM1, 2596108815186184352212566251962367)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 4902797)
 
     def test_MOVLPD_5(self):
         ''' Instruction MOVLPD_5
@@ -8161,9 +8161,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x00')
-        self.assertEqual(cpu.XMM1, 2614529363561018951087389933600L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5284556L)
+        self.assertEqual(cpu.XMM1, 2614529363561018951087389933600)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5284556)
 
     def test_MOVLPD_6(self):
         ''' Instruction MOVLPD_6
@@ -8205,9 +8205,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x7f')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x00')
-        self.assertEqual(cpu.XMM1, 2596069201107260733309822636687359L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5080352L)
+        self.assertEqual(cpu.XMM1, 2596069201107260733309822636687359)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5080352)
 
     def test_MOVSD_1(self):
         ''' Instruction MOVSD_1
@@ -8261,10 +8261,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x55555576e63d], '\x00')
         self.assertEqual(mem[0x55555576e63e], '\x00')
         self.assertEqual(mem[0x55555576e63f], '\x00')
-        self.assertEqual(cpu.RCX, 17L)
-        self.assertEqual(cpu.RDI, 140737488346020L)
-        self.assertEqual(cpu.RSI, 93824994436668L)
-        self.assertEqual(cpu.RIP, 93824992243259L)
+        self.assertEqual(cpu.RCX, 17)
+        self.assertEqual(cpu.RDI, 140737488346020)
+        self.assertEqual(cpu.RSI, 93824994436668)
+        self.assertEqual(cpu.RIP, 93824992243259)
 
     def test_MOVSD_2(self):
         ''' Instruction MOVSD_2
@@ -8318,10 +8318,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x55555576e61d], '\x00')
         self.assertEqual(mem[0x55555576e61e], '\x00')
         self.assertEqual(mem[0x55555576e61f], '\x00')
-        self.assertEqual(cpu.RCX, 24L)
-        self.assertEqual(cpu.RDI, 140737488345992L)
-        self.assertEqual(cpu.RSI, 93824994436640L)
-        self.assertEqual(cpu.RIP, 93824992243259L)
+        self.assertEqual(cpu.RCX, 24)
+        self.assertEqual(cpu.RDI, 140737488345992)
+        self.assertEqual(cpu.RSI, 93824994436640)
+        self.assertEqual(cpu.RIP, 93824992243259)
 
     def test_MOVSD_3(self):
         ''' Instruction MOVSD_3
@@ -8375,10 +8375,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdbba], '\x00')
         self.assertEqual(mem[0x555555556e3b], '\xf3')
         self.assertEqual(mem[0x555555556e3c], '\xa5')
-        self.assertEqual(cpu.RCX, 12L)
-        self.assertEqual(cpu.RDI, 140737488346040L)
-        self.assertEqual(cpu.RSI, 93824994436688L)
-        self.assertEqual(cpu.RIP, 93824992243259L)
+        self.assertEqual(cpu.RCX, 12)
+        self.assertEqual(cpu.RDI, 140737488346040)
+        self.assertEqual(cpu.RSI, 93824994436688)
+        self.assertEqual(cpu.RIP, 93824992243259)
 
     def test_MOVSD_4(self):
         ''' Instruction MOVSD_4
@@ -8432,10 +8432,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdbaf], '\x00')
         self.assertEqual(mem[0x555555556e3b], '\xf3')
         self.assertEqual(mem[0x555555556e3c], '\xa5')
-        self.assertEqual(cpu.RCX, 15L)
-        self.assertEqual(cpu.RDI, 140737488346028L)
-        self.assertEqual(cpu.RSI, 93824994436676L)
-        self.assertEqual(cpu.RIP, 93824992243259L)
+        self.assertEqual(cpu.RCX, 15)
+        self.assertEqual(cpu.RDI, 140737488346028)
+        self.assertEqual(cpu.RSI, 93824994436676)
+        self.assertEqual(cpu.RIP, 93824992243259)
 
     def test_MOVSD_5(self):
         ''' Instruction MOVSD_5
@@ -8489,10 +8489,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdb9d], '\x00')
         self.assertEqual(mem[0x7fffffffdb9e], '\x00')
         self.assertEqual(mem[0x7fffffffdb9f], '\x00')
-        self.assertEqual(cpu.RCX, 18L)
-        self.assertEqual(cpu.RDI, 140737488346016L)
-        self.assertEqual(cpu.RSI, 93824994436664L)
-        self.assertEqual(cpu.RIP, 93824992243259L)
+        self.assertEqual(cpu.RCX, 18)
+        self.assertEqual(cpu.RDI, 140737488346016)
+        self.assertEqual(cpu.RSI, 93824994436664)
+        self.assertEqual(cpu.RIP, 93824992243259)
 
     def test_MOVSD_6(self):
         ''' Instruction MOVSD_6
@@ -8546,10 +8546,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdb73], '\xff')
         self.assertEqual(mem[0x555555556e3b], '\xf3')
         self.assertEqual(mem[0x555555556e3c], '\xa5')
-        self.assertEqual(cpu.RCX, 30L)
-        self.assertEqual(cpu.RDI, 140737488345968L)
-        self.assertEqual(cpu.RSI, 93824994436616L)
-        self.assertEqual(cpu.RIP, 93824992243259L)
+        self.assertEqual(cpu.RCX, 30)
+        self.assertEqual(cpu.RDI, 140737488345968)
+        self.assertEqual(cpu.RSI, 93824994436616)
+        self.assertEqual(cpu.RIP, 93824992243259)
 
     def test_MOVSXD_1(self):
         ''' Instruction MOVSXD_1
@@ -8570,9 +8570,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x466083], 'H')
         self.assertEqual(mem[0x466084], 'c')
         self.assertEqual(mem[0x466085], '\xff')
-        self.assertEqual(cpu.EDI, 65L)
-        self.assertEqual(cpu.RDI, 65L)
-        self.assertEqual(cpu.RIP, 4612230L)
+        self.assertEqual(cpu.EDI, 65)
+        self.assertEqual(cpu.RDI, 65)
+        self.assertEqual(cpu.RIP, 4612230)
 
     def test_MOVSXD_2(self):
         ''' Instruction MOVSXD_2
@@ -8605,10 +8605,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df5f1d], '\x91')
         self.assertEqual(mem[0x7ffff7df5f1e], '\xfe')
         self.assertEqual(mem[0x7ffff7df5f1f], '\xff')
-        self.assertEqual(cpu.R8, 140737351999260L)
-        self.assertEqual(cpu.RDX, 18446744073709457807L)
-        self.assertEqual(cpu.RIP, 140737351905388L)
-        self.assertEqual(cpu.RBX, 0L)
+        self.assertEqual(cpu.R8, 140737351999260)
+        self.assertEqual(cpu.RDX, 18446744073709457807)
+        self.assertEqual(cpu.RIP, 140737351905388)
+        self.assertEqual(cpu.RBX, 0)
 
     def test_MOVSXD_3(self):
         ''' Instruction MOVSXD_3
@@ -8640,9 +8640,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x436905], '\x82')
         self.assertEqual(mem[0x494cf3], '\xff')
         self.assertEqual(mem[0x494cf2], '\xfa')
-        self.assertEqual(cpu.RAX, 18446744073709165728L)
-        self.assertEqual(cpu.RIP, 4417798L)
-        self.assertEqual(cpu.RDX, 4803712L)
+        self.assertEqual(cpu.RAX, 18446744073709165728)
+        self.assertEqual(cpu.RIP, 4417798)
+        self.assertEqual(cpu.RDX, 4803712)
 
     def test_MOVSXD_4(self):
         ''' Instruction MOVSXD_4
@@ -8674,9 +8674,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df214d], '\x81')
         self.assertEqual(mem[0x7ffff7df674e], '\xff')
         self.assertEqual(mem[0x7ffff7df674d], '\xbb')
-        self.assertEqual(cpu.RCX, 140737352001344L)
-        self.assertEqual(cpu.RAX, 18446744073709534000L)
-        self.assertEqual(cpu.RIP, 140737351983438L)
+        self.assertEqual(cpu.RCX, 140737352001344)
+        self.assertEqual(cpu.RAX, 18446744073709534000)
+        self.assertEqual(cpu.RIP, 140737351983438)
 
     def test_MOVSXD_5(self):
         ''' Instruction MOVSXD_5
@@ -8708,9 +8708,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x436b15], '\x82')
         self.assertEqual(mem[0x436b13], 'c')
         self.assertEqual(mem[0x436b12], 'H')
-        self.assertEqual(cpu.RAX, 18446744073709165840L)
-        self.assertEqual(cpu.RIP, 4418326L)
-        self.assertEqual(cpu.RDX, 4804224L)
+        self.assertEqual(cpu.RAX, 18446744073709165840)
+        self.assertEqual(cpu.RIP, 4418326)
+        self.assertEqual(cpu.RDX, 4804224)
 
     def test_MOVSXD_6(self):
         ''' Instruction MOVSXD_6
@@ -8743,10 +8743,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de62ea], '\xa0')
         self.assertEqual(mem[0x7ffff7df645b], '\xff')
         self.assertEqual(mem[0x7ffff7df645a], '\xfe')
-        self.assertEqual(cpu.RAX, 140737352000576L)
-        self.assertEqual(cpu.R12, 6L)
-        self.assertEqual(cpu.RDX, 18446744073709485944L)
-        self.assertEqual(cpu.RIP, 140737351934699L)
+        self.assertEqual(cpu.RAX, 140737352000576)
+        self.assertEqual(cpu.R12, 6)
+        self.assertEqual(cpu.RDX, 18446744073709485944)
+        self.assertEqual(cpu.RIP, 140737351934699)
 
     def test_MOVSX_1(self):
         ''' Instruction MOVSX_1
@@ -8770,9 +8770,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df1274], '\xbe')
         self.assertEqual(mem[0x7ffff7df1275], '\x17')
         self.assertEqual(mem[0x555555554435], '.')
-        self.assertEqual(cpu.EDX, 46L)
-        self.assertEqual(cpu.RDI, 93824992232501L)
-        self.assertEqual(cpu.RIP, 140737351979638L)
+        self.assertEqual(cpu.EDX, 46)
+        self.assertEqual(cpu.RDI, 93824992232501)
+        self.assertEqual(cpu.RIP, 140737351979638)
 
     def test_MOVSX_2(self):
         ''' Instruction MOVSX_2
@@ -8796,9 +8796,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df1274], '\xbe')
         self.assertEqual(mem[0x7ffff7df1275], '\x17')
         self.assertEqual(mem[0x55555555444d], '.')
-        self.assertEqual(cpu.EDX, 46L)
-        self.assertEqual(cpu.RDI, 93824992232525L)
-        self.assertEqual(cpu.RIP, 140737351979638L)
+        self.assertEqual(cpu.EDX, 46)
+        self.assertEqual(cpu.RDI, 93824992232525)
+        self.assertEqual(cpu.RIP, 140737351979638)
 
     def test_MOVSX_3(self):
         ''' Instruction MOVSX_3
@@ -8822,9 +8822,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df1261], '\xbe')
         self.assertEqual(mem[0x7ffff7df1262], '\x06')
         self.assertEqual(mem[0x7ffff7ff23b6], 'l')
-        self.assertEqual(cpu.EAX, 108L)
-        self.assertEqual(cpu.RSI, 140737354081206L)
-        self.assertEqual(cpu.RIP, 140737351979619L)
+        self.assertEqual(cpu.EAX, 108)
+        self.assertEqual(cpu.RSI, 140737354081206)
+        self.assertEqual(cpu.RIP, 140737351979619)
 
     def test_MOVSX_4(self):
         ''' Instruction MOVSX_4
@@ -8848,9 +8848,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df1261], '\xbe')
         self.assertEqual(mem[0x7ffff7df1262], '\x06')
         self.assertEqual(mem[0x7ffff7fede8e], 'i')
-        self.assertEqual(cpu.EAX, 105L)
-        self.assertEqual(cpu.RSI, 140737354063502L)
-        self.assertEqual(cpu.RIP, 140737351979619L)
+        self.assertEqual(cpu.EAX, 105)
+        self.assertEqual(cpu.RSI, 140737354063502)
+        self.assertEqual(cpu.RIP, 140737351979619)
 
     def test_MOVSX_5(self):
         ''' Instruction MOVSX_5
@@ -8874,9 +8874,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df1261], '\xbe')
         self.assertEqual(mem[0x7ffff7df1262], '\x06')
         self.assertEqual(mem[0x7ffff7fede8f], 'b')
-        self.assertEqual(cpu.EAX, 98L)
-        self.assertEqual(cpu.RSI, 140737354063503L)
-        self.assertEqual(cpu.RIP, 140737351979619L)
+        self.assertEqual(cpu.EAX, 98)
+        self.assertEqual(cpu.RSI, 140737354063503)
+        self.assertEqual(cpu.RIP, 140737351979619)
 
     def test_MOVSX_6(self):
         ''' Instruction MOVSX_6
@@ -8900,9 +8900,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df1273], '\x0f')
         self.assertEqual(mem[0x7ffff7df1274], '\xbe')
         self.assertEqual(mem[0x7ffff7df1275], '\x17')
-        self.assertEqual(cpu.EDX, 99L)
-        self.assertEqual(cpu.RDI, 93824992232500L)
-        self.assertEqual(cpu.RIP, 140737351979638L)
+        self.assertEqual(cpu.EDX, 99)
+        self.assertEqual(cpu.RDI, 93824992232500)
+        self.assertEqual(cpu.RIP, 140737351979638)
 
     def test_MOVZX_1(self):
         ''' Instruction MOVZX_1
@@ -8928,9 +8928,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3aa4], '\xb6')
         self.assertEqual(mem[0x7ffff7de3aa5], 'Q')
         self.assertEqual(mem[0x7ffff7de3aa6], '\x04')
-        self.assertEqual(cpu.EDX, 17L)
-        self.assertEqual(cpu.RCX, 140737348052152L)
-        self.assertEqual(cpu.RIP, 140737351924391L)
+        self.assertEqual(cpu.EDX, 17)
+        self.assertEqual(cpu.RCX, 140737348052152)
+        self.assertEqual(cpu.RIP, 140737351924391)
 
     def test_MOVZX_2(self):
         ''' Instruction MOVZX_2
@@ -8954,9 +8954,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de439a], '\xb6')
         self.assertEqual(mem[0x7ffff7de439b], '\x11')
         self.assertEqual(mem[0x555555554e44], '_')
-        self.assertEqual(cpu.EDX, 95L)
-        self.assertEqual(cpu.RCX, 93824992235076L)
-        self.assertEqual(cpu.RIP, 140737351926684L)
+        self.assertEqual(cpu.EDX, 95)
+        self.assertEqual(cpu.RCX, 93824992235076)
+        self.assertEqual(cpu.RIP, 140737351926684)
 
     def test_MOVZX_3(self):
         ''' Instruction MOVZX_3
@@ -8977,9 +8977,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400aaa], '\x0f')
         self.assertEqual(mem[0x400aab], '\xb6')
         self.assertEqual(mem[0x400aac], '\xc0')
-        self.assertEqual(cpu.EAX, 121L)
-        self.assertEqual(cpu.AL, 121L)
-        self.assertEqual(cpu.RIP, 4197037L)
+        self.assertEqual(cpu.EAX, 121)
+        self.assertEqual(cpu.AL, 121)
+        self.assertEqual(cpu.RIP, 4197037)
 
     def test_MOVZX_4(self):
         ''' Instruction MOVZX_4
@@ -9009,9 +9009,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7b58f1c], '\x06')
         self.assertEqual(mem[0x7ffff7a3575e], '\x0b')
         self.assertEqual(mem[0x7ffff7a3575f], '\x00')
-        self.assertEqual(cpu.RDX, 140737348065112L)
-        self.assertEqual(cpu.RIP, 140737349259037L)
-        self.assertEqual(cpu.R10D, 11L)
+        self.assertEqual(cpu.RDX, 140737348065112)
+        self.assertEqual(cpu.RIP, 140737349259037)
+        self.assertEqual(cpu.R10D, 11)
 
     def test_MOVZX_5(self):
         ''' Instruction MOVZX_5
@@ -9034,9 +9034,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de621a], '\x0f')
         self.assertEqual(mem[0x7ffff7de621b], '\xb6')
         self.assertEqual(mem[0x7ffff7de621c], '\xc9')
-        self.assertEqual(cpu.R9D, 0L)
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 140737351934493L)
+        self.assertEqual(cpu.R9D, 0)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 140737351934493)
 
     def test_MOVZX_6(self):
         ''' Instruction MOVZX_6
@@ -9062,9 +9062,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de392a], '\xb6')
         self.assertEqual(mem[0x7ffff7de392b], 'M')
         self.assertEqual(mem[0x7ffff7de392c], '\x88')
-        self.assertEqual(cpu.RBP, 140737488345216L)
-        self.assertEqual(cpu.RIP, 140737351924013L)
-        self.assertEqual(cpu.ECX, 56L)
+        self.assertEqual(cpu.RBP, 140737488345216)
+        self.assertEqual(cpu.RIP, 140737351924013)
+        self.assertEqual(cpu.ECX, 56)
 
     def test_MOV_1(self):
         ''' Instruction MOV_1
@@ -9088,8 +9088,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x73728a], '\x00')
         self.assertEqual(mem[0x73728b], '\x00')
         self.assertEqual(mem[0x737287], '\xbb')
-        self.assertEqual(cpu.EBX, 64L)
-        self.assertEqual(cpu.RIP, 7565964L)
+        self.assertEqual(cpu.EBX, 64)
+        self.assertEqual(cpu.RIP, 7565964)
 
     def test_MOV_2(self):
         ''' Instruction MOV_2
@@ -9110,9 +9110,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6121], 'L')
         self.assertEqual(mem[0x7ffff7de6122], '\x89')
         self.assertEqual(mem[0x7ffff7de6123], '\xe8')
-        self.assertEqual(cpu.RAX, 140737348034560L)
-        self.assertEqual(cpu.RIP, 140737351934244L)
-        self.assertEqual(cpu.R13, 140737348034560L)
+        self.assertEqual(cpu.RAX, 140737348034560)
+        self.assertEqual(cpu.RIP, 140737351934244)
+        self.assertEqual(cpu.R13, 140737348034560)
 
     def test_MOV_3(self):
         ''' Instruction MOV_3
@@ -9149,8 +9149,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x74dcf2], '\x00')
         self.assertEqual(mem[0x7fffffffccb3], '\x00')
         self.assertEqual(mem[0x74dcf3], '\x00')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 7658740L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 7658740)
 
     def test_MOV_4(self):
         ''' Instruction MOV_4
@@ -9189,8 +9189,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb5], '\x00')
         self.assertEqual(mem[0x7fffffffccb6], '\x00')
         self.assertEqual(mem[0x7fffffffccb7], '\x00')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 4915428L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 4915428)
 
     def test_MOV_5(self):
         ''' Instruction MOV_5
@@ -9229,8 +9229,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb9], '\x00')
         self.assertEqual(mem[0x7fffffffccba], '\x00')
         self.assertEqual(mem[0x7fffffffccbb], '\x80')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 7829217L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 7829217)
 
     def test_MOV_6(self):
         ''' Instruction MOV_6
@@ -9269,8 +9269,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccbd], 'V')
         self.assertEqual(mem[0x7fffffffccbe], '4')
         self.assertEqual(mem[0x7fffffffccbf], '\x12')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 4995984L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 4995984)
 
     def test_MUL_1(self):
         ''' Instruction MUL_1
@@ -9294,10 +9294,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de2541], '\xe2')
         self.assertEqual(mem[0x7ffff7de253f], 'H')
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RAX, 19L)
+        self.assertEqual(cpu.RAX, 19)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351918914L)
-        self.assertEqual(cpu.RDX, 76L)
+        self.assertEqual(cpu.RIP, 140737351918914)
+        self.assertEqual(cpu.RDX, 76)
 
     def test_MUL_2(self):
         ''' Instruction MUL_2
@@ -9321,10 +9321,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de2541], '\xe2')
         self.assertEqual(mem[0x7ffff7de253f], 'H')
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RAX, 19L)
+        self.assertEqual(cpu.RAX, 19)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351918914L)
-        self.assertEqual(cpu.RDX, 76L)
+        self.assertEqual(cpu.RIP, 140737351918914)
+        self.assertEqual(cpu.RDX, 76)
 
     def test_MUL_3(self):
         ''' Instruction MUL_3
@@ -9348,10 +9348,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de2541], '\xe2')
         self.assertEqual(mem[0x7ffff7de253f], 'H')
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RAX, 19L)
+        self.assertEqual(cpu.RAX, 19)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351918914L)
-        self.assertEqual(cpu.RDX, 76L)
+        self.assertEqual(cpu.RIP, 140737351918914)
+        self.assertEqual(cpu.RDX, 76)
 
     def test_MUL_4(self):
         ''' Instruction MUL_4
@@ -9375,10 +9375,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x45f866], '\xf7')
         self.assertEqual(mem[0x45f867], '\xe2')
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RAX, 11068046444225730987L)
+        self.assertEqual(cpu.RAX, 11068046444225730987)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4585576L)
-        self.assertEqual(cpu.RDX, 69L)
+        self.assertEqual(cpu.RIP, 4585576)
+        self.assertEqual(cpu.RDX, 69)
 
     def test_MUL_5(self):
         ''' Instruction MUL_5
@@ -9402,10 +9402,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4624e6], '\xf7')
         self.assertEqual(mem[0x4624e7], '\xe2')
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RAX, 11068046444225730987L)
+        self.assertEqual(cpu.RAX, 11068046444225730987)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4596968L)
-        self.assertEqual(cpu.RDX, 69L)
+        self.assertEqual(cpu.RIP, 4596968)
+        self.assertEqual(cpu.RDX, 69)
 
     def test_MUL_6(self):
         ''' Instruction MUL_6
@@ -9429,12 +9429,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x443dc8], '\xf7')
         self.assertEqual(mem[0x443dc9], '\xe1')
         self.assertEqual(mem[0x443dc7], 'I')
-        self.assertEqual(cpu.RDX, 2L)
+        self.assertEqual(cpu.RDX, 2)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4472266L)
-        self.assertEqual(cpu.R9, 14757395258967641293L)
-        self.assertEqual(cpu.RAX, 7378697629483820647L)
+        self.assertEqual(cpu.RIP, 4472266)
+        self.assertEqual(cpu.R9, 14757395258967641293)
+        self.assertEqual(cpu.RAX, 7378697629483820647)
 
     def test_NEG_1(self):
         ''' Instruction NEG_1
@@ -9461,12 +9461,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df27d1], '\xd8')
         self.assertEqual(mem[0x7ffff7df27cf], 'H')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 18446603336355419272L)
+        self.assertEqual(cpu.RAX, 18446603336355419272)
         self.assertEqual(cpu.AF, True)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351985106L)
+        self.assertEqual(cpu.RIP, 140737351985106)
         self.assertEqual(cpu.SF, True)
 
     def test_NEG_2(self):
@@ -9494,12 +9494,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de5c55], '\xf7')
         self.assertEqual(mem[0x7ffff7de5c56], '\xd8')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RAX, 18446744073709547520L)
+        self.assertEqual(cpu.RAX, 18446744073709547520)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351933015L)
+        self.assertEqual(cpu.RIP, 140737351933015)
         self.assertEqual(cpu.SF, True)
 
     def test_NEG_3(self):
@@ -9524,13 +9524,13 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x40baad], '\xf7')
         self.assertEqual(mem[0x40baae], '\xd8')
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.EAX, 0)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4242095L)
+        self.assertEqual(cpu.RIP, 4242095)
         self.assertEqual(cpu.SF, False)
 
     def test_NEG_4(self):
@@ -9561,9 +9561,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, True)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RDI, 18446744073709551608L)
+        self.assertEqual(cpu.RDI, 18446744073709551608)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351985081L)
+        self.assertEqual(cpu.RIP, 140737351985081)
         self.assertEqual(cpu.SF, True)
 
     def test_NEG_5(self):
@@ -9591,12 +9591,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x411176], 'I')
         self.assertEqual(mem[0x411177], '\xf7')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.R10, 18446744073709547520L)
+        self.assertEqual(cpu.R10, 18446744073709547520)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4264313L)
+        self.assertEqual(cpu.RIP, 4264313)
         self.assertEqual(cpu.SF, True)
 
     def test_NEG_6(self):
@@ -9627,9 +9627,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, True)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RDI, 18446744073709551608L)
+        self.assertEqual(cpu.RDI, 18446744073709551608)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351985081L)
+        self.assertEqual(cpu.RIP, 140737351985081)
         self.assertEqual(cpu.SF, True)
 
     def test_NOT_1(self):
@@ -9650,8 +9650,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df144a], 'H')
         self.assertEqual(mem[0x7ffff7df144b], '\xf7')
         self.assertEqual(mem[0x7ffff7df144c], '\xd0')
-        self.assertEqual(cpu.RAX, 9223372036854775807L)
-        self.assertEqual(cpu.RIP, 140737351980109L)
+        self.assertEqual(cpu.RAX, 9223372036854775807)
+        self.assertEqual(cpu.RIP, 140737351980109)
 
     def test_NOT_2(self):
         ''' Instruction NOT_2
@@ -9669,8 +9669,8 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x4008f8], '\xd6')
         self.assertEqual(mem[0x4008f7], '\xf7')
-        self.assertEqual(cpu.ESI, 15L)
-        self.assertEqual(cpu.RIP, 4196601L)
+        self.assertEqual(cpu.ESI, 15)
+        self.assertEqual(cpu.RIP, 4196601)
 
     def test_NOT_3(self):
         ''' Instruction NOT_3
@@ -9690,8 +9690,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a78242], 'H')
         self.assertEqual(mem[0x7ffff7a78243], '\xf7')
         self.assertEqual(mem[0x7ffff7a78244], '\xd0')
-        self.assertEqual(cpu.RAX, 3L)
-        self.assertEqual(cpu.RIP, 140737348338245L)
+        self.assertEqual(cpu.RAX, 3)
+        self.assertEqual(cpu.RIP, 140737348338245)
 
     def test_NOT_4(self):
         ''' Instruction NOT_4
@@ -9711,8 +9711,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de5765], 'I')
         self.assertEqual(mem[0x7ffff7de5766], '\xf7')
         self.assertEqual(mem[0x7ffff7de5767], '\xd2')
-        self.assertEqual(cpu.R10, 0L)
-        self.assertEqual(cpu.RIP, 140737351931752L)
+        self.assertEqual(cpu.R10, 0)
+        self.assertEqual(cpu.RIP, 140737351931752)
 
     def test_NOT_5(self):
         ''' Instruction NOT_5
@@ -9732,8 +9732,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de5765], 'I')
         self.assertEqual(mem[0x7ffff7de5766], '\xf7')
         self.assertEqual(mem[0x7ffff7de5767], '\xd2')
-        self.assertEqual(cpu.R10, 0L)
-        self.assertEqual(cpu.RIP, 140737351931752L)
+        self.assertEqual(cpu.R10, 0)
+        self.assertEqual(cpu.RIP, 140737351931752)
 
     def test_NOT_6(self):
         ''' Instruction NOT_6
@@ -9753,8 +9753,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de5765], 'I')
         self.assertEqual(mem[0x7ffff7de5766], '\xf7')
         self.assertEqual(mem[0x7ffff7de5767], '\xd2')
-        self.assertEqual(cpu.R10, 0L)
-        self.assertEqual(cpu.RIP, 140737351931752L)
+        self.assertEqual(cpu.R10, 0)
+        self.assertEqual(cpu.RIP, 140737351931752)
 
     def test_OR_1(self):
         ''' Instruction OR_1
@@ -9780,13 +9780,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6235], 'A')
         self.assertEqual(mem[0x7ffff7de6236], '\t')
         self.assertEqual(mem[0x7ffff7de6237], '\xc1')
-        self.assertEqual(cpu.EAX, 0L)
-        self.assertEqual(cpu.R9D, 0L)
+        self.assertEqual(cpu.EAX, 0)
+        self.assertEqual(cpu.R9D, 0)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351934520L)
+        self.assertEqual(cpu.RIP, 140737351934520)
         self.assertEqual(cpu.SF, False)
 
     def test_OR_2(self):
@@ -9836,9 +9836,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926601L)
+        self.assertEqual(cpu.RIP, 140737351926601)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RSP, 140737488341280L)
+        self.assertEqual(cpu.RSP, 140737488341280)
         self.assertEqual(cpu.SF, False)
 
     def test_OR_3(self):
@@ -9888,9 +9888,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351923737L)
+        self.assertEqual(cpu.RIP, 140737351923737)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RSP, 140737488340880L)
+        self.assertEqual(cpu.RSP, 140737488340880)
         self.assertEqual(cpu.SF, False)
 
     def test_OR_4(self):
@@ -9940,9 +9940,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351923737L)
+        self.assertEqual(cpu.RIP, 140737351923737)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RSP, 140737488340880L)
+        self.assertEqual(cpu.RSP, 140737488340880)
         self.assertEqual(cpu.SF, False)
 
     def test_OR_5(self):
@@ -9992,9 +9992,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4236177L)
+        self.assertEqual(cpu.RIP, 4236177)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.RSP, 140737488341760L)
+        self.assertEqual(cpu.RSP, 140737488341760)
         self.assertEqual(cpu.SF, False)
 
     def test_OR_6(self):
@@ -10021,13 +10021,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6212], 'A')
         self.assertEqual(mem[0x7ffff7de6213], '\t')
         self.assertEqual(mem[0x7ffff7de6214], '\xc1')
-        self.assertEqual(cpu.EAX, 4294967040L)
-        self.assertEqual(cpu.R9D, 4294967040L)
+        self.assertEqual(cpu.EAX, 4294967040)
+        self.assertEqual(cpu.R9D, 4294967040)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351934485L)
+        self.assertEqual(cpu.RIP, 140737351934485)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPEQB_1(self):
@@ -10052,7 +10052,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457e14], 't')
         self.assertEqual(mem[0x457e15], '\xea')
         self.assertEqual(cpu.XMM2, 0)
-        self.assertEqual(cpu.RIP, 4554262L)
+        self.assertEqual(cpu.RIP, 4554262)
         self.assertEqual(cpu.XMM5, 0)
 
     def test_PCMPEQB_2(self):
@@ -10080,7 +10080,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4184bf], 'f')
         self.assertEqual(cpu.XMM12, 0)
         self.assertEqual(cpu.XMM8, 0)
-        self.assertEqual(cpu.RIP, 4293828L)
+        self.assertEqual(cpu.RIP, 4293828)
 
     def test_PCMPEQB_3(self):
         ''' Instruction PCMPEQB_3
@@ -10103,9 +10103,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457a29], '\xc7')
         self.assertEqual(mem[0x457a26], 'f')
         self.assertEqual(mem[0x457a27], '\x0f')
-        self.assertEqual(cpu.XMM0, 1324035698927585248728409418697277440L)
+        self.assertEqual(cpu.XMM0, 1324035698927585248728409418697277440)
         self.assertEqual(cpu.XMM7, 0)
-        self.assertEqual(cpu.RIP, 4553258L)
+        self.assertEqual(cpu.RIP, 4553258)
 
     def test_PCMPEQB_4(self):
         ''' Instruction PCMPEQB_4
@@ -10128,9 +10128,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4579e9], '\x0f')
         self.assertEqual(mem[0x4579ea], 't')
         self.assertEqual(mem[0x4579eb], '\xc1')
-        self.assertEqual(cpu.XMM0, 338953138925154751793923932131017359615L)
-        self.assertEqual(cpu.XMM1, 62718710765820030520700417840365121327L)
-        self.assertEqual(cpu.RIP, 4553196L)
+        self.assertEqual(cpu.XMM0, 338953138925154751793923932131017359615)
+        self.assertEqual(cpu.XMM1, 62718710765820030520700417840365121327)
+        self.assertEqual(cpu.RIP, 4553196)
 
     def test_PCMPEQB_5(self):
         ''' Instruction PCMPEQB_5
@@ -10153,9 +10153,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab7ac9], '\xc7')
         self.assertEqual(mem[0x7ffff7ab7ac6], 'f')
         self.assertEqual(mem[0x7ffff7ab7ac7], '\x0f')
-        self.assertEqual(cpu.XMM0, 338953138925461823674472811186503024640L)
+        self.assertEqual(cpu.XMM0, 338953138925461823674472811186503024640)
         self.assertEqual(cpu.XMM7, 0)
-        self.assertEqual(cpu.RIP, 140737348598474L)
+        self.assertEqual(cpu.RIP, 140737348598474)
 
     def test_PCMPEQB_6(self):
         ''' Instruction PCMPEQB_6
@@ -10178,9 +10178,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab79b2], '\x0f')
         self.assertEqual(mem[0x7ffff7ab79b3], 't')
         self.assertEqual(mem[0x7ffff7ab79b4], '\xc1')
-        self.assertEqual(cpu.XMM0, 20203181441137406366729172418815L)
-        self.assertEqual(cpu.XMM1, 62718710765820030520700417840365121327L)
-        self.assertEqual(cpu.RIP, 140737348598197L)
+        self.assertEqual(cpu.XMM0, 20203181441137406366729172418815)
+        self.assertEqual(cpu.XMM1, 62718710765820030520700417840365121327)
+        self.assertEqual(cpu.RIP, 140737348598197)
 
     def test_PMINUB_1(self):
         ''' Instruction PMINUB_1
@@ -10240,9 +10240,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x41b162], '\xda')
         self.assertEqual(mem[0x41b163], '@')
         self.assertEqual(mem[0x41b164], '\x10')
-        self.assertEqual(cpu.XMM8, 42702100946941193483733406035713466400L)
-        self.assertEqual(cpu.RAX, 4801152L)
-        self.assertEqual(cpu.RIP, 4305253L)
+        self.assertEqual(cpu.XMM8, 42702100946941193483733406035713466400)
+        self.assertEqual(cpu.RAX, 4801152)
+        self.assertEqual(cpu.RIP, 4305253)
 
     def test_PMINUB_2(self):
         ''' Instruction PMINUB_2
@@ -10302,9 +10302,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4942fd], ' ')
         self.assertEqual(mem[0x4942fe], ' ')
         self.assertEqual(mem[0x4942ff], '_')
-        self.assertEqual(cpu.XMM8, 42702100946941297375796029167539068960L)
-        self.assertEqual(cpu.RAX, 4801152L)
-        self.assertEqual(cpu.RIP, 4305224L)
+        self.assertEqual(cpu.XMM8, 42702100946941297375796029167539068960)
+        self.assertEqual(cpu.RAX, 4801152)
+        self.assertEqual(cpu.RIP, 4305224)
 
     def test_PMINUB_3(self):
         ''' Instruction PMINUB_3
@@ -10327,9 +10327,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457af9], '\xc2')
         self.assertEqual(mem[0x457af6], 'f')
         self.assertEqual(mem[0x457af7], '\x0f')
-        self.assertEqual(cpu.XMM2, 106744563275012473217874926561820694528L)
-        self.assertEqual(cpu.XMM0, 66867723401463788104917456226191955968L)
-        self.assertEqual(cpu.RIP, 4553466L)
+        self.assertEqual(cpu.XMM2, 106744563275012473217874926561820694528)
+        self.assertEqual(cpu.XMM0, 66867723401463788104917456226191955968)
+        self.assertEqual(cpu.RIP, 4553466)
 
     def test_PMINUB_4(self):
         ''' Instruction PMINUB_4
@@ -10389,9 +10389,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4941ed], 't')
         self.assertEqual(mem[0x4941ee], 'e')
         self.assertEqual(mem[0x4941ef], 'm')
-        self.assertEqual(cpu.XMM8, 131761822365339956131716016926609334560L)
-        self.assertEqual(cpu.RAX, 4800896L)
-        self.assertEqual(cpu.RIP, 4305218L)
+        self.assertEqual(cpu.XMM8, 131761822365339956131716016926609334560)
+        self.assertEqual(cpu.RAX, 4800896)
+        self.assertEqual(cpu.RIP, 4305218)
 
     def test_PMINUB_5(self):
         ''' Instruction PMINUB_5
@@ -10414,9 +10414,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457ee3], '\x0f')
         self.assertEqual(mem[0x457ee4], '\xda')
         self.assertEqual(mem[0x457ee5], '\xc5')
-        self.assertEqual(cpu.XMM0, 102351554371899083128134245349023967075L)
-        self.assertEqual(cpu.RIP, 4554470L)
-        self.assertEqual(cpu.XMM5, 134876510559778439374245404375482789731L)
+        self.assertEqual(cpu.XMM0, 102351554371899083128134245349023967075)
+        self.assertEqual(cpu.RIP, 4554470)
+        self.assertEqual(cpu.XMM5, 134876510559778439374245404375482789731)
 
     def test_PMINUB_6(self):
         ''' Instruction PMINUB_6
@@ -10439,9 +10439,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab7ac1], '\xc4')
         self.assertEqual(mem[0x7ffff7ab7abe], 'f')
         self.assertEqual(mem[0x7ffff7ab7abf], '\x0f')
-        self.assertEqual(cpu.XMM0, 261200618430042665518031405314425944L)
-        self.assertEqual(cpu.XMM4, 152136634193178674532939302896952962401L)
-        self.assertEqual(cpu.RIP, 140737348598466L)
+        self.assertEqual(cpu.XMM0, 261200618430042665518031405314425944)
+        self.assertEqual(cpu.XMM4, 152136634193178674532939302896952962401)
+        self.assertEqual(cpu.RIP, 140737348598466)
 
     def test_PMOVMSKB_1(self):
         ''' Instruction PMOVMSKB_1
@@ -10467,8 +10467,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4184f4], '\xd7')
         self.assertEqual(mem[0x4184f5], '\xcb')
         self.assertEqual(cpu.XMM11, 0)
-        self.assertEqual(cpu.RIP, 4293878L)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.RIP, 4293878)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PMOVMSKB_2(self):
         ''' Instruction PMOVMSKB_2
@@ -10493,9 +10493,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457d72], '\xd3')
         self.assertEqual(mem[0x457d6e], 'f')
         self.assertEqual(mem[0x457d6f], 'D')
-        self.assertEqual(cpu.XMM3, 5172014448935879877845345013596160L)
-        self.assertEqual(cpu.RIP, 4554099L)
-        self.assertEqual(cpu.R10D, 8448L)
+        self.assertEqual(cpu.XMM3, 5172014448935879877845345013596160)
+        self.assertEqual(cpu.RIP, 4554099)
+        self.assertEqual(cpu.R10D, 8448)
 
     def test_PMOVMSKB_3(self):
         ''' Instruction PMOVMSKB_3
@@ -10519,8 +10519,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457dde], '\x0f')
         self.assertEqual(mem[0x457ddf], '\xd7')
         self.assertEqual(cpu.XMM3, 0)
-        self.assertEqual(cpu.EDX, 0L)
-        self.assertEqual(cpu.RIP, 4554209L)
+        self.assertEqual(cpu.EDX, 0)
+        self.assertEqual(cpu.RIP, 4554209)
 
     def test_PMOVMSKB_4(self):
         ''' Instruction PMOVMSKB_4
@@ -10545,9 +10545,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab5ce3], '\x0f')
         self.assertEqual(mem[0x7ffff7ab5ce4], '\xd7')
         self.assertEqual(mem[0x7ffff7ab5ce5], '\xcb')
-        self.assertEqual(cpu.XMM11, 340282346638528859830150926458714849280L)
-        self.assertEqual(cpu.RIP, 140737348590822L)
-        self.assertEqual(cpu.ECX, 57568L)
+        self.assertEqual(cpu.XMM11, 340282346638528859830150926458714849280)
+        self.assertEqual(cpu.RIP, 140737348590822)
+        self.assertEqual(cpu.ECX, 57568)
 
     def test_PMOVMSKB_5(self):
         ''' Instruction PMOVMSKB_5
@@ -10572,9 +10572,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4184ea], '\xd7')
         self.assertEqual(mem[0x4184eb], '\xd1')
         self.assertEqual(mem[0x4184e7], 'f')
-        self.assertEqual(cpu.EDX, 8192L)
-        self.assertEqual(cpu.XMM9, 5172014448931175958106549077934080L)
-        self.assertEqual(cpu.RIP, 4293868L)
+        self.assertEqual(cpu.EDX, 8192)
+        self.assertEqual(cpu.XMM9, 5172014448931175958106549077934080)
+        self.assertEqual(cpu.RIP, 4293868)
 
     def test_PMOVMSKB_6(self):
         ''' Instruction PMOVMSKB_6
@@ -10599,9 +10599,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4184c5], 'A')
         self.assertEqual(mem[0x4184c6], '\x0f')
         self.assertEqual(mem[0x4184c7], '\xd7')
-        self.assertEqual(cpu.EDX, 0L)
+        self.assertEqual(cpu.EDX, 0)
         self.assertEqual(cpu.XMM12, 0)
-        self.assertEqual(cpu.RIP, 4293833L)
+        self.assertEqual(cpu.RIP, 4293833)
 
     def test_POP_1(self):
         ''' Instruction POP_1
@@ -10653,9 +10653,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd87d], '\x7f')
         self.assertEqual(mem[0x7fffffffd87e], '\x00')
         self.assertEqual(mem[0x7fffffffd87f], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345224L)
-        self.assertEqual(cpu.RIP, 140737351924492L)
-        self.assertEqual(cpu.RBP, 140737488345520L)
+        self.assertEqual(cpu.RSP, 140737488345224)
+        self.assertEqual(cpu.RIP, 140737351924492)
+        self.assertEqual(cpu.RBP, 140737488345520)
 
     def test_POP_2(self):
         ''' Instruction POP_2
@@ -10710,10 +10710,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffda17], '\x00')
         self.assertEqual(mem[0x7fffffffda18], '`')
         self.assertEqual(mem[0x7ffff7dea3ad], 'A')
-        self.assertEqual(cpu.R14, 140737488345648L)
-        self.assertEqual(cpu.RSP, 140737488345624L)
-        self.assertEqual(cpu.RIP, 140737351951279L)
-        self.assertEqual(cpu.RBP, 140737488345632L)
+        self.assertEqual(cpu.R14, 140737488345648)
+        self.assertEqual(cpu.RSP, 140737488345624)
+        self.assertEqual(cpu.RIP, 140737351951279)
+        self.assertEqual(cpu.RBP, 140737488345632)
 
     def test_POP_3(self):
         ''' Instruction POP_3
@@ -10768,10 +10768,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdafd], '\x00')
         self.assertEqual(mem[0x7fffffffdafe], '\x00')
         self.assertEqual(mem[0x4624e5], '\\')
-        self.assertEqual(cpu.R12, 7066696L)
-        self.assertEqual(cpu.RSP, 140737488345864L)
-        self.assertEqual(cpu.RIP, 4596966L)
-        self.assertEqual(cpu.RBP, 140737488345888L)
+        self.assertEqual(cpu.R12, 7066696)
+        self.assertEqual(cpu.RSP, 140737488345864)
+        self.assertEqual(cpu.RIP, 4596966)
+        self.assertEqual(cpu.RBP, 140737488345888)
 
     def test_POP_4(self):
         ''' Instruction POP_4
@@ -10824,10 +10824,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccaf], '\x00')
         self.assertEqual(mem[0x7fffffffccb0], '@')
         self.assertEqual(mem[0x6ff233], 'Z')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RDX, 1L)
-        self.assertEqual(cpu.RIP, 7336500L)
-        self.assertEqual(cpu.RBP, 0L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RDX, 1)
+        self.assertEqual(cpu.RIP, 7336500)
+        self.assertEqual(cpu.RBP, 0)
 
     def test_POP_5(self):
         ''' Instruction POP_5
@@ -10880,10 +10880,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccaf], '\x00')
         self.assertEqual(mem[0x7fffffffccb0], '\x00')
         self.assertEqual(mem[0x7fffffffccaa], '\x00')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RDX, 2147483648L)
-        self.assertEqual(cpu.RIP, 6500235L)
-        self.assertEqual(cpu.RBP, 0L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RDX, 2147483648)
+        self.assertEqual(cpu.RIP, 6500235)
+        self.assertEqual(cpu.RBP, 0)
 
     def test_POP_6(self):
         ''' Instruction POP_6
@@ -10936,10 +10936,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccaf], '\x00')
         self.assertEqual(mem[0x7fffffffccb0], '@')
         self.assertEqual(mem[0x737db3], 'Z')
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RDX, 65280L)
-        self.assertEqual(cpu.RIP, 7568820L)
-        self.assertEqual(cpu.RBP, 0L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RDX, 65280)
+        self.assertEqual(cpu.RIP, 7568820)
+        self.assertEqual(cpu.RBP, 0)
 
     def test_POR_1(self):
         ''' Instruction POR_1
@@ -10964,7 +10964,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df43a7], 'f')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM4, 0)
-        self.assertEqual(cpu.RIP, 140737351992235L)
+        self.assertEqual(cpu.RIP, 140737351992235)
 
     def test_POR_2(self):
         ''' Instruction POR_2
@@ -10989,7 +10989,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df43a7], 'f')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM4, 0)
-        self.assertEqual(cpu.RIP, 140737351992235L)
+        self.assertEqual(cpu.RIP, 140737351992235)
 
     def test_POR_3(self):
         ''' Instruction POR_3
@@ -11012,9 +11012,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df43a9], '\xeb')
         self.assertEqual(mem[0x7ffff7df43aa], '\xc4')
         self.assertEqual(mem[0x7ffff7df43a7], 'f')
-        self.assertEqual(cpu.XMM0, 1324035698927585248728408323480616960L)
-        self.assertEqual(cpu.XMM4, 1324035698927585248728408323480616960L)
-        self.assertEqual(cpu.RIP, 140737351992235L)
+        self.assertEqual(cpu.XMM0, 1324035698927585248728408323480616960)
+        self.assertEqual(cpu.XMM4, 1324035698927585248728408323480616960)
+        self.assertEqual(cpu.RIP, 140737351992235)
 
     def test_POR_4(self):
         ''' Instruction POR_4
@@ -11039,7 +11039,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df43a7], 'f')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM4, 0)
-        self.assertEqual(cpu.RIP, 140737351992235L)
+        self.assertEqual(cpu.RIP, 140737351992235)
 
     def test_POR_5(self):
         ''' Instruction POR_5
@@ -11064,7 +11064,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df4415], '\xc3')
         self.assertEqual(cpu.XMM3, 71776119061217280)
         self.assertEqual(cpu.XMM0, 71776119061217280)
-        self.assertEqual(cpu.RIP, 140737351992342L)
+        self.assertEqual(cpu.RIP, 140737351992342)
 
     def test_POR_6(self):
         ''' Instruction POR_6
@@ -11089,7 +11089,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0b17], 'f')
         self.assertEqual(cpu.XMM0, 72057589742960895)
         self.assertEqual(cpu.XMM4, 72057589742960895)
-        self.assertEqual(cpu.RIP, 140737348635419L)
+        self.assertEqual(cpu.RIP, 140737348635419)
 
     def test_PSHUFD_1(self):
         ''' Instruction PSHUFD_1
@@ -11113,8 +11113,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0afa], 'p')
         self.assertEqual(mem[0x7ffff7ac0afb], '\xc9')
         self.assertEqual(mem[0x7ffff7ac0afc], '\x00')
-        self.assertEqual(cpu.XMM1, 49374304219900875090764158725393818917L)
-        self.assertEqual(cpu.RIP, 140737348635389L)
+        self.assertEqual(cpu.XMM1, 49374304219900875090764158725393818917)
+        self.assertEqual(cpu.RIP, 140737348635389)
 
     def test_PSHUFD_2(self):
         ''' Instruction PSHUFD_2
@@ -11138,8 +11138,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0afa], 'p')
         self.assertEqual(mem[0x7ffff7ac0afb], '\xc9')
         self.assertEqual(mem[0x7ffff7ac0afc], '\x00')
-        self.assertEqual(cpu.XMM1, 49374304219900875090764158725393818917L)
-        self.assertEqual(cpu.RIP, 140737348635389L)
+        self.assertEqual(cpu.XMM1, 49374304219900875090764158725393818917)
+        self.assertEqual(cpu.RIP, 140737348635389)
 
     def test_PSHUFD_3(self):
         ''' Instruction PSHUFD_3
@@ -11163,8 +11163,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df438a], 'p')
         self.assertEqual(mem[0x7ffff7df438b], '\xc9')
         self.assertEqual(mem[0x7ffff7df438c], '\x00')
-        self.assertEqual(cpu.XMM1, 48039863565308959547770532813896688676L)
-        self.assertEqual(cpu.RIP, 140737351992205L)
+        self.assertEqual(cpu.XMM1, 48039863565308959547770532813896688676)
+        self.assertEqual(cpu.RIP, 140737351992205)
 
     def test_PSHUFD_4(self):
         ''' Instruction PSHUFD_4
@@ -11188,8 +11188,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab799c], 'p')
         self.assertEqual(mem[0x7ffff7ab799d], '\xc9')
         self.assertEqual(mem[0x7ffff7ab799e], '\x00')
-        self.assertEqual(cpu.XMM1, 62718710765820030520700417840365121327L)
-        self.assertEqual(cpu.RIP, 140737348598175L)
+        self.assertEqual(cpu.XMM1, 62718710765820030520700417840365121327)
+        self.assertEqual(cpu.RIP, 140737348598175)
 
     def test_PSHUFD_5(self):
         ''' Instruction PSHUFD_5
@@ -11213,8 +11213,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df438a], 'p')
         self.assertEqual(mem[0x7ffff7df438b], '\xc9')
         self.assertEqual(mem[0x7ffff7df438c], '\x00')
-        self.assertEqual(cpu.XMM1, 48039863565308959547770532813896688676L)
-        self.assertEqual(cpu.RIP, 140737351992205L)
+        self.assertEqual(cpu.XMM1, 48039863565308959547770532813896688676)
+        self.assertEqual(cpu.RIP, 140737351992205)
 
     def test_PSHUFD_6(self):
         ''' Instruction PSHUFD_6
@@ -11238,8 +11238,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ab799c], 'p')
         self.assertEqual(mem[0x7ffff7ab799d], '\xc9')
         self.assertEqual(mem[0x7ffff7ab799e], '\x00')
-        self.assertEqual(cpu.XMM1, 62718710765820030520700417840365121327L)
-        self.assertEqual(cpu.RIP, 140737348598175L)
+        self.assertEqual(cpu.XMM1, 62718710765820030520700417840365121327)
+        self.assertEqual(cpu.RIP, 140737348598175)
 
     def test_PUNPCKLBW_1(self):
         ''' Instruction PUNPCKLBW_1
@@ -11262,7 +11262,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df437d], '`')
         self.assertEqual(mem[0x7ffff7df437e], '\xc9')
         self.assertEqual(cpu.XMM1, 9252)
-        self.assertEqual(cpu.RIP, 140737351992191L)
+        self.assertEqual(cpu.RIP, 140737351992191)
 
     def test_PUNPCKLBW_2(self):
         ''' Instruction PUNPCKLBW_2
@@ -11285,7 +11285,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0aed], '`')
         self.assertEqual(mem[0x7ffff7ac0aee], '\xc9')
         self.assertEqual(cpu.XMM1, 9509)
-        self.assertEqual(cpu.RIP, 140737348635375L)
+        self.assertEqual(cpu.RIP, 140737348635375)
 
     def test_PUNPCKLBW_3(self):
         ''' Instruction PUNPCKLBW_3
@@ -11308,7 +11308,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0aed], '`')
         self.assertEqual(mem[0x7ffff7ac0aee], '\xc9')
         self.assertEqual(cpu.XMM1, 9509)
-        self.assertEqual(cpu.RIP, 140737348635375L)
+        self.assertEqual(cpu.RIP, 140737348635375)
 
     def test_PUNPCKLBW_4(self):
         ''' Instruction PUNPCKLBW_4
@@ -11331,7 +11331,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4579ce], '`')
         self.assertEqual(mem[0x4579cf], '\xc9')
         self.assertEqual(cpu.XMM1, 12079)
-        self.assertEqual(cpu.RIP, 4553168L)
+        self.assertEqual(cpu.RIP, 4553168)
 
     def test_PUNPCKLBW_5(self):
         ''' Instruction PUNPCKLBW_5
@@ -11354,7 +11354,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x45794e], '`')
         self.assertEqual(mem[0x45794f], '\xc9')
         self.assertEqual(cpu.XMM1, 12079)
-        self.assertEqual(cpu.RIP, 4553040L)
+        self.assertEqual(cpu.RIP, 4553040)
 
     def test_PUNPCKLBW_6(self):
         ''' Instruction PUNPCKLBW_6
@@ -11377,7 +11377,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df437d], '`')
         self.assertEqual(mem[0x7ffff7df437e], '\xc9')
         self.assertEqual(cpu.XMM1, 9252)
-        self.assertEqual(cpu.RIP, 140737351992191L)
+        self.assertEqual(cpu.RIP, 140737351992191)
 
     def test_PUNPCKLWD_1(self):
         ''' Instruction PUNPCKLWD_1
@@ -11400,7 +11400,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x457a46], 'f')
         self.assertEqual(mem[0x457a47], '\x0f')
         self.assertEqual(cpu.XMM1, 791621423)
-        self.assertEqual(cpu.RIP, 4553290L)
+        self.assertEqual(cpu.RIP, 4553290)
 
     def test_PUNPCKLWD_2(self):
         ''' Instruction PUNPCKLWD_2
@@ -11423,7 +11423,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x421b26], 'a')
         self.assertEqual(mem[0x421b27], '\xc9')
         self.assertEqual(cpu.XMM1, 623191333)
-        self.assertEqual(cpu.RIP, 4332328L)
+        self.assertEqual(cpu.RIP, 4332328)
 
     def test_PUNPCKLWD_3(self):
         ''' Instruction PUNPCKLWD_3
@@ -11446,7 +11446,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df4386], 'a')
         self.assertEqual(mem[0x7ffff7df4387], '\xc9')
         self.assertEqual(cpu.XMM1, 606348324)
-        self.assertEqual(cpu.RIP, 140737351992200L)
+        self.assertEqual(cpu.RIP, 140737351992200)
 
     def test_PUNPCKLWD_4(self):
         ''' Instruction PUNPCKLWD_4
@@ -11469,7 +11469,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df4386], 'a')
         self.assertEqual(mem[0x7ffff7df4387], '\xc9')
         self.assertEqual(cpu.XMM1, 606348324)
-        self.assertEqual(cpu.RIP, 140737351992200L)
+        self.assertEqual(cpu.RIP, 140737351992200)
 
     def test_PUNPCKLWD_5(self):
         ''' Instruction PUNPCKLWD_5
@@ -11492,7 +11492,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x45a576], 'f')
         self.assertEqual(mem[0x45a577], '\x0f')
         self.assertEqual(cpu.XMM1, 791621423)
-        self.assertEqual(cpu.RIP, 4564346L)
+        self.assertEqual(cpu.RIP, 4564346)
 
     def test_PUNPCKLWD_6(self):
         ''' Instruction PUNPCKLWD_6
@@ -11515,7 +11515,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ac0af6], 'a')
         self.assertEqual(mem[0x7ffff7ac0af7], '\xc9')
         self.assertEqual(cpu.XMM1, 623191333)
-        self.assertEqual(cpu.RIP, 140737348635384L)
+        self.assertEqual(cpu.RIP, 140737348635384)
 
     def test_PUSH_1(self):
         ''' Instruction PUSH_1
@@ -11570,10 +11570,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd79d], '\x7f')
         self.assertEqual(mem[0x7fffffffd79e], '\x00')
         self.assertEqual(mem[0x7fffffffd79f], '\x00')
-        self.assertEqual(cpu.R12, 140737354102360L)
-        self.assertEqual(cpu.RSP, 140737488344976L)
-        self.assertEqual(cpu.RIP, 140737351925884L)
-        self.assertEqual(cpu.RBP, 140737488345200L)
+        self.assertEqual(cpu.R12, 140737354102360)
+        self.assertEqual(cpu.RSP, 140737488344976)
+        self.assertEqual(cpu.RIP, 140737351925884)
+        self.assertEqual(cpu.RBP, 140737488345200)
 
     def test_PUSH_2(self):
         ''' Instruction PUSH_2
@@ -11633,9 +11633,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x722548], '\xff')
         self.assertEqual(mem[0x722549], '\x00')
         self.assertEqual(mem[0x72254a], '\x00')
-        self.assertEqual(cpu.RSP, 140737488342184L)
-        self.assertEqual(cpu.RIP, 7480651L)
-        self.assertEqual(cpu.RBP, 0L)
+        self.assertEqual(cpu.RSP, 140737488342184)
+        self.assertEqual(cpu.RIP, 7480651)
+        self.assertEqual(cpu.RBP, 0)
 
     def test_PUSH_3(self):
         ''' Instruction PUSH_3
@@ -11695,9 +11695,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x744c40], '\xaa')
         self.assertEqual(mem[0x744c41], '\x00')
         self.assertEqual(mem[0x744c42], '\x0f')
-        self.assertEqual(cpu.RSP, 140737488342184L)
-        self.assertEqual(cpu.RIP, 7621699L)
-        self.assertEqual(cpu.RBP, 0L)
+        self.assertEqual(cpu.RSP, 140737488342184)
+        self.assertEqual(cpu.RIP, 7621699)
+        self.assertEqual(cpu.RBP, 0)
 
     def test_PUSH_4(self):
         ''' Instruction PUSH_4
@@ -11750,10 +11750,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccb7], '\x00')
         self.assertEqual(mem[0x7fffffffccb8], '!')
         self.assertEqual(mem[0x6651fa], 'P')
-        self.assertEqual(cpu.RSP, 140737488342184L)
-        self.assertEqual(cpu.RAX, 127L)
-        self.assertEqual(cpu.RIP, 6705659L)
-        self.assertEqual(cpu.RBP, 0L)
+        self.assertEqual(cpu.RSP, 140737488342184)
+        self.assertEqual(cpu.RAX, 127)
+        self.assertEqual(cpu.RIP, 6705659)
+        self.assertEqual(cpu.RBP, 0)
 
     def test_PUSH_5(self):
         ''' Instruction PUSH_5
@@ -11805,9 +11805,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffda3d], '\x7f')
         self.assertEqual(mem[0x7fffffffda3e], '\x00')
         self.assertEqual(mem[0x7fffffffda3f], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345648L)
-        self.assertEqual(cpu.RIP, 140737351926577L)
-        self.assertEqual(cpu.RBP, 140737488345968L)
+        self.assertEqual(cpu.RSP, 140737488345648)
+        self.assertEqual(cpu.RIP, 140737351926577)
+        self.assertEqual(cpu.RBP, 140737488345968)
 
     def test_PUSH_6(self):
         ''' Instruction PUSH_6
@@ -11867,9 +11867,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x75c169], '\xaa')
         self.assertEqual(mem[0x75c16a], '\x00')
         self.assertEqual(mem[0x75c16b], '\x0f')
-        self.assertEqual(cpu.RSP, 140737488342184L)
-        self.assertEqual(cpu.RIP, 7717228L)
-        self.assertEqual(cpu.RBP, 0L)
+        self.assertEqual(cpu.RSP, 140737488342184)
+        self.assertEqual(cpu.RIP, 7717228)
+        self.assertEqual(cpu.RBP, 0)
 
     def test_PXOR_1(self):
         ''' Instruction PXOR_1
@@ -11894,7 +11894,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x418493], '\xef')
         self.assertEqual(mem[0x418494], '\xc0')
         self.assertEqual(cpu.XMM8, 0)
-        self.assertEqual(cpu.RIP, 4293781L)
+        self.assertEqual(cpu.RIP, 4293781)
 
     def test_PXOR_2(self):
         ''' Instruction PXOR_2
@@ -11919,7 +11919,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x418493], '\xdb')
         self.assertEqual(mem[0x41848f], 'f')
         self.assertEqual(cpu.XMM11, 0)
-        self.assertEqual(cpu.RIP, 4293780L)
+        self.assertEqual(cpu.RIP, 4293780)
 
     def test_PXOR_3(self):
         ''' Instruction PXOR_3
@@ -11944,7 +11944,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4184c3], '\xdb')
         self.assertEqual(mem[0x4184bf], 'f')
         self.assertEqual(cpu.XMM11, 0)
-        self.assertEqual(cpu.RIP, 4293828L)
+        self.assertEqual(cpu.RIP, 4293828)
 
     def test_PXOR_4(self):
         ''' Instruction PXOR_4
@@ -11969,7 +11969,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x418483], '\xef')
         self.assertEqual(mem[0x418484], '\xc0')
         self.assertEqual(cpu.XMM8, 0)
-        self.assertEqual(cpu.RIP, 4293765L)
+        self.assertEqual(cpu.RIP, 4293765)
 
     def test_PXOR_5(self):
         ''' Instruction PXOR_5
@@ -11994,7 +11994,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4183b6], 'E')
         self.assertEqual(mem[0x4183b7], '\x0f')
         self.assertEqual(cpu.XMM9, 0)
-        self.assertEqual(cpu.RIP, 4293562L)
+        self.assertEqual(cpu.RIP, 4293562)
 
     def test_PXOR_6(self):
         ''' Instruction PXOR_6
@@ -12019,7 +12019,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x418496], 'E')
         self.assertEqual(mem[0x418497], '\x0f')
         self.assertEqual(cpu.XMM9, 0)
-        self.assertEqual(cpu.RIP, 4293786L)
+        self.assertEqual(cpu.RIP, 4293786)
 
     def test_RET_1(self):
         ''' Instruction RET_1
@@ -12071,9 +12071,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd77d], '\x7f')
         self.assertEqual(mem[0x7fffffffd77e], '\x00')
         self.assertEqual(mem[0x7fffffffd77f], '\x00')
-        self.assertEqual(cpu.RSP, 140737488344960L)
-        self.assertEqual(cpu.RIP, 140737351925931L)
-        self.assertEqual(cpu.RBP, 140737488345200L)
+        self.assertEqual(cpu.RSP, 140737488344960)
+        self.assertEqual(cpu.RIP, 140737351925931)
+        self.assertEqual(cpu.RBP, 140737488345200)
 
     def test_RET_2(self):
         ''' Instruction RET_2
@@ -12125,9 +12125,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd83d], '\x7f')
         self.assertEqual(mem[0x7fffffffd83e], '\x00')
         self.assertEqual(mem[0x7ffff7df537f], '\xc3')
-        self.assertEqual(cpu.RSP, 140737488345152L)
-        self.assertEqual(cpu.RIP, 140737351942107L)
-        self.assertEqual(cpu.RBP, 140737488345824L)
+        self.assertEqual(cpu.RSP, 140737488345152)
+        self.assertEqual(cpu.RIP, 140737351942107)
+        self.assertEqual(cpu.RBP, 140737488345824)
 
     def test_RET_3(self):
         ''' Instruction RET_3
@@ -12179,9 +12179,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdb2f], '\x00')
         self.assertEqual(mem[0x7fffffffdb30], '@')
         self.assertEqual(mem[0x7fffffffdb27], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345904L)
-        self.assertEqual(cpu.RIP, 4419406L)
-        self.assertEqual(cpu.RBP, 140737488345968L)
+        self.assertEqual(cpu.RSP, 140737488345904)
+        self.assertEqual(cpu.RIP, 4419406)
+        self.assertEqual(cpu.RBP, 140737488345968)
 
     def test_RET_4(self):
         ''' Instruction RET_4
@@ -12233,9 +12233,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd70f], '\x00')
         self.assertEqual(mem[0x7fffffffd710], '\xb0')
         self.assertEqual(mem[0x7ffff7de2af3], '\xc3')
-        self.assertEqual(cpu.RSP, 140737488344848L)
-        self.assertEqual(cpu.RIP, 140737351939369L)
-        self.assertEqual(cpu.RBP, 140737488344864L)
+        self.assertEqual(cpu.RSP, 140737488344848)
+        self.assertEqual(cpu.RIP, 140737351939369)
+        self.assertEqual(cpu.RBP, 140737488344864)
 
     def test_RET_5(self):
         ''' Instruction RET_5
@@ -12287,9 +12287,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdaef], '\x00')
         self.assertEqual(mem[0x7fffffffdaf0], '\x02')
         self.assertEqual(mem[0x7fffffffdaeb], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345840L)
-        self.assertEqual(cpu.RIP, 4273692L)
-        self.assertEqual(cpu.RBP, 140737488345856L)
+        self.assertEqual(cpu.RSP, 140737488345840)
+        self.assertEqual(cpu.RIP, 4273692)
+        self.assertEqual(cpu.RBP, 140737488345856)
 
     def test_RET_6(self):
         ''' Instruction RET_6
@@ -12341,9 +12341,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffd9fd], '\x00')
         self.assertEqual(mem[0x7fffffffd9fe], '\x00')
         self.assertEqual(mem[0x7fffffffd9ff], '\x00')
-        self.assertEqual(cpu.RSP, 140737488345600L)
-        self.assertEqual(cpu.RIP, 4554222L)
-        self.assertEqual(cpu.RBP, 140737488345776L)
+        self.assertEqual(cpu.RSP, 140737488345600)
+        self.assertEqual(cpu.RIP, 4554222)
+        self.assertEqual(cpu.RBP, 140737488345776)
 
     def test_ROL_1(self):
         ''' Instruction ROL_1
@@ -12368,9 +12368,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x44272c], '\xc0')
         self.assertEqual(mem[0x44272d], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 11777445978752552255L)
+        self.assertEqual(cpu.RAX, 11777445978752552255)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4466478L)
+        self.assertEqual(cpu.RIP, 4466478)
 
     def test_ROL_2(self):
         ''' Instruction ROL_2
@@ -12395,9 +12395,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7df408e], '\xc1')
         self.assertEqual(mem[0x7ffff7df408f], '\xc0')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 18446744072423997440L)
+        self.assertEqual(cpu.RAX, 18446744072423997440)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351991441L)
+        self.assertEqual(cpu.RIP, 140737351991441)
 
     def test_ROL_3(self):
         ''' Instruction ROL_3
@@ -12422,9 +12422,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x409c7c], '\xc7')
         self.assertEqual(mem[0x409c7d], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RDI, 4536145262703058787L)
+        self.assertEqual(cpu.RDI, 4536145262703058787)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4234366L)
+        self.assertEqual(cpu.RIP, 4234366)
 
     def test_ROL_4(self):
         ''' Instruction ROL_4
@@ -12449,9 +12449,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40725c], '\xc7')
         self.assertEqual(mem[0x40725d], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RDI, 6119076834908453415L)
+        self.assertEqual(cpu.RDI, 6119076834908453415)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4223582L)
+        self.assertEqual(cpu.RIP, 4223582)
 
     def test_ROL_5(self):
         ''' Instruction ROL_5
@@ -12477,8 +12477,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4452b7], '\xc2')
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4477625L)
-        self.assertEqual(cpu.RDX, 13910598262045056867L)
+        self.assertEqual(cpu.RIP, 4477625)
+        self.assertEqual(cpu.RDX, 13910598262045056867)
 
     def test_ROL_6(self):
         ''' Instruction ROL_6
@@ -12503,9 +12503,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a6220c], '\xc0')
         self.assertEqual(mem[0x7ffff7a6220d], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 2234035801451174445L)
+        self.assertEqual(cpu.RAX, 2234035801451174445)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737348248078L)
+        self.assertEqual(cpu.RIP, 140737348248078)
 
     def test_ROR_1(self):
         ''' Instruction ROR_1
@@ -12530,9 +12530,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x406f55], '\xc8')
         self.assertEqual(mem[0x406f56], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 5295750768033622977L)
+        self.assertEqual(cpu.RAX, 5295750768033622977)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4222807L)
+        self.assertEqual(cpu.RIP, 4222807)
 
     def test_ROR_2(self):
         ''' Instruction ROR_2
@@ -12557,9 +12557,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a65255], '\xc8')
         self.assertEqual(mem[0x7ffff7a65256], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 13406970899868547054L)
+        self.assertEqual(cpu.RAX, 13406970899868547054)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737348260439L)
+        self.assertEqual(cpu.RIP, 140737348260439)
 
     def test_ROR_3(self):
         ''' Instruction ROR_3
@@ -12584,9 +12584,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x406fd5], '\xc8')
         self.assertEqual(mem[0x406fd6], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 10170153807536003386L)
+        self.assertEqual(cpu.RAX, 10170153807536003386)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4222935L)
+        self.assertEqual(cpu.RIP, 4222935)
 
     def test_ROR_4(self):
         ''' Instruction ROR_4
@@ -12611,9 +12611,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a65255], '\xc8')
         self.assertEqual(mem[0x7ffff7a65256], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 12916761005984851132L)
+        self.assertEqual(cpu.RAX, 12916761005984851132)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737348260439L)
+        self.assertEqual(cpu.RIP, 140737348260439)
 
     def test_ROR_5(self):
         ''' Instruction ROR_5
@@ -12638,9 +12638,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x406f55], '\xc8')
         self.assertEqual(mem[0x406f56], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 2095205673997108485L)
+        self.assertEqual(cpu.RAX, 2095205673997108485)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4222807L)
+        self.assertEqual(cpu.RIP, 4222807)
 
     def test_ROR_6(self):
         ''' Instruction ROR_6
@@ -12665,9 +12665,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x406fc5], '\xc8')
         self.assertEqual(mem[0x406fc6], '\x11')
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RAX, 2185788763754708387L)
+        self.assertEqual(cpu.RAX, 2185788763754708387)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4222919L)
+        self.assertEqual(cpu.RIP, 4222919)
 
     def test_SAR_1(self):
         ''' Instruction SAR_1
@@ -12697,10 +12697,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925897L)
+        self.assertEqual(cpu.RIP, 140737351925897)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.RAX, 1394L)
+        self.assertEqual(cpu.RAX, 1394)
 
     def test_SAR_2(self):
         ''' Instruction SAR_2
@@ -12730,8 +12730,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737348697212L)
-        self.assertEqual(cpu.R8D, 0L)
+        self.assertEqual(cpu.RIP, 140737348697212)
+        self.assertEqual(cpu.R8D, 0)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -12763,10 +12763,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925897L)
+        self.assertEqual(cpu.RIP, 140737351925897)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.RAX, 1188L)
+        self.assertEqual(cpu.RAX, 1188)
 
     def test_SAR_4(self):
         ''' Instruction SAR_4
@@ -12796,10 +12796,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925897L)
+        self.assertEqual(cpu.RIP, 140737351925897)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.RAX, 1300L)
+        self.assertEqual(cpu.RAX, 1300)
 
     def test_SAR_5(self):
         ''' Instruction SAR_5
@@ -12829,10 +12829,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925897L)
+        self.assertEqual(cpu.RIP, 140737351925897)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.RAX, 1288L)
+        self.assertEqual(cpu.RAX, 1288)
 
     def test_SAR_6(self):
         ''' Instruction SAR_6
@@ -12862,10 +12862,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925897L)
+        self.assertEqual(cpu.RIP, 140737351925897)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.RAX, 1052L)
+        self.assertEqual(cpu.RAX, 1052)
 
     def test_SCASB_1(self):
         ''' Instruction SCASB_1
@@ -12920,11 +12920,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ba14b4], 't')
         self.assertEqual(mem[0x7ffff7ba14ba], 'o')
         self.assertEqual(mem[0x7ffff7ba14bb], ' ')
-        self.assertEqual(cpu.RCX, 18446744073709551593L)
-        self.assertEqual(cpu.RDI, 140737349555381L)
-        self.assertEqual(cpu.RSI, 140737488333256L)
-        self.assertEqual(cpu.RIP, 140737348338227L)
-        self.assertEqual(cpu.AL, 0L)
+        self.assertEqual(cpu.RCX, 18446744073709551593)
+        self.assertEqual(cpu.RDI, 140737349555381)
+        self.assertEqual(cpu.RSI, 140737488333256)
+        self.assertEqual(cpu.RIP, 140737348338227)
+        self.assertEqual(cpu.AL, 0)
 
     def test_SCASB_2(self):
         ''' Instruction SCASB_2
@@ -12979,11 +12979,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ba14a8], 'i')
         self.assertEqual(mem[0x7ffff7a78233], '\xf2')
         self.assertEqual(mem[0x7ffff7a78234], '\xae')
-        self.assertEqual(cpu.RCX, 18446744073709551612L)
-        self.assertEqual(cpu.RDI, 140737349555362L)
-        self.assertEqual(cpu.RSI, 140737488333256L)
-        self.assertEqual(cpu.RIP, 140737348338227L)
-        self.assertEqual(cpu.AL, 0L)
+        self.assertEqual(cpu.RCX, 18446744073709551612)
+        self.assertEqual(cpu.RDI, 140737349555362)
+        self.assertEqual(cpu.RSI, 140737488333256)
+        self.assertEqual(cpu.RIP, 140737348338227)
+        self.assertEqual(cpu.AL, 0)
 
     def test_SCASB_3(self):
         ''' Instruction SCASB_3
@@ -13038,11 +13038,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ba14b7], 'y')
         self.assertEqual(mem[0x7ffff7ba14b8], '\x00')
         self.assertEqual(mem[0x7ffff7ba14b4], 't')
-        self.assertEqual(cpu.RCX, 18446744073709551595L)
-        self.assertEqual(cpu.RDI, 140737349555379L)
-        self.assertEqual(cpu.RSI, 140737488333256L)
-        self.assertEqual(cpu.RIP, 140737348338227L)
-        self.assertEqual(cpu.AL, 0L)
+        self.assertEqual(cpu.RCX, 18446744073709551595)
+        self.assertEqual(cpu.RDI, 140737349555379)
+        self.assertEqual(cpu.RSI, 140737488333256)
+        self.assertEqual(cpu.RIP, 140737348338227)
+        self.assertEqual(cpu.AL, 0)
 
     def test_SCASB_4(self):
         ''' Instruction SCASB_4
@@ -13097,11 +13097,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffc2fd], '\x7f')
         self.assertEqual(mem[0x7fffffffc2fe], '\x00')
         self.assertEqual(mem[0x7fffffffc2ff], '\x00')
-        self.assertEqual(cpu.RCX, 18446744073709551614L)
-        self.assertEqual(cpu.RDI, 140737488347302L)
-        self.assertEqual(cpu.RSI, 140737488339704L)
-        self.assertEqual(cpu.RIP, 140737348338227L)
-        self.assertEqual(cpu.AL, 0L)
+        self.assertEqual(cpu.RCX, 18446744073709551614)
+        self.assertEqual(cpu.RDI, 140737488347302)
+        self.assertEqual(cpu.RSI, 140737488339704)
+        self.assertEqual(cpu.RIP, 140737348338227)
+        self.assertEqual(cpu.AL, 0)
 
     def test_SCASB_5(self):
         ''' Instruction SCASB_5
@@ -13156,11 +13156,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a78233], '\xf2')
         self.assertEqual(mem[0x7ffff7ba14a9], 'l')
         self.assertEqual(mem[0x7ffff7ba14aa], 'e')
-        self.assertEqual(cpu.RCX, 18446744073709551608L)
-        self.assertEqual(cpu.RDI, 140737349555366L)
-        self.assertEqual(cpu.RSI, 140737488333256L)
-        self.assertEqual(cpu.RIP, 140737348338227L)
-        self.assertEqual(cpu.AL, 0L)
+        self.assertEqual(cpu.RCX, 18446744073709551608)
+        self.assertEqual(cpu.RDI, 140737349555366)
+        self.assertEqual(cpu.RSI, 140737488333256)
+        self.assertEqual(cpu.RIP, 140737348338227)
+        self.assertEqual(cpu.AL, 0)
 
     def test_SCASB_6(self):
         ''' Instruction SCASB_6
@@ -13215,11 +13215,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffa9cf], '\x00')
         self.assertEqual(mem[0x7ffff7a78233], '\xf2')
         self.assertEqual(mem[0x7ffff7a78234], '\xae')
-        self.assertEqual(cpu.RCX, 18446744073709551614L)
-        self.assertEqual(cpu.RDI, 93824994450881L)
-        self.assertEqual(cpu.RSI, 140737488333256L)
-        self.assertEqual(cpu.RIP, 140737348338227L)
-        self.assertEqual(cpu.AL, 0L)
+        self.assertEqual(cpu.RCX, 18446744073709551614)
+        self.assertEqual(cpu.RDI, 93824994450881)
+        self.assertEqual(cpu.RSI, 140737488333256)
+        self.assertEqual(cpu.RIP, 140737348338227)
+        self.assertEqual(cpu.AL, 0)
 
     def test_SETA_1(self):
         ''' Instruction SETA_1
@@ -13241,8 +13241,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x5555555548c2], '\x0f')
         self.assertEqual(mem[0x5555555548c3], '\x97')
         self.assertEqual(mem[0x5555555548c4], '\xc2')
-        self.assertEqual(cpu.DL, 1L)
-        self.assertEqual(cpu.RIP, 93824992233669L)
+        self.assertEqual(cpu.DL, 1)
+        self.assertEqual(cpu.RIP, 93824992233669)
 
     def test_SETBE_1(self):
         ''' Instruction SETBE_1
@@ -13266,8 +13266,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6209], '\x96')
         self.assertEqual(mem[0x7ffff7de620a], '\xc1')
         self.assertEqual(mem[0x7ffff7de6207], 'A')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 140737351934475L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 140737351934475)
 
     def test_SETBE_2(self):
         ''' Instruction SETBE_2
@@ -13291,8 +13291,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6209], '\x96')
         self.assertEqual(mem[0x7ffff7de620a], '\xc1')
         self.assertEqual(mem[0x7ffff7de6207], 'A')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 140737351934475L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 140737351934475)
 
     def test_SETBE_3(self):
         ''' Instruction SETBE_3
@@ -13316,8 +13316,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6209], '\x96')
         self.assertEqual(mem[0x7ffff7de620a], '\xc1')
         self.assertEqual(mem[0x7ffff7de6207], 'A')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 140737351934475L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 140737351934475)
 
     def test_SETBE_4(self):
         ''' Instruction SETBE_4
@@ -13341,8 +13341,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6209], '\x96')
         self.assertEqual(mem[0x7ffff7de620a], '\xc1')
         self.assertEqual(mem[0x7ffff7de6207], 'A')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 140737351934475L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 140737351934475)
 
     def test_SETBE_5(self):
         ''' Instruction SETBE_5
@@ -13366,8 +13366,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6209], '\x96')
         self.assertEqual(mem[0x7ffff7de620a], '\xc1')
         self.assertEqual(mem[0x7ffff7de6207], 'A')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 140737351934475L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 140737351934475)
 
     def test_SETBE_6(self):
         ''' Instruction SETBE_6
@@ -13391,8 +13391,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6209], '\x96')
         self.assertEqual(mem[0x7ffff7de620a], '\xc1')
         self.assertEqual(mem[0x7ffff7de6207], 'A')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 140737351934475L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 140737351934475)
 
     def test_SETB_1(self):
         ''' Instruction SETB_1
@@ -13413,8 +13413,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4342ea], '\x0f')
         self.assertEqual(mem[0x4342eb], '\x92')
         self.assertEqual(mem[0x4342ec], '\xc0')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 4408045L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 4408045)
 
     def test_SETB_2(self):
         ''' Instruction SETB_2
@@ -13435,8 +13435,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43426a], '\x0f')
         self.assertEqual(mem[0x43426b], '\x92')
         self.assertEqual(mem[0x43426c], '\xc0')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 4407917L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 4407917)
 
     def test_SETB_3(self):
         ''' Instruction SETB_3
@@ -13457,8 +13457,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4346ca], '\x0f')
         self.assertEqual(mem[0x4346cb], '\x92')
         self.assertEqual(mem[0x4346cc], '\xc0')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 4409037L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 4409037)
 
     def test_SETB_4(self):
         ''' Instruction SETB_4
@@ -13479,8 +13479,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4342ea], '\x0f')
         self.assertEqual(mem[0x4342eb], '\x92')
         self.assertEqual(mem[0x4342ec], '\xc0')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 4408045L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 4408045)
 
     def test_SETB_5(self):
         ''' Instruction SETB_5
@@ -13501,8 +13501,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4342ea], '\x0f')
         self.assertEqual(mem[0x4342eb], '\x92')
         self.assertEqual(mem[0x4342ec], '\xc0')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 4408045L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 4408045)
 
     def test_SETB_6(self):
         ''' Instruction SETB_6
@@ -13523,8 +13523,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43430a], '\x0f')
         self.assertEqual(mem[0x43430b], '\x92')
         self.assertEqual(mem[0x43430c], '\xc0')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 4408077L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 4408077)
 
     def test_SETE_1(self):
         ''' Instruction SETE_1
@@ -13547,8 +13547,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de36a3], '\x0f')
         self.assertEqual(mem[0x7ffff7de36a4], '\x94')
         self.assertEqual(mem[0x7ffff7de36a5], '\xc2')
-        self.assertEqual(cpu.R10B, 0L)
-        self.assertEqual(cpu.RIP, 140737351923366L)
+        self.assertEqual(cpu.R10B, 0)
+        self.assertEqual(cpu.RIP, 140737351923366)
 
     def test_SETE_2(self):
         ''' Instruction SETE_2
@@ -13569,8 +13569,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6210], '\x94')
         self.assertEqual(mem[0x7ffff7de6211], '\xc0')
         self.assertEqual(mem[0x7ffff7de620f], '\x0f')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 140737351934482L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 140737351934482)
 
     def test_SETE_3(self):
         ''' Instruction SETE_3
@@ -13591,8 +13591,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6229], '\x0f')
         self.assertEqual(mem[0x7ffff7de622a], '\x94')
         self.assertEqual(mem[0x7ffff7de622b], '\xc0')
-        self.assertEqual(cpu.AL, 1L)
-        self.assertEqual(cpu.RIP, 140737351934508L)
+        self.assertEqual(cpu.AL, 1)
+        self.assertEqual(cpu.RIP, 140737351934508)
 
     def test_SETE_4(self):
         ''' Instruction SETE_4
@@ -13613,8 +13613,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6229], '\x0f')
         self.assertEqual(mem[0x7ffff7de622a], '\x94')
         self.assertEqual(mem[0x7ffff7de622b], '\xc0')
-        self.assertEqual(cpu.AL, 1L)
-        self.assertEqual(cpu.RIP, 140737351934508L)
+        self.assertEqual(cpu.AL, 1)
+        self.assertEqual(cpu.RIP, 140737351934508)
 
     def test_SETE_5(self):
         ''' Instruction SETE_5
@@ -13637,8 +13637,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432459], '\x0f')
         self.assertEqual(mem[0x43245a], '\x94')
         self.assertEqual(mem[0x43245b], '\xc1')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 4400220L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 4400220)
 
     def test_SETE_6(self):
         ''' Instruction SETE_6
@@ -13659,8 +13659,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de6210], '\x94')
         self.assertEqual(mem[0x7ffff7de6211], '\xc0')
         self.assertEqual(mem[0x7ffff7de620f], '\x0f')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 140737351934482L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 140737351934482)
 
     def test_SETG_1(self):
         ''' Instruction SETG_1
@@ -13685,8 +13685,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x555555567df5], '\x0f')
         self.assertEqual(mem[0x555555567df6], '\x9f')
         self.assertEqual(mem[0x555555567df7], '\xc1')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 93824992312824L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 93824992312824)
 
     def test_SETG_2(self):
         ''' Instruction SETG_2
@@ -13711,8 +13711,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x555555567df5], '\x0f')
         self.assertEqual(mem[0x555555567df6], '\x9f')
         self.assertEqual(mem[0x555555567df7], '\xc1')
-        self.assertEqual(cpu.R9B, 0L)
-        self.assertEqual(cpu.RIP, 93824992312824L)
+        self.assertEqual(cpu.R9B, 0)
+        self.assertEqual(cpu.RIP, 93824992312824)
 
     def test_SETLE_1(self):
         ''' Instruction SETLE_1
@@ -13735,8 +13735,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x448ae0], '\x0f')
         self.assertEqual(mem[0x448ae1], '\x9e')
         self.assertEqual(mem[0x448ae2], '\xc2')
-        self.assertEqual(cpu.DL, 1L)
-        self.assertEqual(cpu.RIP, 4492003L)
+        self.assertEqual(cpu.DL, 1)
+        self.assertEqual(cpu.RIP, 4492003)
 
     def test_SETLE_2(self):
         ''' Instruction SETLE_2
@@ -13759,8 +13759,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x448ae0], '\x0f')
         self.assertEqual(mem[0x448ae1], '\x9e')
         self.assertEqual(mem[0x448ae2], '\xc2')
-        self.assertEqual(cpu.DL, 1L)
-        self.assertEqual(cpu.RIP, 4492003L)
+        self.assertEqual(cpu.DL, 1)
+        self.assertEqual(cpu.RIP, 4492003)
 
     def test_SETNE_1(self):
         ''' Instruction SETNE_1
@@ -13781,8 +13781,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x410ee5], '\x0f')
         self.assertEqual(mem[0x410ee6], '\x95')
         self.assertEqual(mem[0x410ee7], '\xc1')
-        self.assertEqual(cpu.RIP, 4263656L)
-        self.assertEqual(cpu.CL, 0L)
+        self.assertEqual(cpu.RIP, 4263656)
+        self.assertEqual(cpu.CL, 0)
 
     def test_SETNE_2(self):
         ''' Instruction SETNE_2
@@ -13803,8 +13803,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x436d20], '\x0f')
         self.assertEqual(mem[0x436d21], '\x95')
         self.assertEqual(mem[0x436d22], '\xc2')
-        self.assertEqual(cpu.DL, 0L)
-        self.assertEqual(cpu.RIP, 4418851L)
+        self.assertEqual(cpu.DL, 0)
+        self.assertEqual(cpu.RIP, 4418851)
 
     def test_SETNE_3(self):
         ''' Instruction SETNE_3
@@ -13825,8 +13825,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x410f05], '\x0f')
         self.assertEqual(mem[0x410f06], '\x95')
         self.assertEqual(mem[0x410f07], '\xc1')
-        self.assertEqual(cpu.RIP, 4263688L)
-        self.assertEqual(cpu.CL, 0L)
+        self.assertEqual(cpu.RIP, 4263688)
+        self.assertEqual(cpu.CL, 0)
 
     def test_SETNE_4(self):
         ''' Instruction SETNE_4
@@ -13847,8 +13847,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x436f20], '\x0f')
         self.assertEqual(mem[0x436f21], '\x95')
         self.assertEqual(mem[0x436f22], '\xc2')
-        self.assertEqual(cpu.DL, 0L)
-        self.assertEqual(cpu.RIP, 4419363L)
+        self.assertEqual(cpu.DL, 0)
+        self.assertEqual(cpu.RIP, 4419363)
 
     def test_SETNE_5(self):
         ''' Instruction SETNE_5
@@ -13869,8 +13869,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4120f9], '\x0f')
         self.assertEqual(mem[0x4120fa], '\x95')
         self.assertEqual(mem[0x4120fb], '\xc1')
-        self.assertEqual(cpu.RIP, 4268284L)
-        self.assertEqual(cpu.CL, 0L)
+        self.assertEqual(cpu.RIP, 4268284)
+        self.assertEqual(cpu.CL, 0)
 
     def test_SETNE_6(self):
         ''' Instruction SETNE_6
@@ -13891,8 +13891,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de5de4], '\x0f')
         self.assertEqual(mem[0x7ffff7de5de5], '\x95')
         self.assertEqual(mem[0x7ffff7de5de6], '\xc0')
-        self.assertEqual(cpu.AL, 0L)
-        self.assertEqual(cpu.RIP, 140737351933415L)
+        self.assertEqual(cpu.AL, 0)
+        self.assertEqual(cpu.RIP, 140737351933415)
 
     def test_SHLX_1(self):
         ''' Instruction SHLX_1
@@ -13936,9 +13936,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x555555565950], '\xf7')
         self.assertEqual(mem[0x555555565951], 'F')
         self.assertEqual(mem[0x555555565952], 'P')
-        self.assertEqual(cpu.R14, 140737488340912L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RIP, 93824992303443L)
+        self.assertEqual(cpu.R14, 140737488340912)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RIP, 93824992303443)
 
     def test_SHLX_2(self):
         ''' Instruction SHLX_2
@@ -13963,9 +13963,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x55555556544c], '\xf9')
         self.assertEqual(mem[0x55555556544d], '\xf7')
         self.assertEqual(mem[0x55555556544e], '\xc2')
-        self.assertEqual(cpu.RAX, 256L)
-        self.assertEqual(cpu.RIP, 93824992302159L)
-        self.assertEqual(cpu.RDX, 1L)
+        self.assertEqual(cpu.RAX, 256)
+        self.assertEqual(cpu.RIP, 93824992302159)
+        self.assertEqual(cpu.RDX, 1)
 
     def test_SHLX_3(self):
         ''' Instruction SHLX_3
@@ -13990,9 +13990,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x55555556544c], '\xf9')
         self.assertEqual(mem[0x55555556544d], '\xf7')
         self.assertEqual(mem[0x55555556544e], '\xc2')
-        self.assertEqual(cpu.RAX, 256L)
-        self.assertEqual(cpu.RIP, 93824992302159L)
-        self.assertEqual(cpu.RDX, 1L)
+        self.assertEqual(cpu.RAX, 256)
+        self.assertEqual(cpu.RIP, 93824992302159)
+        self.assertEqual(cpu.RDX, 1)
 
     def test_SHLX_4(self):
         ''' Instruction SHLX_4
@@ -14036,9 +14036,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x555555565950], '\xf7')
         self.assertEqual(mem[0x555555565951], 'F')
         self.assertEqual(mem[0x555555565952], 'P')
-        self.assertEqual(cpu.R14, 140737488340912L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RIP, 93824992303443L)
+        self.assertEqual(cpu.R14, 140737488340912)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RIP, 93824992303443)
 
     def test_SHL_1(self):
         ''' Instruction SHL_1
@@ -14064,10 +14064,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de4391], '\xe6')
         self.assertEqual(mem[0x7ffff7de4392], '\x05')
         self.assertEqual(mem[0x7ffff7de438f], 'H')
-        self.assertEqual(cpu.RSI, 187637888L)
+        self.assertEqual(cpu.RSI, 187637888)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926675L)
+        self.assertEqual(cpu.RIP, 140737351926675)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
 
@@ -14095,10 +14095,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de4391], '\xe6')
         self.assertEqual(mem[0x7ffff7de4392], '\x05')
         self.assertEqual(mem[0x7ffff7de438f], 'H')
-        self.assertEqual(cpu.RSI, 2924776815468297216L)
+        self.assertEqual(cpu.RSI, 2924776815468297216)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926675L)
+        self.assertEqual(cpu.RIP, 140737351926675)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -14126,10 +14126,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de4391], '\xe6')
         self.assertEqual(mem[0x7ffff7de4392], '\x05')
         self.assertEqual(mem[0x7ffff7de438f], 'H')
-        self.assertEqual(cpu.RSI, 10054299555619605088L)
+        self.assertEqual(cpu.RSI, 10054299555619605088)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351926675L)
+        self.assertEqual(cpu.RIP, 140737351926675)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, True)
 
@@ -14157,10 +14157,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de4391], '\xe6')
         self.assertEqual(mem[0x7ffff7de4392], '\x05')
         self.assertEqual(mem[0x7ffff7de438f], 'H')
-        self.assertEqual(cpu.RSI, 5616743111828736864L)
+        self.assertEqual(cpu.RSI, 5616743111828736864)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926675L)
+        self.assertEqual(cpu.RIP, 140737351926675)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -14188,10 +14188,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de4391], '\xe6')
         self.assertEqual(mem[0x7ffff7de4392], '\x05')
         self.assertEqual(mem[0x7ffff7de438f], 'H')
-        self.assertEqual(cpu.RSI, 5685632L)
+        self.assertEqual(cpu.RSI, 5685632)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926675L)
+        self.assertEqual(cpu.RIP, 140737351926675)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
 
@@ -14219,10 +14219,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de4391], '\xe6')
         self.assertEqual(mem[0x7ffff7de4392], '\x05')
         self.assertEqual(mem[0x7ffff7de438f], 'H')
-        self.assertEqual(cpu.RSI, 7996096205977115808L)
+        self.assertEqual(cpu.RSI, 7996096205977115808)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351926675L)
+        self.assertEqual(cpu.RIP, 140737351926675)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -14250,8 +14250,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de405f], '\xea')
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925856L)
-        self.assertEqual(cpu.RDX, 170208618L)
+        self.assertEqual(cpu.RIP, 140737351925856)
+        self.assertEqual(cpu.RDX, 170208618)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -14278,11 +14278,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de391d], 'H')
         self.assertEqual(mem[0x7ffff7de391e], '\xd3')
         self.assertEqual(mem[0x7ffff7de391f], '\xee')
-        self.assertEqual(cpu.RSI, 8599695L)
-        self.assertEqual(cpu.CL, 6L)
+        self.assertEqual(cpu.RSI, 8599695)
+        self.assertEqual(cpu.CL, 6)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351924000L)
+        self.assertEqual(cpu.RIP, 140737351924000)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
 
@@ -14309,11 +14309,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3928], '\xee')
         self.assertEqual(mem[0x7ffff7de3926], 'H')
         self.assertEqual(mem[0x7ffff7de3927], '\xd3')
-        self.assertEqual(cpu.RSI, 8589934592L)
-        self.assertEqual(cpu.CL, 218L)
+        self.assertEqual(cpu.RSI, 8589934592)
+        self.assertEqual(cpu.CL, 218)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351924009L)
+        self.assertEqual(cpu.RIP, 140737351924009)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -14341,8 +14341,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de61d4], '\x04')
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351934421L)
-        self.assertEqual(cpu.AL, 2L)
+        self.assertEqual(cpu.RIP, 140737351934421)
+        self.assertEqual(cpu.AL, 2)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.SF, False)
 
@@ -14369,11 +14369,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de391d], 'H')
         self.assertEqual(mem[0x7ffff7de391e], '\xd3')
         self.assertEqual(mem[0x7ffff7de391f], '\xee')
-        self.assertEqual(cpu.RSI, 127577L)
-        self.assertEqual(cpu.CL, 14L)
+        self.assertEqual(cpu.RSI, 127577)
+        self.assertEqual(cpu.CL, 14)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 140737351924000L)
+        self.assertEqual(cpu.RIP, 140737351924000)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -14401,10 +14401,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4322bf], '\xe8')
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4399808L)
+        self.assertEqual(cpu.RIP, 4399808)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.RAX, 0L)
+        self.assertEqual(cpu.RAX, 0)
 
     def test_STC_1(self):
         ''' Instruction STC_1
@@ -14421,7 +14421,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x5667fa], '\xf9')
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 5662715L)
+        self.assertEqual(cpu.RIP, 5662715)
 
     def test_STC_2(self):
         ''' Instruction STC_2
@@ -14438,7 +14438,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x42a889], '\xf9')
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4368522L)
+        self.assertEqual(cpu.RIP, 4368522)
 
     def test_STC_3(self):
         ''' Instruction STC_3
@@ -14455,7 +14455,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x60b5d5], '\xf9')
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 6338006L)
+        self.assertEqual(cpu.RIP, 6338006)
 
     def test_STC_4(self):
         ''' Instruction STC_4
@@ -14472,7 +14472,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x52da4d], '\xf9')
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 5429838L)
+        self.assertEqual(cpu.RIP, 5429838)
 
     def test_STC_5(self):
         ''' Instruction STC_5
@@ -14489,7 +14489,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x56ba0e], '\xf9')
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 5683727L)
+        self.assertEqual(cpu.RIP, 5683727)
 
     def test_STC_6(self):
         ''' Instruction STC_6
@@ -14506,7 +14506,7 @@ class CPUTest(unittest.TestCase):
         #cpu.writeback()
         self.assertEqual(mem[0x61a7d6], '\xf9')
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 6399959L)
+        self.assertEqual(cpu.RIP, 6399959)
 
     def test_STOSD_1(self):
         ''' Instruction STOSD_1
@@ -14560,11 +14560,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdb75], '\x7f')
         self.assertEqual(mem[0x7fffffffdb76], '\x00')
         self.assertEqual(mem[0x7fffffffdb77], '\x00')
-        self.assertEqual(cpu.RCX, 5L)
-        self.assertEqual(cpu.RDI, 140737488345972L)
-        self.assertEqual(cpu.RSI, 140737488345736L)
-        self.assertEqual(cpu.RIP, 93824992233410L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RCX, 5)
+        self.assertEqual(cpu.RDI, 140737488345972)
+        self.assertEqual(cpu.RSI, 140737488345736)
+        self.assertEqual(cpu.RIP, 93824992233410)
+        self.assertEqual(cpu.EAX, 0)
 
     def test_STOSD_2(self):
         ''' Instruction STOSD_2
@@ -14618,11 +14618,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdb1d], '\x00')
         self.assertEqual(mem[0x7fffffffdb1e], '\x00')
         self.assertEqual(mem[0x7fffffffdb1f], '\x00')
-        self.assertEqual(cpu.RCX, 26L)
-        self.assertEqual(cpu.RDI, 140737488345888L)
-        self.assertEqual(cpu.RSI, 140737488345736L)
-        self.assertEqual(cpu.RIP, 93824992233410L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RCX, 26)
+        self.assertEqual(cpu.RDI, 140737488345888)
+        self.assertEqual(cpu.RSI, 140737488345736)
+        self.assertEqual(cpu.RIP, 93824992233410)
+        self.assertEqual(cpu.EAX, 0)
 
     def test_STOSD_3(self):
         ''' Instruction STOSD_3
@@ -14676,11 +14676,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffda9d], '\x00')
         self.assertEqual(mem[0x7fffffffda9e], '\x00')
         self.assertEqual(mem[0x7fffffffda9f], '\x00')
-        self.assertEqual(cpu.RCX, 58L)
-        self.assertEqual(cpu.RDI, 140737488345760L)
-        self.assertEqual(cpu.RSI, 140737488345736L)
-        self.assertEqual(cpu.RIP, 93824992233410L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RCX, 58)
+        self.assertEqual(cpu.RDI, 140737488345760)
+        self.assertEqual(cpu.RSI, 140737488345736)
+        self.assertEqual(cpu.RIP, 93824992233410)
+        self.assertEqual(cpu.EAX, 0)
 
     def test_STOSD_4(self):
         ''' Instruction STOSD_4
@@ -14734,11 +14734,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdaf3], '\x00')
         self.assertEqual(mem[0x7fffffffdaee], '\x00')
         self.assertEqual(mem[0x7fffffffdaef], '\x00')
-        self.assertEqual(cpu.RCX, 38L)
-        self.assertEqual(cpu.RDI, 140737488345840L)
-        self.assertEqual(cpu.RSI, 140737488345736L)
-        self.assertEqual(cpu.RIP, 93824992233410L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RCX, 38)
+        self.assertEqual(cpu.RDI, 140737488345840)
+        self.assertEqual(cpu.RSI, 140737488345736)
+        self.assertEqual(cpu.RIP, 93824992233410)
+        self.assertEqual(cpu.EAX, 0)
 
     def test_STOSD_5(self):
         ''' Instruction STOSD_5
@@ -14792,11 +14792,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdb7d], '\x00')
         self.assertEqual(mem[0x7fffffffdb7e], '\x00')
         self.assertEqual(mem[0x7fffffffdb7f], '\x00')
-        self.assertEqual(cpu.RCX, 2L)
-        self.assertEqual(cpu.RDI, 140737488345984L)
-        self.assertEqual(cpu.RSI, 140737488345736L)
-        self.assertEqual(cpu.RIP, 93824992233410L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RCX, 2)
+        self.assertEqual(cpu.RDI, 140737488345984)
+        self.assertEqual(cpu.RSI, 140737488345736)
+        self.assertEqual(cpu.RIP, 93824992233410)
+        self.assertEqual(cpu.EAX, 0)
 
     def test_STOSD_6(self):
         ''' Instruction STOSD_6
@@ -14850,11 +14850,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdaf5], '\x00')
         self.assertEqual(mem[0x7fffffffdaf6], '\x00')
         self.assertEqual(mem[0x7fffffffdaf7], '\x00')
-        self.assertEqual(cpu.RCX, 37L)
-        self.assertEqual(cpu.RDI, 140737488345844L)
-        self.assertEqual(cpu.RSI, 140737488345736L)
-        self.assertEqual(cpu.RIP, 93824992233410L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RCX, 37)
+        self.assertEqual(cpu.RDI, 140737488345844)
+        self.assertEqual(cpu.RSI, 140737488345736)
+        self.assertEqual(cpu.RIP, 93824992233410)
+        self.assertEqual(cpu.EAX, 0)
 
     def test_STOSQ_1(self):
         ''' Instruction STOSQ_1
@@ -14910,11 +14910,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ded09d], '\xab')
         self.assertEqual(mem[0x7ffff7fd7f3e], '\x00')
         self.assertEqual(mem[0x7ffff7fd7f3f], '\x00')
-        self.assertEqual(cpu.RCX, 24L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RDI, 140737353973568L)
-        self.assertEqual(cpu.RSI, 140737353971456L)
-        self.assertEqual(cpu.RIP, 140737351962779L)
+        self.assertEqual(cpu.RCX, 24)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RDI, 140737353973568)
+        self.assertEqual(cpu.RSI, 140737353971456)
+        self.assertEqual(cpu.RIP, 140737351962779)
 
     def test_STOSQ_2(self):
         ''' Instruction STOSQ_2
@@ -14970,11 +14970,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ded09d], '\xab')
         self.assertEqual(mem[0x7ffff7fd7cbe], '\x00')
         self.assertEqual(mem[0x7ffff7fd7cbf], '\x00')
-        self.assertEqual(cpu.RCX, 104L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RDI, 140737353972928L)
-        self.assertEqual(cpu.RSI, 140737353971456L)
-        self.assertEqual(cpu.RIP, 140737351962779L)
+        self.assertEqual(cpu.RCX, 104)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RDI, 140737353972928)
+        self.assertEqual(cpu.RSI, 140737353971456)
+        self.assertEqual(cpu.RIP, 140737351962779)
 
     def test_STOSQ_3(self):
         ''' Instruction STOSQ_3
@@ -15031,11 +15031,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ffe4a0], '\x00')
         self.assertEqual(mem[0x7ffff7ffe4a7], '\x00')
         self.assertEqual(mem[0x7ffff7de5ebf], '\xf3')
-        self.assertEqual(cpu.RCX, 6L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RDI, 140737488345744L)
-        self.assertEqual(cpu.RSI, 140737354130592L)
-        self.assertEqual(cpu.RIP, 140737351933631L)
+        self.assertEqual(cpu.RCX, 6)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RDI, 140737488345744)
+        self.assertEqual(cpu.RSI, 140737354130592)
+        self.assertEqual(cpu.RIP, 140737351933631)
 
     def test_STOSQ_4(self):
         ''' Instruction STOSQ_4
@@ -15091,11 +15091,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ded09b], '\xf3')
         self.assertEqual(mem[0x7ffff7ded09c], 'H')
         self.assertEqual(mem[0x7ffff7ded09d], '\xab')
-        self.assertEqual(cpu.RCX, 281L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RDI, 140737353971512L)
-        self.assertEqual(cpu.RSI, 140737353971456L)
-        self.assertEqual(cpu.RIP, 140737351962779L)
+        self.assertEqual(cpu.RCX, 281)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RDI, 140737353971512)
+        self.assertEqual(cpu.RSI, 140737353971456)
+        self.assertEqual(cpu.RIP, 140737351962779)
 
     def test_STOSQ_5(self):
         ''' Instruction STOSQ_5
@@ -15151,11 +15151,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffdc9d], '\x7f')
         self.assertEqual(mem[0x7fffffffdc9e], '\x00')
         self.assertEqual(mem[0x7fffffffdc9f], '\x00')
-        self.assertEqual(cpu.RCX, 29L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RDI, 140737488345752L)
-        self.assertEqual(cpu.RSI, 140737488346264L)
-        self.assertEqual(cpu.RIP, 93824992233621L)
+        self.assertEqual(cpu.RCX, 29)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RDI, 140737488345752)
+        self.assertEqual(cpu.RSI, 140737488346264)
+        self.assertEqual(cpu.RIP, 93824992233621)
 
     def test_STOSQ_6(self):
         ''' Instruction STOSQ_6
@@ -15211,11 +15211,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7ded09b], '\xf3')
         self.assertEqual(mem[0x7ffff7ded09c], 'H')
         self.assertEqual(mem[0x7ffff7ded09d], '\xab')
-        self.assertEqual(cpu.RCX, 33L)
-        self.assertEqual(cpu.RAX, 0L)
-        self.assertEqual(cpu.RDI, 140737353973496L)
-        self.assertEqual(cpu.RSI, 140737353971456L)
-        self.assertEqual(cpu.RIP, 140737351962779L)
+        self.assertEqual(cpu.RCX, 33)
+        self.assertEqual(cpu.RAX, 0)
+        self.assertEqual(cpu.RDI, 140737353973496)
+        self.assertEqual(cpu.RSI, 140737353971456)
+        self.assertEqual(cpu.RIP, 140737351962779)
 
     def test_SUB_1(self):
         ''' Instruction SUB_1
@@ -15253,9 +15253,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSP, 140737488341648L)
+        self.assertEqual(cpu.RSP, 140737488341648)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4400842L)
+        self.assertEqual(cpu.RIP, 4400842)
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_2(self):
@@ -15294,9 +15294,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSP, 140737488341488L)
+        self.assertEqual(cpu.RSP, 140737488341488)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4241124L)
+        self.assertEqual(cpu.RIP, 4241124)
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_3(self):
@@ -15329,9 +15329,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, True)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSP, 140737488345144L)
+        self.assertEqual(cpu.RSP, 140737488345144)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925873L)
+        self.assertEqual(cpu.RIP, 140737351925873)
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_4(self):
@@ -15370,9 +15370,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSP, 140737488339104L)
+        self.assertEqual(cpu.RSP, 140737488339104)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351961611L)
+        self.assertEqual(cpu.RIP, 140737351961611)
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_5(self):
@@ -15411,9 +15411,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSP, 140737488339648L)
+        self.assertEqual(cpu.RSP, 140737488339648)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351910932L)
+        self.assertEqual(cpu.RIP, 140737351910932)
         self.assertEqual(cpu.SF, False)
 
     def test_SUB_6(self):
@@ -15452,9 +15452,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RSP, 140737488341376L)
+        self.assertEqual(cpu.RSP, 140737488341376)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351954996L)
+        self.assertEqual(cpu.RIP, 140737351954996)
         self.assertEqual(cpu.SF, False)
 
     def test_TEST_1(self):
@@ -15481,8 +15481,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351992734L)
-        self.assertEqual(cpu.AL, 108L)
+        self.assertEqual(cpu.RIP, 140737351992734)
+        self.assertEqual(cpu.AL, 108)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -15510,8 +15510,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351992734L)
-        self.assertEqual(cpu.AL, 95L)
+        self.assertEqual(cpu.RIP, 140737351992734)
+        self.assertEqual(cpu.AL, 95)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -15538,11 +15538,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de3892], 'E')
         self.assertEqual(mem[0x7ffff7de3893], '\x85')
         self.assertEqual(mem[0x7ffff7de3894], '\xff')
-        self.assertEqual(cpu.R15D, 0L)
+        self.assertEqual(cpu.R15D, 0)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351923861L)
+        self.assertEqual(cpu.RIP, 140737351923861)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -15578,9 +15578,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a3193c], '\xbc')
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
-        self.assertEqual(cpu.R8, 140737348049216L)
+        self.assertEqual(cpu.R8, 140737348049216)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737349259020L)
+        self.assertEqual(cpu.RIP, 140737349259020)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -15610,9 +15610,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351894714L)
+        self.assertEqual(cpu.RIP, 140737351894714)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.RDI, 140737354113952L)
+        self.assertEqual(cpu.RDI, 140737354113952)
         self.assertEqual(cpu.SF, False)
 
     def test_TEST_6(self):
@@ -15638,11 +15638,11 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x406e88], 'H')
         self.assertEqual(mem[0x406e89], '\x85')
         self.assertEqual(mem[0x406e8a], '\xdb')
-        self.assertEqual(cpu.RBX, 140737488349479L)
+        self.assertEqual(cpu.RBX, 140737488349479)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4222603L)
+        self.assertEqual(cpu.RIP, 4222603)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -15668,8 +15668,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432056], 'n')
         self.assertEqual(mem[0x432057], '\xce')
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.ESI, 0L)
-        self.assertEqual(cpu.RIP, 4399192L)
+        self.assertEqual(cpu.ESI, 0)
+        self.assertEqual(cpu.RIP, 4399192)
 
     def test_VMOVD_2(self):
         ''' Instruction VMOVD_2
@@ -15693,8 +15693,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432156], 'n')
         self.assertEqual(mem[0x432157], '\xce')
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.ESI, 0L)
-        self.assertEqual(cpu.RIP, 4399448L)
+        self.assertEqual(cpu.ESI, 0)
+        self.assertEqual(cpu.RIP, 4399448)
 
     def test_VMOVD_3(self):
         ''' Instruction VMOVD_3
@@ -15718,8 +15718,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432126], 'n')
         self.assertEqual(mem[0x432127], '\xce')
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.ESI, 0L)
-        self.assertEqual(cpu.RIP, 4399400L)
+        self.assertEqual(cpu.ESI, 0)
+        self.assertEqual(cpu.RIP, 4399400)
 
     def test_VMOVD_4(self):
         ''' Instruction VMOVD_4
@@ -15743,8 +15743,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x434cd6], 'n')
         self.assertEqual(mem[0x434cd7], '\xce')
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.ESI, 0L)
-        self.assertEqual(cpu.RIP, 4410584L)
+        self.assertEqual(cpu.ESI, 0)
+        self.assertEqual(cpu.RIP, 4410584)
 
     def test_VMOVD_5(self):
         ''' Instruction VMOVD_5
@@ -15768,8 +15768,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432136], 'n')
         self.assertEqual(mem[0x432137], '\xce')
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.ESI, 0L)
-        self.assertEqual(cpu.RIP, 4399416L)
+        self.assertEqual(cpu.ESI, 0)
+        self.assertEqual(cpu.RIP, 4399416)
 
     def test_VMOVD_6(self):
         ''' Instruction VMOVD_6
@@ -15793,8 +15793,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432516], 'n')
         self.assertEqual(mem[0x432517], '\xce')
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.ESI, 0L)
-        self.assertEqual(cpu.RIP, 4400408L)
+        self.assertEqual(cpu.ESI, 0)
+        self.assertEqual(cpu.RIP, 4400408)
 
     def test_VPSHUFB_1(self):
         ''' Instruction VPSHUFB_1
@@ -15821,7 +15821,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4321af], '\xc4')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.RIP, 4399540L)
+        self.assertEqual(cpu.RIP, 4399540)
 
     def test_VPSHUFB_2(self):
         ''' Instruction VPSHUFB_2
@@ -15848,7 +15848,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43215f], '\xc4')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.RIP, 4399460L)
+        self.assertEqual(cpu.RIP, 4399460)
 
     def test_VPSHUFB_3(self):
         ''' Instruction VPSHUFB_3
@@ -15875,7 +15875,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43205f], '\xc4')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.RIP, 4399204L)
+        self.assertEqual(cpu.RIP, 4399204)
 
     def test_VPSHUFB_4(self):
         ''' Instruction VPSHUFB_4
@@ -15902,7 +15902,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43212f], '\xc4')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.RIP, 4399412L)
+        self.assertEqual(cpu.RIP, 4399412)
 
     def test_VPSHUFB_5(self):
         ''' Instruction VPSHUFB_5
@@ -15929,7 +15929,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43213f], '\xc4')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.RIP, 4399428L)
+        self.assertEqual(cpu.RIP, 4399428)
 
     def test_VPSHUFB_6(self):
         ''' Instruction VPSHUFB_6
@@ -15956,7 +15956,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x434cdf], '\xc4')
         self.assertEqual(cpu.XMM0, 0)
         self.assertEqual(cpu.XMM1, 0)
-        self.assertEqual(cpu.RIP, 4410596L)
+        self.assertEqual(cpu.RIP, 4410596)
 
     def test_VPXOR_1(self):
         ''' Instruction VPXOR_1
@@ -15979,7 +15979,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4321a2], '\xef')
         self.assertEqual(mem[0x4321a3], '\xc0')
         self.assertEqual(cpu.XMM0, 0)
-        self.assertEqual(cpu.RIP, 4399524L)
+        self.assertEqual(cpu.RIP, 4399524)
 
     def test_VPXOR_2(self):
         ''' Instruction VPXOR_2
@@ -16002,7 +16002,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432512], '\xef')
         self.assertEqual(mem[0x432513], '\xc0')
         self.assertEqual(cpu.XMM0, 0)
-        self.assertEqual(cpu.RIP, 4400404L)
+        self.assertEqual(cpu.RIP, 4400404)
 
     def test_VPXOR_3(self):
         ''' Instruction VPXOR_3
@@ -16025,7 +16025,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432052], '\xef')
         self.assertEqual(mem[0x432053], '\xc0')
         self.assertEqual(cpu.XMM0, 0)
-        self.assertEqual(cpu.RIP, 4399188L)
+        self.assertEqual(cpu.RIP, 4399188)
 
     def test_VPXOR_4(self):
         ''' Instruction VPXOR_4
@@ -16048,7 +16048,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432152], '\xef')
         self.assertEqual(mem[0x432153], '\xc0')
         self.assertEqual(cpu.XMM0, 0)
-        self.assertEqual(cpu.RIP, 4399444L)
+        self.assertEqual(cpu.RIP, 4399444)
 
     def test_VPXOR_5(self):
         ''' Instruction VPXOR_5
@@ -16071,7 +16071,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432132], '\xef')
         self.assertEqual(mem[0x432133], '\xc0')
         self.assertEqual(cpu.XMM0, 0)
-        self.assertEqual(cpu.RIP, 4399412L)
+        self.assertEqual(cpu.RIP, 4399412)
 
     def test_VPXOR_6(self):
         ''' Instruction VPXOR_6
@@ -16094,7 +16094,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432132], '\xef')
         self.assertEqual(mem[0x432133], '\xc0')
         self.assertEqual(cpu.XMM0, 0)
-        self.assertEqual(cpu.RIP, 4399412L)
+        self.assertEqual(cpu.RIP, 4399412)
 
     def test_VZEROUPPER_1(self):
         ''' Instruction VZEROUPPER_1
@@ -16113,7 +16113,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4322a9], '\xc5')
         self.assertEqual(mem[0x4322aa], '\xf8')
         self.assertEqual(mem[0x4322ab], 'w')
-        self.assertEqual(cpu.RIP, 4399788L)
+        self.assertEqual(cpu.RIP, 4399788)
 
     def test_VZEROUPPER_2(self):
         ''' Instruction VZEROUPPER_2
@@ -16132,7 +16132,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432319], '\xc5')
         self.assertEqual(mem[0x43231a], '\xf8')
         self.assertEqual(mem[0x43231b], 'w')
-        self.assertEqual(cpu.RIP, 4399900L)
+        self.assertEqual(cpu.RIP, 4399900)
 
     def test_VZEROUPPER_3(self):
         ''' Instruction VZEROUPPER_3
@@ -16151,7 +16151,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4322c9], '\xc5')
         self.assertEqual(mem[0x4322ca], '\xf8')
         self.assertEqual(mem[0x4322cb], 'w')
-        self.assertEqual(cpu.RIP, 4399820L)
+        self.assertEqual(cpu.RIP, 4399820)
 
     def test_VZEROUPPER_4(self):
         ''' Instruction VZEROUPPER_4
@@ -16170,7 +16170,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432229], '\xc5')
         self.assertEqual(mem[0x43222a], '\xf8')
         self.assertEqual(mem[0x43222b], 'w')
-        self.assertEqual(cpu.RIP, 4399660L)
+        self.assertEqual(cpu.RIP, 4399660)
 
     def test_VZEROUPPER_5(self):
         ''' Instruction VZEROUPPER_5
@@ -16189,7 +16189,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4322a9], '\xc5')
         self.assertEqual(mem[0x4322aa], '\xf8')
         self.assertEqual(mem[0x4322ab], 'w')
-        self.assertEqual(cpu.RIP, 4399788L)
+        self.assertEqual(cpu.RIP, 4399788)
 
     def test_VZEROUPPER_6(self):
         ''' Instruction VZEROUPPER_6
@@ -16208,7 +16208,7 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x432689], '\xc5')
         self.assertEqual(mem[0x43268a], '\xf8')
         self.assertEqual(mem[0x43268b], 'w')
-        self.assertEqual(cpu.RIP, 4400780L)
+        self.assertEqual(cpu.RIP, 4400780)
 
     def test_XGETBV_1(self):
         ''' Instruction XGETBV_1
@@ -16230,10 +16230,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a4eb1b], '\x0f')
         self.assertEqual(mem[0x7ffff7a4eb1c], '\x01')
         self.assertEqual(mem[0x7ffff7a4eb1d], '\xd0')
-        self.assertEqual(cpu.RAX, 7L)
-        self.assertEqual(cpu.RCX, 0L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 140737348168478L)
+        self.assertEqual(cpu.RAX, 7)
+        self.assertEqual(cpu.RCX, 0)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 140737348168478)
 
     def test_XGETBV_2(self):
         ''' Instruction XGETBV_2
@@ -16255,10 +16255,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x437c10], '\xd0')
         self.assertEqual(mem[0x437c0e], '\x0f')
         self.assertEqual(mem[0x437c0f], '\x01')
-        self.assertEqual(cpu.RAX, 7L)
-        self.assertEqual(cpu.RCX, 0L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4422673L)
+        self.assertEqual(cpu.RAX, 7)
+        self.assertEqual(cpu.RCX, 0)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4422673)
 
     def test_XGETBV_3(self):
         ''' Instruction XGETBV_3
@@ -16280,10 +16280,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7a4eb1b], '\x0f')
         self.assertEqual(mem[0x7ffff7a4eb1c], '\x01')
         self.assertEqual(mem[0x7ffff7a4eb1d], '\xd0')
-        self.assertEqual(cpu.RAX, 7L)
-        self.assertEqual(cpu.RCX, 0L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 140737348168478L)
+        self.assertEqual(cpu.RAX, 7)
+        self.assertEqual(cpu.RCX, 0)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 140737348168478)
 
     def test_XGETBV_4(self):
         ''' Instruction XGETBV_4
@@ -16305,10 +16305,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x43a5a0], '\xd0')
         self.assertEqual(mem[0x43a59e], '\x0f')
         self.assertEqual(mem[0x43a59f], '\x01')
-        self.assertEqual(cpu.RAX, 7L)
-        self.assertEqual(cpu.RCX, 0L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4433313L)
+        self.assertEqual(cpu.RAX, 7)
+        self.assertEqual(cpu.RCX, 0)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4433313)
 
     def test_XGETBV_5(self):
         ''' Instruction XGETBV_5
@@ -16330,10 +16330,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x437920], '\xd0')
         self.assertEqual(mem[0x43791e], '\x0f')
         self.assertEqual(mem[0x43791f], '\x01')
-        self.assertEqual(cpu.RAX, 7L)
-        self.assertEqual(cpu.RCX, 0L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4421921L)
+        self.assertEqual(cpu.RAX, 7)
+        self.assertEqual(cpu.RCX, 0)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4421921)
 
     def test_XGETBV_6(self):
         ''' Instruction XGETBV_6
@@ -16355,10 +16355,10 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x437a70], '\xd0')
         self.assertEqual(mem[0x437a6e], '\x0f')
         self.assertEqual(mem[0x437a6f], '\x01')
-        self.assertEqual(cpu.RAX, 7L)
-        self.assertEqual(cpu.RCX, 0L)
-        self.assertEqual(cpu.RDX, 0L)
-        self.assertEqual(cpu.RIP, 4422257L)
+        self.assertEqual(cpu.RAX, 7)
+        self.assertEqual(cpu.RCX, 0)
+        self.assertEqual(cpu.RDX, 0)
+        self.assertEqual(cpu.RIP, 4422257)
 
     def test_XORPS_1(self):
         ''' Instruction XORPS_1
@@ -16379,9 +16379,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x530d30], 'W')
         self.assertEqual(mem[0x530d31], '\xc8')
         self.assertEqual(mem[0x530d2f], '\x0f')
-        self.assertEqual(cpu.XMM0, 340282366762482139043588486956268388350L)
-        self.assertEqual(cpu.XMM1, 5149830563390288455574671589440L)
-        self.assertEqual(cpu.RIP, 5442866L)
+        self.assertEqual(cpu.XMM0, 340282366762482139043588486956268388350)
+        self.assertEqual(cpu.XMM1, 5149830563390288455574671589440)
+        self.assertEqual(cpu.RIP, 5442866)
 
     def test_XORPS_2(self):
         ''' Instruction XORPS_2
@@ -16402,9 +16402,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x530a6c], '\x0f')
         self.assertEqual(mem[0x530a6d], 'W')
         self.assertEqual(mem[0x530a6e], '\xc8')
-        self.assertEqual(cpu.XMM0, 340282366802096219710424845394334711806L)
-        self.assertEqual(cpu.XMM1, 5149830563399511827474087411776L)
-        self.assertEqual(cpu.RIP, 5442159L)
+        self.assertEqual(cpu.XMM0, 340282366802096219710424845394334711806)
+        self.assertEqual(cpu.XMM1, 5149830563399511827474087411776)
+        self.assertEqual(cpu.RIP, 5442159)
 
     def test_XORPS_3(self):
         ''' Instruction XORPS_3
@@ -16460,9 +16460,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccbd], '\x00')
         self.assertEqual(mem[0x7fffffffccbe], '\x00')
         self.assertEqual(mem[0x7fffffffccbf], '\x80')
-        self.assertEqual(cpu.XMM0, 170141183460469836176150507692102778880L)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5568366L)
+        self.assertEqual(cpu.XMM0, 170141183460469836176150507692102778880)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5568366)
 
     def test_XORPS_4(self):
         ''' Instruction XORPS_4
@@ -16483,9 +16483,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x540f22], '\x0f')
         self.assertEqual(mem[0x540f23], 'W')
         self.assertEqual(mem[0x540f24], '\xc8')
-        self.assertEqual(cpu.XMM0, 2535301202799195300496253386784L)
-        self.assertEqual(cpu.XMM1, 79228164266705024999678279681L)
-        self.assertEqual(cpu.RIP, 5508901L)
+        self.assertEqual(cpu.XMM0, 2535301202799195300496253386784)
+        self.assertEqual(cpu.XMM1, 79228164266705024999678279681)
+        self.assertEqual(cpu.RIP, 5508901)
 
     def test_XORPS_5(self):
         ''' Instruction XORPS_5
@@ -16542,8 +16542,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccbe], '\xff')
         self.assertEqual(mem[0x7fffffffccb5], '\x7f')
         self.assertEqual(cpu.XMM0, 0)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5638489L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5638489)
 
     def test_XORPS_6(self):
         ''' Instruction XORPS_6
@@ -16600,8 +16600,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7fffffffccbe], '\x00')
         self.assertEqual(mem[0x7fffffffccbf], '\x80')
         self.assertEqual(cpu.XMM0, 0)
-        self.assertEqual(cpu.RSP, 140737488342192L)
-        self.assertEqual(cpu.RIP, 5578440L)
+        self.assertEqual(cpu.RSP, 140737488342192)
+        self.assertEqual(cpu.RIP, 5578440)
 
     def test_XOR_1(self):
         ''' Instruction XOR_1
@@ -16627,8 +16627,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351934501L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RIP, 140737351934501)
+        self.assertEqual(cpu.EAX, 0)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -16657,13 +16657,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x7ffff7de405b], '1')
         self.assertEqual(mem[0x7ffff7de405c], '\xea')
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.R13, 2090266759L)
+        self.assertEqual(cpu.R13, 2090266759)
         self.assertEqual(cpu.SF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925853L)
-        self.assertEqual(cpu.RDX, 0L)
+        self.assertEqual(cpu.RIP, 140737351925853)
+        self.assertEqual(cpu.RDX, 0)
 
     def test_XOR_3(self):
         ''' Instruction XOR_3
@@ -16689,8 +16689,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351992738L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RIP, 140737351992738)
+        self.assertEqual(cpu.EAX, 0)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -16718,9 +16718,9 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351925752L)
+        self.assertEqual(cpu.RIP, 140737351925752)
         self.assertEqual(cpu.PF, True)
-        self.assertEqual(cpu.EDX, 0L)
+        self.assertEqual(cpu.EDX, 0)
         self.assertEqual(cpu.SF, False)
 
     def test_XOR_5(self):
@@ -16747,8 +16747,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351991502L)
-        self.assertEqual(cpu.EAX, 0L)
+        self.assertEqual(cpu.RIP, 140737351991502)
+        self.assertEqual(cpu.EAX, 0)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -16778,8 +16778,8 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 140737351923356L)
-        self.assertEqual(cpu.R10D, 0L)
+        self.assertEqual(cpu.RIP, 140737351923356)
+        self.assertEqual(cpu.R10D, 0)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
 
@@ -16818,7 +16818,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -16882,7 +16882,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -16945,7 +16945,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17008,7 +17008,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17114,7 +17114,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17229,7 +17229,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17299,7 +17299,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17361,7 +17361,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17423,7 +17423,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17484,7 +17484,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17544,7 +17544,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17629,7 +17629,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17689,7 +17689,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17738,7 +17738,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17787,7 +17787,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17837,7 +17837,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17888,7 +17888,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17938,7 +17938,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17985,7 +17985,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18031,7 +18031,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18078,7 +18078,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18125,7 +18125,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18172,7 +18172,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18220,7 +18220,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18270,7 +18270,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18321,7 +18321,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18372,7 +18372,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18423,7 +18423,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18474,7 +18474,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18525,7 +18525,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18661,7 +18661,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18856,7 +18856,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19017,7 +19017,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19170,7 +19170,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19323,7 +19323,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19476,7 +19476,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19538,7 +19538,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19579,7 +19579,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19620,7 +19620,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19661,7 +19661,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19702,7 +19702,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19743,7 +19743,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19783,7 +19783,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19822,7 +19822,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19861,7 +19861,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19900,7 +19900,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19939,7 +19939,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19978,7 +19978,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20024,7 +20024,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20074,7 +20074,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20124,7 +20124,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20174,7 +20174,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20224,7 +20224,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20274,7 +20274,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20326,7 +20326,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20378,7 +20378,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20430,7 +20430,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20482,7 +20482,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20534,7 +20534,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20586,7 +20586,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20638,7 +20638,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20690,7 +20690,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20742,7 +20742,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20794,7 +20794,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20846,7 +20846,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20898,7 +20898,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20948,7 +20948,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20997,7 +20997,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21045,7 +21045,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21094,7 +21094,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21143,7 +21143,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21191,7 +21191,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21240,7 +21240,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21290,7 +21290,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21340,7 +21340,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21433,7 +21433,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21494,7 +21494,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21544,7 +21544,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21594,7 +21594,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21644,7 +21644,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21694,7 +21694,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21744,7 +21744,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21793,7 +21793,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21842,7 +21842,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21892,7 +21892,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21942,7 +21942,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22072,7 +22072,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22217,7 +22217,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22362,7 +22362,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22507,7 +22507,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22651,7 +22651,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22795,7 +22795,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22907,7 +22907,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23016,7 +23016,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23124,7 +23124,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23232,7 +23232,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23341,7 +23341,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23451,7 +23451,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23548,7 +23548,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23643,7 +23643,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23735,7 +23735,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23848,7 +23848,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23945,7 +23945,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24037,7 +24037,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24106,7 +24106,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24182,7 +24182,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24247,7 +24247,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24354,7 +24354,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24429,7 +24429,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24492,7 +24492,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24543,7 +24543,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24587,7 +24587,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24631,7 +24631,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24675,7 +24675,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24719,7 +24719,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24763,7 +24763,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24815,7 +24815,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24871,7 +24871,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24927,7 +24927,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25006,7 +25006,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25069,7 +25069,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25125,7 +25125,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25176,7 +25176,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25225,7 +25225,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25274,7 +25274,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25323,7 +25323,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25372,7 +25372,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25421,7 +25421,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25470,7 +25470,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25519,7 +25519,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25568,7 +25568,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25617,7 +25617,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25666,7 +25666,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25715,7 +25715,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25770,7 +25770,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25828,7 +25828,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25883,7 +25883,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25936,7 +25936,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25993,7 +25993,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26053,7 +26053,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26112,7 +26112,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26170,7 +26170,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26228,7 +26228,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26286,7 +26286,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26344,7 +26344,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26402,7 +26402,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26449,7 +26449,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26489,7 +26489,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26529,7 +26529,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26573,7 +26573,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26617,7 +26617,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26657,7 +26657,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26699,7 +26699,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26741,7 +26741,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26783,7 +26783,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26825,7 +26825,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26867,7 +26867,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26909,7 +26909,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26955,7 +26955,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27005,7 +27005,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27051,7 +27051,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27097,7 +27097,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27143,7 +27143,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27189,7 +27189,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27233,7 +27233,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27273,7 +27273,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27317,7 +27317,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27361,7 +27361,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27401,7 +27401,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27441,7 +27441,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27485,7 +27485,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27533,7 +27533,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27581,7 +27581,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27629,7 +27629,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27673,7 +27673,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27713,7 +27713,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27759,7 +27759,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27805,7 +27805,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27851,7 +27851,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27899,7 +27899,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27947,7 +27947,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27995,7 +27995,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28043,7 +28043,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28095,7 +28095,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28147,7 +28147,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28195,7 +28195,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28243,7 +28243,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28291,7 +28291,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28335,7 +28335,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28379,7 +28379,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28423,7 +28423,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28465,7 +28465,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28507,7 +28507,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28549,7 +28549,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28590,7 +28590,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28631,7 +28631,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28672,7 +28672,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28715,7 +28715,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28754,7 +28754,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28792,7 +28792,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28832,7 +28832,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28872,7 +28872,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28916,7 +28916,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28960,7 +28960,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29000,7 +29000,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29040,7 +29040,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29080,7 +29080,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29124,7 +29124,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29168,7 +29168,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29208,7 +29208,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29248,7 +29248,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29288,7 +29288,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29332,7 +29332,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29380,7 +29380,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29428,7 +29428,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29472,7 +29472,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29512,7 +29512,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29552,7 +29552,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29759,7 +29759,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30000,7 +30000,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30246,7 +30246,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30493,7 +30493,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30740,7 +30740,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30987,7 +30987,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31107,7 +31107,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31204,7 +31204,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31301,7 +31301,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31398,7 +31398,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31496,7 +31496,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31598,7 +31598,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31661,7 +31661,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31718,7 +31718,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31775,7 +31775,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31832,7 +31832,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31889,7 +31889,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31946,7 +31946,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31999,7 +31999,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32047,7 +32047,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32095,7 +32095,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32225,7 +32225,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32290,7 +32290,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32338,7 +32338,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32468,7 +32468,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32615,7 +32615,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32763,7 +32763,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32912,7 +32912,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33061,7 +33061,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33209,7 +33209,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33274,7 +33274,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33322,7 +33322,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33370,7 +33370,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33418,7 +33418,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33466,7 +33466,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33514,7 +33514,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33604,7 +33604,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33703,7 +33703,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33802,7 +33802,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33901,7 +33901,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34000,7 +34000,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34099,7 +34099,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34238,7 +34238,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34383,7 +34383,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34528,7 +34528,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34673,7 +34673,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34818,7 +34818,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34963,7 +34963,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35025,7 +35025,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35095,7 +35095,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35169,7 +35169,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35242,7 +35242,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35315,7 +35315,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35390,7 +35390,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35448,7 +35448,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35501,7 +35501,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35554,7 +35554,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35607,7 +35607,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35660,7 +35660,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35713,7 +35713,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35767,7 +35767,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35821,7 +35821,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35868,7 +35868,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35927,7 +35927,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35978,7 +35978,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36032,7 +36032,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36080,7 +36080,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36127,7 +36127,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36196,7 +36196,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36273,7 +36273,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36351,7 +36351,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36429,7 +36429,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36487,7 +36487,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36539,7 +36539,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36591,7 +36591,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36643,7 +36643,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36695,7 +36695,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36749,7 +36749,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36808,7 +36808,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36869,7 +36869,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36929,7 +36929,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36989,7 +36989,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37050,7 +37050,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37111,7 +37111,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37160,7 +37160,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37202,7 +37202,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37244,7 +37244,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37287,7 +37287,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37330,7 +37330,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37373,7 +37373,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37428,7 +37428,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37530,7 +37530,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37641,7 +37641,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37752,7 +37752,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37863,7 +37863,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37933,7 +37933,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37985,7 +37985,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38034,7 +38034,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38083,7 +38083,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38131,7 +38131,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38179,7 +38179,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38227,7 +38227,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38358,7 +38358,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38507,7 +38507,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38573,7 +38573,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38704,7 +38704,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38770,7 +38770,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38818,7 +38818,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38867,7 +38867,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38917,7 +38917,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38966,7 +38966,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39015,7 +39015,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39065,7 +39065,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39115,7 +39115,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39247,7 +39247,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39395,7 +39395,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39545,7 +39545,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39694,7 +39694,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39842,7 +39842,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39990,7 +39990,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40053,7 +40053,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40101,7 +40101,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40149,7 +40149,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40197,7 +40197,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40245,7 +40245,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40293,7 +40293,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40340,7 +40340,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40387,7 +40387,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40434,7 +40434,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40481,7 +40481,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40528,7 +40528,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40575,7 +40575,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40621,7 +40621,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40666,7 +40666,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40711,7 +40711,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40756,7 +40756,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40801,7 +40801,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40846,7 +40846,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40891,7 +40891,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40936,7 +40936,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40981,7 +40981,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41026,7 +41026,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41071,7 +41071,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41116,7 +41116,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41249,7 +41249,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41400,7 +41400,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41553,7 +41553,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41704,7 +41704,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41850,7 +41850,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41999,7 +41999,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42064,7 +42064,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42111,7 +42111,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42158,7 +42158,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42205,7 +42205,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42252,7 +42252,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42299,7 +42299,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42430,7 +42430,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42575,7 +42575,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42720,7 +42720,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42865,7 +42865,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43010,7 +43010,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43155,7 +43155,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43219,7 +43219,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43270,7 +43270,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43321,7 +43321,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43372,7 +43372,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43423,7 +43423,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43474,7 +43474,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43525,7 +43525,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43576,7 +43576,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43627,7 +43627,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43678,7 +43678,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43729,7 +43729,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43780,7 +43780,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43837,7 +43837,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43897,7 +43897,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43957,7 +43957,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44017,7 +44017,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44077,7 +44077,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44137,7 +44137,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44273,7 +44273,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44421,7 +44421,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44569,7 +44569,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44717,7 +44717,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44865,7 +44865,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45013,7 +45013,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45078,7 +45078,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45126,7 +45126,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45175,7 +45175,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45224,7 +45224,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45273,7 +45273,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45322,7 +45322,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45371,7 +45371,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45417,7 +45417,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45462,7 +45462,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45507,7 +45507,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45552,7 +45552,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45597,7 +45597,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45642,7 +45642,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45688,7 +45688,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45734,7 +45734,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45779,7 +45779,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45824,7 +45824,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45870,7 +45870,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45916,7 +45916,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45966,7 +45966,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46017,7 +46017,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46067,7 +46067,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46116,7 +46116,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46161,7 +46161,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46206,7 +46206,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46251,7 +46251,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46296,7 +46296,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46341,7 +46341,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46386,7 +46386,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46475,7 +46475,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46534,7 +46534,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46584,7 +46584,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46676,7 +46676,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46740,7 +46740,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46797,7 +46797,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46854,7 +46854,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46911,7 +46911,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46968,7 +46968,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47025,7 +47025,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47081,7 +47081,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47138,7 +47138,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47196,7 +47196,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47252,7 +47252,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47309,7 +47309,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47365,7 +47365,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47410,7 +47410,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47449,7 +47449,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47488,7 +47488,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47527,7 +47527,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47566,7 +47566,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47605,7 +47605,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47732,7 +47732,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47879,7 +47879,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48026,7 +48026,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48173,7 +48173,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48320,7 +48320,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48467,7 +48467,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48615,7 +48615,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48764,7 +48764,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48914,7 +48914,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49063,7 +49063,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49212,7 +49212,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49361,7 +49361,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49439,7 +49439,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49508,7 +49508,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49574,7 +49574,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49640,7 +49640,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49709,7 +49709,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49778,7 +49778,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49840,7 +49840,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49896,7 +49896,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49953,7 +49953,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50019,7 +50019,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50080,7 +50080,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50138,7 +50138,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50189,7 +50189,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50237,7 +50237,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50285,7 +50285,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50333,7 +50333,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50381,7 +50381,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50429,7 +50429,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50478,7 +50478,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50528,7 +50528,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50578,7 +50578,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50628,7 +50628,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50678,7 +50678,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50728,7 +50728,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50775,7 +50775,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50820,7 +50820,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50865,7 +50865,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50910,7 +50910,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50955,7 +50955,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51000,7 +51000,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51042,7 +51042,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51082,7 +51082,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51122,7 +51122,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51162,7 +51162,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51202,7 +51202,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51242,7 +51242,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51288,7 +51288,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51337,7 +51337,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51386,7 +51386,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51435,7 +51435,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51484,7 +51484,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51533,7 +51533,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51580,7 +51580,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51626,7 +51626,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51754,7 +51754,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51817,7 +51817,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51945,7 +51945,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52090,7 +52090,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52160,7 +52160,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52219,7 +52219,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52277,7 +52277,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52333,7 +52333,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52389,7 +52389,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52446,7 +52446,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
