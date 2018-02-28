@@ -463,7 +463,7 @@ class Z3Solver(Solver):
                 var = []
                 result = ''
                 for i in xrange(expression.index_max):
-                    subvar = temp_cs.new_bitvec(8)
+                    subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
                     temp_cs.add(subvar==expression[i])
 
