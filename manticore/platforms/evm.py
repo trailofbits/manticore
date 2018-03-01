@@ -896,11 +896,7 @@ class EVM(Eventful):
         state['pc'] = self.pc
         state['stack'] = self.stack
         state['gas'] = self._gas
-<<<<<<< HEAD
         state['allocated'] = self._allocated
-=======
-        state['allocated'] = self.allocated
->>>>>>> master
         state['suicides'] = self.suicides
         state['logs'] = self.logs
 
@@ -924,12 +920,7 @@ class EVM(Eventful):
         self.header = state['header']
         self.pc = state['pc']
         self.stack = state['stack']
-<<<<<<< HEAD
-        self._gas = state['gas']
         self._allocated = state['allocated']
-=======
-        self.allocated = state['allocated']
->>>>>>> master
         self.suicides = state['suicides']
         super(EVM, self).__setstate__(state)
 
@@ -948,7 +939,7 @@ class EVM(Eventful):
         flag = Operators.UGT(new_totalfee, old_totalfee)
         self._consume(Operators.ITEBV(512, flag, memfee, 0))
 
-        self._allocated=Operators.ITEBV(512, flag, Operators.ZEXTEND( address, 512), Operators.ZEXTEND(allocated,512))
+        self._allocated=Operators.ITEBV(512, flag, Operators.ZEXTEND( ceil32(address), 512), Operators.ZEXTEND(allocated,512))
 
     @property
     def allocated(self):
@@ -968,7 +959,7 @@ class EVM(Eventful):
     def _load(self, address):
         self._allocate(address)
         value = self.memory[address]
-        #value = arithmetic_simplifier(value)
+        value = arithmetic_simplifier(value)
         if isinstance(value, Constant) and not value.taint: 
             value = value.value
         self._publish('did_evm_read_memory', address, value)
@@ -1036,15 +1027,13 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-<<<<<<< HEAD
         self.constraints.add(Operators.UGE(fee, 0))
-        self.constraints.add(Operators.UGE(self.gas, fee) )
-=======
-        assert fee >= 0
-        if self._gas < fee:
+
+        #FIXME add configurable checks here
+        if solver.can_be_true(self.constraints, self._gas < fee):
+            self.constraints.add(Operators.UGT(fee, self.gas))
             logger.debug("Not enough gas for instruction")
             raise NotEnoughGas()
->>>>>>> master
         self._gas -= fee
 
     #Execute an instruction from current pc
@@ -1297,6 +1286,11 @@ class EVM(Eventful):
         if size:
             self._consume(GSHA3WORD * (ceil32(size) // 32) )
         data = self.read_buffer(start, size)
+        
+        concrete_data = []
+        for i in range(len(data)):
+            concrete_data.append(chr(simplify(data[i]).value))
+        data = ''.join(concrete_data)
         if any(map(issymbolic, data)):
             raise Sha3(data)
 
@@ -1319,7 +1313,7 @@ class EVM(Eventful):
         '''Get balance of the given account'''
         BALANCE_SUPPLEMENTAL_GAS = 380
         self._consume(BALANCE_SUPPLEMENTAL_GAS)
-        return self._world_state.get_balance(account)
+        return self.world.get_balance(account)
 
     def ORIGIN(self): 
         '''Get execution origination address'''
@@ -1402,11 +1396,11 @@ class EVM(Eventful):
 
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
-        return len(self.world_state.get_code(account))
+        return len(self.world.get_code(account))
 
     def EXTCODECOPY(self, account, address, offset, size): 
         '''Copy an account's code to memory'''
-        extbytecode = self.world_state.get_code(account)
+        extbytecode = self.world.get_code(account)
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
 
@@ -1507,7 +1501,7 @@ class EVM(Eventful):
 
     def MSIZE(self):
         '''Get the size of active memory in bytes'''
-        return self._allocated * 32
+        return self._allocated 
 
     def GAS(self):
         '''Get the amount of available gas, including the corresponding reduction the amount of available gas'''
@@ -1553,26 +1547,10 @@ class EVM(Eventful):
     ##########################################################################
     ##System operations
     def read_buffer(self, offset, size):
-<<<<<<< HEAD
-        self._allocate(offset+size)
-        data = self.memory[offset:offset+size]
-        self._publish('did_evm_read_memory', offset, data)
-=======
         if size:
             self._allocate(offset+size)
-        data = []
-        for i in xrange(size):
-            data.append(self._load(offset+i))
-        data = map(Operators.CHR, data)
-        if any(map(issymbolic, data)):
-            data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
-            for i in range(len(data)):
-                data_symb[i] = Operators.ORD(data[i])
-            data = data_symb
-        else:
-            data = ''.join(data)
-
->>>>>>> master
+        data = self.memory[offset:offset+size]
+        self._publish('did_evm_read_memory', offset, data)
         return data
 
     def write_buffer(self, offset, buf):
@@ -1645,6 +1623,7 @@ class EVM(Eventful):
             return lines
 
         '''
+        #FIXME
         m = []
         if len(self.memory._memory.keys()):
             for i in range(max([0] + self.memory._memory.keys())+1):
@@ -1864,9 +1843,12 @@ class EVMWorld(Platform):
         self.world_state[int(address)]['balance'] = value
 
     def get_balance(self, address):
+        if address not in self.world_state:
+            return 0 
         return self.world_state[address]['balance']
 
     def add_to_balance(self, address, value):
+        assert address in self.world_state
         self.world_state[address]['balance'] += value
 
     def send_funds(self, sender, recipient, value):
@@ -1874,6 +1856,8 @@ class EVMWorld(Platform):
         self.world_state[recipient]['balance'] += value
 
     def get_code(self, address):
+        if address not in self.world_state:
+            return '' 
         return self.world_state[address]['code']
 
     def set_code(self, address, data):

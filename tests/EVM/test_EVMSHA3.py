@@ -54,7 +54,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -80,7 +80,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -106,7 +106,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -132,7 +132,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -158,7 +158,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -184,7 +184,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -210,7 +210,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -236,7 +236,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -262,7 +262,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
@@ -288,7 +288,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -316,7 +316,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -344,7 +344,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -372,7 +372,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -400,7 +400,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -428,7 +428,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -456,7 +456,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -484,7 +484,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -512,7 +512,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(0)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
@@ -540,7 +540,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -566,10 +566,10 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(0)
-            new_vm.memory.write(0, [88])
+            new_vm.memory[0] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -595,10 +595,10 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(1)
-            new_vm.memory.write(1, [88])
+            new_vm.memory[1] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -624,7 +624,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -650,7 +650,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -676,10 +676,10 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(16)
-            new_vm.memory.write(16, [88])
+            new_vm.memory[16] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -705,10 +705,10 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(32)
-            new_vm.memory.write(32, [88])
+            new_vm.memory[32] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -734,10 +734,10 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(48)
-            new_vm.memory.write(48, [88])
+            new_vm.memory[48] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -763,7 +763,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(1)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
@@ -789,7 +789,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -815,7 +815,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -841,7 +841,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -867,7 +867,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -893,7 +893,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -919,7 +919,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -945,7 +945,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -971,7 +971,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -997,7 +997,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1023,7 +1023,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1049,7 +1049,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -1075,7 +1075,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -1101,7 +1101,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1127,7 +1127,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1153,7 +1153,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -1179,7 +1179,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -1205,7 +1205,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -1231,7 +1231,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1257,7 +1257,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1283,25 +1283,25 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(0)
-            new_vm.memory.write(0, [88])
-            new_vm.memory.write(1, [88])
-            new_vm.memory.write(2, [88])
-            new_vm.memory.write(3, [88])
-            new_vm.memory.write(4, [88])
-            new_vm.memory.write(5, [88])
-            new_vm.memory.write(6, [88])
-            new_vm.memory.write(7, [88])
-            new_vm.memory.write(8, [88])
-            new_vm.memory.write(9, [88])
-            new_vm.memory.write(10, [88])
-            new_vm.memory.write(11, [88])
-            new_vm.memory.write(12, [88])
-            new_vm.memory.write(13, [88])
-            new_vm.memory.write(14, [88])
-            new_vm.memory.write(15, [88])
+            new_vm.memory[0] = 88
+            new_vm.memory[1] = 88
+            new_vm.memory[2] = 88
+            new_vm.memory[3] = 88
+            new_vm.memory[4] = 88
+            new_vm.memory[5] = 88
+            new_vm.memory[6] = 88
+            new_vm.memory[7] = 88
+            new_vm.memory[8] = 88
+            new_vm.memory[9] = 88
+            new_vm.memory[10] = 88
+            new_vm.memory[11] = 88
+            new_vm.memory[12] = 88
+            new_vm.memory[13] = 88
+            new_vm.memory[14] = 88
+            new_vm.memory[15] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1327,25 +1327,25 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(1)
-            new_vm.memory.write(1, [88])
-            new_vm.memory.write(2, [88])
-            new_vm.memory.write(3, [88])
-            new_vm.memory.write(4, [88])
-            new_vm.memory.write(5, [88])
-            new_vm.memory.write(6, [88])
-            new_vm.memory.write(7, [88])
-            new_vm.memory.write(8, [88])
-            new_vm.memory.write(9, [88])
-            new_vm.memory.write(10, [88])
-            new_vm.memory.write(11, [88])
-            new_vm.memory.write(12, [88])
-            new_vm.memory.write(13, [88])
-            new_vm.memory.write(14, [88])
-            new_vm.memory.write(15, [88])
-            new_vm.memory.write(16, [88])
+            new_vm.memory[1] = 88
+            new_vm.memory[2] = 88
+            new_vm.memory[3] = 88
+            new_vm.memory[4] = 88
+            new_vm.memory[5] = 88
+            new_vm.memory[6] = 88
+            new_vm.memory[7] = 88
+            new_vm.memory[8] = 88
+            new_vm.memory[9] = 88
+            new_vm.memory[10] = 88
+            new_vm.memory[11] = 88
+            new_vm.memory[12] = 88
+            new_vm.memory[13] = 88
+            new_vm.memory[14] = 88
+            new_vm.memory[15] = 88
+            new_vm.memory[16] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1371,7 +1371,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1397,7 +1397,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1423,25 +1423,25 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(16)
-            new_vm.memory.write(16, [88])
-            new_vm.memory.write(17, [88])
-            new_vm.memory.write(18, [88])
-            new_vm.memory.write(19, [88])
-            new_vm.memory.write(20, [88])
-            new_vm.memory.write(21, [88])
-            new_vm.memory.write(22, [88])
-            new_vm.memory.write(23, [88])
-            new_vm.memory.write(24, [88])
-            new_vm.memory.write(25, [88])
-            new_vm.memory.write(26, [88])
-            new_vm.memory.write(27, [88])
-            new_vm.memory.write(28, [88])
-            new_vm.memory.write(29, [88])
-            new_vm.memory.write(30, [88])
-            new_vm.memory.write(31, [88])
+            new_vm.memory[16] = 88
+            new_vm.memory[17] = 88
+            new_vm.memory[18] = 88
+            new_vm.memory[19] = 88
+            new_vm.memory[20] = 88
+            new_vm.memory[21] = 88
+            new_vm.memory[22] = 88
+            new_vm.memory[23] = 88
+            new_vm.memory[24] = 88
+            new_vm.memory[25] = 88
+            new_vm.memory[26] = 88
+            new_vm.memory[27] = 88
+            new_vm.memory[28] = 88
+            new_vm.memory[29] = 88
+            new_vm.memory[30] = 88
+            new_vm.memory[31] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1467,25 +1467,25 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(32)
-            new_vm.memory.write(32, [88])
-            new_vm.memory.write(33, [88])
-            new_vm.memory.write(34, [88])
-            new_vm.memory.write(35, [88])
-            new_vm.memory.write(36, [88])
-            new_vm.memory.write(37, [88])
-            new_vm.memory.write(38, [88])
-            new_vm.memory.write(39, [88])
-            new_vm.memory.write(40, [88])
-            new_vm.memory.write(41, [88])
-            new_vm.memory.write(42, [88])
-            new_vm.memory.write(43, [88])
-            new_vm.memory.write(44, [88])
-            new_vm.memory.write(45, [88])
-            new_vm.memory.write(46, [88])
-            new_vm.memory.write(47, [88])
+            new_vm.memory[32] = 88
+            new_vm.memory[33] = 88
+            new_vm.memory[34] = 88
+            new_vm.memory[35] = 88
+            new_vm.memory[36] = 88
+            new_vm.memory[37] = 88
+            new_vm.memory[38] = 88
+            new_vm.memory[39] = 88
+            new_vm.memory[40] = 88
+            new_vm.memory[41] = 88
+            new_vm.memory[42] = 88
+            new_vm.memory[43] = 88
+            new_vm.memory[44] = 88
+            new_vm.memory[45] = 88
+            new_vm.memory[46] = 88
+            new_vm.memory[47] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1511,25 +1511,25 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(48)
-            new_vm.memory.write(48, [88])
-            new_vm.memory.write(49, [88])
-            new_vm.memory.write(50, [88])
-            new_vm.memory.write(51, [88])
-            new_vm.memory.write(52, [88])
-            new_vm.memory.write(53, [88])
-            new_vm.memory.write(54, [88])
-            new_vm.memory.write(55, [88])
-            new_vm.memory.write(56, [88])
-            new_vm.memory.write(57, [88])
-            new_vm.memory.write(58, [88])
-            new_vm.memory.write(59, [88])
-            new_vm.memory.write(60, [88])
-            new_vm.memory.write(61, [88])
-            new_vm.memory.write(62, [88])
-            new_vm.memory.write(63, [88])
+            new_vm.memory[48] = 88
+            new_vm.memory[49] = 88
+            new_vm.memory[50] = 88
+            new_vm.memory[51] = 88
+            new_vm.memory[52] = 88
+            new_vm.memory[53] = 88
+            new_vm.memory[54] = 88
+            new_vm.memory[55] = 88
+            new_vm.memory[56] = 88
+            new_vm.memory[57] = 88
+            new_vm.memory[58] = 88
+            new_vm.memory[59] = 88
+            new_vm.memory[60] = 88
+            new_vm.memory[61] = 88
+            new_vm.memory[62] = 88
+            new_vm.memory[63] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1555,7 +1555,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(16)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1581,7 +1581,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1607,41 +1607,41 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(0)
-            new_vm.memory.write(0, [88])
-            new_vm.memory.write(1, [88])
-            new_vm.memory.write(2, [88])
-            new_vm.memory.write(3, [88])
-            new_vm.memory.write(4, [88])
-            new_vm.memory.write(5, [88])
-            new_vm.memory.write(6, [88])
-            new_vm.memory.write(7, [88])
-            new_vm.memory.write(8, [88])
-            new_vm.memory.write(9, [88])
-            new_vm.memory.write(10, [88])
-            new_vm.memory.write(11, [88])
-            new_vm.memory.write(12, [88])
-            new_vm.memory.write(13, [88])
-            new_vm.memory.write(14, [88])
-            new_vm.memory.write(15, [88])
-            new_vm.memory.write(16, [88])
-            new_vm.memory.write(17, [88])
-            new_vm.memory.write(18, [88])
-            new_vm.memory.write(19, [88])
-            new_vm.memory.write(20, [88])
-            new_vm.memory.write(21, [88])
-            new_vm.memory.write(22, [88])
-            new_vm.memory.write(23, [88])
-            new_vm.memory.write(24, [88])
-            new_vm.memory.write(25, [88])
-            new_vm.memory.write(26, [88])
-            new_vm.memory.write(27, [88])
-            new_vm.memory.write(28, [88])
-            new_vm.memory.write(29, [88])
-            new_vm.memory.write(30, [88])
-            new_vm.memory.write(31, [88])
+            new_vm.memory[0] = 88
+            new_vm.memory[1] = 88
+            new_vm.memory[2] = 88
+            new_vm.memory[3] = 88
+            new_vm.memory[4] = 88
+            new_vm.memory[5] = 88
+            new_vm.memory[6] = 88
+            new_vm.memory[7] = 88
+            new_vm.memory[8] = 88
+            new_vm.memory[9] = 88
+            new_vm.memory[10] = 88
+            new_vm.memory[11] = 88
+            new_vm.memory[12] = 88
+            new_vm.memory[13] = 88
+            new_vm.memory[14] = 88
+            new_vm.memory[15] = 88
+            new_vm.memory[16] = 88
+            new_vm.memory[17] = 88
+            new_vm.memory[18] = 88
+            new_vm.memory[19] = 88
+            new_vm.memory[20] = 88
+            new_vm.memory[21] = 88
+            new_vm.memory[22] = 88
+            new_vm.memory[23] = 88
+            new_vm.memory[24] = 88
+            new_vm.memory[25] = 88
+            new_vm.memory[26] = 88
+            new_vm.memory[27] = 88
+            new_vm.memory[28] = 88
+            new_vm.memory[29] = 88
+            new_vm.memory[30] = 88
+            new_vm.memory[31] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1667,41 +1667,41 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(1)
-            new_vm.memory.write(1, [88])
-            new_vm.memory.write(2, [88])
-            new_vm.memory.write(3, [88])
-            new_vm.memory.write(4, [88])
-            new_vm.memory.write(5, [88])
-            new_vm.memory.write(6, [88])
-            new_vm.memory.write(7, [88])
-            new_vm.memory.write(8, [88])
-            new_vm.memory.write(9, [88])
-            new_vm.memory.write(10, [88])
-            new_vm.memory.write(11, [88])
-            new_vm.memory.write(12, [88])
-            new_vm.memory.write(13, [88])
-            new_vm.memory.write(14, [88])
-            new_vm.memory.write(15, [88])
-            new_vm.memory.write(16, [88])
-            new_vm.memory.write(17, [88])
-            new_vm.memory.write(18, [88])
-            new_vm.memory.write(19, [88])
-            new_vm.memory.write(20, [88])
-            new_vm.memory.write(21, [88])
-            new_vm.memory.write(22, [88])
-            new_vm.memory.write(23, [88])
-            new_vm.memory.write(24, [88])
-            new_vm.memory.write(25, [88])
-            new_vm.memory.write(26, [88])
-            new_vm.memory.write(27, [88])
-            new_vm.memory.write(28, [88])
-            new_vm.memory.write(29, [88])
-            new_vm.memory.write(30, [88])
-            new_vm.memory.write(31, [88])
-            new_vm.memory.write(32, [88])
+            new_vm.memory[1] = 88
+            new_vm.memory[2] = 88
+            new_vm.memory[3] = 88
+            new_vm.memory[4] = 88
+            new_vm.memory[5] = 88
+            new_vm.memory[6] = 88
+            new_vm.memory[7] = 88
+            new_vm.memory[8] = 88
+            new_vm.memory[9] = 88
+            new_vm.memory[10] = 88
+            new_vm.memory[11] = 88
+            new_vm.memory[12] = 88
+            new_vm.memory[13] = 88
+            new_vm.memory[14] = 88
+            new_vm.memory[15] = 88
+            new_vm.memory[16] = 88
+            new_vm.memory[17] = 88
+            new_vm.memory[18] = 88
+            new_vm.memory[19] = 88
+            new_vm.memory[20] = 88
+            new_vm.memory[21] = 88
+            new_vm.memory[22] = 88
+            new_vm.memory[23] = 88
+            new_vm.memory[24] = 88
+            new_vm.memory[25] = 88
+            new_vm.memory[26] = 88
+            new_vm.memory[27] = 88
+            new_vm.memory[28] = 88
+            new_vm.memory[29] = 88
+            new_vm.memory[30] = 88
+            new_vm.memory[31] = 88
+            new_vm.memory[32] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1727,7 +1727,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1753,7 +1753,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1779,41 +1779,41 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(16)
-            new_vm.memory.write(16, [88])
-            new_vm.memory.write(17, [88])
-            new_vm.memory.write(18, [88])
-            new_vm.memory.write(19, [88])
-            new_vm.memory.write(20, [88])
-            new_vm.memory.write(21, [88])
-            new_vm.memory.write(22, [88])
-            new_vm.memory.write(23, [88])
-            new_vm.memory.write(24, [88])
-            new_vm.memory.write(25, [88])
-            new_vm.memory.write(26, [88])
-            new_vm.memory.write(27, [88])
-            new_vm.memory.write(28, [88])
-            new_vm.memory.write(29, [88])
-            new_vm.memory.write(30, [88])
-            new_vm.memory.write(31, [88])
-            new_vm.memory.write(32, [88])
-            new_vm.memory.write(33, [88])
-            new_vm.memory.write(34, [88])
-            new_vm.memory.write(35, [88])
-            new_vm.memory.write(36, [88])
-            new_vm.memory.write(37, [88])
-            new_vm.memory.write(38, [88])
-            new_vm.memory.write(39, [88])
-            new_vm.memory.write(40, [88])
-            new_vm.memory.write(41, [88])
-            new_vm.memory.write(42, [88])
-            new_vm.memory.write(43, [88])
-            new_vm.memory.write(44, [88])
-            new_vm.memory.write(45, [88])
-            new_vm.memory.write(46, [88])
-            new_vm.memory.write(47, [88])
+            new_vm.memory[16] = 88
+            new_vm.memory[17] = 88
+            new_vm.memory[18] = 88
+            new_vm.memory[19] = 88
+            new_vm.memory[20] = 88
+            new_vm.memory[21] = 88
+            new_vm.memory[22] = 88
+            new_vm.memory[23] = 88
+            new_vm.memory[24] = 88
+            new_vm.memory[25] = 88
+            new_vm.memory[26] = 88
+            new_vm.memory[27] = 88
+            new_vm.memory[28] = 88
+            new_vm.memory[29] = 88
+            new_vm.memory[30] = 88
+            new_vm.memory[31] = 88
+            new_vm.memory[32] = 88
+            new_vm.memory[33] = 88
+            new_vm.memory[34] = 88
+            new_vm.memory[35] = 88
+            new_vm.memory[36] = 88
+            new_vm.memory[37] = 88
+            new_vm.memory[38] = 88
+            new_vm.memory[39] = 88
+            new_vm.memory[40] = 88
+            new_vm.memory[41] = 88
+            new_vm.memory[42] = 88
+            new_vm.memory[43] = 88
+            new_vm.memory[44] = 88
+            new_vm.memory[45] = 88
+            new_vm.memory[46] = 88
+            new_vm.memory[47] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1839,41 +1839,41 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(32)
-            new_vm.memory.write(32, [88])
-            new_vm.memory.write(33, [88])
-            new_vm.memory.write(34, [88])
-            new_vm.memory.write(35, [88])
-            new_vm.memory.write(36, [88])
-            new_vm.memory.write(37, [88])
-            new_vm.memory.write(38, [88])
-            new_vm.memory.write(39, [88])
-            new_vm.memory.write(40, [88])
-            new_vm.memory.write(41, [88])
-            new_vm.memory.write(42, [88])
-            new_vm.memory.write(43, [88])
-            new_vm.memory.write(44, [88])
-            new_vm.memory.write(45, [88])
-            new_vm.memory.write(46, [88])
-            new_vm.memory.write(47, [88])
-            new_vm.memory.write(48, [88])
-            new_vm.memory.write(49, [88])
-            new_vm.memory.write(50, [88])
-            new_vm.memory.write(51, [88])
-            new_vm.memory.write(52, [88])
-            new_vm.memory.write(53, [88])
-            new_vm.memory.write(54, [88])
-            new_vm.memory.write(55, [88])
-            new_vm.memory.write(56, [88])
-            new_vm.memory.write(57, [88])
-            new_vm.memory.write(58, [88])
-            new_vm.memory.write(59, [88])
-            new_vm.memory.write(60, [88])
-            new_vm.memory.write(61, [88])
-            new_vm.memory.write(62, [88])
-            new_vm.memory.write(63, [88])
+            new_vm.memory[32] = 88
+            new_vm.memory[33] = 88
+            new_vm.memory[34] = 88
+            new_vm.memory[35] = 88
+            new_vm.memory[36] = 88
+            new_vm.memory[37] = 88
+            new_vm.memory[38] = 88
+            new_vm.memory[39] = 88
+            new_vm.memory[40] = 88
+            new_vm.memory[41] = 88
+            new_vm.memory[42] = 88
+            new_vm.memory[43] = 88
+            new_vm.memory[44] = 88
+            new_vm.memory[45] = 88
+            new_vm.memory[46] = 88
+            new_vm.memory[47] = 88
+            new_vm.memory[48] = 88
+            new_vm.memory[49] = 88
+            new_vm.memory[50] = 88
+            new_vm.memory[51] = 88
+            new_vm.memory[52] = 88
+            new_vm.memory[53] = 88
+            new_vm.memory[54] = 88
+            new_vm.memory[55] = 88
+            new_vm.memory[56] = 88
+            new_vm.memory[57] = 88
+            new_vm.memory[58] = 88
+            new_vm.memory[59] = 88
+            new_vm.memory[60] = 88
+            new_vm.memory[61] = 88
+            new_vm.memory[62] = 88
+            new_vm.memory[63] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1899,41 +1899,41 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(48)
-            new_vm.memory.write(48, [88])
-            new_vm.memory.write(49, [88])
-            new_vm.memory.write(50, [88])
-            new_vm.memory.write(51, [88])
-            new_vm.memory.write(52, [88])
-            new_vm.memory.write(53, [88])
-            new_vm.memory.write(54, [88])
-            new_vm.memory.write(55, [88])
-            new_vm.memory.write(56, [88])
-            new_vm.memory.write(57, [88])
-            new_vm.memory.write(58, [88])
-            new_vm.memory.write(59, [88])
-            new_vm.memory.write(60, [88])
-            new_vm.memory.write(61, [88])
-            new_vm.memory.write(62, [88])
-            new_vm.memory.write(63, [88])
-            new_vm.memory.write(64, [88])
-            new_vm.memory.write(65, [88])
-            new_vm.memory.write(66, [88])
-            new_vm.memory.write(67, [88])
-            new_vm.memory.write(68, [88])
-            new_vm.memory.write(69, [88])
-            new_vm.memory.write(70, [88])
-            new_vm.memory.write(71, [88])
-            new_vm.memory.write(72, [88])
-            new_vm.memory.write(73, [88])
-            new_vm.memory.write(74, [88])
-            new_vm.memory.write(75, [88])
-            new_vm.memory.write(76, [88])
-            new_vm.memory.write(77, [88])
-            new_vm.memory.write(78, [88])
-            new_vm.memory.write(79, [88])
+            new_vm.memory[48] = 88
+            new_vm.memory[49] = 88
+            new_vm.memory[50] = 88
+            new_vm.memory[51] = 88
+            new_vm.memory[52] = 88
+            new_vm.memory[53] = 88
+            new_vm.memory[54] = 88
+            new_vm.memory[55] = 88
+            new_vm.memory[56] = 88
+            new_vm.memory[57] = 88
+            new_vm.memory[58] = 88
+            new_vm.memory[59] = 88
+            new_vm.memory[60] = 88
+            new_vm.memory[61] = 88
+            new_vm.memory[62] = 88
+            new_vm.memory[63] = 88
+            new_vm.memory[64] = 88
+            new_vm.memory[65] = 88
+            new_vm.memory[66] = 88
+            new_vm.memory[67] = 88
+            new_vm.memory[68] = 88
+            new_vm.memory[69] = 88
+            new_vm.memory[70] = 88
+            new_vm.memory[71] = 88
+            new_vm.memory[72] = 88
+            new_vm.memory[73] = 88
+            new_vm.memory[74] = 88
+            new_vm.memory[75] = 88
+            new_vm.memory[76] = 88
+            new_vm.memory[77] = 88
+            new_vm.memory[78] = 88
+            new_vm.memory[79] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1959,7 +1959,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(32)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
@@ -1985,7 +1985,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -2011,57 +2011,57 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(0)
-            new_vm.memory.write(0, [88])
-            new_vm.memory.write(1, [88])
-            new_vm.memory.write(2, [88])
-            new_vm.memory.write(3, [88])
-            new_vm.memory.write(4, [88])
-            new_vm.memory.write(5, [88])
-            new_vm.memory.write(6, [88])
-            new_vm.memory.write(7, [88])
-            new_vm.memory.write(8, [88])
-            new_vm.memory.write(9, [88])
-            new_vm.memory.write(10, [88])
-            new_vm.memory.write(11, [88])
-            new_vm.memory.write(12, [88])
-            new_vm.memory.write(13, [88])
-            new_vm.memory.write(14, [88])
-            new_vm.memory.write(15, [88])
-            new_vm.memory.write(16, [88])
-            new_vm.memory.write(17, [88])
-            new_vm.memory.write(18, [88])
-            new_vm.memory.write(19, [88])
-            new_vm.memory.write(20, [88])
-            new_vm.memory.write(21, [88])
-            new_vm.memory.write(22, [88])
-            new_vm.memory.write(23, [88])
-            new_vm.memory.write(24, [88])
-            new_vm.memory.write(25, [88])
-            new_vm.memory.write(26, [88])
-            new_vm.memory.write(27, [88])
-            new_vm.memory.write(28, [88])
-            new_vm.memory.write(29, [88])
-            new_vm.memory.write(30, [88])
-            new_vm.memory.write(31, [88])
-            new_vm.memory.write(32, [88])
-            new_vm.memory.write(33, [88])
-            new_vm.memory.write(34, [88])
-            new_vm.memory.write(35, [88])
-            new_vm.memory.write(36, [88])
-            new_vm.memory.write(37, [88])
-            new_vm.memory.write(38, [88])
-            new_vm.memory.write(39, [88])
-            new_vm.memory.write(40, [88])
-            new_vm.memory.write(41, [88])
-            new_vm.memory.write(42, [88])
-            new_vm.memory.write(43, [88])
-            new_vm.memory.write(44, [88])
-            new_vm.memory.write(45, [88])
-            new_vm.memory.write(46, [88])
-            new_vm.memory.write(47, [88])
+            new_vm.memory[0] = 88
+            new_vm.memory[1] = 88
+            new_vm.memory[2] = 88
+            new_vm.memory[3] = 88
+            new_vm.memory[4] = 88
+            new_vm.memory[5] = 88
+            new_vm.memory[6] = 88
+            new_vm.memory[7] = 88
+            new_vm.memory[8] = 88
+            new_vm.memory[9] = 88
+            new_vm.memory[10] = 88
+            new_vm.memory[11] = 88
+            new_vm.memory[12] = 88
+            new_vm.memory[13] = 88
+            new_vm.memory[14] = 88
+            new_vm.memory[15] = 88
+            new_vm.memory[16] = 88
+            new_vm.memory[17] = 88
+            new_vm.memory[18] = 88
+            new_vm.memory[19] = 88
+            new_vm.memory[20] = 88
+            new_vm.memory[21] = 88
+            new_vm.memory[22] = 88
+            new_vm.memory[23] = 88
+            new_vm.memory[24] = 88
+            new_vm.memory[25] = 88
+            new_vm.memory[26] = 88
+            new_vm.memory[27] = 88
+            new_vm.memory[28] = 88
+            new_vm.memory[29] = 88
+            new_vm.memory[30] = 88
+            new_vm.memory[31] = 88
+            new_vm.memory[32] = 88
+            new_vm.memory[33] = 88
+            new_vm.memory[34] = 88
+            new_vm.memory[35] = 88
+            new_vm.memory[36] = 88
+            new_vm.memory[37] = 88
+            new_vm.memory[38] = 88
+            new_vm.memory[39] = 88
+            new_vm.memory[40] = 88
+            new_vm.memory[41] = 88
+            new_vm.memory[42] = 88
+            new_vm.memory[43] = 88
+            new_vm.memory[44] = 88
+            new_vm.memory[45] = 88
+            new_vm.memory[46] = 88
+            new_vm.memory[47] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2087,57 +2087,57 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(1)
-            new_vm.memory.write(1, [88])
-            new_vm.memory.write(2, [88])
-            new_vm.memory.write(3, [88])
-            new_vm.memory.write(4, [88])
-            new_vm.memory.write(5, [88])
-            new_vm.memory.write(6, [88])
-            new_vm.memory.write(7, [88])
-            new_vm.memory.write(8, [88])
-            new_vm.memory.write(9, [88])
-            new_vm.memory.write(10, [88])
-            new_vm.memory.write(11, [88])
-            new_vm.memory.write(12, [88])
-            new_vm.memory.write(13, [88])
-            new_vm.memory.write(14, [88])
-            new_vm.memory.write(15, [88])
-            new_vm.memory.write(16, [88])
-            new_vm.memory.write(17, [88])
-            new_vm.memory.write(18, [88])
-            new_vm.memory.write(19, [88])
-            new_vm.memory.write(20, [88])
-            new_vm.memory.write(21, [88])
-            new_vm.memory.write(22, [88])
-            new_vm.memory.write(23, [88])
-            new_vm.memory.write(24, [88])
-            new_vm.memory.write(25, [88])
-            new_vm.memory.write(26, [88])
-            new_vm.memory.write(27, [88])
-            new_vm.memory.write(28, [88])
-            new_vm.memory.write(29, [88])
-            new_vm.memory.write(30, [88])
-            new_vm.memory.write(31, [88])
-            new_vm.memory.write(32, [88])
-            new_vm.memory.write(33, [88])
-            new_vm.memory.write(34, [88])
-            new_vm.memory.write(35, [88])
-            new_vm.memory.write(36, [88])
-            new_vm.memory.write(37, [88])
-            new_vm.memory.write(38, [88])
-            new_vm.memory.write(39, [88])
-            new_vm.memory.write(40, [88])
-            new_vm.memory.write(41, [88])
-            new_vm.memory.write(42, [88])
-            new_vm.memory.write(43, [88])
-            new_vm.memory.write(44, [88])
-            new_vm.memory.write(45, [88])
-            new_vm.memory.write(46, [88])
-            new_vm.memory.write(47, [88])
-            new_vm.memory.write(48, [88])
+            new_vm.memory[1] = 88
+            new_vm.memory[2] = 88
+            new_vm.memory[3] = 88
+            new_vm.memory[4] = 88
+            new_vm.memory[5] = 88
+            new_vm.memory[6] = 88
+            new_vm.memory[7] = 88
+            new_vm.memory[8] = 88
+            new_vm.memory[9] = 88
+            new_vm.memory[10] = 88
+            new_vm.memory[11] = 88
+            new_vm.memory[12] = 88
+            new_vm.memory[13] = 88
+            new_vm.memory[14] = 88
+            new_vm.memory[15] = 88
+            new_vm.memory[16] = 88
+            new_vm.memory[17] = 88
+            new_vm.memory[18] = 88
+            new_vm.memory[19] = 88
+            new_vm.memory[20] = 88
+            new_vm.memory[21] = 88
+            new_vm.memory[22] = 88
+            new_vm.memory[23] = 88
+            new_vm.memory[24] = 88
+            new_vm.memory[25] = 88
+            new_vm.memory[26] = 88
+            new_vm.memory[27] = 88
+            new_vm.memory[28] = 88
+            new_vm.memory[29] = 88
+            new_vm.memory[30] = 88
+            new_vm.memory[31] = 88
+            new_vm.memory[32] = 88
+            new_vm.memory[33] = 88
+            new_vm.memory[34] = 88
+            new_vm.memory[35] = 88
+            new_vm.memory[36] = 88
+            new_vm.memory[37] = 88
+            new_vm.memory[38] = 88
+            new_vm.memory[39] = 88
+            new_vm.memory[40] = 88
+            new_vm.memory[41] = 88
+            new_vm.memory[42] = 88
+            new_vm.memory[43] = 88
+            new_vm.memory[44] = 88
+            new_vm.memory[45] = 88
+            new_vm.memory[46] = 88
+            new_vm.memory[47] = 88
+            new_vm.memory[48] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2163,7 +2163,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -2189,7 +2189,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -2215,57 +2215,57 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(16)
-            new_vm.memory.write(16, [88])
-            new_vm.memory.write(17, [88])
-            new_vm.memory.write(18, [88])
-            new_vm.memory.write(19, [88])
-            new_vm.memory.write(20, [88])
-            new_vm.memory.write(21, [88])
-            new_vm.memory.write(22, [88])
-            new_vm.memory.write(23, [88])
-            new_vm.memory.write(24, [88])
-            new_vm.memory.write(25, [88])
-            new_vm.memory.write(26, [88])
-            new_vm.memory.write(27, [88])
-            new_vm.memory.write(28, [88])
-            new_vm.memory.write(29, [88])
-            new_vm.memory.write(30, [88])
-            new_vm.memory.write(31, [88])
-            new_vm.memory.write(32, [88])
-            new_vm.memory.write(33, [88])
-            new_vm.memory.write(34, [88])
-            new_vm.memory.write(35, [88])
-            new_vm.memory.write(36, [88])
-            new_vm.memory.write(37, [88])
-            new_vm.memory.write(38, [88])
-            new_vm.memory.write(39, [88])
-            new_vm.memory.write(40, [88])
-            new_vm.memory.write(41, [88])
-            new_vm.memory.write(42, [88])
-            new_vm.memory.write(43, [88])
-            new_vm.memory.write(44, [88])
-            new_vm.memory.write(45, [88])
-            new_vm.memory.write(46, [88])
-            new_vm.memory.write(47, [88])
-            new_vm.memory.write(48, [88])
-            new_vm.memory.write(49, [88])
-            new_vm.memory.write(50, [88])
-            new_vm.memory.write(51, [88])
-            new_vm.memory.write(52, [88])
-            new_vm.memory.write(53, [88])
-            new_vm.memory.write(54, [88])
-            new_vm.memory.write(55, [88])
-            new_vm.memory.write(56, [88])
-            new_vm.memory.write(57, [88])
-            new_vm.memory.write(58, [88])
-            new_vm.memory.write(59, [88])
-            new_vm.memory.write(60, [88])
-            new_vm.memory.write(61, [88])
-            new_vm.memory.write(62, [88])
-            new_vm.memory.write(63, [88])
+            new_vm.memory[16] = 88
+            new_vm.memory[17] = 88
+            new_vm.memory[18] = 88
+            new_vm.memory[19] = 88
+            new_vm.memory[20] = 88
+            new_vm.memory[21] = 88
+            new_vm.memory[22] = 88
+            new_vm.memory[23] = 88
+            new_vm.memory[24] = 88
+            new_vm.memory[25] = 88
+            new_vm.memory[26] = 88
+            new_vm.memory[27] = 88
+            new_vm.memory[28] = 88
+            new_vm.memory[29] = 88
+            new_vm.memory[30] = 88
+            new_vm.memory[31] = 88
+            new_vm.memory[32] = 88
+            new_vm.memory[33] = 88
+            new_vm.memory[34] = 88
+            new_vm.memory[35] = 88
+            new_vm.memory[36] = 88
+            new_vm.memory[37] = 88
+            new_vm.memory[38] = 88
+            new_vm.memory[39] = 88
+            new_vm.memory[40] = 88
+            new_vm.memory[41] = 88
+            new_vm.memory[42] = 88
+            new_vm.memory[43] = 88
+            new_vm.memory[44] = 88
+            new_vm.memory[45] = 88
+            new_vm.memory[46] = 88
+            new_vm.memory[47] = 88
+            new_vm.memory[48] = 88
+            new_vm.memory[49] = 88
+            new_vm.memory[50] = 88
+            new_vm.memory[51] = 88
+            new_vm.memory[52] = 88
+            new_vm.memory[53] = 88
+            new_vm.memory[54] = 88
+            new_vm.memory[55] = 88
+            new_vm.memory[56] = 88
+            new_vm.memory[57] = 88
+            new_vm.memory[58] = 88
+            new_vm.memory[59] = 88
+            new_vm.memory[60] = 88
+            new_vm.memory[61] = 88
+            new_vm.memory[62] = 88
+            new_vm.memory[63] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2291,57 +2291,57 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(32)
-            new_vm.memory.write(32, [88])
-            new_vm.memory.write(33, [88])
-            new_vm.memory.write(34, [88])
-            new_vm.memory.write(35, [88])
-            new_vm.memory.write(36, [88])
-            new_vm.memory.write(37, [88])
-            new_vm.memory.write(38, [88])
-            new_vm.memory.write(39, [88])
-            new_vm.memory.write(40, [88])
-            new_vm.memory.write(41, [88])
-            new_vm.memory.write(42, [88])
-            new_vm.memory.write(43, [88])
-            new_vm.memory.write(44, [88])
-            new_vm.memory.write(45, [88])
-            new_vm.memory.write(46, [88])
-            new_vm.memory.write(47, [88])
-            new_vm.memory.write(48, [88])
-            new_vm.memory.write(49, [88])
-            new_vm.memory.write(50, [88])
-            new_vm.memory.write(51, [88])
-            new_vm.memory.write(52, [88])
-            new_vm.memory.write(53, [88])
-            new_vm.memory.write(54, [88])
-            new_vm.memory.write(55, [88])
-            new_vm.memory.write(56, [88])
-            new_vm.memory.write(57, [88])
-            new_vm.memory.write(58, [88])
-            new_vm.memory.write(59, [88])
-            new_vm.memory.write(60, [88])
-            new_vm.memory.write(61, [88])
-            new_vm.memory.write(62, [88])
-            new_vm.memory.write(63, [88])
-            new_vm.memory.write(64, [88])
-            new_vm.memory.write(65, [88])
-            new_vm.memory.write(66, [88])
-            new_vm.memory.write(67, [88])
-            new_vm.memory.write(68, [88])
-            new_vm.memory.write(69, [88])
-            new_vm.memory.write(70, [88])
-            new_vm.memory.write(71, [88])
-            new_vm.memory.write(72, [88])
-            new_vm.memory.write(73, [88])
-            new_vm.memory.write(74, [88])
-            new_vm.memory.write(75, [88])
-            new_vm.memory.write(76, [88])
-            new_vm.memory.write(77, [88])
-            new_vm.memory.write(78, [88])
-            new_vm.memory.write(79, [88])
+            new_vm.memory[32] = 88
+            new_vm.memory[33] = 88
+            new_vm.memory[34] = 88
+            new_vm.memory[35] = 88
+            new_vm.memory[36] = 88
+            new_vm.memory[37] = 88
+            new_vm.memory[38] = 88
+            new_vm.memory[39] = 88
+            new_vm.memory[40] = 88
+            new_vm.memory[41] = 88
+            new_vm.memory[42] = 88
+            new_vm.memory[43] = 88
+            new_vm.memory[44] = 88
+            new_vm.memory[45] = 88
+            new_vm.memory[46] = 88
+            new_vm.memory[47] = 88
+            new_vm.memory[48] = 88
+            new_vm.memory[49] = 88
+            new_vm.memory[50] = 88
+            new_vm.memory[51] = 88
+            new_vm.memory[52] = 88
+            new_vm.memory[53] = 88
+            new_vm.memory[54] = 88
+            new_vm.memory[55] = 88
+            new_vm.memory[56] = 88
+            new_vm.memory[57] = 88
+            new_vm.memory[58] = 88
+            new_vm.memory[59] = 88
+            new_vm.memory[60] = 88
+            new_vm.memory[61] = 88
+            new_vm.memory[62] = 88
+            new_vm.memory[63] = 88
+            new_vm.memory[64] = 88
+            new_vm.memory[65] = 88
+            new_vm.memory[66] = 88
+            new_vm.memory[67] = 88
+            new_vm.memory[68] = 88
+            new_vm.memory[69] = 88
+            new_vm.memory[70] = 88
+            new_vm.memory[71] = 88
+            new_vm.memory[72] = 88
+            new_vm.memory[73] = 88
+            new_vm.memory[74] = 88
+            new_vm.memory[75] = 88
+            new_vm.memory[76] = 88
+            new_vm.memory[77] = 88
+            new_vm.memory[78] = 88
+            new_vm.memory[79] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2367,57 +2367,57 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(48)
-            new_vm.memory.write(48, [88])
-            new_vm.memory.write(49, [88])
-            new_vm.memory.write(50, [88])
-            new_vm.memory.write(51, [88])
-            new_vm.memory.write(52, [88])
-            new_vm.memory.write(53, [88])
-            new_vm.memory.write(54, [88])
-            new_vm.memory.write(55, [88])
-            new_vm.memory.write(56, [88])
-            new_vm.memory.write(57, [88])
-            new_vm.memory.write(58, [88])
-            new_vm.memory.write(59, [88])
-            new_vm.memory.write(60, [88])
-            new_vm.memory.write(61, [88])
-            new_vm.memory.write(62, [88])
-            new_vm.memory.write(63, [88])
-            new_vm.memory.write(64, [88])
-            new_vm.memory.write(65, [88])
-            new_vm.memory.write(66, [88])
-            new_vm.memory.write(67, [88])
-            new_vm.memory.write(68, [88])
-            new_vm.memory.write(69, [88])
-            new_vm.memory.write(70, [88])
-            new_vm.memory.write(71, [88])
-            new_vm.memory.write(72, [88])
-            new_vm.memory.write(73, [88])
-            new_vm.memory.write(74, [88])
-            new_vm.memory.write(75, [88])
-            new_vm.memory.write(76, [88])
-            new_vm.memory.write(77, [88])
-            new_vm.memory.write(78, [88])
-            new_vm.memory.write(79, [88])
-            new_vm.memory.write(80, [88])
-            new_vm.memory.write(81, [88])
-            new_vm.memory.write(82, [88])
-            new_vm.memory.write(83, [88])
-            new_vm.memory.write(84, [88])
-            new_vm.memory.write(85, [88])
-            new_vm.memory.write(86, [88])
-            new_vm.memory.write(87, [88])
-            new_vm.memory.write(88, [88])
-            new_vm.memory.write(89, [88])
-            new_vm.memory.write(90, [88])
-            new_vm.memory.write(91, [88])
-            new_vm.memory.write(92, [88])
-            new_vm.memory.write(93, [88])
-            new_vm.memory.write(94, [88])
-            new_vm.memory.write(95, [88])
+            new_vm.memory[48] = 88
+            new_vm.memory[49] = 88
+            new_vm.memory[50] = 88
+            new_vm.memory[51] = 88
+            new_vm.memory[52] = 88
+            new_vm.memory[53] = 88
+            new_vm.memory[54] = 88
+            new_vm.memory[55] = 88
+            new_vm.memory[56] = 88
+            new_vm.memory[57] = 88
+            new_vm.memory[58] = 88
+            new_vm.memory[59] = 88
+            new_vm.memory[60] = 88
+            new_vm.memory[61] = 88
+            new_vm.memory[62] = 88
+            new_vm.memory[63] = 88
+            new_vm.memory[64] = 88
+            new_vm.memory[65] = 88
+            new_vm.memory[66] = 88
+            new_vm.memory[67] = 88
+            new_vm.memory[68] = 88
+            new_vm.memory[69] = 88
+            new_vm.memory[70] = 88
+            new_vm.memory[71] = 88
+            new_vm.memory[72] = 88
+            new_vm.memory[73] = 88
+            new_vm.memory[74] = 88
+            new_vm.memory[75] = 88
+            new_vm.memory[76] = 88
+            new_vm.memory[77] = 88
+            new_vm.memory[78] = 88
+            new_vm.memory[79] = 88
+            new_vm.memory[80] = 88
+            new_vm.memory[81] = 88
+            new_vm.memory[82] = 88
+            new_vm.memory[83] = 88
+            new_vm.memory[84] = 88
+            new_vm.memory[85] = 88
+            new_vm.memory[86] = 88
+            new_vm.memory[87] = 88
+            new_vm.memory[88] = 88
+            new_vm.memory[89] = 88
+            new_vm.memory[90] = 88
+            new_vm.memory[91] = 88
+            new_vm.memory[92] = 88
+            new_vm.memory[93] = 88
+            new_vm.memory[94] = 88
+            new_vm.memory[95] = 88
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2443,7 +2443,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(48)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
@@ -2469,7 +2469,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             last_exception, last_returned = self._execute(new_vm)
@@ -2495,7 +2495,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
@@ -2521,7 +2521,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
@@ -2547,7 +2547,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
             last_exception, last_returned = self._execute(new_vm)
@@ -2573,7 +2573,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
             last_exception, last_returned = self._execute(new_vm)
@@ -2599,7 +2599,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
@@ -2625,7 +2625,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
@@ -2651,7 +2651,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
@@ -2677,7 +2677,7 @@ class EVMTest_SHA3(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, world=world)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             new_vm._push(6089590155545428825848686802984512581899718912L)
             last_exception, last_returned = self._execute(new_vm)
