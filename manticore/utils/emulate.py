@@ -34,24 +34,33 @@ class UnicornEmulator(object):
         # instruction
         self._should_be_written = {}
 
-    def reset(self):
-        self._emu = self._unicorn()
-        self._to_raise = None
-
-    def _unicorn(self):
         if self._cpu.arch == CS_ARCH_ARM:
-            if self._cpu.mode == CS_MODE_ARM:
-                return Uc(UC_ARCH_ARM, UC_MODE_ARM)
-            elif self._cpu.mode == CS_MODE_THUMB:
-                return Uc(UC_ARCH_ARM, UC_MODE_THUMB)
+            self._uc_arch = UC_ARCH_ARM
+            self._uc_mode = {
+                CS_MODE_ARM: UC_MODE_ARM,
+                CS_MODE_THUMB: UC_MODE_THUMB
+            }[self._cpu.mode]
+
+        elif self._cpu.arch == CS_ARCH_ARM64:
+            self._uc_arch = UC_ARCH_ARM64
+            self._uc_mode = {
+                CS_MODE_ARM: UC_MODE_ARM,
+                CS_MODE_THUMB: UC_MODE_THUMB
+            }[self._cpu.mode]
+
         elif self._cpu.arch == CS_ARCH_X86:
-            if self._cpu.mode == CS_MODE_32:
-                return Uc(UC_ARCH_X86, UC_MODE_32)
-            elif self._cpu.mode == CS_MODE_64:
-                return Uc(UC_ARCH_X86, UC_MODE_64)
+            self._uc_arch = UC_ARCH_X86
+            self._uc_mode = {
+                CS_MODE_32: UC_MODE_32,
+                CS_MODE_64: UC_MODE_64
+            }[self._cpu.mode]
 
-        raise RuntimeError("Unsupported architecture")
+        else:
+            raise NotImplementedError('Unsupported architecture: %s' % self._cpu.arch)
 
+    def reset(self):
+        self._emu = Uc(self._uc_arch, self._uc_mode)
+        self._to_raise = None
 
     def _create_emulated_mapping(self, uc, address):
         '''
