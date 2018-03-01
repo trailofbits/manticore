@@ -22,7 +22,7 @@ TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
 
-PendingTransaction = namedtuple("PendingTransaction", ['sort', 'address', 'origin', 'price', 'data', 'caller', 'value', 'return_data', 'result'])
+PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'origin', 'price', 'data', 'caller', 'value', 'bytecode', 'header'])
 
 def ceil32(x):
     return Operators.ITEBV(256, (x % 32) == 0, x , x + 32 - (x % 32))
