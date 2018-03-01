@@ -343,7 +343,7 @@ class ABI(object):
         return reduce(lambda x,y: x+y, result)
 
     @staticmethod
-    def get_uint(data, offset, nbytes):
+    def get_uint(data, nbytes, offset):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
 
@@ -382,8 +382,8 @@ class ABI(object):
             size = int(ty[5:])
             return data[offset:offset+size], offset+32
         if ty == u'address[]':
-            dyn_offset = arithmetic_simplify((get_uint(256,offset)))
-            size = arithmetic_simplify(get_uint(256, dyn_offset))
+            dyn_offset = arithmetic_simplify((ABI.get_uint(data, 32, offset))) + offset
+            size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
             result = [ABI.get_uint(data, 20, dyn_offset+32 + 32*i) for i in range(size)]
             return result, offset+32
         else:
