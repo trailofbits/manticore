@@ -374,7 +374,7 @@ class Executor(Eventful):
         assert isinstance(expression, Expression)
 
         if setstate is None:
-            def setstate(x, y): return None
+            setstate = lambda x, y: None
 
         # Find a set of solutions for expression
         solutions = state.concretize(expression, policy)
