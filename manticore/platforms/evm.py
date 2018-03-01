@@ -11,6 +11,7 @@ from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translat
 from ..core.state import Concretize, TerminateState
 import logging
 import sys
+from collections import namedtuple
 if sys.version_info < (3, 6):
     import sha3
 
@@ -22,6 +23,7 @@ TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
 
+PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'origin', 'price', 'data', 'caller', 'value', 'bytecode', 'header'])
 
 def ceil32(x):
     return Operators.ITEBV(256, (x % 32) == 0, x, x + 32 - (x % 32))
@@ -1214,7 +1216,6 @@ class EVM(Eventful):
         if isinstance(value, Constant) and not value.taint:
             value = value.value
         self._publish('did_evm_read_memory', address, value)
-
         return value
 
     @staticmethod
@@ -1280,6 +1281,7 @@ class EVM(Eventful):
     def _consume(self, fee):
         assert fee >= 0
         if self._gas < fee:
+            logger.debug("Not enough gas for instruction")
             raise NotEnoughGas()
         self._gas -= fee
 
@@ -1788,11 +1790,10 @@ class EVM(Eventful):
     def read_buffer(self, offset, size):
         if size:
             self._allocate(offset + size)
-
         data = []
         for i in xrange(size):
-            data.append(Operators.CHR(self._load(offset + i)))
-
+            data.append(self._load(offset+i))
+        data = map(Operators.CHR, data)
         if any(map(issymbolic, data)):
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
             for i in range(len(data)):
@@ -2248,7 +2249,7 @@ class EVMWorld(Platform):
 
         self.storage[address]['storage'] = EVMMemory(self.constraints, 256, 256)
 
-        self._pending_transaction = ('Create', address, origin, price, '', origin, balance, ''.join(init), header)
+        self._pending_transaction = PendingTransaction('Create', address, origin, price, '', origin, balance, ''.join(init), header)
 
         if run:
             assert False
@@ -2296,7 +2297,7 @@ class EVMWorld(Platform):
         else:
             data = ''.join(data)
         bytecode = self.get_code(address)
-        self._pending_transaction = ('Call', address, origin, price, data, caller, value, bytecode, header)
+        self._pending_transaction = PendingTransaction('Call', address, origin, price, data, caller, value, bytecode, header)
 
         if run:
             assert self.depth == 0
