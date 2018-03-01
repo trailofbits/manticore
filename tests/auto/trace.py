@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import hex
+from builtins import range
 import copy
 import sys
 import sys
@@ -39,7 +41,7 @@ class Gdb(subprocess.Popen):
         if reg in ['$R%dW'%i for i in range(16)] :
             reg = reg[:-1] + "&0xffff"
         val = self.correspond('p /x %s\n'%reg.lower()).split("0x")[-1]
-        return long(val.split("\n")[0],16)
+        return int(val.split("\n")[0],16)
 
     def setR(reg, value):
         self.correspond('set $%s = %s\n'%(reg.lower(), int(value)))
@@ -51,7 +53,7 @@ class Gdb(subprocess.Popen):
         self.correspond("stepi\n")
     def getM(self, m):
         try:
-            return long(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
+            return int(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
         except Exception as e:
             print('x/xg %s\n'%m)
             print(self.correspond('x/xg %s\n'%m))

@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import hex
+from builtins import map
 import sys, random
 tests = []
 tests_str = file(sys.argv[1], 'r').read().split('\n')
@@ -108,9 +110,9 @@ def regSize(x):
 
 def get_maps(test):
     pages = set()
-    for addr in test['pre']['memory'].keys():
+    for addr in list(test['pre']['memory'].keys()):
         pages.add(addr>>12)
-    for addr in test['pos']['memory'].keys():
+    for addr in list(test['pos']['memory'].keys()):
         pages.add(addr>>12)
 
     maps = []
@@ -149,10 +151,10 @@ for test_name in sorted(test_dic.keys()):
 
 
 
-    for addr, byte in test['pre']['memory'].items():
+    for addr, byte in list(test['pre']['memory'].items()):
         print('''        mem[0x%08x] = %r''' % (addr, byte))
 
-    for reg_name, value in test['pre']['registers'].items():
+    for reg_name, value in list(test['pre']['registers'].items()):
         if isFlag(reg_name):
             print("""        cpu.%s = %r"""%(reg_name, value))
         else:
@@ -161,10 +163,10 @@ for test_name in sorted(test_dic.keys()):
     print("""        cpu.execute()
     """)
 
-    for addr, byte in test['pos']['memory'].items():
+    for addr, byte in list(test['pos']['memory'].items()):
         print("""        self.assertEqual(mem[0x%x], %r)"""%(addr, byte))
 
-    for reg_name, value in test['pos']['registers'].items():
+    for reg_name, value in list(test['pos']['registers'].items()):
         print("""        self.assertEqual(cpu.%s, %r)"""%(reg_name, value))
 
 for test_name in sorted(test_dic.keys()):
@@ -194,7 +196,7 @@ for test_name in sorted(test_dic.keys()):
 
     ip = test['pre']['registers'][pc]
     text_size = len(test['text'])
-    for addr, byte in test['pre']['memory'].items():
+    for addr, byte in list(test['pre']['memory'].items()):
         if addr >= ip and addr <= ip+text_size:
             print("""        mem[0x%x] = %r"""%(addr, byte))
             continue
@@ -207,7 +209,7 @@ for test_name in sorted(test_dic.keys()):
 
 
 
-    for reg_name, value in test['pre']['registers'].items():
+    for reg_name, value in list(test['pre']['registers'].items()):
         if reg_name in ('EIP', 'RIP'):
             print("""        cpu.%s = 0x%x"""%(reg_name, value))
             continue
@@ -256,9 +258,9 @@ for test_name in sorted(test_dic.keys()):
     print("""
         condition = True""")
 
-    for addr, byte in test['pos']['memory'].items():
+    for addr, byte in list(test['pos']['memory'].items()):
         print("""        condition = Operators.AND(condition, cpu.read_int(0x%x, 8)== ord(%r))"""%(addr, byte))
-    for reg_name, value in test['pos']['registers'].items():
+    for reg_name, value in list(test['pos']['registers'].items()):
         if isFlag(reg_name):
             print("""        condition = Operators.AND(condition, cpu.%s == %r)"""%(reg_name, value))
         else:
