@@ -1122,13 +1122,13 @@ class ManticoreEVM(Manticore):
         argument_size = available/number_dyn_arguments
         for index in dyn_arguments:
             #get, constraint and concretize dyn_offset to some reasonable value
-            dyn_offset = ABI.get_uint(data, 4 + index*32, 256)
+            dyn_offset = ABI.get_uint(data, 4 + index*32, 32)
             state.constrain(dyn_offset+4 == free_pointer)
             data[4 + index*32 : 4 + index*32 + 32] = ("%064x"%(free_pointer-4)).decode('hex')
 
 
             #get, constraint and concretize dyn_size to some reasonable value
-            dyn_size = ABI.get_uint(data, free_pointer, 256)
+            dyn_size = ABI.get_uint(data, free_pointer, 32)
             state.constrain(dyn_size == argument_size/32)
             data[free_pointer:free_pointer+32]= ("%064x"%(argument_size/32)).decode('hex')
 
