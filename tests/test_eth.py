@@ -1,7 +1,9 @@
+import struct
 import unittest
 import os
 
 from manticore.ethereum import ManticoreEVM, IntegerOverflow
+from manticore.ethereum import ABI
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -20,3 +22,24 @@ class EthDetectors(unittest.TestCase):
         self.assertIn('underflow at SUB', all_findings)
         self.assertIn('overflow at ADD', all_findings)
         self.assertIn('overflow at MUL', all_findings)
+
+class EthereumAbiTests(unittest.TestCase):
+    @staticmethod
+    def _pack_int_to_32(x):
+        return '\x00' * 28 + struct.pack('>I', x)
+
+    def test_dyn_address(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),  # offset to data start
+            self._pack_int_to_32(2),   # data start; # of elements
+            self._pack_int_to_32(42),  # element 1
+            self._pack_int_to_32(43),  # element 2
+        ]
+        d = ''.join(d)
+
+        ret = ABI.parse(type_spec='func(address[])', data=d)
+
+        funcname, dynargs = ret
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ([42, 43],))
