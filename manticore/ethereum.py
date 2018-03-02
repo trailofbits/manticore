@@ -4,7 +4,6 @@ standard_library.install_aliases()
 from builtins import str
 from builtins import map
 from builtins import range
-from past.utils import old_div
 from builtins import object
 import string
 
@@ -400,7 +399,7 @@ class ABI(object):
 
             size = simplify(size)
             offset = simplify(offset)
-            byte_size = size / 8
+            byte_size = size // 8
             padding = 32 - byte_size  # for 160
             value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size])))
             return simplify(value)
