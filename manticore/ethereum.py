@@ -361,7 +361,7 @@ class ABI(object):
 
         Further info: http://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
 
-        :param data:
+        :param data: transaction data WITHOUT the function hash first 4 bytes
         :param offset: offset into data of the first byte of the "head part" of the ABI element
         :return: tuple where the first element is the extracted ABI element, and the second is the offset of
             the next ABI element
@@ -383,14 +383,14 @@ class ABI(object):
         elif ty == u'':
             return None, offset
         elif ty in (u'bytes', u'string'):
-            dyn_offset = ABI.get_uint(data, 32,offset) + offset  #256 bits
+            dyn_offset = ABI.get_uint(data, 32,offset)  #256 bits
             size = ABI.get_uint(data, 32, dyn_offset)  #256 bits
             return data[dyn_offset+32:dyn_offset+32+size], offset+32
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
             return data[offset:offset+size], offset+32
         elif ty == u'address[]':
-            dyn_offset = arithmetic_simplify((ABI.get_uint(data, 32, offset)) + offset)
+            dyn_offset = arithmetic_simplify(ABI.get_uint(data, 32, offset))
             size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
             result = [ABI.get_uint(data, 20, dyn_offset+32 + 32*i) for i in range(size)]
             return result, offset+32
@@ -415,12 +415,11 @@ class ABI(object):
         ''' Deserialize function ID and arguments specified in `type_spec` from `data` '''
         is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
 
+        off = 0
+
         #If it parsed the function name from the spec, skip 4 bytes from the data
         if func_name:
-            off = 4
-        else:
-            off = 0
-
+            data = data[4:]
 
         arguments = []
         for ty in types:
