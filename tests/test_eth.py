@@ -38,8 +38,7 @@ class EthereumAbiTests(unittest.TestCase):
         ]
         d = ''.join(d)
 
-        ret = ABI.parse(type_spec='func(address[])', data=d)
+        funcname, dynargs = ABI.parse(type_spec='func(address[])', data=d)
 
-        funcname, dynargs = ret
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, ([42, 43],))
