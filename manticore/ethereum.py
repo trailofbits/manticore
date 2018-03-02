@@ -1,3 +1,11 @@
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import map
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import string
 
 from . import Manticore
@@ -8,12 +16,12 @@ from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
 from multiprocessing import Process, Queue
-from Queue import Empty as EmptyQueue
+from queue import Empty as EmptyQueue
 import sha3
 import json
 import logging
-import StringIO
-import cPickle as pickle
+import io
+import pickle as pickle
 from .core.plugin import Plugin
 
 logger = logging.getLogger(__name__)
@@ -228,7 +236,7 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(( (b,a) for (a,b) in self.hashes.items() ))
+        return dict(( (b,a) for (a,b) in list(self.hashes.items()) ))
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
@@ -257,7 +265,7 @@ class ABI(object):
         and for contract-to-contract interaction. 
 
     '''
-    class SByte():
+    class SByte(object):
         ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
         def __init__(self, size=1):
             self.size=size
@@ -277,7 +285,7 @@ class ABI(object):
             return ABI.serialize_string(value)
         if isinstance(value, (list)):
             return ABI.serialize_array(value)
-        if isinstance(value, (int, long)):
+        if isinstance(value, (int, int)):
             return ABI.serialize_uint(value)
         if isinstance(value, ABI.SByte):
             return ABI.serialize_uint(value.size) + (None,)*value.size + (('\x00',)*(32-(value.size%32)))
@@ -293,7 +301,7 @@ class ABI(object):
         bytes = []
         for position in range(size):
             bytes.append( Operators.EXTRACT(value, position*8, 8) )
-        chars = map(Operators.CHR, bytes)
+        chars = list(map(Operators.CHR, bytes))
         return tuple(reversed(chars))
 
     @staticmethod
@@ -374,9 +382,9 @@ class ABI(object):
 
             size = simplify(size)
             offset = simplify(offset)
-            byte_size = size/8
+            byte_size = old_div(size,8)
             padding = 32 - byte_size # for 160
-            value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset+padding:offset+padding+byte_size])))
+            value = arithmetic_simplifier(Operators.CONCAT(size, *list(map(Operators.ORD, data[offset+padding:offset+padding+byte_size]))))
             return simplify(value)
 
         if ty == u'uint256':
@@ -475,7 +483,7 @@ class EVMAccount(object):
             self._hashes = {}
             md = self._seth.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in md.hashes.items():
+                for signature, func_id in list(md.hashes.items()):
                     func_name = str(signature.split('(')[0])
                     self._hashes[func_name] = signature, func_id
             #It was successful, no need to re-run. _init_hashes disabled
@@ -493,7 +501,7 @@ class EVMAccount(object):
         '''
         if not name.startswith('_'):
             self._init_hashes()
-            if self._hashes is not None and name in self._hashes.keys() :
+            if self._hashes is not None and name in list(self._hashes.keys()) :
                 def f(*args, **kwargs):
                     caller = kwargs.get('caller', None)
                     value = kwargs.get('value', 0)
@@ -607,9 +615,9 @@ class ManticoreEVM(Manticore):
 
             name, contract = None, None
             if contract_name is None:
-                name, contract = contracts.items()[0]
+                name, contract = list(contracts.items())[0]
             else:
-                for n, c in contracts.items():
+                for n, c in list(contracts.items()):
                     if n.split(":")[1] == contract_name:
                         name, contract = n, c
                         break
@@ -1168,7 +1176,7 @@ class ManticoreEVM(Manticore):
                 code = blockchain.get_code(account_address)
                 if len(code):
                     summary.write("Code:\n")
-                    fcode = StringIO.StringIO(code)
+                    fcode = io.BytesIO(code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write('\t%s\n' % chunk.encode('hex'))
                     trace = set(( offset for address_i, offset in state.context['seth.trace'] if address == address_i))        
@@ -1178,7 +1186,7 @@ class ManticoreEVM(Manticore):
 
             if blockchain._sha3:
                 summary.write("Known hashes:\n")
-                for key, value in blockchain._sha3.items():
+                for key, value in list(blockchain._sha3.items()):
                     summary.write('%s::%x\n'%(key.encode('hex'), value))
 
             if is_something_symbolic:
@@ -1216,7 +1224,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write('\n')
                         tx_summary.write( "Function call:\n")
                         tx_summary.write("%s(" % state.solve_one(function_name ))
-                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
+                        tx_summary.write(','.join(map(repr, list(map(state.solve_one, arguments)))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
@@ -1241,7 +1249,7 @@ class ManticoreEVM(Manticore):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = ''.join(filter(lambda c: c in string.printable, solved_memlog))
+                printable_bytes = ''.join([c for c in solved_memlog if c in string.printable])
 
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
@@ -1267,7 +1275,7 @@ class ManticoreEVM(Manticore):
         #move runnign states to final states list
         # and generate a testcase for each
         q = Queue()
-        map(q.put, self.running_state_ids)
+        list(map(q.put, self.running_state_ids))
         def f(q):
             try:
                 while True:
@@ -1326,7 +1334,7 @@ class ManticoreEVM(Manticore):
                 global_summary.write( '\n\nCompiler warnings for %s:\n' % md.name )
                 global_summary.write( md.warnings )
 
-        for address, md in self.metadata.items():
+        for address, md in list(self.metadata.items()):
             with self._output.save_stream('global_%s.sol'%md.name) as global_src :
                 global_src.write(md.source_code)
             with self._output.save_stream('global_%s_runtime.bytecode'%md.name) as global_runtime_bytecode :
