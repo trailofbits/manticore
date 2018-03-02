@@ -1,3 +1,11 @@
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import map
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import string
 
 from . import Manticore
@@ -9,12 +17,12 @@ from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
 from multiprocessing import Process, Queue
-from Queue import Empty as EmptyQueue
+from queue import Empty as EmptyQueue
 import sha3
 import json
 import logging
-import StringIO
-import cPickle as pickle
+import io
+import pickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
 
@@ -272,7 +280,7 @@ class ABI(object):
         and for contract-to-contract interaction.
 
     '''
-    class SByte():
+    class SByte(object):
         ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
 
         def __init__(self, size=1):
@@ -294,7 +302,7 @@ class ABI(object):
             return ABI.serialize_string(value)
         if isinstance(value, (list)):
             return ABI.serialize_array(value)
-        if isinstance(value, (int, long)):
+        if isinstance(value, (int, int)):
             return ABI.serialize_uint(value)
         if isinstance(value, ABI.SByte):
             return ABI.serialize_uint(value.size) + (None,) * value.size + (('\x00',) * (32 - (value.size % 32)))
@@ -492,7 +500,7 @@ class EVMAccount(object):
             self._hashes = {}
             md = self._seth.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in md.hashes.items():
+                for signature, func_id in list(md.hashes.items()):
                     func_name = str(signature.split('(')[0])
                     self._hashes[func_name] = signature, func_id
             # It was successful, no need to re-run. _init_hashes disabled
@@ -623,9 +631,9 @@ class ManticoreEVM(Manticore):
 
             name, contract = None, None
             if contract_name is None:
-                name, contract = contracts.items()[0]
+                name, contract = list(contracts.items())[0]
             else:
-                for n, c in contracts.items():
+                for n, c in list(contracts.items()):
                     if n.split(":")[1] == contract_name:
                         name, contract = n, c
                         break
@@ -1198,7 +1206,7 @@ class ManticoreEVM(Manticore):
                 runtime_code = blockchain.get_code(account_address)
                 if runtime_code:
                     summary.write("Code:\n")
-                    fcode = StringIO.StringIO(runtime_code)
+                    fcode = io.BytesIO(code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write('\t%s\n' % chunk.encode('hex'))
                     runtime_trace = set((pc for contract, pc in state.context['seth.rt.trace'] if address == contract))
@@ -1272,7 +1280,7 @@ class ManticoreEVM(Manticore):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = ''.join(filter(lambda c: c in string.printable, solved_memlog))
+                printable_bytes = ''.join([c for c in solved_memlog if c in string.printable])
 
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))

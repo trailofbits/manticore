@@ -1,3 +1,6 @@
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import sys
 import time
@@ -153,7 +156,7 @@ class Manticore(Eventful):
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
         super(Manticore, self).__init__()
 
-        if isinstance(workspace_url, str):
+        if isinstance(workspace_url, str) or isinstance(workspace_url, unicode) or isinstance(workspace_url, bytes):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
             else:
@@ -400,7 +403,7 @@ class Manticore(Eventful):
                     profile.disable()
                     profile.create_stats()
                     with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(profile.stats.items())
+                        profiling_stats.append(list(profile.stats.items()))
                     return result
                 return wrapper
 
@@ -458,7 +461,7 @@ class Manticore(Eventful):
         :type pc: int or None
         :param callable callback: Hook function
         '''
-        if not (isinstance(pc, (int, long)) or pc is None):
+        if not (isinstance(pc, int) or pc is None):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
         else:
             self._hooks.setdefault(pc, set()).add(callback)
@@ -471,7 +474,8 @@ class Manticore(Eventful):
         # Ignore symbolic pc.
         # TODO(yan): Should we ask the solver if any of the hooks are possible,
         # and execute those that are?
-        if not isinstance(pc, (int, long)):
+
+        if issymbolic(pc):
             return
 
         # Invoke all pc-specific hooks
@@ -565,7 +569,7 @@ class Manticore(Eventful):
         logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
 
     def _produce_profiling_data(self):
-        class PstatsFormatted:
+        class PstatsFormatted(object):
             def __init__(self, d):
                 self.stats = dict(d)
 
