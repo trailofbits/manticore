@@ -333,10 +333,6 @@ class ABI(object):
     @staticmethod
     def make_function_call(method_name, *args):
         function_id = ABI.make_function_id(method_name)
-        def check_bitsize(value, size):
-            if isinstance(value, BitVec):
-                return value.size==size
-            return (value & ~((1<<size)-1)) == 0
         assert len(function_id) == 4
         result = [tuple(function_id)]
         result.append(ABI.make_function_arguments(*args))
