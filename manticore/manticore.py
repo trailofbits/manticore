@@ -403,7 +403,7 @@ class Manticore(Eventful):
                     profile.disable()
                     profile.create_stats()
                     with self.locked_context('profiling_stats', list) as profiling_stats:
-                        profiling_stats.append(list(profile.stats.items()))
+                        profiling_stats.append(profile.stats.items())
                     return result
                 return wrapper
 

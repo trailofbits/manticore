@@ -500,7 +500,7 @@ class EVMAccount(object):
             self._hashes = {}
             md = self._seth.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in list(md.hashes.items()):
+                for signature, func_id in md.hashes.items():
                     func_name = str(signature.split('(')[0])
                     self._hashes[func_name] = signature, func_id
             # It was successful, no need to re-run. _init_hashes disabled
@@ -518,7 +518,7 @@ class EVMAccount(object):
         '''
         if not name.startswith('_'):
             self._init_hashes()
-            if self._hashes is not None and name in self._hashes.keys():
+            if self._hashes is not None and name in self._hashes:
                 def f(*args, **kwargs):
                     caller = kwargs.get('caller', None)
                     value = kwargs.get('value', 0)
@@ -633,7 +633,7 @@ class ManticoreEVM(Manticore):
             if contract_name is None:
                 name, contract = list(contracts.items())[0]
             else:
-                for n, c in list(contracts.items()):
+                for n, c in contracts:
                     if n.split(":")[1] == contract_name:
                         name, contract = n, c
                         break
@@ -1328,7 +1328,8 @@ class ManticoreEVM(Manticore):
         # move runnign states to final states list
         # and generate a testcase for each
         q = Queue()
-        map(q.put, self.running_state_ids)
+        for running_state_id in self.running_state_ids:
+            q.put(running_state_id)
 
         def f(q):
             try:
