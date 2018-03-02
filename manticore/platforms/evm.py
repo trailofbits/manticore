@@ -1919,7 +1919,7 @@ class EVMWorld(Platform):
         if self.depth:
             self.current.constraints = None
         #MAKE A DEEP COPY OF THE SPECIFIC ACCOUNT
-        self._callstack.append( ( self.logs, self.deleted_accounts, copy(self.world_state[vm.address]['storage']) , vm ) )
+        self._callstack.append( ( self.logs, self.deleted_accounts, copy.copy(self.world_state[vm.address]['storage']) , vm ) )
 
         self.current.constraints = self.constraints
         #self.forward_events_from(self.current)

@@ -1124,7 +1124,7 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def _generate_testcase_callback(self, state, name, message):
+    def _generate_testcase_callback(self, state, name, message=''):
         '''
         Create a serialized description of a given state.
         :param state: The state to generate information about
