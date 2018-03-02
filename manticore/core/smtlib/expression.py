@@ -717,7 +717,7 @@ class ArrayProxy(Array):
             else:
                 name='%s_sliced_b%d_e%d'%(self.name, start, stop)
 
-            new_array_var = ArrayVariable(self.index_bits, size, name=name, taint=self.taint)
+            new_array_var = ArrayVariable(self.index_bits, size, self.value_bits, name=name, taint=self.taint)
             new_array = ArrayProxy(new_array_var)
             for i in xrange(size):
                 if self.index_max is not None and not isinstance(i+start, Expression) and i+start >= self.index_max:
