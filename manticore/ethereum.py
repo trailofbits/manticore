@@ -236,7 +236,7 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(( (b,a) for (a,b) in list(self.hashes.items()) ))
+        return dict(( (b,a) for (a,b) in self.hashes.items()) )
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
@@ -301,7 +301,7 @@ class ABI(object):
         bytes = []
         for position in range(size):
             bytes.append( Operators.EXTRACT(value, position*8, 8) )
-        chars = list(map(Operators.CHR, bytes))
+        chars = map(Operators.CHR, bytes)
         return tuple(reversed(chars))
 
     @staticmethod
@@ -483,7 +483,7 @@ class EVMAccount(object):
             self._hashes = {}
             md = self._seth.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in list(md.hashes.items()):
+                for signature, func_id in md.hashes.items():
                     func_name = str(signature.split('(')[0])
                     self._hashes[func_name] = signature, func_id
             #It was successful, no need to re-run. _init_hashes disabled
@@ -501,7 +501,7 @@ class EVMAccount(object):
         '''
         if not name.startswith('_'):
             self._init_hashes()
-            if self._hashes is not None and name in list(self._hashes.keys()) :
+            if self._hashes is not None and name in self._hashes:
                 def f(*args, **kwargs):
                     caller = kwargs.get('caller', None)
                     value = kwargs.get('value', 0)
@@ -617,7 +617,7 @@ class ManticoreEVM(Manticore):
             if contract_name is None:
                 name, contract = list(contracts.items())[0]
             else:
-                for n, c in list(contracts.items()):
+                for n, c in contracts:
                     if n.split(":")[1] == contract_name:
                         name, contract = n, c
                         break
@@ -1186,7 +1186,7 @@ class ManticoreEVM(Manticore):
 
             if blockchain._sha3:
                 summary.write("Known hashes:\n")
-                for key, value in list(blockchain._sha3.items()):
+                for key, value in blockchain._sha3.items():
                     summary.write('%s::%x\n'%(key.encode('hex'), value))
 
             if is_something_symbolic:
@@ -1224,7 +1224,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write('\n')
                         tx_summary.write( "Function call:\n")
                         tx_summary.write("%s(" % state.solve_one(function_name ))
-                        tx_summary.write(','.join(map(repr, list(map(state.solve_one, arguments)))))
+                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
@@ -1275,7 +1275,9 @@ class ManticoreEVM(Manticore):
         #move runnign states to final states list
         # and generate a testcase for each
         q = Queue()
-        list(map(q.put, self.running_state_ids))
+        for running_state_id in self.running_state_ids:
+            q.put(running_state_id)
+
         def f(q):
             try:
                 while True:
@@ -1334,7 +1336,7 @@ class ManticoreEVM(Manticore):
                 global_summary.write( '\n\nCompiler warnings for %s:\n' % md.name )
                 global_summary.write( md.warnings )
 
-        for address, md in list(self.metadata.items()):
+        for address, md in self.metadata.items():
             with self._output.save_stream('global_%s.sol'%md.name) as global_src :
                 global_src.write(md.source_code)
             with self._output.save_stream('global_%s_runtime.bytecode'%md.name) as global_runtime_bytecode :
