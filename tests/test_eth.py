@@ -152,6 +152,10 @@ class EthDetectors(unittest.TestCase):
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
+        """
+        Tests whether the did_evm_execute_instruction event is fired for instructions that internally trigger
+        an exception
+        """
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.semantics in ('REVERT', 'STOP'):
