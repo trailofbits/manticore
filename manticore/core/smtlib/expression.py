@@ -181,7 +181,6 @@ class BoolITE(BoolOperation):
 class BitVec(Expression):
     ''' This adds a bitsize to the Expression class '''
     def __init__(self, size, *operands, **kwargs):
-        #assert size in (1, 8, 16, 32, 64, 128, 256)
         super(BitVec, self).__init__(*operands, **kwargs)
         self.size = size
 
@@ -535,12 +534,14 @@ class UnsignedGreaterOrEqual(BoolOperation):
 ###############################################################################
 # Array  BV32 -> BV8  or BV64 -> BV8
 class Array(Expression):
-    def __init__(self, index_bits, index_max, *operands, **kwargs):
+    def __init__(self, index_bits, index_max, value_bits, *operands, **kwargs):
         assert index_bits in (32, 64, 256)
+        assert value_bits in (8, 16, 32, 64, 256)
         assert index_max is None or isinstance(index_max, (int, long))
         assert index_max is None or index_max >= 0 and index_max < 2 ** index_bits
         self._index_bits = index_bits
         self._index_max = index_max
+        self._value_bits = value_bits
         super(Array, self).__init__(*operands, **kwargs)
 
     def cast_index(self, index):
@@ -554,13 +555,22 @@ class Array(Expression):
         if isinstance(value, str) and len(value) == 1:
             value = ord(value)
         if isinstance(value, (int, long)):
-            return BitVecConstant(8, value)
-        assert isinstance(value, BitVec) and value.size == 8
+            return BitVecConstant(self.value_bits, value)
+        assert isinstance(value, BitVec) and value.size == self.value_bits
         return value
+
+    def __len__(self):
+        if self.index_max is None:
+            raise Exception("Array max index not set")
+        return self.index_max
 
     @property
     def index_bits(self):
         return self._index_bits
+
+    @property
+    def value_bits(self):
+        return self._value_bits
 
     @property
     def index_max(self):
@@ -572,30 +582,35 @@ class Array(Expression):
     def store(self, index, value):
         return ArrayStore(self, self.cast_index(index), self.cast_value(value))
 
-
-class ArrayVariable(Array, Variable):
-    def __init__(self, index_bits, index_max, name, *operands, **kwargs):
-        super(ArrayVariable, self).__init__(index_bits, index_max, name, **kwargs)
-
-    @property
-    def declaration(self):
-        return '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec 8)))' % (self.name, self.index_bits)
-
     def __getitem__(self, index):
         return ArraySelect(self, self.cast_index(index))
 
+    @property
+    def underlying_variable(self):
+        array = self
+        while not isinstance(array, ArrayVariable):
+            array = array.array
+        return array
+
+class ArrayVariable(Array, Variable):
+    def __init__(self, index_bits, index_max, value_bits, name, *operands, **kwargs):
+        super(ArrayVariable, self).__init__(index_bits, index_max, value_bits, name, **kwargs)
+
+    @property
+    def declaration(self):
+        return '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (self.name, self.index_bits, self.value_bits)
 
 class ArrayOperation(Array, Operation):
     def __init__(self, array, *operands, **kwargs):
         assert isinstance(array, Array)
-        super(ArrayOperation, self).__init__(array.index_bits, array.index_max, array, *operands, **kwargs)
+        super(ArrayOperation, self).__init__(array.index_bits, array.index_max, array.value_bits, array, *operands, **kwargs)
 
 
 class ArrayStore(ArrayOperation):
     def __init__(self, array, index, value, *args, **kwargs):
         assert isinstance(array, Array)
         assert isinstance(index, BitVec) and index.size == array.index_bits
-        assert isinstance(value, BitVec) and value.size == 8
+        assert isinstance(value, BitVec) and value.size == array.value_bits
         super(ArrayStore, self).__init__(array, index, value, *args, **kwargs)
 
     @property
@@ -616,14 +631,30 @@ class ArrayStore(ArrayOperation):
 
 class ArrayProxy(Array):
     def __init__(self, array):
-        assert isinstance(array, ArrayVariable)
-        super(ArrayProxy, self).__init__(array.index_bits, array.index_max)
-        self._array = array
-        self.name = array.name
+        assert isinstance(array, Array)
 
+        if isinstance (array, ArrayProxy):
+            #copy constructor
+            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            self._array = array._array
+            self._name = array._name
+        elif isinstance(array, ArrayVariable):
+            #fresh array proxy
+            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            self._array = array
+            self._name = array.name
+        else:
+            #arrayproxy for an prepopulated array
+            super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
+            self._name = array.underlying_variable.name            
+            
+    @property
+    def array(self):
+        return self._array
 
-    def __len__(self):
-        return len(self._array)
+    @property
+    def name(self):
+        return self._name
 
     @property
     def operands(self):
@@ -636,6 +667,10 @@ class ArrayProxy(Array):
     @property
     def index_max(self):
         return self._array.index_max
+
+    @property
+    def value_bits(self):
+        return self._array.value_bits
    
     @property
     def taint(self):
@@ -703,10 +738,6 @@ class ArrayProxy(Array):
         else:
             self.store(index, value)
 
-    def __len__(self):
-        if self._array.index_max is None:
-            raise Exception()
-        return self._array.index_max
 
     def __getstate__(self):
         state = {}
@@ -716,16 +747,17 @@ class ArrayProxy(Array):
 
     def __setstate__(self, state):
         self._array = state['_array']
-        self.name = state['name']
-        self._index_bits = self._array.index_bits
-        self._index_max = self._array.index_max
+        self._name = state['name']
 
+    def __copy__(self):
+        return ArrayProxy(self)
+        
 
 class ArraySelect(BitVec, Operation):
     def __init__(self, array, index, *args, **kwargs):
         assert isinstance(array, Array)
         assert isinstance(index, BitVec) and index.size == array.index_bits
-        super(ArraySelect, self).__init__(8, array, index, *args, **kwargs)
+        super(ArraySelect, self).__init__(array.value_bits, array, index, *args, **kwargs)
 
     @property
     def array(self):

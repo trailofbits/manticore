@@ -2,7 +2,29 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.6...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.7...HEAD)
+
+## 0.1.7 - 2018-02-23
+
+This release brings EVM, performance, Linux emulation, and API improvements, along with numerous bug fixes. Thanks again to our external contributors!
+
+- [jean](https://github.com/jean)
+- [disconnect3d](https://github.com/disconnect3d)
+- [arunjohnkuruvilla](https://github.com/arunjohnkuruvilla)
+- [alexanderholman](https://github.com/alexanderholman)
+- [Srinivas11789](https://github.com/Srinivas11789)
+
+### Added
+
+ - [Documentation](https://github.com/trailofbits/manticore/blob/master/docs/syminput.rst) on symbolic input
+ - "[force](http://manticore.readthedocs.io/en/latest/api.html#manticore.core.cpu.abstractcpu.Cpu.write_bytes)" keyword argument in `cpu.write_bytes/read_bytes` etc.
+ - Linux syscalls: getrandom(), openat()
+
+### Fixed
+
+- Improved ARMv7 Thumb support
+- Numerous EVM bug fixes and improvements (transaction generation, SHA3 handling, instruction tracing, int overflow detection)
+- Improved x86/64 emulation performance
 
 ## 0.1.6 - 2017-12-22
 

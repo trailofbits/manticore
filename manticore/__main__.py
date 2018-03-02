@@ -60,11 +60,12 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.1.6',
+    parser.add_argument('--version', action='version', version='Manticore 0.1.7',
                          help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
-
+    parser.add_argument('--contract', type=str,
+                        help='Contract name to analyze in case of multiple ones (Ethereum only)')
 
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
@@ -79,19 +80,19 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from ethereum import ManticoreEVM, IntegerOverflow, UnitializedStorage, UnitializedMemory
+    from ethereum import ManticoreEVM, IntegerOverflow, UninitializedStorage, UninitializedMemory
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
 
     ################ Default? Detectors #######################
     m.register_detector(IntegerOverflow())
-    m.register_detector(UnitializedStorage())
-    m.register_detector(UnitializedMemory())
+    m.register_detector(UninitializedStorage())
+    m.register_detector(UninitializedMemory())
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], args.txlimit)
+    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit)
 
 def main():
     log.init_logging()
@@ -106,7 +107,7 @@ def main():
 
     env = {key:val for key, val in map(lambda env: env[0].split('='), args.env)}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 
     #Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage

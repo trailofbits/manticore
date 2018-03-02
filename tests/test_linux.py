@@ -1,7 +1,12 @@
 import os
+import shutil
+import tempfile
 import unittest
 
 from manticore.platforms import linux, linux_syscalls
+from manticore.core.smtlib import *
+from manticore.core.smtlib import *
+from manticore.core.cpu.abstractcpu import ConcretizeRegister
 
 
 class LinuxTest(unittest.TestCase):
@@ -64,23 +69,23 @@ class LinuxTest(unittest.TestCase):
         nr_fstat64 = 197
 
         # Create a minimal state
-        model = self.symbolic_linux
-        model.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        model.current.SP = 0x2000-4
+        platform = self.symbolic_linux
+        platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        platform.current.SP = 0x2000-4
 
         # open a file
-        filename = model.current.push_bytes('/bin/true\x00')
-        fd = model.sys_open(filename, os.O_RDONLY, 0600)
+        filename = platform.current.push_bytes('/bin/true\x00')
+        fd = platform.sys_open(filename, os.O_RDONLY, 0600)
 
-        stat = model.current.SP - 0x100
-        model.current.R0 = fd
-        model.current.R1 = stat
-        model.current.R7 = nr_fstat64
+        stat = platform.current.SP - 0x100
+        platform.current.R0 = fd
+        platform.current.R1 = stat
+        platform.current.R7 = nr_fstat64
         self.assertEquals(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
 
-        model.syscall()
+        platform.syscall()
 
-        print ''.join(model.current.read_bytes(stat, 100)).encode('hex')
+        print ''.join(platform.current.read_bytes(stat, 100)).encode('hex')
 
     def test_linux_workspace_files(self):
         files = self.symbolic_linux.generate_workspace_files()
@@ -102,29 +107,80 @@ class LinuxTest(unittest.TestCase):
                 self.nevents += 1
 
         # Create a minimal state
-        model = self.symbolic_linux
-        model.current.memory.mmap(0x1000, 0x1000, 'rw ')
-        model.current.SP = 0x2000-4
-        model.current.memory.mmap(0x2000, 0x2000, 'rwx')
-        model.current.PC = 0x2000
-        model.current.write_int(model.current.PC, 0x050f)
+        platform = self.symbolic_linux
+        platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        platform.current.SP = 0x2000-4
+        platform.current.memory.mmap(0x2000, 0x2000, 'rwx')
+        platform.current.PC = 0x2000
+        platform.current.write_int(platform.current.PC, 0x050f)
 
         r = Receiver()
-        model.current.subscribe('will_execute_instruction', r.will_exec)
-        model.current.subscribe('did_execute_instruction', r.did_exec)
+        platform.current.subscribe('will_execute_instruction', r.will_exec)
+        platform.current.subscribe('did_execute_instruction', r.did_exec)
 
-        filename = model.current.push_bytes('/bin/true\x00')
-        fd = model.sys_open(filename, os.O_RDONLY, 0600)
+        filename = platform.current.push_bytes('/bin/true\x00')
+        fd = platform.sys_open(filename, os.O_RDONLY, 0600)
 
-        stat = model.current.SP - 0x100
-        model.current.R0 = fd
-        model.current.R1 = stat
-        model.current.R7 = nr_fstat64
+        stat = platform.current.SP - 0x100
+        platform.current.R0 = fd
+        platform.current.R1 = stat
+        platform.current.R7 = nr_fstat64
         self.assertEquals(linux_syscalls.armv7[nr_fstat64], 'sys_fstat64')
 
-        pre_icount = model.current.icount
-        model.execute()
-        post_icount = model.current.icount
+        pre_icount = platform.current.icount
+        platform.execute()
+        post_icount = platform.current.icount
 
         self.assertEquals(pre_icount+1, post_icount)
         self.assertEquals(r.nevents, 2)
+
+    def _create_openat_state(self):
+        nr_openat = 322
+
+        # Create a minimal state
+        platform = self.symbolic_linux
+        platform.current.memory.mmap(0x1000, 0x1000, 'rw ')
+        platform.current.SP = 0x2000-4
+
+        dir_path = tempfile.mkdtemp()
+        file_name = "file"
+        file_path = os.path.join(dir_path, file_name)
+        with open(file_path, 'w') as f:
+            f.write('test')
+
+        # open a file + directory
+        dirname = platform.current.push_bytes(dir_path+'\x00')
+        dirfd = platform.sys_open(dirname, os.O_RDONLY, 0700)
+        filename = platform.current.push_bytes(file_name+'\x00')
+
+        stat = platform.current.SP - 0x100
+        platform.current.R0 = dirfd
+        platform.current.R1 = filename
+        platform.current.R2 = os.O_RDONLY
+        platform.current.R3 = 0700
+        platform.current.R7 = nr_openat
+        self.assertEquals(linux_syscalls.armv7[nr_openat], 'sys_openat')
+
+        return platform
+
+    def test_syscall_openat_concrete(self):
+        platform = self._create_openat_state()
+
+        platform.syscall()
+
+        self.assertGreater(platform.current.R0, 2)
+
+    def test_syscall_openat_symbolic(self):
+        platform = self._create_openat_state()
+
+        platform.current.R0 = BitVecVariable(32, 'fd')
+
+        with self.assertRaises(ConcretizeRegister) as cm:
+            platform.syscall()
+
+        e = cm.exception
+
+        _min, _max = solver.minmax(platform.constraints, e.cpu.read_register(e.reg_name))
+        self.assertLess(_min, len(platform.files))
+        self.assertGreater(_max, len(platform.files)-1)
+

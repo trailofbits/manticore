@@ -194,7 +194,7 @@ class State(Eventful):
         :param int nbytes: Length of the new buffer
         :param str label: (keyword arg only) The label to assign to the buffer
         :param bool cstring: (keyword arg only) Whether or not to enforce that the buffer is a cstring
-                 (i.e. no \0 bytes, except for the last byte). (bool)
+                 (i.e. no NULL bytes, except for the last byte). (bool)
         :param taint: Taint identifier of the new buffer
         :type taint: tuple or frozenset
 
@@ -202,7 +202,7 @@ class State(Eventful):
         '''
         label = options.get('label', 'buffer')
         taint = options.get('taint', frozenset())
-        expr = self._constraints.new_array(name=label, index_max=nbytes, taint=taint)
+        expr = self._constraints.new_array(name=label, index_max=nbytes, value_bits=8, taint=taint)
         self._input_symbols.append(expr)
 
         if options.get('cstring', False):
@@ -234,7 +234,7 @@ class State(Eventful):
                 this is the identity function on the first argument.
         :param str label: The label to assign to the value
         :param str wildcard: The byte that is considered a wildcard
-        :param bool string: Ensure bytes returned can not be \0
+        :param bool string: Ensure bytes returned can not be NULL
         :param taint: Taint identifier of the symbolicated data
         :type taint: tuple or frozenset
 

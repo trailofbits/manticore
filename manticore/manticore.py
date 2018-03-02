@@ -56,15 +56,15 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     initial_state = State(constraints, platform)
     return initial_state
 
-def make_decree(program, concrete_data='', **kwargs):
+def make_decree(program, concrete_start='', **kwargs):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
     logger.info('Loading program %s', program)
 
-    if concrete_data != '':
-        logger.info('Starting with concrete input: {}'.format(concrete_data))
-    platform.input.transmit(concrete_data)
+    if concrete_start != '':
+        logger.info('Starting with concrete input: {}'.format(concrete_start))
+    platform.input.transmit(concrete_start)
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
@@ -212,13 +212,26 @@ class Manticore(Eventful):
             if callback is not None:
                 self.subscribe(event_name, callback)
 
-        if logger.isEnabledFor(logging.DEBUG):
-            for callback_name in dir(plugin):
-                if callback_name.endswith('_callback'):
-                    event_name = callback_name[:-9]
-                    if event_name not in all_events:
-                        logger.warning("There is no event name %s for callback on plugin type %s", event_name, type(plugin) )
+        #Safety checks
+        for callback_name in dir(plugin):
+            if callback_name.endswith('_callback'):
+                event_name = callback_name[:-9]
+                if event_name not in all_events:
+                    logger.warning("There is no event named %s for callback on plugin %s", event_name, type(plugin).__name__ )
 
+        for event_name in all_events:
+            for plugin_method_name in dir(plugin):
+                if event_name in plugin_method_name:
+                    if not plugin_method_name.endswith('_callback') :
+                        if plugin_method_name.startswith('on_') or \
+                           plugin_method_name.startswith('will_') or \
+                           plugin_method_name.startswith('did_'):
+                            logger.warning("Plugin methods named '%s()' should end with '_callback' on plugin %s", plugin_method_name, type(plugin).__name__ )
+                    if plugin_method_name.endswith('_callback') and \
+                        not plugin_method_name.startswith('on_') and \
+                        not plugin_method_name.startswith('will_') and \
+                        not plugin_method_name.startswith('did_'):
+                            logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s", plugin_method_name, type(plugin).__name__)
 
 
     def unregister_plugin(self, plugin):
@@ -353,10 +366,6 @@ class Manticore(Eventful):
     @property
     def running(self):
         return self._executor._running.value
-
-    def enqueue(self, state):
-        ''' Dynamically enqueue states. Users should typically not need to do this '''
-        self._executor.add(state)
 
     @property
     def running(self):
@@ -665,6 +674,10 @@ class Manticore(Eventful):
     @property
     def coverage_file(self):
         return self._coverage_file
+
+    @property
+    def workspace(self):
+         return self._output.store.uri
 
     @coverage_file.setter
     def coverage_file(self, path):
