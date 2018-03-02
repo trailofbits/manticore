@@ -360,7 +360,17 @@ class ABI(object):
 
     @staticmethod        
     def _consume_type(ty, data, offset):
-        ''' INTERNAL parses a value of type from data '''
+        """
+        Parses a value of type from data
+
+        Further info: http://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+
+        :param data:
+        :param offset: offset into data of the first byte of the "head part" of the ABI element
+        :return: tuple where the first element is the extracted ABI element, and the second is the offset of
+            the next ABI element
+        :rtype: tuple
+        """
         if ty == u'uint256':
             return ABI.get_uint(data, 32, offset), offset+32 #256 bits
         elif ty in (u'bool', u'uint8'):
