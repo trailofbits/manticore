@@ -412,7 +412,13 @@ class ABI(object):
 
     @staticmethod
     def parse(type_spec, data):
-        ''' Deserialize function ID and arguments specified in `type_spec` from `data` '''
+        ''' Deserialize function ID and arguments specified in `type_spec` from `data`
+
+        :param str type_spec: EVM ABI function specification. function name is optional
+        :param data: ethereum transaction data
+        :type data: str or Array
+        :return:
+        '''
         is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
 
         off = 0
