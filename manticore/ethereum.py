@@ -387,7 +387,7 @@ class ABI(object):
         elif ty == u'':
             return None, offset
         elif ty in (u'bytes', u'string'):
-            dyn_offset = ABI.get_uint(data, 32,offset)  #256 bits
+            dyn_offset = ABI.get_uint(data, 32,offset) + offset  #256 bits
             size = ABI.get_uint(data, 32, dyn_offset)  #256 bits
             return data[dyn_offset+32:dyn_offset+32+size], offset+32
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
