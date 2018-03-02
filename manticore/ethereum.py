@@ -311,7 +311,7 @@ class ABI(object):
         args = list(args)
         for i in range(len(args)):
             if isinstance(args[i], EVMAccount):
-                 args[i] = int(args[i])
+                args[i] = int(args[i])
         result = []
         dynamic_args = []
         dynamic_offset = 32*len(args)
