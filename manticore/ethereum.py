@@ -1,12 +1,14 @@
 import string
 
 from . import Manticore
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import arithmetic_simplify, pretty_print
 from .platforms import evm
 from .core.state import State
 import tempfile
 from subprocess import Popen, PIPE
+from multiprocessing import Process, Queue
+from Queue import Empty as EmptyQueue
 import sha3
 import json
 import logging
@@ -53,20 +55,37 @@ class IntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
+    @staticmethod
+    def _can_add_overflow(state, result, a, b):
+        # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
+        return state.can_be_true(result < a) or state.can_be_true(result < b)
+
+    @staticmethod
+    def _can_mul_overflow(state, result, a, b):
+        return state.can_be_true(operators.ULT(result, a) & operators.ULT(result, b))
+
+    @staticmethod
+    def _can_sub_underflow(state, a, b):
+        return state.can_be_true(b > a)
+
     def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         mnemonic = instruction.semantics
-        if mnemonic in ('ADD', 'MUL'):
-            if state.can_be_true(result < arguments[0]) or state.can_be_true(result < arguments[1]):
+
+        if mnemonic == 'ADD':
+            if self._can_add_overflow(state, result, *arguments):
+                self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+        elif mnemonic == 'MUL':
+            if self._can_mul_overflow(state, result, *arguments):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
         elif mnemonic == 'SUB':
-            if state.can_be_true(arguments[1] > arguments[0]):
+            if self._can_sub_underflow(state, *arguments):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
             
-class UnitializedMemory(Detector):
+class UninitializedMemory(Detector):
     '''
         Detects uses of uninitialized memory
     '''
-    def did_evm_read_memory(self, state, offset, value):
+    def did_evm_read_memory_callback(self, state, offset, value):
         if not state.can_be_true(value != 0):
             #Not initialized memory should be zero
             return 
@@ -78,16 +97,16 @@ class UnitializedMemory(Detector):
         if state.can_be_true(cbu):
             self.add_finding(state, "Potentially reading uninitialized memory at instruction")
  
-    def did_evm_write_memory(self, state, offset, value):
+    def did_evm_write_memory_callback(self, state, offset, value):
         #concrete or symbolic write
         state.context.setdefault('seth.detectors.initialized_memory',set()).add(offset)
 
 
-class UnitializedStorage(Detector):
+class UninitializedStorage(Detector):
     '''
         Detects uses of uninitialized storage
     '''
-    def did_evm_read_storage(self, state, offset, value):
+    def did_evm_read_storage_callback(self, state, offset, value):
         if not state.can_be_true(value != 0):
             #Not initialized memory should be zero
             return 
@@ -99,7 +118,7 @@ class UnitializedStorage(Detector):
         if state.can_be_true(cbu):
             self.add_finding(state, "Potentially reading uninitialized storage")
  
-    def did_evm_write_storage(self, state, offset, value):
+    def did_evm_write_storage_callback(self, state, offset, value):
         #concrete or symbolic write
         state.context.setdefault('seth.detectors.initialized_storage',set()).add(offset)
 
@@ -459,7 +478,7 @@ class EVMAccount(object):
     def address(self):
         return self._address
 
-    def _null_func():
+    def _null_func(self):
         pass
 
 
@@ -571,34 +590,44 @@ class ManticoreEVM(Manticore):
         return ABI.SValue
 
     @staticmethod
-    def compile(source_code):
+    def compile(source_code, contract_name = None):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code)
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name)
         return bytecode
 
     @staticmethod
-    def _compile(source_code):
+    def _compile(source_code, contract_name):
         """ Compile a Solidity contract, used internally
             
             :param source_code: a solidity source code
+            :param contract_name: a string with the name of the contract to analyze
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', temp.name], stdout=PIPE, stderr=PIPE)
+            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths','.', temp.name], stdout=PIPE, stderr=PIPE)
 
             try:
                 output = json.loads(p.stdout.read())
             except ValueError:
-                raise Exception('Solidity compilation error')
+                raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
 
             contracts = output.get('contracts', [])
-            if len(contracts) != 1:
-                raise Exception('Solidity file must contain exactly one contract')
+            if len(contracts) != 1 and contract_name is None:
+                raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
-            name, contract = contracts.items()[0]
+            name, contract = None, None
+            if contract_name is None:
+                name, contract = contracts.items()[0]
+            else:
+                for n, c in contracts.items():
+                    if n.split(":")[1] == contract_name:
+                        name, contract = n, c
+                        break
+
+            assert(name is not None)
             name = name.split(':')[1]
             bytecode = contract['bin'].decode('hex')
             srcmap = contract['srcmap'].split(';')
@@ -663,7 +692,10 @@ class ManticoreEVM(Manticore):
 
     @property
     def all_state_ids(self):
-        ''' IDs of the all states ''' 
+        ''' IDs of the all states 
+
+            Note: state with id -1 is already in memory and it is not backed on the storage
+        ''' 
         return self.running_state_ids + self.terminated_state_ids
 
     @property
@@ -767,12 +799,14 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, balance=0, address=None, args=()):
+    def solidity_create_contract(self, source_code, owner, contract_name=None, balance=0, address=None, args=()):
         ''' Creates a solidity contract 
 
             :param str source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
             :type owner: int or EVMAccount
+            :param contract_name: Name of the contract to analyze (optional if there is a single one in the source code)
+            :type contract_name: str
             :param balance: balance to be transferred on creation
             :type balance: int or SValue
             :param address: the address for the new contract (optional)
@@ -780,7 +814,7 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-        compile_results = self._compile(source_code)
+        compile_results = self._compile(source_code, contract_name)
         init_bytecode = compile_results[2]
 
         if address is None:
@@ -873,12 +907,12 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, tx_limit=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None):
         with open(solidity_filename) as f:
             source_code = f.read()
 
         user_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, owner=user_account)
+        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=user_account)
         attacker_account = self.create_account(balance=1000)
 
         def run_symbolic_tx():
@@ -1002,7 +1036,7 @@ class ManticoreEVM(Manticore):
         state.context['last_exception'] = e
         # TODO(mark): This will break if we ever change the message text. Use a less
         # brittle check.
-        if e.message not in {'REVERT', 'THROW', 'Not Enough Funds for transaction'}:
+        if e.message not in {'REVERT', 'THROW', 'TXERROR'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':
@@ -1158,7 +1192,7 @@ class ManticoreEVM(Manticore):
             summary.write("Last exception: %s\n" %state.context['last_exception'])
 
             address, offset = state.context['seth.trace'][-1]
-            
+
             #Last instruction
             metadata = self.get_metadata(blockchain.transactions[-1].address)
             if metadata is not None:
@@ -1200,6 +1234,11 @@ class ManticoreEVM(Manticore):
                 summary.write("\n")
 
 
+            if blockchain._sha3:
+                summary.write("Known hashes:\n")
+                for key, value in blockchain._sha3.items():
+                    summary.write('%s::%x\n'%(key.encode('hex'), value))
+
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
@@ -1215,11 +1254,11 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_summary.write("Data: %s %s\n"% (state.solve_one(tx.data).encode('hex'), flagged(issymbolic(tx.data))))
+                tx_data = ''.join(state.solve_one(tx.data))
+                tx_summary.write("Data: %s %s\n"% (tx_data.encode('hex'), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
-
                 
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'Call':
@@ -1282,8 +1321,8 @@ class ManticoreEVM(Manticore):
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write("Topics:\n")
-                for topic in log_item.topics:
-                    logs_summary.write("\t%d) %x %s" %(log_item.topics.index(topic), state.solve_one(topic), flagged(issymbolic(topic))))
+                for i, topic in enumerate(log_item.topics):
+                    logs_summary.write("\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
@@ -1302,13 +1341,31 @@ class ManticoreEVM(Manticore):
     def finalize(self):
         #move runnign states to final states list
         # and generate a testcase for each
-        lst = tuple(self.running_state_ids)
-        for state_id in lst:
-            self.terminate_state_id(state_id)
+        q = Queue()
+        map(q.put, self.running_state_ids)
+        def f(q):
+            try:
+                while True:
+                    state_id = q.get_nowait()
+                    self.terminate_state_id(state_id)
+            except EmptyQueue:
+                pass
 
+        ps = []
+
+        for _ in range(self._config_procs):
+            p = Process(target=f, args=(q,))
+            p.start()
+            ps.append(p)
+
+        for p in ps:
+            p.join()            
+                
         #delete actual streams from storage
         for state_id in self.all_state_ids:
-            self._executor._workspace.rm_state(state_id)
+            #state_id -1 is always only on memory
+            if state_id != -1:
+                self._executor._workspace.rm_state(state_id)
 
         #clean up lists
         with self.locked_context('seth') as seth_context:

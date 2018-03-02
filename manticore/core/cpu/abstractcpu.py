@@ -553,7 +553,7 @@ class Cpu(Eventful):
     def memory(self):
         return self._memory
 
-    def write_int(self, where, expression, size=None):
+    def write_int(self, where, expression, size=None, force=False):
         '''
         Writes int to memory
 
@@ -561,18 +561,20 @@ class Cpu(Eventful):
         :param expr: value to write
         :type expr: int or BitVec
         :param size: bit size of `expr`
+        :param force: whether to ignore memory permissions
         '''
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
         self._publish('will_write_memory', where, expression, size)
 
-        self.memory[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in xrange(0, size, 8)]
+        data = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in xrange(0, size, 8)]
+        self._memory.write(where, data, force)
 
         self._publish('did_write_memory', where, expression, size)
 
 
-    def read_int(self, where, size=None):
+    def read_int(self, where, size=None, force=False):
         '''
         Reads int from memory
 
@@ -580,13 +582,14 @@ class Cpu(Eventful):
         :param size: number of bits to read
         :return: the value read
         :rtype: int or BitVec
+        :param force: whether to ignore memory permissions
         '''
         if size is None:
             size = self.address_bit_size
         assert size in SANE_SIZES
         self._publish('will_read_memory', where, size)
 
-        data = self.memory[where:where + size / 8]
+        data = self._memory.read(where, size/8, force)
         assert (8 * len(data)) == size
         value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
 
@@ -594,32 +597,34 @@ class Cpu(Eventful):
         return value
 
 
-    def write_bytes(self, where, data):
+    def write_bytes(self, where, data, force=False):
         '''
         Write a concrete or symbolic (or mixed) buffer to memory
 
         :param int where: address to write to
         :param data: data to write
         :type data: str or list
+        :param force: whether to ignore memory permissions
         '''
         for i in xrange(len(data)):
-            self.write_int(where + i, Operators.ORD(data[i]), 8)
+            self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
-    def read_bytes(self, where, size):
+    def read_bytes(self, where, size, force=False):
         '''
         Read from memory.
 
         :param int where: address to read data from
         :param int size: number of bytes
+        :param force: whether to ignore memory permissions
         :return: data
         :rtype: list[int or Expression]
         '''
         result = []
         for i in xrange(size):
-            result.append(Operators.CHR(self.read_int(where + i, 8)))
+            result.append(Operators.CHR(self.read_int(where + i, 8, force)))
         return result
 
-    def write_string(self, where, string, max_length=None):
+    def write_string(self, where, string, max_length=None, force=False):
         '''
         Writes a string to memory, appending a NULL-terminator at the end.
         :param int where: Address to write the string to
@@ -627,14 +632,15 @@ class Cpu(Eventful):
         :param int max_length:
             The size in bytes to cap the string at, or None [default] for no
             limit. This includes the NULL terminator.
+        :param force: whether to ignore memory permissions
         '''
         
         if max_length is not None:
             string = string[:max_length-1]
         
-        self.write_bytes(where, string + '\x00')
+        self.write_bytes(where, string + '\x00', force)
         
-    def read_string(self, where, max_length=None):
+    def read_string(self, where, max_length=None, force=False):
         '''
         Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
 
@@ -642,12 +648,13 @@ class Cpu(Eventful):
         :param int max_length:
             The size in bytes to cap the string at, or None [default] for no
             limit.
+        :param force: whether to ignore memory permissions
         :return: string read
         :rtype: str
         '''
         s = StringIO.StringIO()
         while True:
-            c = self.read_int(where, 8)
+            c = self.read_int(where, 8, force)
 
             if issymbolic(c) or c == 0:
                 break
@@ -660,46 +667,50 @@ class Cpu(Eventful):
             where += 1
         return s.getvalue()
 
-    def push_bytes(self, data):
+    def push_bytes(self, data, force=False):
         '''
         Write `data` to the stack and decrement the stack pointer accordingly.
 
         :param str data: Data to write
+        :param force: whether to ignore memory permissions
         '''
         self.STACK -= len(data)
-        self.write_bytes(self.STACK, data)
+        self.write_bytes(self.STACK, data, force)
         return self.STACK
 
-    def pop_bytes(self, nbytes):
+    def pop_bytes(self, nbytes, force=False):
         '''
         Read `nbytes` from the stack, increment the stack pointer, and return
         data.
 
         :param int nbytes: How many bytes to read
+        :param force: whether to ignore memory permissions
         :return: Data read from the stack
         '''
-        data = self.read_bytes(self.STACK, nbytes)
+        data = self.read_bytes(self.STACK, nbytes, force=force)
         self.STACK += nbytes
         return data
 
-    def push_int(self, value):
+    def push_int(self, value, force=False):
         '''
         Decrement the stack pointer and write `value` to the stack.
 
         :param int value: The value to write
+        :param force: whether to ignore memory permissions
         :return: New stack pointer
         '''
         self.STACK -= self.address_bit_size / 8
-        self.write_int(self.STACK, value)
+        self.write_int(self.STACK, value, force=force)
         return self.STACK
 
-    def pop_int(self):
+    def pop_int(self, force=False):
         '''
         Read a value from the stack and increment the stack pointer.
 
+        :param force: whether to ignore memory permissions
         :return: Value read
         '''
-        value = self.read_int(self.STACK)
+        value = self.read_int(self.STACK, force=force)
         self.STACK += self.address_bit_size / 8
         return value
 
@@ -805,19 +816,23 @@ class Cpu(Eventful):
 
         name = self.canonicalize_instruction_name(insn)
             
-        if logger.level == logging.DEBUG :
+        if logger.level == logging.DEBUG:
             logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
 
         try:
-            try:
-                getattr(self, name)(*insn.operands)
-            except AttributeError:
-                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+            implementation = getattr(self, name, None)
+
+            if implementation is not None:
+                implementation(*insn.operands)
+
+            else:
+                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
                 logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
                 self.emulate(insn)
+
         except (Interruption, Syscall) as e:
             e.on_handled = lambda: self._publish_instruction_as_executed(insn)
             raise e
