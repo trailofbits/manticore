@@ -395,7 +395,7 @@ class ABI(object):
             result = [ABI.get_uint(data, 20, dyn_offset+32 + 32*i) for i in range(size)]
             return result, offset+32
         else:
-            raise NotImplementedError(ty)
+            raise NotImplementedError(repr(ty))
 
     @staticmethod
     def parse_type_spec(type_spec):
