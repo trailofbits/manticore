@@ -57,6 +57,25 @@ class EthereumAbiTests(unittest.TestCase):
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, ('Z'*30,))
 
+    def test_simple_types(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),
+            '\xff' * 32,
+            '\xff'.rjust(32, '\0'),
+            self._pack_int_to_32(0x424242),
+            '\x7f' + '\xff' *31, # int256 max
+            '\x80'.ljust(32, '\0'), # int256 min
+
+
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(uint256,uint256,bool,address,int256,int256)', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242, 2**255 - 1,-(2**255) ))
+
     def test_mult_dyn_types(self):
         d = [
             'AAAA',                    # function hash
