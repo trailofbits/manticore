@@ -672,7 +672,7 @@ class ManticoreEVM(Manticore):
             return context['_completed_transactions']
 
     @property
-    def running_state_ids(self):
+    def _running_state_ids(self):
         ''' IDs of the running states''' 
         with self.locked_context('seth') as context:
             if self.initial_state is not None:
@@ -681,15 +681,15 @@ class ManticoreEVM(Manticore):
                 return context['_saved_states']
 
     @property
-    def all_state_ids(self):
+    def _all_state_ids(self):
         ''' IDs of the all states 
 
             Note: state with id -1 is already in memory and it is not backed on the storage
         ''' 
-        return self.running_state_ids + self.terminated_state_ids
+        return self._running_state_ids + self._terminated_state_ids
 
     @property
-    def terminated_state_ids(self):
+    def _terminated_state_ids(self):
         ''' IDs of the terminated states ''' 
         with self.locked_context('seth') as context:
             return context['_final_states']
@@ -697,37 +697,40 @@ class ManticoreEVM(Manticore):
     @property
     def running_states(self):
         ''' Iterates over the running states''' 
-        for state_id in self.running_state_ids:
+        for state_id in self._running_state_ids:
             state = self.load(state_id)
             yield state
+            #FIXME re save state in case it was modified by the user
 
     @property
     def terminated_states(self):
         ''' Iterates over the terminated states''' 
-        for state_id in self.terminated_state_ids:
+        for state_id in self._terminated_state_ids:
             state = self.load(state_id)
             yield state
+            #FIXME re save state in case it was modified by the user
 
     @property
     def all_states(self):
         ''' Iterates over the all states (terminated and alive)''' 
-        for state_id in self.terminated_state_ids + self.running_state_ids:
+        for state_id in self._all_state_ids:
             state = self.load(state_id)
             yield state
+            #FIXME re save state in case it was modified by the user
 
     def count_states(self):
         ''' Total states count '''
-        return len(self.terminated_state_ids + self.running_state_ids)
+        return len(self._all_state_ids)
 
     def count_running_states(self):
         ''' Running states count '''
-        return len(self.running_state_ids)
+        return len(self._running_state_ids)
 
     def count_terminated_states(self):
         ''' Terminated states count '''
-        return len(self.terminated_state_ids)
+        return len(self._terminated_state_ids)
         
-    def terminate_state_id(self, state_id):
+    def _terminate_state_id(self, state_id):
         ''' Manually  terminates a states by state_id.
             Moves the state from the running list into the terminated list and 
             generates a testcase for it
@@ -819,7 +822,7 @@ class ManticoreEVM(Manticore):
                                        address=address,
                                        init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
 
-        if len(self.running_state_ids) ==0 or self.get_code(account) == '':
+        if not self.count_running_states() or self.get_code(account) == '':
             return None
         return account
 
@@ -834,7 +837,7 @@ class ManticoreEVM(Manticore):
             :param str init: initializing evm bytecode and arguments
             :rtype: EVMAccount
         '''
-        assert len(self.running_state_ids) == 1, "No forking yet"
+        assert self.count_running_states() == 1, "No forking yet"
         assert init is not None
         if address is None:
             address = self.world.new_address()
@@ -858,7 +861,7 @@ class ManticoreEVM(Manticore):
             :type address: int
             :return: an EVMAccount
         '''
-        assert len(self.running_state_ids) == 1, "No forking yet"
+        assert self.count_running_states() == 1, "No forking yet"
         with self.locked_context('seth') as context:
            assert context['_pending_transaction'] is None
         address = self.world.create_account( address, balance, code=code, storage=None)
@@ -894,7 +897,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
-        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Terminated States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
+        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Terminated States: %d | Alive States: %d", self.completed_transactions, self.global_coverage(address), self.count_terminated_states(), self.count_running_states())
 
         return status
 
@@ -962,7 +965,7 @@ class ManticoreEVM(Manticore):
             if len(context['_saved_states'])==1:
                 self._initial_state = self._executor._workspace.load_state(context['_saved_states'][0], delete=True)
                 context['_saved_states'] = []
-                assert self.running_state_ids == [-1]
+                assert self._running_state_ids == [-1]
 
             #clear pending transcations. We are done.
             context['_pending_transaction'] = None
@@ -996,9 +999,9 @@ class ManticoreEVM(Manticore):
         state = None
         if state_id is None:
             #a single state was assumed
-            if len(self.running_state_ids) == 1:  
+            if self.count_running_states() == 1:  
                 #Get the ID of the single running state              
-                state_id = self.running_state_ids[0]
+                state_id = self._running_state_ids[0]
             else:
                 raise Exception("More than one state running.")
 
@@ -1006,6 +1009,8 @@ class ManticoreEVM(Manticore):
             state = self.initial_state
         else:
             state = self._executor._workspace.load_state(state_id, delete=False)
+            #froward events from newly loaded object
+            self._executor.forward_events_from(state, True)
         return state
 
     #Callbacks
@@ -1138,7 +1143,7 @@ class ManticoreEVM(Manticore):
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         def flagged(flag):
             return '(*)' if flag else '' 
-        testcase = self._output.testcase()
+        testcase = self._output.testcase(name.replace(' ', '_'))
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
         with testcase.open_stream('summary') as summary:            
@@ -1282,12 +1287,12 @@ class ManticoreEVM(Manticore):
         #move runnign states to final states list
         # and generate a testcase for each
         q = Queue()
-        map(q.put, self.running_state_ids)
+        map(q.put, self._running_state_ids)
         def f(q):
             try:
                 while True:
                     state_id = q.get_nowait()
-                    self.terminate_state_id(state_id)
+                    self._terminate_state_id(state_id)
             except EmptyQueue:
                 pass
 
@@ -1405,9 +1410,8 @@ class ManticoreEVM(Manticore):
         account_address = int(account_address)
 
         #Search one state in which the account_address exists
-        world=None
-        for state_id in self.all_state_ids:
-            world = self.get_world(state_id)
+        for state in self.all_states:
+            world = state.platform
             if account_address in world:
                 break
 
