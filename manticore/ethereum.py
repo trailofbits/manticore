@@ -393,8 +393,8 @@ class ABI(object):
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
             return data[offset:offset+size], offset+32
-        if ty == u'address[]':
-            dyn_offset = arithmetic_simplify((ABI.get_uint(data, 32, offset))) + offset
+        elif ty == u'address[]':
+            dyn_offset = arithmetic_simplify((ABI.get_uint(data, 32, offset)) + offset)
             size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
             result = [ABI.get_uint(data, 20, dyn_offset+32 + 32*i) for i in range(size)]
             return result, offset+32
