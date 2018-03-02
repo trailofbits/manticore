@@ -1144,7 +1144,8 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def _concretize_offsets_and_sizes(self, state, signature, data):
+    @staticmethod
+    def _concretize_offsets_and_sizes(state, signature, data):
         ''' Using signature spec this function browse the data and concretize 
             all the offsets to dynamic arguments and all the size of the dynamic
             arguments so it all fits into data.
