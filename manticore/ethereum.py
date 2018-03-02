@@ -1126,27 +1126,38 @@ class ManticoreEVM(Manticore):
         number_dyn_arguments = len(dyn_arguments)
         if not number_dyn_arguments:
             return
-        free_pointer = 4 + len(types)*32 
-        available = len(data) -free_pointer - number_dyn_arguments*32
+        free_pointer = 4 + len(types)*32
+        space_for_all_size_fields = number_dyn_arguments * 32
+        space_for_arg_data = len(data) -free_pointer - space_for_all_size_fields
 
 
         #This will try certain partition of the data into arguments.
         #It may generate an unsolvable core. Other feasible partitions may exist. 
-        argument_size = available/number_dyn_arguments
+        space_for_each_arg = space_for_arg_data/number_dyn_arguments
         for index in dyn_arguments:
             #get, constraint and concretize dyn_offset to some reasonable value
-            dyn_offset = ABI.get_uint(data, 32, 4 + index*32)
-            state.constrain(dyn_offset == free_pointer - 4)
-            data[4 + index*32 : 4 + index*32 + 32] = ("%064x"%(free_pointer-4)).decode('hex')
-
+            arg_head_element_offset = 4 + index * 32
+            offset_to_arg_data = ABI.get_uint(data, 32, arg_head_element_offset)
+            concrete_offset_to_arg_data = free_pointer - 4
+            state.constrain(offset_to_arg_data == concrete_offset_to_arg_data)
+            data[arg_head_element_offset:arg_head_element_offset + 32] = ("%064x"%(concrete_offset_to_arg_data)).decode('hex')
 
             #get, constraint and concretize dyn_size to some reasonable value
-            dyn_size = ABI.get_uint(data, 32, free_pointer)
-            state.constrain(dyn_size == argument_size/32)
-            data[free_pointer:free_pointer+32]= ("%064x"%(argument_size/32)).decode('hex')
+            number_of_elements_in_arg = ABI.get_uint(data, 32, free_pointer)
+
+            # FIXME (mark) element_size is not always 32. for bytes it is 1
+            # if regular one
+            element_size = 32
+            # else if bytes
+            #     element_size = 1
+
+            # but what about bytes?
+            concrete_number_of_elements_in_arg = space_for_each_arg/element_size
+            state.constrain(number_of_elements_in_arg == concrete_number_of_elements_in_arg)
+            data[free_pointer:free_pointer + 32]= ("%064x"%(concrete_number_of_elements_in_arg)).decode('hex')
 
 
-            free_pointer += 32 + argument_size
+            free_pointer += 32 + space_for_each_arg
             #free_pointer points to the first unused byte in the dinamic argument area
 
 
