@@ -1136,7 +1136,7 @@ class ManticoreEVM(Manticore):
         for index in dyn_arguments:
             #get, constraint and concretize dyn_offset to some reasonable value
             dyn_offset = ABI.get_uint(data, 32, 4 + index*32)
-            state.constrain(dyn_offset+4 == free_pointer)
+            state.constrain(dyn_offset == free_pointer - 4)
             data[4 + index*32 : 4 + index*32 + 32] = ("%064x"%(free_pointer-4)).decode('hex')
 
 
