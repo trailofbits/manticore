@@ -10,7 +10,7 @@ from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translat
 from ..core.state import Concretize,TerminateState
 import logging
 import sys, hashlib
-from manticore.core.smtlib import *
+from collections import namedtuple
 if sys.version_info < (3, 6):
     import sha3
 
@@ -21,6 +21,8 @@ TT256 = 2 ** 256
 TT256M1 = 2 ** 256 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
+
+PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'origin', 'price', 'data', 'caller', 'value', 'bytecode', 'header'])
 
 def ceil32(x):
     return Operators.ITEBV(256, Operators.UREM(x, 32) == 0, x , x + 32 - Operators.UREM(x, 32))
@@ -2033,9 +2035,7 @@ class EVMWorld(Platform):
         assert not issymbolic(origin) 
         address = self.create_account(address, 0)
 
-        #A pending transaction of type Create will set the code for the account 
-        # with the result of the constructor code
-        self._pending_transaction = ('Create', address, origin, price, '', caller, balance, ''.join(init), header)
+        self._pending_transaction = PendingTransaction('Create', address, origin, price, '', caller, balance, ''.join(init), header)
 
         if run:
             assert False
@@ -2079,7 +2079,7 @@ class EVMWorld(Platform):
         else:
             data = ''.join(data)
         bytecode = self.get_code(address)
-        self._pending_transaction = ('Call', address, origin, price, data, caller, value, bytecode, header)
+        self._pending_transaction = PendingTransaction('Call', address, origin, price, data, caller, value, bytecode, header)
 
         if run:
             assert self.depth == 0
