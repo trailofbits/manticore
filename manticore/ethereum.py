@@ -371,6 +371,8 @@ class ABI(object):
             the next ABI element
         :rtype: tuple
         """
+        # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
+        # should be something the caller keeps track of.
         if ty == u'uint256':
             return ABI.get_uint(data, 32, offset), offset+32 #256 bits
         elif ty in (u'bool', u'uint8'):
