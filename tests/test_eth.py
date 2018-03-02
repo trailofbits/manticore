@@ -42,3 +42,17 @@ class EthereumAbiTests(unittest.TestCase):
 
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, ([42, 43],))
+
+    def test_dyn_bytes(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),  # offset to data start
+            self._pack_int_to_32(30),   # data start; # of elements
+            'Z'*30, '\x00'*2
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(bytes)', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ('Z'*30,))
