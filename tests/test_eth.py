@@ -14,6 +14,11 @@ from manticore.utils.log import init_logging
 
 init_logging()
 
+def make_mock_evm_state():
+    cs = ConstraintSet()
+    fakestate = State(cs, EVMWorld(cs))
+    return fakestate
+
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
     def test_int_ovf(self):
@@ -130,17 +135,37 @@ class EthereumAbiTests(unittest.TestCase):
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
 
+class EthTests(unittest.TestCase):
+    def setUp(self):
+        self.state = make_mock_evm_state()
+
+    def test_concretize_dyn_args(self):
+        sig = 'func(address[],address[])'
+
+        funchash_sz = 4
+        head_element_sz = 32
+        nelements_sz = 32
+        each_data_sz = 32*2
+        data_space = each_data_sz*2  # my choice, choosing to give 2 elements to each array
+        total_tx_data_size = funchash_sz + head_element_sz*2  + nelements_sz*2 + data_space
+
+        dat = self.state.new_symbolic_buffer(total_tx_data_size)
+        ManticoreEVM._concretize_offsets_and_sizes(self.state, sig, dat)
+
+        head1 = ABI.get_uint(dat, 32, funchash_sz)
+        nelements1 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2)
+        head2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz)
+        nelements2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2 + nelements_sz + each_data_sz)
+
+        self.assertTrue(self.state.must_be_true(head1 == head_element_sz*2))
+        self.assertTrue(self.state.must_be_true(nelements1 == 2))
+        self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
+        self.assertTrue(self.state.must_be_true(nelements2 == 2))
 
 class EthDetectors(unittest.TestCase):
     def setUp(self):
         self.io = IntegerOverflow()
-        self.state = self.make_mock_evm_state()
-
-    @staticmethod
-    def make_mock_evm_state():
-        cs = ConstraintSet()
-        fakestate = State(cs, EVMWorld(cs))
-        return fakestate
+        self.state = make_mock_evm_state()
 
     def test_mul_no_overflow(self):
         """
