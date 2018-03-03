@@ -330,8 +330,7 @@ class Z3Solver(Solver):
 
         with constraints as temp_cs:
             temp_cs.add(expression)
-
-            self._reset(temp_cs.related_to(expression))
+            self._reset(temp_cs)
             return self._check() == 'sat'
 
 
