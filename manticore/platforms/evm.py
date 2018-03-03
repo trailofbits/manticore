@@ -2165,8 +2165,9 @@ class EVMWorld(Platform):
             self._transactions.append(tx)
         else:            
             n = len(self._transactions)
-            if len (self._internal_transactions) < n:
-                self._internal_transactions.append([])
+            if len(self._internal_transactions) <= n:
+                for _ in xrange(n-len(self._internal_transactions)+1):
+                    self._internal_transactions.append([])
             self._internal_transactions[n].append(tx)
 
     def CREATE(self, value, bytecode):
