@@ -27,6 +27,30 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn('overflow at ADD', all_findings)
         self.assertIn('overflow at MUL', all_findings)
 
+    def test_emit_did_execute_end_instructions(self):
+        """
+        Tests whether the did_evm_execute_instruction event is fired for instructions that internally trigger
+        an exception
+        """
+        class TestDetector(Detector):
+            def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+                if instruction.semantics in ('REVERT', 'STOP'):
+                    with self.locked_context('insns', dict) as d:
+                        d[instruction.semantics] = True
+
+        mevm = ManticoreEVM()
+        p = TestDetector()
+        mevm.register_detector(p)
+
+        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=1)
+
+        self.assertIn('insns', p.context)
+        context = p.context['insns']
+        self.assertIn('STOP', context)
+        self.assertIn('REVERT', context)
+
+
 class EthereumAbiTests(unittest.TestCase):
     @staticmethod
     def _pack_int_to_32(x):
@@ -148,28 +172,3 @@ class EthDetectors(unittest.TestCase):
 
         check = self.io._can_mul_overflow(self.state, result, *arguments)
         self.assertTrue(check)
-
-
-class EthTests(unittest.TestCase):
-    def test_emit_did_execute_end_instructions(self):
-        """
-        Tests whether the did_evm_execute_instruction event is fired for instructions that internally trigger
-        an exception
-        """
-        class TestDetector(Detector):
-            def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-                if instruction.semantics in ('REVERT', 'STOP'):
-                    with self.locked_context('insns', dict) as d:
-                        d[instruction.semantics] = True
-
-        mevm = ManticoreEVM()
-        p = TestDetector()
-        mevm.register_detector(p)
-
-        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
-        mevm.multi_tx_analysis(filename, tx_limit=1)
-
-        self.assertIn('insns', p.context)
-        context = p.context['insns']
-        self.assertIn('STOP', context)
-        self.assertIn('REVERT', context)
