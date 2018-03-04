@@ -3,7 +3,7 @@ import warnings
 import capstone as cs
 
 from .abstractcpu import Cpu, RegisterFile, Abi, SyscallAbi, Operand, instruction
-from .arm import HighBit
+from .arm import HighBit, Armv7Operand
 from .register import Register
 
 
@@ -108,6 +108,23 @@ class Aarch64Cpu(Cpu):
         self._mode = cs.CS_MODE_ARM
         super(Aarch64Cpu, self).__init__(Aarch64RegisterFile(), memory)
 
+    def __getstate__(self):
+        state = super(Aarch64Cpu, self).__getstate__()
+        state['_last_flags'] = self._last_flags
+        # TODO / FIXME / REVIEWME: do we need those in aarch64? [copied from armv7]
+        # state['at_symbolic_conditional'] = self._at_symbolic_conditional
+        # state['_it_conditional'] = self._it_conditional
+        state['_mode'] = self._mode
+        return state
+
+    def __setstate__(self, state):
+        self._last_flags = state['_last_flags']
+        # TODO / FIXME / REVIEWME: do we need those in aarch64? [copied from armv7]
+        # self._at_symbolic_conditional = state['at_symbolic_conditional']
+        # self._it_conditional = state['_it_conditional']
+        self._mode = state['_mode']
+        super(Aarch64Cpu, self).__setstate__(state)
+
     def _wrap_operands(self, ops):
         return [Aarch64Operand(self, op) for op in ops]
 
@@ -119,8 +136,8 @@ class Aarch64Cpu(Cpu):
         Note: If src operand is PC, temporarily release our logical PC
         view and conform to the spec, which dictates PC = curr instr + 8
 
-        :param Armv7Operand dest: The destination operand; register.
-        :param Armv7Operand src: The source operand; register or immediate.
+        :param Arm64Operand dest: The destination operand; register.
+        :param Arm64Operand src: The source operand; register or immediate.
         """
         if cpu.mode == cs.CS_MODE_ARM:
             result, carry_out = src.read(with_carry=True)
@@ -205,24 +222,26 @@ class Aarch64LinuxSyscallAbi(SyscallAbi):
 
 
 class Aarch64Operand(Operand):
-    def __init__(self, cpu, op):
+    def __init__(self, cpu, op, **kwargs):
         super(Aarch64Operand, self).__init__(cpu, op)
+
+        assert self.op.type in (
+            cs.arm64.ARM64_OP_REG,  # Register operand
+            cs.arm64.ARM64_OP_MEM,  # Memory operand
+            cs.arm64.ARM64_OP_IMM,  # Immediate operand
+            cs.arm64.ARM64_OP_CIMM,  # C-Immediate
+            cs.arm64.ARM64_OP_FP  # Floating-Point operand
+        )
+
+        self._type = self.op.type
 
     @property
     def type(self):
-        type_map = {
-            cs.arm.ARM_OP_REG: 'register',
-            cs.arm.ARM_OP_MEM: 'memory',
-            cs.arm.ARM_OP_IMM: 'immediate',
-            cs.arm.ARM_OP_PIMM: 'coprocessor',
-            cs.arm.ARM_OP_CIMM: 'immediate'
-        }
-
-        return type_map[self.op.type]
+        return self._type
 
     def read(self, nbits=None, with_carry=False):
         carry = self.cpu.regfile.read('APSR_C')
-        if self.type == 'register':
+        if self.type == cs.arm64.ARM64_OP_REG:
             value = self.cpu.regfile.read(self.reg)
             # PC in this case has to be set to the instruction after next. PC at this point
             # is already pointing to next instruction; we bump it one more.
@@ -231,15 +250,11 @@ class Aarch64Operand(Operand):
             if self.is_shifted():
                 shift = self.op.shift
                 value, carry = self.cpu._shift(value, shift.type, shift.value, carry)
-            if self.op.subtracted:
-                value = -value
             if with_carry:
                 return value, carry
             return value
-        elif self.type == 'immediate':
+        elif self.type == cs.arm64.ARM64_OP_IMM:
             imm = self.op.imm
-            if self.op.subtracted:
-                imm = -imm
             if with_carry:
                 return imm, self._get_expand_imm_carry(carry)
             return imm
@@ -253,3 +268,76 @@ class Aarch64Operand(Operand):
             return val
         else:
             raise NotImplementedError("readOperand unknown type", self.op.type)
+
+    def write(self, value, nbits=None):
+        if self.type == cs.arm64.ARM64_OP_REG:
+            self.cpu.regfile.write(self.reg, value)
+        elif self.type == 'memory':
+            raise NotImplementedError('need to impl arm store mem')
+        else:
+            raise NotImplementedError("writeOperand unknown type", self.op.type)
+
+    def writeback(self, value):
+        if self.type == cs.arm64.ARM64_OP_REG:
+            self.write(value)
+        elif self.type == 'memory':
+            self.cpu.regfile.write(self.mem.base, value)
+        else:
+            raise NotImplementedError("writeback Operand unknown type", self.op.type)
+
+    def is_shifted(self):
+        return self.op.shift.type != cs.arm.ARM_SFT_INVALID
+
+    def address(self):
+        assert self.type == 'memory'
+        addr = self.get_mem_base_addr() + self.get_mem_offset()
+        return addr & Mask(self.cpu.address_bit_size)
+
+    def get_mem_offset(self):
+        assert self.type == 'memory'
+
+        off = 0
+        if self.mem.index is not None:
+            idx = self.mem.scale * self.cpu.regfile.read(self.mem.index)
+            carry = self.cpu.regfile.read('APSR_C')
+            if self.is_shifted():
+                shift = self.op.shift
+                idx, carry = self.cpu._shift(idx, shift.type, shift.value, carry)
+            off = idx
+        else:
+            off = self.mem.disp
+        return off
+
+    def get_mem_base_addr(self):
+        assert self.type == 'memory'
+
+        base = self.cpu.regfile.read(self.mem.base)
+
+        # PC relative addressing is fun in ARM:
+        # In ARM mode, the spec defines the base value as current insn + 8
+        # In thumb mode, the spec defines the base value as ALIGN(current insn address) + 4,
+        # where ALIGN(current insn address) => <current insn address> & 0xFFFFFFFC
+        #
+        # Regardless of mode, our implementation of read(PC) will return the address
+        # of the instruction following the next instruction.
+        if self.mem.base in ('PC', 'R15'):
+            if self.cpu.mode == cs.CS_MODE_ARM:
+                logger.debug("ARM mode PC relative addressing: PC + offset: 0x{:x} + 0x{:x}".format(base, 4))
+                return base + 4
+            else:
+                #base currently has the value PC + len(current_instruction)
+                #we need (PC & 0xFFFFFFFC) + 4
+                #thus:
+                new_base = (base - self.cpu.instruction.size) & 0xFFFFFFFC
+                logger.debug("THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{:x} + 0x{:x}".format(new_base, 4))
+                return new_base + 4
+        else:
+            return base
+
+    def _get_expand_imm_carry(self, carryIn):
+        """Manually compute the carry bit produced by expanding an immediate operand (see ARMExpandImm_C)"""
+        insn = struct.unpack('<I', self.cpu.instruction.bytes)[0]
+        unrotated = insn & Mask(8)
+        shift = Operators.EXTRACT(insn, 8, 4)
+        _, carry = self.cpu._shift(unrotated, cs.arm.ARM_SFT_ROR, 2 * shift, carryIn)
+        return carry
