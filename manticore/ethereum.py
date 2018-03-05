@@ -1113,7 +1113,7 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def generate_testcase(self, state, name, message):
+    def generate_testcase(self, state, name, message=''):
         self._generate_testcase_callback(state, name, message)
     
     def _generate_testcase_callback(self, state, name, message):
