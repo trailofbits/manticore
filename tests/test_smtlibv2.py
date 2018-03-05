@@ -2,10 +2,7 @@ from __future__ import division
 from builtins import range
 from manticore.core.smtlib import *
 import unittest
-import fcntl
-import resource
-import gc
-import sys
+
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)

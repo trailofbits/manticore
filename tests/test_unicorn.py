@@ -1,18 +1,16 @@
-from builtins import map
-from builtins import range
+from builtins import map, range
 import unittest
 import struct
 from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.cpu.abstractcpu import ConcretizeRegister
-from manticore.core.memory import ConcretizeMemory, Memory32, SMemory32
+from manticore.core.memory import ConcretizeMemory, Memory32
 from manticore.core.state import State
-from manticore.core.smtlib import BitVecVariable, ConstraintSet
+from manticore.core.smtlib import ConstraintSet
 from manticore.platforms import linux
 from manticore.utils.emulate import UnicornEmulator
 
-from capstone.arm import *
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)

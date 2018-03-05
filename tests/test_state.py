@@ -1,7 +1,6 @@
 from future import standard_library
 standard_library.install_aliases()
-from builtins import range
-from builtins import object
+from builtins import range, object
 import unittest
 from manticore.utils.event import Eventful
 from manticore.platforms import linux

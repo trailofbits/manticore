@@ -6,7 +6,6 @@ import sys
 import shutil
 import tempfile
 import os
-import hashlib
 import subprocess
 import time
 

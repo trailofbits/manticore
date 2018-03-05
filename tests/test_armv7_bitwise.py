@@ -1,5 +1,6 @@
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 from builtins import hex
+
 import unittest
 
 from manticore.core.cpu import bitwise

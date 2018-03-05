@@ -1,27 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import division
-from builtins import zip
-from builtins import range
+from __future__ import absolute_import, division, print_function
+from builtins import filter, map, range, zip
 from builtins import object
-import unittest
-import sys
-import shutil
-import tempfile
-import os
-import hashlib
-import subprocess
-import collections
-import time
 
-from manticore import Manticore, issymbolic
+import unittest
+
 from manticore import variadic
-from manticore.core.smtlib import BitVecVariable
 from manticore.core.cpu.abstractcpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
 from manticore.core.cpu.arm import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
 from manticore.core.cpu.x86 import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386StdcallAbi, I386CdeclAbi, AMD64LinuxSyscallAbi, SystemVAbi
-from manticore.core.memory import SMemory32, Memory32, SMemory64
+from manticore.core.memory import SMemory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
 
 class ABITests(unittest.TestCase):

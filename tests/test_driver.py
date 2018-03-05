@@ -1,13 +1,7 @@
 
 import unittest
-import sys
 import shutil
 import tempfile
-import os
-import hashlib
-import subprocess
-import collections
-import time
 
 from manticore import Manticore, issymbolic
 from manticore.core.smtlib import BitVecVariable
