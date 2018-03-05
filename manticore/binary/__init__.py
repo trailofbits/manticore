@@ -50,7 +50,7 @@ class CGCElf(Binary):
     def _cgc2elf(filename):
         #hack begin so we can use upstream Elftool
         with open(filename, 'rb') as fd:
-            stream = io.StringIO(fd.read())
+            stream = io.BytesIO(fd.read())
             stream.write('\x7fELF')
             stream.name = fd.name
             return stream
