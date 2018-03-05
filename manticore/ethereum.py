@@ -1113,6 +1113,9 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
+    def generate_testcase(self, state, name, message):
+        self._generate_testcase_callback(state, name, message)
+    
     def _generate_testcase_callback(self, state, name, message):
         '''
         Create a serialized description of a given state.
@@ -1127,7 +1130,7 @@ class ManticoreEVM(Manticore):
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         def flagged(flag):
             return '(*)' if flag else '' 
-        testcase = self._output.testcase()
+        testcase = self._output.testcase(name)
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
         with testcase.open_stream('summary') as summary:            
