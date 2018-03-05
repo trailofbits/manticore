@@ -1,14 +1,8 @@
-from builtins import zip
-from builtins import str
-from builtins import object
-import signal
+from builtins import object, str, zip
 import unittest
 
-from multiprocessing.managers import SyncManager
-
 from manticore.platforms import linux
-from manticore.core.state import State
-from manticore.core.smtlib import BitVecVariable, ConstraintSet
+from manticore.core.smtlib import ConstraintSet
 from manticore.core.workspace import *
 from manticore.utils.event import Eventful
 

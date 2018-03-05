@@ -1,6 +1,5 @@
 
-from builtins import range
-from builtins import object
+from builtins import object, range
 import unittest
 import functools
 from manticore.core.cpu.x86 import *

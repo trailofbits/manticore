@@ -1,11 +1,8 @@
-from __future__ import absolute_import
-from __future__ import division
-from builtins import range
-from builtins import object
+from __future__ import absolute_import, division
+from builtins import range, object
 import struct
 import unittest
 from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
 from manticore.core.memory import *
 from . import mockmem
 from functools import reduce

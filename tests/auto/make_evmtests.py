@@ -1,10 +1,8 @@
 from __future__ import print_function
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str
-from builtins import range
+from builtins import str, range
 from pprint import pformat
-from io import StringIO
 
 def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
     nlch = lfchar + htchar * (indent + 1)

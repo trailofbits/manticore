@@ -1,12 +1,7 @@
 from __future__ import print_function
-from builtins import hex
-from builtins import range
-import copy
+from builtins import hex, range
 import sys
-import sys
-import time
 import subprocess
-from distorm3 import Decompose, Decode16Bits, Decode32Bits, Decode64Bits, Mnemonics, Registers
 
 count = 0
  

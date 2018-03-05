@@ -1,12 +1,10 @@
 from __future__ import print_function
 from builtins import object
 import os
-import shutil
 import tempfile
 import unittest
 
 from manticore.platforms import linux, linux_syscalls
-from manticore.core.smtlib import *
 from manticore.core.smtlib import *
 from manticore.core.cpu.abstractcpu import ConcretizeRegister
 

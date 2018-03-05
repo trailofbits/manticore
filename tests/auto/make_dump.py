@@ -1,15 +1,6 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import next
-from builtins import map
-from builtins import chr
-from builtins import str
-from builtins import range
-import copy
-import traceback
-import os
+from __future__ import print_function, division
+from builtins import next, chr, str, range
 import sys
-import time
 import subprocess
 from capstone import *
 from capstone.x86 import *
