@@ -15,6 +15,13 @@ and common API.  interpreters? linkers? linked DLLs?
 
 '''
 
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
+from elftools.elf.elffile import ELFFile
+import io
+
 class Binary(object):
     magics = { }
     def __new__(cls, path):
@@ -38,16 +45,12 @@ class Binary(object):
         pass
 
 
-
-from elftools.elf.elffile import ELFFile
-import StringIO
 class CGCElf(Binary):
-
     @staticmethod
     def _cgc2elf(filename):
         #hack begin so we can use upstream Elftool
         with open(filename, 'rb') as fd:
-            stream = StringIO.StringIO(fd.read())
+            stream = io.StringIO(fd.read())
             stream.write('\x7fELF')
             stream.name = fd.name
             return stream
@@ -137,7 +140,7 @@ Binary.magics= { '\x7fCGC': CGCElf,
 
 if __name__ == '__main__':
     import sys
-    print list(Binary(sys.argv[1]).threads())
-    print list(Binary(sys.argv[1]).maps())
+    print(list(Binary(sys.argv[1]).threads()))
+    print(list(Binary(sys.argv[1]).maps()))
 
 
