@@ -129,6 +129,18 @@ class Armv7Operand(Operand):
             raise NotImplementedError("writeback Operand unknown type", self.op.type)
 
     def is_shifted(self):
+        """
+        In ARM some of the operands may have an additional metadata which means they can be shifted
+        with either a register or immediate value.
+
+        See:
+        * https://github.com/aquynh/capstone/blob/fdebc371ba0568acde007e08dad2cc3c9333e3fa/include/arm.h#L22-L34
+
+        * 11.5 Syntax of Operand2 as a register with optional shift
+            http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0473m/dom1361289852638.html
+
+        :return: True if operand is shifted, otherwise False.
+        """
         return self.op.shift.type != cs.arm.ARM_SFT_INVALID
 
     def address(self):
