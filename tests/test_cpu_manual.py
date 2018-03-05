@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from builtins import range
-from past.utils import old_div
 from builtins import object
 import struct
 import unittest
@@ -550,10 +549,10 @@ class SymCPUTest(unittest.TestCase):
         random.shuffle(written)
         for address in written:
             size = random.choice([8,16,32,64])
-            if address > 0x2000-old_div(size,8):
+            if address > 0x2000-(size // 8):
                 continue
             pattern = {8:'B', 16:'<H', 32:'<L', 64:'<Q'} [size]
-            self.assertEqual(cpu.read_int(address,size), struct.unpack(pattern, ''.join(memory[address-0x1000:address-0x1000+old_div(size,8)]))[0] )
+            self.assertEqual(cpu.read_int(address,size), struct.unpack(pattern, ''.join(memory[address-0x1000:address-0x1000+(size // 8)]))[0] )
 
 
 

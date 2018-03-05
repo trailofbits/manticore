@@ -5,7 +5,6 @@ from __future__ import division
 from builtins import zip
 from builtins import range
 from builtins import object
-from past.utils import old_div
 import unittest
 import sys
 import shutil
@@ -49,7 +48,7 @@ class ABITests(unittest.TestCase):
         self._cpu_x64.syscall_abi = AMD64LinuxSyscallAbi(self._cpu_x64)
 
         def write(mem, where, val, size):
-            mem[where:where+old_div(size,8)] = [Operators.CHR(Operators.EXTRACT(val, offset, 8)) for offset in range(0, size, 8)]
+            mem[where:where + size // 8] = [Operators.CHR(Operators.EXTRACT(val, offset, 8)) for offset in range(0, size, 8)]
         for val in range(0, 0x100, 4):
             write(mem32, 0x1000+val, val, 32)
         for val in range(0, 0x100, 8):
@@ -178,7 +177,7 @@ class ABITests(unittest.TestCase):
 
         base = cpu.ESP
 
-        bwidth = old_div(cpu.address_bit_size, 8)
+        bwidth = cpu.address_bit_size // 8
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
 
         cpu.push(0x1234, cpu.address_bit_size)
@@ -201,7 +200,7 @@ class ABITests(unittest.TestCase):
     def test_i386_stdcall_concretize(self):
         cpu = self._cpu_x86
 
-        bwidth = old_div(cpu.address_bit_size, 8)
+        bwidth = cpu.address_bit_size // 8
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
 
         cpu.push(0x1234, cpu.address_bit_size)
@@ -259,7 +258,7 @@ class ABITests(unittest.TestCase):
 
         @variadic
         def test(params):
-            for val, idx in zip(params, list(range(1, 4))):
+            for val, idx in zip(params, range(1, 4)):
                 self.assertEqual(val, idx)
 
         cpu.func_abi.invoke(test)
@@ -343,7 +342,7 @@ class ABITests(unittest.TestCase):
 
         @variadic
         def test(params):
-            for val, idx in zip(params, list(range(3))):
+            for val, idx in zip(params, range(3)):
                 self.assertEqual(val, idx)
 
         cpu.func_abi.invoke(test)

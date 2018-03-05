@@ -80,21 +80,21 @@ def gen_test(testcase, testname, skip):
 
     pre = testcase['pre']
     world = {}
-    for address in list(pre.keys()):
+    for address in pre:
         iaddress = i(address)
         world[iaddress] = {}
         world[iaddress]['code'] = pre[address][u'code'][2:].decode('hex')
         world[iaddress]['nonce'] = i(pre[address][u'nonce'])
         world[iaddress]['balance'] = i(pre[address][u'balance'])
         world[iaddress]['storage'] = {}
-        for key, value in list(pre[address][u'storage'].items()):
+        for key, value in pre[address][u'storage'].items():
             world[iaddress]['storage'][key] = value
 
     #output += "        pre_world =" + pprint( world, indent=22)+'\n'
     pre_world = world
     exe = testcase['exec']
     transaction = {}
-    for key in list(exe.keys()):
+    for key in exe:
         pkey = str(key)
         if key == 'gasPrice':
             pkey = 'price'
@@ -109,14 +109,14 @@ def gen_test(testcase, testname, skip):
     if 'post' in testcase:
         pos = testcase['post']
         world = {}
-        for address in list(pos.keys()):
+        for address in pos:
             iaddress = i(address)
             world[iaddress] = {}
             world[iaddress]['code'] = pos[address][u'code'][2:].decode('hex')
             world[iaddress]['nonce'] = i(pos[address][u'nonce'])
             world[iaddress]['balance'] = i(pos[address][u'balance'])
             world[iaddress]['storage'] = {} 
-            for key, value in list(pos[address][u'storage'].items()):
+            for key, value in pos[address][u'storage'].items():
                 world[iaddress]['storage'][i(key)] = i(value)        
         output += "        pos_world = " + pprint(world, indent=27) + '\n'
     
@@ -130,7 +130,7 @@ def gen_test(testcase, testname, skip):
         constraints = ConstraintSet()
         platform = evm.EVMWorld(constraints)'''
     
-    for address, contract in list(pre_world.items()):
+    for address, contract in pre_world.items():
         output +='''           
         platform.create_account(address=%s, 
                                 balance=%s, 
@@ -214,7 +214,7 @@ class EVMTest_%s(unittest.TestCase):
 
     #print "#processed ", len(tests.keys()), tests.keys()
     count = 0
-    for test_name, testcase in list(tests.items()):
+    for test_name, testcase in tests.items():
         count +=1
         #print "#count", count , test_name, '0c423e4e26c7938c2a82ce40d05a549d617b32303a824ba5a93cb2fb0b037dfd'
         skip = False
