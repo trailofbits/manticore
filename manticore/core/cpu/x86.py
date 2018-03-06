@@ -102,7 +102,7 @@ def repe(old_method):
 
                 # REPE
                 if cs.x86.X86_PREFIX_REP in prefix:
-                    FLAG = Operators.AND(cpu.ZF, count != 0)  # true FLAG means loop
+                    FLAG = Operators.AND(cpu.ZF == True, count != 0)  # true FLAG means loop
                 # REPNE
                 elif cs.x86.X86_PREFIX_REPNE in prefix:
                     FLAG = Operators.AND(cpu.ZF == False, count != 0)  # true FLAG means loop
@@ -3168,7 +3168,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param target: destination operand.
         '''
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF, target.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF == True, target.read(), cpu.PC)
 
     @instruction
     def JBE(cpu, target):
