@@ -1036,6 +1036,7 @@ class ManticoreEVM(Manticore):
             ty, caller, address, value, data = context['_pending_transaction']
         # TODO(mark): This will break if we ever change the message text. Use a less
         # brittle check.
+        #'REVERT', 'THROW', 'TXERROR', 'STOP', 'RETURN' ?
         if e.message not in {'REVERT', 'THROW', 'TXERROR'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
@@ -1049,10 +1050,7 @@ class ManticoreEVM(Manticore):
             if ty == 'CREATE_CONTRACT':
                 world.delete_account(address)
             self.save(state, final=True)
-            e.testcase = True #Do generate a testcase file
-
-
-
+    
     #Callbacks
     def _load_state_callback(self, state, state_id):
         ''' INTERNAL USE 
@@ -1242,6 +1240,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
                         is_return_symbolic = any(map(issymbolic, return_data))
                         return_values = tuple(map(state.solve_one, return_data))
+                        return_values = ''.join(map(chr, return_values))
                         if len(return_values) == 1:
                             return_values = return_values[0]
 
@@ -1307,7 +1306,7 @@ class ManticoreEVM(Manticore):
             p.join()            
                 
         #delete actual streams from storage
-        for state_id in self.all_state_ids:
+        for state_id in self._all_state_ids:
             #state_id -1 is always only on memory
             if state_id != -1:
                 self._executor._workspace.rm_state(state_id)

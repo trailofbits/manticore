@@ -1459,10 +1459,18 @@ class EVM(Eventful):
 
     def MLOAD(self, address):
         '''Load word from memory'''
+        self._allocate(address+32)
+        value = self.memory[address:address+32]
+        value = arithmetic_simplifier(value)
         bytes = []
         for offset in xrange(32):
-            bytes.append(self._load(address+offset))
-        return Operators.CONCAT(256, *bytes)
+            bytes.append(simplify(value[offset]))
+            if isinstance(bytes[-1], Constant) and not bytes[-1].taint: 
+                bytes[-1] = bytes[-1].value
+        self._publish('did_evm_read_memory', address, value)
+
+        value = simplify(Operators.CONCAT(256, *bytes))
+        return value
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
@@ -2139,11 +2147,13 @@ class EVMWorld(Platform):
         is_human_tx = ( self.depth == 0 )
 
         if failed:
+            tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
+
             if is_human_tx: #human transaction
-                tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
-                self._transactions.append(tx)
-                raise TerminateState('TXERROR')
+                self._add_transaction(tx)
+                raise TerminateState('TXERROR', testcase=False)
             else:
+                self._add_transaction(tx, internal=True)
                 self.current._push(0)
                 return
 
@@ -2162,8 +2172,14 @@ class EVMWorld(Platform):
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
+            self._add_transaction(tx)
+        else:
+            self._add_transaction(tx, internal=True)
+
+    def _add_transaction(self, tx, internal=False):
+        if not internal:
             self._transactions.append(tx)
-        else:            
+        else:
             n = len(self._transactions)
             if len(self._internal_transactions) <= n:
                 for _ in xrange(n-len(self._internal_transactions)+1):
@@ -2227,7 +2243,7 @@ class EVMWorld(Platform):
     def THROW(self):
         prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
-        self.world_state.send_funds(prev_vm.address, prev_vm.caller, prev_vm.value)
+        self.send_funds(prev_vm.address, prev_vm.caller, prev_vm.value)
 
         if self.depth == 0:
             tx = self._transactions[-1]
