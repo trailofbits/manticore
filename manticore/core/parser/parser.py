@@ -1,4 +1,7 @@
 # Minimal INTEL assembler expression calculator
+
+from __future__ import division, print_function
+from builtins import input, map
 import ply.yacc as yacc
 import copy
 from ..smtlib import Operators, Bool
@@ -116,7 +119,7 @@ t_ignore = ' \t'
 
 
 def t_error(t):
-    print "Illegal character '%s'" % t.value[0]
+    print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
 
 
@@ -166,7 +169,7 @@ sizes = copy.copy(default_sizes_32)
 
 def p_expression_div(p):
     'expression : expression DIVIDE expression'
-    p[0] = p[1] / p[3]
+    p[0] = p[1] // p[3]
 
 
 def p_expression_mul(p):
@@ -296,7 +299,7 @@ def p_expression_ge(p):
 
 # Error rule for syntax errors
 def p_error(p):
-    print "Syntax error in input:", p
+    print("Syntax error in input:", p)
 
 # Build the parser
 
@@ -338,11 +341,11 @@ def parse(expression, read_memory=None, read_register=None, get_descriptor=None,
 
 if __name__ == '__main__':
     while True:
-        try:
-            s = raw_input('calc > ')
-        except EOFError:
-            break
-        if not s:
-            continue
-        result = parse(s)
-        print result
+       try:
+           s = input('calc > ')
+       except EOFError:
+           break
+       if not s:
+           continue
+       result = parse(s)
+       print(result)

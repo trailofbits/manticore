@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str, object
 import os
 import random
 import logging
@@ -7,7 +11,7 @@ from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
 from .smtlib import solver, Expression, SolverException
 from .state import Concretize, TerminateState
-from workspace import Workspace
+from .workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 

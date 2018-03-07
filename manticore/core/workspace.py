@@ -1,14 +1,14 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map, chr, str, object
 import os
 import sys
 import glob
 import signal
-import cPickle
+import pickle
 import logging
 import tempfile
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
+import io
 
 from contextlib import contextmanager
 from multiprocessing.managers import SyncManager
@@ -42,7 +42,7 @@ class StateSerializer(object):
 class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
         try:
-            f.write(cPickle.dumps(state, 2))
+            f.write(pickle.dumps(state, 2))
         except RuntimeError:
             # recursion exceeded. try a slower, iterative solution
             from ..utils import iterpickle
@@ -50,7 +50,7 @@ class PickleSerializer(StateSerializer):
             f.write(iterpickle.dumps(state, 2))
 
     def deserialize(self, f):
-        return cPickle.load(f)
+        return pickle.load(f)
 
 
 class Store(object):
@@ -127,7 +127,7 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         """
-        s = StringIO.StringIO()
+        s = io.StringIO()
         yield s
         self.save_value(key, s.getvalue())
 
@@ -141,7 +141,7 @@ class Store(object):
         :return: A managed stream-like object
         """
         value = self.load_value(key)
-        yield StringIO.StringIO(value)
+        yield io.StringIO(value)
 
     def save_state(self, state, key):
         """
@@ -243,7 +243,7 @@ class FilesystemStore(Store):
         :return: list of matched keys
         """
         path = os.path.join(self.uri, glob_str)
-        return map(lambda s: os.path.split(s)[1], glob.glob(path))
+        return [os.path.split(s)[1] for s in glob.glob(path)]
 
 
 class MemoryStore(Store):
@@ -355,7 +355,7 @@ class Workspace(object):
         def get_state_id(name):
             return int(name[len(self._prefix):-len(self._suffix)], 16)
 
-        state_ids = map(get_state_id, state_names)
+        state_ids = list(map(get_state_id, state_names))
 
         if not state_ids:
             return []
@@ -528,7 +528,7 @@ class ManticoreOutput(object):
                 return
 
             memories = set()
-            for cpu in filter(None, state.platform.procs):
+            for cpu in [f for f in state.platform.procs if f]:
                 idx = state.platform.procs.index(cpu)
                 summary.write("================ PROC: %02d ================\n" % idx)
                 summary.write("Memory:\n")

@@ -13,6 +13,16 @@ def issymbolic(value):
     '''
     return isinstance(value, Expression)
 
+def isstring(value):
+    '''
+    Helper to determine whether an object is string-y, which is nontrivial when targeting Python 2 and 3 at the same
+    time.
+
+    :param object value: object to check
+    :return: whether `value` can be treated as string
+    :rtype: bool
+    '''
+    return hasattr(value, 'strip')
 
 import functools
 

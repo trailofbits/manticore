@@ -1,5 +1,7 @@
-from expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BitVecConstant, BoolConstant, ArrayProxy
-from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplifier
+from __future__ import absolute_import
+from builtins import str, object
+from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy
+from .visitors import GetDeclarations, TranslatorSmtlib, translate_to_smtlib, get_variables, arithmetic_simplifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -78,15 +80,18 @@ class ConstraintSet(object):
         added = True
         while added:
             added = False
-            logger.debug('Related variables %r', map(lambda x: x.name, related_variables))
-            for constraint in list(remaining_constraints):
+            logger.debug('Related variables %r', [x.name for x in related_variables])
+            next_remaining_constraints = set()
+            for constraint in remaining_constraints:
                 variables = get_variables(constraint)
                 if related_variables & variables:
-                    remaining_constraints.remove(constraint)
                     related_constraints.add(constraint)
                     related_variables |= variables
                     added = True
-
+                else:
+                    next_remaining_constraints.add(constraint)
+            remaining_constraints = next_remaining_constraints
+                    
         result = ''
         for var in related_variables:
             result += var.declaration + '\n'

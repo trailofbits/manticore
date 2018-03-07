@@ -1,3 +1,4 @@
+from builtins import str, object
 import logging
 
 from capstone import CS_GRP_JUMP
@@ -289,9 +290,9 @@ class ExamplePlugin(Plugin):
         logger.info('did_execute_instruction', state, pc, target_pc, instruction)
 
     def will_start_run_callback(self, state):
-        ''' Called once at the begining of the run.
-            state is the initial root state
-        '''
+        ''' Called once at the beginning of the run.
+            state is the initial root state 
+        ''' 
         logger.info('will_start_run')
 
     def did_finish_run_callback(self):
