@@ -1198,11 +1198,13 @@ class ManticoreEVM(Manticore):
             #get, constraint and concretize dyn_size to some reasonable value
             number_of_elements_in_arg = ABI.get_uint(data, 32, free_pointer)
 
-            # FIXME (mark) element_size is not always 32. for bytes it is 1
-            # if regular one
-            element_size = 32
-            # else if bytes
-            #     element_size = 1
+            # FIXME TODO (mark) i'm not sure that the encoding for bytes and string is identical, this could
+            # be buggy for string
+            typ = types[index]
+            if typ not in ('bytes', 'string'):
+                element_size = 32
+            else:
+                element_size = 1
 
             # but what about bytes?
             concrete_number_of_elements_in_arg = space_for_each_arg/element_size
