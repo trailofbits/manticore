@@ -186,6 +186,29 @@ class EthTests(unittest.TestCase):
         self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
         self.assertTrue(self.state.must_be_true(nelements2 == 2))
 
+    def test_concretize_dyn_args_bytes(self):
+        sig = 'func(address[],bytes)'
+
+        funchash_sz = 4
+        head_element_sz = 32
+        nelements_sz = 32
+        each_data_sz = 32*2
+        data_space = each_data_sz*2  # my choice, choosing to give 2 elements to each array
+        total_tx_data_size = funchash_sz + head_element_sz*2  + nelements_sz*2 + data_space
+
+        dat = self.state.new_symbolic_buffer(total_tx_data_size)
+        ManticoreEVM._concretize_offsets_and_sizes(self.state, sig, dat)
+
+        head1 = ABI.get_uint(dat, 32, funchash_sz)
+        nelements1 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2)
+        head2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz)
+        nelements2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2 + nelements_sz + each_data_sz)
+
+        self.assertTrue(self.state.must_be_true(head1 == head_element_sz*2))
+        self.assertTrue(self.state.must_be_true(nelements1 == 2))
+        self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
+        self.assertTrue(self.state.must_be_true(nelements2 == 64))
+
 class EthDetectors(unittest.TestCase):
     def setUp(self):
         self.io = IntegerOverflow()
