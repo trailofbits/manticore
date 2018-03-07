@@ -1160,7 +1160,7 @@ class ManticoreEVM(Manticore):
         is_multiple, func_name, types = ABI.parse_type_spec(signature)
         dyn_arguments = []
         for pos, t in enumerate(types):
-            dynamic = t in (u'bytes', u'string') or t.endswith(']')
+            dynamic = t in ('bytes', 'string') or t.endswith(']')
             if dynamic:
                 dyn_arguments.append(pos)
 
