@@ -1,6 +1,13 @@
-import StringIO
+from __future__ import division
+from __future__ import print_function
+from builtins import hex, str, range, object
+from future import standard_library
+standard_library.install_aliases()
+
+from builtins import int
 import errno
 import fcntl
+import io
 import logging
 import os
 import random
@@ -235,7 +242,7 @@ class SymbolicFile(File):
         :rtype: int
         :return: the file offset.
         '''
-        assert isinstance(offset, (int, long))
+        assert isinstance(offset, int)
         assert whence in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END)
 
         new_position = 0
@@ -263,7 +270,7 @@ class SymbolicFile(File):
             return []
         else:
             size = min(count, self.max_size - self.pos)
-            ret = [self.array[i] for i in xrange(self.pos, self.pos + size)]
+            ret = [self.array[i] for i in range(self.pos, self.pos + size)]
             self.pos += size
             return ret
 
@@ -272,7 +279,7 @@ class SymbolicFile(File):
         Writes the symbolic bytes in C{data} onto the file.
         '''
         size = min(len(data), self.max_size - self.pos)
-        for i in xrange(self.pos, self.pos + size):
+        for i in range(self.pos, self.pos + size):
             self.array[i] = data[i - self.pos]
 
 
@@ -328,7 +335,7 @@ class Socket(object):
     def receive(self, size):
         rx_bytes = min(size, len(self.buffer))
         ret = []
-        for i in xrange(rx_bytes):
+        for i in range(rx_bytes):
             ret.append(self.buffer.pop())
         return ret
 
@@ -457,13 +464,13 @@ class Linux(Platform):
         nprocs = len(self.procs)
         nfiles = len(self.files)
         assert nprocs > 0
-        self.running = range(nprocs)
+        self.running = list(range(nprocs))
 
         #Each process can wait for one timeout
         self.timers = [None] * nprocs
         #each fd has a waitlist
-        self.rwait = [set() for _ in xrange(nfiles)]
-        self.twait = [set() for _ in xrange(nfiles)]
+        self.rwait = [set() for _ in range(nfiles)]
+        self.twait = [set() for _ in range(nfiles)]
 
         #Install event forwarders
         for proc in self.procs:
@@ -1251,7 +1258,7 @@ class Linux(Platform):
             - C{-1} if the calling process can not access the file in the desired mode.
         '''
         filename = ""
-        for i in xrange(0, 255):
+        for i in range(0, 255):
             c = Operators.CHR(self.current.read_int(buf + i, 8))
             if c == '\x00':
                 break
@@ -1274,7 +1281,7 @@ class Linux(Platform):
         def pad(s):
             return s +'\x00'*(65-len(s))
 
-        now = datetime(2017, 8, 01).strftime("%a %b %d %H:%M:%S ART %Y")
+        now = datetime(2017, 8, 0o1).strftime("%a %b %d %H:%M:%S ART %Y")
         info = (('sysname', 'Linux'),
                 ('nodename', 'ubuntu'),
                 ('release', '4.4.0-77-generic'),
@@ -1707,7 +1714,7 @@ class Linux(Platform):
         ptrsize = cpu.address_bit_size
         sizeof_iovec = 2 * (ptrsize // 8)
         total = 0
-        for i in xrange(0, count):
+        for i in range(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2),
                                 ptrsize)
@@ -1738,12 +1745,12 @@ class Linux(Platform):
             logger.error("writev: Not a valid file descriptor ({})".format(fd))
             return -e.err
 
-        for i in xrange(0, count):
+        for i in range(0, count):
             buf = cpu.read_int(iov + i * sizeof_iovec, ptrsize)
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             data = ""
-            for j in xrange(0,size):
+            for j in range(0,size):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
             data = self._transform_write_data(data)
             write_fd.write(data)
@@ -1767,7 +1774,7 @@ class Linux(Platform):
         assert flags == 0x51  #TODO: fix
         self.current.GS = 0x63
         self.current.set_descriptor(self.current.GS, pointer, 0x4000, 'rw')
-        self.current.write_int(user_info, (0x63 - 3) / 8, 32)
+        self.current.write_int(user_info, (0x63 - 3) // 8, 32)
         return 0
 
     def sys_getpriority(self, which, who):
@@ -2009,7 +2016,7 @@ class Linux(Platform):
             logger.debug("None running checking if there is some process waiting for a timeout")
             if all([x is None for x in self.timers]):
                 raise Deadlock()
-            self.clocks = min(filter(lambda x: x is not None, self.timers)) + 1
+            self.clocks = min([x for x in self.timers if x is not None]) + 1
             self.check_timers()
             assert len(self.running) != 0, "DEADLOCK!"
             self._current = self.running[0]
@@ -2104,7 +2111,7 @@ class Linux(Platform):
         ''' Awake process if timer has expired '''
         if self._current is None:
             #Advance the clocks. Go to future!!
-            advance = min([self.clocks] + filter(lambda x: x is not None, self.timers)) + 1
+            advance = min([self.clocks] + [x for x in self.timers if x is not None]) + 1
             logger.debug("Advancing the clock from %d to %d", self.clocks, advance)
             self.clocks = advance
         for procid in range(len(self.timers)):
@@ -2166,7 +2173,7 @@ class Linux(Platform):
 
         # From linux/arch/x86/include/uapi/asm/stat.h
         # Numerous fields are native width-wide
-        nw = self.current.address_bit_size / 8
+        nw = self.current.address_bit_size // 8
 
         bufstat = add(nw, stat.st_dev)     # long st_dev
         bufstat += add(nw, stat.st_ino)     # long st_ino
@@ -2314,7 +2321,7 @@ class Linux(Platform):
         # Establish segment registers for x86 architectures
         if self.arch in {'i386', 'amd64'}:
             x86_defaults = {'CS': 0x23, 'SS': 0x2b, 'DS': 0x2b, 'ES': 0x2b}
-            for reg, val in x86_defaults.iteritems():
+            for reg, val in x86_defaults.items():
                 self.current.regfile.write(reg, val)
 
         if is_binja_disassembler(self.disasm):
@@ -2329,7 +2336,7 @@ class Linux(Platform):
         :return: total load size of interpreter, not aligned
         :rtype: int
         '''
-        load_segs = filter(lambda x: x.header.p_type == 'PT_LOAD', interp.iter_segments())
+        load_segs = [x for x in interp.iter_segments() if x.header.p_type == 'PT_LOAD']
         last = load_segs[-1]
         return last.header.p_vaddr + last.header.p_memsz
 
@@ -2594,10 +2601,10 @@ class SLinux(Linux):
             except SolverException:
                 fd.write('{SolverException}')
 
-        out = StringIO.StringIO()
-        inn = StringIO.StringIO()
-        err = StringIO.StringIO()
-        net = StringIO.StringIO()
+        out = io.BytesIO()
+        inn = io.BytesIO()
+        err = io.BytesIO()
+        net = io.BytesIO()
 
         for name, fd, data in self.syscall_trace:
             if name in ('_transmit', '_write'):

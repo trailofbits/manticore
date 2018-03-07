@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 # Solver
 # A solver maintains a companion smtlib capable process connected via stdio.
@@ -13,18 +14,24 @@
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
+from builtins import str
+from builtins import chr
+from builtins import map
+from builtins import range
+from builtins import object
 from subprocess import PIPE, Popen, check_output
 from abc import ABCMeta, abstractmethod
 from copy import copy, deepcopy
-import operators as Operators
-from expression import *
-from constraints import *
+from . import operators as Operators
+from .expression import *
+from .constraints import *
 import logging
 import re
 import time
-from visitors import *
+from .visitors import *
 from ...utils.helpers import issymbolic, memoized
 import collections
+from future.utils import with_metaclass
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +49,7 @@ class TooManySolutions(SolverException):
         super(TooManySolutions, self).__init__("Max number of different solutions hit")
         self.solutions = solutions
 
-class Solver(object):
-    __metaclass__ = ABCMeta
-
+class Solver(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def __init__(self):
         pass
@@ -160,7 +165,7 @@ class Z3Solver(Solver):
             raise Z3NotFoundError
         try:
             version = version_cmd_output.split()[2]
-            their_version = Version(*map(int, version.split('.')))
+            their_version = Version(*[int(s) for s in version.split('.')])
         except (IndexError, ValueError, TypeError):
             pass
         return their_version
@@ -203,7 +208,7 @@ class Z3Solver(Solver):
         try:
             self._proc.stdin.writelines(('(exit)\n',))
             self._proc.wait()
-        except Exception,e:
+        except Exception as e:
             pass
 
     def _reset(self, constraints=None):
@@ -462,7 +467,7 @@ class Z3Solver(Solver):
             elif isinstance(expression, Array):
                 var = []
                 result = ''
-                for i in xrange(expression.index_max):
+                for i in range(expression.index_max):
                     subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
                     temp_cs.add(subvar==expression[i])
@@ -471,7 +476,7 @@ class Z3Solver(Solver):
                 if self._check() != 'sat':
                     raise SolverException('Model is not available')
 
-                for i in xrange(expression.index_max):
+                for i in range(expression.index_max):
                     self._send('(get-value (%s))'%var[i].name)
                     ret = self._recv()
                     assert ret.startswith('((') and ret.endswith('))')

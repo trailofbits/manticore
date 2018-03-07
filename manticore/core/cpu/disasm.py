@@ -1,3 +1,4 @@
+from builtins import next, hex, str, range, object
 from abc import abstractproperty, abstractmethod
 
 import capstone as cs
@@ -128,7 +129,7 @@ class BinjaILDisasm(Disasm):
         func, size = self._llil_func_info(code, pc)
         self.current_llil_func = func
         self.disasm_insn_size = size
-        self.il_queue = [(i, func[i]) for i in xrange(len(func))]
+        self.il_queue = [(i, func[i]) for i in range(len(func))]
         return self.il_queue.pop(0)[1]
 
     def unimplemented(self, il):

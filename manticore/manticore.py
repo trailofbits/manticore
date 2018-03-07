@@ -26,7 +26,7 @@ from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
 from .platforms import linux, decree, evm
-from .utils.helpers import issymbolic, is_binja_disassembler
+from .utils.helpers import issymbolic, is_binja_disassembler, isstring
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
 from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited, Tracer
@@ -147,7 +147,7 @@ class Manticore(Eventful):
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
         super(Manticore, self).__init__()
 
-        if isinstance(workspace_url, str) or isinstance(workspace_url, unicode) or isinstance(workspace_url, bytes):
+        if isstring(workspace_url):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
             else:
@@ -170,7 +170,7 @@ class Manticore(Eventful):
         #Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
-        if isinstance(path_or_state, str) or isinstance(path_or_state, bytes):
+        if isstring(path_or_state):
             assert os.path.isfile(path_or_state)
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
         elif isinstance(path_or_state, State):

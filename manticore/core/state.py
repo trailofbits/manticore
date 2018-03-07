@@ -1,12 +1,10 @@
-import os
+from __future__ import division
+from builtins import range
 import copy
 import logging
-from collections import OrderedDict
-from weakref import WeakSet
 
-from .smtlib import solver, Bool, ArrayProxy, Array
+from .smtlib import solver, Bool
 from ..utils.helpers import issymbolic
-from ..utils.event import Eventful
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister
@@ -248,7 +246,7 @@ class State(Eventful):
             self._input_symbols.append(symb)
 
             tmp = []
-            for i in xrange(size):
+            for i in range(size):
                 if data[i] == wildcard:
                     tmp.append(symb[i])
                 else:
@@ -278,8 +276,8 @@ class State(Eventful):
             m, M = self._solver.minmax(self._constraints, symbolic)
             vals += [m, M]
             if M - m > 3:
-                if self._solver.can_be_true(self._constraints, symbolic == (m + M) / 2):
-                    vals.append((m + M) / 2)
+                if self._solver.can_be_true(self._constraints, symbolic == (m + M) // 2):
+                    vals.append((m + M) // 2)
             if M - m > 100:
                 vals += self._solver.get_all_values(self._constraints, symbolic,
                                                     maxcnt=maxcount, silent=True)
