@@ -1769,6 +1769,14 @@ class EVMWorld(Platform):
             self._internal_transactions.append([])
         return self._internal_transactions
 
+    def _add_transaction(self, tx, internal=False):
+        if not internal:
+            self._transactions.append(tx)
+            self._internal_transactions.append([])
+        else:
+            assert len(self._internal_transactions) == len(self._transactions)
+            self._internal_transactions[-1].append(tx)
+
     @property
     def all_transactions(self):
         txs = []
@@ -1777,7 +1785,6 @@ class EVMWorld(Platform):
             for txi in self.internal_transactions[i]:
                 txs.append(txi)
         return txs
-
 
     @property
     def last_return_data(self):
@@ -2170,26 +2177,8 @@ class EVMWorld(Platform):
         new_vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, header, depth=self.depth, world=self)
         self._push_vm(new_vm)
 
-
         tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
-        if is_human_tx:
-            #handle human transactions
-            if ty == 'Create':
-                self.current.last_exception = Create(None, None, None)
-            elif ty == 'Call':
-                self.current.last_exception = Call(None, None, None, None)
-
-            self._add_transaction(tx)
-        else:
-            self._add_transaction(tx, internal=True)
-
-    def _add_transaction(self, tx, internal=False):
-        if not internal:
-            self._transactions.append(tx)
-            self._internal_transactions.append([])
-        else:
-            assert len(self._internal_transactions) == len(self._transactions)
-            self._internal_transactions[-1].append(tx)
+        self._add_transaction(tx, internal=(not is_human_tx) )
 
     def CREATE(self, value, bytecode):
         origin = self.current.origin

@@ -1088,7 +1088,7 @@ class ManticoreEVM(Manticore):
         assert state.platform.constraints == state.platform.current.constraints
         logger.debug("%s", state.platform.current)
 
-        if 'Call' in str(type(state.platform.current.last_exception)):
+        if state.platform.current_transaction.sort == 'Call':
             coverage_context_name = 'runtime_coverage'
         else:
             coverage_context_name = 'init_coverage'
