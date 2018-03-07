@@ -1989,7 +1989,6 @@ class EVMWorld(Platform):
                 txs.append(txi)
         return txs
 
-
     @property
     def last_return_data(self):
         return self.current_transaction.return_data
@@ -2354,12 +2353,13 @@ class EVMWorld(Platform):
         if failed:
             if is_human_tx: #human transaction
                 tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
-                self._transactions.append(tx)
-                self._internal_transactions.append([])
+                self._add_transaction(tx)
                 raise TerminateState('TXERROR')
             else:
+                self._add_transaction(tx, internal=True)
                 self.current._push(0)
                 return
+
 
         #Here we have enoug funds and room in the callstack
 
@@ -2370,7 +2370,6 @@ class EVMWorld(Platform):
         self._push_vm(new_vm)
 
 
-        tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
         if is_human_tx:
             #handle human transactions
             if ty == 'Create':
@@ -2378,15 +2377,16 @@ class EVMWorld(Platform):
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
+        tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
+        self._add_transaction(tx, internal=(not is_human_tx) )
+
+    def _add_transaction(self, tx, internal=False):
+        if not internal:
             self._transactions.append(tx)
             self._internal_transactions.append([])
-        else:            
-            n = len(self._transactions)
-            if len(self._internal_transactions) <= n:
-                for _ in xrange(n-len(self._internal_transactions)+1):
-                    self._internal_transactions.append([])
-            self._internal_transactions[n].append(tx)
-
+        else:
+            assert len(self._internal_transactions) == len(self._transactions)
+            self._internal_transactions[-1].append(tx)
 
     def CALL(self, gas, to, value, data):
         address = to
