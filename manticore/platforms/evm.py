@@ -1772,16 +1772,23 @@ class EVMWorld(Platform):
     @property
     def all_transactions(self):
         txs = []
-        for tx in self._transactions:
+        for i, tx in enumerate(self._transactions):
             txs.append(tx)
-            for txi in self.internal_transactions[self._transactions.index(tx)]:
+            for txi in self.internal_transactions[i]:
                 txs.append(txi)
         return txs
 
 
     @property
     def last_return_data(self):
-        return self.transactions[-1].return_data
+        return self.current_transaction.return_data
+
+    @property
+    def current_transaction(self):
+        n = len(self._transactions)
+        if len(self.internal_transactions[n-1]) > 0:
+            return self.internal_transactions[-1]
+        return self._transactions[-1]
 
     @constraints.setter
     def constraints(self, constraints):
@@ -2179,12 +2186,15 @@ class EVMWorld(Platform):
     def _add_transaction(self, tx, internal=False):
         if not internal:
             self._transactions.append(tx)
+            self._internal_transactions.append([])
         else:
-            n = len(self._transactions)
+            assert len(self._internal_transactions) == len(self._transactions)
+            '''n = len(self._transactions)
             if len(self._internal_transactions) <= n:
                 for _ in xrange(n-len(self._internal_transactions)+1):
-                    self._internal_transactions.append([])
-            self._internal_transactions[n].append(tx)
+                    self._internal_transactions[n]
+            '''
+            self._internal_transactions[-1].append(tx)
 
     def CREATE(self, value, bytecode):
         origin = self.current.origin
@@ -2206,10 +2216,11 @@ class EVMWorld(Platform):
 
     def RETURN(self, data):
         prev_vm = self._pop_vm() #current VM changed!
+
+        self.current_transaction.return_data=data
+        self.current_transaction.result='RETURN'
+
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.return_data=data
-            tx.result = 'RETURN'
             raise TerminateState("RETURN", testcase=True)
 
 
@@ -2229,10 +2240,9 @@ class EVMWorld(Platform):
 
     def STOP(self):
         prev_vm = self._pop_vm(rollback=False)
+        self.current_transaction.return_data=None
+        self.current_transaction.result='STOP'
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.return_data=None
-            tx.result = 'STOP'
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
         self.current._push(1)
@@ -2245,10 +2255,10 @@ class EVMWorld(Platform):
         #revert balance on CALL fail
         self.send_funds(prev_vm.address, prev_vm.caller, prev_vm.value)
 
+        self.current_transaction.return_data=None
+        self.current_transaction.result='THROW'
+
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.return_data=None
-            tx.result = 'THROW'
             raise TerminateState("THROW", testcase=True)
 
         self.current.last_exception = None
@@ -2260,11 +2270,10 @@ class EVMWorld(Platform):
         prev_vm = self._pop_vm(rollback=True)
         #revert balance on CALL fail
         self.send_funds(prev_vm.address, prev_vm.caller, prev_vm.value)
+        self.current_transaction.return_data=data
+        self.current_transaction.result='REVERT'
 
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.return_data=data
-            tx.result = 'REVERT'
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
@@ -2289,9 +2298,10 @@ class EVMWorld(Platform):
         self.world_state.delete_account(address)
         prev_vm = self._pop_vm(rollback=False)
 
+        self.current_transaction.return_data=None
+        self.current_transaction.result='SELFDESTRUCT'
+
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.result = 'SELFDESTRUCT'
             raise TerminateState("SELFDESTRUCT", testcase=True)
             
     def HASH(self, data):
