@@ -1215,7 +1215,7 @@ class ManticoreEVM(Manticore):
 
 
             free_pointer += 32 + space_for_each_arg
-            #free_pointer points to the first unused byte in the dinamic argument area
+            #free_pointer points to the first unused byte in the dynamic argument area
 
 
     def _generate_testcase_callback(self, state, name, message):
