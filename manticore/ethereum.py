@@ -1184,10 +1184,6 @@ class ManticoreEVM(Manticore):
         # out cleanly, we force it, and round it down to the next multiple of 32. this does waste some space,
         # meaning not every byte in the data will belong to an argument.
 
-        # TODO(mark) the most ideal way to do this, with no space wasted, would be to detect that there is
-        # some excess space. check if any of the arguments are of type bytes. then make it such that the bytes
-        # argument uses the excess space, since each of its elements are size 1, not size 32.
-
         space_for_each_arg = (space_for_arg_data/number_dyn_arguments) & (~0x1f)
         assert space_for_each_arg % 32 == 0
 
