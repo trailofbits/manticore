@@ -1983,16 +1983,22 @@ class EVMWorld(Platform):
     @property
     def all_transactions(self):
         txs = []
-        for tx in self._transactions:
+        for i, tx in enumerate(self._transactions):
             txs.append(tx)
-            for txi in self.internal_transactions[self._transactions.index(tx)]:
+            for txi in self.internal_transactions[i]:
                 txs.append(txi)
         return txs
 
-
     @property
     def last_return_data(self):
-        return self.transactions[-1].return_data
+        return self.current_transaction.return_data
+
+    @property
+    def current_transaction(self):
+        n = len(self._transactions)
+        if len(self.internal_transactions[n-1]) > 0:
+            return self.internal_transactions[-1]
+        return self._transactions[-1]
 
     @constraints.setter
     def constraints(self, constraints):
@@ -2347,11 +2353,13 @@ class EVMWorld(Platform):
         if failed:
             if is_human_tx: #human transaction
                 tx = Transaction(ty, address, origin, price, data, caller, value, 'TXERROR', None)
-                self._transactions.append(tx)
+                self._add_transaction(tx)
                 raise TerminateState('TXERROR')
             else:
+                self._add_transaction(tx, internal=True)
                 self.current._push(0)
                 return
+
 
         #Here we have enoug funds and room in the callstack
 
@@ -2362,7 +2370,6 @@ class EVMWorld(Platform):
         self._push_vm(new_vm)
 
 
-        tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
         if is_human_tx:
             #handle human transactions
             if ty == 'Create':
@@ -2370,14 +2377,16 @@ class EVMWorld(Platform):
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
-            self._transactions.append(tx)
-        else:            
-            n = len(self._transactions)
-            if len(self._internal_transactions) <= n:
-                for _ in xrange(n-len(self._internal_transactions)+1):
-                    self._internal_transactions.append([])
-            self._internal_transactions[n].append(tx)
+        tx = Transaction(ty, address, origin, price, data, caller, value, None, None)
+        self._add_transaction(tx, internal=(not is_human_tx) )
 
+    def _add_transaction(self, tx, internal=False):
+        if not internal:
+            self._transactions.append(tx)
+            self._internal_transactions.append([])
+        else:
+            assert len(self._internal_transactions) == len(self._transactions)
+            self._internal_transactions[-1].append(tx)
 
     def CALL(self, gas, to, value, data):
         address = to
@@ -2392,10 +2401,11 @@ class EVMWorld(Platform):
 
     def RETURN(self, data):
         prev_vm = self._pop_vm() #current VM changed!
+
+        self.current_transaction.return_data=data
+        self.current_transaction.result='RETURN'
+
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.return_data=data
-            tx.result = 'RETURN'
             raise TerminateState("RETURN", testcase=True)
 
 
@@ -2415,10 +2425,9 @@ class EVMWorld(Platform):
 
     def STOP(self):
         prev_vm = self._pop_vm(rollback=False)
+        self.current_transaction.return_data=None
+        self.current_transaction.result='STOP'
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.return_data=None
-            tx.result = 'STOP'
             raise TerminateState("STOP", testcase=True)
         self.current.last_exception = None
         self.current._push(1)
@@ -2432,10 +2441,10 @@ class EVMWorld(Platform):
         self.storage[prev_vm.caller]['balance'] += prev_vm.value
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
+        self.current_transaction.return_data=None
+        self.current_transaction.result='THROW'
+
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.return_data=None
-            tx.result = 'THROW'
             raise TerminateState("THROW", testcase=True)
 
         self.current.last_exception = None
@@ -2449,10 +2458,10 @@ class EVMWorld(Platform):
         self.storage[prev_vm.caller]['balance'] += prev_vm.value
         self.storage[prev_vm.address]['balance'] -= prev_vm.value
 
+        self.current_transaction.return_data=data
+        self.current_transaction.result='REVERT'
+
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.return_data=data
-            tx.result = 'REVERT'
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
@@ -2470,9 +2479,10 @@ class EVMWorld(Platform):
         self.current.suicides.add(address)
         prev_vm = self._pop_vm(rollback=False)
 
+        self.current_transaction.return_data=None
+        self.current_transaction.result='SELFDESTRUCT'
+
         if self.depth == 0:
-            tx = self._transactions[-1]
-            tx.result = 'SELFDESTRUCT'
             raise TerminateState("SELFDESTRUCT", testcase=True)
             
     def HASH(self, data):
