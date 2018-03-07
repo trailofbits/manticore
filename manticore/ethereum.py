@@ -1146,11 +1146,17 @@ class ManticoreEVM(Manticore):
 
     @staticmethod
     def _concretize_offsets_and_sizes(state, signature, data):
-        ''' Using signature spec this function browse the data and concretize 
-            all the offsets to dynamic arguments and all the size of the dynamic
-            arguments so it all fits into data.
-            The available space is fairly divided among all the dynamic arguments.
-        '''
+        """
+        Using signature spec this function browse the data and concretize
+        all the offsets to dynamic arguments and all the size of the dynamic
+        arguments so it all fits into data.
+        The available space is fairly divided among all the dynamic arguments.
+
+        :param state:
+        :param str signature: type spec of the arguments encoded in `data`
+        :param data: transaction data
+        :type data: str or Array Expression
+        """
         is_multiple, func_name, types = ABI.parse_type_spec(signature)
         dyn_arguments = []
         for pos, t in enumerate(types):
