@@ -1273,11 +1273,8 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        assert issymbolic(fee) or fee>=0  
-        if solver.can_be_true(self.constraints, self.gas > fee):
-            #FIXME We go for maximun gas only
-            self.constraints.add(self.gas > fee)
-        else:
+        assert fee >= 0
+        if self._gas < fee:
             logger.debug("Not enough gas for instruction")
             raise NotEnoughGas()
         self._gas -= fee
