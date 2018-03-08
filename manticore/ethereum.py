@@ -1179,10 +1179,9 @@ class ManticoreEVM(Manticore):
         # It may generate an unsolvable core. Other feasible partitions may exist.
         #
 
-        # space_for_each_arg needs to be a multiple of 32 to be usable because, with the exception
-        # of the bytes type, each element of a dynamic array takes 32 bytes. so if the math didn't work
+        # space_for_each_arg needs to be a multiple of 32, as required by the ABI. so if the math didn't work
         # out cleanly, we force it, and round it down to the next multiple of 32. this does waste some space,
-        # meaning not every byte in the data will belong to an argument.
+        # meaning not every byte in the data will correspond to an argument.
 
         space_for_each_arg = (space_for_arg_data/number_dyn_arguments) & (~0x1f)
         assert space_for_each_arg % 32 == 0
