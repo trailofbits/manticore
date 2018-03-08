@@ -1113,6 +1113,9 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
+    def generate_testcase(self, state, name, message=''):
+        self._generate_testcase_callback(state, name, message)
+    
     def _generate_testcase_callback(self, state, name, message):
         '''
         Create a serialized description of a given state.
@@ -1127,7 +1130,7 @@ class ManticoreEVM(Manticore):
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         def flagged(flag):
             return '(*)' if flag else '' 
-        testcase = self._output.testcase()
+        testcase = self._output.testcase(name)
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
         with testcase.open_stream('summary') as summary:            
@@ -1210,6 +1213,7 @@ class ManticoreEVM(Manticore):
                         signature = metadata.get_func_signature(function_id)
                         function_name, arguments = ABI.parse(signature, tx.data)
 
+                        return_data = None
                         if tx.result == 'RETURN':
                             ret_types = metadata.get_func_return_types(function_id)
                             return_data = ABI.parse(ret_types, tx.return_data) #function return
@@ -1221,13 +1225,15 @@ class ManticoreEVM(Manticore):
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
-                        is_return_symbolic = any(map(issymbolic, return_data))
-                        return_values = tuple(map(state.solve_one, return_data))
-                        if len(return_values) == 1:
-                            return_values = return_values[0]
 
-                        tx_summary.write('return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
-                        is_something_symbolic = is_something_symbolic or is_return_symbolic
+                        if return_data is not None:
+                            is_return_symbolic = any(map(issymbolic, return_data))
+                            return_values = tuple(map(state.solve_one, return_data))
+                            if len(return_values) == 1:
+                                return_values = return_values[0]
+
+                            tx_summary.write('return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
+                            is_something_symbolic = is_something_symbolic or is_return_symbolic
 
 
                 tx_summary.write('\n\n')
