@@ -953,8 +953,6 @@ class ManticoreEVM(Manticore):
 
             if not found_new_coverage:
                 break
-            if not self.running_state_ids:
-                break
 
         self.finalize()
 
