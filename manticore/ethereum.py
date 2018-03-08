@@ -1210,9 +1210,8 @@ class ManticoreEVM(Manticore):
             state.constrain(number_of_elements_in_arg == concrete_number_of_elements_in_arg)
             data[free_pointer:free_pointer + 32]= ("%064x"%(concrete_number_of_elements_in_arg)).decode('hex')
 
-
-            free_pointer += 32 + space_for_each_arg
             #free_pointer points to the first unused byte in the dynamic argument area
+            free_pointer += 32 + space_for_each_arg
 
 
     def _generate_testcase_callback(self, state, name, message):
