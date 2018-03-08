@@ -1206,7 +1206,6 @@ class ManticoreEVM(Manticore):
             else:
                 element_size = 1
 
-            # but what about bytes?
             concrete_number_of_elements_in_arg = space_for_each_arg/element_size
             state.constrain(number_of_elements_in_arg == concrete_number_of_elements_in_arg)
             data[free_pointer:free_pointer + 32]= ("%064x"%(concrete_number_of_elements_in_arg)).decode('hex')
