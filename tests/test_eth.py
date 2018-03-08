@@ -162,15 +162,15 @@ class EthTests(unittest.TestCase):
         self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
         self.assertTrue(self.state.must_be_true(nelements2 == 2))
 
-    def test_concretize_dyn_args_unfair_split(self):
+    def test_concretize_dyn_args_odd_len(self):
         sig = 'func(address[],address[])'
 
         funchash_sz = 4
         head_element_sz = 32
         nelements_sz = 32
         each_data_sz = 32*2
-        unfar_split_amount = 3  # purposefully make the len of tx data a weird number
-        data_space = each_data_sz*2 + unfar_split_amount  # my choice, choosing to give 2 elements to each array
+        odd_len_amount = 3  # purposefully make the len of tx data a weird number
+        data_space = each_data_sz*2 + odd_len_amount  # my choice, choosing to give 2 elements to each array
         total_tx_data_size = funchash_sz + head_element_sz*2  + nelements_sz*2 + data_space
 
         dat = self.state.new_symbolic_buffer(total_tx_data_size)
