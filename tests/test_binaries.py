@@ -130,7 +130,6 @@ class IntegrationTest(unittest.TestCase):
     def test_eth_regressions(self):
         contracts = [676, 678, 701, 714, 735, 760]
         for contract in contracts:
-            sys.stderr.write('~')  # output something to keep travis going
             self._simple_cli_run('{}.sol'.format(contract))
 
     def test_eth_705(self):
