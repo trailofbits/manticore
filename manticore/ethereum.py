@@ -1147,10 +1147,10 @@ class ManticoreEVM(Manticore):
     @staticmethod
     def _concretize_offsets_and_sizes(state, signature, data):
         """
-        Using signature spec this function browse the data and concretize
-        all the offsets to dynamic arguments and all the size of the dynamic
-        arguments so it all fits into data.
-        The available space is fairly divided among all the dynamic arguments.
+        Checks if there are dynamically sized arguments encoded in the data and apply additional state
+        constraints and concretizations to make this more tractable for the solver. Concretizes the 1. fields
+        for offsets to arg data and 2. fields for length of the individual arguments. Evenly divides the
+        available space in data among all the arguments.
 
         :param state:
         :param str signature: type spec of the arguments encoded in `data`
