@@ -1185,14 +1185,17 @@ class ManticoreEVM(Manticore):
         assert space_for_each_arg % 32 == 0
 
         for index in dyn_arguments:
-            #get, constraint and concretize dyn_offset to some reasonable value
+            # Constrain/concretize the argument's head element, which can be calculated based on the number
+            # of dynamic arguments in the type spec, as the length of the data
             arg_head_element_offset = 4 + index * 32
             offset_to_arg_data = ABI.get_uint(data, 32, arg_head_element_offset)
+
             concrete_offset_to_arg_data = free_pointer - 4
             state.constrain(offset_to_arg_data == concrete_offset_to_arg_data)
             data[arg_head_element_offset:arg_head_element_offset + 32] = ("%064x"%(concrete_offset_to_arg_data)).decode('hex')
 
-            #get, constraint and concretize dyn_size to some reasonable value
+            # Constrain/concretize the argument's size field, which we calculate based on the number of
+            # dynamic arguments and the total amount of space they all share
             number_of_elements_in_arg = ABI.get_uint(data, 32, free_pointer)
 
             # FIXME TODO (mark) i'm not sure that the encoding for bytes and string is identical, this could
