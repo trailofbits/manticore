@@ -1169,7 +1169,7 @@ class ManticoreEVM(Manticore):
         space_for_all_size_fields = number_dyn_arguments * 32
 
         # TODO FIXME (mark) what if space_for_arg_data or space_for_each_arg ends up being zero?
-        space_for_arg_data = len(data) -free_pointer - space_for_all_size_fields
+        space_for_arg_data = len(data) - free_pointer - space_for_all_size_fields
 
 
         #
