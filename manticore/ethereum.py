@@ -1195,7 +1195,7 @@ class ManticoreEVM(Manticore):
         space_for_each_arg = (space_for_arg_data/number_dyn_arguments) & (~0x1f)
         assert space_for_each_arg % 32 == 0
 
-        for index, typ in zip(dyn_arguments, types):
+        for index in dyn_arguments:
             # Constrain/concretize the argument's head element, which can be calculated based on the number
             # of dynamic arguments in the type spec, as the length of the data
             arg_head_element_offset = 4 + index * 32
@@ -1211,6 +1211,7 @@ class ManticoreEVM(Manticore):
 
             # FIXME TODO (mark) i'm not sure that the encoding for bytes and string is identical, this could
             # be buggy for string
+            typ = types[index]
             if typ not in ('bytes', 'string'):
                 element_size = 32
             else:
