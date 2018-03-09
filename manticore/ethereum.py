@@ -1192,8 +1192,8 @@ class ManticoreEVM(Manticore):
         # out cleanly, we force it, and round it down to the next multiple of 32. this does waste some space,
         # meaning not every byte in the data will correspond to an argument.
 
-        space_for_each_arg = (space_for_arg_data/number_dyn_arguments) & (~0x1f)
-        assert space_for_each_arg % 32 == 0
+        space_for_each_arg = (space_for_arg_data/number_dyn_arguments)
+        space_for_each_arg_aligned = space_for_each_arg & (~0x1f)
 
         for index in dyn_arguments:
             # Constrain/concretize the argument's head element, which can be calculated based on the number
@@ -1217,12 +1217,12 @@ class ManticoreEVM(Manticore):
             else:
                 element_size = 1
 
-            concrete_number_of_elements_in_arg = space_for_each_arg/element_size
+            concrete_number_of_elements_in_arg = space_for_each_arg_aligned/element_size
             state.constrain(number_of_elements_in_arg == concrete_number_of_elements_in_arg)
             data[free_pointer:free_pointer + 32]= pack32(concrete_number_of_elements_in_arg)
 
             #free_pointer points to the first unused byte in the dynamic argument area
-            free_pointer += 32 + space_for_each_arg
+            free_pointer += 32 + space_for_each_arg_aligned
 
 
     def _generate_testcase_callback(self, state, name, message):
