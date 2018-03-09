@@ -1,6 +1,7 @@
 from __future__ import division
 from __future__ import print_function
-from builtins import hex, str, range, object
+from builtins import chr
+from builtins import hex, str, range, object, int
 from future import standard_library
 standard_library.install_aliases()
 
@@ -2448,7 +2449,7 @@ class SLinux(Linux):
         for c in data:
             if issymbolic(c):
                 bytes_concretized += 1
-                c = chr(solver.get_value(self.constraints, c))
+                c = bytes([solver.get_value(self.constraints, c)])
             concrete_data.append(c)
 
         if bytes_concretized > 0:
@@ -2605,6 +2606,11 @@ class SLinux(Linux):
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
+            def make_chr(c):
+                if isinstance(c, int):
+                    return bytes([c])
+                return c
+
             try:
                 for c in data:
                     if issymbolic(c):

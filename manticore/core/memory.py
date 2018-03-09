@@ -2,7 +2,7 @@ from __future__ import division
 from past.builtins import cmp
 from future import standard_library
 standard_library.install_aliases()
-from builtins import chr, int, map, range, object, str
+from builtins import int, map, range, object, str, bytes
 from abc import abstractproperty
 from weakref import WeakValueDictionary
 from .smtlib import *
@@ -260,8 +260,8 @@ class AnonMap(Map):
     def __getitem__(self, index):
         index = self._get_offset(index)
         if isinstance(index, slice):
-            return list(map(chr, self._data[index]))
-        return chr(self._data[index])
+            return [bytes([i]) for i in self._data[index]]
+        return bytes([self._data[index]])
 
 
 class FileMap(Map):
@@ -782,7 +782,6 @@ class Memory(with_metaclass(ABCMeta, object)):
         p = addr
         while p < stop:
             m = self.map_containing(p)
-
             _size = min(m.end - p, stop - p)
             result += m[p:p + _size]
             p += _size
@@ -1002,15 +1001,12 @@ class SMemory(Memory):
         '''
         size = len(value)
         if issymbolic(address):
-
             solutions = self._try_get_solutions(address, size, 'w', force=force)
-
             for offset in range(size):
                 for base in solutions:
                     condition = base == address
                     self._symbols.setdefault(base + offset, []).append((condition, value[offset]))
         else:
-
             for offset in range(size):
                 if issymbolic(value[offset]):
                     if not self.access_ok(address + offset, 'w', force):

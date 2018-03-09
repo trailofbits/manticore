@@ -2,6 +2,18 @@ from __future__ import division, absolute_import
 from builtins import range, object, int
 from functools import reduce
 
+# TODO feeb find a better place for this, can't be in helpers rn because of circular import
+def isstring(value):
+    '''
+    Helper to determine whether an object is string-y, which is nontrivial when targeting Python 2 and 3 at the same
+    time.
+
+    :param object value: object to check
+    :return: whether `value` can be treated as string
+    :rtype: bool
+    '''
+    return hasattr(value, 'strip')
+
 class Expression(object):
     ''' Abstract taintable Expression. '''
 
@@ -28,7 +40,7 @@ class Variable(Expression):
     def __init__(self, name, *args, **kwargs):
         if self.__class__ is Variable:
             raise TypeError
-        assert isinstance(name, str) and ' ' not in name
+        assert isstring(name) and ' ' not in name
         super(Variable, self).__init__(*args, **kwargs)
         self._name = name
 
@@ -201,7 +213,7 @@ class BitVec(Expression):
         if isinstance(value, BitVec):
             assert value.size == self.size
             return value
-        if isinstance(value, str) and len(value) == 1:
+        if isstring(value) and len(value) == 1:
             value = ord(value)
         assert isinstance(value, (int, bool))
         # FIXME? Assert it fits in the representation
@@ -559,7 +571,7 @@ class Array(Expression):
         return index
 
     def cast_value(self, value):
-        if isinstance(value, str) and len(value) == 1:
+        if isstring(value) and len(value) == 1:
             value = ord(value)
         if isinstance(value, int):
             return BitVecConstant(self.value_bits, value)

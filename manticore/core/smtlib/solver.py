@@ -483,7 +483,7 @@ class Z3Solver(Solver):
                     pattern, base = self._get_value_fmt
                     m = pattern.match(ret)
                     expr, value = m.group('expr'), m.group('value')
-                    result += chr(int(value, base))
+                    result += bytes([int(value, base)])
                 return result
 
             temp_cs.add(var == expression)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from builtins import int
 from ..smtlib import Operators
 from ..smtlib.expression import BitVec
 

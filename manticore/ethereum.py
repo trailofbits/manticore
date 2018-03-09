@@ -5,6 +5,7 @@ from builtins import str
 from builtins import map
 from builtins import range
 from builtins import object
+from builtins import int
 import string
 
 from . import Manticore
@@ -24,6 +25,7 @@ import io
 import pickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
+from utils.helpers import isstring
 
 logger = logging.getLogger(__name__)
 
@@ -297,11 +299,11 @@ class ABI(object):
         '''
         Translates a Python object to its EVM ABI serialization.
         '''
-        if isinstance(value, (str, tuple)):
+        if isstring(value) or isinstance(value, tuple):
             return ABI.serialize_string(value)
         if isinstance(value, (list)):
             return ABI.serialize_array(value)
-        if isinstance(value, (int, int)):
+        if isinstance(value, int):
             return ABI.serialize_uint(value)
         if isinstance(value, ABI.SByte):
             return ABI.serialize_uint(value.size) + (None,) * value.size + (('\x00',) * (32 - (value.size % 32)))
@@ -325,7 +327,6 @@ class ABI(object):
         '''
         Translates a string or a tuple of chars its EVM ABI serialization
         '''
-        assert isinstance(value, (str, tuple))
         return ABI.serialize_uint(len(value)) + tuple(value) + tuple('\x00' * (32 - (len(value) % 32)))
 
     @staticmethod
@@ -359,7 +360,7 @@ class ABI(object):
         dynamic_args = []
         dynamic_offset = 32 * len(args)
         for arg in args:
-            if isinstance(arg, (list, tuple, str, ManticoreEVM.SByte)):
+            if isstring(arg) or isinstance(arg, (list, tuple, ManticoreEVM.SByte)):
                 result.append(ABI.serialize(dynamic_offset))
                 serialized_arg = ABI.serialize(arg)
                 dynamic_args.append(serialized_arg)

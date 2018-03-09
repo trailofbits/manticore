@@ -1,6 +1,8 @@
+#from builtins import object
 import inspect
 import logging
-from weakref import WeakKeyDictionary, ref
+from weakref import ref, WeakSet, WeakKeyDictionary, WeakValueDictionary
+from future.utils import with_metaclass
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ class EventsGatherMetaclass(type):
         return eventful_sub
 
 
-class Eventful(object):
+class Eventful(with_metaclass(EventsGatherMetaclass, object)):
     '''
         Abstract class for objects emitting and receiving events
         An eventful object can:
@@ -43,7 +45,6 @@ class Eventful(object):
           - let foreign objects subscribe their methods to events emitted here
           - forward events to/from other eventful objects
     '''
-    __metaclass__ = EventsGatherMetaclass
 
     # Maps an Eventful subclass with a set of all the events it publishes.
     __all_events__ = dict()
@@ -87,7 +88,7 @@ class Eventful(object):
         # This simply removes all callback methods associated with that object
         # Also if no more callbacks at all for an event name it deletes the event entry
         remove = set()
-        for name, bucket in self._signals.iteritems():
+        for name, bucket in self._signals.items():
             if robj in bucket:
                 del bucket[robj]
             if len(bucket) == 0:
@@ -121,7 +122,7 @@ class Eventful(object):
     # shouldn't check the event.
     def _publish_impl(self, _name, *args, **kwargs):
         bucket = self._get_signal_bucket(_name)
-        for robj, methods in bucket.iteritems():
+        for robj, methods in bucket.items():
             for callback in methods:
                 callback(robj(), *args, **kwargs)
 

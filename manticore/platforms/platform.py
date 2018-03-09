@@ -1,5 +1,7 @@
 
 from manticore.utils.event import Eventful
+from itertools import islice
+import inspect
 
 class OSException(Exception):
     pass
