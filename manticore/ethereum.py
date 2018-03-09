@@ -540,6 +540,17 @@ class EVMAccount(object):
         return object.__getattribute__(self, name)            
 
 
+def pack32(val):
+    """
+    Pack an integer into a big endian 32 byte str
+
+    :param int val:
+    :return: big endian 32 byte str
+    :rtype: str
+    """
+
+    return "{:064x}".format(val).decode('hex')
+
 
 class ManticoreEVM(Manticore):
     ''' Manticore EVM manager
@@ -1192,7 +1203,7 @@ class ManticoreEVM(Manticore):
 
             concrete_offset_to_arg_data = free_pointer - 4
             state.constrain(offset_to_arg_data == concrete_offset_to_arg_data)
-            data[arg_head_element_offset:arg_head_element_offset + 32] = ("%064x"%(concrete_offset_to_arg_data)).decode('hex')
+            data[arg_head_element_offset:arg_head_element_offset + 32] = pack32(concrete_offset_to_arg_data)
 
             # Constrain/concretize the argument's size field, which we calculate based on the number of
             # dynamic arguments and the total amount of space they all share
@@ -1207,7 +1218,7 @@ class ManticoreEVM(Manticore):
 
             concrete_number_of_elements_in_arg = space_for_each_arg/element_size
             state.constrain(number_of_elements_in_arg == concrete_number_of_elements_in_arg)
-            data[free_pointer:free_pointer + 32]= ("%064x"%(concrete_number_of_elements_in_arg)).decode('hex')
+            data[free_pointer:free_pointer + 32]= pack32(concrete_number_of_elements_in_arg)
 
             #free_pointer points to the first unused byte in the dynamic argument area
             free_pointer += 32 + space_for_each_arg
