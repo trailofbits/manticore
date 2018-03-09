@@ -1,4 +1,4 @@
-from builtins import map, range
+from builtins import map, range, bytes
 import unittest
 import struct
 from functools import wraps
@@ -29,7 +29,7 @@ def assemble(asm):
     ords = ks.asm(asm)[0]
     if not ords:
         raise Exception('bad assembly: {}'.format(asm))
-    return ''.join(map(chr, ords))
+    return [bytes([s]) for s in ords]
 
 
 def emulate_next(cpu):

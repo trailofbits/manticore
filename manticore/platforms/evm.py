@@ -1,6 +1,14 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
+from builtins import str
+from builtins import hex
+from builtins import map
+from builtins import next
+from builtins import chr
+from builtins import range
+from builtins import object
+from builtins import bytes
 import random, copy
-from ..utils.helpers import issymbolic, memoized
+from ..utils.helpers import issymbolic, memoized, isstring
 from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
     SolverException
@@ -47,7 +55,7 @@ class Transaction(object):
     def __str__(self):
         return 'Transaction(%s, from=0x%x, to=0x%x, value=%r, data=%r..)' %(self.sort, self.caller, self.address, self.value, self.data)
 
-class EVMLog():
+class EVMLog(object):
     def __init__(self, address, memlog, topics):
         self.address = address
         self.memlog = memlog
@@ -126,7 +134,7 @@ class EVMMemory(object):
         if isinstance(index, slice):
             size = self._get_size(index)
             assert len(value) == size
-            for i in xrange(size):
+            for i in range(size):
                 self.write(index.start+i, [value[i]])
         else:
             self.write(index, [value])
@@ -139,7 +147,7 @@ class EVMMemory(object):
                 del self._symbols[offset]
 
         if isinstance(index, slice):
-            for offset in xrange(index.start, index.end):
+            for offset in range(index.start, index.end):
                 delete(offset)
         else:
             delete(index)
@@ -149,7 +157,7 @@ class EVMMemory(object):
                offset in self._symbols
 
     def items(self):
-        offsets = set( self._symbols.keys() + self._memory.keys())
+        offsets = set( list(self._symbols.keys()) + list(self._memory.keys()))
         return [(x, self[x]) for x in offsets]
 
     def get(self, offset, default=0):
@@ -282,14 +290,14 @@ class EVMMemory(object):
 
             solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000) #if more than 0x3000 exception
 
-            for offset in xrange(size):
+            for offset in range(size):
                 for base in solutions:
                     condition = base == address
                     self._symbols.setdefault(base+offset, []).append((condition, value[offset]))
 
         else:
 
-            for offset in xrange(size):
+            for offset in range(size):
                 if issymbolic(value[offset]):
                     self._symbols[address+offset] = [(True, value[offset])]
                 else:
@@ -485,12 +493,12 @@ class EVMAsm(object):
         @property
         def bytes(self):
             ''' Encoded instruction '''
-            bytes = []
-            bytes.append(chr(self._opcode))
-            for offset in reversed(xrange(self.operand_size)):
+            res = []
+            res.append(self._opcode)
+            for offset in reversed(range(self.operand_size)):
                 c = (self.operand >> offset*8 ) & 0xff 
-                bytes.append(chr(c))
-            return ''.join(bytes)
+                res.append(c)
+            return bytes(res)
 
         @property
         def offset(self):
@@ -797,7 +805,7 @@ class EVMAsm(object):
                     """)
 
         '''
-        if isinstance(assembler, str):
+        if isstring(assembler):
             assembler = assembler.split('\n')
         assembler = iter(assembler)
         for line in assembler:
@@ -909,7 +917,7 @@ class EVMAsm(object):
                 ...
                 "\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00"
         '''
-        return ''.join(map(lambda x:x.bytes, EVMAsm.assemble_all(asmcode, offset=offset)))
+        return ''.join([x.bytes for x in EVMAsm.assemble_all(asmcode, offset=offset)])
 
     @staticmethod
     def disassemble_hex(bytecode, offset=0):
@@ -1249,7 +1257,7 @@ class EVM(Eventful):
                    ITEM2
              sp->  {empty}
         '''
-        assert isinstance(value,(int,long)) or isinstance(value, BitVec) and value.size==256 
+        assert isinstance(value,int) or isinstance(value, BitVec) and value.size==256 
         if len(self.stack) >= 1024:
             raise StackOverflow()
         self.stack.append(value & TT256M1)
@@ -1566,7 +1574,7 @@ class EVM(Eventful):
 
         bytes = list(self.data[offset:offset+32])
         bytes += list('\x00'*( 32-len(bytes)))
-        bytes = map(Operators.ORD, bytes)
+        bytes = list(map(Operators.ORD, bytes))
         value = Operators.CONCAT(256, *bytes)
         return value 
 
@@ -1682,13 +1690,13 @@ class EVM(Eventful):
     def MLOAD(self, address):
         '''Load word from memory'''
         bytes = []
-        for offset in xrange(32):
+        for offset in range(32):
             bytes.append(self._load(address+offset))
         return Operators.CONCAT(256, *bytes)
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
-        for offset in xrange(32):
+        for offset in range(32):
             self._store(address+offset, Operators.EXTRACT(value, (31-offset)*8, 8))
 
     def MSTORE8(self, address, value):
@@ -1776,7 +1784,7 @@ class EVM(Eventful):
             self._allocate(offset+size)
 
         data = []
-        for i in xrange(size):
+        for i in range(size):
             data.append(Operators.CHR(self._load(offset+i)))
 
         if any(map(issymbolic, data)):
@@ -1838,7 +1846,7 @@ class EVM(Eventful):
         def hexdump(src, length=16):
             FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
             lines = []
-            for c in xrange(0, len(src), length):
+            for c in range(0, len(src), length):
                 chars = src[c:c+length]
                 def p (x):
                     if issymbolic(x):
@@ -1857,8 +1865,8 @@ class EVM(Eventful):
             return lines
 
         m = []
-        if len(self.memory._memory.keys()):
-            for i in range(max([0] + self.memory._memory.keys())+1):
+        if len(list(self.memory._memory.keys())):
+            for i in range(max([0] + list(self.memory._memory.keys()))+1):
                 c = self.memory.read(i,1)[0]
                 m.append(c)
 
@@ -1952,7 +1960,7 @@ class EVMWorld(Platform):
         self._sha3[buf] = value
 
     def __getitem__(self, index):
-        assert isinstance(index, (int,long))
+        assert isinstance(index, int)
         return self.storage[index]
 
 
@@ -2011,7 +2019,7 @@ class EVMWorld(Platform):
 
     @property
     def accounts(self):
-        return self.storage.keys()
+        return list(self.storage.keys())
 
     @property
     def normal_accounts(self):
@@ -2047,10 +2055,10 @@ class EVMWorld(Platform):
         return self.storage[address]['storage'].get(offset)
 
     def get_storage_items(self, address):
-        return self.storage[address]['storage'].items()
+        return list(self.storage[address]['storage'].items())
 
     def has_storage(self, address):
-        return len(self.storage[address]['storage'].items()) != 0
+        return len(list(self.storage[address]['storage'].items())) != 0
 
     def set_balance(self, address, value):
         self.storage[int(address)]['balance'] = value
@@ -2149,7 +2157,7 @@ class EVMWorld(Platform):
     def new_address(self):
         ''' create a fresh 160bit address '''
         new_address = random.randint(100, pow(2, 160))
-        if new_address in self._global_storage.keys():
+        if new_address in self._global_storage:
             return self.new_address()
         return new_address
 
@@ -2194,9 +2202,9 @@ class EVMWorld(Platform):
 
         if address is None:
             address = self.new_address()
-        assert address not in self.storage.keys(), 'The account already exists'
+        assert address not in self.storage, 'The account already exists'
         self.storage[address] = {}
-        self.storage[address]['nonce'] = 0L
+        self.storage[address]['nonce'] = 0
         self.storage[address]['balance'] = balance
         self.storage[address]['storage'] = storage
         self.storage[address]['code'] = code
@@ -2460,7 +2468,7 @@ class EVMWorld(Platform):
         #This may create a user account
         recipient = Operators.EXTRACT(recipient, 0, 160)
         address = self.current.address
-        if recipient not in self.storage.keys():
+        if recipient not in self.storage:
             self.create_account(address=recipient, balance=0, code='', storage=None)
         self.storage[recipient]['balance'] += self.storage[address]['balance']
         self.storage[address]['balance'] = 0
@@ -2488,7 +2496,7 @@ class EVMWorld(Platform):
         logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         #Broadcast the signal 
-        self._publish('on_symbolic_sha3', data, self._sha3.items())
+        self._publish('on_symbolic_sha3', data, list(self._sha3.items()))
 
         results = []
 

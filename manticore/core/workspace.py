@@ -126,7 +126,7 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         """
-        s = io.StringIO()
+        s = io.BytesIO()
         yield s
         self.save_value(key, s.getvalue())
 
@@ -140,7 +140,7 @@ class Store(object):
         :return: A managed stream-like object
         """
         value = self.load_value(key)
-        yield io.StringIO(value)
+        yield io.BytesIO(value)
 
     def save_state(self, state, key):
         """
@@ -569,7 +569,7 @@ class ManticoreOutput(object):
         def solve_to_fd(data, fd):
             try:
                 for c in data:
-                    fd.write(chr(solver.get_value(state.constraints, c)))
+                    fd.write(bytes[solver.get_value(state.constraints, c)])
             except SolverException:
                 fd.write('{SolverException}')
 

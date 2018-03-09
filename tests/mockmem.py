@@ -1,5 +1,6 @@
 from builtins import object, range
 from manticore.core.smtlib import Operators
+from manticore.utils.helpers import isstring
 
 class Memory(object):  #todo Mock
     def getchar(self, addr):
@@ -48,7 +49,7 @@ class SMem(object):
 
     def putchar(self, addr, char):
         assert isinstance(addr,int)
-        assert isinstance(char,str) and len(char) == 1
+        assert isstring(char) and len(char) == 1
         self.mem[addr]=char
 
     def read(self, addr, size):

@@ -3,6 +3,7 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import str, range
 from pprint import pformat
+from manticore.utils.helpers import isstring
 
 def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
     nlch = lfchar + htchar * (indent + 1)
@@ -28,7 +29,7 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
         if len(value) ==0:
             return repr(value)
 
-        if width is not None and isinstance(value, str):
+        if width is not None and isstring(value):
             width = width - indent
             width = max(1, width)
             o = []
@@ -42,7 +43,7 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
 pprint = pretty
 pp = pretty
 def spprint(x, indent=0, width=None,**kwargs):
-    if width is not None and isinstance(x, str):
+    if width is not None and isstring(x):
         o = ''
         for pos in range(0, len(x), width): 
             o += ' '*indent + repr(x[pos: pos+width]) + '\\'
@@ -53,7 +54,7 @@ def spprint(x, indent=0, width=None,**kwargs):
 def i(x):
     if isinstance(x, (int, int)):
         return x
-    assert isinstance(x, (str, str))
+    assert isstring(x)
     if not x.startswith('0x'):
         x = '0x' + x
     return int(x, 0)

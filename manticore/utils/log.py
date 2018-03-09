@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import range
 import logging
 import sys
 import types
@@ -16,7 +18,7 @@ class ContextFilter(logging.Filter):
         return '{}.{}'.format(prefix, components[-1])
 
     def filter(self, record):
-        if hasattr(self, 'stateid') and isinstance(self.stateid, (int, long)):
+        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
             record.stateid = '[%d]' % self.stateid
         else:
             record.stateid = ''
@@ -29,7 +31,7 @@ all_loggers = []
 
 def init_logging():
     global all_loggers
-    loggers = logging.getLogger().manager.loggerDict.keys()
+    loggers = list(logging.getLogger().manager.loggerDict.keys())
         
     ctxfilter = ContextFilter()
     logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
@@ -56,7 +58,7 @@ def loggerSetState(logger, stateid):
 
 def set_verbosity(setting):
     global manticore_verbosity, all_loggers
-    zero = map(lambda x: (x, logging.WARNING), all_loggers)
+    zero = [(x, logging.WARNING) for x in all_loggers]
     levels = [
         # 0
         zero,
@@ -107,7 +109,7 @@ def set_verbosity(setting):
         return True
 
     def glob(lst, expression):
-        return filter(lambda name: match(name, expression), lst)
+        return [name for name in lst if match(name, expression)]
 
     # Takes a value and ensures it's in a certain range
     def clamp(val, minimum, maximum):

@@ -1,5 +1,5 @@
 from __future__ import division
-from builtins import range
+from builtins import range, int
 from functools import wraps
 import logging
 import struct
@@ -11,7 +11,7 @@ from .abstractcpu import instruction as abstract_instruction
 from .bitwise import *
 from .register import Register
 from ..smtlib import Operators, BitVecConstant
-from ...utils.helpers import issymbolic
+from ...utils.helpers import issymbolic, isstring
 
 logger = logging.getLogger(__name__)
 
@@ -411,7 +411,7 @@ class Armv7Cpu(Cpu):
             instr2 commits all in _last_flags
             now overflow=1 even though it should still be 0
         """
-        unupdated_flags = self._last_flags.keys() - flags.keys()
+        unupdated_flags = set(self._last_flags.keys()) - set(flags.keys())
         for flag in unupdated_flags:
             flag_name = 'APSR_{}'.format(flag)
             self._last_flags[flag] = self.regfile.read(flag_name)
@@ -469,7 +469,7 @@ class Armv7Cpu(Cpu):
         elif isinstance(data, BitVec):
             self.SP -= data.size // 8
             self.write_int(self.SP, data, data.size)
-        elif isinstance(data, str):
+        elif isstring(data):
             self.SP -= len(data)
             self.write(self.SP, data)
         else:

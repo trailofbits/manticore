@@ -1,6 +1,7 @@
-from builtins import map, range
+from builtins import map, range, bytes
 import unittest
 import struct
+from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.memory import SMemory32
@@ -27,7 +28,7 @@ def assemble(asm, mode=CS_MODE_ARM):
         raise Exception('bad processor mode for assembly: {}'.format(mode))
     if not ords:
         raise Exception('bad assembly: {}'.format(asm))
-    return ''.join(map(chr, ords))
+    return [bytes([s]) for s in ords]
 
 
 class Armv7CpuTest(unittest.TestCase):

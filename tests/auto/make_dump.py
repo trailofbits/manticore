@@ -153,7 +153,7 @@ while True:
 
         COUNTER = {'i386': 'ECX', 'amd64': 'RCX'}[arch]
         wordsize =  {'i386': 4, 'amd64': 8}[arch]
-        text = ''.join([chr(gdb.getByte(pc+i)) for i in range(16)])
+        text = bytes([gdb.getByte(pc+i) for i in range(16)])
 
         cap_arch = {'i386': CS_ARCH_X86, 'amd64': CS_ARCH_X86}[arch] 
         cap_mode = {'i386': CS_MODE_32, 'amd64': CS_MODE_64}[arch] 
@@ -197,8 +197,7 @@ while True:
             registers['AL'] = gdb.getR('AL')
             registers[B] = gdb.getR(B)
             address = registers[B]+registers['AL']
-            memory[address] = chr(gdb.getByte(address))
-
+            memory[address] = bytes([gdb.getByte(address)])
         if instruction.insn_name().upper() in ['BTC', 'BTR', 'BTS', 'BT']:
             if instruction.operands[0].type == X86_OP_MEM:
                 o = instruction.operands[0]
@@ -220,7 +219,7 @@ while True:
                 elif instruction.operands[1].type == X86_OP_REG:
                     reg_name = str(instruction.reg_name(o.reg).upper())
                     address + gdb.getR(reg_name) // 8
-                memory[address] = chr(gdb.getByte(address))
+                memory[address] = bytes([gdb.getByte(address)])
 
         if instruction.insn_name().upper() in STACK_INSTRUCTIONS:
             registers[SP] = gdb.getR(SP)
@@ -229,12 +228,12 @@ while True:
             #save a bunch of stack
             pointer = registers[SP]
             for i in range(-wordsize, wordsize+1):
-                memory[pointer+i] = chr(gdb.getByte(pointer+i))
+                memory[pointer+i] = bytes([gdb.getByte(pointer+i)])
 
         if instruction.insn_name().upper() in ['ENTER', 'LEAVE']:
             pointer = registers[BP]
             for i in range(-wordsize, wordsize+1):
-                memory[pointer+i] = chr(gdb.getByte(pointer+i))
+                memory[pointer+i] = bytes([gdb.getByte(pointer+i)])
 
 
         if instruction.mnemonic.startswith('rep'):
@@ -243,10 +242,10 @@ while True:
             registers[COUNTER] = gdb.getR(COUNTER)
             pointer = registers[DI]
             for i in range(wordsize):
-                memory[pointer+i] = chr(gdb.getByte(pointer+i))
+                memory[pointer+i] = bytes([gdb.getByte(pointer+i)])
             pointer = registers[SI]
             for i in range(wordsize):
-                memory[pointer+i] = chr(gdb.getByte(pointer+i))
+                memory[pointer+i] = bytes([gdb.getByte(pointer+i)])
 
         #implicit registers
         #if not instruction.mnemonic.startswith('rep'):
@@ -342,7 +341,7 @@ while True:
                     address += o.mem.scale*registers[reg_name]
                 address = address&({'i386': 0xffffffff, 'amd64': 0xffffffffffffffff}[arch])
                 for i in range(address, address+o.size):
-                    memory[i] = chr(gdb.getByte(i))
+                    memory[i] = bytes([gdb.getByte(i)])
 
 
         # gather PRE info
@@ -386,7 +385,7 @@ while True:
  
         #update memory
         for i in memory:
-            memory[i] = chr(gdb.getByte(i))
+            memory[i] = bytes([gdb.getByte(i)])
 
         test['pos'] = {}
         test['pos']['memory'] = memory

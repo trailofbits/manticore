@@ -1,5 +1,5 @@
 from __future__ import division
-from builtins import hex, map, chr, str, range
+from builtins import hex, map, chr, str, range, int
 import ctypes
 import logging
 import os
@@ -14,7 +14,7 @@ from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
 from .cpufactory import CpuFactory
 from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
-from ...utils.helpers import issymbolic
+from ...utils.helpers import issymbolic, isstring
 from functools import reduce
 
 logger = logging.getLogger(__name__)
@@ -262,7 +262,7 @@ def binja_platform_regmap(binja_arch_regs, binja_arch_flags, binja_arch_aliases,
     for x86_reg, binja_reg in x86_to_binja.items():
         if isinstance(binja_reg, tuple):
             binja_to_x86["high_mappings"].append(binja_reg[0])
-        elif isinstance(binja_reg, str):
+        elif isstring(binja_reg):
             binja_to_x86[binja_reg] = x86_reg
 
     return x86_to_binja, binja_to_x86

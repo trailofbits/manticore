@@ -2,7 +2,7 @@ from __future__ import division
 from future import standard_library
 standard_library.install_aliases()
 from builtins import str, range
-from io import StringIO
+from io import BytesIO
 import unittest
 import tempfile, os
 import gc, pickle
@@ -1421,7 +1421,7 @@ class MemoryTest(unittest.TestCase):
     def test_pickle_mmap_anon(self):
         m = AnonMap(0x10000000, 0x3000, 'rwx')
         m[0x10001000] = 'A'
-        s = StringIO(pickle.dumps(m))
+        s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], 'A')
 
@@ -1433,7 +1433,7 @@ class MemoryTest(unittest.TestCase):
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, 'rwx', rwx_file.name)
         m[0x10000000] = 'Y'
-        s = StringIO(pickle.dumps(m))
+        s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], 'X')
         self.assertEqual(m[0x10000000], 'Y')
@@ -1441,7 +1441,7 @@ class MemoryTest(unittest.TestCase):
     def test_pickle_mmap_anon_cow(self):
         m = AnonMap(0x10000000, 0x3000, 'rwx', 'X'*0x1000+'Y'*0x1000+'Z'*0x1000)
         m = COWMap(m)
-        s = StringIO(pickle.dumps(m))
+        s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], 'Y')
         self.assertEqual(m.start, 0x10000000)
@@ -1450,7 +1450,7 @@ class MemoryTest(unittest.TestCase):
     def test_pickle_mmap_anon_cow_offset(self):
         m = AnonMap(0x10000000, 0x3000, 'rwx', 'X'*0x1000+'Y'*0x1000+'Z'*0x1000)
         m = COWMap(m, offset=0x1000, size=0x1000)
-        s = StringIO(pickle.dumps(m))
+        s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], 'Y')
         self.assertEqual(m.start, 0x10001000)
@@ -1464,7 +1464,7 @@ class MemoryTest(unittest.TestCase):
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, 'rwx', rwx_file.name)
         m = COWMap(m)
-        s = StringIO(pickle.dumps(m))
+        s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], 'Y')
         self.assertEqual(m.start, 0x10000000)
@@ -1477,7 +1477,7 @@ class MemoryTest(unittest.TestCase):
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, 'rwx', rwx_file.name)
         m = COWMap(m, size=0x1000, offset=0x1000)
-        s = StringIO(pickle.dumps(m))
+        s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
         self.assertEqual(m[0x10001000], 'Y')
         self.assertEqual(m.start, 0x10001000)
@@ -1510,7 +1510,7 @@ class MemoryTest(unittest.TestCase):
 
         #save it
 
-        s = StringIO(pickle.dumps(mem))
+        s = BytesIO(pickle.dumps(mem))
 
         #load it
         mem1 = pickle.load(s)

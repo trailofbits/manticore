@@ -1,7 +1,7 @@
 from __future__ import division
 from future import standard_library
 standard_library.install_aliases()
-from builtins import next, str, map, range, object
+from builtins import next, str, map, range, object, int
 import inspect
 import logging
 import io
@@ -345,7 +345,7 @@ class Abi(object):
             src = next(islice(descriptors, idx, idx+1))
 
             msg = 'Concretizing due to model invocation'
-            if isinstance(src, str):
+            if isstring(src):
                 raise ConcretizeRegister(self._cpu, src, msg)
             else:
                 raise ConcretizeMemory(self._cpu.memory, src, self._cpu.address_bit_size, msg)

@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import
-from builtins import map, int
+from builtins import map, int, chr, bytes
 from .expression import *
 from ...utils.helpers import issymbolic
 import math
@@ -24,7 +24,7 @@ def CHR(s):
         else:
             return BitVecExtract(s, 0, 8)
     elif isinstance(s, int):
-        return chr(s & 0xff)
+        return bytes([s & 0xff])
     else:
         assert len(s) == 1
         return s
