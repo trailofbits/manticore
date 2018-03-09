@@ -1172,18 +1172,18 @@ class EVM(Eventful):
 
     #Memory related
     def _allocate(self, address):
-        cond = address > self.memory._allocated
+        need_to_allocate = address > self.memory._allocated
 
-        if issymbolic(cond):
+        if issymbolic(need_to_allocate):
             #FIXME we should explore the other case too
-            if solver.can_be_true(self.constraints, cond):
-                self.constraints.add(cond)
-                cond = True
+            if solver.can_be_true(self.constraints, need_to_allocate):
+                self.constraints.add(need_to_allocate)
+                need_to_allocate = True
             else:
-                cond = False
+                need_to_allocate = False
 
 
-        if cond:
+        if need_to_allocate:
             GMEMORY = 3
             GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
 
