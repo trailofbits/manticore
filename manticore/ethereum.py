@@ -330,7 +330,7 @@ class ABI(object):
         args = list(args)
         for i in range(len(args)):
             if isinstance(args[i], EVMAccount):
-                 args[i] = int(args[i])
+                args[i] = int(args[i])
         result = []
         dynamic_args = []
         dynamic_offset = 32*len(args)
@@ -352,17 +352,13 @@ class ABI(object):
     @staticmethod
     def make_function_call(method_name, *args):
         function_id = ABI.make_function_id(method_name)
-        def check_bitsize(value, size):
-            if isinstance(value, BitVec):
-                return value.size==size
-            return (value & ~((1<<size)-1)) == 0
         assert len(function_id) == 4
         result = [tuple(function_id)]
         result.append(ABI.make_function_arguments(*args))
         return reduce(lambda x,y: x+y, result)
 
     @staticmethod
-    def get_uint(data, offset, nbytes):
+    def get_uint(data, nbytes, offset):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
 
@@ -379,7 +375,19 @@ class ABI(object):
 
     @staticmethod        
     def _consume_type(ty, data, offset):
-        ''' INTERNAL parses a value of type from data '''
+        """
+        Parses a value of type from data
+
+        Further info: http://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+
+        :param data: transaction data WITHOUT the function hash first 4 bytes
+        :param offset: offset into data of the first byte of the "head part" of the ABI element
+        :return: tuple where the first element is the extracted ABI element, and the second is the offset of
+            the next ABI element
+        :rtype: tuple
+        """
+        # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
+        # should be something the caller keeps track of.
         if ty == u'uint256':
             return ABI.get_uint(data, 32, offset), offset+32 #256 bits
         elif ty in (u'bool', u'uint8'):
@@ -400,13 +408,13 @@ class ABI(object):
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
             return data[offset:offset+size], offset+32
-        if ty == u'address[]':
-            dyn_offset = arithmetic_simplify((get_uint(256,offset)))
-            size = arithmetic_simplify(get_uint(256, dyn_offset))
+        elif ty == u'address[]':
+            dyn_offset = arithmetic_simplify(ABI.get_uint(data, 32, offset))
+            size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
             result = [ABI.get_uint(data, 20, dyn_offset+32 + 32*i) for i in range(size)]
             return result, offset+32
         else:
-            raise NotImplementedError(ty)
+            raise NotImplementedError(repr(ty))
 
     @staticmethod
     def parse_type_spec(type_spec):
@@ -423,15 +431,20 @@ class ABI(object):
 
     @staticmethod
     def parse(type_spec, data):
-        ''' Deserialize function ID and arguments specified in `type_spec` from `data` '''
+        ''' Deserialize function ID and arguments specified in `type_spec` from `data`
+
+        :param str type_spec: EVM ABI function specification. function name is optional
+        :param data: ethereum transaction data
+        :type data: str or Array
+        :return:
+        '''
         is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
+
+        off = 0
 
         #If it parsed the function name from the spec, skip 4 bytes from the data
         if func_name:
-            off = 4
-        else:
-            off = 0
-
+            data = data[4:]
 
         arguments = []
         for ty in types:
@@ -526,6 +539,17 @@ class EVMAccount(object):
 
         return object.__getattribute__(self, name)            
 
+
+def pack32(val):
+    """
+    Pack an integer into a big endian 32 byte str
+
+    :param int val:
+    :return: big endian 32 byte str
+    :rtype: str
+    """
+
+    return "{:064x}".format(val).decode('hex')
 
 
 class ManticoreEVM(Manticore):
@@ -940,8 +964,6 @@ class ManticoreEVM(Manticore):
 
             if not found_new_coverage:
                 break
-            if not self.running_state_ids:
-                break
 
         self.finalize()
 
@@ -1131,44 +1153,76 @@ class ManticoreEVM(Manticore):
     def workspace(self):
         return self._executor._workspace._store.uri
 
-    def _concretize_offsets_and_sizes(self, state, signature, data):
-        ''' Using signature spec this function browse the data and concretize 
-            all the offsets to dynamic arguments and all the size of the dynamic
-            arguments so it all fits into data.
-            The available space is fairly divided among all the dynamic arguments.
-        '''
+    @staticmethod
+    def _concretize_offsets_and_sizes(state, signature, data):
+        """
+        Checks if there are dynamically sized arguments encoded in the data and apply additional state
+        constraints and concretizations to make this more tractable for the solver. Concretizes the 1. fields
+        for offsets to arg data and 2. fields for length of the individual arguments. Evenly divides the
+        available space in data among all the arguments.
+
+        :param state:
+        :param str signature: type spec of the arguments encoded in `data`
+        :param data: transaction data
+        :type data: str or Array Expression
+        """
         is_multiple, func_name, types = ABI.parse_type_spec(signature)
         dyn_arguments = []
         for pos, t in enumerate(types):
-            dynamic = t in (u'bytes', u'string') or t.endswith(']')
+            dynamic = t in ('bytes', 'string') or t.endswith(']')
             if dynamic:
                 dyn_arguments.append(pos)
 
         number_dyn_arguments = len(dyn_arguments)
         if not number_dyn_arguments:
             return
-        free_pointer = 4 + len(types)*32 
-        available = len(data) -free_pointer - number_dyn_arguments*32
+        free_pointer = 4 + len(types)*32
+        space_for_all_size_fields = number_dyn_arguments * 32
+
+        # TODO FIXME (mark) what if space_for_arg_data or space_for_each_arg ends up being zero?
+        space_for_arg_data = len(data) - free_pointer - space_for_all_size_fields
 
 
-        #This will try certain partition of the data into arguments.
-        #It may generate an unsolvable core. Other feasible partitions may exist. 
-        argument_size = available/number_dyn_arguments
+        #
+        # This will try certain partition of the data into arguments.
+        # It may generate an unsolvable core. Other feasible partitions may exist.
+        #
+
+        # space_for_each_arg needs to be a multiple of 32, as required by the ABI. so if the math didn't work
+        # out cleanly, we force it, and round it down to the next multiple of 32. this does waste some space,
+        # meaning not every byte in the data will correspond to an argument.
+
+        space_for_each_arg = (space_for_arg_data/number_dyn_arguments)
+        space_for_each_arg_aligned = space_for_each_arg & (~0x1f)
+
         for index in dyn_arguments:
-            #get, constraint and concretize dyn_offset to some reasonable value
-            dyn_offset = ABI.get_uint(data, 4 + index*32, 256)
-            state.constrain(dyn_offset+4 == free_pointer)
-            data[4 + index*32 : 4 + index*32 + 32] = ("%064x"%(free_pointer-4)).decode('hex')
+            # Constrain/concretize the argument's head element, which can be calculated based on the number
+            # of dynamic arguments in the type spec, as the length of the data
+            arg_head_element_offset = 4 + index * 32
+            offset_to_arg_data = ABI.get_uint(data, 32, arg_head_element_offset)
 
+            concrete_offset_to_arg_data = free_pointer - 4
+            state.constrain(offset_to_arg_data == concrete_offset_to_arg_data)
+            data[arg_head_element_offset:arg_head_element_offset + 32] = pack32(concrete_offset_to_arg_data)
 
-            #get, constraint and concretize dyn_size to some reasonable value
-            dyn_size = ABI.get_uint(data, free_pointer, 256)
-            state.constrain(dyn_size == argument_size/32)
-            data[free_pointer:free_pointer+32]= ("%064x"%(argument_size/32)).decode('hex')
+            # Constrain/concretize the argument's size field, which we calculate based on the number of
+            # dynamic arguments and the total amount of space they all share
+            number_of_elements_in_arg = ABI.get_uint(data, 32, free_pointer)
 
+            # FIXME TODO (mark) i'm not sure that the encoding for bytes and string is identical, this could
+            # be buggy for string
+            typ = types[index]
+            if typ not in ('bytes', 'string'):
+                element_size = 32
+            else:
+                element_size = 1
 
-            free_pointer += 32 + argument_size
-            #free_pointer points to the first unused byte in the dinamic argument area
+            concrete_number_of_elements_in_arg = space_for_each_arg_aligned/element_size
+            state.constrain(number_of_elements_in_arg == concrete_number_of_elements_in_arg)
+            data[free_pointer:free_pointer + 32]= pack32(concrete_number_of_elements_in_arg)
+
+            #free_pointer points to the first unused byte in the dynamic argument area
+            free_pointer += 32 + space_for_each_arg_aligned
 
 
     def _generate_testcase_callback(self, state, name, message):

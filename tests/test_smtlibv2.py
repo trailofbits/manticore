@@ -18,6 +18,14 @@ class ExpressionTest(unittest.TestCase):
     def tearDown(self):
         del self.solver
 
+    def test_no_variable_expression_can_be_true(self):
+        """
+        Tests if solver.can_be_true is correct when the expression has no nodes that subclass
+        from Variable (e.g. BitVecConstant)
+        """
+        x = BitVecConstant(32, 10)
+        cs = ConstraintSet()
+        self.assertFalse(self.solver.can_be_true(cs, x == False))
 
     def testBasicAST_001(self):
         ''' Can't build abstract classes '''
