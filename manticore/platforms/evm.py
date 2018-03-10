@@ -1052,7 +1052,7 @@ class Sha3(EVMException):
 
 
 def concretized_args(**policies):
-    '''
+    """
     Make sure an EVM instruction has all of its arguments concretized according to
     provided policies.
 
@@ -1068,17 +1068,16 @@ def concretized_args(**policies):
     :param policies: A kwargs list of argument names and their respective policies.
                          Provide None or '' as policy to use default.
     :return: A function decorator
-    '''
+    """
     def concretizer(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             spec = inspect.getargspec(func)
-            sys.stderr.write("args: {}, kwargs: {}".format(repr(args), repr(kwargs)))
             for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
                 policy = policy or 'MINMAX'
                 # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
-                # since implementation methods always take a first `self` parameter.
+                # since implementation method is always a bound method (self is param 0)
                 index = spec.args.index(arg)
                 if issymbolic(args[index]):
                     raise ConcretizeStack(index, policy)
