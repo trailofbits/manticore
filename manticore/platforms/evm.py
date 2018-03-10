@@ -1,5 +1,7 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
 import random, copy
+import inspect
+from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
@@ -1049,6 +1051,39 @@ class Sha3(EVMException):
         return (self.__class__, (self.data, ))
 
 
+def concretized_args(**policies):
+    '''
+    Make sure an EVM instruction has all of its arguments concretized according to
+    provided policies.
+
+    Example decoration:
+
+        @concretized_args(size='ONE')
+        def LOG(self, address, size, *topics):
+            ...
+
+    The above will make sure that the |size| parameter to LOG is Concretized when symbolic
+    according to the 'ONE' policy.
+
+    :param policies: A kwargs list of argument names and their respective policies.
+                         Provide None or '' as policy to use default.
+    :return: A function decorator
+    '''
+    def concretizer(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            spec = inspect.getargspec(func)
+            sys.stderr.write("args: {}, kwargs: {}".format(repr(args), repr(kwargs)))
+            for arg, policy in policies.items():
+                assert arg in spec.args, "Concretizer argument not found in wrapped function."
+                policy = policy or 'MINMAX'
+                index = spec.args.index(arg)
+                if issymbolic(args[index]):
+                    raise ConcretizeStack(index, policy)
+            return func(*args, **kwargs)
+        return wrapper
+    return concretizer
+
 class EVM(Eventful):
     '''Machine State. The machine state is defined as
         the tuple (g, pc, m, i, s) which are the gas available, the
@@ -1599,10 +1634,9 @@ class EVM(Eventful):
         '''Get size of code running in current environment'''
         return len(self.bytecode)
 
+    @concretized_args(size='')
     def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
-        if issymbolic(size):
-            raise ConcretizeStack(3)
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(size) // 32)
 
@@ -1762,10 +1796,8 @@ class EVM(Eventful):
 
     ##########################################################################
     ##Logging Operations
+    @concretized_args(size='ONE')
     def LOG(self, address, size, *topics):
-
-        if issymbolic(size):
-            raise ConcretizeStack(2, policy='ONE')
 
         memlog = self.read_buffer(address, size)
 
@@ -1802,12 +1834,9 @@ class EVM(Eventful):
         code = self.read_buffer(offset, size)
         raise Create(value, code)
 
+    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def CALL(self, gas, to, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
-        if issymbolic(in_offset):
-            raise ConcretizeStack(4, policy='SAMPLED')
-        if issymbolic(in_size):
-            raise ConcretizeStack(5, policy='SAMPLED')
 
         data = self.read_buffer(in_offset, in_size)
         raise Call(gas, to, value, data, out_offset, out_size)
