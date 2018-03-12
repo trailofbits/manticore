@@ -70,9 +70,7 @@ class EthDetectors(unittest.TestCase):
         self.assertTrue(check)
 
 
-
 class EthTests(unittest.TestCase):
-
     def test_emit_did_execute_end_instructions(self):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
