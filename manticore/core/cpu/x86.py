@@ -773,6 +773,10 @@ class X86Cpu(Cpu):
         name = OP_NAME_MAP.get(name, name)
         return name
 
+    #
+    # Instruction Implementations
+    #
+
     def _calculate_CMP_flags(self, size, res, arg0, arg1):
         SIGN_MASK = 1 << (size - 1)
         self.CF = Operators.ULT(arg0, arg1)
