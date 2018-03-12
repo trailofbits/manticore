@@ -5014,8 +5014,8 @@ class X86Cpu(Cpu):
             if len(haystack) < len(needle):
                 return 0
             for i in range(len(haystack)):
-                if len(needle + 1) > xmmsize // stepsize:
-                    upto = xmmsize // stepsize - 1
+                if len(needle) + i > xmmsize // stepsize:
+                    upto = xmmsize // stepsize - i
                 else:
                     upto = len(needle)
                 subneedle = needle[:upto]
