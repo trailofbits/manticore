@@ -1,4 +1,4 @@
-from builtins import object, int
+from builtins import int
 from ..smtlib import Operators, BitVec, Bool
 
 class Register(object):

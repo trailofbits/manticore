@@ -4,7 +4,6 @@ standard_library.install_aliases()
 from builtins import str
 from builtins import map
 from builtins import range
-from builtins import object
 from builtins import int
 import string
 

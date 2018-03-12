@@ -2,7 +2,7 @@ from __future__ import division
 from past.builtins import cmp
 from future import standard_library
 standard_library.install_aliases()
-from builtins import int, map, range, object, str, bytes
+from builtins import int, map, range, str, bytes
 from abc import abstractproperty
 from weakref import WeakValueDictionary
 from .smtlib import *

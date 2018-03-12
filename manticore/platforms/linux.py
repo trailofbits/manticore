@@ -1,7 +1,7 @@
 from __future__ import division
 from __future__ import print_function
 from builtins import chr
-from builtins import hex, str, range, object, int
+from builtins import hex, str, range, int, bytes
 from future import standard_library
 standard_library.install_aliases()
 
