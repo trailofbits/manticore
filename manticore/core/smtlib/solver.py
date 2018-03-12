@@ -205,7 +205,7 @@ class Z3Solver(Solver):
         try:
             self._proc.stdin.writelines(('(exit)\n',))
             self._proc.wait()
-        except Exception as e:
+        except Exception:
             pass
 
     def _reset(self, constraints=None):
