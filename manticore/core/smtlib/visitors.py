@@ -138,6 +138,22 @@ def get_variables(expression):
     visitor.visit(expression)
     return visitor.result
 
+class GetNodeCount(Visitor):
+    def __init__(self, *args, **kwargs):
+        super(GetNodeCount, self).__init__(*args, **kwargs)
+        self.count = 0
+
+    def visit_Expression(self, expression, *rest):
+        self.count += 1
+
+    def visit_Operation(self, exp, *operands):
+        self.count += 1
+
+def get_node_count(exp):
+    visitor = GetNodeCount()
+    visitor.visit(exp)
+    return visitor.count
+
 class GetDepth(Visitor):
     ''' Simple visitor to collect all variables in an expression or set of
         expressions
