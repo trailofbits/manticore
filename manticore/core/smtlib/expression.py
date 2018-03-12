@@ -156,7 +156,7 @@ class BoolConstant(Bool, Constant):
     def __bool__(self):
         return self.value
 
-    def __nonzero_(self):
+    def __nonzero__(self):
         return self.__bool__()
 
 
