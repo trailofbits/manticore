@@ -1805,10 +1805,8 @@ class EVM(Eventful):
         return data
 
     def write_buffer(self, offset, buf):
-        count = 0
-        for c in buf:
-            self._store(offset + count, c)
-            count += 1
+        for i, c in enumerate(buf):
+            self._store(offset+i, Operators.ORD(c))
 
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''

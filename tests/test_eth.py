@@ -102,3 +102,23 @@ class EthTests(unittest.TestCase):
         x = mevm.create_account(balance=0)
         contract_account = mevm.solidity_create_contract(source_code,
                 contract_name="C", owner=owner, args=[x])
+
+    def test_writebuffer_doesnt_raise(self):
+        mevm = ManticoreEVM()
+        source_code = """
+	contract X {
+	    mapping(address => uint) private balance;
+	    function f(address z) returns (uint) { return balance[z]; }
+	}
+	contract C {
+	  X y;
+	  function C() {
+	    y = new X();
+	    uint z = y.f(0);
+	  }
+	}"""
+        # Make sure that write_buffer (used by RETURN) succeeds without errors
+        owner = mevm.create_account(balance=1000)
+        x = mevm.create_account(balance=0)
+        contract_account = mevm.solidity_create_contract(source_code,
+                contract_name="C", owner=owner, args=[x])
