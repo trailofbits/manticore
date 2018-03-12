@@ -1793,7 +1793,7 @@ class EVM(Eventful):
 
     def write_buffer(self, offset, buf):
         for i, c in enumerate(buf):
-            self._store(offset+i, ord(c))
+            self._store(offset+i, Operators.ORD(c))
 
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
