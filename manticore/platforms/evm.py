@@ -1016,8 +1016,8 @@ class Call(EVMInstructionException):
 
 
 class Create(Call):
-    def __init__(self, value, offset, size):
-        super(Create, self).__init__(gas=None, to=None, value=value, data='')
+    def __init__(self, value, bytecode):
+        super(Create, self).__init__(gas=None, to=None, value=value, data=bytecode)
 
 
 class DelegateCall(Call):
@@ -2375,7 +2375,7 @@ class EVMWorld(Platform):
         if is_human_tx:
             # handle human transactions
             if ty == 'Create':
-                self.current.last_exception = Create(None, None, None)
+                self.current.last_exception = Create(None, None)
             elif ty == 'Call':
                 self.current.last_exception = Call(None, None, None, None)
 
