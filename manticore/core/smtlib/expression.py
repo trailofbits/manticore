@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import
-from builtins import range, object, int
+from builtins import range, int
 from functools import reduce
 
 # TODO feeb find a better place for this, can't be in helpers rn because of circular import
@@ -135,6 +135,9 @@ class Bool(Expression):
     def __bool__(self):
         raise NotImplementedError("__nonzero__ for Bool")
 
+    def __nonzero__(self):
+        raise NotImplementedError("__nonzero__ for Bool")
+
 
 class BoolVariable(Bool, Variable):
     def __init__(self, name, *args, **kwargs):
@@ -152,6 +155,9 @@ class BoolConstant(Bool, Constant):
 
     def __bool__(self):
         return self.value
+
+    def __nonzero_(self):
+        return self.__bool__()
 
 
 class BoolOperation(Operation, Bool):

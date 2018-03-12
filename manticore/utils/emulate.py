@@ -1,4 +1,3 @@
-from builtins import object
 import logging
 
 from ..core.memory import MemoryException, FileMap, AnonMap

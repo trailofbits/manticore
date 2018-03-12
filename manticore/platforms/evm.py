@@ -5,7 +5,6 @@ from builtins import map
 from builtins import next
 from builtins import chr
 from builtins import range
-from builtins import object
 from builtins import bytes
 import random, copy
 from ..utils.helpers import issymbolic, memoized, isstring

@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import
-from builtins import str, zip, range, object
+from builtins import str, zip, range
 from .expression import *
 import operator
 import logging
@@ -53,7 +53,7 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        assert object in expression.__class__.__mro__
+        assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = 'visit_%s' % sort

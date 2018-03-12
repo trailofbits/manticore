@@ -1,4 +1,4 @@
-from builtins import next, hex, str, range, object
+from builtins import next, hex, str, range
 from abc import abstractproperty, abstractmethod
 
 import capstone as cs

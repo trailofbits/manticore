@@ -18,7 +18,6 @@ from builtins import str
 from builtins import chr
 from builtins import map
 from builtins import range
-from builtins import object
 from subprocess import PIPE, Popen, check_output
 from abc import ABCMeta, abstractmethod
 from copy import copy, deepcopy

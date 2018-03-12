@@ -1,4 +1,3 @@
-from builtins import object
 import collections
 from ..core.smtlib import Expression
 
