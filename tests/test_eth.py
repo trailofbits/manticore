@@ -91,7 +91,7 @@ class EthTests(unittest.TestCase):
         self.assertIn('REVERT', context)
 
     def test_can_create(self):
-        mevm = ManticoreEVM(procs=10)
+        mevm = ManticoreEVM()
         source_code = """
         contract X { function X(address x) {} }
         contract C { function C(address x) { new X(x); }
