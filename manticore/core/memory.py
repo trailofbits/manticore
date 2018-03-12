@@ -10,7 +10,6 @@ import logging
 from ..utils.mappings import _mmap, _munmap
 from ..utils.helpers import issymbolic, isstring
 from future.utils import with_metaclass
-
 logger = logging.getLogger(__name__)
 
 
@@ -231,7 +230,10 @@ class AnonMap(Map):
         self._data = bytearray(size)
         if not data_init is None:
             assert len(data_init) <= size, 'More initial data than reserved memory'
-            self._data[0:len(data_init)] = data_init
+            if isinstance(data_init[0], int):
+                self._data[0:len(data_init)] = data_init
+            else:
+                self._data[0:len(data_init)] = [ord(s) for s in data_init]
 
     def __reduce__(self):
         return (self.__class__, (self.start, len(self), self.perms, self._data, ))
@@ -255,7 +257,7 @@ class AnonMap(Map):
             for i in range(index.stop-index.start):
                 self._data[index.start+i] = ord(value[i])
         else:
-            self._data[index] = value
+            self._data[index] = ord(value)
 
     def __getitem__(self, index):
         index = self._get_offset(index)
