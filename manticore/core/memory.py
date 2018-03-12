@@ -254,8 +254,10 @@ class AnonMap(Map):
                len(value) == index.stop-index.start
         index = self._get_offset(index)
         if isinstance(index, slice):
-            for i in range(index.stop-index.start):
-                self._data[index.start+i] = ord(value[i])
+            if not isinstance(value[0], int):
+                value = [ord(n) for n in value]
+            for i in range(index.stop - index.start):
+                self._data[index.start + i] = value[i]
         else:
             self._data[index] = ord(value)
 
