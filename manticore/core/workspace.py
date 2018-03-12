@@ -1,6 +1,6 @@
 from future import standard_library
 standard_library.install_aliases()
-from builtins import map, chr, str, object
+from builtins import map, chr, str, object, bytes
 import os
 import sys
 import glob
@@ -529,15 +529,16 @@ class ManticoreOutput(object):
                 summary.write("================ PROC: %02d ================\n" % idx)
                 summary.write("Memory:\n")
                 if hash(cpu.memory) not in memories:
-                    summary.write(str(cpu.memory).replace('\n', '\n  '))
+                    summary.write(bytes(cpu.memory).replace('\n', '\n  '))
                     memories.add(hash(cpu.memory))
 
                 summary.write("CPU:\n{}".format(cpu))
 
                 if hasattr(cpu, "instruction") and cpu.instruction is not None:
                     i = cpu.instruction
-                    summary.write("  Instruction: 0x%x\t(%s %s)\n" % (
-                        i.address, i.mnemonic, i.op_str))
+                    summary.write('Instruction: 0x%x\t(%s %s)\n' % (i.address,
+                                                                    i.mnemonic.encode('utf-16be'),
+                                                                    i.op_str.encode('utf-16be')))
                 else:
                     summary.write("  Instruction: {symbolic}\n")
 
@@ -553,7 +554,7 @@ class ManticoreOutput(object):
         # assert solver.check(state.constraints)
 
         with self._named_stream('smt') as f:
-            f.write(str(state.constraints))
+            f.write(bytes(state.constraints))
 
     def save_input_symbols(self, state):
         with self._named_stream('input') as f:
