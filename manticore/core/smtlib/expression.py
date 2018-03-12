@@ -258,7 +258,7 @@ class BitVec(Expression):
         return BitVecDiv(self, self.cast(other))
 
     def __floordiv__(self, other):
-        return self // other
+        return self / other
 
     # These methods are called to implement the binary arithmetic operations
     # (+, # -, *, /, %, divmod(), pow(), **, <<, >>, &, ^, |) with reflected
