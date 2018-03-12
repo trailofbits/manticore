@@ -3,6 +3,7 @@
 from ..smtlib import Operators
 from ..smtlib.expression import BitVec
 
+
 def Mask(width):
     '''
     Return a mask with the low `width` bits set.
@@ -11,6 +12,7 @@ def Mask(width):
     :return: int or long
     '''
     return (1 << width) - 1
+
 
 def Bit(value, idx):
     '''
@@ -22,6 +24,7 @@ def Bit(value, idx):
     :return: int or long or BitVex
     '''
     return Operators.EXTRACT(value, idx, 1)
+
 
 def GetNBits(value, nbits):
     '''
@@ -42,6 +45,7 @@ def GetNBits(value, nbits):
         else:
             return Operators.EXTRACT(value, 0, nbits)
 
+
 def SInt(value, width):
     '''
     Convert a bitstring `value` of `width` bits to a signed integer
@@ -53,9 +57,10 @@ def SInt(value, width):
     :return: The converted value
     :rtype int or long or BitVec
     '''
-    return Operators.ITEBV(width, Bit(value, width-1) == 1,
-                                      GetNBits(value, width) - 2**width,
-                                      GetNBits(value, width))
+    return Operators.ITEBV(width, Bit(value, width - 1) == 1,
+                           GetNBits(value, width) - 2**width,
+                           GetNBits(value, width))
+
 
 def UInt(value, width):
     '''
@@ -69,6 +74,7 @@ def UInt(value, width):
     '''
     return GetNBits(value, width)
 
+
 def LSL_C(value, amount, width):
     '''
     The ARM LSL_C (logical left shift with carry) operation.
@@ -81,11 +87,12 @@ def LSL_C(value, amount, width):
     :rtype tuple
     '''
     assert amount > 0
-    value = Operators.ZEXTEND(value, width*2)
+    value = Operators.ZEXTEND(value, width * 2)
     shifted = value << amount
     result = GetNBits(shifted, width)
     carry = Bit(shifted, width)
     return (result, carry)
+
 
 def LSL(value, amount, width):
     '''
@@ -104,6 +111,7 @@ def LSL(value, amount, width):
     result, _ = LSL_C(value, amount, width)
     return result
 
+
 def LSR_C(value, amount, width):
     '''
     The ARM LSR_C (logical shift right with carry) operation.
@@ -119,6 +127,7 @@ def LSR_C(value, amount, width):
     result = GetNBits(value >> amount, width)
     carry = Bit(value >> (amount - 1), 0)
     return (result, carry)
+
 
 def LSR(value, amount, width):
     '''
@@ -136,6 +145,7 @@ def LSR(value, amount, width):
     result, _ = LSR_C(value, amount, width)
     return result
 
+
 def ASR_C(value, amount, width):
     '''
     The ARM ASR_C (arithmetic shift right with carry) operation.
@@ -151,9 +161,10 @@ def ASR_C(value, amount, width):
     assert amount > 0
     assert amount + width <= width * 2
     value = Operators.SEXTEND(value, width, width * 2)
-    result = GetNBits(value >>  amount     , width) 
-    carry =  Bit(value, amount - 1)
+    result = GetNBits(value >> amount, width)
+    carry = Bit(value, amount - 1)
     return (result, carry)
+
 
 def ASR(value, amount, width):
     '''
@@ -171,6 +182,7 @@ def ASR(value, amount, width):
 
     result, _ = ASR_C(value, amount, width)
     return result
+
 
 def ROR_C(value, amount, width):
     '''
@@ -192,6 +204,7 @@ def ROR_C(value, amount, width):
     carry = Bit(result, width - 1)
     return (result, carry)
 
+
 def ROR(value, amount, width):
     '''
     The ARM ROR (rotate right) operation.
@@ -208,6 +221,7 @@ def ROR(value, amount, width):
     result, _ = ROR_C(value, amount, width)
     return result
 
+
 def RRX_C(value, carry, width):
     '''
     The ARM RRX (rotate right with extend and with carry) operation.
@@ -220,8 +234,9 @@ def RRX_C(value, carry, width):
     :rtype tuple
     '''
     carry_out = Bit(value, 0)
-    result = (value >> 1) | (carry << (width-1))
+    result = (value >> 1) | (carry << (width - 1))
     return (result, carry_out)
+
 
 def RRX(value, carry, width):
     '''
@@ -236,4 +251,3 @@ def RRX(value, carry, width):
     '''
     result, _ = RRX_C(value, carry, width)
     return result
-

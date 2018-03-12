@@ -10,6 +10,7 @@ from .core.smtlib.operators import ITEBV, ZEXTEND
 
 VARIADIC_FUNC_ATTR = '_variadic'
 
+
 def isvariadic(model):
     """
     :param callable model: Function model
@@ -17,6 +18,7 @@ def isvariadic(model):
     :rtype: bool
     """
     return getattr(model, VARIADIC_FUNC_ATTR, False)
+
 
 def variadic(func):
     """
@@ -28,6 +30,7 @@ def variadic(func):
     """
     setattr(func, VARIADIC_FUNC_ATTR, True)
     return func
+
 
 def _find_zero(cpu, constrs, ptr):
     """
@@ -132,7 +135,7 @@ def strlen(state, s):
 
     ret = zero_idx
 
-    for offset in xrange(zero_idx-1, -1, -1):
+    for offset in xrange(zero_idx - 1, -1, -1):
         byt = cpu.read_int(s + offset, 8)
         if issymbolic(byt):
             ret = ITEBV(cpu.address_bit_size, byt == 0, offset, ret)
