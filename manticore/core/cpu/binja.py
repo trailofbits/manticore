@@ -1,10 +1,8 @@
 import ctypes
 import logging
 import os
-import re
 
 from collections import defaultdict
-from functools import wraps
 
 import capstone as cs
 
@@ -15,9 +13,11 @@ from .cpufactory import CpuFactory
 from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
 from ...utils.helpers import issymbolic
+from functools import reduce
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger('{}.registers'.format(__name__))
+
 
 class BinjaRegisterFile(RegisterFile):
 
@@ -26,12 +26,12 @@ class BinjaRegisterFile(RegisterFile):
         self.arch = arch
         arch = Architecture[arch]
         self.reg_aliases = {
-            'STACK' : str(arch.stack_pointer),
-            'PC' : self.get_pc(),
-            'CS' : 'cs',
-            'SS' : 'ss',
-            'DS' : 'ds',
-            'ES' : 'es'
+            'STACK': str(arch.stack_pointer),
+            'PC': self.get_pc(),
+            'CS': 'cs',
+            'SS': 'ss',
+            'DS': 'ds',
+            'ES': 'es'
         }
         super(BinjaRegisterFile, self).__init__(aliases=self.reg_aliases)
 
@@ -55,7 +55,7 @@ class BinjaRegisterFile(RegisterFile):
 
         # all regs are: architecture, aliases and flags
         all_regs = arch_regs + self.reg_aliases.values() + f_regs
-        self.registers = {reg : 0 for reg in all_regs}
+        self.registers = {reg: 0 for reg in all_regs}
 
         # FIXME get these from the platform!! they are already part of registers
         self.segment_registers = (['cs', 'ds', 'es', 'ss'] +
@@ -146,6 +146,7 @@ class BinjaRegisterFile(RegisterFile):
         else:
             raise NotImplementedError
 
+
 class BinjaOperand(Operand):
     def __init__(self, cpu, parent_il, op, **kwargs):
         self.llil = parent_il
@@ -157,9 +158,9 @@ class BinjaOperand(Operand):
     def type(self):
         from binaryninja import lowlevelil as il
         type_map = {
-            il.ILRegister : 'register',
-            il.LowLevelILInstruction : 'instruction',
-            il.ILFlag : 'flag',
+            il.ILRegister: 'register',
+            il.LowLevelILInstruction: 'instruction',
+            il.ILFlag: 'flag',
         }
 
         try:
@@ -202,21 +203,27 @@ class BinjaOperand(Operand):
     def __getattr__(self, name):
         return getattr(self.op, name)
 
+
 def _carry_ult(left, right):
     return Operators.ULT(left, right)
+
 
 def _adjust_flag(result, left, right):
     return ((left ^ right) ^ result) & 0x10 != 0
 
+
 def _zero_flag(res):
     return res == 0
+
 
 def _sign_flag(res, size):
     mask = 1 << (size - 1)
     return (res & mask) != 0
 
+
 def _parity_flag(v):
     return (v ^ v >> 1 ^ v >> 2 ^ v >> 3 ^ v >> 4 ^ v >> 5 ^ v >> 6 ^ v >> 7) & 1 == 0
+
 
 def _overflow_flag(res, right, left, size):
     mask = 1 << (size - 1)
@@ -225,12 +232,13 @@ def _overflow_flag(res, right, left, size):
     sign_res = (res & mask) == mask
     return Operators.AND(sign_r ^ sign_l, sign_r ^ sign_res)
 
+
 def binja_platform_regmap(binja_arch_regs, binja_arch_flags, binja_arch_aliases,
                           x86_cpu_regs):
     all_x86_regs = [r.lower() for r in x86_cpu_regs]
 
     # get all registers that are present already in the arch
-    x86_to_binja = {r.upper() : r for r in all_x86_regs
+    x86_to_binja = {r.upper(): r for r in all_x86_regs
                     if r in binja_arch_regs}
 
     # map flag registers
@@ -268,10 +276,12 @@ def binja_platform_regmap(binja_arch_regs, binja_arch_flags, binja_arch_aliases,
 
     return x86_to_binja, binja_to_x86
 
+
 class BinjaCpu(Cpu):
     '''
     A Virtual CPU model for Binary Ninja's IL
     '''
+
     def __init__(self, memory):
         '''
         Builds a CPU model.
@@ -334,9 +344,9 @@ class BinjaCpu(Cpu):
         '''
         text = ''
         # Read Instruction from memory
-        for address in xrange(pc, pc+self.max_instr_width):
-            #This reads a byte from memory ignoring permissions
-            #and concretize it if symbolic
+        for address in xrange(pc, pc + self.max_instr_width):
+            # This reads a byte from memory ignoring permissions
+            # and concretize it if symbolic
             if not self.memory.access_ok(address, 'x'):
                 break
 
@@ -354,8 +364,7 @@ class BinjaCpu(Cpu):
                                            policy='INSTRUCTION')
             text += c
 
-
-        #Pad potentially incomplete instruction with zeroes
+        # Pad potentially incomplete instruction with zeroes
 
         code = text.ljust(self.max_instr_width, '\x00')
 
@@ -365,7 +374,7 @@ class BinjaCpu(Cpu):
         except StopIteration as e:
             raise DecodeException(pc, code)
 
-        #Check that the decoded instruction is contained in executable memory
+        # Check that the decoded instruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
@@ -402,6 +411,7 @@ class BinjaCpu(Cpu):
             return
 
         name = self.canonicalize_instruction_name(insn)
+
         def fallback_to_emulate(*operands):
             if (isinstance(self.disasm, BinjaILDisasm) and
                     isinstance(insn, cs.CsInsn)):
@@ -411,7 +421,7 @@ class BinjaCpu(Cpu):
                 # XXX after this point self.PC != self._last_pc but that is
                 # OK because we will update the PC  properly
             else:
-                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
                 logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
 
@@ -421,7 +431,7 @@ class BinjaCpu(Cpu):
 
         implementation = getattr(self, name, fallback_to_emulate)
 
-        if logger.level == logging.DEBUG :
+        if logger.level == logging.DEBUG:
             logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
@@ -457,7 +467,8 @@ class BinjaCpu(Cpu):
 
     def update_platform_cpu_regs(self):
         for pl_reg, binja_reg in self.regfile.pl2b_map.items():
-            if isinstance(binja_reg, tuple) or binja_reg is None: continue
+            if isinstance(binja_reg, tuple) or binja_reg is None:
+                continue
             self.platform_cpu.write_register(pl_reg,
                                              self.regfile.read(binja_reg))
 
@@ -848,10 +859,10 @@ class BinjaCpu(Cpu):
         rsize = reg.llil.size * 8
         count = shift.read()
         value = reg.read()
-        countMask = {8 : 0x1f,
+        countMask = {8: 0x1f,
                      16: 0x1f,
                      32: 0x1f,
-                     64: 0x3f }[rsize]
+                     64: 0x3f}[rsize]
         temp = Operators.ZEXTEND(count & countMask, rsize)
 
         tempD = value = reg.read()
@@ -940,7 +951,7 @@ class BinjaCpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, (int,long)):
+        if isinstance(divisor, (int, long)):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
@@ -952,7 +963,7 @@ class BinjaCpu(Cpu):
 
         quotient = Operators.SDIV(dividend, divisor)
         if (isinstance(dividend, (int, long)) and
-                isinstance(dividend, (int,long))):
+                isinstance(dividend, (int, long))):
             remainder = dividend - (quotient * divisor)
         else:
             remainder = Operators.SREM(dividend, divisor)
@@ -1066,7 +1077,7 @@ class BinjaCpu(Cpu):
         size = left_expr.llil.size * 8
         count = right_expr.read()
         countMask = {
-            8 : 0x1f,
+            8: 0x1f,
             16: 0x1f,
             32: 0x1f,
             64: 0x3f
@@ -1090,10 +1101,10 @@ class BinjaCpu(Cpu):
         # FIXME refactor ROL, ROR
         size = left_expr.llil.size * 8
         count = right_expr.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[size]
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[size]
         tempCount = Operators.ZEXTEND((count & countMask) % (size), size)
 
         value = left_expr.read()
@@ -1104,8 +1115,8 @@ class BinjaCpu(Cpu):
                           Operators.ITE(tempCount != 0,
                                         ((res >> (size - 1)) & 0x1) == 1,
                                         cpu.regfile.read('cf')))
-        s_MSB = ((res >> (size-1)) & 0x1) == 1
-        s_MSB2 = ((res >> (size-2)) & 0x1) == 1
+        s_MSB = ((res >> (size - 1)) & 0x1) == 1
+        s_MSB2 = ((res >> (size - 2)) & 0x1) == 1
         cpu.regfile.write('of',
                           Operators.ITE(tempCount == 1,
                                         s_MSB ^ s_MSB2,
@@ -1206,7 +1217,6 @@ class BinjaCpu(Cpu):
     def ZX(cpu, expr):
         return Operators.ZEXTEND(expr.read(), expr.llil.size * 8)
 
-
     def FALLBACK(cpu, name, *operands):
         """Fallback for unimplemented instructions
         """
@@ -1215,7 +1225,8 @@ class BinjaCpu(Cpu):
                        name)
         # update registers
         for pl_reg, binja_reg in cpu.regfile.pl2b_map.items():
-            if isinstance(binja_reg, tuple) or binja_reg is None: continue
+            if isinstance(binja_reg, tuple) or binja_reg is None:
+                continue
             cpu.platform_cpu.write_register(pl_reg, cpu.regfile.read(binja_reg))
 
         # as well as all the required attributes
@@ -1227,7 +1238,8 @@ class BinjaCpu(Cpu):
 
         # restore registers to BinjaCpu
         for pl_reg, binja_reg in cpu.regfile.pl2b_map.items():
-            if isinstance(binja_reg, tuple) or binja_reg is None: continue
+            if isinstance(binja_reg, tuple) or binja_reg is None:
+                continue
             cpu.regfile.write(binja_reg, cpu.platform_cpu.read_register(pl_reg))
 
 #
@@ -1235,6 +1247,7 @@ class BinjaCpu(Cpu):
 # ARCH-SPECIFIC INSNs
 #
 #
+
 
 def x86_get_eflags(cpu, reg):
     def make_symbolic(flag_expr):
@@ -1266,6 +1279,7 @@ def x86_get_eflags(cpu, reg):
             res += flag << offset
     return res
 
+
 def insn_flags(cpu):
     # FIXME temporary hack due to binja issue with flags
     f = cpu.disasm.current_func
@@ -1275,6 +1289,7 @@ def insn_flags(cpu):
     #  mod_flags2 = cpu.arch.flags_written_by_flag_write_type.get(il2.flags)
     #  assert mod_flags2 == mod_flags
     return mod_flags
+
 
 def x86_calculate_cmp_flags(cpu, size, res, left_v, right_v):
     mod_flags = insn_flags(cpu)
@@ -1292,6 +1307,7 @@ def x86_calculate_cmp_flags(cpu, size, res, left_v, right_v):
 
     cpu.update_flags(flags)
 
+
 def x86_update_logic_flags(cpu, result, size):
     mod_flags = insn_flags(cpu)
     if not mod_flags:
@@ -1305,6 +1321,7 @@ def x86_update_logic_flags(cpu, result, size):
         'o': False
     }
     cpu.update_flags(flags)
+
 
 def x86_add(cpu, dest, src, carry=False):
     size = dest.llil.size * 8
@@ -1322,7 +1339,7 @@ def x86_add(cpu, dest, src, carry=False):
         to_add = src_v + cv
 
     res = (dest_v + to_add) & MASK
-    #Affected flags: oszapc
+    # Affected flags: oszapc
     tempCF = Operators.OR(_carry_ult(res, dest_v & MASK),
                           _carry_ult(res, src_v & MASK))
     if carry:
@@ -1331,12 +1348,12 @@ def x86_add(cpu, dest, src, carry=False):
                               Operators.AND(res == MASK,
                                             cpu.regfile.registers['cf']))
     flags = {
-        'c' : tempCF,
-        'a' : _adjust_flag(res, dest_v, src_v),
-        'z' : res == 0,
-        's' : _sign_flag(res, size),
-        'o' : (((dest_v ^ src_v ^ SIGN_MASK) & (res ^ src_v)) & SIGN_MASK) != 0,
-        'p' : _parity_flag(res)
+        'c': tempCF,
+        'a': _adjust_flag(res, dest_v, src_v),
+        'z': res == 0,
+        's': _sign_flag(res, size),
+        'o': (((dest_v ^ src_v ^ SIGN_MASK) & (res ^ src_v)) & SIGN_MASK) != 0,
+        'p': _parity_flag(res)
     }
     cpu.update_flags(flags)
     return res

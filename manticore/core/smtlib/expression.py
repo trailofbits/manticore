@@ -1,8 +1,9 @@
-import operator
-import weakref
+from functools import reduce
+
 
 class Expression(object):
     ''' Abstract taintable Expression. '''
+
     def __init__(self, taint=()):
         if self.__class__ is Expression:
             raise TypeError
@@ -12,6 +13,7 @@ class Expression(object):
 
     def __repr__(self):
         return "<%s at %x>" % (type(self).__name__, id(self))
+
     @property
     def is_tainted(self):
         return len(self._taint) != 0
@@ -120,6 +122,7 @@ class Bool(Expression):
     def __nonzero__(self):
         raise NotImplementedError("__nonzero__ for Bool")
 
+
 class BoolVariable(Bool, Variable):
     def __init__(self, name, *args, **kwargs):
         super(BoolVariable, self).__init__(name, *args, **kwargs)
@@ -180,6 +183,7 @@ class BoolITE(BoolOperation):
 
 class BitVec(Expression):
     ''' This adds a bitsize to the Expression class '''
+
     def __init__(self, size, *operands, **kwargs):
         super(BitVec, self).__init__(*operands, **kwargs)
         self.size = size
@@ -245,7 +249,7 @@ class BitVec(Expression):
         return BitVecDiv(self, self.cast(other))
 
     def __floordiv__(self, other):
-        return self /other
+        return self / other
 
     # These methods are called to implement the binary arithmetic operations
     # (+, # -, *, /, %, divmod(), pow(), **, <<, >>, &, ^, |) with reflected
@@ -420,9 +424,11 @@ class BitVecMod(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
         super(BitVecMod, self).__init__(a.size, a, b, *args, **kwargs)
 
+
 class BitVecRem(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
         super(BitVecRem, self).__init__(a.size, a, b, *args, **kwargs)
+
 
 class BitVecUnsignedRem(BitVecOperation):
     def __init__(self, a, b, *args, **kwargs):
@@ -629,6 +635,7 @@ class ArrayStore(ArrayOperation):
     def byte(self):
         return self.operands[2]
 
+
 class ArrayProxy(Array):
     def __init__(self, array):
         assert isinstance(array, Array)
@@ -663,7 +670,7 @@ class ArrayProxy(Array):
     @property
     def index_bits(self):
         return self._array.index_bits
-    
+
     @property
     def index_max(self):
         return self._array.index_max
@@ -671,7 +678,7 @@ class ArrayProxy(Array):
     @property
     def value_bits(self):
         return self._array.value_bits
-   
+
     @property
     def taint(self):
         return self._array.taint
@@ -691,7 +698,7 @@ class ArrayProxy(Array):
         if stop is None:
             stop = len(self)
         return start, stop
-        
+
     def _get_size(self, index):
         start, stop = self._fix_index(index)
         size = stop - start
@@ -711,13 +718,13 @@ class ArrayProxy(Array):
             new_array = ArrayVariable(self.index_bits, size, self.value_bits, name='%s_b%d_e%d'%(self.name, start, stop), taint=self.taint)
             new_array = ArrayProxy(new_array)
             for i in xrange(size):
-                if self.index_max is not None and not isinstance(i+start, Expression) and i+start >= self.index_max:
+                if self.index_max is not None and not isinstance(i + start, Expression) and i + start >= self.index_max:
                     new_array[i] = 0
                 else:
-                    new_array[i] = self._array.select(start+i)
+                    new_array[i] = self._array.select(start + i)
             return new_array
         else:
-            if self.index_max is not None :
+            if self.index_max is not None:
                 if not isinstance(index, Expression) and index >= self.index_max:
                     raise IndexError
             return self._array.select(index)
@@ -728,7 +735,7 @@ class ArrayProxy(Array):
             size = self._get_size(index)
             assert len(value) == size
             for i in xrange(size):
-                self.store(start+i, value[i])
+                self.store(start + i, value[i])
         else:
             self.store(index, value)
 
@@ -777,7 +784,7 @@ class BitVecZeroExtend(BitVecOperation):
         assert isinstance(size_dest, (int, long))
         assert size_dest >= operand.size
         super(BitVecZeroExtend, self).__init__(size_dest, operand, *args, **kwargs)
-        self.extend = size_dest-operand.size
+        self.extend = size_dest - operand.size
 
 
 class BitVecExtract(BitVecOperation):
@@ -803,5 +810,4 @@ class BitVecITE(BitVecOperation):
         assert isinstance(true_value, BitVec)
         assert isinstance(false_value, BitVec)
         assert true_value.size == false_value.size
-        super(BitVecITE, self).__init__(size, condition, true_value, false_value, *args, **kwargs)  
-
+        super(BitVecITE, self).__init__(size, condition, true_value, false_value, *args, **kwargs)
