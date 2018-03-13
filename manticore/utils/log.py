@@ -2,10 +2,12 @@ import logging
 import sys
 import types
 
+
 class ContextFilter(logging.Filter):
     '''
     This is a filter which injects contextual information into the log.
     '''
+
     def summarized_name(self, name):
         '''
         Produce a summarized record name
@@ -24,13 +26,15 @@ class ContextFilter(logging.Filter):
         record.name = self.summarized_name(record.name)
         return True
 
+
 manticore_verbosity = 0
 all_loggers = []
+
 
 def init_logging():
     global all_loggers
     loggers = logging.getLogger().manager.loggerDict.keys()
-        
+
     ctxfilter = ContextFilter()
     logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
               " %(message)s")
@@ -51,8 +55,10 @@ def init_logging():
         all_loggers.append(name)
     set_verbosity(manticore_verbosity)
 
+
 def loggerSetState(logger, stateid):
     logger.filters[0].stateid = stateid
+
 
 def set_verbosity(setting):
     global manticore_verbosity, all_loggers
@@ -88,7 +94,7 @@ def set_verbosity(setting):
             ('manticore.manticore', logging.DEBUG),
             ('manticore.core.smtlib', logging.DEBUG),
             ('manticore.core.smtlib.*', logging.DEBUG)
-         ]
+        ]
     ]
 
     def match(name, pattern):

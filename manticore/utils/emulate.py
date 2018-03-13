@@ -1,5 +1,4 @@
 import logging
-import inspect
 
 from ..core.memory import MemoryException, FileMap, AnonMap
 
@@ -18,17 +17,19 @@ from capstone.x86 import *
 
 logger = logging.getLogger(__name__)
 
+
 class UnicornEmulator(object):
     '''
     Helper class to emulate a single instruction via Unicorn.
     '''
+
     def __init__(self, cpu):
         self._cpu = cpu
 
         text = cpu.memory.map_containing(cpu.PC)
         # Keep track of all memory mappings. We start with just the text section
         self._should_be_mapped = {
-                text.start: (len(text), UC_PROT_READ | UC_PROT_EXEC)
+            text.start: (len(text), UC_PROT_READ | UC_PROT_EXEC)
         }
 
         # Keep track of all the memory Unicorn needs while executing this
@@ -101,7 +102,6 @@ class UnicornEmulator(object):
         else:
             raise Exception("Getting PC after unicorn emulation for %s architecture is not implemented" % self._cpu.arch)
 
-
     def _hook_xfer_mem(self, uc, access, address, size, value, data):
         '''
         Handle memory operations from unicorn.
@@ -109,7 +109,7 @@ class UnicornEmulator(object):
         assert access in (UC_MEM_WRITE, UC_MEM_READ, UC_MEM_FETCH)
 
         if access == UC_MEM_WRITE:
-            self._cpu.write_int(address, value, size*8)
+            self._cpu.write_int(address, value, size * 8)
 
         # If client code is attempting to read a value, we need to bring it
         # in from Manticore state. If we try to mem_write it here, Unicorn
@@ -127,7 +127,6 @@ class UnicornEmulator(object):
             return False
 
         return True
-
 
     def _hook_unmapped(self, uc, access, address, size, value, data):
         '''
@@ -203,7 +202,6 @@ class UnicornEmulator(object):
             if not self._should_try_again:
                 break
 
-
     def _step(self, instruction):
         '''
         A single attempt at executing an instruction.
@@ -215,7 +213,7 @@ class UnicornEmulator(object):
         if self._cpu.arch == CS_ARCH_X86:
             # The last 8 canonical registers of x86 are individual flags; replace
             # with the eflags
-            registers -= set(['CF','PF','AF','ZF','SF','IF','DF','OF'])
+            registers -= set(['CF', 'PF', 'AF', 'ZF', 'SF', 'IF', 'DF', 'OF'])
             registers.add('EFLAGS')
 
             # TODO(mark): Unicorn 1.0.1 does not support reading YMM registers,
@@ -224,8 +222,10 @@ class UnicornEmulator(object):
             # incorrect zero value being actually written to the XMM register. This is
             # fixed in Unicorn PR #819, so when that is included in a release, delete
             # these two lines.
-            registers -= set(['YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15'])
-            registers |= set(['XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'])
+            registers -= set(['YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5', 'YMM6', 'YMM7',
+                              'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12', 'YMM13', 'YMM14', 'YMM15'])
+            registers |= set(['XMM0', 'XMM1', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7',
+                              'XMM8', 'XMM9', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15'])
 
         # XXX(yan): This concretizes the entire register state. This is overly
         # aggressive. Once capstone adds consistent support for accessing
@@ -244,17 +244,17 @@ class UnicornEmulator(object):
         text_bytes = self._cpu.read_bytes(self._cpu.PC, instruction.size)
         self._emu.mem_write(self._cpu.PC, ''.join(text_bytes))
 
-        self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED,  self._hook_unmapped)
+        self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_FETCH_UNMAPPED, self._hook_unmapped)
-        self._emu.hook_add(UC_HOOK_MEM_READ,           self._hook_xfer_mem)
-        self._emu.hook_add(UC_HOOK_MEM_WRITE,          self._hook_xfer_mem)
-        self._emu.hook_add(UC_HOOK_INTR,               self._interrupt)
+        self._emu.hook_add(UC_HOOK_MEM_READ, self._hook_xfer_mem)
+        self._emu.hook_add(UC_HOOK_MEM_WRITE, self._hook_xfer_mem)
+        self._emu.hook_add(UC_HOOK_INTR, self._interrupt)
 
         saved_PC = self._cpu.PC
 
         try:
-            self._emu.emu_start(self._cpu.PC, self._cpu.PC+instruction.size, count=1)
+            self._emu.emu_start(self._cpu.PC, self._cpu.PC + instruction.size, count=1)
         except UcError as e:
             # We request re-execution by signaling error; if we we didn't set
             # _should_try_again, it was likely an actual error
@@ -265,12 +265,12 @@ class UnicornEmulator(object):
             return
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("="*10)
+            logger.debug("=" * 10)
             for register in self._cpu.canonical_registers:
                 logger.debug("Register % 3s  Manticore: %08x, Unicorn %08x",
-                        register, self._cpu.read_register(register),
-                        self._emu.reg_read(self._to_unicorn_id(register)) )
-            logger.debug(">"*10)
+                             register, self._cpu.read_register(register),
+                             self._emu.reg_read(self._to_unicorn_id(register)))
+            logger.debug(">" * 10)
 
         # Bring back Unicorn registers to Manticore
         for reg in registers:

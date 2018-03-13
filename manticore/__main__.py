@@ -61,7 +61,7 @@ def parse_arguments():
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
     parser.add_argument('--version', action='version', version='Manticore 0.1.7',
-                         help='Show program version information')
+                        help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
     parser.add_argument('--contract', type=str,
@@ -125,6 +125,7 @@ def main():
             initial_state.platform.add_symbolic_file(file)
 
     m.run(procs=args.procs, timeout=args.timeout, should_profile=args.profile)
+
 
 if __name__ == '__main__':
     main()

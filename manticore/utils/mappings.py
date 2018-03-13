@@ -18,23 +18,21 @@ if osname == "darwin" or osname.startswith("linux"):
     mmap_function = libc.mmap
     mmap_function.restype = ctypes.c_void_p
     mmap_function.argtype = [ctypes.c_void_p, ctypes.c_size_t,
-        ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_size_t]
+                             ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_size_t]
     # int munmap(void* addr, size_t len)
     munmap_function = libc.munmap
     munmap_function.restype = ctypes.c_int
     munmap_function.argtype = [ctypes.c_void_p, ctypes.c_size_t]
 
-
-    def _munmap(address,size):
+    def _munmap(address, size):
         result = munmap_function(address, size)
         assert result == 0
-
 
     def _mmap(fd, offset, size):
         prot = MMAP.PROT_READ | MMAP.PROT_WRITE
         flags = MMAP.MAP_PRIVATE
 
-        if size &0xfff !=0:
+        if size & 0xfff != 0:
             size = (size & ~0xfff) + 0x1000
 
         assert size > 0
@@ -47,4 +45,3 @@ if osname == "darwin" or osname.startswith("linux"):
 
 else:
     raise ValueError("Unsupported host OS: " + osname)
-

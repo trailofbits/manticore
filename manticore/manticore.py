@@ -57,6 +57,7 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     return State(constraints, platform)
 
 
+
 def make_decree(program, concrete_start='', **kwargs):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
@@ -87,10 +88,10 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
         logger.info('Starting with concrete input: %s', concrete_start)
 
     for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1))
+        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i + 1))
 
     for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1))
+        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i + 1))
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
@@ -100,8 +101,8 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
     platform.input.write(concrete_start)
 
     # set stdin input...
-    platform.input.write(initial_state.symbolicate_buffer('+' * 256, label='STDIN'))
-
+    platform.input.write(initial_state.symbolicate_buffer('+' * 256,
+                                                          label='STDIN'))
     return initial_state
 
 
@@ -211,7 +212,7 @@ class Manticore(Eventful):
 
         events = Eventful.all_events()
         prefix = Eventful.prefixes
-        all_events = [x+y for x, y in itertools.product(prefix, events)]
+        all_events = [x + y for x, y in itertools.product(prefix, events)]
         for event_name in all_events:
             callback_name = '{}_callback'.format(event_name)
             callback = getattr(plugin, callback_name, None)
@@ -223,21 +224,22 @@ class Manticore(Eventful):
             if callback_name.endswith('_callback'):
                 event_name = callback_name[:-9]
                 if event_name not in all_events:
-                    logger.warning("There is no event named %s for callback on plugin %s", event_name, type(plugin).__name__ )
+                    logger.warning("There is no event named %s for callback on plugin %s", event_name, type(plugin).__name__)
 
         for event_name in all_events:
             for plugin_method_name in dir(plugin):
                 if event_name in plugin_method_name:
-                    if not plugin_method_name.endswith('_callback') :
+                    if not plugin_method_name.endswith('_callback'):
                         if plugin_method_name.startswith('on_') or \
                            plugin_method_name.startswith('will_') or \
                            plugin_method_name.startswith('did_'):
-                            logger.warning("Plugin methods named '%s()' should end with '_callback' on plugin %s", plugin_method_name, type(plugin).__name__ )
+                            logger.warning("Plugin methods named '%s()' should end with '_callback' on plugin %s", plugin_method_name, type(plugin).__name__)
                     if plugin_method_name.endswith('_callback') and \
-                        not plugin_method_name.startswith('on_') and \
-                        not plugin_method_name.startswith('will_') and \
-                        not plugin_method_name.startswith('did_'):
-                            logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s", plugin_method_name, type(plugin).__name__)
+                            not plugin_method_name.startswith('on_') and \
+                            not plugin_method_name.startswith('will_') and \
+                            not plugin_method_name.startswith('did_'):
+                        logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s",
+                                       plugin_method_name, type(plugin).__name__)
 
     def unregister_plugin(self, plugin):
         assert plugin in self.plugins, "Plugin instance not registered"
@@ -303,9 +305,9 @@ class Manticore(Eventful):
 
     def subscribe(self, name, callback):
         from types import MethodType
-        if not isinstance(callback,MethodType):
+        if not isinstance(callback, MethodType):
             callback = MethodType(callback, self)
-        super(Manticore,self).subscribe(name, callback)
+        super(Manticore, self).subscribe(name, callback)
 
     @property
     def context(self):
@@ -343,7 +345,7 @@ class Manticore(Eventful):
 
         @contextmanager
         def _real_context():
-            if not self.running :
+            if not self.running:
                 yield self._context
             else:
                 with self._executor.locked_context() as context:
@@ -485,6 +487,7 @@ class Manticore(Eventful):
 
     def apply_model_hooks(self, path):
         # TODO(yan): Simplify the partial function application
+
         # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
         import core.cpu
@@ -498,11 +501,12 @@ class Manticore(Eventful):
                 name_parts = name.split('.')
                 importlib.import_module(".platforms.{}".format(name_parts[0]), 'manticore')
                 for n in name_parts:
-                    fmodel = getattr(fmodel,n)
+                    fmodel = getattr(fmodel, n)
                 assert fmodel != platforms
+
                 def cb_function(state):
                     state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
-                self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
+                self._model_hooks.setdefault(int(address, 0), set()).add(cb_function)
                 self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
 
     def _model_hook_callback(self, state, instruction):
@@ -530,7 +534,7 @@ class Manticore(Eventful):
         if pc not in self._assertions:
             return
 
-        from core.parser import parse
+        from .core.parser.parser import parse
 
         program = self._assertions[pc]
 
@@ -540,7 +544,7 @@ class Manticore(Eventful):
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                    state.cpu.pc, program)
+                        state.cpu.pc, program)
             raise TerminateState()
 
         # Everything is good add it.

@@ -3,11 +3,6 @@ import os
 import random
 import signal
 
-try:
-    import cStringIO as StringIO
-except:
-    import StringIO
-
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
 from .smtlib import solver, Expression, SolverException
@@ -16,8 +11,9 @@ from workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
-
 # This is the single global manager that will handle all shared memory among workers
+
+
 def mgr_init():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -29,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def sync(f):
-    """Synchronization decorator."""
+    """ Synchronization decorator. """
 
     def newFunction(self, *args, **kw):
         self._lock.acquire()
@@ -42,7 +38,7 @@ def sync(f):
 
 
 class Policy(object):
-    """Base class for prioritization of state search"""
+    """ Base class for prioritization of state search """
 
     def __init__(self, executor, *args, **kwargs):
         super(Policy, self).__init__(*args, **kwargs)
@@ -59,7 +55,9 @@ class Policy(object):
             yield policy_context
 
     def _add_state_callback(self, state_id, state):
-        """Save summarize(state) on policy shared context before the state is stored"""
+        """ Save summarize(state) on policy shared context before
+            the state is stored
+        """
         summary = self.summarize(state)
         if summary is None:
             return
@@ -154,7 +152,6 @@ class BranchLimited(Policy):
 
         return lst[0][0] if lst else None
 
-
 class Executor(Eventful):
     """
     The executor guides the execution of a single state, handles state forking
@@ -217,7 +214,7 @@ class Executor(Eventful):
     @contextmanager
     def locked_context(self, key=None, default=dict):
         """Executor context is a shared memory object. All workers share this. 
-        It needs a lock. It can be used like this:
+           It needs a lock. It can be used like this:
 
             with executor.context() as context:
                 visited = context['visited']
@@ -245,16 +242,17 @@ class Executor(Eventful):
 
     def _register_state_callbacks(self, state, state_id):
         """
-        Install forwarding callbacks in state so the events can go up.
-        Going up, we prepend state in the arguments.
+           Install forwarding callbacks in state so the events can go up.
+           Going up, we prepend state in the arguments.
         """
         # Forward all state signals
         self.forward_events_from(state, True)
 
     def enqueue(self, state):
         """
-        Enqueue state: save state on storage, 
-        assigns an id to it, then add it to the priority queue.
+            Enqueue state.
+            Save state on storage, assigns an id to it, then add it to the
+            priority queue.
         """
         # save the state to secondary storage
         state_id = self._workspace.save_state(state)
@@ -445,7 +443,7 @@ class Executor(Eventful):
                                         self.forward_events_from(current_state, True)
                                         self._publish('did_load_state', current_state, current_state_id)
                                         logger.info("load state %r", current_state_id)
-                                        # notify siblings we have a state to play with
+                                    # notify siblings we have a state to play with
                                 finally:
                                     self._notify_start_run()
 
