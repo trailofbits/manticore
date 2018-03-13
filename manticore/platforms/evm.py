@@ -1103,6 +1103,7 @@ def concretized_args(**policies):
         return wrapper
     return concretizer
 
+
 class EVM(Eventful):
     '''Machine State. The machine state is defined as
         the tuple (g, pc, m, i, s) which are the gas available, the
