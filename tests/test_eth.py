@@ -2,9 +2,11 @@ import unittest
 import os
 
 from manticore.core.smtlib import ConstraintSet, operators
+from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
 from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
-from manticore.platforms.evm import EVMWorld
+from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args
+
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -122,3 +124,47 @@ class EthTests(unittest.TestCase):
         x = mevm.create_account(balance=0)
         contract_account = mevm.solidity_create_contract(source_code,
                 contract_name="C", owner=owner, args=[x])
+
+
+class EthHelpers(unittest.TestCase):
+    def setUp(self):
+        self.bv = BitVec(256)
+
+    def test_concretizer(self):
+        policy = 'SOME_NONSTANDARD_POLICY'
+
+        @concretized_args(a=policy)
+        def inner_func(self, a, b):
+            return a, b
+
+        with self.assertRaises(ConcretizeStack) as cm:
+            inner_func(None, self.bv, 34)
+
+        self.assertEquals(cm.exception.pos, 1)
+        self.assertEquals(cm.exception.policy, policy)
+
+    def test_concretizer_default(self):
+        @concretized_args(b='')
+        def inner_func(self, a, b):
+            return a, b
+
+        with self.assertRaises(ConcretizeStack) as cm:
+            inner_func(None, 34, self.bv)
+
+        self.assertEquals(cm.exception.pos, 2)
+        # Make sure the policy isn't blank, i.e. we didn't pass through
+        # a falsifiable value, and we selected a default
+        self.assertTrue(cm.exception.policy)
+        self.assertNotEquals(cm.exception.policy, '')
+
+
+    def test_concretizer_doesnt_overreach(self):
+        @concretized_args(b='')
+        def inner_func(self, a, b):
+            return a, b
+
+        # Make sure we don't raise when a param is symbolic and its concretization
+        # wasn't requested.
+        inner_func(None, self.bv, 123)
+
+
