@@ -1076,12 +1076,12 @@ def concretized_args(**policies):
 
     Example decoration:
 
-        @concretized_args(size='ONE')
+        @concretized_args(size='ONE', address='')
         def LOG(self, address, size, *topics):
             ...
 
     The above will make sure that the |size| parameter to LOG is Concretized when symbolic
-    according to the 'ONE' policy.
+    according to the 'ONE' policy and concretize |address| with the default policy.
 
     :param policies: A kwargs list of argument names and their respective policies.
                          Provide None or '' as policy to use default.
