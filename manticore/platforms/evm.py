@@ -1093,12 +1093,14 @@ def concretized_args(**policies):
             spec = inspect.getargspec(func)
             for arg, policy in policies.items():
                 assert arg in spec.args, "Concretizer argument not found in wrapped function."
-                policy = policy or 'MINMAX'
                 # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
                 # since implementation method is always a bound method (self is param 0)
                 index = spec.args.index(arg)
                 if issymbolic(args[index]):
-                    raise ConcretizeStack(index, policy)
+                    if policy:
+                        raise ConcretizeStack(index, policy=policy)
+                    else:
+                        raise ConcretizeStack(index)
             return func(*args, **kwargs)
         return wrapper
     return concretizer
