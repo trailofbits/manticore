@@ -390,9 +390,9 @@ class ABI(object):
             return simplify(value)
 
         if ty.startswith('uint') and 0 <= int(ty[4:]) <= 256:
-             size = int(ty[4:])
-             assert((size % 8) == 0)
-             return get_uint(size, offset), offset+32
+            size = int(ty[4:])
+            assert((size % 8) == 0)
+            return get_uint(size, offset), offset+32
         elif ty in (u'bool'):
             return get_uint(8, offset), offset + 32
         elif ty == u'address':
