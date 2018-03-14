@@ -389,9 +389,11 @@ class ABI(object):
             value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size])))
             return simplify(value)
 
-        if ty == u'uint256':
-            return get_uint(256, offset), offset + 32
-        elif ty in (u'bool', u'uint8'):
+        if ty.startswith('uint') and 0 <= int(ty[4:]) <= 256:
+             size = int(ty[4:])
+             assert((size % 8) == 0)
+             return get_uint(size, offset), offset+32
+        elif ty in (u'bool'):
             return get_uint(8, offset), offset + 32
         elif ty == u'address':
             return get_uint(160, offset), offset + 32
