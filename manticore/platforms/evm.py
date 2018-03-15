@@ -1015,6 +1015,10 @@ class Create(Call):
     def __init__(self, value, offset, size):
         super(Create, self).__init__(gas=None, to=None, value=value, data='')
 
+    def __reduce__(self):
+        return (self.__class__, (self.value, None, None))
+
+
 class DelegateCall(Call):
     pass
 
