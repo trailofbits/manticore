@@ -1276,8 +1276,9 @@ class ManticoreEVM(Manticore):
             for contract, pc in state.context['seth.trace']:
                 if pc == 0:
                     f.write('---\n')
-                ln = '0x{:x} 0x{:x}\n'.format(contract, pc)
+                ln = '0x{:x}:0x{:x}\n'.format(contract, pc)
                 f.write(ln)
+
     def finalize(self):
         # move runnign states to final states list
         # and generate a testcase for each
