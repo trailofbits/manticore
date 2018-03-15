@@ -1,5 +1,6 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
 from builtins import str
+from builtins import int
 from builtins import hex
 from builtins import map
 from builtins import next
