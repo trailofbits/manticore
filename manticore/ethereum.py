@@ -624,6 +624,10 @@ class ManticoreEVM(Manticore):
 
             assert(name is not None)
             name = name.split(':')[1]
+
+            if contract['bin'] == '':
+                raise Exception('Solidity failed to compile your contract.')
+                
             bytecode = contract['bin'].decode('hex')
             srcmap = contract['srcmap'].split(';')
             srcmap_runtime = contract['srcmap-runtime'].split(';')
