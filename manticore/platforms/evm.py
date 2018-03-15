@@ -1660,7 +1660,7 @@ class EVM(Eventful):
         self._consume(GCOPY * ceil32(size) // 32)
 
         for i in range(size):
-            if (code_offset + i > len(self.bytecode)):
+            if code_offset + i >= len(self.bytecode):
                 self._store(mem_offset + i, 0)
             else:
                 self._store(mem_offset + i, Operators.ORD(self.bytecode[code_offset + i]))
