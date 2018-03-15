@@ -364,7 +364,7 @@ class Z3Solver(Solver):
                 # Yet, if the number of solution is large, sending back
                 # the whole formula is more expensive
                 if len(result) < 50:
-                    self._reset(temp_cs.to_string(related_to=var) )
+                    self._reset(temp_cs.to_string(related_to=var))
                     for value in result:
                         self._assert(var != value)
                 else:

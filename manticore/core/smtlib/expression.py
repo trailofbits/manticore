@@ -602,30 +602,30 @@ class Array(Expression):
     def read_BE(self, address, size):
         bytes = []
         for offset in xrange(size):
-            bytes.append(self.get(address+offset,0))
+            bytes.append(self.get(address + offset, 0))
         return BitVecConcat(size*self.value_bits, *bytes)
 
     def read_LE(self, address, size):
         address = self.cast_index(address)
         bytes = []
         for offset in xrange(size):
-            bytes.append(self.get(address+offset,0))
+            bytes.append(self.get(address + offset, 0))
         return BitVecConcat(size*self.value_bits, *reversed(bytes))
 
     def write_BE(self, address, value, size):
         address = self.cast_index(address)
-        value = BitVec(size*self.value_bits).cast(value)
+        value = BitVec(size * self.value_bits).cast(value)
         array = self    
         for offset in xrange(size):
-            array = self.store(address+offset,  BitVecExtract(value, (size-1-offset)*self.value_bits, self.value_bits))
+            array = self.store(address + offset,  BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
 
     def write_LE(self, address, value, size):
         address = self.cast_index(address)
-        value = BitVec(size*self.value_bits).cast(value)
+        value = BitVec(size * self.value_bits).cast(value)
         array = self    
         for offset in reversed(xrange(size)):
-            array = self.store(address+offset,  BitVecExtract(value, (size-1-offset)*self.value_bits, self.value_bits))
+            array = self.store(address + offset,  BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
 
 class ArrayVariable(Array, Variable):
@@ -720,7 +720,7 @@ class ArrayProxy(Array):
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
         else:
-            self._concrete_cache={}
+            self._concrete_cache = {}
 
         return self._array.select(index)
 
@@ -730,7 +730,7 @@ class ArrayProxy(Array):
         if not isinstance(value, Expression):
             value = self.cast_value(value)
         if isinstance(index, Constant):
-            self._concrete_cache[index.value]=value
+            self._concrete_cache[index.value] = value
         auxiliar = self._array.store(index, value)
         self._array = auxiliar
         return auxiliar

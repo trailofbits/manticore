@@ -552,7 +552,7 @@ class Manticore(Eventful):
         Create a serialized description of a given state.
         :param state: The state to generate information about
         :param message: Accompanying message
-        ''' 
+        '''
         testcase_id = self._output.save_testcase(state, name, message)
         logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
 

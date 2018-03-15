@@ -66,8 +66,7 @@ class ConstraintSet(object):
         self._sid += 1
         return self._sid
 
-    def to_string(self, related_to=None, replace_constants=False):
-
+    def __get_related(self, related_to=None):
         if related_to is not None:
             number_of_constraints = len(self.constraints)
             remaining_constraints = set(self.constraints)
@@ -90,17 +89,19 @@ class ConstraintSet(object):
             for constraint in self.constraints:
                 related_variables |= get_variables(constraint)
             related_constraints = set(self.constraints)
+        return related_variables, related_constraints
 
+    def to_string(self, related_to=None, replace_constants=False):
+        related_variables, related_constraints = self.__get_related(related_to)
 
         if replace_constants:
             constant_bindings = {}
             for expression in self.constraints:
                 if isinstance(expression, BitVecEq) and \
-                    isinstance(expression.operands[0], BitVecVar) and \
-                    isinstance(expression.operands[1], BitVecConstant):
+                   isinstance(expression.operands[0], BitVecVar) and \
+                   isinstance(expression.operands[1], BitVecConstant):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
-                    
         tmp = set()
         result = ''
         for var in related_variables:

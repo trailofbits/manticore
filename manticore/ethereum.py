@@ -410,7 +410,7 @@ class ABI(object):
             size = int(ty[5:])
             return data[offset:offset + size], offset + 32
         elif ty == u'address[]':
-            dyn_offset = 4 + get_uint(256,offset)
+            dyn_offset = 4 + get_uint(256, offset)
             size = get_uint(256, dyn_offset)
             return data[dyn_offset + 32:dyn_offset + 32 + size], offset + 4
         else:
@@ -455,7 +455,7 @@ class EVMAccount(object):
     ''' An EVM account '''
 
     def __init__(self, address, m=None, default_caller=None):
-        ''' Encapsulates an account. 
+        ''' Encapsulates an account.
 
             :param address: the address of this account
             :type address: 160 bit long integer
@@ -515,11 +515,10 @@ class EVMAccount(object):
                         caller = int(caller)
                     else:
                         caller = self._default_caller
-                    self._m.transaction(caller = caller,
-                                            address = self._address,
-                                            value = value,
-                                            data = tx_data
-                                         )
+                    self._m.transaction(caller=caller,
+                                        address=self._address,
+                                        value=value,
+                                        data=tx_data)
                 return f
 
         return object.__getattribute__(self, name)
@@ -689,7 +688,7 @@ class ManticoreEVM(Manticore):
 
     @property
     def _all_state_ids(self):
-        ''' IDs of the all states 
+        ''' IDs of the all states
 
             Note: state with id -1 is already in memory and it is not backed on the storage
         ''' 
@@ -926,6 +925,7 @@ class ManticoreEVM(Manticore):
         user_account = self.create_account(balance=1000)
         attacker_account = self.create_account(balance=1000)
         contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=user_account)
+
         def run_symbolic_tx():
             symbolic_data = self.make_symbolic_buffer(320)
             symbolic_value = self.make_symbolic_value()
@@ -933,7 +933,6 @@ class ManticoreEVM(Manticore):
                              address=contract_account,
                              data=symbolic_data,
                              value=symbolic_value)
-
 
         if contract_account is None:
             logger.info("Failed to create contract. Exception in constructor")
@@ -1047,7 +1046,7 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing last transaction we save it in
             our private list
         '''
-        assert  state.platform.current_transaction is None, "Should not be an ongoing tx"
+        assert state.platform.current_transaction is None, "Should not be an ongoing tx"
 
         world = state.platform
         tx = world.last_human_transaction
@@ -1058,7 +1057,6 @@ class ManticoreEVM(Manticore):
             else:
                 world.delete_account(address)
 
-
         if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
         else:
@@ -1066,7 +1064,7 @@ class ManticoreEVM(Manticore):
             # if not a revert we save the state for further transactioning
             del state.context['processed']
             self.save(state)
-            e.testcase = False  #Do not generate a testcase file
+            e.testcase = False # Do not generate a testcase file
     
     #Callbacks
     def _load_state_callback(self, state, state_id):

@@ -248,26 +248,26 @@ class ConstantFolderSimplifier(Visitor):
     def __init__(self, **kw):
         super(ConstantFolderSimplifier, self).__init__(**kw)
 
-    operations = {  BitVecAdd: operator.__add__ ,
-                    BitVecSub: operator.__sub__ ,
-                    BitVecMul: operator.__mul__ ,
-                    BitVecDiv: operator.__div__ ,
-                    BitVecShiftLeft: operator.__lshift__ ,
-                    BitVecShiftRight: operator.__rshift__ ,
-                    BitVecAnd: operator.__and__ ,
-                    BitVecOr: operator.__or__ ,
-                    BitVecXor: operator.__xor__ ,
-                    BitVecNot: operator.__not__ ,
-                    BitVecNeg: operator.__invert__ ,
-                    LessThan: operator.__lt__ ,
-                    LessOrEqual: operator.__le__ ,
-                    Equal: operator.__eq__ ,
-                    GreaterThan: operator.__gt__ ,
-                    GreaterOrEqual: operator.__ge__ ,
-                    BoolAnd: operator.__and__ ,
-                    BoolOr: operator.__or__ ,
-                    BoolNot: operator.__not__ ,
-                 }
+    operations = {BitVecAdd: operator.__add__,
+                  BitVecSub: operator.__sub__,
+                  BitVecMul: operator.__mul__,
+                  BitVecDiv: operator.__div__,
+                  BitVecShiftLeft: operator.__lshift__,
+                  BitVecShiftRight: operator.__rshift__,
+                  BitVecAnd: operator.__and__,
+                  BitVecOr: operator.__or__,
+                  BitVecXor: operator.__xor__,
+                  BitVecNot: operator.__not__,
+                  BitVecNeg: operator.__invert__,
+                  LessThan: operator.__lt__,
+                  LessOrEqual: operator.__le__,
+                  Equal: operator.__eq__,
+                  GreaterThan: operator.__gt__,
+                  GreaterOrEqual: operator.__ge__,
+                  BoolAnd: operator.__and__,
+                  BoolOr: operator.__or__,
+                  BoolNot: operator.__not__,
+                }
 
     def visit_BitVecConcat(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
@@ -309,6 +309,8 @@ class ConstantFolderSimplifier(Visitor):
 
 
 constant_folder_simplifier_cache = {}
+
+
 def constant_folder(expression):
     global constant_folder_simplifier_cache
     simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
@@ -471,12 +473,12 @@ class ArithmeticSimplifier(Visitor):
         '''
         arr, index = operands
         if isinstance(arr, ArrayVariable):
-            return 
+            return
 
         while isinstance(arr, ArrayStore) \
-            and isinstance(index, BitVecConstant) \
-            and isinstance(arr.index, BitVecConstant)\
-            and arr.index.value != index.value:
+              and isinstance(index, BitVecConstant) \
+              and isinstance(arr.index, BitVecConstant)\
+              and arr.index.value != index.value:
             arr = arr.array
 
         if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
@@ -493,16 +495,19 @@ class ArithmeticSimplifier(Visitor):
 # FIXME this should forget old expressions lru?
 arithmetic_simplifier_cache = {}
 
+
 def arithmetic_simplifier(expression):
     global arithmetic_simplifier_cache
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     return simp.result
 
+
 def simplify(expression):
     expression = constant_folder(expression)
     expression = arithmetic_simplifier(expression)
     return expression
+
 
 class TranslatorSmtlib(Visitor):
     ''' Simple visitor to translate an expression to its smtlib representation
@@ -529,7 +534,7 @@ class TranslatorSmtlib(Visitor):
             return self._cache[expression]
         '''
         TranslatorSmtlib.unique += 1
-        name ='aux%d'% TranslatorSmtlib.unique
+        name ='aux%d' % TranslatorSmtlib.unique
 
         self._bindings.append((name, expression, smtlib))
 
@@ -625,6 +630,7 @@ def translate_to_smtlib(expression, **kwargs):
     translator.visit(expression)
     return translator.result
 
+
 class Replace(Visitor):
     ''' Simple visitor to replaces expresions '''
     def __init__(self, bindings, **kwargs):
@@ -636,13 +642,14 @@ class Replace(Visitor):
             return self.bindings[expression]
         return expression
 
+
 def replace(expression, bindings):
     visitor = Replace(bindings)
     visitor.visit(expression)
     return visitor.result
 
+
 def get_variables(expression):
     visitor = GetDeclarations()
     visitor.visit(expression)
     return visitor.result
-
