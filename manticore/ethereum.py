@@ -1272,6 +1272,12 @@ class ManticoreEVM(Manticore):
                 logger.debug("Using iterpickle to dump state")
                 statef.write(iterpickle.dumps(state, 2))
 
+        with testcase.open_stream('trace') as f:
+            for contract, pc in state.context['seth.trace']:
+                if pc == 0:
+                    f.write('---\n')
+                ln = '0x{:x} 0x{:x}\n'.format(contract, pc)
+                f.write(ln)
     def finalize(self):
         # move runnign states to final states list
         # and generate a testcase for each
