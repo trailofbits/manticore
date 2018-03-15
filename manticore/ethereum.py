@@ -947,8 +947,10 @@ class ManticoreEVM(Manticore):
         # Check if there is a pending transaction
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
-            # there is at least one states in seth saved states
-            assert context['_saved_states'] or self.initial_state is not None
+
+            if not context['_saved_states'] or self.initial_state is None:
+                return
+
             # there is no states added to the executor queue
             assert len(self._executor.list()) == 0
 
@@ -958,7 +960,7 @@ class ManticoreEVM(Manticore):
 
         # A callback will use _pending_transaction and issue the transaction
         # in each state (see load_state_callback)
-        result = super(ManticoreEVM, self).run(**kwargs)
+        super(ManticoreEVM, self).run(**kwargs)
 
         with self.locked_context('seth') as context:
             if len(context['_saved_states']) == 1:
@@ -968,7 +970,6 @@ class ManticoreEVM(Manticore):
 
             # clear pending transcations. We are done.
             context['_pending_transaction'] = None
-        return result
 
     def save(self, state, final=False):
         ''' Save a state in secondary storage and add it to running or final lists
