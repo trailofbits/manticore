@@ -2208,7 +2208,7 @@ class EVMWorld(Platform):
 
     def execute(self):
         try:
-            print self.current, self.all_transactions
+            #print self.current, self.all_transactions
             if self.current is None:
                 raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self._process_pending_transaction()
@@ -2216,7 +2216,7 @@ class EVMWorld(Platform):
         except StartTx:
             pass
         except EndTx as ex:
-            print ex, ex.result
+            #print ex, ex.result
             self._close_transaction(ex.result, ex.data)
             if self.depth == 0:
                 raise TerminateState(result, testcase=True)
