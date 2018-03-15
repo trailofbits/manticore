@@ -90,7 +90,7 @@ exploit_account = m.solidity_create_contract(exploit_source_code, owner=attacker
 
 print "[+] Setup the exploit"
 exploit_account.set_vulnerable_contract(contract_account)
-exploit_account.set_reentry_reps(30)
+exploit_account.set_reentry_reps(2)
 
 print "[+] Setting attack string"
 #'\x9d\x15\xfd\x17'+pack_msb(32)+pack_msb(4)+'\x5f\xd8\xc7\x10',

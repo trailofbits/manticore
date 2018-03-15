@@ -443,7 +443,7 @@ class ABI(object):
 
 class EVMAccount(object):
     ''' An EVM account '''
-    def __init__(self, address, seth=None, default_caller=None):
+    def __init__(self, address, m=None, default_caller=None):
         ''' Encapsulates an account. 
 
             :param address: the address of this account
@@ -453,8 +453,8 @@ class EVMAccount(object):
 
         '''
         self._default_caller = default_caller
-        self._seth=seth
-        self._address=address
+        self._m = m
+        self._address = address
         self._hashes = None
         self._init_hashes()
 
@@ -471,12 +471,11 @@ class EVMAccount(object):
     def _null_func(self):
         pass
 
-
     def _init_hashes(self):
         #initializes self._hashes lazy
-        if self._hashes is None and self._seth is not None:
+        if self._hashes is None and self._m is not None:
             self._hashes = {}
-            md = self._seth.get_metadata(self._address)
+            md = self._m.get_metadata(self._address)
             if md is not None:
                 for signature, func_id in md.hashes.items():
                     func_name = str(signature.split('(')[0])
@@ -505,13 +504,11 @@ class EVMAccount(object):
                         caller = int(caller)
                     else:
                         caller = self._default_caller
-                    self._seth.transaction(caller=caller,
+                    self._m.transaction(caller=caller,
                                             address=self._address,
                                             value=value,
                                             data=tx_data
                                          )
-                    self._caller = None
-                    self._value = 0
                 return f
 
         return object.__getattribute__(self, name)            
@@ -524,7 +521,7 @@ class ManticoreEVM(Manticore):
         Usage Ex::
 
             from manticore.ethereum import ManticoreEVM, ABI
-            seth = ManticoreEVM()
+            m = ManticoreEVM()
             #And now make the contract account to analyze
             source_code = """
                 pragma solidity ^0.4.15;
@@ -536,8 +533,8 @@ class ManticoreEVM(Manticore):
                 }
             """
             #Initialize user and contracts
-            user_account = seth.create_account(balance=1000)
-            contract_account = seth.solidity_create_contract(source_code, owner=user_account, balance=0)
+            user_account = m.create_account(balance=1000)
+            contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
             contract_account.set(12345, value=100) 
 
             seth.report()
@@ -768,7 +765,7 @@ class ManticoreEVM(Manticore):
         ''' Balance for account `address` on state `state_id` '''
         if isinstance(address, EVMAccount):
             address = int(address)
-        return self.get_world(state_id).get_balance()
+        return self.get_world(state_id).get_balance(address)
 
     def get_storage_data(self, address, offset, state_id=None):
         ''' Storage data for `offset` on account `address` on state `state_id` '''
@@ -821,7 +818,6 @@ class ManticoreEVM(Manticore):
                                        balance=balance,
                                        address=address,
                                        init=tuple(init_bytecode)+tuple(ABI.make_function_arguments(*args)))
-
         if not self.count_running_states() or self.get_code(account) == '':
             return None
         return account
@@ -839,17 +835,22 @@ class ManticoreEVM(Manticore):
         '''
         assert self.count_running_states() == 1, "No forking yet"
         assert init is not None
+        #FIxme?
+        #We force the same address/accounts on all the states
         if address is None:
             address = self.world.new_address()
 
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is None
             context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
-
+        
         self.run(procs=self._config_procs)
 
-        self.contract_accounts.add(address)
 
+        #FIxme?
+        #We assume the constructor run in all states effectivelly and add the 
+        #address to the accounts list
+        self.contract_accounts.add(address)
         return EVMAccount(address, self, default_caller=owner)
 
     def create_account(self, balance=0, address=None, code=''):
@@ -861,10 +862,18 @@ class ManticoreEVM(Manticore):
             :type address: int
             :return: an EVMAccount
         '''
-        assert self.count_running_states() == 1, "No forking yet"
+        if self.count_running_states() != 1:
+            raise EVMException("This works only when there is a single state")
         with self.locked_context('seth') as context:
-           assert context['_pending_transaction'] is None
-        address = self.world.create_account( address, balance, code=code, storage=None)
+            if context['_pending_transaction'] is not None:
+                raise EVMException("It should be no other pending transaction")
+
+        #self.world refers to the evm world of the single state in existance
+        address = self.world.new_address()
+        self.world.create_account( address, balance, code=code, storage=None)
+
+        #keep a list just in case. 
+        #Caveat: After some execution the account list on different states may differ
         self.normal_accounts.add(address)
         return address
 
@@ -1030,26 +1039,26 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing last transaction we save it in
             our private list 
         '''
+        assert  state.platform.current_transaction is None, "Should not be an ongoing tx"
+
         world = state.platform
+        tx = world.last_human_transaction
         state.context['last_exception'] = e
-        with self.locked_context('seth') as context:
-            ty, caller, address, value, data = context['_pending_transaction']
-        # TODO(mark): This will break if we ever change the message text. Use a less
-        # brittle check.
-        #'REVERT', 'THROW', 'TXERROR', 'STOP', 'RETURN' ?
-        if e.message not in {'REVERT', 'THROW', 'TXERROR'}:
+        if tx.sort == 'CREATE':
+            if tx.result == 'RETURN':
+                world.set_code(tx.address, tx.return_data)
+            else:
+                world.delete_account(address)
+
+
+        if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
+            self.save(state, final=True)
+        else:
+            assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
             # if not a revert we save the state for further transactioning
-            state.context['processed'] = False
-            if e.message == 'RETURN':
-                if ty == 'CREATE_CONTRACT':
-                    world.set_code(address, world.last_return_data)
+            del state.context['processed']
             self.save(state)
             e.testcase = False  #Do not generate a testcase file
-        else:
-            #Remove account if constructor failed
-            if ty == 'CREATE_CONTRACT':
-                world.delete_account(address)
-            self.save(state, final=True)
     
     #Callbacks
     def _load_state_callback(self, state, state_id):
@@ -1088,7 +1097,7 @@ class ManticoreEVM(Manticore):
         assert state.platform.constraints == state.platform.current.constraints
         logger.debug("%s", state.platform.current)
 
-        if state.platform.current_transaction.sort == 'Call':
+        if state.platform.current_transaction.sort == 'CALL':
             coverage_context_name = 'runtime_coverage'
         else:
             coverage_context_name = 'init_coverage'
@@ -1154,7 +1163,7 @@ class ManticoreEVM(Manticore):
                 metadata = self.get_metadata(blockchain.transactions[-1].address)
                 if metadata is not None:
                     summary.write('Last instruction at contract %x offset %x\n' %(address, offset))
-                    at_runtime = blockchain.transactions[-1].sort != 'Create'
+                    at_runtime = blockchain.transactions[-1].sort != 'CREATE'
                     summary.write(metadata.get_source_for(offset, at_runtime))
                     summary.write('\n')
 
@@ -1220,7 +1229,7 @@ class ManticoreEVM(Manticore):
                     tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
                 
                 metadata = self.get_metadata(tx.address)
-                if tx.sort == 'Call':
+                if tx.sort == 'CALL':
                     if metadata is not None:
                         function_id = tx.data[:4]  #hope there is enough data
                         function_id = state.solve_one(function_id).encode('hex')
@@ -1286,7 +1295,8 @@ class ManticoreEVM(Manticore):
 
 
     def finalize(self):
-        #move runnign states to final states list
+        logger.debug("Finalizing %d states.", self.count_states)
+        #move running states to final states list
         # and generate a testcase for each
         q = Queue()
         map(q.put, self._running_state_ids)

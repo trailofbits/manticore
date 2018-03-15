@@ -253,6 +253,10 @@ class ConstantFolderSimplifier(Visitor):
                     Equal : operator.__eq__ ,
                     GreaterThan : operator.__gt__ ,
                     GreaterOrEqual : operator.__ge__ ,
+                    BoolAnd : operator.__and__ ,
+                    BoolOr : operator.__or__ ,
+                    BoolNot : operator.__not__ ,
+
                  }
 
     def visit_BitVecConcat(self, expression, *operands):
@@ -455,16 +459,20 @@ class ArithmeticSimplifier(Visitor):
         ''' ArraySelect (ArrayStore((ArrayStore(x0,v0) ...),xn, vn), x0)
                 -> v0
         '''
-        arr = expression.array
-        index = expression.index
-        while  isinstance(index, BitVecConstant) \
-            and isinstance(arr, ArrayStore) \
+        arr, index = operands
+        if isinstance(arr, ArrayVariable):
+            return 
+
+        while isinstance(arr, ArrayStore) \
+            and isinstance(index, BitVecConstant) \
             and isinstance(arr.index, BitVecConstant)\
             and arr.index.value != index.value:
             arr = arr.array
 
         if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
             return arr.value
+        else:
+            return arr.select(index)
 
     def visit_Expression(self, expression, *operands):
         assert len(operands) == 0
@@ -505,7 +513,11 @@ class TranslatorSmtlib(Visitor):
                 return nm #fixme change to dict
             if smtlib == smt:
                 return nm #fixme change to dict
+        
+        if expression in self._cache:
+            return self._cache[expression]
         '''
+
         TranslatorSmtlib.unique+=1
         name ='aux%d'% TranslatorSmtlib.unique
 
@@ -551,13 +563,13 @@ class TranslatorSmtlib(Visitor):
         UnsignedLessOrEqual: 'bvule',
         UnsignedGreaterThan: 'bvugt',
         UnsignedGreaterOrEqual: 'bvuge',
-        ArraySelect: 'select',
         BitVecSignExtend: '(_ sign_extend %d)',
         BitVecZeroExtend: '(_ zero_extend %d)',
         BitVecExtract: '(_ extract %d %d)',
         BitVecConcat: 'concat',
         BitVecITE: 'ite',
         ArrayStore: 'store',
+        ArraySelect: 'select',
     }
 
     def visit_BitVecConstant(self, expression):
@@ -567,7 +579,6 @@ class TranslatorSmtlib(Visitor):
         else:
             return '#x%0*x' % (int(expression.size/4),
                                  expression.value & expression.mask)
-
 
     def visit_BoolConstant(self, expression):
         return expression.value and 'true' or 'false'
@@ -596,7 +607,6 @@ class TranslatorSmtlib(Visitor):
         if self.use_bindings:
             for name, expr, smtlib in reversed(self._bindings):
                 output = '( let ((%s %s)) %s )' % (name, smtlib, output)
-        #self._bindings = []
         return output
 
 def translate_to_smtlib(expression, **kwargs):

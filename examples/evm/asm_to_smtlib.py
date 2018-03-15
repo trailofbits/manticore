@@ -42,34 +42,13 @@ balance = constraints.new_bitvec(256, name='balance')
 
 code = EVMAsm.assemble(
 '''
-PUSH1 0x60
-PUSH1 0x40 
-MSTORE 
-PUSH1 0x0 
-DUP1 
-PUSH1 0x14 
-PUSH2 0x100 
-EXP
-DUP2 
-SLOAD 
-DUP2 
-PUSH1 0xFF 
-MUL 
-NOT 
-AND 
-SWAP1 
-DUP4 
-ISZERO 
-ISZERO 
-MUL 
-OR 
-SWAP1 
-SSTORE 
-POP 
-CALLVALUE 
-ISZERO 
-PUSH2 0x29 
-JUMPI 
+PUSH1 00
+DUP5
+SWAP1
+SWAP2
+SWAP1
+SWAP2
+POP   
 '''
 )
 
