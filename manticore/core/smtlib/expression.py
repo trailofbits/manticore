@@ -603,14 +603,14 @@ class Array(Expression):
         bytes = []
         for offset in xrange(size):
             bytes.append(self.get(address + offset, 0))
-        return BitVecConcat(size*self.value_bits, *bytes)
+        return BitVecConcat(size * self.value_bits, *bytes)
 
     def read_LE(self, address, size):
         address = self.cast_index(address)
         bytes = []
         for offset in xrange(size):
             bytes.append(self.get(address + offset, 0))
-        return BitVecConcat(size*self.value_bits, *reversed(bytes))
+        return BitVecConcat(size * self.value_bits, *reversed(bytes))
 
     def write_BE(self, address, value, size):
         address = self.cast_index(address)

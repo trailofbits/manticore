@@ -1064,7 +1064,7 @@ class ManticoreEVM(Manticore):
             # if not a revert we save the state for further transactioning
             del state.context['processed']
             self.save(state)
-            e.testcase = False # Do not generate a testcase file
+            e.testcase = False  # Do not generate a testcase file
     
     #Callbacks
     def _load_state_callback(self, state, state_id):

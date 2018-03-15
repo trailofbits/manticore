@@ -5,9 +5,7 @@ import inspect
 from functools import wraps
 from ..utils.helpers import issymbolic, memoized
 from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, \
-                          Array, Operators, Constant, BitVecConstant, \
-                          ConstraintSet, SolverException
+from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, SolverException
 from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify
@@ -31,14 +29,17 @@ TOOHIGHMEM = 0x1000
 PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'origin', 'price', 'data', 'caller', 'value', 'bytecode', 'gas'])
 EVMLog = namedtuple("EVMLog", ['address', 'memlog', 'topics'])
 
+
 def ceil32(x):
     size = 256
     if isinstance(x, BitVec):
         size = x.size
     return Operators.ITEBV(size, Operators.UREM(x, 32) == 0, x, x + 32 - Operators.UREM(x, 32))
 
+
 def to_signed(i):
     return Operators.ITEBV(256, i < TT255, i, i - TT256)
+
 
 class Transaction(object):
     __slots__ = '_sort', 'address', 'origin', 'price', 'data', 'caller', 'value', '_return_data', '_result'
@@ -977,7 +978,6 @@ class EVM(Eventful):
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
-
         self._constraints = constraints
         self.last_exception = None
         self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
@@ -1076,7 +1076,7 @@ class EVM(Eventful):
         flag = Operators.UGT(new_totalfee, old_totalfee)
         self._consume(Operators.ITEBV(512, flag, memfee, 0))
 
-        self._allocated=Operators.ITEBV(512, flag, Operators.ZEXTEND(ceil32(address), 512), Operators.ZEXTEND(allocated, 512))
+        self._allocated = Operators.ITEBV(512, flag, Operators.ZEXTEND(ceil32(address), 512), Operators.ZEXTEND(allocated, 512))
 
     @property
     def allocated(self):
@@ -1189,13 +1189,14 @@ class EVM(Eventful):
     def execute(self):
         if issymbolic(self.pc):
             expression = self.pc
+
             def setstate(state, value):
                 state.platform.current.pc = value
 
             raise Concretize("Concretice PC",
-                              expression=expression,
-                              setstate=setstate,
-                              policy='ALL')
+                             expression=expression,
+                             setstate=setstate,
+                             policy='ALL')
         last_pc = self.pc
         current = self.instruction
 
@@ -1221,9 +1222,9 @@ class EVM(Eventful):
                 self.stack[-ex.pos] = value
 
             raise Concretize("Concretice Stack Variable",
-                                expression=self.stack[-ex.pos], 
-                                setstate=setstate,
-                                policy=ex.policy)
+                             expression=self.stack[-ex.pos],
+                             setstate=setstate,
+                             policy=ex.policy)
         except StartTx:
             #Revert the stack so it looks like before executing the instruction
             self._push_arguments(arguments)
@@ -1257,12 +1258,10 @@ class EVM(Eventful):
         return data
 
     def write_buffer(self, offset, buf):
-        count = 0
-        self._allocate(offset+len(buf))
+        self._allocate(offset + len(buf))
 
-        for c in buf:
-            self._store(offset+count, c)
-            count += 1
+        for i, c in enumerate(buf):
+            self._store(offset + i, Operators.ORD(c))
 
     def _load(self, offset):
         return simplify(self.memory[offset]).value
@@ -1293,8 +1292,8 @@ class EVM(Eventful):
         raise InvalidOpcode()
 
     ############################################################################
-    ## Stop and Arithmetic Operations
-    ##  All arithmetic is modulo 256 unless otherwise noted.
+    # Stop and Arithmetic Operations
+    # All arithmetic is modulo 256 unless otherwise noted.
 
     def STOP(self):
         ''' Halts execution '''
@@ -1465,7 +1464,7 @@ class EVM(Eventful):
             return value
 
     ############################################################################
-    ## Environmental Information
+    # Environmental Information
     def ADDRESS(self):
         '''Get address of currently executing account'''
         return self.address
@@ -1546,7 +1545,7 @@ class EVM(Eventful):
             else:
                 value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), 0, Operators.ORD(self.bytecode[code_offset+i]))
             self.memory[mem_offset+i] = value
-        self._publish( 'did_evm_read_code', code_offset, size)
+        self._publish('did_evm_read_code', code_offset, size)
 
     def GASPRICE(self):
         '''Get price of gas in current environment'''
@@ -1669,19 +1668,19 @@ class EVM(Eventful):
     def JUMPDEST(self):
         '''Mark a valid destination for jumps'''
 
-    ##########################################################################
+    ############################################################################
     # Push Operations
     def PUSH(self, value):
         '''Place 1 to 32 bytes item on stack'''
         return value
 
-    ##########################################################################
+    ############################################################################
     # Duplication Operations
     def DUP(self, *operands):
         '''Duplicate stack item'''
         return (operands[-1],) + operands
 
-    ##########################################################################
+    ############################################################################
     # Exchange Operations
     def SWAP(self, *operands):
         '''Exchange 1st and 2nd stack items'''
@@ -1689,7 +1688,7 @@ class EVM(Eventful):
         b = operands[-1]
         return (b,) + operands[1:-1] + (a,)
 
-    ##########################################################################
+    ############################################################################
     # Logging Operations
     @concretized_args(size='ONE')
     def LOG(self, address, size, *topics):
@@ -1698,7 +1697,7 @@ class EVM(Eventful):
         self.world.log(memlog, topic, data)
 
     ############################################################################
-    ##System operations
+    # System operations
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
         self.start_transaction('CREATE',
@@ -1731,7 +1730,6 @@ class EVM(Eventful):
 
     @CALL.pos
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
-        #assert self.prev_tx.sort == 'Call', 'Only Create or Call supported for now'
         data = self.world.current_transaction.return_data
 
         if data is not None:
@@ -1972,14 +1970,14 @@ class EVMWorld(Platform):
         internal_transactions = self._internal_transactions[-1]
         if internal_transactions:
             internal_tx = internal_transactions[-1]
-            if  internal_tx.result is None:
+            if internal_tx.result is None:
                 internal_tx.set_result(result, data)
                 del self._internal_transactions[-1]
                 self._internal_transactions[-1].insert(0, internal_tx)
                 return
 
         assert 0 == self.depth
-        tx = self._transactions[-1]        
+        tx = self._transactions[-1]
         assert tx.result is None
         tx.set_result(result, data)
 
@@ -2101,7 +2099,7 @@ class EVMWorld(Platform):
 
     def has_storage(self, address):
         #FIXME keep a variable that records if something(!=0) has been written
-        return True # len(self.world_state[address]['storage'].items()) != 0
+        return True  # len(self.world_state[address]['storage'].items()) != 0
 
     def get_storage(self, address):
         return self.world_state[address]['storage']
@@ -2111,7 +2109,7 @@ class EVMWorld(Platform):
 
     def get_balance(self, address):
         if address not in self.world_state:
-            return 0 
+            return 0
         return self.world_state[address]['balance']
 
     def add_to_balance(self, address, value):
@@ -2124,7 +2122,7 @@ class EVMWorld(Platform):
 
     def get_code(self, address):
         if address not in self.world_state:
-            return '' 
+            return ''
         return self.world_state[address]['code']
 
     def set_code(self, address, data):
@@ -2183,7 +2181,7 @@ class EVMWorld(Platform):
         if self.depth:
             self.current.constraints = None
         #MAKE A DEEP COPY OF THE SPECIFIC ACCOUNT
-        self._callstack.append((self.logs, self.deleted_accounts, copy.copy(self.world_state[vm.address]['storage']), vm ))
+        self._callstack.append((self.logs, self.deleted_accounts, copy.copy(self.world_state[vm.address]['storage']), vm))
 
         self.current.constraints = self.constraints
         # self.forward_events_from(self.current)
@@ -2235,7 +2233,7 @@ class EVMWorld(Platform):
     def run(self):
         while True:
             self.execute()
-    
+
     def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
         ''' code is the runtime code '''
         storage = {} if storage is None else storage
@@ -2263,14 +2261,14 @@ class EVMWorld(Platform):
         '''
         address = self.create_account(address, 0)
         self.start_transaction('CREATE', address, origin, price, init, caller, balance)
-        self._process_pending_transaction( )
+        self._process_pending_transaction()
 
         return address
 
     def transaction(self, address, origin=None, price=0, data='', caller=None, value=0):
         assert self._pending_transaction is None
-        self.start_transaction( 'CALL', address, origin=origin, price=price, data=data, caller=caller, value=value)
-        self._process_pending_transaction(  )
+        self.start_transaction('CALL', address, origin=origin, price=price, data=data, caller=caller, value=value)
+        self._process_pending_transaction()
 
     def start_transaction(self, sort, address, origin=None, price=0, data=None, caller=None, value=0, gas=2300):
         ''' Initiate a transaction
@@ -2293,7 +2291,6 @@ class EVMWorld(Platform):
             raise EVMException("Symbolic origin address not supported yet.")
         if issymbolic(caller):
             raise EVMException("Symbolic caller address not supported yet.")
-
 
         if caller is None:
             caller = origin
