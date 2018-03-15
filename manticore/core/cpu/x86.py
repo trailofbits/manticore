@@ -15,109 +15,113 @@ from .abstractcpu import (
 from ..smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
 from ..memory import MemoryException, ConcretizeMemory
 from ...utils.helpers import issymbolic
+from functools import reduce
 
 logger = logging.getLogger(__name__)
 
 OP_NAME_MAP = {
-    'JNE':      'JNZ',
-    'JE':       'JZ',
-    'CMOVE':    'CMOVZ',
-    'CMOVNE':   'CMOVNZ',
-    'MOVUPS':   'MOV',
-    'MOVABS':   'MOV',
-    'MOVSB':    'MOVS',
-    'MOVSW':    'MOVS',
-    'MOVSQ':    'MOVS',
-    'SETNE':    'SETNZ',
-    'SETE':     'SETZ',
-    'LODSB':    'LODS',
-    'LODSW':    'LODS',
-    'LODSD':    'LODS',
-    'LODSQ':    'LODS',
-    'STOSB':    'STOS',
-    'STOSW':    'STOS',
-    'STOSD':    'STOS',
-    'STOSQ':    'STOS',
-    'SCASB':    'SCAS',
-    'SCASW':    'SCAS',
-    'SCASD':    'SCAS',
-    'SCASQ':    'SCAS',
-    'CMPSB':    'CMPS',
-    'CMPSW':    'CMPS',
-    'CMPSD':    'CMPS',
-    'VMOVSD':   'MOVSD',
-    'FUCOMPI':  'FUCOMIP',
+    'JNE': 'JNZ',
+    'JE': 'JZ',
+    'CMOVE': 'CMOVZ',
+    'CMOVNE': 'CMOVNZ',
+    'MOVUPS': 'MOV',
+    'MOVABS': 'MOV',
+    'MOVSB': 'MOVS',
+    'MOVSW': 'MOVS',
+    'MOVSQ': 'MOVS',
+    'SETNE': 'SETNZ',
+    'SETE': 'SETZ',
+    'LODSB': 'LODS',
+    'LODSW': 'LODS',
+    'LODSD': 'LODS',
+    'LODSQ': 'LODS',
+    'STOSB': 'STOS',
+    'STOSW': 'STOS',
+    'STOSD': 'STOS',
+    'STOSQ': 'STOS',
+    'SCASB': 'SCAS',
+    'SCASW': 'SCAS',
+    'SCASD': 'SCAS',
+    'SCASQ': 'SCAS',
+    'CMPSB': 'CMPS',
+    'CMPSW': 'CMPS',
+    'CMPSD': 'CMPS',
+    'VMOVSD': 'MOVSD',
+    'FUCOMPI': 'FUCOMIP',
 }
 
 
 ###############################################################################
-#Auxiliar decorators...
+# Auxiliar decorators...
 def rep(old_method):
     # This decorates REP instructions (STOS, LODS, MOVS, INS, OUTS)
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         prefix = cpu.instruction.prefix
         if (cs.x86.X86_PREFIX_REP in prefix):
-            counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8]
+            counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size * 8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
                 raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
 
             FLAG = count != 0
 
-            #Repeat!
+            # Repeat!
             if FLAG:
                 old_method(cpu, *args, **kw_args)
-                count = cpu.write_register(counter_name, count-1)
-                FLAG = count != 0 #true FLAG means loop
+                count = cpu.write_register(counter_name, count - 1)
+                FLAG = count != 0  # true FLAG means loop
 
             if not FLAG:
                 cpu.PC += cpu.instruction.size
 
         else:
             cpu.PC += cpu.instruction.size
-            old_method(cpu, *args,**kw_args)
+            old_method(cpu, *args, **kw_args)
 
     return new_method
 
+
 def repe(old_method):
-    #This decorates REPE enabled instructions (SCAS, CMPS)
+    # This decorates REPE enabled instructions (SCAS, CMPS)
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         prefix = cpu.instruction.prefix
         if (cs.x86.X86_PREFIX_REP in prefix) or (cs.x86.X86_PREFIX_REPNE in prefix):
-            counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size*8]
+            counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.instruction.addr_size * 8]
             count = cpu.read_register(counter_name)
             if issymbolic(count):
                 raise ConcretizeRegister(cpu, counter_name, "Concretizing {} on REP instruction".format(counter_name), policy='SAMPLED')
 
             FLAG = count != 0
 
-            #Repeate!
+            # Repeate!
             if FLAG:
                 old_method(cpu, *args, **kw_args)
-                count = cpu.write_register(counter_name, count-1)
+                count = cpu.write_register(counter_name, count - 1)
 
-                #REPE
+                # REPE
                 if cs.x86.X86_PREFIX_REP in prefix:
-                    FLAG = Operators.AND(cpu.ZF == True, count != 0) #true FLAG means loop
-                #REPNE
+                    FLAG = Operators.AND(cpu.ZF == True, count != 0)  # true FLAG means loop
+                # REPNE
                 elif cs.x86.X86_PREFIX_REPNE in prefix:
-                    FLAG = Operators.AND(cpu.ZF == False, count != 0) #true FLAG means loop
+                    FLAG = Operators.AND(cpu.ZF == False, count != 0)  # true FLAG means loop
 
-            #if issymbolic(FLAG):
+            # if issymbolic(FLAG):
             #    raise ConcretizeRegister(cpu, 'ZF', "Concretizing ZF on REP instruction", policy='ALL')
 
-            #if not FLAG:
+            # if not FLAG:
             cpu.PC += Operators.ITEBV(cpu.address_bit_size, FLAG, 0, cpu.instruction.size)
 
         else:
             cpu.PC += cpu.instruction.size
-            old_method(cpu, *args,**kw_args)
+            old_method(cpu, *args, **kw_args)
     return new_method
 
 ###############################################################################
-#register/flag descriptors
+# register/flag descriptors
+
+
 class AMD64RegFile(RegisterFile):
     Regspec = collections.namedtuple('RegSpec', 'register_id ty offset size reset')
     _flags = {
@@ -229,7 +233,7 @@ class AMD64RegFile(RegisterFile):
         'FP6': Regspec('FP6', float, 0, 80, False),
         'FP7': Regspec('FP7', float, 0, 80, False),
         'FPSW': Regspec('FPSW', int, 0, 16, False),
-        'TOP' : Regspec('FPSW', int, 11, 3, False),
+        'TOP': Regspec('FPSW', int, 11, 3, False),
         'FPTAG': Regspec('FPTAG', int, 0, 16, False),
         'FPCW': Regspec('FPCW', int, 0, 16, False),
         'CF': Regspec('CF', bool, 0, 1, False),
@@ -272,162 +276,163 @@ class AMD64RegFile(RegisterFile):
         'XMM13': Regspec('YMM13', int, 0, 128, False),
         'XMM14': Regspec('YMM14', int, 0, 128, False),
         'XMM15': Regspec('YMM15', int, 0, 128, False),
-        }
+    }
 
-    #this should be calculated on __import__ using _table
+    # this should be calculated on __import__ using _table
     _affects = {
-        'RIP' : ('EIP', 'IP'),
-        'EIP' : ('IP', 'RIP'),
-        'IP' : ('EIP', 'RIP'),
-        'RAX' : ('AH', 'AL', 'AX', 'EAX'),
+        'RIP': ('EIP', 'IP'),
+        'EIP': ('IP', 'RIP'),
+        'IP': ('EIP', 'RIP'),
+        'RAX': ('AH', 'AL', 'AX', 'EAX'),
         'EAX': ('AH', 'AL', 'AX', 'RAX'),
         'AX': ('AH', 'AL', 'EAX', 'RAX'),
         'AH': ('AX', 'EAX', 'RAX'),
         'AL': ('AX', 'EAX', 'RAX'),
-        'RBX' : ('BH', 'BL', 'BX', 'EBX'),
-        'EBX' : ('BH', 'BL', 'BX', 'RBX'),
-        'BX' : ('BH', 'BL', 'EBX', 'RBX'),
-        'BH' : ('BX', 'EBX', 'RBX'),
-        'BL' : ('BX', 'EBX', 'RBX'),
-        'RCX' : ('CH', 'CL', 'CX', 'ECX'),
-        'ECX' : ('CH', 'CL', 'CX', 'RCX'),
-        'CX' : ('CH', 'CL', 'ECX', 'RCX'),
-        'CH' : ('CX', 'ECX', 'RCX'),
-        'CL' : ('CX', 'ECX', 'RCX'),
-        'RDX' : ('DH', 'DL', 'DX', 'EDX'),
-        'EDX' : ('DH', 'DL', 'DX', 'RDX'),
-        'DX' : ('DH', 'DL', 'EDX', 'RDX'),
-        'DH' : ('DX', 'EDX', 'RDX'),
-        'DL' : ('DX', 'EDX', 'RDX'),
-        'RSI' : ('ESI', 'SI', 'SIH', 'SIL'),
-        'ESI' : ('RSI', 'SI', 'SIH', 'SIL'),
-        'SI' : ('ESI', 'RSI', 'SIH', 'SIL'),
-        'SIH' : ('ESI', 'RSI', 'SI'),
-        'SIL' : ('ESI', 'RSI', 'SI'),
-        'RDI' : ('DI', 'DIH', 'DIL', 'EDI'),
-        'EDI' : ('DI', 'DIH', 'DIL', 'RDI'),
-        'DI' : ('DIH', 'DIL', 'EDI', 'RDI'),
-        'DIH' : ('DI', 'EDI', 'RDI'),
-        'DIL' : ('DI', 'EDI', 'RDI'),
-        'RSP' : ('ESP', 'SP', 'SPH', 'SPL'),
-        'ESP' : ('RSP', 'SP', 'SPH', 'SPL'),
-        'SP' : ('ESP', 'RSP', 'SPH', 'SPL'),
-        'SPH' : ('ESP', 'RSP', 'SP'),
-        'SPL' : ('ESP', 'RSP', 'SP'),
-        'RBP' : ('BP', 'BPH', 'BPL', 'EBP'),
-        'EBP' : ('BP', 'BPH', 'BPL', 'RBP'),
-        'BP' : ('BPH', 'BPL', 'EBP', 'RBP'),
-        'BPH' : ('BP', 'EBP', 'RBP'),
-        'BPL' : ('BP', 'EBP', 'RBP'),
-        'CS' : (),
-        'DS' : (),
-        'ES' : (),
-        'FS' : (),
-        'GS' : (),
-        'SS' : (),
-        'RFLAGS' : ('EFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'),
-        'EFLAGS' : ('RFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'),
-        'AF' : ('RFLAGS', 'EFLAGS'),
-        'CF' : ('RFLAGS', 'EFLAGS'),
-        'DF' : ('RFLAGS', 'EFLAGS'),
-        'IF' : ('RFLAGS', 'EFLAGS'),
-        'OF' : ('RFLAGS', 'EFLAGS'),
-        'PF' : ('RFLAGS', 'EFLAGS'),
-        'SF' : ('RFLAGS', 'EFLAGS'),
-        'ZF' : ('RFLAGS', 'EFLAGS'),
-        'FPSW' : ('TOP',),
-        'TOP' : ('FPSW',),
-        'FPCW' : (),
-        'FPTAG' : (),
-        'FP0' : (),
-        'FP1' : (),
-        'FP2' : (),
-        'FP3' : (),
-        'FP4' : (),
-        'FP5' : (),
-        'FP6' : (),
-        'FP7' : (),
-        'R10' : ('R10B', 'R10D', 'R10H', 'R10W'),
-        'R10B' : ('R10', 'R10D', 'R10W'),
-        'R10D' : ('R10', 'R10B', 'R10H', 'R10W'),
-        'R10H' : ('R10', 'R10D', 'R10W'),
-        'R10W' : ('R10', 'R10B', 'R10D', 'R10H'),
-        'R11' : ('R11B', 'R11D', 'R11H', 'R11W'),
-        'R11B' : ('R11', 'R11D', 'R11W'),
-        'R11D' : ('R11', 'R11B', 'R11H', 'R11W'),
-        'R11H' : ('R11', 'R11D', 'R11W'),
-        'R11W' : ('R11', 'R11B', 'R11D', 'R11H'),
-        'R12' : ('R12B', 'R12D', 'R12H', 'R12W'),
-        'R12B' : ('R12', 'R12D', 'R12W'),
-        'R12D' : ('R12', 'R12B', 'R12H', 'R12W'),
-        'R12H' : ('R12', 'R12D', 'R12W'),
-        'R12W' : ('R12', 'R12B', 'R12D', 'R12H'),
-        'R13' : ('R13B', 'R13D', 'R13H', 'R13W'),
-        'R13B' : ('R13', 'R13D', 'R13W'),
-        'R13D' : ('R13', 'R13B', 'R13H', 'R13W'),
-        'R13H' : ('R13', 'R13D', 'R13W'),
-        'R13W' : ('R13', 'R13B', 'R13D', 'R13H'),
-        'R14' : ('R14B', 'R14D', 'R14H', 'R14W'),
-        'R14B' : ('R14', 'R14D', 'R14W'),
-        'R14D' : ('R14', 'R14B', 'R14H', 'R14W'),
-        'R14H' : ('R14', 'R14D', 'R14W'),
-        'R14W' : ('R14', 'R14B', 'R14D', 'R14H'),
-        'R15' : ('R15B', 'R15D', 'R15H', 'R15W'),
-        'R15B' : ('R15', 'R15D', 'R15W'),
-        'R15D' : ('R15', 'R15B', 'R15H', 'R15W'),
-        'R15H' : ('R15', 'R15D', 'R15W'),
-        'R15W' : ('R15', 'R15B', 'R15D', 'R15H'),
-        'R8' : ('R8B', 'R8D', 'R8H', 'R8W'),
-        'R8B' : ('R8', 'R8D', 'R8W'),
-        'R8D' : ('R8', 'R8B', 'R8H', 'R8W'),
-        'R8H' : ('R8', 'R8D', 'R8W'),
-        'R8W' : ('R8', 'R8B', 'R8D', 'R8H'),
-        'R9' : ('R9B', 'R9D', 'R9H', 'R9W'),
-        'R9B' : ('R9', 'R9D', 'R9W'),
-        'R9D' : ('R9', 'R9B', 'R9H', 'R9W'),
-        'R9H' : ('R9', 'R9D', 'R9W'),
-        'R9W' : ('R9', 'R9B', 'R9D', 'R9H'),
-        'XMM0' : ('YMM0',),
-        'XMM1' : ('YMM1',),
-        'XMM10' : ('YMM10',),
-        'XMM11' : ('YMM11',),
-        'XMM12' : ('YMM12',),
-        'XMM13' : ('YMM13',),
-        'XMM14' : ('YMM14',),
-        'XMM15' : ('YMM15',),
-        'XMM2' : ('YMM2',),
-        'XMM3' : ('YMM3',),
-        'XMM4' : ('YMM4',),
-        'XMM5' : ('YMM5',),
-        'XMM6' : ('YMM6',),
-        'XMM7' : ('YMM7',),
-        'XMM8' : ('YMM8',),
-        'XMM9' : ('YMM9',),
-        'YMM0' : ('XMM0',),
-        'YMM1' : ('XMM1',),
-        'YMM10' : ('XMM10',),
-        'YMM11' : ('XMM11',),
-        'YMM12' : ('XMM12',),
-        'YMM13' : ('XMM13',),
-        'YMM14' : ('XMM14',),
-        'YMM15' : ('XMM15',),
-        'YMM2' : ('XMM2',),
-        'YMM3' : ('XMM3',),
-        'YMM4' : ('XMM4',),
-        'YMM5' : ('XMM5',),
-        'YMM6' : ('XMM6',),
-        'YMM7' : ('XMM7',),
-        'YMM8' : ('XMM8',),
-        'YMM9' : ('XMM9',),
+        'RBX': ('BH', 'BL', 'BX', 'EBX'),
+        'EBX': ('BH', 'BL', 'BX', 'RBX'),
+        'BX': ('BH', 'BL', 'EBX', 'RBX'),
+        'BH': ('BX', 'EBX', 'RBX'),
+        'BL': ('BX', 'EBX', 'RBX'),
+        'RCX': ('CH', 'CL', 'CX', 'ECX'),
+        'ECX': ('CH', 'CL', 'CX', 'RCX'),
+        'CX': ('CH', 'CL', 'ECX', 'RCX'),
+        'CH': ('CX', 'ECX', 'RCX'),
+        'CL': ('CX', 'ECX', 'RCX'),
+        'RDX': ('DH', 'DL', 'DX', 'EDX'),
+        'EDX': ('DH', 'DL', 'DX', 'RDX'),
+        'DX': ('DH', 'DL', 'EDX', 'RDX'),
+        'DH': ('DX', 'EDX', 'RDX'),
+        'DL': ('DX', 'EDX', 'RDX'),
+        'RSI': ('ESI', 'SI', 'SIH', 'SIL'),
+        'ESI': ('RSI', 'SI', 'SIH', 'SIL'),
+        'SI': ('ESI', 'RSI', 'SIH', 'SIL'),
+        'SIH': ('ESI', 'RSI', 'SI'),
+        'SIL': ('ESI', 'RSI', 'SI'),
+        'RDI': ('DI', 'DIH', 'DIL', 'EDI'),
+        'EDI': ('DI', 'DIH', 'DIL', 'RDI'),
+        'DI': ('DIH', 'DIL', 'EDI', 'RDI'),
+        'DIH': ('DI', 'EDI', 'RDI'),
+        'DIL': ('DI', 'EDI', 'RDI'),
+        'RSP': ('ESP', 'SP', 'SPH', 'SPL'),
+        'ESP': ('RSP', 'SP', 'SPH', 'SPL'),
+        'SP': ('ESP', 'RSP', 'SPH', 'SPL'),
+        'SPH': ('ESP', 'RSP', 'SP'),
+        'SPL': ('ESP', 'RSP', 'SP'),
+        'RBP': ('BP', 'BPH', 'BPL', 'EBP'),
+        'EBP': ('BP', 'BPH', 'BPL', 'RBP'),
+        'BP': ('BPH', 'BPL', 'EBP', 'RBP'),
+        'BPH': ('BP', 'EBP', 'RBP'),
+        'BPL': ('BP', 'EBP', 'RBP'),
+        'CS': (),
+        'DS': (),
+        'ES': (),
+        'FS': (),
+        'GS': (),
+        'SS': (),
+        'RFLAGS': ('EFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'),
+        'EFLAGS': ('RFLAGS', 'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'),
+        'AF': ('RFLAGS', 'EFLAGS'),
+        'CF': ('RFLAGS', 'EFLAGS'),
+        'DF': ('RFLAGS', 'EFLAGS'),
+        'IF': ('RFLAGS', 'EFLAGS'),
+        'OF': ('RFLAGS', 'EFLAGS'),
+        'PF': ('RFLAGS', 'EFLAGS'),
+        'SF': ('RFLAGS', 'EFLAGS'),
+        'ZF': ('RFLAGS', 'EFLAGS'),
+        'FPSW': ('TOP',),
+        'TOP': ('FPSW',),
+        'FPCW': (),
+        'FPTAG': (),
+        'FP0': (),
+        'FP1': (),
+        'FP2': (),
+        'FP3': (),
+        'FP4': (),
+        'FP5': (),
+        'FP6': (),
+        'FP7': (),
+        'R10': ('R10B', 'R10D', 'R10H', 'R10W'),
+        'R10B': ('R10', 'R10D', 'R10W'),
+        'R10D': ('R10', 'R10B', 'R10H', 'R10W'),
+        'R10H': ('R10', 'R10D', 'R10W'),
+        'R10W': ('R10', 'R10B', 'R10D', 'R10H'),
+        'R11': ('R11B', 'R11D', 'R11H', 'R11W'),
+        'R11B': ('R11', 'R11D', 'R11W'),
+        'R11D': ('R11', 'R11B', 'R11H', 'R11W'),
+        'R11H': ('R11', 'R11D', 'R11W'),
+        'R11W': ('R11', 'R11B', 'R11D', 'R11H'),
+        'R12': ('R12B', 'R12D', 'R12H', 'R12W'),
+        'R12B': ('R12', 'R12D', 'R12W'),
+        'R12D': ('R12', 'R12B', 'R12H', 'R12W'),
+        'R12H': ('R12', 'R12D', 'R12W'),
+        'R12W': ('R12', 'R12B', 'R12D', 'R12H'),
+        'R13': ('R13B', 'R13D', 'R13H', 'R13W'),
+        'R13B': ('R13', 'R13D', 'R13W'),
+        'R13D': ('R13', 'R13B', 'R13H', 'R13W'),
+        'R13H': ('R13', 'R13D', 'R13W'),
+        'R13W': ('R13', 'R13B', 'R13D', 'R13H'),
+        'R14': ('R14B', 'R14D', 'R14H', 'R14W'),
+        'R14B': ('R14', 'R14D', 'R14W'),
+        'R14D': ('R14', 'R14B', 'R14H', 'R14W'),
+        'R14H': ('R14', 'R14D', 'R14W'),
+        'R14W': ('R14', 'R14B', 'R14D', 'R14H'),
+        'R15': ('R15B', 'R15D', 'R15H', 'R15W'),
+        'R15B': ('R15', 'R15D', 'R15W'),
+        'R15D': ('R15', 'R15B', 'R15H', 'R15W'),
+        'R15H': ('R15', 'R15D', 'R15W'),
+        'R15W': ('R15', 'R15B', 'R15D', 'R15H'),
+        'R8': ('R8B', 'R8D', 'R8H', 'R8W'),
+        'R8B': ('R8', 'R8D', 'R8W'),
+        'R8D': ('R8', 'R8B', 'R8H', 'R8W'),
+        'R8H': ('R8', 'R8D', 'R8W'),
+        'R8W': ('R8', 'R8B', 'R8D', 'R8H'),
+        'R9': ('R9B', 'R9D', 'R9H', 'R9W'),
+        'R9B': ('R9', 'R9D', 'R9W'),
+        'R9D': ('R9', 'R9B', 'R9H', 'R9W'),
+        'R9H': ('R9', 'R9D', 'R9W'),
+        'R9W': ('R9', 'R9B', 'R9D', 'R9H'),
+        'XMM0': ('YMM0',),
+        'XMM1': ('YMM1',),
+        'XMM10': ('YMM10',),
+        'XMM11': ('YMM11',),
+        'XMM12': ('YMM12',),
+        'XMM13': ('YMM13',),
+        'XMM14': ('YMM14',),
+        'XMM15': ('YMM15',),
+        'XMM2': ('YMM2',),
+        'XMM3': ('YMM3',),
+        'XMM4': ('YMM4',),
+        'XMM5': ('YMM5',),
+        'XMM6': ('YMM6',),
+        'XMM7': ('YMM7',),
+        'XMM8': ('YMM8',),
+        'XMM9': ('YMM9',),
+        'YMM0': ('XMM0',),
+        'YMM1': ('XMM1',),
+        'YMM10': ('XMM10',),
+        'YMM11': ('XMM11',),
+        'YMM12': ('XMM12',),
+        'YMM13': ('XMM13',),
+        'YMM14': ('XMM14',),
+        'YMM15': ('XMM15',),
+        'YMM2': ('XMM2',),
+        'YMM3': ('XMM3',),
+        'YMM4': ('XMM4',),
+        'YMM5': ('XMM5',),
+        'YMM6': ('XMM6',),
+        'YMM7': ('XMM7',),
+        'YMM8': ('XMM8',),
+        'YMM9': ('XMM9',),
     }
     _canonical_registers = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI',
                             'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'RIP',
                             'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5',
                             'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12',
-                            'YMM13', 'YMM14', 'YMM15', 'CS','DS','ES','SS', 'FS', 'GS',
+                            'YMM13', 'YMM14', 'YMM15', 'CS', 'DS', 'ES', 'SS', 'FS', 'GS',
                             'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF',
                             'FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7',
                             'FPSW', 'FPCW', 'FPTAG')
+
     def __init__(self, *args, **kwargs):
         super(AMD64RegFile, self).__init__(*args, **kwargs)
 
@@ -436,7 +441,7 @@ class AMD64RegFile(RegisterFile):
                     'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'RIP',
                     'YMM0', 'YMM1', 'YMM2', 'YMM3', 'YMM4', 'YMM5',
                     'YMM6', 'YMM7', 'YMM8', 'YMM9', 'YMM10', 'YMM11', 'YMM12',
-                    'YMM13', 'YMM14', 'YMM15', 'CS','DS','ES','SS', 'FS', 'GS',
+                    'YMM13', 'YMM14', 'YMM15', 'CS', 'DS', 'ES', 'SS', 'FS', 'GS',
                     'AF', 'CF', 'DF', 'IF', 'OF', 'PF', 'SF', 'ZF'):
             self._registers[reg] = 0
 
@@ -466,9 +471,9 @@ class AMD64RegFile(RegisterFile):
         return register in self.all_registers
 
     def _set_bv(self, register_id, register_size, offset, size, reset, value):
-        if isinstance(value, (int,long)):
+        if isinstance(value, (int, long)):
             # type error or forgiving?
-            #if (value & ~((1<<size)-1)) != 0 :
+            # if (value & ~((1<<size)-1)) != 0 :
             #    raise TypeError('Value bigger than register')
             value &= (1 << size) - 1
         elif not isinstance(value, BitVec) or value.size != size:
@@ -477,9 +482,9 @@ class AMD64RegFile(RegisterFile):
             if register_size == size:
                 new_value = 0
             elif offset == 0:
-                new_value = self._registers[register_id] &  (~((1<<size)-1))
+                new_value = self._registers[register_id] & (~((1 << size) - 1))
             else:
-                new_value = self._registers[register_id] &  (~(((1<<size)-1)<<offset))
+                new_value = self._registers[register_id] & (~(((1 << size) - 1) << offset))
         else:
             new_value = 0
         new_value |= Operators.ZEXTEND(value, register_size) << offset
@@ -492,7 +497,6 @@ class AMD64RegFile(RegisterFile):
         else:
             value = Operators.EXTRACT(self._registers[register_id], offset, size)
         return value
-
 
     def _set_flag(self, register_id, register_size, offset, size, reset, value):
         assert size == 1
@@ -513,7 +517,7 @@ class AMD64RegFile(RegisterFile):
     def _set_float(self, register_id, register_size, offset, size, reset, value):
         assert size == 80
         assert offset == 0
-        if not isinstance(value, tuple): #Add decimal here?
+        if not isinstance(value, tuple):  # Add decimal here?
             raise TypeError
         self._registers[register_id] = value
         return value
@@ -552,10 +556,10 @@ class AMD64RegFile(RegisterFile):
 
     def write(self, name, value):
         name = self._alias(name)
-        if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
+        if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
+            name = 'FP%d' % ((self.read('TOP') + int(name[2])) & 7)
 
-        #Special EFLAGS/RFLAGS case
+        # Special EFLAGS/RFLAGS case
         if 'FLAGS' in name:
             self._set_flags(name, value)
             self._update_cache(name, value)
@@ -563,11 +567,11 @@ class AMD64RegFile(RegisterFile):
 
         register_id, ty, offset, size, reset = self._table[name]
         if register_id != name:
-            #FIXME add a column to _table with parent_size so we don't need to access the dict twice
+            # FIXME add a column to _table with parent_size so we don't need to access the dict twice
             register_size = self._table[register_id].size
         else:
             register_size = size
-        assert register_size >= offset+size
+        assert register_size >= offset + size
         typed_setter = {int: self._set_bv, bool: self._set_flag, float: self._set_float}[ty]
         value = typed_setter(register_id, register_size, offset, size, reset, value)
         self._update_cache(name, value)
@@ -581,8 +585,8 @@ class AMD64RegFile(RegisterFile):
 
     def read(self, name):
         name = self._alias(name)
-        if name in  ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = 'FP%d' % ((self.read('TOP') + int(name[2]) ) & 7)
+        if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
+            name = 'FP%d' % ((self.read('TOP') + int(name[2])) & 7)
         if name in self._cache:
             return self._cache[name]
         if 'FLAGS' in name:
@@ -594,7 +598,7 @@ class AMD64RegFile(RegisterFile):
             register_size = self._table[register_id].size
         else:
             register_size = size
-        assert register_size >= offset+size
+        assert register_size >= offset + size
         typed_getter = {int: self._get_bv, bool: self._get_flag, float: self._get_float}[ty]
         value = typed_getter(register_id, register_size, offset, size)
         self._cache[name] = value
@@ -603,22 +607,21 @@ class AMD64RegFile(RegisterFile):
     def sizeof(self, reg):
         return self._table[reg].size
 
-###########################
 # Operand Wrapper
 class AMD64Operand(Operand):
     ''' This class deals with capstone X86 operands '''
+
     def __init__(self, cpu, op, **kwargs):
         super(AMD64Operand, self).__init__(cpu, op, **kwargs)
 
     @property
     def type(self):
-        type_map = { cs.x86.X86_OP_REG: 'register',
-                     cs.x86.X86_OP_MEM: 'memory',
-                     cs.x86.X86_OP_IMM: 'immediate'}
+        type_map = {cs.x86.X86_OP_REG: 'register',
+                    cs.x86.X86_OP_MEM: 'memory',
+                    cs.x86.X86_OP_IMM: 'immediate'}
 
         return type_map[self.op.type]
 
-    #################################3
     # Operand access
     def address(self):
         cpu, o = self.cpu, self.op
@@ -626,25 +629,25 @@ class AMD64Operand(Operand):
         if self.mem.segment is not None:
             seg = self.mem.segment
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
-            address += base #todo check limits and perms
+            address += base  # todo check limits and perms
         else:
-            #FIXME inspect operand or cpu.instruction and decide
+            # FIXME inspect operand or cpu.instruction and decide
             # the correct default segment for instruction
             seg = 'DS'
             if self.mem.base is not None and self.mem.base in ['SP', 'ESP', 'EBP']:
                 seg = 'SS'
             base, size, ty = cpu.get_descriptor(cpu.read_register(seg))
-            address += base #todo check limits and perms
-        if self.mem.base  is not None:
+            address += base  # todo check limits and perms
+        if self.mem.base is not None:
             base = self.mem.base
             address += cpu.read_register(base)
-        if self.mem.index  is not None:
+        if self.mem.index is not None:
             index = self.mem.index
-            address += self.mem.scale*cpu.read_register(index)
+            address += self.mem.scale * cpu.read_register(index)
 
         address += self.mem.disp
 
-        return address & ((1<<cpu.address_bit_size)-1)
+        return address & ((1 << cpu.address_bit_size) - 1)
 
     def read(self):
         cpu, o = self.cpu, self.op
@@ -663,7 +666,7 @@ class AMD64Operand(Operand):
             raise NotImplementedError("read_operand unknown type", o.type)
 
     def write(self, value):
-        cpu,o = self.cpu, self.op
+        cpu, o = self.cpu, self.op
         if self.type == 'register':
             #logger.info("Write to reg %s value: %x",self.reg, value)
             cpu.write_register(self.reg, value)
@@ -681,10 +684,12 @@ class AMD64Operand(Operand):
     def __getattr__(self, name):
         return getattr(self.op, name)
 
+
 class X86Cpu(Cpu):
     '''
     A CPU model.
     '''
+
     def __init__(self, regfile, memory, *args, **kwargs):
         '''
         Builds a CPU model.
@@ -704,23 +709,20 @@ class X86Cpu(Cpu):
         self._segments = state['segments']
         super(X86Cpu, self).__setstate__(state)
 
-    ####################
     # Segments
     def set_descriptor(self, selector, base, limit, perms):
-        assert selector>0 and selector < 0xffff
-        assert base>=0 and base < (1<<self.address_bit_size)
-        assert limit >=0 and limit < 0xffff or limit&0xfff == 0
-        #perms ? not used yet Also is not really perms but rather a bunch of attributes
+        assert selector > 0 and selector < 0xffff
+        assert base >= 0 and base < (1 << self.address_bit_size)
+        assert limit >= 0 and limit < 0xffff or limit & 0xfff == 0
+        # perms ? not used yet Also is not really perms but rather a bunch of attributes
         self._segments[selector] = (base, limit, perms)
 
     def get_descriptor(self, selector):
         return self._segments.setdefault(selector, (0, 0xfffff000, 'rwx'))
 
-
     def _wrap_operands(self, operands):
         return [AMD64Operand(self, op) for op in operands]
 
-    #####################
     # Auxiliar stack acess
     def push(cpu, value, size):
         '''
@@ -729,10 +731,10 @@ class X86Cpu(Cpu):
         :param value: the value to put in the stack.
         :param size: the size of the value.
         '''
-        assert size in ( 8, 16, cpu.address_bit_size )
-        cpu.STACK = cpu.STACK-size/8
+        assert size in (8, 16, cpu.address_bit_size)
+        cpu.STACK = cpu.STACK - size / 8
         base, _, _ = cpu.get_descriptor(cpu.read_register('SS'))
-        address = cpu.STACK+base
+        address = cpu.STACK + base
         cpu.write_int(address, value, size)
 
     def pop(cpu, size):
@@ -743,13 +745,12 @@ class X86Cpu(Cpu):
         :param size: the size of the value to consume from the stack.
         :return: the value from the stack.
         '''
-        assert size in ( 16, cpu.address_bit_size )
+        assert size in (16, cpu.address_bit_size)
         base, _, _ = cpu.get_descriptor(cpu.SS)
-        address = cpu.STACK+base
+        address = cpu.STACK + base
         value = cpu.read_int(address, size)
-        cpu.STACK = cpu.STACK + size/8
+        cpu.STACK = cpu.STACK + size / 8
         return value
-
 
     ################################################
     # This its unused but shouldn't be deleted!!!
@@ -759,28 +760,29 @@ class X86Cpu(Cpu):
         ''' remove decoded instruction from instruction cache '''
         cache = cpu.instruction_cache
         for offset in range(size):
-            if address+offset in cache:
-                del cache[address+offset]
+            if address + offset in cache:
+                del cache[address + offset]
 
     def canonicalize_instruction_name(self, instruction):
-        #MOVSD
+        # MOVSD
         if instruction.opcode[0] in (0xa4, 0xa5):
             name = 'MOVS'
         else:
             name = instruction.insn_name().upper()
-        #Check if we already have an implementation...
+        # Check if we already have an implementation...
         name = OP_NAME_MAP.get(name, name)
         return name
 
-    ################################################3
-    # instruction implementation
+    #
+    # Instruction Implementations
+    #
 
     def _calculate_CMP_flags(self, size, res, arg0, arg1):
-        SIGN_MASK = 1<<(size-1)
+        SIGN_MASK = 1 << (size - 1)
         self.CF = Operators.ULT(arg0, arg1)
         self.AF = ((arg0 ^ arg1) ^ res) & 0x10 != 0
         self.ZF = res == 0
-        self.SF = (res & SIGN_MASK)!=0
+        self.SF = (res & SIGN_MASK) != 0
         sign0 = (arg0 & SIGN_MASK) == SIGN_MASK
         sign1 = (arg1 & SIGN_MASK) == SIGN_MASK
         signr = (res & SIGN_MASK) == SIGN_MASK
@@ -791,12 +793,12 @@ class X86Cpu(Cpu):
         return (res ^ res >> 1 ^ res >> 2 ^ res >> 3 ^ res >> 4 ^ res >> 5 ^ res >> 6 ^ res >> 7) & 1 == 0
 
     def _calculate_logic_flags(self, size, res):
-        SIGN_MASK = 1<<(size-1)
-        self.CF = False     #cleared
+        SIGN_MASK = 1 << (size - 1)
+        self.CF = False  # cleared
         self.AF = False
         self.ZF = res == 0
-        self.SF = (res & SIGN_MASK)!=0
-        self.OF = False     #cleared
+        self.SF = (res & SIGN_MASK) != 0
+        self.OF = False  # cleared
         self.PF = self._calculate_parity_flag(res)
 
     #####################################################
@@ -818,34 +820,34 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         '''
-        #FIXME Choose conservative values and consider returning some default when eax not here
-        conf = {   0x0:        (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
-                   0x1:        (0x000306c3, 0x05100800, 0x7ffafbff, 0xbfebfbff),
-                   0x2:        (0x76035a01, 0x00f0b5ff, 0x00000000, 0x00c10000),
-                   0x4: { 0x0: (0x1c004121, 0x01c0003f, 0x0000003f, 0x00000000),
-                          0x1: (0x1c004122, 0x01c0003f, 0x0000003f, 0x00000000),
-                          0x2: (0x1c004143, 0x01c0003f, 0x000001ff, 0x00000000),
-                          0x3: (0x1c03c163, 0x03c0003f, 0x00000fff, 0x00000006)},
-                   0x7:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
-                   0x8:        (0x00000000, 0x00000000, 0x00000000, 0x00000000),
-                   0xb: { 0x0: (0x00000001, 0x00000002, 0x00000100, 0x00000005),
-                          0x1: (0x00000004, 0x00000004, 0x00000201, 0x00000003)},
-                   0xd: { 0x0: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
-                          0x1: (0x00000000, 0x00000000, 0x00000000, 0x00000000)},
-                  }
+        # FIXME Choose conservative values and consider returning some default when eax not here
+        conf = {0x0: (0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69),
+                0x1: (0x000306c3, 0x05100800, 0x7ffafbff, 0xbfebfbff),
+                0x2: (0x76035a01, 0x00f0b5ff, 0x00000000, 0x00c10000),
+                0x4: {0x0: (0x1c004121, 0x01c0003f, 0x0000003f, 0x00000000),
+                      0x1: (0x1c004122, 0x01c0003f, 0x0000003f, 0x00000000),
+                      0x2: (0x1c004143, 0x01c0003f, 0x000001ff, 0x00000000),
+                      0x3: (0x1c03c163, 0x03c0003f, 0x00000fff, 0x00000006)},
+                0x7: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
+                0x8: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
+                0xb: {0x0: (0x00000001, 0x00000002, 0x00000100, 0x00000005),
+                      0x1: (0x00000004, 0x00000004, 0x00000201, 0x00000003)},
+                0xd: {0x0: (0x00000000, 0x00000000, 0x00000000, 0x00000000),
+                      0x1: (0x00000000, 0x00000000, 0x00000000, 0x00000000)},
+                }
 
-        if not cpu.EAX in conf:
+        if cpu.EAX not in conf:
             logger.warning('CPUID with EAX=%x not implemented @ %x', cpu.EAX, cpu.PC)
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0,0,0,0
+            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
             return
 
         if isinstance(conf[cpu.EAX], tuple):
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX]
             return
 
-        if not cpu.ECX in conf[cpu.EAX]:
-            logger.warning('CPUID with EAX=%x ECX=%x not implemented',cpu.EAX, cpu.ECX)
-            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0,0,0,0
+        if cpu.ECX not in conf[cpu.EAX]:
+            logger.warning('CPUID with EAX=%x ECX=%x not implemented', cpu.EAX, cpu.ECX)
+            cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
             return
 
         cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = conf[cpu.EAX][cpu.ECX]
@@ -860,9 +862,9 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         '''
-        #if cpu.ECX != 0:
+        # if cpu.ECX != 0:
         #logger.debug("XGETBV ECX=%x not implemented", cpu.ECX)
-        cpu.EAX, cpu.EDX = 7,0
+        cpu.EAX, cpu.EDX = 7, 0
 
 ########################################################################################
 # Generic Operations
@@ -888,7 +890,7 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         res = dest.write(dest.read() & src.read())
-        #Defined Flags: szp
+        # Defined Flags: szp
         cpu._calculate_logic_flags(dest.size, res)
 
     @instruction
@@ -915,9 +917,9 @@ class X86Cpu(Cpu):
         :param src1: first operand.
         :param src2: second operand.
         '''
-        #Defined Flags: szp
-        temp = src1.read() & src2.read();
-        cpu.SF = (temp & (1 << (src1.size-1))) != 0
+        # Defined Flags: szp
+        temp = src1.read() & src2.read()
+        cpu.SF = (temp & (1 << (src1.size - 1))) != 0
         cpu.ZF = temp == 0
         cpu.PF = cpu._calculate_parity_flag(temp)
         cpu.CF = False
@@ -938,7 +940,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         '''
         res = dest.write(~dest.read())
-        #Flags Affected: None.
+        # Flags Affected: None.
 
     @instruction
     def XOR(cpu, dest, src):
@@ -961,12 +963,12 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         if dest == src:
-            #if the operands are the same write zero
+            # if the operands are the same write zero
             res = dest.write(0)
         else:
             res = dest.write(dest.read() ^ src.read())
-        #Defined Flags: szp
-        cpu._calculate_logic_flags( dest.size, res)
+        # Defined Flags: szp
+        cpu._calculate_logic_flags(dest.size, res)
 
     @instruction
     def OR(cpu, dest, src):
@@ -989,7 +991,7 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         res = dest.write(dest.read() | src.read())
-        #Defined Flags: szp
+        # Defined Flags: szp
         cpu._calculate_logic_flags(dest.size, res)
 
 ########################################################################################
@@ -1083,7 +1085,7 @@ class X86Cpu(Cpu):
         cpu.AL += cpu.AH * imm
         cpu.AH = 0
 
-        #Defined flags: ...sz.p.
+        # Defined flags: ...sz.p.
         cpu._calculate_logic_flags(8, cpu.AL)
 
     @instruction
@@ -1118,8 +1120,8 @@ class X86Cpu(Cpu):
         cpu.AH = Operators.UDIV(cpu.AL, imm)
         cpu.AL = Operators.UREM(cpu.AL, imm)
 
-        #Defined flags: ...sz.p.
-        cpu._calculate_logic_flags( 8, cpu.AL)
+        # Defined flags: ...sz.p.
+        cpu._calculate_logic_flags(8, cpu.AL)
 
     @instruction
     def AAS(cpu):
@@ -1229,16 +1231,16 @@ class X86Cpu(Cpu):
 
         res = dest.write((arg0 + to_add) & MASK)
 
-        #Affected flags: oszapc
-        tempCF = Operators.OR( Operators.ULT(res, arg0&MASK), Operators.ULT(res, arg1&MASK))
+        # Affected flags: oszapc
+        tempCF = Operators.OR(Operators.ULT(res, arg0 & MASK), Operators.ULT(res, arg1 & MASK))
         if carry:
             # case of 0xFFFFFFFF + 0xFFFFFFFF + CF(1)
-            tempCF = Operators.OR(tempCF, Operators.AND(res==MASK, cpu.CF))
+            tempCF = Operators.OR(tempCF, Operators.AND(res == MASK, cpu.CF))
 
         cpu.CF = tempCF
         cpu.AF = ((arg0 ^ arg1) ^ res) & 0x10 != 0
         cpu.ZF = res == 0
-        cpu.SF = (res & SIGN_MASK)!=0
+        cpu.SF = (res & SIGN_MASK) != 0
         cpu.OF = (((arg0 ^ arg1 ^ SIGN_MASK) & (res ^ arg1)) & SIGN_MASK) != 0
         cpu.PF = cpu._calculate_parity_flag(res)
 
@@ -1265,9 +1267,8 @@ class X86Cpu(Cpu):
         arg0 = src1.read()
         arg1 = Operators.SEXTEND(src2.read(), src2.size, src1.size)
 
-        #Affected Flags o..szapc
-        cpu._calculate_CMP_flags(src1.size, arg0-arg1, arg0, arg1)
-
+        # Affected Flags o..szapc
+        cpu._calculate_CMP_flags(src1.size, arg0 - arg1, arg0, arg1)
 
     @instruction
     def CMPXCHG(cpu, dest, src):
@@ -1301,7 +1302,7 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         size = dest.size
-        reg_name = {8:'AL', 16:'AX', 32:'EAX', 64:'RAX'}[size]
+        reg_name = {8: 'AL', 16: 'AX', 32: 'EAX', 64: 'RAX'}[size]
         accumulator = cpu.read_register(reg_name)
         sval = src.read()
         dval = dest.read()
@@ -1309,7 +1310,7 @@ class X86Cpu(Cpu):
         cpu.write_register(reg_name, dval)
         dest.write(Operators.ITEBV(size, accumulator == dval, sval, dval))
 
-        #Affected Flags o..szapc
+        # Affected Flags o..szapc
         cpu._calculate_CMP_flags(size, accumulator - dval, accumulator, dval)
 
     @instruction
@@ -1348,12 +1349,12 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         '''
         size = dest.size
-        cmp_reg_name_l = { 64:'EAX', 128:'RAX'}[size]
-        cmp_reg_name_h = { 64:'EDX', 128:'RDX'}[size]
-        src_reg_name_l = { 64:'EBX', 128:'RBX'}[size]
-        src_reg_name_h = { 64:'ECX', 128:'RCX'}[size]
+        cmp_reg_name_l = {64: 'EAX', 128: 'RAX'}[size]
+        cmp_reg_name_h = {64: 'EDX', 128: 'RDX'}[size]
+        src_reg_name_l = {64: 'EBX', 128: 'RBX'}[size]
+        src_reg_name_h = {64: 'ECX', 128: 'RCX'}[size]
 
-        #EDX:EAX or RDX:RAX
+        # EDX:EAX or RDX:RAX
         cmph = cpu.read_register(cmp_reg_name_h)
         cmpl = cpu.read_register(cmp_reg_name_l)
 
@@ -1366,16 +1367,15 @@ class X86Cpu(Cpu):
         cpu.ZF = arg_dest == cmp0
 
         dest.write(
-                    Operators.ITEBV(size, cpu.ZF,
-                                    Operators.CONCAT(size, srch, srcl),
-                                    arg_dest )
-                  )
+            Operators.ITEBV(size, cpu.ZF,
+                            Operators.CONCAT(size, srch, srcl),
+                            arg_dest)
+        )
 
-        cpu.write_register(cmp_reg_name_l, Operators.ITEBV(size/2, cpu.ZF, cmpl,
-                                                              Operators.EXTRACT(arg_dest,0, size/2) ) )
-        cpu.write_register(cmp_reg_name_h, Operators.ITEBV(size/2, cpu.ZF, cmph,
-                                                              Operators.EXTRACT(arg_dest,size/2,size/2) ) )
-
+        cpu.write_register(cmp_reg_name_l, Operators.ITEBV(size / 2, cpu.ZF, cmpl,
+                                                           Operators.EXTRACT(arg_dest, 0, size / 2)))
+        cpu.write_register(cmp_reg_name_h, Operators.ITEBV(size / 2, cpu.ZF, cmph,
+                                                           Operators.EXTRACT(arg_dest, size / 2, size / 2)))
 
     @instruction
     def DAA(cpu):
@@ -1437,7 +1437,6 @@ class X86Cpu(Cpu):
         cpu.SF = (cpu.AL & 0x80) != 0
         cpu.PF = cpu._calculate_parity_flag(cpu.AL)
 
-
     @instruction
     def DAS(cpu):
         '''
@@ -1469,9 +1468,9 @@ class X86Cpu(Cpu):
 
         cpu.AF = Operators.OR((cpu.AL & 0x0f) > 9, cpu.AF)
         cpu.AL = Operators.ITEBV(8, cpu.AF, cpu.AL - 6, cpu.AL)
-        cpu.CF =  Operators.ITE(cpu.AF, Operators.OR(oldCF, cpu.AL > oldAL), cpu.CF)
+        cpu.CF = Operators.ITE(cpu.AF, Operators.OR(oldCF, cpu.AL > oldAL), cpu.CF)
 
-        cpu.CF = Operators.ITE( Operators.OR(oldAL > 0x99, oldCF), True, cpu.CF)
+        cpu.CF = Operators.ITE(Operators.OR(oldAL > 0x99, oldCF), True, cpu.CF)
         cpu.AL = Operators.ITEBV(8, Operators.OR(oldAL > 0x99, oldCF), cpu.AL - 0x60, cpu.AL)
         #
         '''
@@ -1489,7 +1488,6 @@ class X86Cpu(Cpu):
         cpu.ZF = cpu.AL == 0
         cpu.SF = (cpu.AL & 0x80) != 0
         cpu.PF = cpu._calculate_parity_flag(cpu.AL)
-
 
     @instruction
     def DEC(cpu, dest):
@@ -1512,7 +1510,7 @@ class X86Cpu(Cpu):
         '''
         arg0 = dest.read()
         res = dest.write(arg0 - 1)
-        #Affected Flags o..szapc
+        # Affected Flags o..szapc
         res &= (1 << dest.size) - 1
         SIGN_MASK = 1 << (dest.size - 1)
         cpu.AF = ((arg0 ^ 1) ^ res) & 0x10 != 0
@@ -1584,30 +1582,30 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         size = src.size
-        reg_name_h = {8: 'DL', 16: 'DX', 32:'EDX', 64:'RDX'}[size]
-        reg_name_l = {8: 'AL', 16: 'AX', 32:'EAX', 64:'RAX'}[size]
+        reg_name_h = {8: 'DL', 16: 'DX', 32: 'EDX', 64: 'RDX'}[size]
+        reg_name_l = {8: 'AL', 16: 'AX', 32: 'EAX', 64: 'RAX'}[size]
 
         dividend = Operators.CONCAT(size * 2,
                                     cpu.read_register(reg_name_h),
                                     cpu.read_register(reg_name_l))
         divisor = Operators.ZEXTEND(src.read(), size * 2)
 
-        #TODO make symbol friendly
+        # TODO make symbol friendly
         if isinstance(divisor, (int, long)) and divisor == 0:
             raise DivideByZeroError()
         quotient = Operators.UDIV(dividend, divisor)
 
         MASK = (1 << size) - 1
 
-        #TODO make symbol friendly
+        # TODO make symbol friendly
         if isinstance(quotient, (int, long)) and quotient > MASK:
             raise DivideByZeroError()
         remainder = Operators.UREM(dividend, divisor)
 
         cpu.write_register(reg_name_l, Operators.EXTRACT(quotient, 0, size))
         cpu.write_register(reg_name_h, Operators.EXTRACT(remainder, 0, size))
-        #Flags Affected
-        #The CF, OF, SF, ZF, AF, and PF flags are undefined.
+        # Flags Affected
+        # The CF, OF, SF, ZF, AF, and PF flags are undefined.
 
     @instruction
     def IDIV(cpu, src):
@@ -1662,8 +1660,8 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
 
-        reg_name_h = { 8: 'AH', 16: 'DX', 32:'EDX', 64:'RDX'}[src.size]
-        reg_name_l = { 8: 'AL', 16: 'AX', 32:'EAX', 64:'RAX'}[src.size]
+        reg_name_h = {8: 'AH', 16: 'DX', 32: 'EDX', 64: 'RDX'}[src.size]
+        reg_name_l = {8: 'AL', 16: 'AX', 32: 'EAX', 64: 'RAX'}[src.size]
 
         dividend = Operators.CONCAT(src.size * 2,
                                     cpu.read_register(reg_name_h),
@@ -1682,7 +1680,7 @@ class X86Cpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, (int,long)):
+        if isinstance(divisor, (int, long)):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
@@ -1694,7 +1692,7 @@ class X86Cpu(Cpu):
 
         quotient = Operators.SDIV(dividend, divisor)
         if (isinstance(dividend, (int, long)) and
-                isinstance(dividend, (int,long))):
+                isinstance(dividend, (int, long))):
             # handle the concrete case
             remainder = dividend - (quotient * divisor)
         else:
@@ -1703,8 +1701,8 @@ class X86Cpu(Cpu):
 
         cpu.write_register(reg_name_l, Operators.EXTRACT(quotient, 0, src.size))
         cpu.write_register(reg_name_h, Operators.EXTRACT(remainder, 0, src.size))
-        #Flags Affected
-        #The CF, OF, SF, ZF, AF, and PF flags are undefined.
+        # Flags Affected
+        # The CF, OF, SF, ZF, AF, and PF flags are undefined.
 
     @instruction
     def IMUL(cpu, *operands):
@@ -1817,8 +1815,8 @@ class X86Cpu(Cpu):
         '''
         dest = operands[0]
         OperandSize = dest.size
-        reg_name_h = {8: 'AH', 16: 'DX', 32:'EDX', 64:'RDX'}[OperandSize]
-        reg_name_l = {8: 'AL', 16: 'AX', 32:'EAX', 64:'RAX'}[OperandSize]
+        reg_name_h = {8: 'AH', 16: 'DX', 32: 'EDX', 64: 'RDX'}[OperandSize]
+        reg_name_l = {8: 'AL', 16: 'AX', 32: 'EAX', 64: 'RAX'}[OperandSize]
 
         arg0 = dest.read()
         arg1 = None
@@ -1868,9 +1866,9 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         '''
         arg0 = dest.read()
-        res = dest.write(arg0+1)
-        res &= (1<<dest.size)-1
-        SIGN_MASK = 1<<(dest.size-1)
+        res = dest.write(arg0 + 1)
+        res &= (1 << dest.size) - 1
+        SIGN_MASK = 1 << (dest.size - 1)
         cpu.AF = ((arg0 ^ 1) ^ res) & 0x10 != 0
         cpu.ZF = res == 0
         cpu.SF = (res & SIGN_MASK) != 0
@@ -1910,10 +1908,10 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         size = src.size
-        reg_name_low, reg_name_high = { 8: ('AL','AH'),
-                                        16: ('AX','DX'),
-                                        32: ('EAX','EDX'),
-                                        64: ('RAX','RDX')}[size]
+        reg_name_low, reg_name_high = {8: ('AL', 'AH'),
+                                       16: ('AX', 'DX'),
+                                       32: ('EAX', 'EDX'),
+                                       64: ('RAX', 'RDX')}[size]
         res = (Operators.ZEXTEND(cpu.read_register(reg_name_low), 256) *
                Operators.ZEXTEND(src.read(), 256))
         cpu.write_register(reg_name_low, Operators.EXTRACT(res, 0, size))
@@ -1941,7 +1939,7 @@ class X86Cpu(Cpu):
         '''
         source = dest.read()
         res = dest.write(-source)
-        cpu._calculate_logic_flags( dest.size, res)
+        cpu._calculate_logic_flags(dest.size, res)
         cpu.CF = source != 0
         cpu.AF = (res & 0x0f) != 0x00
 
@@ -2036,8 +2034,8 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        MASK = (1<<dest.size)-1
-        SIGN_MASK = 1<<(dest.size-1)
+        MASK = (1 << dest.size) - 1
+        SIGN_MASK = 1 << (dest.size - 1)
 
         arg0 = dest.read()
         arg1 = src.read()
@@ -2045,13 +2043,12 @@ class X86Cpu(Cpu):
         src.write(arg0)
         dest.write(temp)
 
-
-        #Affected flags: oszapc
-        tempCF = Operators.OR( Operators.ULT(temp, arg0), Operators.ULT(temp, arg1))
+        # Affected flags: oszapc
+        tempCF = Operators.OR(Operators.ULT(temp, arg0), Operators.ULT(temp, arg1))
         cpu.CF = tempCF
         cpu.AF = ((arg0 ^ arg1) ^ temp) & 0x10 != 0
         cpu.ZF = temp == 0
-        cpu.SF = (temp & SIGN_MASK)!=0
+        cpu.SF = (temp & SIGN_MASK) != 0
         cpu.OF = (((arg0 ^ arg1 ^ SIGN_MASK) & (temp ^ arg1)) & SIGN_MASK) != 0
         cpu.PF = cpu._calculate_parity_flag(temp)
 
@@ -2101,8 +2098,8 @@ class X86Cpu(Cpu):
 #                              CMOVAE CMOVNA CMOVBE CMOVNZ CMOVE CMOVNZ CMOVNE CMOVPE
 #                              CMOVP CMOVPO CMOVNP
 ########################################################################################
-    ##CMOVcc
-    #CMOVB CMOVNAE CMOVC
+    # CMOVcc
+    # CMOVB CMOVNAE CMOVC
     @instruction
     def CMOVB(cpu, dest, src):
         '''
@@ -2118,7 +2115,7 @@ class X86Cpu(Cpu):
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.CF, src.read(), dest.read()))
 
-    #CMOVNBE
+    # CMOVNBE
     @instruction
     def CMOVA(cpu, dest, src):
         '''
@@ -2132,9 +2129,9 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF==False, cpu.ZF==False), src.read(), dest.read()))
+        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF == False, cpu.ZF == False), src.read(), dest.read()))
 
-    #CMOVNB CMOVNC
+    # CMOVNB CMOVNC
     @instruction
     def CMOVAE(cpu, dest, src):
         '''
@@ -2148,9 +2145,9 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.CF==False, src.read(), dest.read()))
+        dest.write(Operators.ITEBV(dest.size, cpu.CF == False, src.read(), dest.read()))
 
-    #CMOVNA
+    # CMOVNA
     @instruction
     def CMOVBE(cpu, dest, src):
         '''
@@ -2194,9 +2191,9 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, src.read(), dest.read()))
+        dest.write(Operators.ITEBV(dest.size, cpu.ZF == False, src.read(), dest.read()))
 
-    #CMOVPE
+    # CMOVPE
     @instruction
     def CMOVP(cpu, dest, src):
         '''
@@ -2211,7 +2208,8 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.PF, src.read(), dest.read()))
-    #CMOVPO
+    # CMOVPO
+
     @instruction
     def CMOVNP(cpu, dest, src):
         '''
@@ -2225,7 +2223,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.PF==False, src.read(), dest.read()))
+        dest.write(Operators.ITEBV(dest.size, cpu.PF == False, src.read(), dest.read()))
 
 ########################################################################################
 # Generic Operations -- Moves -- Signed Conditional Moves
@@ -2246,9 +2244,9 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==0, cpu.SF==cpu.OF), src.read(), dest.read()))
+        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF == 0, cpu.SF == cpu.OF), src.read(), dest.read()))
 
-    #CMOVNL
+    # CMOVNL
     @instruction
     def CMOVGE(cpu, dest, src):
         '''
@@ -2262,10 +2260,9 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, (cpu.SF ^ cpu.OF)==0, src.read(), dest.read()))
+        dest.write(Operators.ITEBV(dest.size, (cpu.SF ^ cpu.OF) == 0, src.read(), dest.read()))
 
-
-    #CMOVNGE
+    # CMOVNGE
     @instruction
     def CMOVL(cpu, dest, src):
         '''
@@ -2281,7 +2278,7 @@ class X86Cpu(Cpu):
         '''
         dest.write(Operators.ITEBV(dest.size, cpu.SF ^ cpu.OF, src.read(), dest.read()))
 
-    #CMOVNG
+    # CMOVNG
     @instruction
     def CMOVLE(cpu, dest, src):
         '''
@@ -2325,7 +2322,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.OF==False, src.read(), dest.read()))
+        dest.write(Operators.ITEBV(dest.size, cpu.OF == False, src.read(), dest.read()))
 
     @instruction
     def CMOVS(cpu, dest, src):
@@ -2355,7 +2352,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.SF==False, src.read(), dest.read()))
+        dest.write(Operators.ITEBV(dest.size, cpu.SF == False, src.read(), dest.read()))
 
     @instruction
     def LAHF(cpu):
@@ -2378,18 +2375,18 @@ class X86Cpu(Cpu):
         def make_flag(val, offset):
             if is_expression:
                 return Operators.ITEBV(8, val,
-                        BitVecConstant(8, 1 << offset),
-                        BitVecConstant(8, 0))
+                                       BitVecConstant(8, 1 << offset),
+                                       BitVecConstant(8, 0))
             else:
                 return val << offset
 
         cpu.AH = (make_flag(cpu.SF, 7) |
                   make_flag(cpu.ZF, 6) |
-                  make_flag(0,      5) |
+                  make_flag(0, 5) |
                   make_flag(cpu.AF, 4) |
-                  make_flag(0,      3) |
+                  make_flag(0, 3) |
                   make_flag(cpu.PF, 2) |
-                  make_flag(1,      1) |
+                  make_flag(1, 1) |
                   make_flag(cpu.CF, 0))
 
     @instruction
@@ -2398,28 +2395,32 @@ class X86Cpu(Cpu):
         Not implemented.
 
         """
-        raise NotImplementedError("LDS") #TODO
+        raise NotImplementedError("LDS")  # TODO
+
     @instruction
     def LES(cpu, dest, src):
         """
         Not implemented.
 
         """
-        raise NotImplementedError("LES") #TODO
+        raise NotImplementedError("LES")  # TODO
+
     @instruction
     def LFS(cpu, dest, src):
         """
         Not implemented.
 
         """
-        raise NotImplementedError("LFS") #TODO
+        raise NotImplementedError("LFS")  # TODO
+
     @instruction
     def LGS(cpu, dest, src):
         """
         Not implemented.
 
         """
-        raise NotImplementedError("LGS") #TODO
+        raise NotImplementedError("LGS")  # TODO
+
     @instruction
     def LSS(cpu, dest, src):
         '''
@@ -2487,7 +2488,7 @@ class X86Cpu(Cpu):
                     FI;
                     DEST  =  Offset(SRC);
         '''
-        raise NotImplementedError("LSS") #TODO
+        raise NotImplementedError("LSS")  # TODO
 
     @instruction
     def LEA(cpu, dest, src):
@@ -2505,11 +2506,10 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        dest.write(Operators.EXTRACT(src.address(),0,dest.size))
-
+        dest.write(Operators.EXTRACT(src.address(), 0, dest.size))
 
     @instruction
-    def MOV(cpu, dest, src, *rest): # Fake argument to work around capstone issue # 950
+    def MOV(cpu, dest, src, *rest):  # Fake argument to work around capstone issue # 950
         '''
         Move.
 
@@ -2568,8 +2568,8 @@ class X86Cpu(Cpu):
         size = dest.size
         arg0 = dest.read()
         temp = 0
-        for pos in xrange(0,size,8):
-            temp = (temp << 8) | (arg0&0xff)
+        for pos in xrange(0, size, 8):
+            temp = (temp << 8) | (arg0 & 0xff)
             arg0 = arg0 >> 8
         dest.write(arg0)
 
@@ -2613,7 +2613,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
          '''
-        dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF,cpu.ZF) == False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.CF, cpu.ZF) == False, 1, 0))
 
     @instruction
     def SETAE(cpu, dest):
@@ -2623,7 +2623,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.CF == False, 1, 0))
 
     @instruction
     def SETB(cpu, dest):
@@ -2673,7 +2673,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==False, cpu.SF==cpu.OF), 1, 0))
+        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF == False, cpu.SF == cpu.OF), 1, 0))
 
     @instruction
     def SETGE(cpu, dest):
@@ -2683,7 +2683,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.SF==cpu.OF, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.SF == cpu.OF, 1, 0))
 
     @instruction
     def SETL(cpu, dest):
@@ -2693,7 +2693,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.SF!=cpu.OF, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.SF != cpu.OF, 1, 0))
 
     @instruction
     def SETLE(cpu, dest):
@@ -2703,7 +2703,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF!=cpu.OF), 1, 0))
+        dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), 1, 0))
 
     @instruction
     def SETNA(cpu, dest):
@@ -2733,7 +2733,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.CF == False, 1, 0))
 
     @instruction
     def SETNBE(cpu, dest):
@@ -2743,7 +2743,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF==False, cpu.ZF==False), 1, 0))
+        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.CF == False, cpu.ZF == False), 1, 0))
 
     @instruction
     def SETNC(cpu, dest):
@@ -2753,7 +2753,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.CF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.CF == False, 1, 0))
 
     @instruction
     def SETNE(cpu, dest):
@@ -2763,7 +2763,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.ZF == False, 1, 0))
 
     @instruction
     def SETNG(cpu, dest):
@@ -2773,7 +2773,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF!=cpu.OF), 1, 0))
+        dest.write(Operators.ITEBV(dest.size, Operators.OR(cpu.ZF, cpu.SF != cpu.OF), 1, 0))
 
     @instruction
     def SETNGE(cpu, dest):
@@ -2783,7 +2783,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.SF!=cpu.OF, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.SF != cpu.OF, 1, 0))
 
     @instruction
     def SETNL(cpu, dest):
@@ -2793,7 +2793,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.SF==cpu.OF, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.SF == cpu.OF, 1, 0))
 
     @instruction
     def SETNLE(cpu, dest):
@@ -2803,7 +2803,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF==False, cpu.SF==cpu.OF), 1, 0))
+        dest.write(Operators.ITEBV(dest.size, Operators.AND(cpu.ZF == False, cpu.SF == cpu.OF), 1, 0))
 
     @instruction
     def SETNO(cpu, dest):
@@ -2813,7 +2813,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.OF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.OF == False, 1, 0))
 
     @instruction
     def SETNP(cpu, dest):
@@ -2823,7 +2823,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.PF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.PF == False, 1, 0))
 
     @instruction
     def SETNS(cpu, dest):
@@ -2833,7 +2833,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.SF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.SF == False, 1, 0))
 
     @instruction
     def SETNZ(cpu, dest):
@@ -2843,7 +2843,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.ZF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.ZF == False, 1, 0))
 
     @instruction
     def SETO(cpu, dest):
@@ -2883,7 +2883,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param dest: destination operand.
         '''
-        dest.write(Operators.ITEBV(dest.size, cpu.PF==False, 1, 0))
+        dest.write(Operators.ITEBV(dest.size, cpu.PF == False, 1, 0))
 
     @instruction
     def SETS(cpu, dest):
@@ -2997,10 +2997,10 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param src: source operand.
         '''
-        #http://stackoverflow.com/questions/11291151/how-push-imm-encodes
+        # http://stackoverflow.com/questions/11291151/how-push-imm-encodes
         size = src.size
         v = src.read()
-        if size != 64 and size != cpu.address_bit_size/2 :
+        if size != 64 and size != cpu.address_bit_size / 2:
             v = Operators.SEXTEND(v, size, cpu.address_bit_size)
             size = cpu.address_bit_size
         cpu.push(v, size)
@@ -3041,7 +3041,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         '''
         mask = 0x00000001 | 0x00000004 | 0x00000010 | 0x00000040 | 0x00000080 | 0x00000400 | 0x00000800
-        cpu.EFLAGS = (cpu.EFLAGS& ~mask) | cpu.pop(64) & mask
+        cpu.EFLAGS = (cpu.EFLAGS & ~mask) | cpu.pop(64) & mask
 
     @instruction
     def PUSHF(cpu):
@@ -3118,13 +3118,13 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param op0: target operand.
         '''
-        #TODO FIX 64Bit FIX segment
+        # TODO FIX 64Bit FIX segment
         proc = op0.read()
         cpu.push(cpu.PC, cpu.address_bit_size)
-        cpu.PC=proc
+        cpu.PC = proc
 
     @instruction
-    def RET(cpu,*operands):
+    def RET(cpu, *operands):
         '''
         Returns from procedure.
 
@@ -3137,7 +3137,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param operands: variable operands list.
         '''
-        #TODO FIX 64Bit FIX segment
+        # TODO FIX 64Bit FIX segment
         N = 0
         if len(operands) > 0:
             N = operands[0].read()
@@ -3192,7 +3192,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param target: destination operand.
         '''
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF , target.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF, target.read(), cpu.PC)
 
     @instruction
     def JCXZ(cpu, target):
@@ -3292,7 +3292,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param target: destination operand.
         '''
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF , target.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, cpu.CF, target.read(), cpu.PC)
 
     @instruction
     def JNB(cpu, target):
@@ -3332,7 +3332,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param target: destination operand.
         '''
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.ZF , target.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.ZF, target.read(), cpu.PC)
 
     @instruction
     def JNG(cpu, target):
@@ -3382,7 +3382,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param target: destination operand.
         '''
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.OF , target.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.OF, target.read(), cpu.PC)
 
     @instruction
     def JNP(cpu, target):
@@ -3392,7 +3392,7 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param target: destination operand.
         '''
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.PF , target.read(), cpu.PC)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, False == cpu.PF, target.read(), cpu.PC)
 
     @instruction
     def JNS(cpu, target):
@@ -3485,17 +3485,17 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param target: destination operand.
         '''
-        cpu.PC=target.read()
+        cpu.PC = target.read()
 
     def LJMP(cpu, cs_selector, target):
         '''
         We are just going to ignore the CS selector for now.
         '''
-        logger.info("LJMP: Jumping to: %r:%r", cs_selector.read(), target.read());
+        logger.info("LJMP: Jumping to: %r:%r", cs_selector.read(), target.read())
         cpu.CS = cs_selector.read()
         cpu.PC = target.read()
 
-    #LOOPZ
+    # LOOPZ
     def LOOP(cpu, dest):
         '''
         Loops according to ECX counter.
@@ -3532,9 +3532,8 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         '''
         counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.address_bit_size]
-        counter = cpu.write_register(counter_name, cpu.read_register(counter_name)-1)
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, counter == 0, (cpu.PC + dest.read()) & ((1<<dest.size)-1), cpu.PC + cpu.instruction.size)
-
+        counter = cpu.write_register(counter_name, cpu.read_register(counter_name) - 1)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, counter == 0, (cpu.PC + dest.read()) & ((1 << dest.size) - 1), cpu.PC + cpu.instruction.size)
 
     def LOOPNZ(cpu, target):
         '''
@@ -3544,8 +3543,8 @@ class X86Cpu(Cpu):
         :param target: destination operand.
         '''
         counter_name = {16: 'CX', 32: 'ECX', 64: 'RCX'}[cpu.address_bit_size]
-        counter = cpu.write_register(counter_name, cpu.read_register(counter_name)-1)
-        cpu.PC = Operators.ITEBV(cpu.address_bit_size, counter != 0, (cpu.PC + target.read()) & ((1<<target.size)-1), cpu.PC + cpu.instruction.size)
+        counter = cpu.write_register(counter_name, cpu.read_register(counter_name) - 1)
+        cpu.PC = Operators.ITEBV(cpu.address_bit_size, counter != 0, (cpu.PC + target.read()) & ((1 << target.size) - 1), cpu.PC + cpu.instruction.size)
 
 
 ########################################################################################
@@ -3574,30 +3573,30 @@ class X86Cpu(Cpu):
         '''
         OperandSize = dest.size
         count = src.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
-        tempCount = Operators.ZEXTEND((count & countMask) % (src.size+1), OperandSize)
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
+        tempCount = Operators.ZEXTEND((count & countMask) % (src.size + 1), OperandSize)
 
         value = dest.read()
 
         if isinstance(tempCount, (int, long)) and tempCount == 0:
-            #this is a no-op
+            # this is a no-op
             new_val = value
             dest.write(new_val)
         else:
             carry = Operators.ITEBV(OperandSize, cpu.CF, 1, 0)
-            right = value >> (OperandSize - tempCount);
+            right = value >> (OperandSize - tempCount)
             new_val = (value << tempCount) | (carry << (tempCount - 1)) | (right >> 1)
             dest.write(new_val)
 
             def sf(v, size):
-                return (v & (1 << (size-1))) != 0
+                return (v & (1 << (size - 1))) != 0
             cpu.CF = sf(value << (tempCount - 1), OperandSize)
             cpu.OF = Operators.ITE(tempCount == 1,
-                    sf(new_val, OperandSize) != cpu.CF,
-                    cpu.OF)
+                                   sf(new_val, OperandSize) != cpu.CF,
+                                   cpu.OF)
 
     @instruction
     def RCR(cpu, dest, src):
@@ -3620,17 +3619,16 @@ class X86Cpu(Cpu):
         '''
         OperandSize = dest.size
         count = src.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
-        tempCount = Operators.ZEXTEND((count & countMask) % (src.size+1), OperandSize)
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
+        tempCount = Operators.ZEXTEND((count & countMask) % (src.size + 1), OperandSize)
 
         value = dest.read()
 
-
         if type(tempCount) in (int, long) and tempCount == 0:
-            #this is a no-op
+            # this is a no-op
             new_val = value
             dest.write(new_val)
         else:
@@ -3643,11 +3641,11 @@ class X86Cpu(Cpu):
             dest.write(new_val)
 
             cpu.CF = Operators.ITE(tempCount != 0, (left & 1) == 1, cpu.CF)
-            #for RCR these are calculated before rotation starts
-            s_MSB = ((new_val >> (OperandSize-1)) & 0x1) == 1
-            s_MSB2 = ((new_val >> (OperandSize-2)) & 0x1) == 1
-            cpu.OF = Operators.ITE(tempCount==1,
-                    s_MSB ^ s_MSB2, cpu.OF)
+            # for RCR these are calculated before rotation starts
+            s_MSB = ((new_val >> (OperandSize - 1)) & 0x1) == 1
+            s_MSB2 = ((new_val >> (OperandSize - 2)) & 0x1) == 1
+            cpu.OF = Operators.ITE(tempCount == 1,
+                                   s_MSB ^ s_MSB2, cpu.OF)
 
     @instruction
     def ROL(cpu, dest, src):
@@ -3669,20 +3667,19 @@ class X86Cpu(Cpu):
         '''
         OperandSize = dest.size
         count = src.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
         tempCount = Operators.ZEXTEND((count & countMask) % (OperandSize), OperandSize)
-
 
         value = dest.read()
         newValue = (value << tempCount) | (value >> (OperandSize - tempCount))
         dest.write(newValue)
 
-        cpu.CF = Operators.ITE(tempCount != 0, (newValue&1) == 1, cpu.CF)
-        s_MSB = ((newValue >> (OperandSize-1)) & 0x1) == 1
-        cpu.OF = Operators.ITE(tempCount==1, s_MSB ^ cpu.CF, cpu.OF)
+        cpu.CF = Operators.ITE(tempCount != 0, (newValue & 1) == 1, cpu.CF)
+        s_MSB = ((newValue >> (OperandSize - 1)) & 0x1) == 1
+        cpu.OF = Operators.ITE(tempCount == 1, s_MSB ^ cpu.CF, cpu.OF)
 
     @instruction
     def ROR(cpu, dest, src):
@@ -3704,10 +3701,10 @@ class X86Cpu(Cpu):
         '''
         OperandSize = dest.size
         count = src.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
         tempCount = Operators.ZEXTEND((count & countMask) % (OperandSize), OperandSize)
 
         value = dest.read()
@@ -3715,10 +3712,10 @@ class X86Cpu(Cpu):
         newValue = (value >> tempCount) | (value << (OperandSize - tempCount))
         dest.write(newValue)
 
-        cpu.CF = Operators.ITE(tempCount != 0, ( (newValue >> (OperandSize-1) ) & 0x1) == 1, cpu.CF)
-        s_MSB = ((newValue >> (OperandSize-1)) & 0x1) == 1
-        s_MSB2 = ((newValue >> (OperandSize-2)) & 0x1) == 1
-        cpu.OF = Operators.ITE(tempCount==1, s_MSB ^ s_MSB2, cpu.OF)
+        cpu.CF = Operators.ITE(tempCount != 0, ((newValue >> (OperandSize - 1)) & 0x1) == 1, cpu.CF)
+        s_MSB = ((newValue >> (OperandSize - 1)) & 0x1) == 1
+        s_MSB2 = ((newValue >> (OperandSize - 2)) & 0x1) == 1
+        cpu.OF = Operators.ITE(tempCount == 1, s_MSB ^ s_MSB2, cpu.OF)
 
     @instruction
     def SAL(cpu, dest, src):
@@ -3736,26 +3733,26 @@ class X86Cpu(Cpu):
         '''
         OperandSize = dest.size
         count = src.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
-        tempCount = Operators.ZEXTEND(count & countMask , dest.size)
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
+        tempCount = Operators.ZEXTEND(count & countMask, dest.size)
 
         tempDest = value = dest.read()
         res = dest.write(Operators.ITEBV(dest.size, tempCount == 0, tempDest, value << tempCount))
 
-        #Should not modify flags if tempcount == 0
-        MASK = (1<<OperandSize)-1
-        SIGN_MASK = 1<<(OperandSize-1)
+        # Should not modify flags if tempcount == 0
+        MASK = (1 << OperandSize) - 1
+        SIGN_MASK = 1 << (OperandSize - 1)
 
-        cpu.CF = Operators.OR(Operators.AND(tempCount==0, cpu.CF), Operators.AND(tempCount!=0, (tempDest & (1<< (OperandSize-tempCount)) != 0)))
-        #OF is only set iff count == 1, and set to XOR(CF, MSB(res))
+        cpu.CF = Operators.OR(Operators.AND(tempCount == 0, cpu.CF), Operators.AND(tempCount != 0, (tempDest & (1 << (OperandSize - tempCount)) != 0)))
+        # OF is only set iff count == 1, and set to XOR(CF, MSB(res))
         # OF is only defined for count == 1, but in practice (unit tests from real cpu) its calculated for count != 0
-        cpu.OF = Operators.ITE(tempCount != 0, (cpu.CF) ^ (((res >> (OperandSize-1)) & 0x1) == 1), cpu.OF)
-        cpu.SF = Operators.OR(Operators.AND(tempCount==0, cpu.SF), Operators.AND(tempCount!=0, (res & SIGN_MASK) != 0))
-        cpu.ZF = Operators.OR(Operators.AND(tempCount==0, cpu.ZF), Operators.AND(tempCount!=0, res == 0))
-        cpu.PF = Operators.OR(Operators.AND(tempCount==0, cpu.PF), Operators.AND(tempCount!=0, cpu._calculate_parity_flag(res)))
+        cpu.OF = Operators.ITE(tempCount != 0, (cpu.CF) ^ (((res >> (OperandSize - 1)) & 0x1) == 1), cpu.OF)
+        cpu.SF = Operators.OR(Operators.AND(tempCount == 0, cpu.SF), Operators.AND(tempCount != 0, (res & SIGN_MASK) != 0))
+        cpu.ZF = Operators.OR(Operators.AND(tempCount == 0, cpu.ZF), Operators.AND(tempCount != 0, res == 0))
+        cpu.PF = Operators.OR(Operators.AND(tempCount == 0, cpu.PF), Operators.AND(tempCount != 0, cpu._calculate_parity_flag(res)))
 
     def SHL(cpu, dest, src):
         '''
@@ -3767,7 +3764,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        return cpu.SAL(dest,src)
+        return cpu.SAL(dest, src)
 
     @instruction
     def SAR(cpu, dest, src):
@@ -3786,10 +3783,10 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         OperandSize = dest.size
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
 
         count = src.read() & countMask
         value = dest.read()
@@ -3797,22 +3794,22 @@ class X86Cpu(Cpu):
         res = Operators.SAR(OperandSize, value, Operators.ZEXTEND(count, OperandSize))
         dest.write(res)
 
-        SIGN_MASK = (1<<(OperandSize-1))
+        SIGN_MASK = (1 << (OperandSize - 1))
 
         # We can't use this one as the 'true' expression gets eagerly calculated even on count == 0		 +        cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
         # cpu.CF = Operators.ITE(count!=0, ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
 
         if issymbolic(count):
-        # We can't use this one as the EXTRACT op needs the offset arguments to be concrete
-        #    cpu.CF = Operators.ITE(count!=0, Operands.EXTRACT(value,count-1,1) !=0, cpu.CF)
-            cpu.CF = Operators.ITE(Operators.AND(count != 0, count <= OperandSize), ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0, cpu.CF)
+            # We can't use this one as the EXTRACT op needs the offset arguments to be concrete
+            #    cpu.CF = Operators.ITE(count!=0, Operands.EXTRACT(value,count-1,1) !=0, cpu.CF)
+            cpu.CF = Operators.ITE(Operators.AND(count != 0, count <= OperandSize), ((value >> Operators.ZEXTEND(count - 1, OperandSize)) & 1) != 0, cpu.CF)
         else:
             if count != 0:
                 if count > OperandSize:
                     count = OperandSize
-                cpu.CF = Operators.EXTRACT(value, count-1, 1) != 0
+                cpu.CF = Operators.EXTRACT(value, count - 1, 1) != 0
 
-        #on count == 0 AF is unaffected, for count > 0, AF is undefined.
+        # on count == 0 AF is unaffected, for count > 0, AF is undefined.
         # in either case, do not touch AF
         cpu.ZF = Operators.ITE(count != 0, res == 0, cpu.ZF)
         cpu.SF = Operators.ITE(count != 0, (res & SIGN_MASK) != 0, cpu.SF)
@@ -3837,26 +3834,26 @@ class X86Cpu(Cpu):
         :param src: count operand.
         '''
         OperandSize = dest.size
-        count = Operators.ZEXTEND(src.read() & (OperandSize-1), OperandSize)
+        count = Operators.ZEXTEND(src.read() & (OperandSize - 1), OperandSize)
         value = dest.read()
 
-        res = dest.write(value >> count) #UNSIGNED Operators.UDIV2 !! TODO Check
+        res = dest.write(value >> count)  # UNSIGNED Operators.UDIV2 !! TODO Check
 
-        MASK = (1<<OperandSize)-1
-        SIGN_MASK = 1<<(OperandSize-1)
+        MASK = (1 << OperandSize) - 1
+        SIGN_MASK = 1 << (OperandSize - 1)
 
         if issymbolic(count):
-            cpu.CF = Operators.ITE(count!=0,
-                                   ((value >> Operators.ZEXTEND(count-1, OperandSize)) & 1) !=0,
+            cpu.CF = Operators.ITE(count != 0,
+                                   ((value >> Operators.ZEXTEND(count - 1, OperandSize)) & 1) != 0,
                                    cpu.CF)
         else:
             if count != 0:
-                cpu.CF = Operators.EXTRACT(value, count-1, 1) != 0
+                cpu.CF = Operators.EXTRACT(value, count - 1, 1) != 0
 
         cpu.ZF = Operators.ITE(count != 0, res == 0, cpu.ZF)
         cpu.SF = Operators.ITE(count != 0, (res & SIGN_MASK) != 0, cpu.SF)
         # OF is only defined for count == 1, but in practice (unit tests from real cpu) its calculated for count != 0
-        cpu.OF = Operators.ITE(count != 0, ((value >> (OperandSize-1)) & 0x1) == 1, cpu.OF)
+        cpu.OF = Operators.ITE(count != 0, ((value >> (OperandSize - 1)) & 0x1) == 1, cpu.OF)
         cpu.PF = Operators.ITE(count != 0, cpu._calculate_parity_flag(res), cpu.PF)
 
     def _set_shiftd_flags(cpu, opsize, original, result, lastbit, count):
@@ -3866,19 +3863,19 @@ class X86Cpu(Cpu):
 
         # tempcount can be CL
         cpu.CF = Operators.OR(
-                Operators.AND(cpu.CF, count == 0),
-                Operators.AND(count != 0, lastbit))
+            Operators.AND(cpu.CF, count == 0),
+            Operators.AND(count != 0, lastbit))
 
         # on one bit shifts, OF is set if a sign change occurred, otherwise cleared
         # undefined for > 1 bit shifts
         signchange = (result & SIGN_MASK) != (original & SIGN_MASK)
         cpu.OF = Operators.ITE(count == 1,
-                signchange,
-                cpu.OF)
+                               signchange,
+                               cpu.OF)
 
         cpu.PF = Operators.ITE(count == 0, cpu.PF, cpu._calculate_parity_flag(result))
-        cpu.SF = Operators.ITE(count == 0, cpu.SF, (result & SIGN_MASK) !=0 )
-        cpu.ZF = Operators.ITE(count == 0, cpu.ZF,  result == 0)
+        cpu.SF = Operators.ITE(count == 0, cpu.SF, (result & SIGN_MASK) != 0)
+        cpu.ZF = Operators.ITE(count == 0, cpu.ZF, result == 0)
 
     @instruction
     def SHRD(cpu, dest, src, count):
@@ -3895,9 +3892,9 @@ class X86Cpu(Cpu):
         :param count: count operand
         '''
         OperandSize = dest.size
-        MASK = ((1 << OperandSize) -1)
+        MASK = ((1 << OperandSize) - 1)
         # count is masked based on destination size
-        tempCount =  Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
+        tempCount = Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
 
         if type(tempCount) in (int, long) and tempCount == 0:
             pass
@@ -3905,10 +3902,10 @@ class X86Cpu(Cpu):
             arg0 = dest.read()
             arg1 = src.read()
             # do the shift
-            res = Operators.ITEBV(OperandSize, tempCount == 0, arg0,  (arg0 >> tempCount) | (arg1 << (dest.size-tempCount)))
+            res = Operators.ITEBV(OperandSize, tempCount == 0, arg0, (arg0 >> tempCount) | (arg1 << (dest.size - tempCount)))
             res = res & MASK
             dest.write(res)
-            lastbit = 0 != (arg0 >> (tempCount - 1))&1
+            lastbit = 0 != (arg0 >> (tempCount - 1)) & 1
 
             cpu._set_shiftd_flags(OperandSize, arg0, res, lastbit, tempCount)
 
@@ -3927,13 +3924,13 @@ class X86Cpu(Cpu):
         :param count: count operand
         '''
         OperandSize = dest.size
-        tempCount =  Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
+        tempCount = Operators.ZEXTEND(count.read(), OperandSize) & (OperandSize - 1)
         arg0 = dest.read()
         arg1 = src.read()
 
-        MASK = ((1<<OperandSize)-1)
+        MASK = ((1 << OperandSize) - 1)
         t0 = (arg0 << tempCount)
-        t1 = arg1 >> (OperandSize-tempCount)
+        t1 = arg1 >> (OperandSize - tempCount)
         res = Operators.ITEBV(OperandSize, tempCount == 0, arg0, t0 | t1)
         res = res & MASK
         dest.write(res)
@@ -3941,7 +3938,7 @@ class X86Cpu(Cpu):
         if type(tempCount) in (int, long) and tempCount == 0:
             pass
         else:
-            SIGN_MASK = 1<<(OperandSize-1)
+            SIGN_MASK = 1 << (OperandSize - 1)
             lastbit = 0 != ((arg0 << (tempCount - 1)) & SIGN_MASK)
 
             cpu._set_shiftd_flags(OperandSize, arg0, res, lastbit, tempCount)
@@ -3959,7 +3956,7 @@ class X86Cpu(Cpu):
         assert bitbase.size >= bitoffset.size
         addr = bitbase.address()
         offt = Operators.SEXTEND(bitoffset.read(), bitoffset.size, bitbase.size)
-        offt_is_neg = offt >= (1<<(bitbase.size-1))
+        offt_is_neg = offt >= (1 << (bitbase.size - 1))
         offt_in_bytes = offt / 8
         bitpos = offt % 8
 
@@ -4001,8 +3998,8 @@ class X86Cpu(Cpu):
         flag = Operators.EXTRACT(value, 0, 1) == 1
         res = 0
         for pos in xrange(1, src.size):
-            res  = Operators.ITEBV(dest.size, flag, res, pos)
-            flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1 )
+            res = Operators.ITEBV(dest.size, flag, res, pos)
+            flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
 
         cpu.ZF = value == 0
         dest.write(Operators.ITEBV(dest.size, cpu.ZF, dest.read(), res))
@@ -4039,12 +4036,12 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         value = src.read()
-        flag = Operators.EXTRACT(value, src.size-1, 1) == 1
+        flag = Operators.EXTRACT(value, src.size - 1, 1) == 1
         res = 0
 
         for pos in reversed(xrange(0, src.size)):
             res = Operators.ITEBV(dest.size, flag, res, pos)
-            flag = Operators.OR(flag,  (Operators.EXTRACT(value, pos, 1) == 1))
+            flag = Operators.OR(flag, (Operators.EXTRACT(value, pos, 1) == 1))
 
         cpu.PF = cpu._calculate_parity_flag(res)
         cpu.ZF = value == 0
@@ -4071,11 +4068,11 @@ class X86Cpu(Cpu):
         :param src: bit offset.
         '''
         if dest.type == 'register':
-            cpu.CF = ((dest.read() >> (src.read()%dest.size) ) &1) !=0
+            cpu.CF = ((dest.read() >> (src.read() % dest.size)) & 1) != 0
         elif dest.type == 'memory':
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
-            value = cpu.read_int(addr+base, 8)
+            value = cpu.read_int(addr + base, 8)
             cpu.CF = Operators.EXTRACT(value, pos, 1) == 1
         else:
             raise NotImplementedError("Unknown operand for BT: {}".format(dest.type))
@@ -4096,15 +4093,15 @@ class X86Cpu(Cpu):
         '''
         if dest.type == 'register':
             value = dest.read()
-            pos = src.read()%dest.size
-            cpu.CF = value & (1<<pos) == 1<<pos
+            pos = src.read() % dest.size
+            cpu.CF = value & (1 << pos) == 1 << pos
             dest.write(value ^ (1 << pos))
         elif dest.type == 'memory':
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
             addr += base
             value = cpu.read_int(addr, 8)
-            cpu.CF = value & (1<<pos) == 1<<pos
+            cpu.CF = value & (1 << pos) == 1 << pos
             value = value ^ (1 << pos)
             cpu.write_int(addr, value, 8)
         else:
@@ -4127,14 +4124,14 @@ class X86Cpu(Cpu):
         if dest.type == 'register':
             value = dest.read()
             pos = src.read() % dest.size
-            cpu.CF = value & (1<<pos) == 1<<pos
+            cpu.CF = value & (1 << pos) == 1 << pos
             dest.write(value & ~(1 << pos))
         elif dest.type == 'memory':
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
-            addr+=base
+            addr += base
             value = cpu.read_int(addr, 8)
-            cpu.CF = value & (1<<pos) == 1<<pos
+            cpu.CF = value & (1 << pos) == 1 << pos
             value = value & ~(1 << pos)
             cpu.write_int(addr, value, 8)
         else:
@@ -4158,15 +4155,15 @@ class X86Cpu(Cpu):
         if dest.type == 'register':
             value = dest.read()
             pos = src.read() % dest.size
-            cpu.CF = value & (1<<pos) == 1<<pos
+            cpu.CF = value & (1 << pos) == 1 << pos
             dest.write(value | (1 << pos))
         elif dest.type == 'memory':
             addr, pos = cpu._getMemoryBit(dest, src)
             base, size, ty = cpu.get_descriptor(cpu.DS)
-            addr+=base
+            addr += base
             # read from addr
             value = cpu.read_int(addr, 8)
-            cpu.CF = value & (1<<pos) == 1<<pos
+            cpu.CF = value & (1 << pos) == 1 << pos
             value = value | (1 << pos)
             cpu.write_int(addr, value, 8)
         else:
@@ -4189,12 +4186,12 @@ class X86Cpu(Cpu):
         OF, SF, ZF, AF, CF, PF are all cleared.
         ZF is set if SRC = 0, otherwise ZF is cleared
         '''
-        count = 0;
+        count = 0
         source = src.read()
         for i in range(src.size):
-            count += Operators.ITEBV(dest.size, (source >> i)&1 == 1, 1, 0)
+            count += Operators.ITEBV(dest.size, (source >> i) & 1 == 1, 1, 0)
         dest.write(count)
-        #Flags
+        # Flags
         cpu.OF = False
         cpu.SF = False
         cpu.AF = False
@@ -4310,15 +4307,15 @@ class X86Cpu(Cpu):
         dest_addr = cpu.read_register(dest_reg) + base
         size = dest.size
 
-        #Compare
+        # Compare
         arg1 = cpu.read_int(dest_addr, size)
         arg0 = cpu.read_int(src_addr, size)
-        res = (arg0 - arg1) & ((1<<size)-1)
+        res = (arg0 - arg1) & ((1 << size) - 1)
 
         cpu._calculate_CMP_flags(size, res, arg0, arg1)
 
-        #Advance EDI/ESI pointers
-        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size/8, size/8)
+        # Advance EDI/ESI pointers
+        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size / 8, size / 8)
         cpu.write_register(src_reg, cpu.read_register(src_reg) + increment)
         cpu.write_register(dest_reg, cpu.read_register(dest_reg) + increment)
 
@@ -4349,7 +4346,7 @@ class X86Cpu(Cpu):
         arg0 = cpu.read_int(src_addr, size)
         dest.write(arg0)
 
-        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size/8, size/8)
+        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size / 8, size / 8)
         cpu.write_register(src_reg, cpu.read_register(src_reg) + increment)
 
     @rep
@@ -4376,11 +4373,11 @@ class X86Cpu(Cpu):
         dest_reg = dest.mem.base
         size = dest.size
 
-        #Copy the data
+        # Copy the data
         dest.write(src.read())
 
-        #Advance EDI/ESI pointers
-        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size/8, size/8)
+        # Advance EDI/ESI pointers
+        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size / 8, size / 8)
         cpu.write_register(src_reg, cpu.read_register(src_reg) + increment)
         cpu.write_register(dest_reg, cpu.read_register(dest_reg) + increment)
 
@@ -4428,14 +4425,14 @@ class X86Cpu(Cpu):
         :param src: source operand.
         '''
         dest_reg = dest.reg
-        mem_reg = src.mem.base #, src.type, src.read()
+        mem_reg = src.mem.base  # , src.type, src.read()
         size = dest.size
         arg0 = dest.read()
         arg1 = src.read()
         res = arg0 - arg1
-        cpu._calculate_CMP_flags( size, res, arg0, arg1)
+        cpu._calculate_CMP_flags(size, res, arg0, arg1)
 
-        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size/8, size/8)
+        increment = Operators.ITEBV(cpu.address_bit_size, cpu.DF, -size / 8, size / 8)
         cpu.write_register(mem_reg, cpu.read_register(mem_reg) + increment)
 
     @rep
@@ -4457,7 +4454,7 @@ class X86Cpu(Cpu):
         size = src.size
         dest.write(src.read())
         dest_reg = dest.mem.base
-        increment = Operators.ITEBV({'RDI':64, 'EDI':32, 'DI':16}[dest_reg], cpu.DF, -size/8, size/8)
+        increment = Operators.ITEBV({'RDI': 64, 'EDI': 32, 'DI': 16}[dest_reg], cpu.DF, -size / 8, size / 8)
         cpu.write_register(dest_reg, cpu.read_register(dest_reg) + increment)
 
 
@@ -4532,14 +4529,13 @@ class X86Cpu(Cpu):
         '''
         OperandSize = dest.size
         count = count.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
-        tempCount = Operators.ZEXTEND(count & countMask , dest.size)
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
+        tempCount = Operators.ZEXTEND(count & countMask, dest.size)
         tempDest = value = src.read()
         res = dest.write(Operators.ITEBV(dest.size, tempCount == 0, tempDest, value << tempCount))
-
 
     @instruction
     def SHRX(cpu, dest, src, count):
@@ -4552,11 +4548,11 @@ class X86Cpu(Cpu):
         '''
         OperandSize = dest.size
         count = count.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
-        tempCount = Operators.ZEXTEND(count & countMask , dest.size)
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
+        tempCount = Operators.ZEXTEND(count & countMask, dest.size)
         tempDest = value = src.read()
         res = dest.write(Operators.ITEBV(dest.size, tempCount == 0, tempDest, value >> tempCount))
 
@@ -4571,18 +4567,18 @@ class X86Cpu(Cpu):
         '''
         OperandSize = dest.size
         count = count.read()
-        countMask = { 8 : 0x1f,
-                      16: 0x1f,
-                      32: 0x1f,
-                      64: 0x3f }[OperandSize]
-        tempCount =  count & countMask
+        countMask = {8: 0x1f,
+                     16: 0x1f,
+                     32: 0x1f,
+                     64: 0x3f}[OperandSize]
+        tempCount = count & countMask
         tempDest = value = src.read()
 
-        sign = value & (1<<(OperandSize-1))
+        sign = value & (1 << (OperandSize - 1))
         while tempCount != 0:
-            cpu.CF = (value & 0x1) != 0 #LSB
-            value = (value >> 1 ) | sign
-            tempCount = tempCount-1
+            cpu.CF = (value & 0x1) != 0  # LSB
+            value = (value >> 1) | sign
+            tempCount = tempCount - 1
         res = dest.write(value)
 
     @instruction
@@ -4590,10 +4586,10 @@ class X86Cpu(Cpu):
         dest_value = dest.read()
         src_value = src.read()
         result = 0
-        for pos in range(0,dest.size,8):
+        for pos in range(0, dest.size, 8):
             itema = (dest_value >> pos) & 0xff
             itemb = (src_value >> pos) & 0xff
-            result |= Operators.ITEBV(dest.size, itema < itemb, itema, itemb) <<pos
+            result |= Operators.ITEBV(dest.size, itema < itemb, itema, itemb) << pos
         dest.write(result)
 
     @instruction
@@ -4629,14 +4625,14 @@ class X86Cpu(Cpu):
         size = dest.size
         dest_value = dest.read()
         src_value = src.read()
-        mask = (1 << item_size)-1
+        mask = (1 << item_size) - 1
         res = 0
-        count =0
-        for pos in xrange(0, size/item_size):
+        count = 0
+        for pos in xrange(0, size / item_size):
             if count >= size:
                 break
-            item0 = Operators.ZEXTEND( ( dest_value >> (pos * item_size) )& mask, size)
-            item1 = Operators.ZEXTEND( ( src_value >> (pos * item_size) )& mask, size)
+            item0 = Operators.ZEXTEND((dest_value >> (pos * item_size)) & mask, size)
+            item1 = Operators.ZEXTEND((src_value >> (pos * item_size)) & mask, size)
             res |= item0 << count
             count += item_size
             res |= item1 << count
@@ -4652,19 +4648,19 @@ class X86Cpu(Cpu):
         size = dest.size
         dest_value = dest.read()
         src_value = src.read()
-        mask = (1 << item_size)-1
+        mask = (1 << item_size) - 1
         res = 0
         count = 0
-        for pos in reversed(xrange(0, size/item_size)):
+        for pos in reversed(xrange(0, size / item_size)):
             if count >= size:
                 break
-            item0 = Operators.ZEXTEND( ( dest_value >> (pos * item_size) )& mask, size)
-            item1 = Operators.ZEXTEND( ( src_value >> (pos * item_size) )& mask, size)
+            item0 = Operators.ZEXTEND((dest_value >> (pos * item_size)) & mask, size)
+            item1 = Operators.ZEXTEND((src_value >> (pos * item_size)) & mask, size)
             res = res << item_size
             res |= item1
             res = res << item_size
             res |= item0
-            count += item_size*2
+            count += item_size * 2
 
         dest.write(res)
 
@@ -4744,7 +4740,6 @@ class X86Cpu(Cpu):
         '''
         cpu._PUNPCKL(dest, src, 32)
 
-
     @instruction
     def PSHUFW(cpu, op0, op1, op3):
         '''
@@ -4761,12 +4756,12 @@ class X86Cpu(Cpu):
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
-        arg3 = Operators.ZEXTEND(op3.read(),size)
+        arg3 = Operators.ZEXTEND(op3.read(), size)
         assert size == 64
-        arg0 |= ((arg1 >> ((arg3>>0)&3 * 16))&0xffff)
-        arg0 |= ((arg1 >> ((arg3>>2)&3 * 16))&0xffff)<<16
-        arg0 |= ((arg1 >> ((arg3>>4)&3 * 16))&0xffff)<<32
-        arg0 |= ((arg1 >> ((arg3>>6)&3 * 16))&0xffff)<<48
+        arg0 |= ((arg1 >> ((arg3 >> 0) & 3 * 16)) & 0xffff)
+        arg0 |= ((arg1 >> ((arg3 >> 2) & 3 * 16)) & 0xffff) << 16
+        arg0 |= ((arg1 >> ((arg3 >> 4) & 3 * 16)) & 0xffff) << 32
+        arg0 |= ((arg1 >> ((arg3 >> 6) & 3 * 16)) & 0xffff) << 48
         op0.write(arg0)
 
     @instruction
@@ -4790,12 +4785,12 @@ class X86Cpu(Cpu):
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
-        arg3 = Operators.ZEXTEND(op3.read(),size)
-        arg0 = arg1&0xffffffffffffffff0000000000000000
-        arg0 |= ((arg1 >> (((arg3>>0)&3) * 16))&0xffff)
-        arg0 |= ((arg1 >> (((arg3>>2)&3) * 16))&0xffff)<<16
-        arg0 |= ((arg1 >> (((arg3>>4)&3) * 16))&0xffff)<<32
-        arg0 |= ((arg1 >> (((arg3>>6)&3) * 16))&0xffff)<<48
+        arg3 = Operators.ZEXTEND(op3.read(), size)
+        arg0 = arg1 & 0xffffffffffffffff0000000000000000
+        arg0 |= ((arg1 >> (((arg3 >> 0) & 3) * 16)) & 0xffff)
+        arg0 |= ((arg1 >> (((arg3 >> 2) & 3) * 16)) & 0xffff) << 16
+        arg0 |= ((arg1 >> (((arg3 >> 4) & 3) * 16)) & 0xffff) << 32
+        arg0 |= ((arg1 >> (((arg3 >> 6) & 3) * 16)) & 0xffff) << 48
 
         op0.write(arg0)
 
@@ -4818,10 +4813,10 @@ class X86Cpu(Cpu):
         order = Operators.ZEXTEND(op3.read(), size)
 
         arg0 = arg0 & 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000
-        arg0 |= ((arg1 >> (((order>>0)&3) * 32))&0xffffffff)
-        arg0 |= ((arg1 >> (((order>>2)&3) * 32))&0xffffffff)<<32
-        arg0 |= ((arg1 >> (((order>>4)&3) * 32))&0xffffffff)<<64
-        arg0 |= ((arg1 >> (((order>>6)&3) * 32))&0xffffffff)<<96
+        arg0 |= ((arg1 >> (((order >> 0) & 3) * 32)) & 0xffffffff)
+        arg0 |= ((arg1 >> (((order >> 2) & 3) * 32)) & 0xffffffff) << 32
+        arg0 |= ((arg1 >> (((order >> 4) & 3) * 32)) & 0xffffffff) << 64
+        arg0 |= ((arg1 >> (((order >> 6) & 3) * 32)) & 0xffffffff) << 96
 
         op0.write(arg0)
 
@@ -4880,9 +4875,9 @@ class X86Cpu(Cpu):
         arg1 = op1.read()
         res = 0
 
-        for i in xrange(0,op0.size,8):
-            res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 8) == Operators.EXTRACT(arg1, i, 8), res | (0xff << i), res )
-            #if (arg0>>i)&0xff == (arg1>>i)&0xff:
+        for i in xrange(0, op0.size, 8):
+            res = Operators.ITEBV(op0.size, Operators.EXTRACT(arg0, i, 8) == Operators.EXTRACT(arg1, i, 8), res | (0xff << i), res)
+            # if (arg0>>i)&0xff == (arg1>>i)&0xff:
             #    res = res | (0xff << i)
         op0.write(res)
 
@@ -4906,16 +4901,16 @@ class X86Cpu(Cpu):
     #############################################################################
     def _pcmpxstrx_srcdat_format(self, ctlbyte):
         # Parse CTL Byte
-        ## Source Data Format
-        if ((Operators.EXTRACT(ctlbyte, 0, 2) & 1) == 0 ):
+        # Source Data Format
+        if ((Operators.EXTRACT(ctlbyte, 0, 2) & 1) == 0):
             stepsize = 8
         else:
             stepsize = 16
         return stepsize
 
     def _pcmpxstri_output_selection(self, ctlbyte, res):
-        ## Output Selection
-        ###  PCMPESTRI/PCMPISTRI
+        # Output Selection
+        # PCMPESTRI/PCMPISTRI
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
         if (Operators.EXTRACT(ctlbyte, 6, 1) == 0):
             oecx = 0
@@ -4925,24 +4920,24 @@ class X86Cpu(Cpu):
                 tres >>= 1
             return oecx
         else:
-            oecx = 128/stepsize - 1
+            oecx = 128 / stepsize - 1
             tres = res
-            msbmask = (1 << (128/stepsize - 1))
+            msbmask = (1 << (128 / stepsize - 1))
             while ((tres & msbmask) == 0):
                 oecx -= 1
                 tres = (tres << 1) & ((msbmask << 1) - 1)
             return oecx
 
     def _pcmpxstrm_output_selection(self, ctlbyte, res):
-        ## Output Selection
-        ###  PCMPESTRM/PCMPISTRM
+        # Output Selection
+        # PCMPESTRM/PCMPISTRM
         if (Operators.EXTRACT(ctlbyte, 6, 1) == 0):
             return res
         else:
             stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
             xmmres = 0
             for i in range(0, 128, stepsize):
-                if (res&1 == 1):
+                if (res & 1 == 1):
                     xmmres |= (((1 << stepsize) - 1) << i)
                 res >>= 1
             return xmmres
@@ -4967,11 +4962,11 @@ class X86Cpu(Cpu):
             val = Operators.NOT(reg - 1)
         else:
             val = reg
-        if (val > 128/step):
-            val = 128/step
+        if (val > 128 / step):
+            val = 128 / step
         result = []
         for i in range(val):
-            uc = Operators.EXTRACT(arg, i*step, step)
+            uc = Operators.EXTRACT(arg, i * step, step)
             result.append(uc)
         return result
 
@@ -4980,7 +4975,7 @@ class X86Cpu(Cpu):
         needle = [e for e in varg0]
         haystack = [e for e in varg1]
 
-        ## Aggregation Operation
+        # Aggregation Operation
         res = 0
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
         xmmsize = 128
@@ -4991,50 +4986,47 @@ class X86Cpu(Cpu):
                     res |= (1 << i)
         elif (Operators.EXTRACT(ctlbyte, 2, 2) == 1):
             #raise NotImplementedError("pcmpistrx Ranges")
-            assert len(needle)%2 == 0
+            assert len(needle) % 2 == 0
             for i in range(len(haystack)):
                 for j in range(0, len(needle), 2):
-                    if haystack[i] >= needle[j] and haystack[i] <= needle[j+1]:
+                    if haystack[i] >= needle[j] and haystack[i] <= needle[j + 1]:
                         res |= (1 << i)
                         break
         elif (Operators.EXTRACT(ctlbyte, 2, 2) == 2):
             #raise NotImplementedError("pcmpistrx Equal each")
             # Equal Each requires Null Byte Comparison Here
-            while len(needle) < xmmsize/stepsize:
+            while len(needle) < xmmsize / stepsize:
                 needle.append('\x00')
-            while len(haystack) < xmmsize/stepsize:
+            while len(haystack) < xmmsize / stepsize:
                 haystack.append('\x00')
-            for i in range(xmmsize/stepsize):
-                res = Operators.ITEBV(xmmsize, needle[i] == haystack[i], res|(1 << i), res)
+            for i in range(xmmsize / stepsize):
+                res = Operators.ITEBV(xmmsize, needle[i] == haystack[i], res | (1 << i), res)
         elif (Operators.EXTRACT(ctlbyte, 2, 2) == 3):
             #raise NotImplementedError("pcmpistrx Equal ordered")
             if len(haystack) < len(needle):
                 return 0
             for i in range(len(haystack)):
-                subneedle = needle[: (xmmsize/stepsize - i) if len(needle)+i > xmmsize/stepsize else len(needle)]
-                res = Operators.ITEBV(xmmsize, haystack[i:i+len(subneedle)] == subneedle, res|(1 << i), res)
+                subneedle = needle[: (xmmsize / stepsize - i) if len(needle) + i > xmmsize / stepsize else len(needle)]
+                res = Operators.ITEBV(xmmsize, haystack[i:i + len(subneedle)] == subneedle, res | (1 << i), res)
         return res
 
     def _pcmpxstrx_polarity(self, res1, ctlbyte, arg2len):
-        ## Polarity
+        # Polarity
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 0):
             res2 = res1
-            pass
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 1):
-            res2 = ((1 << (128/stepsize)) - 1) ^ res1
+            res2 = ((1 << (128 / stepsize)) - 1) ^ res1
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 2):
             res2 = res1
-            pass
         if (Operators.EXTRACT(ctlbyte, 4, 2) == 3):
             res2 = ((1 << arg2len) - 1) ^ res1
-            pass
         return res2
 
     def _pcmpxstrx_setflags(self, res, varg0, varg1, ctlbyte):
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
-        self.ZF = len(varg1) < 128/stepsize
-        self.SF = len(varg0) < 128/stepsize
+        self.ZF = len(varg1) < 128 / stepsize
+        self.SF = len(varg0) < 128 / stepsize
         self.CF = res != 0
         self.OF = res & 1
         self.AF = False
@@ -5066,7 +5058,7 @@ class X86Cpu(Cpu):
         res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
         res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
         if (res == 0):
-            cpu.ECX = 128/cpu._pcmpxstrx_srcdat_format(ctlbyte)
+            cpu.ECX = 128 / cpu._pcmpxstrx_srcdat_format(ctlbyte)
         else:
             cpu.ECX = cpu._pcmpxstri_output_selection(ctlbyte, res)
         cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
@@ -5089,7 +5081,7 @@ class X86Cpu(Cpu):
         res = cpu._pcmpxstrx_aggregation_operation(varg0, varg1, ctlbyte)
         res = cpu._pcmpxstrx_polarity(res, ctlbyte, len(varg1))
         if (res == 0):
-            cpu.ECX = 128/cpu._pcmpxstrx_srcdat_format(ctlbyte)
+            cpu.ECX = 128 / cpu._pcmpxstrx_srcdat_format(ctlbyte)
         else:
             cpu.ECX = cpu._pcmpxstri_output_selection(ctlbyte, res)
         cpu._pcmpxstrx_setflags(res, varg0, varg1, ctlbyte)
@@ -5122,9 +5114,9 @@ class X86Cpu(Cpu):
         arg1 = op1.read()
 
         res = 0
-        for i in reversed(xrange(7,op1.size,8)):
-            res = (res<<1) | ((arg1>>i)&1)
-        op0.write(Operators.EXTRACT(res,0,op0.size))
+        for i in reversed(xrange(7, op1.size, 8)):
+            res = (res << 1) | ((arg1 >> i) & 1)
+        op0.write(Operators.EXTRACT(res, 0, op0.size))
 
     @instruction
     def PSRLDQ(cpu, dest, src):
@@ -5150,7 +5142,7 @@ class X86Cpu(Cpu):
         # use '-1' as the value
         temp = Operators.EXTRACT(src.read(), 0, 8)
         temp = Operators.ITEBV(src.size, temp > 15, 16, temp)
-        dest.write(dest.read()>>(temp*8))
+        dest.write(dest.read() >> (temp * 8))
 
     @instruction
     def NOP(cpu, arg0=None):
@@ -5164,8 +5156,6 @@ class X86Cpu(Cpu):
         :param cpu: current CPU.
         :param arg0: this argument is ignored.
         '''
-        pass
-
 
     @instruction
     def MOVD(cpu, op0, op1):
@@ -5214,16 +5204,16 @@ class X86Cpu(Cpu):
         '''
         RDX:RAX = sign-extend of RAX.
         '''
-        res = Operators.SEXTEND(cpu.RAX,64,128)
-        cpu.RAX = Operators.EXTRACT(res,0,64)
-        cpu.RDX = Operators.EXTRACT(res,64,64)
+        res = Operators.SEXTEND(cpu.RAX, 64, 128)
+        cpu.RAX = Operators.EXTRACT(res, 0, 64)
+        cpu.RDX = Operators.EXTRACT(res, 64, 64)
 
     @instruction
     def CDQE(cpu):
         '''
         RAX = sign-extend of EAX.
         '''
-        cpu.RAX = Operators.SEXTEND(cpu.EAX,32,64)
+        cpu.RAX = Operators.SEXTEND(cpu.EAX, 32, 64)
 
     @instruction
     def CDQ(cpu):
@@ -5231,7 +5221,6 @@ class X86Cpu(Cpu):
         EDX:EAX = sign-extend of EAX
         '''
         cpu.EDX = Operators.EXTRACT(Operators.SEXTEND(cpu.EAX, 32, 64), 32, 32)
-
 
     @instruction
     def CWDE(cpu):
@@ -5258,7 +5247,7 @@ class X86Cpu(Cpu):
 
         :param cpu: current CPU.
         '''
-        cpu.AX = Operators.SEXTEND(cpu.AL,8,16)
+        cpu.AX = Operators.SEXTEND(cpu.AL, 8, 16)
 
     @instruction
     def RDTSC(cpu):
@@ -5278,8 +5267,7 @@ class X86Cpu(Cpu):
         cpu.RAX = val & 0xffffffff
         cpu.RDX = (val >> 32) & 0xffffffff
 
-
-    #AVX
+    # AVX
     def _writeCorrectSize(cpu, op0, op1):
         if op0.size > op1.size:
             op0.write(Operators.ZEXTEND(op1.read(), op0.size))
@@ -5290,24 +5278,22 @@ class X86Cpu(Cpu):
     def VMOVD(cpu, op0, op1):
         cpu._writeCorrectSize(op0, op1)
 
-    #MMX
+    # MMX
     @instruction
     def VMOVUPS(cpu, op0, op1):
         arg1 = op1.read()
         op0.write(arg1)
-
 
     @instruction
     def VMOVAPS(cpu, op0, op1):
         arg1 = op1.read()
         op0.write(arg1)
 
-
     @instruction
     def VMOVQ(cpu, op0, op1):
         cpu._writeCorrectSize(op0, op1)
 
-    #FPU:
+    # FPU:
     @instruction
     def FNSTCW(cpu, dest):
         '''
@@ -5323,7 +5309,6 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         '''
         cpu.write_int(dest.address(), cpu.FPCW, 16)
-
 
     @instruction
     def SYSCALL(cpu):
@@ -5385,7 +5370,7 @@ class X86Cpu(Cpu):
             dest.write(Operators.EXTRACT(src.read(), 64, 64))
         else:
             assert src.size == 64 and dest.size == 128
-            value = Operators.EXTRACT(dest.read(),0, 64) #low part
+            value = Operators.EXTRACT(dest.read(), 0, 64)  # low part
             dest.write(Operators.CONCAT(128, src.read(), value))
 
     @instruction
@@ -5409,10 +5394,10 @@ class X86Cpu(Cpu):
         result = []
         value_a = dest.read()
         value_b = src.read()
-        for i in reversed(range(0,dest.size,8)):
+        for i in reversed(range(0, dest.size, 8)):
             a = Operators.EXTRACT(value_a, i, 8)
             b = Operators.EXTRACT(value_b, i, 8)
-            result.append((a-b)&0xff)
+            result.append((a - b) & 0xff)
         dest.write(Operators.CONCAT(8 * len(result), *result))
 
     @instruction
@@ -5424,7 +5409,8 @@ class X86Cpu(Cpu):
         operand can be an MMX technology register or an XMM register. Each bit of the result is set to 1 if either
         or both of the corresponding bits of the first and second operands are 1; otherwise, it is set to 0.
         '''
-        res = dest.write(dest.read()|src.read())
+        res = dest.write(dest.read() | src.read())
+
     @instruction
     def XORPS(cpu, dest, src):
         '''
@@ -5434,7 +5420,7 @@ class X86Cpu(Cpu):
         operand can be an MMX technology register or an XMM register. Each bit of the result is set to 1 if either
         or both of the corresponding bits of the first and second operands are 1; otherwise, it is set to 0.
         '''
-        res = dest.write(dest.read()^src.read())
+        res = dest.write(dest.read() ^ src.read())
 
     @instruction
     def VORPD(cpu, dest, src, src2):
@@ -5452,7 +5438,6 @@ class X86Cpu(Cpu):
         '''
         res = dest.write(src.read() | src2.read())
 
-
     @instruction
     def PTEST(cpu, dest, src):
         ''' PTEST
@@ -5466,9 +5451,8 @@ class X86Cpu(Cpu):
         cpu.AF = False
         cpu.PF = False
         cpu.SF = False
-        cpu.ZF = ( Operators.EXTRACT(dest.read(),0,128) & Operators.EXTRACT(src.read(),0,128) ) == 0
-        cpu.CF = ( Operators.EXTRACT(src.read(),0,128) & ~(Operators.EXTRACT(dest.read(),0,128))) == 0
-
+        cpu.ZF = (Operators.EXTRACT(dest.read(), 0, 128) & Operators.EXTRACT(src.read(), 0, 128)) == 0
+        cpu.CF = (Operators.EXTRACT(src.read(), 0, 128) & ~(Operators.EXTRACT(dest.read(), 0, 128))) == 0
 
     @instruction
     def VPTEST(cpu, dest, src):
@@ -5534,7 +5518,7 @@ class X86Cpu(Cpu):
         :param dest: destination operand.
         :param src: source operand.
         '''
-        #mmx to mmx or mmx to mem
+        # mmx to mmx or mmx to mem
         if dest.size == src.size and dest.size == 64:
             dest.write(src.read())
         # two xmm regs
@@ -5580,7 +5564,6 @@ class X86Cpu(Cpu):
             value = Operators.ZEXTEND(value, dest.size)
         dest.write(value)
 
-
     @instruction
     def MOVSS(cpu, dest, src):
         '''
@@ -5605,20 +5588,20 @@ class X86Cpu(Cpu):
             Destination = Source[0..31];
         //MOVSS instruction when source operand is memory location and destination operand is XMM register:
         else {
-	        Destination[0..31] = Source;
-	        Destination[32..127] = 0;
+                Destination[0..31] = Source;
+                Destination[32..127] = 0;
         }
         '''
         if dest.type == 'register' and src.type == 'register':
-            assert dest.size==128 and src.size==128
-            dest.write(dest.read() & ~0xffffffff | src.read()&0xffffffff)
+            assert dest.size == 128 and src.size == 128
+            dest.write(dest.read() & ~0xffffffff | src.read() & 0xffffffff)
         elif dest.type == 'memory':
             assert src.type == 'register'
-            dest.write(Operators.EXTRACT(src.read(),0,dest.size))
+            dest.write(Operators.EXTRACT(src.read(), 0, dest.size))
         else:
             assert src.type == 'memory' and dest.type == 'register'
             assert src.size == 32 and dest.size == 128
-            dest.write(Operators.ZEXTEND(src.read(),128))
+            dest.write(Operators.ZEXTEND(src.read(), 128))
 
     @instruction
     def VMOVDQA(cpu, dest, src):
@@ -5635,7 +5618,7 @@ class X86Cpu(Cpu):
         must be aligned on a 16-byte boundary or a general-protection exception
         (#GP) will be generated. To move integer data to and from unaligned
         memory locations, use the VMOVDQU instruction.'''
-        #TODO raise exception when unaligned!
+        # TODO raise exception when unaligned!
         dest.write(src.read())
 
     @instruction
@@ -5657,7 +5640,7 @@ class X86Cpu(Cpu):
             VMOVDQU (VEX.256 encoded version)
             DEST[255:0] <- SRC[255:0]
         '''
-        #FIXME for VEX128? or do testcase
+        # FIXME for VEX128? or do testcase
         dest.write(src.read())
 
     @instruction
@@ -5669,8 +5652,8 @@ class X86Cpu(Cpu):
         destination operand (first operand). The destination may be either an
         XMM register or an 128-bit memory location.
         '''
-        offset=offset.read()
-        dest.write(Operators.EXTRACT(src.read(), offset*128 , (offset+1)*128))
+        offset = offset.read()
+        dest.write(Operators.EXTRACT(src.read(), offset * 128, (offset + 1) * 128))
 
     @instruction
     def PREFETCHT0(cpu, arg):
@@ -5679,7 +5662,7 @@ class X86Cpu(Cpu):
 
         Performs no operation.
         '''
-        pass
+
     @instruction
     def PREFETCHT1(cpu, arg):
         '''
@@ -5687,7 +5670,7 @@ class X86Cpu(Cpu):
 
         Performs no operation.
         '''
-        pass
+
     @instruction
     def PREFETCHT2(cpu, arg):
         '''
@@ -5695,7 +5678,7 @@ class X86Cpu(Cpu):
 
         Performs no operation.
         '''
-        pass
+
     @instruction
     def PREFETCHTNTA(cpu, arg):
         '''
@@ -5703,20 +5686,27 @@ class X86Cpu(Cpu):
 
         Performs no operation.
         '''
-        pass
 
     @instruction
     def PINSRW(cpu, dest, src, count):
         if dest.size == 64:
-            #PINSRW instruction with 64-bit source operand:
+            # PINSRW instruction with 64-bit source operand:
             sel = count.read() & 3
-            mask = [0x000000000000FFFF, 0x00000000FFFF0000, 0x0000FFFF00000000, 0xFFFF000000000000 ][sel]
+            mask = [0x000000000000FFFF, 0x00000000FFFF0000, 0x0000FFFF00000000, 0xFFFF000000000000][sel]
         else:
-            #PINSRW instruction with 128-bit source operand
+            # PINSRW instruction with 128-bit source operand
             assert dest.size == 128
             sel = count.read() & 7
-            mask = [0x0000000000000000000000000000FFFF,0x000000000000000000000000FFFF0000,0x00000000000000000000FFFF00000000,0x0000000000000000FFFF000000000000,0x000000000000FFFF0000000000000000,0x00000000FFFF00000000000000000000,0x0000FFFF000000000000000000000000,0xFFFF0000000000000000000000000000][sel]
-        dest.write( (dest.read() & ~mask) |  ((Operators.ZEXTEND(src.read(),dest.size) << (sel * 16)) & mask) )
+            mask = [
+                0x0000000000000000000000000000FFFF,
+                0x000000000000000000000000FFFF0000,
+                0x00000000000000000000FFFF00000000,
+                0x0000000000000000FFFF000000000000,
+                0x000000000000FFFF0000000000000000,
+                0x00000000FFFF00000000000000000000,
+                0x0000FFFF000000000000000000000000,
+                0xFFFF0000000000000000000000000000][sel]
+        dest.write((dest.read() & ~mask) | ((Operators.ZEXTEND(src.read(), dest.size) << (sel * 16)) & mask))
 
     @instruction
     def PEXTRW(cpu, dest, src, count):
@@ -5734,10 +5724,10 @@ class X86Cpu(Cpu):
             at byte granularity to the right by a constant immediate, and extracts the right-
             aligned result into the destination.'''
         dest.write(
-                Operators.EXTRACT(
-                    Operators.CONCAT(dest.size * 2, dest.read(), src.read()),
-                    offset.read()*8,
-                    dest.size ))
+            Operators.EXTRACT(
+                Operators.CONCAT(dest.size * 2, dest.read(), src.read()),
+                offset.read() * 8,
+                dest.size))
 
     @instruction
     def PSLLDQ(cpu, dest, src):
@@ -5753,14 +5743,14 @@ class X86Cpu(Cpu):
             if (TEMP > 15) TEMP  =  16;
             DEST  =  DEST << (TEMP * 8);
         '''
-        count = Operators.ZEXTEND(src.read(), dest.size*2)
-        byte_count = Operators.ITEBV(src.size*2, count > 15, 16, count)
+        count = Operators.ZEXTEND(src.read(), dest.size * 2)
+        byte_count = Operators.ITEBV(src.size * 2, count > 15, 16, count)
         bit_count = byte_count * 8
-        val = Operators.ZEXTEND(dest.read(), dest.size*2)
-        val = val << (Operators.ZEXTEND(bit_count, dest.size*2))
+        val = Operators.ZEXTEND(dest.read(), dest.size * 2)
+        val = val << (Operators.ZEXTEND(bit_count, dest.size * 2))
         dest.write(Operators.EXTRACT(val, 0, dest.size))
 
-    #FIXME
+    # FIXME
     @instruction
     def PSRLQ(cpu, dest, src):
         '''Shift Packed Data Right Logical
@@ -5771,19 +5761,19 @@ class X86Cpu(Cpu):
         specified by the count operand is greater than  63, then the destination operand is set
         to all 0s.
 
-    	if(OperandSize == 64) {
-			//PSRLQ instruction with 64-bit operand:
-			if(Count > 63) Destination[64..0] = 0;
-			else Destination = ZeroExtend(Destination >> Count);
-		}
-		else {
-			//PSRLQ instruction with 128-bit operand:
-			if(Count > 15) Destination[128..0] = 0;
-			else {
-				Destination[0..63] = ZeroExtend(Destination[0..63] >> Count);
-				Destination[64..127] = ZeroExtend(Destination[64..127] >> Count);
-			}
-		}
+        if(OperandSize == 64) {
+                        //PSRLQ instruction with 64-bit operand:
+                        if(Count > 63) Destination[64..0] = 0;
+                        else Destination = ZeroExtend(Destination >> Count);
+                }
+                else {
+                        //PSRLQ instruction with 128-bit operand:
+                        if(Count > 15) Destination[128..0] = 0;
+                        else {
+                                Destination[0..63] = ZeroExtend(Destination[0..63] >> Count);
+                                Destination[64..127] = ZeroExtend(Destination[64..127] >> Count);
+                        }
+                }
         '''
 
         count = src.read()
@@ -5795,7 +5785,6 @@ class X86Cpu(Cpu):
             hi = Operators.EXTRACT(dest.read(), 64, 64) >> count
             low = Operators.EXTRACT(dest.read(), 0, 64) >> count
             dest.write(Operators.CONCAT(128, hi, low))
-
 
     @instruction
     def PAND(cpu, dest, src):
@@ -5810,16 +5799,16 @@ class X86Cpu(Cpu):
             # and if so concretize accordingly
             raise NotImplementedError("Do not yet implement symbolic LSL")
 
-        #Checks that the segment selector is not null.
-        if selector == 0 or selector not in cpu._segments: #Shouldn't we need check for max GDTR limit instead?
+        # Checks that the segment selector is not null.
+        if selector == 0 or selector not in cpu._segments:  # Shouldn't we need check for max GDTR limit instead?
             cpu.ZF = False
             logger.info("Invalid selector %s. Clearing ZF", selector)
             return
 
         base, limit, ty = cpu.get_descriptor(selector)
 
-        #Check CPL and type
-        #TODO http://x86.renejeschke.de/html/file_module_x86_id_162.html
+        # Check CPL and type
+        # TODO http://x86.renejeschke.de/html/file_module_x86_id_162.html
         logger.debug("LSL instruction not fully implemented")
 
         cpu.ZF = True
@@ -5854,9 +5843,8 @@ class X86Cpu(Cpu):
         flag = Operators.EXTRACT(value, 0, 1) == 1
         res = 0
         for pos in xrange(1, src.size):
-            res  = Operators.ITEBV(dest.size, flag, res, pos)
-            flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1 )
-
+            res = Operators.ITEBV(dest.size, flag, res, pos)
+            flag = Operators.OR(flag, Operators.EXTRACT(value, pos, 1) == 1)
 
         cpu.CF = res == src.size
         cpu.ZF = res == 0
@@ -5878,24 +5866,24 @@ class X86Cpu(Cpu):
         size = op0.size
         arg0 = op0.read()
         arg1 = op1.read()
-        arg3 = Operators.ZEXTEND(op3.read(),size)
+        arg3 = Operators.ZEXTEND(op3.read(), size)
 
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,7,1) == 1, 0, (arg1 >> ((arg3>>0)&7 * 8))&0xff)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,15,1) == 1, 0, ((arg1 >> ((arg3>>8)&7 * 8))&0xff)<<8 )
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,23,1) == 1, 0, ((arg1 >> ((arg3>>16)&7 * 8))&0xff)<<16)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,31,1) == 1, 0, ((arg1 >> ((arg3>>24)&7 * 8))&0xff)<<24)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,39,1) == 1, 0, ((arg1 >> ((arg3>>32)&7 * 8))&0xff)<<32)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,47,1) == 1, 0, ((arg1 >> ((arg3>>40)&7 * 8))&0xff)<<40)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,55,1) == 1, 0, ((arg1 >> ((arg3>>48)&7 * 8))&0xff)<<48)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,63,1) == 1, 0, ((arg1 >> ((arg3>>56)&7 * 8))&0xff)<<56)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,71,1) == 1, 0, ((arg1 >> ((arg3>>64)&7 * 8))&0xff)<<64)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,79,1) == 1, 0, ((arg1 >> ((arg3>>72)&7 * 8))&0xff)<<72)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,87,1) == 1, 0, ((arg1 >> ((arg3>>80)&7 * 8))&0xff)<<80)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,95,1) == 1, 0, ((arg1 >> ((arg3>>88)&7 * 8))&0xff)<<88)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,103,1) == 1, 0, ((arg1 >> ((arg3>>96)&7 * 8))&0xff)<<96)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,111,1) == 1, 0, ((arg1 >> ((arg3>>104)&7 * 8))&0xff)<<104)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,119,1) == 1, 0, ((arg1 >> ((arg3>>112)&7 * 8))&0xff)<<112)
-        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3,127,1) == 1, 0, ((arg1 >> ((arg3>>120)&7 * 8))&0xff)<<120)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 7, 1) == 1, 0, (arg1 >> ((arg3 >> 0) & 7 * 8)) & 0xff)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 15, 1) == 1, 0, ((arg1 >> ((arg3 >> 8) & 7 * 8)) & 0xff) << 8)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 23, 1) == 1, 0, ((arg1 >> ((arg3 >> 16) & 7 * 8)) & 0xff) << 16)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 31, 1) == 1, 0, ((arg1 >> ((arg3 >> 24) & 7 * 8)) & 0xff) << 24)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 39, 1) == 1, 0, ((arg1 >> ((arg3 >> 32) & 7 * 8)) & 0xff) << 32)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 47, 1) == 1, 0, ((arg1 >> ((arg3 >> 40) & 7 * 8)) & 0xff) << 40)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 55, 1) == 1, 0, ((arg1 >> ((arg3 >> 48) & 7 * 8)) & 0xff) << 48)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 63, 1) == 1, 0, ((arg1 >> ((arg3 >> 56) & 7 * 8)) & 0xff) << 56)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 71, 1) == 1, 0, ((arg1 >> ((arg3 >> 64) & 7 * 8)) & 0xff) << 64)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 79, 1) == 1, 0, ((arg1 >> ((arg3 >> 72) & 7 * 8)) & 0xff) << 72)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 87, 1) == 1, 0, ((arg1 >> ((arg3 >> 80) & 7 * 8)) & 0xff) << 80)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 95, 1) == 1, 0, ((arg1 >> ((arg3 >> 88) & 7 * 8)) & 0xff) << 88)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 103, 1) == 1, 0, ((arg1 >> ((arg3 >> 96) & 7 * 8)) & 0xff) << 96)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 111, 1) == 1, 0, ((arg1 >> ((arg3 >> 104) & 7 * 8)) & 0xff) << 104)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 119, 1) == 1, 0, ((arg1 >> ((arg3 >> 112) & 7 * 8)) & 0xff) << 112)
+        arg0 |= Operators.ITEBV(size, Operators.EXTRACT(arg3, 127, 1) == 1, 0, ((arg1 >> ((arg3 >> 120) & 7 * 8)) & 0xff) << 120)
         op0.write(arg0)
 
     @instruction
@@ -5920,12 +5908,14 @@ class X86Cpu(Cpu):
             cpu.YMM15 = cpu.YMM15 & 0xffffffffffffffffffffffffffffffff
 
 ################################################################################
-#Calling conventions
+# Calling conventions
+
 
 class I386LinuxSyscallAbi(SyscallAbi):
     '''
     i386 Linux system call ABI
     '''
+
     def syscall_number(self):
         return self._cpu.EAX
 
@@ -5936,12 +5926,13 @@ class I386LinuxSyscallAbi(SyscallAbi):
     def write_result(self, result):
         self._cpu.EAX = result
 
+
 class AMD64LinuxSyscallAbi(SyscallAbi):
     '''
     AMD64 Linux system call ABI
     '''
 
-    #TODO(yan): Floating point or wide arguments that deviate from the norm are
+    # TODO(yan): Floating point or wide arguments that deviate from the norm are
     # not yet supported.
 
     def syscall_number(self):
@@ -5959,6 +5950,7 @@ class I386CdeclAbi(Abi):
     '''
     i386 cdecl function call semantics
     '''
+
     def get_arguments(self):
         base = self._cpu.STACK + self._cpu.address_bit_size / 8
         for address in self.values_from(base):
@@ -5970,10 +5962,12 @@ class I386CdeclAbi(Abi):
     def ret(self):
         self._cpu.EIP = self._cpu.pop(self._cpu.address_bit_size)
 
+
 class I386StdcallAbi(Abi):
     '''
     x86 Stdcall function call convention. Callee cleans up the stack.
     '''
+
     def __init__(self, cpu):
         super(I386StdcallAbi, self).__init__(cpu)
         self._arguments = 0
@@ -5994,12 +5988,13 @@ class I386StdcallAbi(Abi):
         self._cpu.ESP += self._arguments * word_bytes
         self._arguments = 0
 
+
 class SystemVAbi(Abi):
     '''
     x64 SystemV function call convention
     '''
 
-    #TODO(yan): Floating point or wide arguments that deviate from the norm are
+    # TODO(yan): Floating point or wide arguments that deviate from the norm are
     # not yet supported.
 
     def get_arguments(self):
@@ -6021,9 +6016,8 @@ class SystemVAbi(Abi):
         self._cpu.RIP = self._cpu.pop(self._cpu.address_bit_size)
 
 
-
 class AMD64Cpu(X86Cpu):
-    #Config
+    # Config
     max_instr_width = 15
     address_bit_size = 64
     machine = 'amd64'
@@ -6035,7 +6029,7 @@ class AMD64Cpu(X86Cpu):
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC' : 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
+        super(AMD64Cpu, self).__init__(AMD64RegFile(aliases={'PC': 'RIP', 'STACK': 'RSP', 'FRAME': 'RBP'},),
                                        memory,
                                        *args,
                                        **kwargs)
@@ -6058,42 +6052,42 @@ class AMD64Cpu(X86Cpu):
         result = ""
         try:
             instruction = self.instruction
-            result += "Instruction: 0x%016x:\t%s\t%s\n"%( instruction.address, instruction.mnemonic, instruction.op_str)
-        except:
+            result += "Instruction: 0x%016x:\t%s\t%s\n" % (instruction.address, instruction.mnemonic, instruction.op_str)
+        except BaseException:
             result += "{can't decode instruction }\n"
 
-        regs = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',  'RIP', 'EFLAGS')
+        regs = ('RAX', 'RCX', 'RDX', 'RBX', 'RSP', 'RBP', 'RSI', 'RDI', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'RIP', 'EFLAGS')
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%3s: "%reg_name + CFAIL
-                result += visitors.pretty_print (value, depth=10)
+                result += "%3s: " % reg_name + CFAIL
+                result += visitors.pretty_print(value, depth=10)
                 result += CEND
             else:
-                result += "%3s: 0x%016x"%(reg_name, value)
+                result += "%3s: 0x%016x" % (reg_name, value)
             pos = 0
             result += '\n'
 
         pos = 0
-        for reg_name in ('CF','SF','ZF','OF','AF', 'PF', 'IF', 'DF'):
+        for reg_name in ('CF', 'SF', 'ZF', 'OF', 'AF', 'PF', 'IF', 'DF'):
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%s:"%reg_name + CFAIL
+                result += "%s:" % reg_name + CFAIL
                 #"%16s"%value+CEND
-                result += visitors.pretty_print (value, depth=10) + CEND
+                result += visitors.pretty_print(value, depth=10) + CEND
             else:
-                result += "%s: %1x"%(reg_name, value)
+                result += "%s: %1x" % (reg_name, value)
 
             pos = 0
             result += '\n'
 
-        for reg_name in ['CS','DS','ES','SS', 'FS', 'GS']:
+        for reg_name in ['CS', 'DS', 'ES', 'SS', 'FS', 'GS']:
             base, size, ty = self.get_descriptor(self.read_register(reg_name))
-            result += '%s: %x, %x (%s)\n'%(reg_name,base, size, ty)
+            result += '%s: %x, %x (%s)\n' % (reg_name, base, size, ty)
 
-        for reg_name in ['FP0','FP1','FP2','FP3','FP4','FP5','FP6','FP7','TOP']:
+        for reg_name in ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'TOP']:
             value = getattr(self, reg_name)
-            result += "%3s: %r"%(reg_name, value)
+            result += "%3s: %r" % (reg_name, value)
             pos = 0
             result += '\n'
 
@@ -6132,7 +6126,6 @@ class AMD64Cpu(X86Cpu):
         cpu.AL = cpu.read_int(cpu.RBX + Operators.ZEXTEND(cpu.AL, 64), 8)
 
 
-
 class I386Cpu(X86Cpu):
     # Config
     max_instr_width = 15
@@ -6146,7 +6139,7 @@ class I386Cpu(X86Cpu):
         Builds a CPU model.
         :param memory: memory object for this CPU.
         '''
-        super(I386Cpu, self).__init__(AMD64RegFile({'PC' : 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
+        super(I386Cpu, self).__init__(AMD64RegFile({'PC': 'EIP', 'STACK': 'ESP', 'FRAME': 'EBP'}),
                                       memory,
                                       *args,
                                       **kwargs)
@@ -6169,41 +6162,41 @@ class I386Cpu(X86Cpu):
         result = ""
         try:
             instruction = self.instruction
-            result += "Instruction: 0x%016x:\t%s\t%s\n"%( instruction.address, instruction.mnemonic, instruction.op_str)
-        except:
+            result += "Instruction: 0x%016x:\t%s\t%s\n" % (instruction.address, instruction.mnemonic, instruction.op_str)
+        except BaseException:
             result += "{can't decode instruction }\n"
 
         regs = ('EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP')
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%3s: "%reg_name + CFAIL
-                result += visitors.pretty_print (value, depth=10) + CEND
+                result += "%3s: " % reg_name + CFAIL
+                result += visitors.pretty_print(value, depth=10) + CEND
             else:
-               result += "%3s: 0x%016x"%(reg_name, value)
+                result += "%3s: 0x%016x" % (reg_name, value)
             pos = 0
             result += '\n'
 
         pos = 0
-        for reg_name in ['CF','SF','ZF','OF','AF', 'PF', 'IF', 'DF']:
+        for reg_name in ['CF', 'SF', 'ZF', 'OF', 'AF', 'PF', 'IF', 'DF']:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%s:"%reg_name + CFAIL
+                result += "%s:" % reg_name + CFAIL
                 #"%16s"%value+CEND
-                result += visitors.pretty_print (value, depth=10) + CEND
+                result += visitors.pretty_print(value, depth=10) + CEND
             else:
-                result += "%s: %1x"%(reg_name, value)
+                result += "%s: %1x" % (reg_name, value)
 
             pos = 0
             result += '\n'
 
-        for reg_name in ['CS','DS','ES','SS', 'FS', 'GS']:
+        for reg_name in ['CS', 'DS', 'ES', 'SS', 'FS', 'GS']:
             base, size, ty = self.get_descriptor(self.read_register(reg_name))
-            result += '%s: %x, %x (%s)\n'%(reg_name,base, size, ty)
+            result += '%s: %x, %x (%s)\n' % (reg_name, base, size, ty)
 
-        for reg_name in ['FP0','FP1','FP2','FP3','FP4','FP5','FP6','FP7','TOP']:
+        for reg_name in ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'TOP']:
             value = getattr(self, reg_name)
-            result += "%3s: %r"%(reg_name, value)
+            result += "%3s: %r" % (reg_name, value)
             pos = 0
             result += '\n'
 
@@ -6211,13 +6204,12 @@ class I386Cpu(X86Cpu):
 
     @property
     def canonical_registers(self):
-        regs = ['EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP' ]
-        regs.extend(['CS','DS','ES','SS', 'FS', 'GS'])
+        regs = ['EAX', 'ECX', 'EDX', 'EBX', 'ESP', 'EBP', 'ESI', 'EDI', 'EIP']
+        regs.extend(['CS', 'DS', 'ES', 'SS', 'FS', 'GS'])
         regs.extend(['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'FPCW', 'FPSW', 'FPTAG'])
         regs.extend(['XMM0', 'XMM1', 'XMM10', 'XMM11', 'XMM12', 'XMM13', 'XMM14', 'XMM15', 'XMM2', 'XMM3', 'XMM4', 'XMM5', 'XMM6', 'XMM7', 'XMM8', 'XMM9'])
-        regs.extend(['CF','PF','AF','ZF','SF','IF','DF','OF'])
+        regs.extend(['CF', 'PF', 'AF', 'ZF', 'SF', 'IF', 'DF', 'OF'])
         return tuple(regs)
-
 
     @instruction
     def XLATB(cpu):
@@ -6246,5 +6238,3 @@ class I386Cpu(X86Cpu):
         :param dest: destination operand.
         '''
         cpu.AL = cpu.read_int(cpu.EBX + Operators.ZEXTEND(cpu.AL, 32), 8)
-
-

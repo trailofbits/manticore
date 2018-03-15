@@ -1,5 +1,5 @@
-''' Common binary formats interface 
-Ideally you should be able to do something like 
+''' Common binary formats interface
+Ideally you should be able to do something like
 
         from binary import Binary
         binary = Binary(filename)
@@ -15,8 +15,10 @@ and common API.  interpreters? linkers? linked DLLs?
 
 '''
 
+
 class Binary(object):
-    magics = { }
+    magics = {}
+
     def __new__(cls, path):
         if cls is Binary:
             cl = cls.magics[file(path).read(4)]
@@ -38,14 +40,15 @@ class Binary(object):
         pass
 
 
-
 from elftools.elf.elffile import ELFFile
 import StringIO
+
+
 class CGCElf(Binary):
 
     @staticmethod
     def _cgc2elf(filename):
-        #hack begin so we can use upstream Elftool
+        # hack begin so we can use upstream Elftool
         with open(filename, 'rb') as fd:
             stream = StringIO.StringIO(fd.read())
             stream.write('\x7fELF')
@@ -56,7 +59,7 @@ class CGCElf(Binary):
         super(CGCElf, self).__init__(filename)
         stream = self._cgc2elf(filename)
         self.elf = ELFFile(stream)
-        self.arch = {'x86':'i386','x64':'amd64'}[self.elf.get_machine_arch()]
+        self.arch = {'x86': 'i386', 'x64': 'amd64'}[self.elf.get_machine_arch()]
 
         assert 'i386' == self.arch
         assert self.elf.header.e_type in ['ET_EXEC']
@@ -70,17 +73,17 @@ class CGCElf(Binary):
                 continue
 
             flags = elf_segment.header.p_flags
-            #PF_X 0x1 Execute - PF_W 0x2 Write - PF_R 0x4 Read
-            perms = ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][flags&7]
+            # PF_X 0x1 Execute - PF_W 0x2 Write - PF_R 0x4 Read
+            perms = ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][flags & 7]
             if 'r' not in perms:
                 raise Exception("Not readable map from cgc elf not supported")
 
-            #CGCMAP--
-            assert elf_segment.header.p_filesz != 0 or elf_segment.header.p_memsz != 0 
+            # CGCMAP--
+            assert elf_segment.header.p_filesz != 0 or elf_segment.header.p_memsz != 0
             yield((elf_segment.header.p_vaddr,
-                  elf_segment.header.p_memsz,
-                  perms, 
-                  elf_segment.stream.name, elf_segment.header.p_offset, elf_segment.header.p_filesz))
+                   elf_segment.header.p_memsz,
+                   perms,
+                   elf_segment.stream.name, elf_segment.header.p_offset, elf_segment.header.p_filesz))
 
     def threads(self):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
@@ -89,22 +92,20 @@ class CGCElf(Binary):
 class Elf(Binary):
     def __init__(self, filename):
         super(Elf, self).__init__(filename)
-        self.elf = ELFFile(file(filename)) 
-        self.arch = {'x86':'i386','x64':'amd64'}[self.elf.get_machine_arch()]
+        self.elf = ELFFile(file(filename))
+        self.arch = {'x86': 'i386', 'x64': 'amd64'}[self.elf.get_machine_arch()]
         assert self.elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
-
-        #Get interpreter elf
+        # Get interpreter elf
         self.interpreter = None
         for elf_segment in self.elf.iter_segments():
             if elf_segment.header.p_type != 'PT_INTERP':
                 continue
             self.interpreter = Elf(elf_segment.data()[:-1])
             break
-        if not self.interpreter is None:
+        if self.interpreter is not None:
             assert self.interpreter.arch == self.arch
             assert self.interpreter.elf.header.e_type in ['ET_DYN', 'ET_EXEC']
-
 
     def maps(self):
         for elf_segment in self.elf.iter_segments():
@@ -112,17 +113,17 @@ class Elf(Binary):
                 continue
 
             flags = elf_segment.header.p_flags
-            #PF_X 0x1 Execute - PF_W 0x2 Write - PF_R 0x4 Read
-            perms = ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][flags&7]
+            # PF_X 0x1 Execute - PF_W 0x2 Write - PF_R 0x4 Read
+            perms = ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][flags & 7]
             if 'r' not in perms:
                 raise Exception("Not readable map from cgc elf not supported")
 
-            #CGCMAP--
-            assert elf_segment.header.p_filesz != 0 or elf_segment.header.p_memsz != 0 
+            # CGCMAP--
+            assert elf_segment.header.p_filesz != 0 or elf_segment.header.p_memsz != 0
             yield((elf_segment.header.p_vaddr,
-                  elf_segment.header.p_memsz,
-                  perms, 
-                  elf_segment.stream.name, elf_segment.header.p_offset, elf_segment.header.p_filesz))
+                   elf_segment.header.p_memsz,
+                   perms,
+                   elf_segment.stream.name, elf_segment.header.p_offset, elf_segment.header.p_filesz))
 
     def getInterpreter(self):
         return self.interpreter
@@ -131,13 +132,11 @@ class Elf(Binary):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
 
 
-Binary.magics= { '\x7fCGC': CGCElf,
-                 '\x7fELF': Elf }
+Binary.magics = {'\x7fCGC': CGCElf,
+                 '\x7fELF': Elf}
 
 
 if __name__ == '__main__':
     import sys
     print list(Binary(sys.argv[1]).threads())
     print list(Binary(sys.argv[1]).maps())
-
-

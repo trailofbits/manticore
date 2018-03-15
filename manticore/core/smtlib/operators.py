@@ -35,6 +35,7 @@ def NOT(a):
         return ~a
     return a == False
 
+
 def AND(a, b, *others):
     if len(others) > 0:
         b = AND(b, others[0], *others[1:])
@@ -64,6 +65,7 @@ def XOR(a, b):
     if isinstance(result, (BitVec, int, long)):
         result = ITE(result != 0, True, False)
     return result
+
 
 def UGT(a, b):
     if isinstance(a, BitVec):
@@ -162,6 +164,7 @@ def CONCAT(total_size, *args):
             result = (result << arg_size) | (arg & ((1 << arg_size) - 1))
         return result
 
+
 def ITE(cond, true_value, false_value):
     assert isinstance(true_value, (Bool, bool, BitVec, int, long))
     assert isinstance(false_value, (Bool, bool, BitVec, int, long))
@@ -179,6 +182,7 @@ def ITE(cond, true_value, false_value):
         false_value = BoolConstant(false_value)
 
     return BoolITE(cond, true_value, false_value)
+
 
 def ITEBV(size, cond, true_value, false_value):
     if isinstance(cond, BitVec):
@@ -204,13 +208,14 @@ def ITEBV(size, cond, true_value, false_value):
         false_value = BitVecConstant(size, false_value)
     return BitVecITE(size, cond, true_value, false_value)
 
+
 def UDIV(dividend, divisor):
     if isinstance(dividend, BitVec):
         return dividend.udiv(divisor)
     elif isinstance(divisor, BitVec):
         return divisor.rudiv(dividend)
     assert dividend >= 0 or divisor > 0  # unsigned-es
-    return dividend/divisor
+    return dividend / divisor
 
 
 def UREM(a, b):
@@ -275,6 +280,5 @@ def SAR(size, a, b):
         sign = tempDest & (1 << (size - 1))
         while tempCount != 0:
             tempDest = (tempDest >> 1) | sign
-            tempCount = tempCount-1
+            tempCount = tempCount - 1
         return tempDest
-

@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import types
-import binascii
 import functools
 import cProfile
 import pstats
@@ -12,13 +11,12 @@ from contextlib import contextmanager
 
 from threading import Timer
 
-#FIXME: remove this three
+# FIXME: remove this three
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
 from .core.executor import Executor
-from .core.parser import parse
 from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
@@ -32,6 +30,7 @@ from .utils import log
 
 logger = logging.getLogger(__name__)
 log.init_logging()
+
 
 def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     def _check_disassembler_present(disasm):
@@ -55,6 +54,7 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     initial_state = State(constraints, platform)
     return initial_state
 
+
 def make_decree(program, concrete_start='', **kwargs):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
@@ -67,10 +67,11 @@ def make_decree(program, concrete_start='', **kwargs):
     platform.input.transmit(initial_state.symbolicate_buffer('+'*14, label='RECEIVE'))
     return initial_state
 
-def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start = ''):
+
+def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
-    env = ['%s=%s'%(k,v) for k,v in env.items()]
+    env = ['%s=%s' % (k, v) for k, v in env.items()]
 
     logger.info('Loading program %s', program)
 
@@ -84,10 +85,10 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
         logger.info('Starting with concrete input: %s', concrete_start)
 
     for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i+1))
+        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i + 1))
 
     for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i+1))
+        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i + 1))
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
@@ -96,7 +97,7 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
 
     platform.input.write(concrete_start)
 
-    #set stdin input...
+    # set stdin input...
     platform.input.write(initial_state.symbolicate_buffer('+' * 256,
                                                           label='STDIN'))
     return initial_state
@@ -120,6 +121,7 @@ def make_initial_state(binary_path, **kwargs):
     else:
         raise NotImplementedError("Binary {} not supported.".format(binary_path))
     return state
+
 
 class Manticore(Eventful):
     '''
@@ -153,17 +155,15 @@ class Manticore(Eventful):
                 raise Exception('Invalid workspace')
             ws_path = None
 
-
-
         self._output = ManticoreOutput(ws_path)
         self._context = {}
 
-        #sugar for 'will_execute_instruction"
+        # sugar for 'will_execute_instruction"
         self._hooks = {}
         self._executor = Executor(store=self._output.store, policy=policy)
         self._workers = []
 
-        #Link Executor events to default callbacks in manticore object
+        # Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
         if isinstance(path_or_state, str):
@@ -180,24 +180,23 @@ class Manticore(Eventful):
 
         self.plugins = set()
 
-        #Move the folowing into a plugin
+        # Move the folowing into a plugin
         self._assertions = {}
         self._coverage_file = None
         self.trace = None
 
-        #FIXME move the folowing to aplugin
+        # FIXME move the folowing to aplugin
         self.subscribe('will_generate_testcase', self._generate_testcase_callback)
         self.subscribe('did_finish_run', self._did_finish_run_callback)
 
-        #Default plugins for now.. FIXME?
+        # Default plugins for now.. FIXME?
         self.register_plugin(InstructionCounter())
         self.register_plugin(Visited())
         self.register_plugin(Tracer())
         self.register_plugin(RecordSymbolicBranches())
 
-
     def register_plugin(self, plugin):
-        #Global enumeration of valid events
+        # Global enumeration of valid events
         assert isinstance(plugin, Plugin)
         assert plugin not in self.plugins, "Plugin instance already registered"
         assert plugin.manticore is None, "Plugin instance already owned"
@@ -207,41 +206,39 @@ class Manticore(Eventful):
 
         events = Eventful.all_events()
         prefix = Eventful.prefixes
-        all_events = [x+y for x, y in itertools.product(prefix, events)]
+        all_events = [x + y for x, y in itertools.product(prefix, events)]
         for event_name in all_events:
             callback_name = '{}_callback'.format(event_name)
             callback = getattr(plugin, callback_name, None)
             if callback is not None:
                 self.subscribe(event_name, callback)
 
-        #Safety checks
+        # Safety checks
         for callback_name in dir(plugin):
             if callback_name.endswith('_callback'):
                 event_name = callback_name[:-9]
                 if event_name not in all_events:
-                    logger.warning("There is no event named %s for callback on plugin %s", event_name, type(plugin).__name__ )
+                    logger.warning("There is no event named %s for callback on plugin %s", event_name, type(plugin).__name__)
 
         for event_name in all_events:
             for plugin_method_name in dir(plugin):
                 if event_name in plugin_method_name:
-                    if not plugin_method_name.endswith('_callback') :
+                    if not plugin_method_name.endswith('_callback'):
                         if plugin_method_name.startswith('on_') or \
                            plugin_method_name.startswith('will_') or \
                            plugin_method_name.startswith('did_'):
-                            logger.warning("Plugin methods named '%s()' should end with '_callback' on plugin %s", plugin_method_name, type(plugin).__name__ )
+                            logger.warning("Plugin methods named '%s()' should end with '_callback' on plugin %s", plugin_method_name, type(plugin).__name__)
                     if plugin_method_name.endswith('_callback') and \
-                        not plugin_method_name.startswith('on_') and \
-                        not plugin_method_name.startswith('will_') and \
-                        not plugin_method_name.startswith('did_'):
-                            logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s", plugin_method_name, type(plugin).__name__)
-
+                            not plugin_method_name.startswith('on_') and \
+                            not plugin_method_name.startswith('will_') and \
+                            not plugin_method_name.startswith('did_'):
+                        logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s",
+                                       plugin_method_name, type(plugin).__name__)
 
     def unregister_plugin(self, plugin):
         assert plugin in self.plugins, "Plugin instance not registered"
         self.plugins.remove(plugin)
         plugin.manticore = None
-
-
 
     @classmethod
     def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
@@ -290,9 +287,9 @@ class Manticore(Eventful):
         :return: Manticore instance, initialized with a EVM State
         :rtype: Manticore
         """
-        #Make the constraint store
+        # Make the constraint store
         constraints = ConstraintSet()
-        #make the ethereum world state
+        # make the ethereum world state
         world = evm.EVMWorld(constraints)
         return cls(State(constraints, world), **kwargs)
 
@@ -302,9 +299,9 @@ class Manticore(Eventful):
 
     def subscribe(self, name, callback):
         from types import MethodType
-        if not isinstance(callback,MethodType):
+        if not isinstance(callback, MethodType):
             callback = MethodType(callback, self)
-        super(Manticore,self).subscribe(name, callback)
+        super(Manticore, self).subscribe(name, callback)
 
     @property
     def context(self):
@@ -314,7 +311,6 @@ class Manticore(Eventful):
         else:
             logger.warning("Using shared context without a lock")
             return self._executor._shared_context
-
 
     @contextmanager
     def locked_context(self, key=None, value_type=list):
@@ -343,7 +339,7 @@ class Manticore(Eventful):
 
         @contextmanager
         def _real_context():
-            if not self.running :
+            if not self.running:
                 yield self._context
             else:
                 with self._executor.locked_context() as context:
@@ -417,7 +413,6 @@ class Manticore(Eventful):
             while len(self._workers) > 0:
                 self._workers.pop().join()
 
-
     ############################################################################
     # Common hooks + callback
     ############################################################################
@@ -484,7 +479,7 @@ class Manticore(Eventful):
     ############################################################################
 
     def apply_model_hooks(self, path):
-        #TODO(yan): Simplify the partial function application
+        # TODO(yan): Simplify the partial function application
 
         # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
@@ -499,13 +494,13 @@ class Manticore(Eventful):
                 name_parts = name.split('.')
                 importlib.import_module(".platforms.{}".format(name_parts[0]), 'manticore')
                 for n in name_parts:
-                    fmodel = getattr(fmodel,n)
+                    fmodel = getattr(fmodel, n)
                 assert fmodel != platforms
+
                 def cb_function(state):
                     state.platform.invoke_model(fmodel, prefix_args=(state.platform,))
-                self._model_hooks.setdefault(int(address,0), set()).add(cb_function)
+                self._model_hooks.setdefault(int(address, 0), set()).add(cb_function)
                 self._executor.subscribe('will_execute_instruction', self._model_hook_callback)
-
 
     def _model_hook_callback(self, state, instruction):
         pc = state.cpu.PC
@@ -514,7 +509,6 @@ class Manticore(Eventful):
 
         for cb in self._model_hooks[pc]:
             cb(state)
-
 
     ############################################################################
     # Assertion hooks + callback
@@ -533,26 +527,25 @@ class Manticore(Eventful):
         if pc not in self._assertions:
             return
 
-        from core.parser import parse
+        from .core.parser.parser import parse
 
         program = self._assertions[pc]
 
-        #This will interpret the buffer specification written in INTEL ASM.
+        # This will interpret the buffer specification written in INTEL ASM.
         # (It may dereference pointers)
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
             logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                    state.cpu.pc, program)
+                        state.cpu.pc, program)
             raise TerminateState()
 
-        #Everything is good add it.
+        # Everything is good add it.
         state.constraints.add(assertion)
 
-
     ##########################################################################
-    #Some are placeholders Remove FIXME
-    #Any platform specific callback should go to a plugin
+    # Some are placeholders Remove FIXME
+    # Any platform specific callback should go to a plugin
 
     def _generate_testcase_callback(self, state, name, message):
         '''
@@ -567,6 +560,7 @@ class Manticore(Eventful):
         class PstatsFormatted:
             def __init__(self, d):
                 self.stats = dict(d)
+
             def create_stats(self):
                 pass
         with self.locked_context('profiling_stats') as profiling_stats:
@@ -599,12 +593,12 @@ class Manticore(Eventful):
             self.enqueue(self._initial_state)
             self._initial_state = None
 
-        #Copy the local main context to the shared conext
+        # Copy the local main context to the shared conext
         self._executor._shared_context.update(self._context)
 
     def _finish_run(self, profiling=False):
         assert not self.running
-        #Copy back the shared context
+        # Copy back the shared context
         self._context = dict(self._executor._shared_context)
 
         if profiling:
@@ -635,14 +629,12 @@ class Manticore(Eventful):
                 t.cancel()
         self._finish_run(profiling=should_profile)
 
-
     def terminate(self):
         '''
         Gracefully terminate the currently-executing run. Typically called from within
         a :func:`~hook`.
         '''
         self._executor.shutdown()
-
 
     #############################################################################
     #############################################################################
@@ -658,7 +650,6 @@ class Manticore(Eventful):
         if self._binary_type == 'ELF':
             self._binary_obj = ELFFile(file(self._binary))
 
-
         if self._binary_obj is None:
             return NotImplementedError("Symbols aren't supported")
 
@@ -672,14 +663,13 @@ class Manticore(Eventful):
 
             return symbols[0].entry['st_value']
 
-
     @property
     def coverage_file(self):
         return self._coverage_file
 
     @property
     def workspace(self):
-         return self._output.store.uri
+        return self._output.store.uri
 
     @coverage_file.setter
     def coverage_file(self, path):
@@ -695,4 +685,3 @@ class Manticore(Eventful):
         elapsed = time.time() - self._time_started
         logger.info('Results in %s', self._output.store.uri)
         logger.info('Total time: %s', elapsed)
-
