@@ -109,9 +109,10 @@ class ConstraintSet(object):
         tmp = set()
         result = ''
         for var in related_variables:
+            # FIXME
             # band aid hack around the fact that we are double declaring stuff :( :(
             if var.declaration in tmp:
-                logger.warning("Variable '%d' was copied twice somewhere", var.name)
+                logger.warning("Variable '%s' was copied twice somewhere", var.name)
                 continue
             tmp.add(var.declaration)
             result += var.declaration + '\n'

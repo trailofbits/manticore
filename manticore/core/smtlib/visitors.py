@@ -484,7 +484,6 @@ class ArithmeticSimplifier(Visitor):
             return arr.value
         else:
             if arr != expression.array:
-                print expression, arr
                 return arr.select(index)
 
     def visit_Expression(self, expression, *operands):

@@ -851,7 +851,7 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is None
             context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
-        
+
         self.run(procs=self._config_procs)
 
         #FIxme?
@@ -907,7 +907,6 @@ class ManticoreEVM(Manticore):
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
 
         logger.info("Starting symbolic transaction: %d", self.completed_transactions + 1)
-
         status = self.run(procs=self._config_procs)
 
         with self.locked_context('seth') as context:
@@ -1079,7 +1078,7 @@ class ManticoreEVM(Manticore):
             ty, caller, address, value, data = context['_pending_transaction']
             txnum = len(state.context['tx'])
 
-        # Replace any none by symbolic values
+        # Replace any None by symbolic values
         if value is None:
             value = state.new_symbolic_value(256, label='tx%d_value' % txnum)
         if isinstance(data, tuple):
@@ -1089,11 +1088,16 @@ class ManticoreEVM(Manticore):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
                 data = symbolic_data
+
+
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value)
         else:
             assert ty == 'CREATE_CONTRACT'
+            print "A"*100, ty
             world.create_contract(caller=caller, address=address, balance=value, init=data)
+        print "B"*100
+        print "C", world.all_transactions
         state.context['tx'].append((ty, caller, address, value, data))
 
     def _will_execute_instruction_callback(self, state, pc, instruction):

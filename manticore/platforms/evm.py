@@ -979,7 +979,6 @@ class EVM(Eventful):
             bytecode = bytecode_symbolic
 
         self._constraints = constraints
-        self.last_exception = None
         self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
         self.address = address
         self.origin = origin  # always an account with empty associated code
@@ -1023,7 +1022,6 @@ class EVM(Eventful):
         state['memory'] = self.memory
         state['world'] = self._world
         state['constraints'] = self.constraints
-        state['last_exception'] = self.last_exception
         state['address'] = self.address
         state['origin'] = self.origin
         state['caller'] = self.caller
@@ -1047,7 +1045,6 @@ class EVM(Eventful):
         self.logs = state['logs']
         self._world = state['world']
         self.constraints = state['constraints']
-        self.last_exception = state['last_exception']
         self.address = state['address']
         self.origin = state['origin']
         self.caller = state['caller']
@@ -1138,11 +1135,17 @@ class EVM(Eventful):
         assert isinstance(value, (int, long)) or isinstance(value, BitVec) and value.size == 256
         if len(self.stack) >= 1024:
             raise StackOverflow()
-        self.stack.append(simplify(value & TT256M1))
+
+        value = simplify(value & TT256M1)
+        if isinstance(value, Constant) and not value.taint:
+            value = value.value
+
+        self.stack.append(value)
 
     def _pop(self):
         if len(self.stack) == 0:
             raise StackUnderflow()
+
         return self.stack.pop()
 
     def _consume(self, fee):
@@ -1152,8 +1155,10 @@ class EVM(Eventful):
             self.constraints.add(Operators.UGT(fee, self.gas))
             logger.debug("Not enough gas for instruction")
             raise NotEnoughGas()
-
         self._gas -= fee
+
+    def _indemnify(self, fee):
+        self._gas += fee
 
     def _pop_arguments(self):
         #Get arguments (imm, pop)
@@ -1215,8 +1220,9 @@ class EVM(Eventful):
             self._publish('did_evm_execute_instruction', current, arguments, result)
             self._publish('did_execute_instruction', last_pc, self.pc, current)
         except ConcretizeStack as ex:
-            #Revert the stack so it looks like before executing the instruction
+            #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
+            self._indemnify(current.fee)
 
             def setstate(state, value):
                 self.stack[-ex.pos] = value
@@ -1226,14 +1232,11 @@ class EVM(Eventful):
                              setstate=setstate,
                              policy=ex.policy)
         except StartTx:
-            #Revert the stack so it looks like before executing the instruction
+            #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
+            self._indemnify(current.fee)
             raise
         except EndTx:
-            #arguments = self._pop_arguments()
-            raise
-        except EVMException as e:
-            self.last_exception = e
             raise
 
         # Check result (push)
@@ -1489,18 +1492,11 @@ class EVM(Eventful):
 
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
-        #FIXME concretize offset read metadata
-        #if issymbolic(offset):
-        #    self._constraints.add(Operators.ULE(offset, len(self.data)+32))
-        #self._constraints.add(0 == offset%32)
-        #    raise ConcretizeStack(3, expression=offset, policy='ALL')
         bytes = []
         for i in range(32):
             bytes.append(simplify(self.data.get(offset+i, 0)))
         value = Operators.CONCAT(256, *bytes)
-        value = simplify(value)
-        if isinstance(value, Constant) and not value.taint:
-            value = value.value
+        return value
 
     def CALLDATASIZE(self):
         '''Get size of input data in current environment'''
@@ -1511,13 +1507,8 @@ class EVM(Eventful):
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(size) // 32)
 
-        # FIXME put zero if not enough data
-        if issymbolic(size) or issymbolic(data_offset):
-            #self._constraints.add(Operators.ULE(data_offset, len(self.data)))
-            self._constraints.add(Operators.ULE(size + data_offset, len(self.data) + (32 - len(self.data) % 32)))
-
         if issymbolic(size):
-            raise ConcretizeStack(3, policy='ALL')
+            raise ConcretizeStack(3, policy='SAMPLE')
 
         self._allocate(mem_offset + size)
         for i in range(size):
@@ -1990,6 +1981,7 @@ class EVMWorld(Platform):
         for i, tx in enumerate(self._transactions):
             for txi in reversed(self.internal_transactions[i]):
                 txs.append(txi)
+            txs.append(tx)
         return txs
 
     @property
@@ -2216,6 +2208,7 @@ class EVMWorld(Platform):
 
     def execute(self):
         try:
+            print self.current, self.all_transactions
             if self.current is None:
                 raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self._process_pending_transaction()
@@ -2223,7 +2216,8 @@ class EVMWorld(Platform):
         except StartTx:
             pass
         except EndTx as ex:
-            self._close_transaction(self, ex.result, ex.data)
+            print ex, ex.result
+            self._close_transaction(ex.result, ex.data)
             if self.depth == 0:
                 raise TerminateState(result, testcase=True)
 
@@ -2237,12 +2231,12 @@ class EVMWorld(Platform):
 
         if address is None:
             address = self.new_address()
-        assert address not in self.storage.keys(), 'The account already exists'
-        self.storage[address] = {}
-        self.storage[address]['nonce'] = 0
-        self.storage[address]['balance'] = balance
-        self.storage[address]['storage'] = storage
-        self.storage[address]['code'] = code
+        assert address not in self.accounts, 'The account already exists'
+        self._world_state[address] = {}
+        self._world_state[address]['nonce'] = 0
+        self._world_state[address]['balance'] = balance
+        self._world_state[address]['storage'] = storage
+        self._world_state[address]['code'] = code
 
         return address
 
@@ -2263,7 +2257,6 @@ class EVMWorld(Platform):
         return address
 
     def transaction(self, address, origin=None, price=0, data='', caller=None, value=0):
-        assert self._pending_transaction is None
         self.start_transaction('CALL', address, origin=origin, price=price, data=data, caller=caller, value=value)
         self._process_pending_transaction()
 
@@ -2280,6 +2273,8 @@ class EVMWorld(Platform):
             :param gas: gas budget for this transaction.
 
         '''
+        assert self._pending_transaction is None, "Already started tx" 
+
         if sort not in {'CALL', 'CREATE'}:
             raise EVMException('Type of transaction not supported')
         if issymbolic(address):
@@ -2309,6 +2304,7 @@ class EVMWorld(Platform):
         self._pending_transaction = PendingTransaction(sort, address, origin, price, data, caller, value, bytecode, gas)
 
     def _process_pending_transaction(self):
+
         if self._pending_transaction is None:
             return
         ty, address, origin, price, data, caller, value, bytecode, gas = self._pending_transaction
@@ -2316,6 +2312,7 @@ class EVMWorld(Platform):
             data = bytecode
 
         # discarding absurd amount of ether (no ether overflow)
+        src_balance = self.get_balance(caller)
         self.constraints.add(src_balance + value >= src_balance)
 
         failed = False
@@ -2344,6 +2341,7 @@ class EVMWorld(Platform):
         self._pending_transaction = None
 
         tx = Transaction(ty, address, origin, price, data, caller, value)
+
         self._open_transaction(tx)
 
         #Here we have enough funds and room in the callstack
