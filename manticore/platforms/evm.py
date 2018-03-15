@@ -806,6 +806,13 @@ class EndTx(EVMException):
         self.result = result
         self.data = data
 
+    def is_rollback(self):
+        if self.result in {'STOP', 'RETURN', 'SELFDESTRUCT'}:
+            return False
+        else:
+            assert self.result in {'THROW', 'TXERROR', 'REVERT'}
+            return True
+
 
 class StackOverflow(EndTx):
     ''' Attemped to push more than 1024 items '''
@@ -2208,7 +2215,7 @@ class EVMWorld(Platform):
 
     def execute(self):
         try:
-            #print self.current, self.all_transactions
+            #print self.current, "acc",self.accounts#, map(str, self.all_transactions)
             if self.current is None:
                 raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self._process_pending_transaction()
@@ -2216,10 +2223,10 @@ class EVMWorld(Platform):
         except StartTx:
             pass
         except EndTx as ex:
-            #print ex, ex.result
+            self._pop_vm(rollback=ex.is_rollback())
             self._close_transaction(ex.result, ex.data)
             if self.depth == 0:
-                raise TerminateState(result, testcase=True)
+                raise TerminateState(ex.result, testcase=True)
 
     def run(self):
         while True:

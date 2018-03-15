@@ -1094,10 +1094,7 @@ class ManticoreEVM(Manticore):
             world.transaction(address=address, caller=caller, data=data, value=value)
         else:
             assert ty == 'CREATE_CONTRACT'
-            print "A"*100, ty
             world.create_contract(caller=caller, address=address, balance=value, init=data)
-        print "B"*100
-        print "C", world.all_transactions
         state.context['tx'].append((ty, caller, address, value, data))
 
     def _will_execute_instruction_callback(self, state, pc, instruction):
