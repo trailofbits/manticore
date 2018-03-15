@@ -335,7 +335,7 @@ class Z3Solver(Solver):
 
     # get-all-values min max minmax
     #@memoized
-    def get_all_values(self, constraints, expression, maxcnt=3000, silent=False):
+    def get_all_values(self, constraints, expression, maxcnt=30000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
         if not isinstance(expression, Expression):
             return [expression]
@@ -358,17 +358,17 @@ class Z3Solver(Solver):
             while self._check() == 'sat':
                 value = self._getvalue(var)
                 result.append(value)
-
                 # Reset the solver to avoid the incremental mode
                 # Triggered with two consecutive calls to check-sat
                 # Yet, if the number of solution is large, sending back
                 # the whole formula is more expensive
+                '''
                 if len(result) < 50:
                     self._reset(temp_cs.to_string(related_to=var))
                     for value in result:
                         self._assert(var != value)
-                else:
-                    self._assert(var != value)
+                else:'''
+                self._assert(var != value)
 
                 if len(result) >= maxcnt:
                     if silent:

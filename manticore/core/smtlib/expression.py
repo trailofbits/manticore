@@ -617,7 +617,7 @@ class Array(Expression):
         value = BitVec(size * self.value_bits).cast(value)
         array = self    
         for offset in xrange(size):
-            array = self.store(address + offset,  BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
+            array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
 
     def write_LE(self, address, value, size):
@@ -625,7 +625,7 @@ class Array(Expression):
         value = BitVec(size * self.value_bits).cast(value)
         array = self    
         for offset in reversed(xrange(size)):
-            array = self.store(address + offset,  BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
+            array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
 
 class ArrayVariable(Array, Variable):

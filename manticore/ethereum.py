@@ -854,7 +854,6 @@ class ManticoreEVM(Manticore):
         
         self.run(procs=self._config_procs)
 
-
         #FIxme?
         #We assume the constructor run in all states effectivelly and add the 
         #address to the accounts list

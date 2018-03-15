@@ -84,11 +84,15 @@ class ConstraintSet(object):
                         related_constraints.add(constraint)
                         related_variables |= variables
                         added = True
+
+            logger.debug('Reduced %d constraints!!', number_of_constraints - len(related_constraints))
         else:
             related_variables = set()
             for constraint in self.constraints:
                 related_variables |= get_variables(constraint)
             related_constraints = set(self.constraints)
+
+
         return related_variables, related_constraints
 
     def to_string(self, related_to=None, replace_constants=False):
@@ -135,8 +139,6 @@ class ConstraintSet(object):
                 result += '(assert %s)\n' % constraint_str
             constraint_str = translator.pop()
 
-        if related_to is not None:
-            logger.debug('Reduced %d constraints!!', number_of_constraints - len(related_constraints))
 
         return result
 

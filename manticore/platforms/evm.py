@@ -936,7 +936,7 @@ class EVM(Eventful):
                     return self._pos(my_obj, *args, **kwargs)
                 else:
                     my_obj._on_transaction = True
-                    return self._pre(my_obj, *args, **kwargs)      
+                    return self._pre(my_obj, *args, **kwargs)
 
             return MethodType(_pre_func, obj)
 
@@ -1519,9 +1519,9 @@ class EVM(Eventful):
         if issymbolic(size):
             raise ConcretizeStack(3, policy='ALL')
 
-        self._allocate(mem_offset+size)
+        self._allocate(mem_offset + size)
         for i in range(size):
-            c = Operators.ITEBV(8,data_offset + i < len(self.data), Operators.ORD(self.data[data_offset+i]), 0)
+            c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
             self.memory[mem_offset + i] = c
 
     def CODESIZE(self):
@@ -1537,14 +1537,14 @@ class EVM(Eventful):
             max_size = size
 
         for i in range(max_size):
-            if not issymbolic(code_offset+i):
-                if code_offset+i >= len(self.bytecode):
+            if not issymbolic(code_offset + i):
+                if code_offset + i >= len(self.bytecode):
                     value = 0
                 else:
-                    value = Operators.ORD(self.bytecode[code_offset+i])
+                    value = Operators.ORD(self.bytecode[code_offset + i])
             else:
-                value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), 0, Operators.ORD(self.bytecode[code_offset+i]))
-            self.memory[mem_offset+i] = value
+                value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), 0, Operators.ORD(self.bytecode[code_offset + i]))
+            self.memory[mem_offset + i] = value
         self._publish('did_evm_read_code', code_offset, size)
 
     def GASPRICE(self):
@@ -1561,7 +1561,7 @@ class EVM(Eventful):
         GCOPY = 3             # cost to copy one 32 byte word
         self._consume(GCOPY * ceil32(len(extbytecode)) // 32)
 
-        self._allocate(address+size)
+        self._allocate(address + size)
 
         for i in range(size):
             if offset + i < len(extbytecode):
@@ -1935,7 +1935,7 @@ class EVMWorld(Platform):
     def logs(self):
         return self._logs
 
-    @property 
+    @property
     def deleted_accounts(self):
         return self._deleted_accounts
 
@@ -1985,15 +1985,12 @@ class EVMWorld(Platform):
     def all_transactions(self):
         #if self.depth > 0 or not self.current_transaction.result:
         #    raise EVMException("Only defined when all tx ended")
+        #fiXME
         txs = []
         for i, tx in enumerate(self._transactions):
-            print i, tx
-            for j, txi in enumerate(self.internal_transactions[i]):
-                print '\t', '%d_sub_%d'%(i,j), txi
-            txs.append((str(tx), map (str, self.internal_transactions[i])))
-            #for txi in reversed(self.internal_transactions[i]):
-            #    txs.append(txi)
-        return []  # txs
+            for txi in reversed(self.internal_transactions[i]):
+                txs.append(txi)
+        return txs
 
     @property
     def last_transaction(self):
@@ -2020,7 +2017,7 @@ class EVMWorld(Platform):
     def current_transaction(self):
         transactions_count = len(self._transactions)
         if not transactions_count:
-             return None
+            return None
         if self.internal_transactions[-1]:
             internal_tx = self.internal_transactions[-1][-1]
             if not internal_tx.result:
@@ -2418,5 +2415,5 @@ class EVMWorld(Platform):
                 value = Operators.ITEBV(256, cond, sha, value)
         else:
             raise TerminateState("Unknown hash")
-            
+
         return value
