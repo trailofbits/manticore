@@ -939,7 +939,10 @@ class ManticoreEVM(Manticore):
         current_coverage = 0
 
         while current_coverage < 100:
-            run_symbolic_tx()
+            try:
+                run_symbolic_tx()
+            except NoAliveStates:
+                break
 
             if tx_limit is not None:
                 tx_limit -= 1
