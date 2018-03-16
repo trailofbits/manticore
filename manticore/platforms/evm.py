@@ -26,7 +26,8 @@ MASK160 = 2 ** 160 - 1
 TT255 = 2 ** 255
 TOOHIGHMEM = 0x1000
 
-#PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'origin', 'price', 'data', 'caller', 'value', 'bytecode', 'gas'])
+#FIXME. We should just use a Transaction() for this
+PendingTransaction = namedtuple("PendingTransaction", ['type', 'address', 'origin', 'price', 'data', 'caller', 'value', 'bytecode', 'gas'])
 EVMLog = namedtuple("EVMLog", ['address', 'memlog', 'topics'])
 
 
@@ -42,8 +43,7 @@ def to_signed(i):
 
 
 class Transaction(object):
-    __slots__ = '_sort', 'address', 'origin', 'price', 'data', 'caller', 'value', 'depth', '_return_data', '_result'
-
+    __slots__ = '_sort', 'address', 'origin', 'price', 'data', 'caller', 'value', 'depth', '_return_data', '_result', 'gas'
     def __init__(self, sort, address, origin, price, data, caller, value, gas=0, depth=None, result=None, return_data=None):
         self.sort = sort
         self.address = address
@@ -55,6 +55,7 @@ class Transaction(object):
         self.depth = depth
         self._return_data = return_data
         self.result = result
+        self.gas = gas
 
     @property
     def sort(self):
@@ -96,7 +97,7 @@ class Transaction(object):
 
     def __reduce__(self):
         ''' Implements serialization/pickle '''
-        return (self.__class__, (self.sort, self.address, self.origin, self.price, self.data, self.caller, self.value, self.depth, self.result, self.return_data))
+        return (self.__class__, (self.sort, self.address, self.origin, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
 
     def __str__(self):
         try:
@@ -368,6 +369,16 @@ class EVMAsm(object):
         def is_terminator(self):
             ''' True if the instruction is a basic block terminator '''
             return self.semantics in ('RETURN', 'STOP', 'INVALID', 'JUMP', 'JUMPI', 'SELFDESTRUCT', 'REVERT')
+
+        @property
+        def is_endtx(self):
+            ''' True if the instruction is a transaction terminator '''
+            return self.semantics in ('RETURN', 'STOP', 'INVALID', 'SELFDESTRUCT', 'REVERT')
+
+        @property
+        def is_starttx(self):
+            ''' True if the instruction is a transaction initiator '''
+            return self.semantics in ('CREATE', 'CALL', 'CALLCODE', 'DELEGATECALL')
 
         @property
         def is_branch(self):
@@ -932,6 +943,7 @@ class EVM(Eventful):
             if doc is None and pre is not None:
                 doc = pre.__doc__
             self.__doc__ = doc
+            self.__name__ = pre.__name__
 
         def __get__(self, obj, objtype=None):
             if obj is None:
@@ -1218,6 +1230,7 @@ class EVM(Eventful):
         last_pc = self.pc
         current = self.instruction
         arguments = self._pop_arguments()
+        result = None
 
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)
@@ -1248,6 +1261,8 @@ class EVM(Eventful):
             self._indemnify(current.fee)
             raise
         except EndTx:
+            self._publish('did_evm_execute_instruction', current, arguments, result)
+            self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
 
         # Check result (push)
@@ -1542,15 +1557,15 @@ class EVM(Eventful):
 
         self._allocate(mem_offset + size)
 
-       if issymbolic(size):
+        if issymbolic(size):
              max_size = solver.max(self.constraints, size)
-         else:
+        else:
              max_size = size
 
-       for i in range(max_size):
-            default = Operators.ITEBV(256, i < size, 0, self._load(mem_offset + i))
-            value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
-            self._store(mem_offset + i, value)
+        for i in range(max_size):
+             default = Operators.ITEBV(256, i < size, 0, self._load(mem_offset + i))
+             value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
+             self._store(mem_offset + i, value)
         self._publish('did_evm_read_code', code_offset, size)
 
     def GASPRICE(self):
@@ -1704,27 +1719,36 @@ class EVM(Eventful):
 
     ############################################################################
     # System operations
+    @transact
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
+        address = self.world.create_account()
         self.world.start_transaction('CREATE',
                                address,
                                origin=self.origin,
                                price=self.price,
-                               data=self.read_buffer(in_offset, in_size),
+                               data=self.read_buffer(offset, size),
                                caller=self.address,
                                value=value,
                                gas=self.gas)
         raise StartTx()
 
+    @CREATE.pos
+    def CREATE(self, value, offset, size):
+        '''Create a new account with associated code'''
+        tx = self.world.last_transaction
+        address = tx.address
+        if tx.result == 'RETURN':
+            self.world.set_code(tx.address, tx.return_data)
+        else:
+            self.world.delete_account(address)
+            address = 0
+        return address
+
     @transact
+    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
-
-        if issymbolic(in_offset):
-            raise ConcretizeStack(4, policy='SAMPLED')
-        if issymbolic(in_size):
-            raise ConcretizeStack(5, policy='SAMPLED')
-
         self.world.start_transaction('CALL',
                                      address,
                                      origin=self.origin,
@@ -1966,7 +1990,6 @@ class EVMWorld(Platform):
         self._do_events()
 
     def _close_transaction(self, result, data=None, rollback=False):
-        #self._pop_vm(rollback)
         tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
         assert self.constraints == vm.constraints
         #seth constraints to the constraints gathered in the last vm
@@ -2149,7 +2172,7 @@ class EVMWorld(Platform):
 
     def tx_gasprice(self):
         return 0
-
+    '''
     # CALLSTACK
     def _push_vm(self, address, origin, price, data, caller, value, bytecode):
         vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, world=self)
@@ -2177,7 +2200,7 @@ class EVMWorld(Platform):
             self._logs = logs
 
         return vm
-
+    '''
     @property
     def depth(self):
         return len(self._callstack)
@@ -2231,7 +2254,7 @@ class EVMWorld(Platform):
         This is done when the byte code in the init byte array is actually run
         on the network.
         '''
-        address = self.create_account(address, 0)
+        address = self.create_account(address)
         self.start_transaction('CREATE', address, origin, price, init, caller, balance)
         self._process_pending_transaction()
 

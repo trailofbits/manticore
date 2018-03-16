@@ -76,7 +76,7 @@ class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-                if instruction.semantics in ('REVERT', 'STOP'):
+                if instruction.is_endtx:
                     with self.locked_context('insns', dict) as d:
                         d[instruction.semantics] = True
 
@@ -89,7 +89,7 @@ class EthTests(unittest.TestCase):
 
         self.assertIn('insns', p.context)
         context = p.context['insns']
-        self.assertIn('STOP', context)
+        self.assertIn('RETURN', context)
         self.assertIn('REVERT', context)
 
     def test_can_create(self):
