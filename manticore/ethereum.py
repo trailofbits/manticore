@@ -880,7 +880,7 @@ class ManticoreEVM(Manticore):
         return address
 
     def transaction(self, caller, address, value, data):
-        ''' Issue a transaction
+        ''' Issue a symbolic transaction
 
             :param caller: the address of the account sending the transaction
             :type caller: int or EVMAccount
