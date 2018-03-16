@@ -1,6 +1,7 @@
 import unittest
 import os
 
+from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
@@ -91,6 +92,36 @@ class EthTests(unittest.TestCase):
         context = p.context['insns']
         self.assertIn('STOP', context)
         self.assertIn('REVERT', context)
+
+    def test_end_instruction_trace(self):
+        """
+        Test that end instructions do indeed get included in the emitted trace files
+        :return:
+        """
+        class TestPlugin(Plugin):
+            """
+            Record the pcs of all end instructions encountered
+            """
+            def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+                if instruction.semantics in ('REVERT', 'STOP', 'RETURN'):
+                    with self.locked_context('endinsns') as d:
+                        d.append(state.platform.current.pc)
+
+        mevm = ManticoreEVM()
+        p = TestPlugin()
+        mevm.register_plugin(p)
+
+        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=1)
+
+        worksp = mevm.workspace
+        listdir = os.listdir(worksp)
+        trace_file_paths = [os.path.join(worksp, f) for f in listdir if f.endswith('.trace')]
+        all_traces = ''.join(open(path).read() for path in trace_file_paths)
+
+        # Make sure all end pcs are present in at least one trace file
+        for pc in p.context['endinsns']:
+            self.assertIn(':0x{:x}'.format(pc), all_traces)
 
     def test_can_create(self):
         mevm = ManticoreEVM()
