@@ -34,6 +34,9 @@ log.init_logging()
 
 
 class ManticoreError(Exception):
+    """
+    Top level Exception object for custom exception hierarchy
+    """
     pass
 
 
