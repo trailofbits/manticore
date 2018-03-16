@@ -543,7 +543,8 @@ class Cpu(Eventful):
         :param value: The value to set the register to
         :type param: int or long or Expression
         '''
-        if hasattr(self, '_regfile') and name in self._regfile:
+        #if hasattr(self, '_regfile') and name in self._regfile:
+        if '_regfile' in dir(self) and name in self._regfile: # TODO (phoebe) replace hack
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
 
