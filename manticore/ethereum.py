@@ -129,9 +129,8 @@ class UninitializedStorage(Detector):
         state.context.setdefault('seth.detectors.initialized_storage', set()).add(offset)
 
 
-def calculate_coverage(code, seen):
-    ''' Calculates what percentage of code has been seen '''
-    runtime_bytecode = code
+def calculate_coverage(runtime_bytecode, seen):
+    ''' Calculates what percentage of runtime_bytecode has been seen '''
     end = None
     if ''.join(runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
