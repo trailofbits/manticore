@@ -1537,22 +1537,19 @@ class EVM(Eventful):
         '''Get size of code running in current environment'''
         return len(self.bytecode)
 
-    @concretized_args(size='')
     def CODECOPY(self, mem_offset, code_offset, size):
         '''Copy code running in current environment to memory'''
-        if issymbolic(size):
-            max_size = solver.max(self.constraints, size)
-        else:
-            max_size = size
 
-        for i in range(max_size):
-            if not issymbolic(code_offset + i):
-                if code_offset + i >= len(self.bytecode):
-                    value = 0
-                else:
-                    value = Operators.ORD(self.bytecode[code_offset + i])
-            else:
-                value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), 0, Operators.ORD(self.bytecode[code_offset + i]))
+        self._allocate(mem_offset + size)
+
+       if issymbolic(size):
+             max_size = solver.max(self.constraints, size)
+         else:
+             max_size = size
+
+       for i in range(max_size):
+            default = Operators.ITEBV(256, i < size, 0, self._load(mem_offset + i))
+            value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
             self._store(mem_offset + i, value)
         self._publish('did_evm_read_code', code_offset, size)
 

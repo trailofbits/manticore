@@ -634,6 +634,10 @@ class ManticoreEVM(Manticore):
 
             assert(name is not None)
             name = name.split(':')[1]
+
+            if contract['bin'] == '':
+                raise Exception('Solidity failed to compile your contract.')
+                
             bytecode = contract['bin'].decode('hex')
             srcmap = contract['srcmap'].split(';')
             srcmap_runtime = contract['srcmap-runtime'].split(';')
@@ -1308,9 +1312,11 @@ class ManticoreEVM(Manticore):
                 statef.write(iterpickle.dumps(state, 2))
 
     def finalize(self):
+        """
+        Terminate and generate testcases for all currently alive states (contract states that cleanly executed
+        to a STOP or RETURN in the last symbolic transaction).
+        """
         logger.debug("Finalizing %d states.", self.count_states)
-        #move running states to final states list
-        # and generate a testcase for each
         q = Queue()
         map(q.put, self._running_state_ids)
 

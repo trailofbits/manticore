@@ -128,7 +128,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(len(actual) > 100 )
 
     def test_eth_regressions(self):
-        contracts = [676, 678, 701, 714, 735, 760]
+        contracts = [676, 678, 701, 714, 735, 760, 780]
         for contract in contracts:
             self._simple_cli_run('{}.sol'.format(contract))
 
