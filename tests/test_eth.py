@@ -6,6 +6,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
 from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
+from manticore.platforms import evm
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args
 
 
@@ -95,16 +96,21 @@ class EthTests(unittest.TestCase):
 
     def test_end_instruction_trace(self):
         """
-        Test that end instructions do indeed get included in the emitted trace files
-        :return:
+        Make sure that the trace files are correct, and include the end instructions
         """
         class TestPlugin(Plugin):
             """
-            Record the pcs of all end instructions encountered
+            Record the pcs of all end instructions encountered. Source of truth.
             """
             def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+                if isinstance(state.platform.current.last_exception, evm.Create):
+                    name = 'init'
+                else:
+                    name = 'rt'
+
+                # collect all end instructions based on whether they are in init or rt
                 if instruction.semantics in ('REVERT', 'STOP', 'RETURN'):
-                    with self.locked_context('endinsns') as d:
+                    with self.locked_context(name) as d:
                         d.append(state.platform.current.pc)
 
         mevm = ManticoreEVM()
@@ -116,12 +122,22 @@ class EthTests(unittest.TestCase):
 
         worksp = mevm.workspace
         listdir = os.listdir(worksp)
-        trace_file_paths = [os.path.join(worksp, f) for f in listdir if f.endswith('.trace')]
-        all_traces = ''.join(open(path).read() for path in trace_file_paths)
 
-        # Make sure all end pcs are present in at least one trace file
-        for pc in p.context['endinsns']:
-            self.assertIn(':0x{:x}'.format(pc), all_traces)
+        def get_concatenated_files(directory, suffix):
+            paths = [os.path.join(directory, f) for f in listdir if f.endswith(suffix)]
+            concatenated = ''.join(open(path).read() for path in paths)
+            return concatenated
+
+        all_init_traces = get_concatenated_files(worksp, 'init.trace')
+        all_rt_traces = get_concatenated_files(worksp, 'rt.trace')
+
+        # make sure all init end insns appear somewhere in the init traces
+        for pc in p.context['init']:
+            self.assertIn(':0x{:x}'.format(pc), all_init_traces)
+
+        # and all rt end insns appear somewhere in the rt traces
+        for pc in p.context['rt']:
+            self.assertIn(':0x{:x}'.format(pc), all_rt_traces)
 
     def test_can_create(self):
         mevm = ManticoreEVM()
