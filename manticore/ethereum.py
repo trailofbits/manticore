@@ -1181,7 +1181,7 @@ class ManticoreEVM(Manticore):
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
 
                 runtime_code = blockchain.get_code(account_address)
-                if len(runtime_code):
+                if runtime_code:
                     summary.write("Code:\n")
                     fcode = StringIO.StringIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
