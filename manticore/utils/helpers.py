@@ -1,5 +1,6 @@
 import collections
 from ..core.smtlib import Expression
+import binascii
 
 def issymbolic(value):
     '''
@@ -22,6 +23,9 @@ def isstring(value):
     :rtype: bool
     '''
     return hasattr(value, 'strip')
+
+def hex_encode(s):
+    return binascii.hexlify(s)
 
 import functools
 

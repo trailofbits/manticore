@@ -5,6 +5,8 @@ from builtins import str
 from builtins import map
 from builtins import range
 from builtins import int
+from builtins import bytes
+
 import string
 
 from . import Manticore
@@ -22,7 +24,7 @@ import logging
 import io
 import pickle as pickle
 from .core.plugin import Plugin
-from utils.helpers import isstring
+from utils.helpers import isstring, hex_encode
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +157,7 @@ class SolidityMetadata(object):
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self.hashes = hashes
-        self.abi = dict( [(item.get('name', '{fallback}'), item) for item in abi ])
+        self.abi = {item.get('name', '{fallback}'): item for item in abi}
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
@@ -236,7 +238,7 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(( (b,a) for (a,b) in self.hashes.items()) )
+        return {b: a for (a,b) in self.hashes.items()}
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
@@ -1133,12 +1135,14 @@ class ManticoreEVM(Manticore):
         #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
+
         def flagged(flag):
-            return '(*)' if flag else '' 
+            return '(*)' if flag else ''
+
         testcase = self._output.testcase()
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
-        with testcase.open_stream('summary') as summary:            
+        with testcase.open_stream('summary') as summary:
             summary.write("Last exception: %s\n" %state.context['last_exception'])
 
             address, offset = state.context['seth.trace'][-1]
@@ -1187,7 +1191,7 @@ class ManticoreEVM(Manticore):
             if blockchain._sha3:
                 summary.write("Known hashes:\n")
                 for key, value in blockchain._sha3.items():
-                    summary.write('%s::%x\n'%(key.encode('hex'), value))
+                    summary.write('%s::%x\n'%(hex_encode(key), value))
 
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
@@ -1204,19 +1208,21 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_summary.write("Data: %s %s\n"% (state.solve_one(tx.data).encode('hex'), flagged(issymbolic(tx.data))))
+                tx_summary.write("Data: %s %s\n"% (hex_encode(state.solve_one(tx.data)), flagged(issymbolic(tx.data))))
+
+
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
+                    tx_summary.write("Return_data: %s %s\n" % (hex_encode(''.join(return_data)), flagged(issymbolic(tx.return_data))))
                 
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'Call':
                     if metadata is not None:
                         function_id = tx.data[:4]  #hope there is enough data
-                        function_id = state.solve_one(function_id).encode('hex')
+                        function_id = hex_encode(state.solve_one(function_id))
+
                         signature = metadata.get_func_signature(function_id)
                         function_name, arguments = ABI.parse(signature, tx.data)
-
                         if tx.result == 'RETURN':
                             ret_types = metadata.get_func_return_types(function_id)
                             return_data = ABI.parse(ret_types, tx.return_data) #function return

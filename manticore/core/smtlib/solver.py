@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+
 ###############################################################################
 # Solver
 # A solver maintains a companion smtlib capable process connected via stdio.
@@ -18,6 +19,8 @@ from builtins import str
 from builtins import chr
 from builtins import map
 from builtins import range
+from builtins import bytes
+
 from subprocess import PIPE, Popen, check_output
 from abc import ABCMeta, abstractmethod
 from copy import copy, deepcopy
@@ -465,7 +468,7 @@ class Z3Solver(Solver):
                 var = temp_cs.new_bitvec(expression.size)
             elif isinstance(expression, Array):
                 var = []
-                result = ''
+                result = []
                 for i in range(expression.index_max):
                     subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
@@ -482,8 +485,8 @@ class Z3Solver(Solver):
                     pattern, base = self._get_value_fmt
                     m = pattern.match(ret)
                     expr, value = m.group('expr'), m.group('value')
-                    result += bytes([int(value, base)])
-                return result
+                    result.append(int(value, base))
+                return bytes(result)
 
             temp_cs.add(var == expression)
 
