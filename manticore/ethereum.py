@@ -900,8 +900,8 @@ class ManticoreEVM(Manticore):
 
         with self.locked_context('seth') as context:
             has_alive_states = context['_saved_states'] or self.initial_state is not None
-        if not has_alive_states:
-            raise NoAliveStates
+            if not has_alive_states:
+                raise NoAliveStates
 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
