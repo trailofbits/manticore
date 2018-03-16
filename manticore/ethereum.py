@@ -1091,6 +1091,8 @@ class ManticoreEVM(Manticore):
             coverage.add((state.platform.current.address, state.platform.current.pc))
 
     def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
+        # TODO(mark): here and above, we need a cleaner way to determine, from this class,
+        # whether the EVM cpu is executing init or runtime bytecode
         if 'Call' in str(type(state.platform.current.last_exception)):
             trace_context_name = 'seth.rt.trace'
         else:
