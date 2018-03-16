@@ -311,7 +311,8 @@ constant_folder_simplifier_cache = {}
 
 
 def constant_folder(expression):
-    global constant_folder_simplifier_cache
+    #global constant_folder_simplifier_cache
+    constant_folder_simplifier_cache = {}
     simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
     simp.visit(expression)
     return simp.result
@@ -495,9 +496,10 @@ class ArithmeticSimplifier(Visitor):
 # FIXME this should forget old expressions lru?
 arithmetic_simplifier_cache = {}
 
-
 def arithmetic_simplifier(expression):
-    global arithmetic_simplifier_cache
+    #global arithmetic_simplifier_cache
+    arithmetic_simplifier_cache = {}
+
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     return simp.result

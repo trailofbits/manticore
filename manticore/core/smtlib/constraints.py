@@ -1,5 +1,5 @@
 from expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BitVecConstant, BoolConstant, ArrayProxy
-from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplifier, replace
+from visitors import GetDeclarations, TranslatorSmtlib, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, simplify, replace
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class ConstraintSet(object):
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
-        constraint = arithmetic_simplifier(constraint)
+        constraint = simplify(constraint)
         if isinstance(constraint, BoolConstant) and not constraint.value:
             logger.info("Adding an imposible constant constraint")
         # If self._child is not None this constraint set has been forked and a
@@ -173,7 +173,7 @@ class ConstraintSet(object):
         result = ''
         translator = TranslatorSmtlib()
         for expression in self.constraints:
-            translator.visit(arithmetic_simplifier(expression))
+            translator.visit(simplify(expression))
 
         # band aid hack around the fact that we are double declaring stuff :( :(
         tmp = set()

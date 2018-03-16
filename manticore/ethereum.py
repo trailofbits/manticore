@@ -2,7 +2,7 @@ import string
 
 from . import Manticore
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
-from .core.smtlib.visitors import arithmetic_simplifier
+from .core.smtlib.visitors import simplify, translate_to_smtlib
 from .platforms import evm
 from .core.state import State
 import tempfile
@@ -31,8 +31,8 @@ class Detector(Plugin):
         return state.context.setdefault('seth.findings.%s' % self.name, set())
 
     def add_finding(self, state, finding):
-        address = state.platform.current.address
-        pc = state.platform.current.pc
+        address = state.platform.current_vm.address
+        pc = state.platform.current_vm.pc
         self.get_findings(state).add((address, pc, finding))
 
         with self.manticore.locked_context('seth.global_findings', set) as global_findings:
@@ -91,18 +91,22 @@ class UninitializedMemory(Detector):
     '''
 
     def did_evm_read_memory_callback(self, state, offset, value):
-        if not state.can_be_true(value != 0):
+        initialized_memory = state.context.get('seth.detectors.initialized_memory',set())
+        #if not state.can_be_true(value != 0):
             # Not initialized memory should be zero
-            return
+        #    return
+        #if 
         # check if offset is known
+        print "LEN", len( initialized_memory), offset in initialized_memory
         cbu = True  # Can be unknown
-        for known_address in state.context['seth.detectors.initialized_memory']:
+        for known_address in initialized_memory:
             cbu = Operators.AND(cbu, offset != known_address)
-
-        if state.can_be_true(cbu):
-            self.add_finding(state, "Potentially reading uninitialized memory at instruction")
+            if state.can_be_true(cbu):
+                self.add_finding(state, "Potentially reading uninitialized memory at instruction (offset %r)"%offset)
+                print translate_to_smtlib(cbu)
 
     def did_evm_write_memory_callback(self, state, offset, value):
+        #print "WRITE", offset, value, state.context.get('seth.detectors.initialized_memory',set())
         # concrete or symbolic write
         state.context.setdefault('seth.detectors.initialized_memory', set()).add(offset)
 
@@ -131,10 +135,15 @@ class UninitializedStorage(Detector):
 
 def calculate_coverage(code, seen):
     ''' Calculates what percentage of code has been seen '''
-    runtime_bytecode = code
+    def array_to_string(arr):
+        result = ''
+        for c in arr:
+            result += chr(c.value)
+        return result
+    runtime_bytecode = array_to_string(code)
     end = None
-    if ''.join(runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
+    if runtime_bytecode[-44: -34] == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and runtime_bytecode[-2:] == '\x00\x29':
         end = -9 - 33 - 2  # Size of metadata at the end of most contracts
 
     count, total = 0, 0
@@ -375,19 +384,19 @@ class ABI(object):
     def _consume_type(ty, data, offset):
         ''' INTERNAL parses a value of type from data '''
         def get_uint(size, offset):
-            def simplify(x):
-                value = arithmetic_simplifier(x)
+            def _simplify(x):
+                value = simplify(x)
                 if isinstance(value, Constant) and not value.taint:
                     return value.value
                 else:
                     return value
 
-            size = simplify(size)
-            offset = simplify(offset)
+            size = _simplify(size)
+            offset = _simplify(offset)
             byte_size = size / 8
             padding = 32 - byte_size  # for 160
-            value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size])))
-            return simplify(value)
+            value = Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size]))
+            return _simplify(value)
 
         if ty == u'uint256':
             return get_uint(256, offset), offset + 32
@@ -1045,9 +1054,8 @@ class ManticoreEVM(Manticore):
             our private list
         '''
         assert state.platform.current_transaction is None, "Should not be an ongoing tx"
-
         world = state.platform
-        tx = world.last_human_transaction
+        tx = world.last_transaction
         state.context['last_exception'] = e
         if tx.sort == 'CREATE':
             if tx.result == 'RETURN':
@@ -1100,8 +1108,8 @@ class ManticoreEVM(Manticore):
     def _will_execute_instruction_callback(self, state, pc, instruction):
         ''' INTERNAL USE '''
         assert state.constraints == state.platform.constraints
-        assert state.platform.constraints == state.platform.current.constraints
-        logger.debug("%s", state.platform.current)
+        assert state.platform.constraints == state.platform.current_vm.constraints
+        logger.debug("%s", state.platform.current_vm)
 
         if state.platform.current_transaction.sort == 'CALL':
             coverage_context_name = 'runtime_coverage'
@@ -1109,17 +1117,17 @@ class ManticoreEVM(Manticore):
             coverage_context_name = 'init_coverage'
 
         with self.locked_context(coverage_context_name, set) as coverage:
-            coverage.add((state.platform.current.address, state.platform.current.pc))
+            coverage.add((state.platform.current_vm.address, state.platform.current_vm.pc))
 
     def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
         ''' INTERNAL USE '''
-        state.context.setdefault('seth.trace', []).append((state.platform.current.address, prev_pc))
+        state.context.setdefault('seth.trace', []).append((state.platform.current_vm.address, prev_pc))
 
     def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
         with self.locked_context('code_data', set) as code_data:
             for i in range(offset, offset + size):
-                code_data.add((state.platform.current.address, i))
+                code_data.add((state.platform.current_vm.address, i))
 
     def get_metadata(self, address):
         ''' Gets the solidity metadata for address.

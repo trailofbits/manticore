@@ -310,7 +310,18 @@ class State(Eventful):
         :return: Concrete value
         :rtype: int
         '''
-        return self._solver.get_value(self._constraints, expr)
+        value = self._solver.get_value(self._constraints, expr)
+        #Include forgiveness here
+        if isinstance(value, tuple):
+            try:
+                return ''.join(map(chr, value))
+            except:
+                pass         
+            try:
+                return ''.join(value)
+            except:
+                pass         
+        return value
 
     def solve_n(self, expr, nsolves):
         '''

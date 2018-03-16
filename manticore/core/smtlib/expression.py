@@ -1,6 +1,5 @@
 from functools import reduce
 
-
 class Expression(object):
     ''' Abstract taintable Expression. '''
 
@@ -670,12 +669,14 @@ class ArrayProxy(Array):
     def __init__(self, array):
         assert isinstance(array, Array)
         self._concrete_cache = {}
+        self._written = None
         if isinstance (array, ArrayProxy):
             #copy constructor
             super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
             self._array = array._array
             self._name = array._name
             self._concrete_cache = dict(array._concrete_cache)
+            self._written = set(array._written)
         elif isinstance(array, ArrayVariable):
             #fresh array proxy
             super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
@@ -717,6 +718,9 @@ class ArrayProxy(Array):
     def select(self, index):
         if not isinstance(index, Expression):
             index = self.cast_index(index)
+        if self.index_max is not None:
+            from manticore.core.smtlib.visitors import simplify
+            index = simplify(BitVecITE(self.index_bits, index<0, self.index_max+index+1, index))
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
         else:
@@ -731,6 +735,7 @@ class ArrayProxy(Array):
             value = self.cast_value(value)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
+        self.written.add(index)
         auxiliar = self._array.store(index, value)
         self._array = auxiliar
         return auxiliar
@@ -747,9 +752,8 @@ class ArrayProxy(Array):
         start, stop = self._fix_index(index)
         size = stop - start
         if isinstance(size, BitVec):
-            import visitors
-            from manticore.core.smtlib.visitors import arithmetic_simplifier
-            size = arithmetic_simplifier(size)
+            from manticore.core.smtlib.visitors import simplify
+            size = simplify(size)
         else:
             size = BitVecConstant(self._array.index_bits, size)
         assert isinstance(size, BitVecConstant)
@@ -789,32 +793,46 @@ class ArrayProxy(Array):
         state['_array'] = self._array
         state['name'] = self.name
         state['_concrete_cache'] = self._concrete_cache
+        state['_written'] = self._written
         return state
 
     def __setstate__(self, state):
         self._array = state['_array']
         self._name = state['name']
         self._concrete_cache = state['_concrete_cache']
+        self._written = state['_written']
 
     def __copy__(self):
         return ArrayProxy(self)
         
     @property
     def written(self):
-        written = []
-        array = self._array
-        while not isinstance(array, ArrayVariable):
-            written.append(array.index)
-            array = array.array
-        return written
+        if self._written is None:
+            written = set()
+            array = self._array
+            while not isinstance(array, ArrayVariable):
+                written.add(array.index)
+                array = array.array
+            self._written = written
+        return self._written
 
-    def get(self, index, default=0):
-        default = self.cast_value(default)
-        value = self.select(index)
+    def is_known(self, index):
+        #return reduce(BoolOr, map(lambda known_index: index == known_index, self.written), BoolConstant(False))
         is_known_index = BoolConstant(False)
         for known_index in self.written:
+            if isinstance(index, Constant) == isinstance(known_index, Constant):
+                if known_index.value == index.value:
+                    return BoolConstant(True)
             is_known_index = BoolOr(index == known_index, is_known_index)
-        return BitVecITE(self._array.value_bits, is_known_index, value, default)
+        return is_known_index
+
+    def get(self, index, default=0):
+        value = self.select(index)
+        if not isinstance(value, ArraySelect):
+            return value 
+        index = self.cast_index(index)
+        default = self.cast_value(default)
+        return BitVecITE(self._array.value_bits, self.is_known(index), value, default)
 
 class ArraySelect(BitVec, Operation):
     def __init__(self, array, index, *args, **kwargs):
