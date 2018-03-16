@@ -948,9 +948,6 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
 
-            if not context['_saved_states'] and self.initial_state is None:
-                return
-
             # there is no states added to the executor queue
             assert len(self._executor.list()) == 0
 
