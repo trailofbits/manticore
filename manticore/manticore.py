@@ -32,6 +32,9 @@ from .utils import log
 logger = logging.getLogger(__name__)
 log.init_logging()
 
+class ManticoreError(Exception):
+    pass
+
 
 def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
     def _check_disassembler_present(disasm):

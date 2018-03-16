@@ -1,6 +1,8 @@
 import string
 
+
 from . import Manticore
+from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import arithmetic_simplifier
 from .platforms import evm
@@ -21,6 +23,12 @@ logger = logging.getLogger(__name__)
 
 ################ Detectors ####################
 
+
+class EthereumError(ManticoreError):
+    pass
+
+class NoAliveStates(EthereumError):
+    pass
 
 class Detector(Plugin):
     @property
