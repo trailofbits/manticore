@@ -1091,8 +1091,12 @@ class ManticoreEVM(Manticore):
             coverage.add((state.platform.current.address, state.platform.current.pc))
 
     def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
-        ''' INTERNAL USE '''
-        state.context.setdefault('seth.trace', []).append((state.platform.current.address, prev_pc))
+        if 'Call' in str(type(state.platform.current.last_exception)):
+            trace_context_name = 'seth.rt.trace'
+        else:
+            trace_context_name = 'seth.init.trace'
+
+        state.context.setdefault(trace_context_name, []).append((state.platform.current.address, prev_pc))
 
     def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
@@ -1144,7 +1148,7 @@ class ManticoreEVM(Manticore):
         with testcase.open_stream('summary') as summary:
             summary.write("Last exception: %s\n" % state.context['last_exception'])
 
-            address, offset = state.context['seth.trace'][-1]
+            address, offset = state.context['seth.rt.trace'][-1]
 
             # Last instruction
             metadata = self.get_metadata(blockchain.transactions[-1].address)
@@ -1174,14 +1178,14 @@ class ManticoreEVM(Manticore):
                         summary.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
 
-                code = blockchain.get_code(account_address)
-                if len(code):
+                runtime_code = blockchain.get_code(account_address)
+                if len(runtime_code):
                     summary.write("Code:\n")
-                    fcode = StringIO.StringIO(code)
+                    fcode = StringIO.StringIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write('\t%s\n' % chunk.encode('hex'))
-                    trace = set((offset for address_i, offset in state.context['seth.trace'] if address == address_i))
-                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(code, trace))  # coverage % for address in this account/state
+                    runtime_trace = set((pc for contract, pc in state.context['seth.rt.trace'] if address == contract))
+                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
                 summary.write("\n")
 
             if blockchain._sha3:
@@ -1271,12 +1275,24 @@ class ManticoreEVM(Manticore):
                 logger.debug("Using iterpickle to dump state")
                 statef.write(iterpickle.dumps(state, 2))
 
-        with testcase.open_stream('trace') as f:
-            for contract, pc in state.context['seth.trace']:
-                if pc == 0:
-                    f.write('---\n')
-                ln = '0x{:x}:0x{:x}\n'.format(contract, pc)
-                f.write(ln)
+        with testcase.open_stream('rt.trace') as f:
+            self._emit_trace_file(f, state.context['seth.rt.trace'])
+
+        with testcase.open_stream('init.trace') as f:
+            self._emit_trace_file(f, state.context['seth.init.trace'])
+
+    @staticmethod
+    def _emit_trace_file(filestream, trace):
+        """
+        :param filestream: file object for the workspace trace file
+        :param trace: list of (contract address, pc) tuples
+        :type trace: list[tuple(int, int)]
+        """
+        for contract, pc in trace:
+            if pc == 0:
+                filestream.write('---\n')
+            ln = '0x{:x}:0x{:x}\n'.format(contract, pc)
+            filestream.write(ln)
 
     def finalize(self):
         # move runnign states to final states list
