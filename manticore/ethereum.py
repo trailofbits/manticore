@@ -27,8 +27,10 @@ logger = logging.getLogger(__name__)
 class EthereumError(ManticoreError):
     pass
 
+
 class NoAliveStates(EthereumError):
     pass
+
 
 class Detector(Plugin):
     @property

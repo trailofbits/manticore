@@ -32,6 +32,7 @@ from .utils import log
 logger = logging.getLogger(__name__)
 log.init_logging()
 
+
 class ManticoreError(Exception):
     pass
 
