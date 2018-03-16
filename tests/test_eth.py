@@ -4,7 +4,7 @@ import os
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args
 
 
@@ -114,7 +114,8 @@ class EthTests(unittest.TestCase):
 
         contract_account.f(1)  # it works
         contract_account.f(65)  # it works
-        contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
+        with self.assertRaises(NoAliveStates):
+            contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
 
     def test_can_create(self):
         mevm = ManticoreEVM()
