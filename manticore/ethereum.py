@@ -890,11 +890,17 @@ class ManticoreEVM(Manticore):
             :type value: int or SValue
             :param data: initial data
             :return: an EVMAccount
+            :raises NoAliveStates: if there are no alive states to execute
         '''
         if isinstance(address, EVMAccount):
             address = int(address)
         if isinstance(caller, EVMAccount):
             caller = int(caller)
+
+        with self.locked_context('seth') as context:
+            has_alive_states = context['_saved_states'] or self.initial_state is not None
+        if not has_alive_states:
+            raise NoAliveStates
 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
