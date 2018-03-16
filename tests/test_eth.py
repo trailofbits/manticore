@@ -4,7 +4,7 @@ import os
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args
 
 
@@ -91,6 +91,31 @@ class EthTests(unittest.TestCase):
         context = p.context['insns']
         self.assertIn('STOP', context)
         self.assertIn('REVERT', context)
+
+    def test_graceful_handle_no_alive_states(self):
+        """
+        If there are no alive states, or no initial states, we should not crash. issue #795
+        """
+        # initiate the blockchain
+        m = ManticoreEVM()
+        source_code = '''
+        contract Simple {
+            function f(uint a) payable public {
+                if (a == 65) {
+                    revert();
+                }
+            }
+        }
+        '''
+
+        # Initiate the accounts
+        user_account = m.create_account(balance=1000)
+        contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
+
+        contract_account.f(1)  # it works
+        contract_account.f(65)  # it works
+        with self.assertRaises(NoAliveStates):
+            contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
 
     def test_can_create(self):
         mevm = ManticoreEVM()

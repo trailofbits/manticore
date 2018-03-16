@@ -1,6 +1,7 @@
 import string
 
 from . import Manticore
+from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import arithmetic_simplifier
 from .platforms import evm
@@ -20,6 +21,14 @@ from functools import reduce
 logger = logging.getLogger(__name__)
 
 ################ Detectors ####################
+
+
+class EthereumError(ManticoreError):
+    pass
+
+
+class NoAliveStates(EthereumError):
+    pass
 
 
 class Detector(Plugin):
@@ -872,7 +881,7 @@ class ManticoreEVM(Manticore):
         return address
 
     def transaction(self, caller, address, value, data):
-        ''' Issue a transaction
+        ''' Issue a symbolic transaction
 
             :param caller: the address of the account sending the transaction
             :type caller: int or EVMAccount
@@ -882,11 +891,17 @@ class ManticoreEVM(Manticore):
             :type value: int or SValue
             :param data: initial data
             :return: an EVMAccount
+            :raises NoAliveStates: if there are no alive states to execute
         '''
         if isinstance(address, EVMAccount):
             address = int(address)
         if isinstance(caller, EVMAccount):
             caller = int(caller)
+
+        with self.locked_context('seth') as context:
+            has_alive_states = context['_saved_states'] or self.initial_state is not None
+            if not has_alive_states:
+                raise NoAliveStates
 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
@@ -925,7 +940,10 @@ class ManticoreEVM(Manticore):
         current_coverage = 0
 
         while current_coverage < 100:
-            run_symbolic_tx()
+            try:
+                run_symbolic_tx()
+            except NoAliveStates:
+                break
 
             if tx_limit is not None:
                 tx_limit -= 1
@@ -947,8 +965,7 @@ class ManticoreEVM(Manticore):
         # Check if there is a pending transaction
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
-            # there is at least one states in seth saved states
-            assert context['_saved_states'] or self.initial_state is not None
+
             # there is no states added to the executor queue
             assert len(self._executor.list()) == 0
 
@@ -958,7 +975,7 @@ class ManticoreEVM(Manticore):
 
         # A callback will use _pending_transaction and issue the transaction
         # in each state (see load_state_callback)
-        result = super(ManticoreEVM, self).run(**kwargs)
+        super(ManticoreEVM, self).run(**kwargs)
 
         with self.locked_context('seth') as context:
             if len(context['_saved_states']) == 1:
@@ -968,7 +985,6 @@ class ManticoreEVM(Manticore):
 
             # clear pending transcations. We are done.
             context['_pending_transaction'] = None
-        return result
 
     def save(self, state, final=False):
         ''' Save a state in secondary storage and add it to running or final lists
