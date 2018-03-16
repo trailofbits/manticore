@@ -48,8 +48,10 @@ Models
 EVM
 ---
 .. automodule:: manticore.platforms.evm
-.. automodule:: manticore.ethereum
-    :members:
+.. autoclass:: manticore.ethereum.ABI
+   :members:
+.. autoclass:: manticore.ethereum.ManticoreEVM
+   :members:
 
 EVM Assembler
 -------------

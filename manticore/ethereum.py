@@ -1273,6 +1273,11 @@ class ManticoreEVM(Manticore):
                 statef.write(iterpickle.dumps(state, 2))
 
     def finalize(self):
+        """
+        Terminate and generate testcases for all currently alive states (contract states that cleanly executed
+        to a STOP or RETURN in the last symbolic transaction).
+        """
+
         # move runnign states to final states list
         # and generate a testcase for each
         q = Queue()
