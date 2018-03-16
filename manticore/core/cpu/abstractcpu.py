@@ -761,7 +761,7 @@ class Cpu(Eventful):
             text += c
 
         #Pad potentially incomplete instruction with zeroes
-        code = text.ljust(self.max_instr_width, '\x00')
+        code = text.ljust(self.max_instr_width, b'\x00')
 
         try:
             # decode the instruction from code
