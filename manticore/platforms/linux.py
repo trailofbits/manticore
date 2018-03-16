@@ -1987,7 +1987,7 @@ class Linux(Platform):
 
     def sys_clock_gettime(self, clock_id, timespec):
         logger.info("sys_clock_time not really implemented")
-	return 0
+        return 0
 
     def sys_time(self, tloc):
         import time
