@@ -664,7 +664,6 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('did_load_state', self._load_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_execute_instruction', self._will_execute_instruction_callback)
-        self._executor.subscribe('did_execute_instruction', self._did_execute_instruction_callback)
         self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
@@ -1082,23 +1081,16 @@ class ManticoreEVM(Manticore):
         assert state.platform.constraints == state.platform.current.constraints
         logger.debug("%s", state.platform.current)
 
-        if 'Call' in str(type(state.platform.current.last_exception)):
-            coverage_context_name = 'runtime_coverage'
-        else:
+        if isinstance(state.platform.current.last_exception, evm.Create):
             coverage_context_name = 'init_coverage'
+            trace_context_name = 'seth.init.trace'
+        else:
+            coverage_context_name = 'runtime_coverage'
+            trace_context_name = 'seth.rt.trace'
 
         with self.locked_context(coverage_context_name, set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
-
-    def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
-        # TODO(mark): here and above, we need a cleaner way to determine, from this class,
-        # whether the EVM cpu is executing init or runtime bytecode
-        if 'Call' in str(type(state.platform.current.last_exception)):
-            trace_context_name = 'seth.rt.trace'
-        else:
-            trace_context_name = 'seth.init.trace'
-
-        state.context.setdefault(trace_context_name, []).append((state.platform.current.address, prev_pc))
+        state.context.setdefault(trace_context_name, []).append((state.platform.current.address, pc))
 
     def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
