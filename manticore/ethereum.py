@@ -920,18 +920,25 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_account="attacker"):
         with open(solidity_filename) as f:
             source_code = f.read()
 
-        user_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=user_account)
+        owner_account = self.create_account(balance=1000)
+        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
+
+        if tx_account == "attacker":
+            tx_account = attacker_account
+        elif tx_account == "owner":
+            tx_account = owner_account
+        else:
+            raise Exception('The account to perform the symbolic exploration of the contract should be either "attacker" or "owner"')
 
         def run_symbolic_tx():
             symbolic_data = self.make_symbolic_buffer(320)
             symbolic_value = self.make_symbolic_value()
-            self.transaction(caller=attacker_account,
+            self.transaction(caller=tx_account,
                              address=contract_account,
                              data=symbolic_data,
                              value=symbolic_value)
