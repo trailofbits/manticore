@@ -1,36 +1,48 @@
-dist: trusty
-sudo: required
-os:
-  - linux
+group: travis_latest
 language: python
-python:
-  - 2.7.13
-
 env:
-  global:
-    - CC_TEST_REPORTER_ID=db72f1ed59628c16eb0c00cbcd629c4c71f68aa1892ef42d18c7c2b8326f460a
-
-branches:
-  only:
-  - master
-  - /^(?!wip-).+$/
-
-cache:
-  pip: true
-  directories:
-  - $HOME/virtualenv/python2.7.13/lib/python2.7/site-packages
-  - $HOME/virtualenv/python2.7.13/bin/
-
+    - REPO=trailofbits/algo  # has .travis.yml file
+    - REPO=trailofbits/binjascripts
+    - REPO=trailofbits/cxx-common  # has .travis.yml file
+    - REPO=trailofbits/deceptiveidn
+    - REPO=trailofbits/doorman  # has .travis.yml file
+    - REPO=trailofbits/ethersplay
+    - REPO=trailofbits/ida-evm
+    - REPO=trailofbits/manticore  # has .travis.yml file
+    - REPO=trailofbits/manticore-examples  # has .travis.yml file
+    - REPO=trailofbits/omaha-server  # has .travis.yml file
+    - REPO=trailofbits/osquery-logger
+    - REPO=trailofbits/osquery-windows-linking-test
+    - REPO=trailofbits/protofuzz  # has .travis.yml file
+    - REPO=trailofbits/workshops
+cache: pip
+python:
+    - 2.7
+    - 3.6
+    #- nightly
+    #- pypy
+    #- pypy3
+matrix:
+    allow_failures:
+        - python: 3.6
+        - python: nightly
+        - python: pypy
+        - python: pypy3
 install:
-  - scripts/travis_install.sh
-
+    #- pip install -r requirements.txt
+    - pip install flake8  # pytest  # add other testing frameworks later
 before_script:
-  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-  - chmod +x ./cc-test-reporter
-  - ./cc-test-reporter before-build
-
+    - URL=https://github.com/${REPO}
+    - echo ; echo -n "flake8 testing of ${URL} on " ; python -V
+    - git clone --depth=50 ${URL} ~/${REPO}  # --branch=master
+    - cd ~/${REPO}
 script:
-  - scripts/travis_test.sh
-
-after_script:
-  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
+    - echo stop the build if there are Python syntax errors or undefined names
+    - echo ; echo -n "flake8 testing of ${URL} on " ; python -V
+    - time flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+    - echo exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
+    - time flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    #- true  # pytest --capture=sys
+notifications:
+    on_success: change
+    on_failure: change  # `always` will be the setting once code changes slow down
