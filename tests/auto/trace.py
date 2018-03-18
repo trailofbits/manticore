@@ -40,7 +40,7 @@ class Gdb(subprocess.Popen):
         val = self.correspond('p /x %s\n'%reg.lower()).split("0x")[-1]
         return long(val.split("\n")[0],16)
 
-    def setR(reg, value):
+    def setR(self, reg, value):
         self.correspond('set $%s = %s\n'%(reg.lower(), int(value)))
     def setByte(self, m, value):
         self.correspond('set *(char*)(%s) = %s\n'%(m,value))
