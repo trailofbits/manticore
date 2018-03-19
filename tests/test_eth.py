@@ -5,9 +5,9 @@ from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
-from manticore.platforms import evm
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args
+
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates
+from manticore.platforms.evm import EVMWorld, ConcretizeStack, Create, concretized_args
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -103,7 +103,7 @@ class EthTests(unittest.TestCase):
             Record the pcs of all end instructions encountered. Source of truth.
             """
             def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-                if isinstance(state.platform.current.last_exception, evm.Create):
+                if isinstance(state.platform.current.last_exception, Create):
                     name = 'init'
                 else:
                     name = 'rt'
@@ -139,38 +139,30 @@ class EthTests(unittest.TestCase):
         for pc in p.context['rt']:
             self.assertIn(':0x{:x}'.format(pc), all_rt_traces)
 
-    def test_can_create(self):
-        mevm = ManticoreEVM()
-        source_code = """
-        contract X { function X(address x) {} }
-        contract C { function C(address x) { new X(x); }
-        }
+    def test_graceful_handle_no_alive_states(self):
         """
-        # Make sure that we can can call CREATE without raising an exception
-        owner = mevm.create_account(balance=1000)
-        x = mevm.create_account(balance=0)
-        contract_account = mevm.solidity_create_contract(source_code,
-                contract_name="C", owner=owner, args=[x])
+        If there are no alive states, or no initial states, we should not crash. issue #795
+        """
+        # initiate the blockchain
+        m = ManticoreEVM()
+        source_code = '''
+        contract Simple {
+            function f(uint a) payable public {
+                if (a == 65) {
+                    revert();
+                }
+            }
+        }
+        '''
 
-    def test_writebuffer_doesnt_raise(self):
-        mevm = ManticoreEVM()
-        source_code = """
-	contract X {
-	    mapping(address => uint) private balance;
-	    function f(address z) returns (uint) { return balance[z]; }
-	}
-	contract C {
-	  X y;
-	  function C() {
-	    y = new X();
-	    uint z = y.f(0);
-	  }
-	}"""
-        # Make sure that write_buffer (used by RETURN) succeeds without errors
-        owner = mevm.create_account(balance=1000)
-        x = mevm.create_account(balance=0)
-        contract_account = mevm.solidity_create_contract(source_code,
-                contract_name="C", owner=owner, args=[x])
+        # Initiate the accounts
+        user_account = m.create_account(balance=1000)
+        contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
+
+        contract_account.f(1)  # it works
+        contract_account.f(65)  # it works
+        with self.assertRaises(NoAliveStates):
+            contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
 
 
 class EthHelpers(unittest.TestCase):
