@@ -31,6 +31,9 @@ class EVMTest_REVERT(unittest.TestCase):
             last_returned = e.data
         except evm.Revert:
             last_exception = "REVERT"
+        except evm.EndTx as e:
+            last_exception = e.result
+
             
         return last_exception, last_returned
 
@@ -274,14 +277,14 @@ class EVMTest_REVERT(unittest.TestCase):
             #make the ethereum world state
             world = evm.EVMWorld(constraints)
 
+            caller=origin=0x111111111111111111111111111111111111100
             address = 0x222222222222222222222222222222222222200
             balance = 0
             code = ''
-            storage = {}
-            world.create_account( address=address, balance=balance, code=code, storage=storage)
+            world.create_account( address=address)
+            world.create_account( address=caller)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
+
             price=0
             value=10000
             bytecode='\xfd'

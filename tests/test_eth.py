@@ -85,10 +85,11 @@ class EthTests(unittest.TestCase):
         mevm.register_detector(p)
 
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
-        mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.multi_tx_analysis(filename, tx_limit=2)
 
         self.assertIn('insns', p.context)
         context = p.context['insns']
+        self.assertIn('STOP', context)
         self.assertIn('RETURN', context)
         self.assertIn('REVERT', context)
 

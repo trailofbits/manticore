@@ -138,7 +138,7 @@ class BoolConstant(Bool, Constant):
 
     def __nonzero__(self):
         return self.value
-
+        
 
 class BoolOperation(Operation, Bool):
     def __init__(self, *operands, **kwargs):
@@ -386,6 +386,11 @@ class BitVecConstant(BitVec, Constant):
 
     def __nonzero__(self):
         return self.value != 0
+
+    def __eq__(self, other):
+        if self.taint:
+            raise NotImplementedError()
+        return self.value == other
 
 
 class BitVecOperation(BitVec, Operation):
@@ -819,20 +824,24 @@ class ArrayProxy(Array):
     def is_known(self, index):
         #return reduce(BoolOr, map(lambda known_index: index == known_index, self.written), BoolConstant(False))
         is_known_index = BoolConstant(False)
-        for known_index in self.written:
-            if isinstance(index, Constant) == isinstance(known_index, Constant):
+        written = self.written
+        for known_index in written:
+            if isinstance(index, Constant) and isinstance(known_index, Constant):
                 if known_index.value == index.value:
                     return BoolConstant(True)
-            is_known_index = BoolOr(index == known_index, is_known_index)
+                else:
+                    continue
+            is_known_index = BoolOr(is_known_index.cast(index == known_index), is_known_index)
         return is_known_index
 
     def get(self, index, default=0):
         value = self.select(index)
         if not isinstance(value, ArraySelect):
             return value 
+        is_known = self.is_known(index)
         index = self.cast_index(index)
         default = self.cast_value(default)
-        return BitVecITE(self._array.value_bits, self.is_known(index), value, default)
+        return BitVecITE(self._array.value_bits, is_known, value, default)
 
 class ArraySelect(BitVec, Operation):
     def __init__(self, array, index, *args, **kwargs):

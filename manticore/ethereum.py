@@ -92,21 +92,13 @@ class UninitializedMemory(Detector):
 
     def did_evm_read_memory_callback(self, state, offset, value):
         initialized_memory = state.context.get('seth.detectors.initialized_memory',set())
-        #if not state.can_be_true(value != 0):
-            # Not initialized memory should be zero
-        #    return
-        #if 
-        # check if offset is known
-        print "LEN", len( initialized_memory), offset in initialized_memory
         cbu = True  # Can be unknown
         for known_address in initialized_memory:
             cbu = Operators.AND(cbu, offset != known_address)
-            if state.can_be_true(cbu):
-                self.add_finding(state, "Potentially reading uninitialized memory at instruction (offset %r)"%offset)
-                print translate_to_smtlib(cbu)
+        if state.can_be_true(cbu):
+            self.add_finding(state, "Potentially reading uninitialized memory at instruction (offset %r)"%offset)
 
     def did_evm_write_memory_callback(self, state, offset, value):
-        #print "WRITE", offset, value, state.context.get('seth.detectors.initialized_memory',set())
         # concrete or symbolic write
         state.context.setdefault('seth.detectors.initialized_memory', set()).add(offset)
 

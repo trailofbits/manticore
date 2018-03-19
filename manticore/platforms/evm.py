@@ -1165,7 +1165,7 @@ class EVM(Eventful):
         if len(self.stack) >= 1024:
             raise StackOverflow()
 
-        self.stack.append(value & TT256M1)
+        self.stack.append(simplify(value & TT256M1))
 
     def _pop(self):
         if len(self.stack) == 0:
@@ -1525,9 +1525,10 @@ class EVM(Eventful):
 
     def CALLDATALOAD(self, offset):
         '''Get input data of current environment'''
+        data_length = len(self.data)
         bytes = []
         for i in range(32):
-            bytes.append(simplify(self.data.get(offset+i, 0)))
+            bytes.append( Operators.ITEBV(8, offset+i< data_length, self.data[offset+i], 0))
         value = Operators.CONCAT(256, *bytes)
         return value
 
@@ -1563,9 +1564,9 @@ class EVM(Eventful):
              max_size = size
 
         for i in range(max_size):
-             default = Operators.ITEBV(256, i < size, 0, self._load(mem_offset + i))
-             value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
-             self._store(mem_offset + i, value)
+            default = Operators.ITEBV(256, i < size, 0, self.memory.get(mem_offset + i, 0))  # Fixme. sometime reading mem
+            value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
+            self._store(mem_offset + i, value)
         self._publish('did_evm_read_code', code_offset, size)
 
     def GASPRICE(self):
@@ -1736,7 +1737,7 @@ class EVM(Eventful):
     @CREATE.pos
     def CREATE(self, value, offset, size):
         '''Create a new account with associated code'''
-        tx = self.world.last_transaction
+        tx = self.world.last_transaction  # At this point last and current tx are the same.
         address = tx.address
         if tx.result == 'RETURN':
             self.world.set_code(tx.address, tx.return_data)
@@ -1986,7 +1987,6 @@ class EVMWorld(Platform):
 
         self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.world_state[vm.address]['storage']), vm))
 
-        # self.forward_events_from(self.current)
         self._do_events()
 
     def _close_transaction(self, result, data=None, rollback=False):
