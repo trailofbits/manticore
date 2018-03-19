@@ -933,7 +933,7 @@ class ManticoreEVM(Manticore):
         elif tx_account == "owner":
             tx_account = owner_account
         else:
-            raise Exception('The account to perform the symbolic exploration of the contract should be either "attacker" or "owner"')
+            raise EthereumError('The account to perform the symbolic exploration of the contract should be either "attacker" or "owner"')
 
         def run_symbolic_tx():
             symbolic_data = self.make_symbolic_buffer(320)
