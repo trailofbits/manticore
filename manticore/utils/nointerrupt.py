@@ -1,6 +1,7 @@
 import signal
 import logging
 
+
 class WithKeyboardInterruptAs(object):
     def __init__(self, callback):
         if callback is None:

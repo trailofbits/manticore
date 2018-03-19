@@ -16,7 +16,7 @@ import struct
 import ctypes
 import socket
 
-#Remove in favor of binary.py
+# Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
 
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
@@ -32,28 +32,35 @@ from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
 
+
 class RestartSyscall(Exception):
     pass
+
 
 class Deadlock(Exception):
     pass
 
+
 class EnvironmentError(RuntimeError):
     pass
+
 
 class FdError(Exception):
     def __init__(self, message='', err=errno.EBADF):
         self.err = err
         super(FdError, self).__init__(message)
 
+
 def perms_from_elf(elf_flags):
-    return ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][elf_flags&7]
+    return ['   ', '  x', ' w ', ' wx', 'r  ', 'r x', 'rw ', 'rwx'][elf_flags & 7]
+
 
 def perms_from_protflags(prot_flags):
-    return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags&7]
+    return ['   ', 'r  ', ' w ', 'rw ', '  x', 'r x', ' wx', 'rwx'][prot_flags & 7]
+
 
 def mode_from_flags(file_flags):
-    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags&7]
+    return {os.O_RDWR: 'r+', os.O_RDONLY: 'r', os.O_WRONLY: 'w'}[file_flags & 7]
 
 
 class File(object):
@@ -94,7 +101,7 @@ class File(object):
         return os.fstat(self.fileno())
 
     def ioctl(self, request, argp):
-        #argp ignored..
+        # argp ignored..
         return fcntl.fcntl(self, request)
 
     def tell(self, *args):
@@ -124,6 +131,7 @@ class File(object):
         Flush buffered data. Currently not implemented.
         '''
         return
+
 
 class Directory(File):
     def __init__(self, path, flags):
@@ -175,6 +183,7 @@ class SymbolicFile(File):
     '''
     Represents a symbolic file.
     '''
+
     def __init__(self, constraints, path="sfile", mode='rw', max_size=100,
                  wildcard='+'):
         '''
@@ -236,7 +245,7 @@ class SymbolicFile(File):
         '''
         return self.pos
 
-    def seek(self, offset, whence = os.SEEK_SET):
+    def seek(self, offset, whence=os.SEEK_SET):
         '''
         Repositions the file C{offset} according to C{whence}.
         Returns the resulting offset or -1 in case of error.
@@ -288,6 +297,7 @@ class SocketDesc(object):
     '''
     Represents a socket descriptor (i.e. value returned by socket(2)
     '''
+
     def __init__(self, domain=None, socket_type=None, protocol=None):
         self.domain = domain
         self.socket_type = socket_type
@@ -297,8 +307,9 @@ class SocketDesc(object):
 class Socket(object):
     def stat(self):
         from collections import namedtuple
-        stat_result = namedtuple('stat_result', ['st_mode','st_ino','st_dev','st_nlink','st_uid','st_gid','st_size','st_atime','st_mtime','st_ctime', 'st_blksize','st_blocks','st_rdev'])
-        return stat_result(8592,11,9,1,1000,5,0,1378673920,1378673920,1378653796,0x400,0x8808,0)
+        stat_result = namedtuple('stat_result', ['st_mode', 'st_ino', 'st_dev', 'st_nlink', 'st_uid', 'st_gid',
+                                                 'st_size', 'st_atime', 'st_mtime', 'st_ctime', 'st_blksize', 'st_blocks', 'st_rdev'])
+        return stat_result(8592, 11, 9, 1, 1000, 5, 0, 1378673920, 1378673920, 1378653796, 0x400, 0x8808, 0)
 
     @staticmethod
     def pair():
@@ -308,7 +319,7 @@ class Socket(object):
         return a, b
 
     def __init__(self):
-        self.buffer = [] #queue os bytes
+        self.buffer = []  # queue os bytes
         self.peer = None
 
     def __repr__(self):
@@ -355,6 +366,7 @@ class Socket(object):
     def seek(self, *args):
         raise FdError("Invalid lseek() operation on Socket", errno.EINVAL)
 
+
 class Linux(Platform):
     '''
     A simple Linux Operating System Platform.
@@ -362,8 +374,8 @@ class Linux(Platform):
     '''
 
     # from /usr/include/asm-generic/resource.h
-    RLIMIT_NOFILE = 7 #/* max number of open files */
-    FCNTL_FDCWD   = -100 #/* Special value used to indicate openat should use the cwd */
+    RLIMIT_NOFILE = 7  # /* max number of open files */
+    FCNTL_FDCWD = -100  # /* Special value used to indicate openat should use the cwd */
 
     def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
         '''
@@ -390,7 +402,7 @@ class Linux(Platform):
             self.RLIMIT_NOFILE: (256, 1024)
         }
 
-        if program != None:
+        if program is not None:
             self.elf = ELFFile(file(program))
             # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
             # make things consistent and perhaps utilize a global mapping for this
@@ -423,13 +435,13 @@ class Linux(Platform):
         stdin = Socket()
         stdout = Socket()
         stderr = Socket()
-        #A transmit to stdin,stdout or stderr will be directed to out
+        # A transmit to stdin,stdout or stderr will be directed to out
         stdin.peer = self.output
         stdout.peer = self.output
         stderr.peer = self.stderr
-        #A receive from stdin will get data from input
+        # A receive from stdin will get data from input
         self.input.peer = stdin
-        #A receive on stdout or stderr will return no data (rx_bytes: 0)
+        # A receive on stdout or stderr will return no data (rx_bytes: 0)
 
         assert self._open(stdin) == 0
         assert self._open(stdout) == 1
@@ -460,20 +472,20 @@ class Linux(Platform):
         self._arch_specific_init()
 
         self._stack_top = self.current.STACK
-        self.setup_stack([program]+argv, envp)
+        self.setup_stack([program] + argv, envp)
 
         nprocs = len(self.procs)
         nfiles = len(self.files)
         assert nprocs > 0
         self.running = list(range(nprocs))
 
-        #Each process can wait for one timeout
+        # Each process can wait for one timeout
         self.timers = [None] * nprocs
         #each fd has a waitlist
         self.rwait = [set() for _ in range(nfiles)]
         self.twait = [set() for _ in range(nfiles)]
 
-        #Install event forwarders
+        # Install event forwarders
         for proc in self.procs:
             self.forward_events_from(proc)
 
@@ -481,7 +493,6 @@ class Linux(Platform):
         mem = Memory32() if arch in {'i386', 'armv7'} else Memory64()
         cpu = CpuFactory.get_cpu(mem, arch)
         return cpu
-
 
     @property
     def current(self):
@@ -575,7 +586,7 @@ class Linux(Platform):
         if '_arm_tls_memory' in state:
             self._arm_tls_memory = state['_arm_tls_memory']
 
-        #Install event forwarders
+        # Install event forwarders
         for proc in self.procs:
             self.forward_events_from(proc)
 
@@ -605,29 +616,29 @@ class Linux(Platform):
         # locking. For actual implementations, refer to
         # arch/arm64/kernel/kuser32.S in the Linux source code.
         __kuser_cmpxchg64 = (
-            '30002de9' + # push    {r4, r5}
-            '08c09de5' + # ldr     ip, [sp, #8]
-            '30009ce8' + # ldm     ip, {r4, r5}
-            '010055e1' + # cmp     r5, r1
-            '00005401' + # cmpeq   r4, r0
-            '0100a013' + # movne   r0, #1
-            '0000a003' + # moveq   r0, #0
-            '0c008c08' + # stmeq   ip, {r2, r3}
-            '3000bde8' + # pop     {r4, r5}
+            '30002de9' +  # push    {r4, r5}
+            '08c09de5' +  # ldr     ip, [sp, #8]
+            '30009ce8' +  # ldm     ip, {r4, r5}
+            '010055e1' +  # cmp     r5, r1
+            '00005401' +  # cmpeq   r4, r0
+            '0100a013' +  # movne   r0, #1
+            '0000a003' +  # moveq   r0, #0
+            '0c008c08' +  # stmeq   ip, {r2, r3}
+            '3000bde8' +  # pop     {r4, r5}
             '1eff2fe1'   # bx      lr
         ).decode('hex')
 
         __kuser_dmb = (
-            '5bf07ff5' + # dmb ish
+            '5bf07ff5' +  # dmb ish
             '1eff2fe1'   # bx lr
         ).decode('hex')
 
         __kuser_cmpxchg = (
-            '003092e5' + # ldr     r3, [r2]
-            '000053e1' + # cmp     r3, r0
-            '0000a003' + # moveq   r0, #0
-            '00108205' + # streq   r1, [r2]
-            '0100a013' + # movne   r0, #1
+            '003092e5' +  # ldr     r3, [r2]
+            '000053e1' +  # cmp     r3, r0
+            '0000a003' +  # moveq   r0, #0
+            '00108205' +  # streq   r1, [r2]
+            '0100a013' +  # movne   r0, #1
             '1eff2fe1'   # bx      lr
         ).decode('hex')
 
@@ -635,17 +646,17 @@ class Linux(Platform):
         self._arm_tls_memory = self.current.memory.mmap(None, 4, 'rw ')
 
         __kuser_get_tls = (
-            '04009FE5' + # ldr r0, [pc, #4]
-            '010090e8' + # ldm r0, {r0}
+            '04009FE5' +  # ldr r0, [pc, #4]
+            '010090e8' +  # ldm r0, {r0}
             '1eff2fe1'   # bx lr
         ).decode('hex') + struct.pack('<I', self._arm_tls_memory)
 
-        tls_area = '\x00'*12
+        tls_area = '\x00' * 12
 
         version = struct.pack('<I', 5)
 
         def update(address, code):
-            page_data[address:address+len(code)] = code
+            page_data[address:address + len(code)] = code
 
         # Offsets from Documentation/arm/kernel_user_helpers.txt in Linux
         update(0x000, preamble)
@@ -659,16 +670,15 @@ class Linux(Platform):
         self.current.memory.mmap(0xffff0000, len(page_data), 'r x', page_data)
 
     def load_vdso(self, bits):
-        #load vdso #TODO or #IGNORE
+        # load vdso #TODO or #IGNORE
         vdso_top = {32: 0x7fff0000, 64: 0x7fff00007fff0000}[bits]
-        vdso_size = len(file('vdso%2d.dump'%bits).read())
+        vdso_size = len(file('vdso%2d.dump' % bits).read())
         vdso_addr = self.memory.mmapFile(self.memory._floor(vdso_top - vdso_size),
                                          vdso_size,
                                          'r x',
                                          {32: 'vdso32.dump', 64: 'vdso64.dump'}[bits],
                                          0)
         return vdso_addr
-
 
     def setup_stack(self, argv, envp):
         '''
@@ -724,11 +734,11 @@ class Linux(Platform):
         for name, val in auxv.items():
             logger.debug("\t\t%s: %s", name, hex(val))
 
-        #We save the argument and environment pointers
+        # We save the argument and environment pointers
         argvlst = []
         envplst = []
 
-        #end envp marker empty string
+        # end envp marker empty string
         for evar in envp:
             cpu.push_bytes('\x00')
             envplst.append(cpu.push_bytes(evar))
@@ -737,51 +747,49 @@ class Linux(Platform):
             cpu.push_bytes('\x00')
             argvlst.append(cpu.push_bytes(arg))
 
-
-        #Put all auxv strings into the string stack area.
-        #And replace the value be its pointer
+        # Put all auxv strings into the string stack area.
+        # And replace the value be its pointer
 
         for name, value in auxv.items():
             if hasattr(value, '__len__'):
                 cpu.push_bytes(value)
                 auxv[name] = cpu.STACK
 
-        #The "secure execution" mode of secure_getenv() is controlled by the
-        #AT_SECURE flag contained in the auxiliary vector passed from the
-        #kernel to user space.
+        # The "secure execution" mode of secure_getenv() is controlled by the
+        # AT_SECURE flag contained in the auxiliary vector passed from the
+        # kernel to user space.
         auxvnames = {
-            'AT_IGNORE': 1, # Entry should be ignored
-            'AT_EXECFD': 2, # File descriptor of program
-            'AT_PHDR': 3, # Program headers for program
-            'AT_PHENT':4, # Size of program header entry
-            'AT_PHNUM':5, # Number of program headers
-            'AT_PAGESZ': 6, # System page size
-            'AT_BASE': 7, # Base address of interpreter
-            'AT_FLAGS':8, # Flags
-            'AT_ENTRY':9, # Entry point of program
-            'AT_NOTELF': 10, # Program is not ELF
-            'AT_UID':11, # Real uid
-            'AT_EUID': 12, # Effective uid
-            'AT_GID':13, # Real gid
-            'AT_EGID': 14, # Effective gid
-            'AT_CLKTCK': 17, # Frequency of times()
-            'AT_PLATFORM': 15, # String identifying platform.
-            'AT_HWCAP':16, # Machine-dependent hints about processor capabilities.
-            'AT_FPUCW':18, # Used FPU control word.
-            'AT_SECURE': 23, # Boolean, was exec setuid-like?
-            'AT_BASE_PLATFORM': 24, # String identifying real platforms.
-            'AT_RANDOM': 25, # Address of 16 random bytes.
-            'AT_EXECFN': 31, # Filename of executable.
-            'AT_SYSINFO':32, #Pointer to the global system page used for system calls and other nice things.
-            'AT_SYSINFO_EHDR': 33, #Pointer to the global system page used for system calls and other nice things.
+            'AT_IGNORE': 1,  # Entry should be ignored
+            'AT_EXECFD': 2,  # File descriptor of program
+            'AT_PHDR': 3,  # Program headers for program
+            'AT_PHENT': 4,  # Size of program header entry
+            'AT_PHNUM': 5,  # Number of program headers
+            'AT_PAGESZ': 6,  # System page size
+            'AT_BASE': 7,  # Base address of interpreter
+            'AT_FLAGS': 8,  # Flags
+            'AT_ENTRY': 9,  # Entry point of program
+            'AT_NOTELF': 10,  # Program is not ELF
+            'AT_UID': 11,  # Real uid
+            'AT_EUID': 12,  # Effective uid
+            'AT_GID': 13,  # Real gid
+            'AT_EGID': 14,  # Effective gid
+            'AT_CLKTCK': 17,  # Frequency of times()
+            'AT_PLATFORM': 15,  # String identifying platform.
+            'AT_HWCAP': 16,  # Machine-dependent hints about processor capabilities.
+            'AT_FPUCW': 18,  # Used FPU control word.
+            'AT_SECURE': 23,  # Boolean, was exec setuid-like?
+            'AT_BASE_PLATFORM': 24,  # String identifying real platforms.
+            'AT_RANDOM': 25,  # Address of 16 random bytes.
+            'AT_EXECFN': 31,  # Filename of executable.
+            'AT_SYSINFO': 32,  # Pointer to the global system page used for system calls and other nice things.
+            'AT_SYSINFO_EHDR': 33,  # Pointer to the global system page used for system calls and other nice things.
         }
-        #AT_NULL
+        # AT_NULL
         cpu.push_int(0)
         cpu.push_int(0)
         for name, val in auxv.items():
             cpu.push_int(val)
             cpu.push_int(auxvnames[name])
-
 
         # NULL ENVP
         cpu.push_int(0)
@@ -795,9 +803,8 @@ class Linux(Platform):
             cpu.push_int(arg)
         argv = cpu.STACK
 
-        #ARGC
+        # ARGC
         cpu.push_int(len(argvlst))
-
 
     def load(self, filename):
         '''
@@ -810,17 +817,17 @@ class Linux(Platform):
             - 'Not matching memory': if the program is compiled for a different address size
         :todo: define va_randomize and read_implies_exec personality
         '''
-        #load elf See binfmt_elf.c
-        #read the ELF object file
+        # load elf See binfmt_elf.c
+        # read the ELF object file
         cpu = self.current
         elf = self.elf
         arch = self.arch
-        addressbitsize = {'x86':32, 'x64':64, 'ARM': 32}[elf.get_machine_arch()]
-        logger.debug("Loading %s as a %s elf",filename, arch)
+        addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32}[elf.get_machine_arch()]
+        logger.debug("Loading %s as a %s elf", filename, arch)
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
-        #Get interpreter elf
+        # Get interpreter elf
         interpreter = None
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != 'PT_INTERP':
@@ -829,11 +836,11 @@ class Linux(Platform):
             logger.info('Interpreter filename: %s', interpreter_filename)
             interpreter = ELFFile(file(interpreter_filename))
             break
-        if not interpreter is None:
+        if interpreter is not None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()
             assert interpreter.header.e_type in ['ET_DYN', 'ET_EXEC']
 
-        #Stack Executability
+        # Stack Executability
         executable_stack = False
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != 'PT_GNU_STACK':
@@ -855,9 +862,9 @@ class Linux(Platform):
             if elf_segment.header.p_type != 'PT_LOAD':
                 continue
 
-            align = 0x1000 #elf_segment.header.p_align
+            align = 0x1000  # elf_segment.header.p_align
 
-            ELF_PAGEOFFSET = elf_segment.header.p_vaddr & (align-1)
+            ELF_PAGEOFFSET = elf_segment.header.p_vaddr & (align - 1)
 
             flags = elf_segment.header.p_flags
             memsz = elf_segment.header.p_memsz + ELF_PAGEOFFSET
@@ -873,20 +880,20 @@ class Linux(Platform):
                     base = 0x555555554000
 
             perms = perms_from_elf(flags)
-            hint = base+vaddr
+            hint = base + vaddr
             if hint == 0:
                 hint = None
 
-            logger.debug("Loading elf offset: %08x addr:%08x %08x %s" %(offset, base+vaddr, base+vaddr+memsz, perms))
+            logger.debug("Loading elf offset: %08x addr:%08x %08x %s" % (offset, base + vaddr, base + vaddr + memsz, perms))
             base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) - vaddr
 
-            if load_addr == 0 :
+            if load_addr == 0:
                 load_addr = base + vaddr
 
-            k = base + vaddr + filesz;
-            if k > elf_bss :
-                elf_bss = k;
-            if (flags & 4) and end_code < k: #PF_X
+            k = base + vaddr + filesz
+            if k > elf_bss:
+                elf_bss = k
+            if (flags & 4) and end_code < k:  # PF_X
                 end_code = k
             if end_data < k:
                 end_data = k
@@ -900,12 +907,11 @@ class Linux(Platform):
         entry = elf_entry
         real_elf_brk = elf_brk
 
-
         # We need to explicitly clear bss, as fractional pages will have data from the file
         bytes_to_clear = elf_brk - elf_bss
         if bytes_to_clear > 0:
             logger.debug("Zeroing main elf fractional pages. From bss(%x) to brk(%x), %d bytes.",
-                    elf_bss, elf_brk, bytes_to_clear)
+                         elf_bss, elf_brk, bytes_to_clear)
             cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
         stack_size = 0x21000
@@ -918,7 +924,7 @@ class Linux(Platform):
         stack = cpu.memory.mmap(stack_base, stack_size, 'rwx', name='stack') + stack_size
         assert stack_top == stack
 
-        reserved = cpu.memory.mmap(base+vaddr+memsz,0x1000000, '   ')
+        reserved = cpu.memory.mmap(base + vaddr + memsz, 0x1000000, '   ')
         interpreter_base = 0
         if interpreter is not None:
             base = 0
@@ -930,14 +936,14 @@ class Linux(Platform):
             for elf_segment in interpreter.iter_segments():
                 if elf_segment.header.p_type != 'PT_LOAD':
                     continue
-                align = 0x1000#elf_segment.header.p_align
+                align = 0x1000  # elf_segment.header.p_align
                 vaddr = elf_segment.header.p_vaddr
                 filesz = elf_segment.header.p_filesz
                 flags = elf_segment.header.p_flags
                 offset = elf_segment.header.p_offset
                 memsz = elf_segment.header.p_memsz
 
-                ELF_PAGEOFFSET = (vaddr & (align-1))
+                ELF_PAGEOFFSET = (vaddr & (align - 1))
                 memsz = memsz + ELF_PAGEOFFSET
                 offset = offset - ELF_PAGEOFFSET
                 filesz = filesz + ELF_PAGEOFFSET
@@ -952,22 +958,32 @@ class Linux(Platform):
                 if base == 0:
                     assert vaddr == 0
                 perms = perms_from_elf(flags)
-                hint = base+vaddr
+                hint = base + vaddr
                 if hint == 0:
                     hint = None
 
                 base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset)
                 base -= vaddr
-                logger.debug("Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %(offset, base+vaddr, base+vaddr+memsz, (flags&1 and 'r' or ' '), (flags&2 and 'w' or ' '), (flags&4 and 'x' or ' ')))
+                logger.debug(
+                    "Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %
+                    (offset,
+                     base +
+                     vaddr,
+                     base +
+                     vaddr +
+                     memsz,
+                     (flags & 1 and 'r' or ' '),
+                        (flags & 2 and 'w' or ' '),
+                        (flags & 4 and 'x' or ' ')))
 
-                k = base + vaddr + filesz;
+                k = base + vaddr + filesz
                 if k > elf_bss:
                     elf_bss = k
-                if (flags & 4) and end_code < k: #PF_X
+                if (flags & 4) and end_code < k:  # PF_X
                     end_code = k
                 if end_data < k:
                     end_data = k
-                k = base + vaddr+ memsz
+                k = base + vaddr + memsz
                 if k > elf_brk:
                     elf_brk = k
 
@@ -978,14 +994,13 @@ class Linux(Platform):
             bytes_to_clear = elf_brk - elf_bss
             if bytes_to_clear > 0:
                 logger.debug("Zeroing interpreter elf fractional pages. From bss(%x) to brk(%x), %d bytes.",
-                        elf_bss, elf_brk, bytes_to_clear)
+                             elf_bss, elf_brk, bytes_to_clear)
                 cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
-
-        #free reserved brk space
+        # free reserved brk space
         cpu.memory.munmap(reserved, 0x1000000)
 
-        #load vdso
+        # load vdso
         #vdso_addr = load_vdso(addressbitsize)
 
         cpu.STACK = stack
@@ -1003,25 +1018,25 @@ class Linux(Platform):
         self.end_data = end_data
         self.elf_brk = real_elf_brk
 
-        at_random = cpu.push_bytes('A'*16)
-        at_execfn = cpu.push_bytes(filename+'\x00')
+        at_random = cpu.push_bytes('A' * 16)
+        at_execfn = cpu.push_bytes(filename + '\x00')
 
         self.auxv = {
-            'AT_PHDR'   : load_addr+elf.header.e_phoff, # Program headers for program
-            'AT_PHENT'  : elf.header.e_phentsize,       # Size of program header entry
-            'AT_PHNUM'  : elf.header.e_phnum,           # Number of program headers
-            'AT_PAGESZ' : cpu.memory.page_size,         # System page size
-            'AT_BASE'   : interpreter_base,             # Base address of interpreter
-            'AT_FLAGS'  : elf.header.e_flags,           # Flags
-            'AT_ENTRY'  : elf_entry,                    # Entry point of program
-            'AT_UID'    : 1000,                         # Real uid
-            'AT_EUID'   : 1000,                         # Effective uid
-            'AT_GID'    : 1000,                         # Real gid
-            'AT_EGID'   : 1000,                         # Effective gid
-            'AT_CLKTCK' : 100,                          # Frequency of times()
-            'AT_HWCAP'  : 0,                            # Machine-dependent hints about processor capabilities.
-            'AT_RANDOM' : at_random,                    # Address of 16 random bytes.
-            'AT_EXECFN' : at_execfn,                    # Filename of executable.
+            'AT_PHDR': load_addr + elf.header.e_phoff,  # Program headers for program
+            'AT_PHENT': elf.header.e_phentsize,       # Size of program header entry
+            'AT_PHNUM': elf.header.e_phnum,           # Number of program headers
+            'AT_PAGESZ': cpu.memory.page_size,         # System page size
+            'AT_BASE': interpreter_base,             # Base address of interpreter
+            'AT_FLAGS': elf.header.e_flags,           # Flags
+            'AT_ENTRY': elf_entry,                    # Entry point of program
+            'AT_UID': 1000,                         # Real uid
+            'AT_EUID': 1000,                         # Effective uid
+            'AT_GID': 1000,                         # Real gid
+            'AT_EGID': 1000,                         # Effective gid
+            'AT_CLKTCK': 100,                          # Frequency of times()
+            'AT_HWCAP': 0,                            # Machine-dependent hints about processor capabilities.
+            'AT_RANDOM': at_random,                    # Address of 16 random bytes.
+            'AT_EXECFN': at_execfn,                    # Filename of executable.
         }
 
     def _to_signed_dword(self, dword):
@@ -1033,7 +1048,6 @@ class Linux(Platform):
         else:
             raise EnvironmentError("Corrupted internal CPU state (arch width is {})".format(arch_width))
         return sdword
-
 
     def _open(self, f):
         '''
@@ -1101,7 +1115,7 @@ class Linux(Platform):
         procid = self.procs.index(self.current)
         self.sched()
         self.running.remove(procid)
-        if len(self.running) == 0 :
+        if len(self.running) == 0:
             raise TerminateState(message, testcase=True)
 
     def sys_umask(self, mask):
@@ -1129,27 +1143,27 @@ class Linux(Platform):
         '''
         getcwd - Get the current working directory
         :param int buf: Pointer to dest array
-        :param size: size in bytes of the array pointed to by the buf 
+        :param size: size in bytes of the array pointed to by the buf
         :return: buf (Success), or 0
         '''
-        
+
         try:
-            current_dir = os.getcwd()          
+            current_dir = os.getcwd()
             length = len(current_dir) + 1
-                      
+
             if size > 0 and size < length:
-                logger.info("GETCWD: size is greater than 0, but is smaller than the length"  
+                logger.info("GETCWD: size is greater than 0, but is smaller than the length"
                             "of the path + 1. Returning ERANGE")
                 return -errno.ERANGE
-        
-            if not self.current.memory.access_ok(slice(buf, buf+length), 'w'):
+
+            if not self.current.memory.access_ok(slice(buf, buf + length), 'w'):
                 logger.info("GETCWD: buf within invalid memory. Returning EFAULT")
                 return -errno.EFAULT
-                      
+
             self.current.write_string(buf, current_dir)
             logger.debug("getcwd(0x%08x, %u) -> <%s> (Size %d)", buf, size, current_dir, length)
             return length
-        
+
         except OSError as e:
             return -e.errno
 
@@ -1175,7 +1189,7 @@ class Linux(Platform):
             self._get_fd(fd).seek(signed_offset, whence)
         except FdError as e:
             logger.info(("LSEEK: Not valid file descriptor on lseek."
-                        "Fd not seekable. Returning EBADF"))
+                         "Fd not seekable. Returning EBADF"))
             return -e.err
 
         return 0
@@ -1184,7 +1198,7 @@ class Linux(Platform):
         data = ''
         if count != 0:
             # TODO check count bytes from buf
-            if not buf in self.current.memory: # or not  self.current.memory.isValid(buf+count):
+            if buf not in self.current.memory:  # or not  self.current.memory.isValid(buf+count):
                 logger.info("READ: buf points to invalid address. Returning EFAULT")
                 return -errno.EFAULT
 
@@ -1280,7 +1294,7 @@ class Linux(Platform):
         from datetime import datetime
 
         def pad(s):
-            return s +'\x00'*(65-len(s))
+            return s + '\x00' * (65 - len(s))
 
         now = datetime(2017, 8, 0o1).strftime("%a %b %d %H:%M:%S ART %Y")
         info = (('sysname', 'Linux'),
@@ -1306,8 +1320,8 @@ class Linux(Platform):
         if brk != 0 and brk != self.elf_brk:
             assert brk > self.elf_brk
             mem = self.current.memory
-            size = brk-self.elf_brk
-            perms = mem.perms(self.elf_brk-1)
+            size = brk - self.elf_brk
+            perms = mem.perms(self.elf_brk - 1)
             if brk > mem._ceil(self.elf_brk):
                 addr = mem.mmap(mem._ceil(self.elf_brk), size, perms)
                 assert mem._ceil(self.elf_brk) == addr, "Error in brk!"
@@ -1386,7 +1400,7 @@ class Linux(Platform):
 
         filename = self.current.read_string(buf)
         dirfd = self._to_signed_dword(dirfd)
-        
+
         if os.path.isabs(filename) or dirfd == self.FCNTL_FDCWD:
             return self.sys_open(buf, flags, mode)
 
@@ -1412,7 +1426,6 @@ class Linux(Platform):
 
         return self._open(f)
 
-            
     def sys_rename(self, oldnamep, newnamep):
         '''
         Rename filename `oldnamep` to `newnamep`.
@@ -1460,7 +1473,7 @@ class Linux(Platform):
             self.current.set_arm_tls(val)
         return 0
 
-    #Signals..
+    # Signals..
     def sys_kill(self, pid, sig):
         logger.debug("KILL, Ignoring Sending signal %d to pid %d", sig, pid)
         return 0
@@ -1481,7 +1494,7 @@ class Linux(Platform):
     def sys_sigprocmask(self, cpu, how, newset, oldset):
         logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
         return 0
-    
+
     def sys_dup(self, fd):
         '''
         Duplicates an open file descriptor
@@ -1489,14 +1502,14 @@ class Linux(Platform):
         :param fd: the open file descriptor to duplicate.
         :return: the new file descriptor.
         '''
-    
+
         if not self._is_fd_open(fd):
             logger.info("DUP: Passed fd is not open. Returning EBADF")
             return -errno.EBADF
-        
+
         newfd = self._dup(fd)
         return newfd
-        
+
     def sys_dup2(self, fd, newfd):
         '''
         Duplicates an open fd to newfd. If newfd is open, it is first closed
@@ -1515,17 +1528,17 @@ class Linux(Platform):
         if newfd >= soft_max:
             logger.info("DUP2: newfd is above max descriptor table size")
             return -errno.EBADF
-          
-        if  self._is_fd_open(newfd):
+
+        if self._is_fd_open(newfd):
             self._close(newfd)
-        
+
         if newfd >= len(self.files):
-            self.files.extend([None]*(newfd+1-len(self.files)))
-        
+            self.files.extend([None] * (newfd + 1 - len(self.files)))
+
         self.files[newfd] = self.files[fd]
-                    
+
         return newfd
-    
+
     def sys_close(self, fd):
         '''
         Closes a file descriptor
@@ -1583,7 +1596,7 @@ class Linux(Platform):
             - C{-1} In case you use C{MAP_FIXED} in the flags and the mapping can not be place at the desired address.
             - the address of the new mapping.
         '''
-        return self.sys_mmap(address, size, prot, flags, fd, offset*0x1000)
+        return self.sys_mmap(address, size, prot, flags, fd, offset * 0x1000)
 
     def sys_mmap(self, address, size, prot, flags, fd, offset):
         '''
@@ -1612,7 +1625,7 @@ class Linux(Platform):
 
         cpu = self.current
         if flags & 0x10:
-            cpu.memory.munmap(address,size)
+            cpu.memory.munmap(address, size)
 
         perms = perms_from_protflags(prot)
 
@@ -1624,7 +1637,7 @@ class Linux(Platform):
             data = self.files[fd].read(size)
             cpu.write_bytes(result, data)
         else:
-            #FIXME Check if file should be symbolic input and do as with fd0
+            # FIXME Check if file should be symbolic input and do as with fd0
             result = cpu.memory.mmapFile(address, size, perms, self.files[fd].name, offset)
 
         actually_mapped = '0x{:016x}'.format(result)
@@ -1751,12 +1764,12 @@ class Linux(Platform):
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             data = ""
-            for j in range(0,size):
+            for j in range(0, size):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
             data = self._transform_write_data(data)
             write_fd.write(data)
             self.syscall_trace.append(("_write", fd, data))
-            total+=size
+            total += size
         return total
 
     def sys_set_thread_area(self, user_info):
@@ -1772,7 +1785,7 @@ class Linux(Platform):
         m = self.current.read_int(user_info + 8, 32)
         flags = self.current.read_int(user_info + 12, 32)
         assert n == 0xffffffff
-        assert flags == 0x51  #TODO: fix
+        assert flags == 0x51  # TODO: fix
         self.current.GS = 0x63
         self.current.set_descriptor(self.current.GS, pointer, 0x4000, 'rw')
         self.current.write_int(user_info, (0x63 - 3) // 8, 32)
@@ -1821,18 +1834,23 @@ class Linux(Platform):
 
     def sys_ptrace(self, request, pid, addr, data):
         return 0
+
     def sys_nanosleep(self, req, rem):
         return 0
+
     def sys_set_tid_address(self, tidptr):
-        return 1000 #tha pid
+        return 1000  # tha pid
+
     def sys_faccessat(self, dirfd, pathname, mode, flags):
         filename = self.current.read_string(pathname)
         return -1
 
     def sys_set_robust_list(self, head, length):
         return -1
+
     def sys_futex(self, uaddr, op, val, timeout, uaddr2, val3):
         return -1
+
     def sys_getrlimit(self, resource, rlim):
         ret = -1
         if resource in self._rlimits:
@@ -1845,6 +1863,7 @@ class Linux(Platform):
 
     def sys_fadvise64(self, fd, offset, length, advice):
         return 0
+
     def sys_gettimeofday(self, tv, tz):
         return 0
 
@@ -1901,7 +1920,6 @@ class Linux(Platform):
 
         return len(data)
 
-
     def sys_send(self, sockfd, buf, count, flags):
         try:
             sock = self.files[sockfd]
@@ -1912,7 +1930,7 @@ class Linux(Platform):
             return -errno.ENOTSOCK
 
         data = self.current.read_bytes(buf, count)
-        #XXX(yan): send(2) is currently a nop; we don't communicate yet
+        # XXX(yan): send(2) is currently a nop; we don't communicate yet
         self.syscall_trace.append(("_send", sockfd, data))
 
         return count
@@ -1929,7 +1947,7 @@ class Linux(Platform):
         except IndexError:
             return -errno.EINVAL
 
-        #XXX(yan): sendfile(2) is currently a nop; we don't communicate yet
+        # XXX(yan): sendfile(2) is currently a nop; we don't communicate yet
 
         return count
 
@@ -1949,7 +1967,7 @@ class Linux(Platform):
         '''
 
         GRND_NONBLOCK = 0x0001
-        GRND_RANDOM   = 0x0002
+        GRND_RANDOM = 0x0002
 
         if size == 0:
             return 0
@@ -1958,14 +1976,14 @@ class Linux(Platform):
             logger.info("getrandom: Provided an invalid address. Returning EFAULT")
             return -errno.EFAULT
 
-        if flags & ~(GRND_NONBLOCK|GRND_RANDOM):
+        if flags & ~(GRND_NONBLOCK | GRND_RANDOM):
             return -errno.EINVAL
 
         self.current.write_bytes(buf, '\x00' * size)
 
         return size
 
-    #Distpatchers...
+    # Distpatchers...
     def syscall(self):
         '''
         Syscall dispatcher.
@@ -1992,10 +2010,9 @@ class Linux(Platform):
     def sys_time(self, tloc):
         import time
         t = time.time()
-        if tloc != 0 :
+        if tloc != 0:
             self.current.write_int(tloc, int(t), self.current.address_bit_size)
         return int(t)
-
 
     def sched(self):
         ''' Yield CPU.
@@ -2047,7 +2064,6 @@ class Linux(Platform):
         logger.debug("\tTWait: %r", self.twait)
         logger.debug("\tTimers: %r", self.timers)
 
-
         for fd in readfds:
             self.rwait[fd].add(self._current)
         for fd in writefds:
@@ -2055,11 +2071,11 @@ class Linux(Platform):
         if timeout is not None:
             self.timers[self._current] = self.clocks + timeout
         procid = self._current
-        #self.sched()
+        # self.sched()
         next_index = (self.running.index(procid) + 1) % len(self.running)
         self._current = self.running[next_index]
         logger.debug("\tTransfer control from process %d to %d", procid, self._current)
-        logger.debug( "\tREMOVING %r from %r. Current: %r", procid, self.running, self._current)
+        logger.debug("\tREMOVING %r from %r. Current: %r", procid, self.running, self._current)
         self.running.remove(procid)
         if self._current not in self.running:
             logger.debug("\tCurrent not running. Checking for timers...")
@@ -2070,9 +2086,11 @@ class Linux(Platform):
         ''' Remove procid from waitlists and reestablish it in the running list '''
         logger.debug("Remove procid:%d from waitlists and reestablish it in the running list", procid)
         for wait_list in self.rwait:
-            if procid in wait_list: wait_list.remove(procid)
+            if procid in wait_list:
+                wait_list.remove(procid)
         for wait_list in self.twait:
-            if procid in wait_list: wait_list.remove(procid)
+            if procid in wait_list:
+                wait_list.remove(procid)
         self.timers[procid] = None
         self.running.append(procid)
         if self._current is None:
@@ -2121,7 +2139,6 @@ class Linux(Platform):
                     self.procs[procid].PC += self.procs[procid].instruction.size
                     self.awake(procid)
 
-
     def execute(self):
         """
         Execute one cpu instruction in the current thread (only one supported).
@@ -2146,8 +2163,7 @@ class Linux(Platform):
 
         return True
 
-
-    #64bit syscalls
+    # 64bit syscalls
 
     def sys_newfstat(self, fd, buf):
         '''
@@ -2165,8 +2181,8 @@ class Linux(Platform):
             return -e.err
 
         def add(width, val):
-            fformat = {2:'H', 4:'L', 8:'Q'}[width]
-            return struct.pack('<'+fformat, val)
+            fformat = {2: 'H', 4: 'L', 8: 'Q'}[width]
+            return struct.pack('<' + fformat, val)
 
         def to_timespec(width, ts):
             'Note: this is a platform-dependent timespec (8 or 16 bytes)'
@@ -2185,11 +2201,11 @@ class Linux(Platform):
         bufstat += add(4, 0)                # 32 _pad
         bufstat += add(nw, stat.st_rdev)    # long st_rdev
         bufstat += add(nw, stat.st_size)    # long st_size
-        bufstat += add(nw, stat.st_blksize) # long st_blksize
+        bufstat += add(nw, stat.st_blksize)  # long st_blksize
         bufstat += add(nw, stat.st_blocks)  # long st_blocks
-        bufstat += to_timespec(nw, stat.st_atime) # long   st_atime, nsec;
-        bufstat += to_timespec(nw, stat.st_mtime) # long   st_mtime, nsec;
-        bufstat += to_timespec(nw, stat.st_ctime) # long   st_ctime, nsec;
+        bufstat += to_timespec(nw, stat.st_atime)  # long   st_atime, nsec;
+        bufstat += to_timespec(nw, stat.st_mtime)  # long   st_mtime, nsec;
+        bufstat += to_timespec(nw, stat.st_ctime)  # long   st_ctime, nsec;
 
         self.current.write_bytes(buf, bufstat)
         return 0
@@ -2210,8 +2226,8 @@ class Linux(Platform):
             return -e.err
 
         def add(width, val):
-            fformat = {2:'H', 4:'L', 8:'Q'}[width]
-            return struct.pack('<'+fformat, val)
+            fformat = {2: 'H', 4: 'L', 8: 'Q'}[width]
+            return struct.pack('<' + fformat, val)
 
         def to_timespec(ts):
             return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
@@ -2225,8 +2241,8 @@ class Linux(Platform):
         bufstat += add(4, stat.st_gid)    # unsigned short st_gid;
         bufstat += add(4, stat.st_rdev)   # unsigned long  st_rdev;
         bufstat += add(4, stat.st_size)   # unsigned long  st_size;
-        bufstat += add(4, stat.st_blksize)# unsigned long  st_blksize;
-        bufstat += add(4, stat.st_blocks) # unsigned long  st_blocks;
+        bufstat += add(4, stat.st_blksize)  # unsigned long  st_blksize;
+        bufstat += add(4, stat.st_blocks)  # unsigned long  st_blocks;
         bufstat += to_timespec(stat.st_atime)  # unsigned long  st_atime;
         bufstat += to_timespec(stat.st_mtime)  # unsigned long  st_mtime;
         bufstat += to_timespec(stat.st_ctime)  # unsigned long  st_ctime;
@@ -2253,8 +2269,8 @@ class Linux(Platform):
             return -e.err
 
         def add(width, val):
-            fformat = {2:'H', 4:'L', 8:'Q'}[width]
-            return struct.pack('<'+fformat, val)
+            fformat = {2: 'H', 4: 'L', 8: 'Q'}[width]
+            return struct.pack('<' + fformat, val)
 
         def to_timespec(ts):
             return struct.pack('<LL', int(ts), int(ts % 1 * 1e9))
@@ -2272,9 +2288,9 @@ class Linux(Platform):
         bufstat += add(8, stat.st_size)       # long long       st_size;
         bufstat += add(8, stat.st_blksize)    # unsigned long   st_blksize;
         bufstat += add(8, stat.st_blocks)     # unsigned long long st_blocks;
-        bufstat += to_timespec(stat.st_atime) # unsigned long   st_atime;
-        bufstat += to_timespec(stat.st_mtime) # unsigned long   st_mtime;
-        bufstat += to_timespec(stat.st_ctime) # unsigned long   st_ctime;
+        bufstat += to_timespec(stat.st_atime)  # unsigned long   st_atime;
+        bufstat += to_timespec(stat.st_mtime)  # unsigned long   st_mtime;
+        bufstat += to_timespec(stat.st_ctime)  # unsigned long   st_ctime;
         bufstat += add(8, stat.st_ino)        # unsigned long long      st_ino;
 
         self.current.write_bytes(buf, bufstat)
@@ -2342,7 +2358,6 @@ class Linux(Platform):
         return last.header.p_vaddr + last.header.p_memsz
 
 
-
 ############################################################################
 # Symbolic versions follows
 
@@ -2356,6 +2371,7 @@ class SLinux(Linux):
     :param list envp: environment variables
     :param tuple[str] symbolic_files: files to consider symbolic
     """
+
     def __init__(self, programs, argv=None, envp=None, symbolic_files=None,
                  disasm='capstone'):
         argv = [] if argv is None else argv
@@ -2369,7 +2385,6 @@ class SLinux(Linux):
                                      argv=argv,
                                      envp=envp,
                                      disasm=disasm)
-
 
     def _mk_proc(self, arch):
         if arch in {'i386', 'armv7'}:
@@ -2404,8 +2419,7 @@ class SLinux(Linux):
         for proc in self.procs:
             proc.memory.constraints = constraints
 
-
-    #marshaling/pickle
+    # marshaling/pickle
     def __getstate__(self):
         state = super(SLinux, self).__getstate__()
         state['constraints'] = self.constraints
@@ -2428,9 +2442,8 @@ class SLinux(Linux):
 
         return f
 
-
     def _transform_write_data(self, data):
-        bytes_concretized = 0;
+        bytes_concretized = 0
         concrete_data = []
         for c in data:
             if issymbolic(c):
@@ -2443,7 +2456,7 @@ class SLinux(Linux):
 
         return super(SLinux, self)._transform_write_data(concrete_data)
 
-    #Dispatchers...
+    # Dispatchers...
 
     def sys_exit_group(self, error_code):
         if issymbolic(error_code):
@@ -2502,7 +2515,7 @@ class SLinux(Linux):
         return super(SLinux, self).sys_recv(sockfd, buf, count, flags)
 
     def sys_accept(self, sockfd, addr, addrlen, flags):
-        #TODO(yan): Transmit some symbolic bytes as soon as we start. 
+        # TODO(yan): Transmit some symbolic bytes as soon as we start.
         # Remove this hack once no longer needed.
 
         fd = super(SLinux, self).sys_accept(sockfd, addr, addrlen, flags)
@@ -2518,7 +2531,7 @@ class SLinux(Linux):
     def sys_open(self, buf, flags, mode):
         '''
         A version of open(2) that includes a special case for a symbolic path.
-        When given a symbolic path, it will create a temporary file with 
+        When given a symbolic path, it will create a temporary file with
         64 bytes of symbolic bytes as contents and return that instead.
 
         :param buf: address of zero-terminated pathname
@@ -2531,7 +2544,7 @@ class SLinux(Linux):
             import tempfile
             fd, path = tempfile.mkstemp()
             with open(path, 'wb+') as f:
-                f.write('+'*64)
+                f.write('+' * 64)
             self.symbolic_files.append(path)
             buf = self.current.memory.mmap(None, 1024, 'rw ', data_init=path)
 
@@ -2592,13 +2605,16 @@ class SLinux(Linux):
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
+            # TODO (phoebe) move to a helpers module
             def make_chr(c):
                 if isinstance(c, int):
                     return bytes([c])
                 return c
             try:
                 for c in data:
-                    fd.write(make_chr(solver.get_value(self.constraints, c)))
+                    if issymbolic(c):
+                        c = make_chr(solver.get_value(self.constraints, c))
+                    fd.write(c)
             except SolverException:
                 fd.write('{SolverException}')
 

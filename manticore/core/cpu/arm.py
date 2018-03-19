@@ -131,6 +131,18 @@ class Armv7Operand(Operand):
             raise NotImplementedError("writeback Operand unknown type", self.op.type)
 
     def is_shifted(self):
+        """
+        In ARM some of the operands may have an additional metadata which means they can be shifted
+        with either a register or immediate value.
+
+        See:
+        * https://github.com/aquynh/capstone/blob/fdebc371ba0568acde007e08dad2cc3c9333e3fa/include/arm.h#L22-L34
+
+        * 11.5 Syntax of Operand2 as a register with optional shift
+            http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0473m/dom1361289852638.html
+
+        :return: True if operand is shifted, otherwise False.
+        """
         return self.op.shift.type != cs.arm.ARM_SFT_INVALID
 
     def address(self):
@@ -170,9 +182,9 @@ class Armv7Operand(Operand):
                 logger.debug("ARM mode PC relative addressing: PC + offset: 0x{:x} + 0x{:x}".format(base, 4))
                 return base + 4
             else:
-                #base currently has the value PC + len(current_instruction)
-                #we need (PC & 0xFFFFFFFC) + 4
-                #thus:
+                # base currently has the value PC + len(current_instruction)
+                # we need (PC & 0xFFFFFFFC) + 4
+                # thus:
                 new_base = (base - self.cpu.instruction.size) & 0xFFFFFFFC
                 logger.debug("THUMB mode PC relative addressing: ALIGN(PC) + offset => 0x{:x} + 0x{:x}".format(new_base, 4))
                 return new_base + 4
@@ -242,10 +254,14 @@ class Armv7RegisterFile(RegisterFile):
                     make_apsr_flag(C, 29) |
                     make_apsr_flag(V, 28))
         else:
-            if N: apsr |= 1 << 31
-            if Z: apsr |= 1 << 30
-            if C: apsr |= 1 << 29
-            if V: apsr |= 1 << 28
+            if N:
+                apsr |= 1 << 31
+            if Z:
+                apsr |= 1 << 30
+            if C:
+                apsr |= 1 << 29
+            if V:
+                apsr |= 1 << 28
         return apsr
 
     def _write_APSR(self, apsr):
@@ -277,7 +293,7 @@ class Armv7RegisterFile(RegisterFile):
     @property
     def all_registers(self):
         return super(Armv7RegisterFile, self).all_registers + \
-               ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',
+            ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15',
                 'D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12', 'D13', 'D14', 'D15',
                 'D16', 'D17', 'D18', 'D19', 'D20', 'D21', 'D22', 'D23', 'D24', 'D25', 'D26', 'D27', 'D28', 'D29',
                 'D30', 'D31', 'APSR', 'APSR_N',
@@ -382,6 +398,7 @@ class Armv7Cpu(Cpu):
 
         if issymbolic(new_mode):
             from ..state import Concretize
+
             def set_concrete_mode(state, value):
                 state.cpu.mode = value
             raise Concretize("Concretizing ARMv7 mode", expression=new_mode, setstate=set_concrete_mode)
@@ -749,7 +766,6 @@ class Armv7Cpu(Cpu):
     @instruction
     def PLD(cpu, addr, offset=None):
         """PLD instructs the cpu that the address at addr might be loaded soon."""
-        pass
 
     def _compute_writeback(cpu, operand, offset):
         if offset:
@@ -946,7 +962,7 @@ class Armv7Cpu(Cpu):
         if dest.type == 'immediate':
             logger.debug("swapping mode due to BLX at inst 0x{:x}".format(address))
             cpu._swap_mode()
-        elif dest.type=='register':
+        elif dest.type == 'register':
             cpu._set_mode_by_val(dest.read())
 
     @instruction
@@ -1240,9 +1256,7 @@ class Armv7Cpu(Cpu):
         Used by the the __kuser_dmb ARM Linux user-space handler. This is a nop
         under Manticore's memory and execution model.
         """
-        pass
 
     @instruction
     def LDCL(cpu, *operands):
         """Occasionally used in glibc (longjmp in ld.so). Nop under our execution model."""
-        pass

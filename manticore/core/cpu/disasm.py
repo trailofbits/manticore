@@ -3,6 +3,7 @@ from abc import abstractproperty, abstractmethod
 
 import capstone as cs
 
+
 class Instruction(object):
     """Capstone-like instruction to be used internally
     """
@@ -35,6 +36,7 @@ class Instruction(object):
     def name(self):
         pass
 
+
 class Disasm(object):
     """Abstract class for different disassembler interfaces"""
 
@@ -48,7 +50,7 @@ class Disasm(object):
         :param str code: binary blob to be disassembled
         :param long pc: program counter
         """
-        pass
+
 
 class CapstoneDisasm(Disasm):
     def __init__(self, arch, mode):
@@ -67,6 +69,7 @@ class CapstoneDisasm(Disasm):
         :param long pc: program counter
         """
         return next(self.disasm.disasm(code, pc))
+
 
 class BinjaILDisasm(Disasm):
 
@@ -186,7 +189,7 @@ class BinjaILDisasm(Disasm):
             return self.fallback_disasm.disassemble_instruction(code, pc)
         for idx, qil in [(0, il)] + self.il_queue:
             if (any((self.unimplemented(op)
-                    for op in qil.operands if hasattr(qil, "operands"))) or
+                     for op in qil.operands if hasattr(qil, "operands"))) or
                     self.unimplemented(qil)):
                 # clear queue and return from fallback disassembler
                 del self.il_queue[:]
@@ -197,7 +200,6 @@ class BinjaILDisasm(Disasm):
                                        self.entry_point_diff,
                                        self.disasm_insn_size,
                                        self.current_llil_func)
-
 
     class BinjaILInstruction(Instruction):
         def __init__(self, llil, offset, size, function):
@@ -261,6 +263,7 @@ class BinjaILDisasm(Disasm):
                                           str(self.llil),
                                           self.llil.operation.name,
                                           self.llil.address)
+
 
 def init_disassembler(disassembler, arch, mode, view=None):
     if disassembler == "capstone":

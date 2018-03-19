@@ -11,6 +11,7 @@ from .core.smtlib.operators import ITEBV, ZEXTEND
 
 VARIADIC_FUNC_ATTR = '_variadic'
 
+
 def isvariadic(model):
     """
     :param callable model: Function model
@@ -18,6 +19,7 @@ def isvariadic(model):
     :rtype: bool
     """
     return getattr(model, VARIADIC_FUNC_ATTR, False)
+
 
 def variadic(func):
     """
@@ -29,6 +31,7 @@ def variadic(func):
     """
     setattr(func, VARIADIC_FUNC_ATTR, True)
     return func
+
 
 def _find_zero(cpu, constrs, ptr):
     """

@@ -28,6 +28,7 @@ class StateSerializer(object):
     StateSerializer can serialize and deserialize :class:`~manticore.core.state.State` objects from and to
     stream-like objects.
     """
+
     def __init__(self):
         pass
 
@@ -254,7 +255,7 @@ class MemoryStore(Store):
     """
     store_type = 'mem'
 
-    #TODO(yan): Once we get a global config store, check it to make sure
+    # TODO(yan): Once we get a global config store, check it to make sure
     # we're executing in a single-worker or test environment.
 
     def __init__(self, uri=None):
@@ -272,6 +273,7 @@ class MemoryStore(Store):
 
     def ls(self, glob_str):
         return list(self._data)
+
 
 class RedisStore(Store):
     """
@@ -321,6 +323,7 @@ class RedisStore(Store):
 # This is copied from Executor to not create a dependency on the naming of the lock field
 def sync(f):
     """ Synchronization decorator. """
+
     def new_function(self, *args, **kw):
         self._lock.acquire()
         try:
@@ -412,6 +415,7 @@ class ManticoreOutput(object):
     Invoked only from :class:`manticore.Manticore` from a single parent process, so
     locking is not required.
     """
+
     def __init__(self, desc=None):
         """
         Create an object capable of producing Manticore output.
@@ -439,7 +443,7 @@ class ManticoreOutput(object):
             def open_stream(self, suffix=''):
                 stream_name = '{}_{:08x}.{}'.format(self._prefix, self._num, suffix)
                 return self._ws.save_stream(stream_name)
- 
+
         return Testcase(self, prefix)
 
     @property

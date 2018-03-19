@@ -1,6 +1,7 @@
 from builtins import int
 from ..smtlib import Operators, BitVec, Bool
 
+
 class Register(object):
     '''
     Generic variable width register. For 1 bit registers, allows writes of types

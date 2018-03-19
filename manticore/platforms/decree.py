@@ -23,16 +23,20 @@ import random
 
 logger = logging.getLogger(__name__)
 
+
 class RestartSyscall(Exception):
     pass
+
 
 class Deadlock(Exception):
     pass
 
+
 class SymbolicSyscallArgument(ConcretizeRegister):
     def __init__(self, cpu, number, message='Concretizing syscall argument', policy='SAMPLED'):
-        reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP' ][number]
+        reg_name = ['EBX', 'ECX', 'EDX', 'ESI', 'EDI', 'EBP'][number]
         super(SymbolicSyscallArgument, self).__init__(cpu, reg_name, message, policy)
+
 
 class Socket(object):
     @staticmethod
@@ -40,23 +44,23 @@ class Socket(object):
         a = Socket()
         b = Socket()
         a.connect(b)
-        return a,b
+        return a, b
 
     def __init__(self):
-        self.buffer = [] #queue os bytes
+        self.buffer = []  # queue os bytes
         self.peer = None
 
     def __repr__(self):
-        return "SOCKET(%x, %r, %x)"%(hash(self), self.buffer, hash(self.peer))
+        return "SOCKET(%x, %r, %x)" % (hash(self), self.buffer, hash(self.peer))
 
     def is_connected(self):
         return self.peer is not None
 
     def is_empty(self):
-        return len(self.buffer)==0
+        return len(self.buffer) == 0
 
     def is_full(self):
-        return len(self.buffer)>2*1024
+        return len(self.buffer) > 2 * 1024
 
     def connect(self, peer):
         assert not self.is_connected()
@@ -78,7 +82,7 @@ class Socket(object):
 
     def _transmit(self, buf):
         for c in buf:
-            self.buffer.insert(0,c)
+            self.buffer.insert(0, c)
         return len(buf)
 
 
@@ -87,15 +91,15 @@ class Decree(Platform):
     A simple Decree Operating System.
     This class emulates the most common Decree system calls
     '''
-    CGC_EBADF=1
-    CGC_EFAULT=2
-    CGC_EINVAL=3
-    CGC_ENOMEM=4
-    CGC_ENOSYS=5
-    CGC_EPIPE=6
-    CGC_SSIZE_MAX=2147483647
-    CGC_SIZE_MAX=4294967295
-    CGC_FD_SETSIZE=32
+    CGC_EBADF = 1
+    CGC_EFAULT = 2
+    CGC_EINVAL = 3
+    CGC_ENOMEM = 4
+    CGC_ENOSYS = 5
+    CGC_EPIPE = 6
+    CGC_SSIZE_MAX = 2147483647
+    CGC_SIZE_MAX = 4294967295
+    CGC_FD_SETSIZE = 32
 
     def __init__(self, programs, **kwargs):
         '''
@@ -120,23 +124,23 @@ class Decree(Platform):
         stdin = Socket()
         stdout = Socket()
         stderr = Socket()
-        #A transmit to stdin,stdout or stderr will be directed to out
+        # A transmit to stdin,stdout or stderr will be directed to out
         stdin.peer = self.output
         stdout.peer = self.output
         stderr.peer = self.output
-        #A receive from stdin will get data from inp
+        # A receive from stdin will get data from inp
         self.input.peer = stdin
-        #A receive on stdout or stderr will return no data (rx_bytes: 0)
+        # A receive on stdout or stderr will return no data (rx_bytes: 0)
 
         assert self._open(stdin) == 0
         assert self._open(stdout) == 1
         assert self._open(stderr) == 2
 
-        #Load process and setup socketpairs
+        # Load process and setup socketpairs
         self.procs = []
         for program in programs:
             self.procs += self.load(program)
-            socka,sockb = Socket.pair()
+            socka, sockb = Socket.pair()
             self._open(socka)
             self._open(sockb)
 
@@ -147,15 +151,14 @@ class Decree(Platform):
         self._current = 0
 
         #Each process can wait for one timeout
-        self.timers = [ None ] * nprocs
+        self.timers = [None] * nprocs
         #each fd has a waitlist
         self.rwait = [set() for _ in range(nfiles)]
         self.twait = [set() for _ in range(nfiles)]
 
-        #Install event forwarders
+        # Install event forwarders
         for proc in self.procs:
             self.forward_events_from(proc)
-
 
     def _mk_proc(self):
         return I386Cpu(Memory32())
@@ -214,7 +217,7 @@ class Decree(Platform):
 
         self.syscall_trace = state['syscall_trace']
 
-        #Install event forwarders
+        # Install event forwarders
         for proc in self.procs:
             self.forward_events_from(proc)
 
@@ -224,13 +227,12 @@ class Decree(Platform):
         :todo: FIX. move to cpu or memory
         """
         filename = ""
-        for i in range(0,1024):
-            c = Operators.CHR(cpu.read_int(buf+i,8))
+        for i in range(0, 1024):
+            c = Operators.CHR(cpu.read_int(buf + i, 8))
             if c == '\x00':
                 break
             filename += c
         return filename
-
 
     def load(self, filename):
         '''
@@ -239,24 +241,27 @@ class Decree(Platform):
 
         :param filename: pathname of the file to be executed.
         '''
-        CGC_MIN_PAGE_SIZE   = 4096
-        CGC_MIN_ALIGN       = CGC_MIN_PAGE_SIZE
-        TASK_SIZE=0x80000000
+        CGC_MIN_PAGE_SIZE = 4096
+        CGC_MIN_ALIGN = CGC_MIN_PAGE_SIZE
+        TASK_SIZE = 0x80000000
 
         def CGC_PAGESTART(_v):
-            return  ((_v) & ~ (CGC_MIN_ALIGN-1))
+            return ((_v) & ~ (CGC_MIN_ALIGN - 1))
+
         def CGC_PAGEOFFSET(_v):
-            return ((_v) & (CGC_MIN_ALIGN-1))
+            return ((_v) & (CGC_MIN_ALIGN - 1))
+
         def CGC_PAGEALIGN(_v):
-            return  (((_v) + CGC_MIN_ALIGN - 1) & ~(CGC_MIN_ALIGN - 1))
+            return (((_v) + CGC_MIN_ALIGN - 1) & ~(CGC_MIN_ALIGN - 1))
+
         def BAD_ADDR(x):
             return ((x) >= TASK_SIZE)
 
-        #load elf See https://github.com/CyberdyneNYC/linux-source-3.13.2-cgc/blob/master/fs/binfmt_cgc.c
-        #read the ELF object file
+        # load elf See https://github.com/CyberdyneNYC/linux-source-3.13.2-cgc/blob/master/fs/binfmt_cgc.c
+        # read the ELF object file
         cgc = CGCElf(filename)
-        logger.info("Loading %s as a %s elf"%(filename, cgc.arch))
-        #make cpu and memory (Only 1 thread in Decree)
+        logger.info("Loading %s as a %s elf" % (filename, cgc.arch))
+        # make cpu and memory (Only 1 thread in Decree)
         cpu = self._mk_proc()
 
         bss = brk = 0
@@ -270,10 +275,10 @@ class Decree(Platform):
                 start_data = vaddr
 
             if vaddr > TASK_SIZE or filesz > memsz or \
-                 memsz > TASK_SIZE or TASK_SIZE - memsz < vaddr :
+                    memsz > TASK_SIZE or TASK_SIZE - memsz < vaddr:
                 raise Exception("Set_brk can never work. avoid overflows")
 
-            #CGCMAP--
+            # CGCMAP--
             addr = None
             if filesz > 0:
                 hint = CGC_PAGESTART(vaddr)
@@ -289,27 +294,25 @@ class Decree(Platform):
                 lo = CGC_PAGESTART(vaddr + filesz)
                 hi = CGC_PAGEALIGN(vaddr + memsz)
 
-
-            #map anon pages for the rest (no prefault)
+            # map anon pages for the rest (no prefault)
             if hi - lo > 0:
-                zaddr = cpu.memory.mmap(lo, hi-lo,perms)
+                zaddr = cpu.memory.mmap(lo, hi - lo, perms)
                 assert not BAD_ADDR(zaddr)
 
             lo = vaddr + filesz
             hi = CGC_PAGEALIGN(vaddr + memsz)
-            if hi - lo > 0 :
+            if hi - lo > 0:
                 old_perms = cpu.memory.perms(lo)
-                cpu.memory.mprotect(lo, hi-lo, 'rw')
+                cpu.memory.mprotect(lo, hi - lo, 'rw')
                 try:
-                    cpu.memory[lo:hi] = '\x00' *(hi-lo)
+                    cpu.memory[lo:hi] = '\x00' * (hi - lo)
                 except Exception as e:
-                    logger.debug("Exception zeroing main elf fractional pages: %s"%str(e))
+                    logger.debug("Exception zeroing main elf fractional pages: %s" % str(e))
                 cpu.memory.mprotect(lo, hi, old_perms)
 
             if addr is None:
                 addr = zaddr
             assert addr is not None
-
 
             k = vaddr + filesz
             if k > bss:
@@ -323,38 +326,37 @@ class Decree(Platform):
             if k > brk:
                 brk = k
 
-
         bss = brk
         stack_base = 0xbaaaaffc
         stack_size = 0x800000
-        stack = cpu.memory.mmap(0xbaaab000-stack_size, stack_size,'rwx')+stack_size-4
-        assert (stack_base) in cpu.memory and (stack_base-stack_size+4) in cpu.memory
+        stack = cpu.memory.mmap(0xbaaab000 - stack_size, stack_size, 'rwx') + stack_size - 4
+        assert (stack_base) in cpu.memory and (stack_base - stack_size + 4) in cpu.memory
 
-        #Only one thread in Decree
+        # Only one thread in Decree
         status, thread = next(cgc.threads())
         assert status == 'Running'
 
         logger.info("Setting initial cpu state")
-        #set initial CPU state
-        cpu.write_register('EAX',            0x0)
-        cpu.write_register('ECX',            0x0)
-        cpu.write_register('EDX',            0x0)
-        cpu.write_register('EBX',            0x0)
-        cpu.write_register('ESP',            stack)
-        cpu.write_register('EBP',            0x0)
-        cpu.write_register('ESI',            0x0)
-        cpu.write_register('EDI',            0x0)
-        cpu.write_register('EIP',            thread['EIP'])
-        cpu.write_register('RFLAGS',         0x202)
-        cpu.write_register('CS',             0x0)
-        cpu.write_register('SS',             0x0)
-        cpu.write_register('DS',             0x0)
-        cpu.write_register('ES',             0x0)
-        cpu.write_register('FS',             0x0)
-        cpu.write_register('GS',             0x0)
+        # set initial CPU state
+        cpu.write_register('EAX', 0x0)
+        cpu.write_register('ECX', 0x0)
+        cpu.write_register('EDX', 0x0)
+        cpu.write_register('EBX', 0x0)
+        cpu.write_register('ESP', stack)
+        cpu.write_register('EBP', 0x0)
+        cpu.write_register('ESI', 0x0)
+        cpu.write_register('EDI', 0x0)
+        cpu.write_register('EIP', thread['EIP'])
+        cpu.write_register('RFLAGS', 0x202)
+        cpu.write_register('CS', 0x0)
+        cpu.write_register('SS', 0x0)
+        cpu.write_register('DS', 0x0)
+        cpu.write_register('ES', 0x0)
+        cpu.write_register('FS', 0x0)
+        cpu.write_register('GS', 0x0)
 
-        cpu.memory.mmap(0x4347c000,0x1000, 'r')
-        #cpu.memory[0x4347c000:0x4347d000] = 'A' 0x1000
+        cpu.memory.mmap(0x4347c000, 0x1000, 'r')
+        # cpu.memory[0x4347c000:0x4347d000] = 'A' 0x1000
 
         logger.info("Entry point: %016x", cpu.EIP)
         logger.info("Stack start: %016x", cpu.ESP)
@@ -367,7 +369,7 @@ class Decree(Platform):
     def _open(self, f):
         if None in self.files:
             fd = self.files.index(None)
-            self.files[fd]=f
+            self.files[fd] = f
         else:
             fd = len(self.files)
             self.files.append(f)
@@ -424,19 +426,19 @@ class Decree(Platform):
                    ENOMEM   No memory is available or the process' maximum number of allocations
                             would have been exceeded.
         '''
-        #TODO: check 4 bytes from addr
-        if not addr in cpu.memory:
+        # TODO: check 4 bytes from addr
+        if addr not in cpu.memory:
             logger.info("ALLOCATE: addr points to invalid address. Returning EFAULT")
             return Decree.CGC_EFAULT
 
-        perms = [ 'rw ', 'rwx'][bool(isX)]
+        perms = ['rw ', 'rwx'][bool(isX)]
         try:
             result = cpu.memory.mmap(None, length, perms)
         except Exception as e:
             logger.info("ALLOCATE exception %s. Returning ENOMEM %r", str(e), length)
             return Decree.CGC_ENOMEM
         cpu.write_int(addr, result, 32)
-        logger.info("ALLOCATE(%d, %s, 0x%08x) -> 0x%08x"%(length, perms, addr, result))
+        logger.info("ALLOCATE(%d, %s, 0x%08x) -> 0x%08x" % (length, perms, addr, result))
         self.syscall_trace.append(("_allocate", -1, length))
         return 0
 
@@ -463,22 +465,22 @@ class Decree(Platform):
                 ret = Decree.CGC_EINVAL
             else:
                 # TODO check count bytes from buf
-                if buf not in cpu.memory or (buf+count) not in cpu.memory:
+                if buf not in cpu.memory or (buf + count) not in cpu.memory:
                     logger.info("RANDOM: buf points to invalid address. Returning EFAULT")
                     return Decree.CGC_EFAULT
 
-                data = file("/dev/urandom","r").read(count)
+                data = file("/dev/urandom", "r").read(count)
                 self.syscall_trace.append(("_random", -1, data))
                 cpu.write_bytes(buf, data)
 
         # TODO check 4 bytes from rx_bytes
         if rx_bytes:
-            if rx_bytes not in cpu.memory :
+            if rx_bytes not in cpu.memory:
                 logger.info("RANDOM: Not valid rx_bytes. Returning EFAULT")
                 return Decree.CGC_EFAULT
             cpu.write_int(rx_bytes, len(data), 32)
 
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> <%s>)"%(buf, count, rnd_bytes, repr(data[:10])))
+        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> <%s>)" % (buf, count, rnd_bytes, repr(data[:10])))
         return ret
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
@@ -504,7 +506,7 @@ class Decree(Platform):
                 return Decree.CGC_EBADF
 
             # TODO check count bytes from buf
-            if buf not in cpu.memory: # or not  buf+count in cpu.memory:
+            if buf not in cpu.memory:  # or not  buf+count in cpu.memory:
                 logger.info("RECEIVE: buf points to invalid address. Returning EFAULT")
                 return Decree.CGC_EFAULT
 
@@ -515,8 +517,8 @@ class Decree(Platform):
                 self.wait([fd], [], None)
                 raise RestartSyscall()
 
-            #get some potential delay
-            #if random.randint(5) == 0 and count > 1:
+            # get some potential delay
+            # if random.randint(5) == 0 and count > 1:
             #    count = count/2
 
             # Read the data and put in tin memory
@@ -526,7 +528,6 @@ class Decree(Platform):
 
             self.signal_receive(fd)
 
-
         # TODO check 4 bytes from rx_bytes
         if rx_bytes:
             if rx_bytes not in cpu.memory:
@@ -534,7 +535,7 @@ class Decree(Platform):
                 return Decree.CGC_EFAULT
             cpu.write_int(rx_bytes, len(data), 32)
 
-        logger.info("RECEIVE(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)"%(fd, buf, count, rx_bytes, repr(data)[:min(count,10)],len(data)))
+        logger.info("RECEIVE(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)" % (fd, buf, count, rx_bytes, repr(data)[:min(count, 10)], len(data)))
         return 0
 
     def sys_transmit(self, cpu, fd, buf, count, tx_bytes):
@@ -560,30 +561,30 @@ class Decree(Platform):
                 return Decree.CGC_EBADF
 
             # TODO check count bytes from buf
-            if buf not in cpu.memory or (buf+count) not in cpu.memory:
+            if buf not in cpu.memory or (buf + count) not in cpu.memory:
                 logger.debug("TRANSMIT: buf points to invalid address. Rerurning EFAULT")
                 return Decree.CGC_EFAULT
 
             if fd > 2 and self.files[fd].is_full():
                 cpu.PC -= cpu.instruction.size
-                self.wait([],[fd],None)
+                self.wait([], [fd], None)
                 raise RestartSyscall()
 
             for i in range(0, count):
-                value = Operators.CHR(cpu.read_int(buf+i,8))
+                value = Operators.CHR(cpu.read_int(buf + i, 8))
                 if not isstring(value):
                     logger.debug("TRANSMIT: Writing symbolic values to file %d", fd)
                     #value = str(value)
                 data.append(value)
             self.files[fd].transmit(data)
 
-            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>"%(fd, buf, count, tx_bytes, ''.join([str(x) for x in data])))
+            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join([str(x) for x in data])))
             self.syscall_trace.append(("_transmit", fd, data))
             self.signal_transmit(fd)
 
         # TODO check 4 bytes from tx_bytes
         if tx_bytes:
-            if tx_bytes not in cpu.memory :
+            if tx_bytes not in cpu.memory:
                 logger.debug("TRANSMIT: Not valid tx_bytes pointer on transmit. Returning EFAULT")
                 return Decree.CGC_EFAULT
             cpu.write_int(tx_bytes, len(data), 32)
@@ -599,12 +600,12 @@ class Decree(Platform):
         procid = self.procs.index(cpu)
         self.sched()
         self.running.remove(procid)
-        #self.procs[procid] = None #let it there so we can report?
+        # self.procs[procid] = None #let it there so we can report?
         if issymbolic(error_code):
-           logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(self.constraints, error_code))
+            logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(self.constraints, error_code))
         else:
             logger.info("TERMINATE PROC_%02d %x", procid, error_code)
-        if len(self.running) == 0 :
+        if len(self.running) == 0:
             raise TerminateState('Process exited correctly. Code: {}'.format(error_code))
         return error_code
 
@@ -635,16 +636,16 @@ class Decree(Platform):
         :param cpu: current CPU.
         :return: C{0} on success.
         '''
-        logger.info("DEALLOCATE(0x%08x, %d)"%(addr, size))
+        logger.info("DEALLOCATE(0x%08x, %d)" % (addr, size))
 
         if addr & 0xfff != 0:
             logger.info("DEALLOCATE: addr is not page aligned")
             return Decree.CGC_EINVAL
-        if size == 0 :
+        if size == 0:
             logger.info("DEALLOCATE:length is zero")
             return Decree.CGC_EINVAL
-        #unlikely AND WRONG!!!
-        #if addr > Decree.CGC_SSIZE_MAX or addr+size > Decree.CGC_SSIZE_MAX:
+        # unlikely AND WRONG!!!
+        # if addr > Decree.CGC_SSIZE_MAX or addr+size > Decree.CGC_SSIZE_MAX:
         #    logger.info("DEALLOCATE: part of the region being deallocated is outside the valid address range of the process")
         #    return Decree.CGC_EINVAL
 
@@ -655,30 +656,30 @@ class Decree(Platform):
     def sys_fdwait(self, cpu, nfds, readfds, writefds, timeout, readyfds):
         ''' fdwait - wait for file descriptors to become ready
         '''
-        logger.debug("FDWAIT(%d, 0x%08x, 0x%08x, 0x%08x, 0x%08x)"%(nfds, readfds, writefds, timeout, readyfds))
+        logger.debug("FDWAIT(%d, 0x%08x, 0x%08x, 0x%08x, 0x%08x)" % (nfds, readfds, writefds, timeout, readyfds))
 
         if timeout:
-            if timeout not in cpu.memory : #todo: size
+            if timeout not in cpu.memory:  # todo: size
                 logger.info("FDWAIT: timeput is pointing to invalid memory. Returning EFAULT")
                 return Decree.CGC_EFAULT
 
         if readyfds:
-            if readyfds not in cpu.memory :
+            if readyfds not in cpu.memory:
                 logger.info("FDWAIT: readyfds pointing to invalid memory. Returning EFAULT")
                 return Decree.CGC_EFAULT
 
         writefds_wait = set()
         writefds_ready = set()
 
-        fds_bitsize = (nfds+7)&~7
+        fds_bitsize = (nfds + 7) & ~7
         if writefds:
-            if writefds not in cpu.memory :
+            if writefds not in cpu.memory:
                 logger.info("FDWAIT: writefds pointing to invalid memory. Returning EFAULT")
                 return Decree.CGC_EFAULT
             bits = cpu.read_int(writefds, fds_bitsize)
 
             for fd in range(nfds):
-                if (bits & 1<<fd):
+                if (bits & 1 << fd):
                     if self.files[fd].is_full():
                         writefds_wait.add(fd)
                     else:
@@ -687,46 +688,48 @@ class Decree(Platform):
         readfds_wait = set()
         readfds_ready = set()
         if readfds:
-            if readfds not in cpu.memory :
+            if readfds not in cpu.memory:
                 logger.info("FDWAIT: readfds pointing to invalid memory. Returning EFAULT")
                 return Decree.CGC_EFAULT
             bits = cpu.read_int(readfds, fds_bitsize)
             for fd in range(nfds):
-                if (bits & 1<<fd):
+                if (bits & 1 << fd):
                     if self.files[fd].is_empty():
                         readfds_wait.add(fd)
                     else:
                         readfds_ready.add(fd)
         n = len(readfds_ready) + len(writefds_ready)
         if n == 0:
-            #TODO FIX timout symbolic
+            # TODO FIX timout symbolic
             if timeout != 0:
                 seconds = cpu.read_int(timeout, 32)
-                microseconds = cpu.read_int(timeout+4, 32)
-                logger.info("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: %d", repr(list(readfds_wait)), repr(list(writefds_wait)), microseconds+1000*seconds)
-                to = microseconds+1000*seconds
-                #no ready file, wait
+                microseconds = cpu.read_int(timeout + 4, 32)
+                logger.info("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: %d", repr(
+                    list(readfds_wait)), repr(list(writefds_wait)), microseconds + 1000 * seconds)
+                to = microseconds + 1000 * seconds
+                # no ready file, wait
             else:
                 to = None
-                logger.info("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: INDIFENITELY", repr(list(readfds_wait)), repr(list(writefds_wait)))
+                logger.info("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: INDIFENITELY",
+                            repr(list(readfds_wait)), repr(list(writefds_wait)))
 
             cpu.PC -= cpu.instruction.size
             self.wait(readfds_wait, writefds_wait, to)
-            raise RestartSyscall() #When comming back from a timeout remember
-            #not to backtrack instruction and set EAX to 0! :( uglyness alert!
+            raise RestartSyscall()  # When comming back from a timeout remember
+            # not to backtrack instruction and set EAX to 0! :( uglyness alert!
 
         if readfds:
             bits = 0
             for fd in readfds_ready:
-                bits |= 1<<fd
-            for byte in range(0, nfds,8):
-                cpu.write_int(readfds, (bits>>byte)&0xff, 8)
+                bits |= 1 << fd
+            for byte in range(0, nfds, 8):
+                cpu.write_int(readfds, (bits >> byte) & 0xff, 8)
         if writefds:
             bits = 0
             for fd in writefds_ready:
-                bits |= 1<<fd
-            for byte in range(0, nfds,8):
-                cpu.write_int(writefds, (bits>>byte)&0xff, 8)
+                bits |= 1 << fd
+            for byte in range(0, nfds, 8):
+                cpu.write_int(writefds, (bits >> byte) & 0xff, 8)
 
         logger.info("FDWAIT: continuing. Some file is ready Readyfds: %08x", readyfds)
         if readyfds:
@@ -741,22 +744,21 @@ class Decree(Platform):
         :param cpu: current CPU.
         _terminate, transmit, receive, fdwait, allocate, deallocate and random
         '''
-        syscalls = { 0x00000001: self.sys_terminate,
-                     0x00000002: self.sys_transmit,
-                     0x00000003: self.sys_receive,
-                     0x00000004: self.sys_fdwait,
-                     0x00000005: self.sys_allocate,
-                     0x00000006: self.sys_deallocate,
-                     0x00000007: self.sys_random,
+        syscalls = {0x00000001: self.sys_terminate,
+                    0x00000002: self.sys_transmit,
+                    0x00000003: self.sys_receive,
+                    0x00000004: self.sys_fdwait,
+                    0x00000005: self.sys_allocate,
+                    0x00000006: self.sys_deallocate,
+                    0x00000007: self.sys_random,
                     }
         if cpu.EAX not in list(syscalls.keys()):
             raise TerminateState("32 bit DECREE system call number {} Not Implemented".format(cpu.EAX))
         func = syscalls[cpu.EAX]
         logger.debug("SYSCALL32: %s (nargs: %d)", func.__name__, func.__code__.co_argcount)
         nargs = func.__code__.co_argcount
-        args = [ cpu, cpu.EBX, cpu.ECX, cpu.EDX, cpu.ESI, cpu.EDI, cpu.EBP ]
-        cpu.EAX = func(*args[:nargs-1])
-
+        args = [cpu, cpu.EBX, cpu.ECX, cpu.EDX, cpu.ESI, cpu.EDI, cpu.EBP]
+        cpu.EAX = func(*args[:nargs - 1])
 
     def sched(self):
         ''' Yield CPU.
@@ -764,7 +766,7 @@ class Decree(Platform):
             current running process. May give the same cpu if only one running
             proccess.
         '''
-        if len(self.procs)>1:
+        if len(self.procs) > 1:
             logger.info("SCHED:")
             logger.info("\tProcess: %r", self.procs)
             logger.info("\tRunning: %r", self.running)
@@ -778,14 +780,14 @@ class Decree(Platform):
             logger.info("None running checking if there is some process waiting for a timeout")
             if all([x is None for x in self.timers]):
                 raise Deadlock()
-            self.clocks = min([x for x in self.timers if x is not None])+1
+            self.clocks = min([x for x in self.timers if x is not None]) + 1
             self.check_timers()
             assert len(self.running) != 0, "DEADLOCK!"
             self._current = self.running[0]
             return
         next_index = (self.running.index(self._current) + 1) % len(self.running)
-        next = self.running[ next_index ]
-        if len(self.procs)>1:
+        next = self.running[next_index]
+        if len(self.procs) > 1:
             logger.info("\tTransfer control from process %d to %d", self._current, next)
         self._current = next
 
@@ -802,7 +804,6 @@ class Decree(Platform):
         logger.info("\tTWait: %r", self.twait)
         logger.info("\tTimers: %r", self.timers)
 
-
         for fd in readfds:
             self.rwait[fd].add(self._current)
         for fd in writefds:
@@ -812,15 +813,15 @@ class Decree(Platform):
         else:
             self.timers[self._current] = None
         procid = self._current
-        #self.sched()
+        # self.sched()
         next_index = (self.running.index(procid) + 1) % len(self.running)
-        self._current = self.running[ next_index ]
+        self._current = self.running[next_index]
         logger.info("\tTransfer control from process %d to %d", procid, self._current)
-        logger.info( "\tREMOVING %r from %r. Current: %r",procid, self.running, self._current)
+        logger.info("\tREMOVING %r from %r. Current: %r", procid, self.running, self._current)
         self.running.remove(procid)
         if self._current not in self.running:
-            logger.info( "\tCurrent not running. Checking for timers...")
-            self._current=None
+            logger.info("\tCurrent not running. Checking for timers...")
+            self._current = None
             if all([x is None for x in self.timers]):
                 raise Deadlock()
             self.check_timers()
@@ -829,18 +830,20 @@ class Decree(Platform):
         ''' Remove procid from waitlists and restablish it in the running list '''
         logger.info("Remove procid:%d from waitlists and restablish it in the running list", procid)
         for wait_list in self.rwait:
-            if procid in wait_list: wait_list.remove(procid)
+            if procid in wait_list:
+                wait_list.remove(procid)
         for wait_list in self.twait:
-            if procid in wait_list: wait_list.remove(procid)
-        self.timers[procid]=None
+            if procid in wait_list:
+                wait_list.remove(procid)
+        self.timers[procid] = None
         self.running.append(procid)
         if self._current is None:
             self._current = procid
 
     def connections(self, fd):
-        if fd in [0,1,2]:
+        if fd in [0, 1, 2]:
             return None
-        if fd%2:
+        if fd % 2:
             return fd + 1
         else:
             return fd - 1
@@ -863,7 +866,7 @@ class Decree(Platform):
         ''' Awake proccess if timer has expired '''
         if self._current is None:
             #Advance the clocks. Go to future!!
-            advance = min([x for x in self.timers if x is not None]) +1
+            advance = min([x for x in self.timers if x is not None]) + 1
             logger.info("Advancing the clock from %d to %d", self.clocks, advance)
             self.clocks = advance
         for procid in range(len(self.timers)):
@@ -899,10 +902,12 @@ class Decree(Platform):
 ############################################################################
 # Symbolic versions follows
 
+
 class SDecree(Decree):
     '''
     A symbolic extension of a Decree Operating System .
     '''
+
     def __init__(self, constraints, programs, symbolic_random=None):
         '''
         Builds a symbolic extension of a Decree OS
@@ -927,7 +932,7 @@ class SDecree(Decree):
         for proc in self.procs:
             proc.memory.constraints = constraints
 
-    #marshaling/pickle
+    # marshaling/pickle
     def __getstate__(self):
         state = super(SDecree, self).__getstate__()
         state['constraints'] = self.constraints
@@ -939,116 +944,113 @@ class SDecree(Decree):
         self.random = state['random']
         super(SDecree, self).__setstate__(state)
 
-
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
         ''' Symbolic version of Decree.sys_receive
         '''
         if issymbolic(fd):
             logger.info("Ask to read from a symbolic file descriptor!!")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 0)
 
         if issymbolic(buf):
             logger.info("Ask to read to a symbolic buffer")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 1)
 
         if issymbolic(count):
             logger.info("Ask to read a symbolic number of bytes ")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 2)
 
         if issymbolic(rx_bytes):
             logger.info("Ask to return size to a symbolic address ")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 3)
 
         return super(SDecree, self).sys_receive(cpu, fd, buf, count, rx_bytes)
-
 
     def sys_transmit(self, cpu, fd, buf, count, tx_bytes):
         ''' Symbolic version of Decree.sys_receive
         '''
         if issymbolic(fd):
             logger.info("Ask to write to a symbolic file descriptor!!")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 0)
 
         if issymbolic(buf):
             logger.info("Ask to write to a symbolic buffer")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 1)
 
         if issymbolic(count):
             logger.info("Ask to write a symbolic number of bytes ")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 2)
 
         if issymbolic(tx_bytes):
             logger.info("Ask to return size to a symbolic address ")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 3)
 
         return super(SDecree, self).sys_transmit(cpu, fd, buf, count, tx_bytes)
 
-
     def sys_allocate(self, cpu, length, isX, address_p):
         if issymbolic(length):
             logger.info("Ask to ALLOCATE a symbolic number of bytes ")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 0)
         if issymbolic(isX):
             logger.info("Ask to ALLOCATE potentially executable or not executable memory")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 1)
         if issymbolic(address_p):
             logger.info("Ask to return ALLOCATE result to a symbolic reference ")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 2)
         return super(SDecree, self).sys_allocate(cpu, length, isX, address_p)
 
     def sys_deallocate(self, cpu, addr, size):
         if issymbolic(addr):
             logger.info("Ask to DEALLOCATE a symbolic pointer?!")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 0)
         if issymbolic(size):
             logger.info("Ask to DEALLOCATE a symbolic size?!")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 1)
         return super(SDecree, self).sys_deallocate(cpu, addr, size)
 
     def sys_random(self, cpu, buf, count, rnd_bytes):
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 0)
 
         if issymbolic(count):
             logger.info("Ask to read a symbolic number of random bytes ")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 1)
 
         if issymbolic(rnd_bytes):
             logger.info("Ask to return rnd size to a symbolic address ")
-            cpu.PC = cpu.PC-cpu.instruction.size
+            cpu.PC = cpu.PC - cpu.instruction.size
             raise SymbolicSyscallArgument(cpu, 2)
 
         data = []
         for i in range(count):
             if False:
-                #Too slow for the new age.
-                value = self.constraints.new_bitvec(8, name="RANDOM_%04d"%self.random)
-                self.constraints.add(symb==cgcrandom.stream[self.random])
+                # Too slow for the new age.
+                value = self.constraints.new_bitvec(8, name="RANDOM_%04d" % self.random)
+                self.constraints.add(symb == cgcrandom.stream[self.random])
             else:
                 value = cgcrandom.stream[self.random]
             data.append(value)
-            self.random+=1
+            self.random += 1
 
         cpu.write_bytes(buf, data)
         if rnd_bytes:
             cpu.write_int(rnd_bytes, len(data), 32)
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf,count,rnd_bytes,len(data))
+        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf, count, rnd_bytes, len(data))
         return 0
 
 
@@ -1088,5 +1090,3 @@ class DecreeEmu(object):
             cpu.store(rnd_bytes, len(data), 32)
         logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf, count, rnd_bytes, len(data))
         return 0
-
-

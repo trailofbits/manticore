@@ -61,7 +61,7 @@ def parse_arguments():
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
     parser.add_argument('--version', action='version', version='Manticore 0.1.7',
-                         help='Show program version information')
+                        help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
     parser.add_argument('--contract', type=str,
@@ -94,6 +94,7 @@ def ethereum_cli(args):
 
     m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit)
 
+
 def main():
     log.init_logging()
     args = parse_arguments()
@@ -107,9 +108,9 @@ def main():
 
     env = {key:val for key, val in [env[0].split('=') for env in args.env]}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 
-    #Fixme(felipe) remove this, move to plugin
+    # Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
 
     if args.names is not None:
@@ -124,6 +125,7 @@ def main():
             initial_state.platform.add_symbolic_file(file)
 
     m.run(procs=args.procs, timeout=args.timeout, should_profile=args.profile)
+
 
 if __name__ == '__main__':
     main()

@@ -25,44 +25,50 @@ logger = logging.getLogger(__name__)
 register_logger = logging.getLogger('{}.registers'.format(__name__))
 
 ###################################################################################
-#Exceptions
+# Exceptions
+
+
 class CpuException(Exception):
     ''' Base cpu exception '''
-    pass
 
 class DecodeException(CpuException):
     '''
     Raised when trying to decode an unknown or invalid instruction '''
+
     def __init__(self, pc, bytes):
         super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
-        self.pc=pc
-        self.bytes=bytes
+        self.pc = pc
+        self.bytes = bytes
+
 
 class InstructionNotImplementedError(CpuException):
     '''
     Exception raised when you try to execute an instruction that is not yet
     implemented in the emulator. Add it to the Cpu-specific implementation.
     '''
-    pass
+
 
 class InstructionEmulationError(CpuException):
     '''
     Exception raised when failing to emulate an instruction outside of Manticore.
     '''
-    pass
+
 
 class DivideByZeroError(CpuException):
     ''' A division by zero '''
-    pass
+
 
 class Interruption(CpuException):
     ''' A software interrupt. '''
+
     def __init__(self, N):
-        super(Interruption,self).__init__("CPU Software Interruption %08x", N)
+        super(Interruption, self).__init__("CPU Software Interruption %08x", N)
         self.N = N
+
 
 class Syscall(CpuException):
     ''' '''
+
     def __init__(self):
         super(Syscall, self).__init__("CPU Syscall")
 
@@ -71,6 +77,7 @@ class ConcretizeRegister(CpuException):
     '''
     Raised when a symbolic register needs to be concretized.
     '''
+
     def __init__(self, cpu, reg_name, message=None, policy='MINMAX'):
         self.message = message if message else "Concretizing {}".format(reg_name)
 
@@ -78,18 +85,22 @@ class ConcretizeRegister(CpuException):
         self.reg_name = reg_name
         self.policy = policy
 
+
 class ConcretizeArgument(CpuException):
     '''
     Raised when a symbolic argument needs to be concretized.
     '''
+
     def __init__(self, cpu, argnum, policy='MINMAX'):
-        self.message = "Concretizing argument #%d."%(argnum,)
+        self.message = "Concretizing argument #%d." % (argnum,)
         self.cpu = cpu
         self.policy = policy
         self.argnum = argnum
 
 
 SANE_SIZES = {8, 16, 32, 64, 80, 128, 256}
+
+
 class Operand(object):
     """This class encapsulates how to access operands (regs/mem/immediates) for
     different CPUs
@@ -99,6 +110,7 @@ class Operand(object):
         Auxiliary class wraps capstone operand 'mem' attribute. This will
         return register names instead of Ids
         '''
+
         def __init__(self, parent):
             self.parent = parent
         segment = property(lambda self: self.parent._reg_name(self.parent.op.mem.segment))
@@ -173,6 +185,8 @@ class Operand(object):
 
 #  Basic register file structure not actually need to abstract as it's used
 #  only from the cpu implementation
+
+
 class RegisterFile(object):
     def __init__(self, aliases=None):
         # dict mapping from alias register name ('PC') to actual register
@@ -225,6 +239,7 @@ class RegisterFile(object):
         '''
         return self._alias(register) in self.all_registers
 
+
 class Abi(object):
     '''
     Represents the ability to extract arguments from the environment and write
@@ -232,6 +247,7 @@ class Abi(object):
 
     Used for function call and system call models.
     '''
+
     def __init__(self, cpu):
         '''
         :param manticore.core.cpu.Cpu cpu: CPU to initialize with
@@ -342,7 +358,7 @@ class Abi(object):
 
             # Arguments were lazily computed in case of variadic, so recompute here
             descriptors = self.get_arguments()
-            src = next(islice(descriptors, idx, idx+1))
+            src = next(islice(descriptors, idx, idx + 1))
 
             msg = 'Concretizing due to model invocation'
             if isstring(src):
@@ -357,7 +373,9 @@ class Abi(object):
 
         return result
 
+
 platform_logger = logging.getLogger('manticore.platforms.platform')
+
 
 class SyscallAbi(Abi):
     '''
@@ -412,6 +430,8 @@ class SyscallAbi(Abi):
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
+
+
 class Cpu(Eventful):
     '''
     Base class for all Cpu architectures. Functionality common to all
@@ -429,7 +449,7 @@ class Cpu(Eventful):
     '''
 
     _published_events = {'write_register', 'read_register', 'write_memory', 'read_memory', 'decode_instruction',
-                           'execute_instruction'}
+                         'execute_instruction'}
 
     def __init__(self, regfile, memory, **kwargs):
         assert isinstance(regfile, RegisterFile)
@@ -548,7 +568,6 @@ class Cpu(Eventful):
             return self.write_register(name, value)
         object.__setattr__(self, name, value)
 
-
     #############################
     # Memory access
     @property
@@ -575,7 +594,6 @@ class Cpu(Eventful):
 
         self._publish('did_write_memory', where, expression, size)
 
-
     def read_int(self, where, size=None, force=False):
         '''
         Reads int from memory
@@ -597,7 +615,6 @@ class Cpu(Eventful):
 
         self._publish('did_read_memory', where, value, size)
         return value
-
 
     def write_bytes(self, where, data, force=False):
         '''
@@ -636,12 +653,12 @@ class Cpu(Eventful):
             limit. This includes the NULL terminator.
         :param force: whether to ignore memory permissions
         '''
-        
+
         if max_length is not None:
-            string = string[:max_length-1]
-        
+            string = string[:max_length - 1]
+
         self.write_bytes(where, string + '\x00', force)
-        
+
     def read_string(self, where, max_length=None, force=False):
         '''
         Read a NUL-terminated concrete buffer from memory. Stops reading at first symbolic byte.
@@ -716,7 +733,6 @@ class Cpu(Eventful):
         self.STACK += self.address_bit_size // 8
         return value
 
-
     #######################################
     # Decoder
     def _wrap_operands(self, operands):
@@ -770,7 +786,7 @@ class Cpu(Eventful):
         except StopIteration as e:
             raise DecodeException(pc, code)
 
-        #Check that the decoded instruction is contained in executable memory
+        # Check that the decoded instruction is contained in executable memory
         if not self.memory.access_ok(slice(pc, pc + insn.size), 'x'):
             logger.info("Trying to execute instructions from non-executable memory")
             raise InvalidMemoryAccess(pc, 'x')
@@ -816,27 +832,31 @@ class Cpu(Eventful):
             return
 
         name = self.canonicalize_instruction_name(insn)
-            
-        if logger.level == logging.DEBUG :
+
+        if logger.level == logging.DEBUG:
             logger.debug(self.render_instruction(insn))
             for l in self.render_registers():
                 register_logger.debug(l)
 
         try:
-            try:
-                getattr(self, name)(*insn.operands)
-            except AttributeError:
-                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+            implementation = getattr(self, name, None)
+
+            if implementation is not None:
+                implementation(*insn.operands)
+
+            else:
+                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
                 logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
                 self.emulate(insn)
+
         except (Interruption, Syscall) as e:
             e.on_handled = lambda: self._publish_instruction_as_executed(insn)
             raise e
         else:
             self._publish_instruction_as_executed(insn)
 
-    #FIXME(yan): In the case the instruction implementation invokes a system call, we would not be able to
+    # FIXME(yan): In the case the instruction implementation invokes a system call, we would not be able to
     # publish the did_execute_instruction event from here, so we capture and attach it to the syscall
     # exception for the platform to emit it for us once the syscall has successfully been executed.
     def _publish_instruction_as_executed(self, insn):
@@ -859,9 +879,9 @@ class Cpu(Eventful):
             emu.emulate(insn)
         except unicorn.UcError as e:
             if e.errno == unicorn.UC_ERR_INSN_INVALID:
-                text_bytes = ' '.join('%02x'%x for x in insn.bytes)
+                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
                 logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                  insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                             insn.address, text_bytes, insn.mnemonic, insn.op_str)
             raise InstructionEmulationError(str(e))
         finally:
             # We have been seeing occasional Unicorn issues with it not clearing
@@ -884,7 +904,7 @@ class Cpu(Eventful):
         value = self.read_register(reg_name)
 
         if issymbolic(value):
-            aux = "%3s: "%reg_name +"%16s"%value
+            aux = "%3s: " % reg_name + "%16s" % value
             result += aux
         elif isinstance(value, int):
             result += "%3s: 0x%016x" % (reg_name, value)
@@ -900,7 +920,7 @@ class Cpu(Eventful):
         return list(map(self.render_register,
                    sorted(self._regfile.canonical_registers)))
 
-    #Generic string representation
+    # Generic string representation
     def __str__(self):
         '''
         Returns a string representation of cpu state
@@ -912,9 +932,11 @@ class Cpu(Eventful):
         result += '\n'.join(self.render_registers())
         return result
 
-#Instruction decorators
+# Instruction decorators
+
+
 def instruction(old_method):
-    #This should decorate every instruction implementation
+    # This should decorate every instruction implementation
     @wraps(old_method)
     def new_method(cpu, *args, **kw_args):
         cpu.PC += cpu.instruction.size
