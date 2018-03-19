@@ -1,11 +1,13 @@
 import unittest
 import os
 
+from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
+
 from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args
+from manticore.platforms.evm import EVMWorld, ConcretizeStack, Create, concretized_args
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -91,6 +93,51 @@ class EthTests(unittest.TestCase):
         context = p.context['insns']
         self.assertIn('STOP', context)
         self.assertIn('REVERT', context)
+
+    def test_end_instruction_trace(self):
+        """
+        Make sure that the trace files are correct, and include the end instructions
+        """
+        class TestPlugin(Plugin):
+            """
+            Record the pcs of all end instructions encountered. Source of truth.
+            """
+            def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+                if isinstance(state.platform.current.last_exception, Create):
+                    name = 'init'
+                else:
+                    name = 'rt'
+
+                # collect all end instructions based on whether they are in init or rt
+                if instruction.semantics in ('REVERT', 'STOP', 'RETURN'):
+                    with self.locked_context(name) as d:
+                        d.append(state.platform.current.pc)
+
+        mevm = ManticoreEVM()
+        p = TestPlugin()
+        mevm.register_plugin(p)
+
+        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=1)
+
+        worksp = mevm.workspace
+        listdir = os.listdir(worksp)
+
+        def get_concatenated_files(directory, suffix):
+            paths = [os.path.join(directory, f) for f in listdir if f.endswith(suffix)]
+            concatenated = ''.join(open(path).read() for path in paths)
+            return concatenated
+
+        all_init_traces = get_concatenated_files(worksp, 'init.trace')
+        all_rt_traces = get_concatenated_files(worksp, 'rt.trace')
+
+        # make sure all init end insns appear somewhere in the init traces
+        for pc in p.context['init']:
+            self.assertIn(':0x{:x}'.format(pc), all_init_traces)
+
+        # and all rt end insns appear somewhere in the rt traces
+        for pc in p.context['rt']:
+            self.assertIn(':0x{:x}'.format(pc), all_rt_traces)
 
     def test_graceful_handle_no_alive_states(self):
         """

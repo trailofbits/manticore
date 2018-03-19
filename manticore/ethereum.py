@@ -138,9 +138,8 @@ class UninitializedStorage(Detector):
         state.context.setdefault('seth.detectors.initialized_storage', set()).add(offset)
 
 
-def calculate_coverage(code, seen):
-    ''' Calculates what percentage of code has been seen '''
-    runtime_bytecode = code
+def calculate_coverage(runtime_bytecode, seen):
+    ''' Calculates what percentage of runtime_bytecode has been seen '''
     end = None
     if ''.join(runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
@@ -674,7 +673,6 @@ class ManticoreEVM(Manticore):
         self._executor.subscribe('did_load_state', self._load_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
         self._executor.subscribe('will_execute_instruction', self._will_execute_instruction_callback)
-        self._executor.subscribe('did_execute_instruction', self._did_execute_instruction_callback)
         self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
@@ -1106,17 +1104,16 @@ class ManticoreEVM(Manticore):
         assert state.platform.constraints == state.platform.current.constraints
         logger.debug("%s", state.platform.current)
 
-        if 'Call' in str(type(state.platform.current.last_exception)):
-            coverage_context_name = 'runtime_coverage'
-        else:
+        if isinstance(state.platform.current.last_exception, evm.Create):
             coverage_context_name = 'init_coverage'
+            trace_context_name = 'seth.init.trace'
+        else:
+            coverage_context_name = 'runtime_coverage'
+            trace_context_name = 'seth.rt.trace'
 
         with self.locked_context(coverage_context_name, set) as coverage:
             coverage.add((state.platform.current.address, state.platform.current.pc))
-
-    def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
-        ''' INTERNAL USE '''
-        state.context.setdefault('seth.trace', []).append((state.platform.current.address, prev_pc))
+        state.context.setdefault(trace_context_name, []).append((state.platform.current.address, pc))
 
     def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
@@ -1168,7 +1165,7 @@ class ManticoreEVM(Manticore):
         with testcase.open_stream('summary') as summary:
             summary.write("Last exception: %s\n" % state.context['last_exception'])
 
-            address, offset = state.context['seth.trace'][-1]
+            address, offset = state.context['seth.rt.trace'][-1]
 
             # Last instruction
             metadata = self.get_metadata(blockchain.transactions[-1].address)
@@ -1198,14 +1195,14 @@ class ManticoreEVM(Manticore):
                         summary.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
 
-                code = blockchain.get_code(account_address)
-                if len(code):
+                runtime_code = blockchain.get_code(account_address)
+                if runtime_code:
                     summary.write("Code:\n")
-                    fcode = StringIO.StringIO(code)
+                    fcode = StringIO.StringIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write('\t%s\n' % chunk.encode('hex'))
-                    trace = set((offset for address_i, offset in state.context['seth.trace'] if address == address_i))
-                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(code, trace))  # coverage % for address in this account/state
+                    runtime_trace = set((pc for contract, pc in state.context['seth.rt.trace'] if address == contract))
+                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
                 summary.write("\n")
 
             if blockchain._sha3:
@@ -1294,6 +1291,25 @@ class ManticoreEVM(Manticore):
                 from .utils import iterpickle
                 logger.debug("Using iterpickle to dump state")
                 statef.write(iterpickle.dumps(state, 2))
+
+        with testcase.open_stream('rt.trace') as f:
+            self._emit_trace_file(f, state.context['seth.rt.trace'])
+
+        with testcase.open_stream('init.trace') as f:
+            self._emit_trace_file(f, state.context['seth.init.trace'])
+
+    @staticmethod
+    def _emit_trace_file(filestream, trace):
+        """
+        :param filestream: file object for the workspace trace file
+        :param trace: list of (contract address, pc) tuples
+        :type trace: list[tuple(int, int)]
+        """
+        for contract, pc in trace:
+            if pc == 0:
+                filestream.write('---\n')
+            ln = '0x{:x}:0x{:x}\n'.format(contract, pc)
+            filestream.write(ln)
 
     def finalize(self):
         """
