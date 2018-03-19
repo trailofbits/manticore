@@ -115,7 +115,7 @@ class Store(object):
         :param str key: The key that identifies the value
         :return: The loaded value
         """
-        with self.load_stream(key) as s:
+        with self.load_stream(key, binary=True) as s:
             return s.read()
 
     @contextmanager
@@ -143,25 +143,26 @@ class Store(object):
         value = self.load_value(key)
         yield io.BytesIO(value)
 
-    def save_state(self, state, key):
+    def save_state(self, state, key, binary=False):
         """
         Save a state to storage.
 
         :param manticore.core.State state:
         :param str key:
+        :param binary bool:
         :return:
         """
-        with self.save_stream(key) as f:
+        with self.save_stream(key, binary=binary) as f:
             self._serializer.serialize(state, f)
 
-    def load_state(self, key, delete=True):
+    def load_state(self, key, delete=True, binary=False):
         """
         Load a state from storage.
 
         :param key: key that identifies state
         :rtype: manticore.core.State
         """
-        with self.load_stream(key) as f:
+        with self.load_stream(key, binary) as f:
             state = self._serializer.deserialize(f)
             if delete:
                 self.rm(key)
@@ -218,12 +219,14 @@ class FilesystemStore(Store):
             yield f
 
     @contextmanager
-    def load_stream(self, key):
+    def load_stream(self, key, binary=False):
         """
-        :param key:
+        :param str key: The file to load from
+        :param bool binary: Whether we should treat it as binary
         :return:
         """
-        with open(os.path.join(self.uri, key), 'r') as f:
+        mode = 'rb' if binary else 'r'
+        with open(os.path.join(self.uri, key), mode) as f:
             yield f
 
     def rm(self, key):
@@ -383,7 +386,11 @@ class Workspace(object):
         :return: The deserialized state
         :rtype: State
         """
-        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete)
+        if self._suffix == '.pkl':
+            binary = True
+        else:
+            binary = False
+        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete, binary=binary)
 
     def save_state(self, state):
         """
@@ -395,7 +402,7 @@ class Workspace(object):
         """
         assert isinstance(state, State)
         id_ = self._get_id()
-        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix))
+        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix), binary=True)
         return id_
 
     def rm_state(self, state_id):

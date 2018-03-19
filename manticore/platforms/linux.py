@@ -15,6 +15,7 @@ import random
 import struct
 import ctypes
 import socket
+import binascii
 
 # Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
@@ -407,7 +408,7 @@ class Linux(Platform):
         }
 
         if program is not None:
-            self.elf = ELFFile(open(program))
+            self.elf = ELFFile(open(program, 'rb'))
             # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
             # make things consistent and perhaps utilize a global mapping for this
             self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
@@ -601,10 +602,10 @@ class Linux(Platform):
         https://www.kernel.org/doc/Documentation/arm/kernel_user_helpers.txt
         '''
 
-        page_data = bytearray('\xf1\xde\xfd\xe7' * 1024)
+        page_data = bytearray(b'\xf1\xde\xfd\xe7' * 1024)
 
         # Extracted from a RPi2
-        preamble = (
+        preamble = binascii.unhexlify(
             'ff0300ea' +
             '650400ea' +
             'f0ff9fe5' +
@@ -613,13 +614,13 @@ class Linux(Platform):
             '810400ea' +
             '000400ea' +
             '870400ea'
-        ).decode('hex')
+        )
 
         # XXX(yan): The following implementations of cmpxchg and cmpxchg64 were
         # handwritten to not use any exclusive instructions (e.g. ldrexd) or
         # locking. For actual implementations, refer to
         # arch/arm64/kernel/kuser32.S in the Linux source code.
-        __kuser_cmpxchg64 = (
+        __kuser_cmpxchg64 = binascii.unhexlify(
             '30002de9' +  # push    {r4, r5}
             '08c09de5' +  # ldr     ip, [sp, #8]
             '30009ce8' +  # ldm     ip, {r4, r5}
@@ -630,32 +631,32 @@ class Linux(Platform):
             '0c008c08' +  # stmeq   ip, {r2, r3}
             '3000bde8' +  # pop     {r4, r5}
             '1eff2fe1'   # bx      lr
-        ).decode('hex')
+        )
 
-        __kuser_dmb = (
+        __kuser_dmb = binascii.unhexlify(
             '5bf07ff5' +  # dmb ish
             '1eff2fe1'   # bx lr
-        ).decode('hex')
+        )
 
-        __kuser_cmpxchg = (
+        __kuser_cmpxchg = binascii.unhexlify(
             '003092e5' +  # ldr     r3, [r2]
             '000053e1' +  # cmp     r3, r0
             '0000a003' +  # moveq   r0, #0
             '00108205' +  # streq   r1, [r2]
             '0100a013' +  # movne   r0, #1
             '1eff2fe1'   # bx      lr
-        ).decode('hex')
+        )
 
         # Map a TLS segment
         self._arm_tls_memory = self.current.memory.mmap(None, 4, 'rw ')
 
-        __kuser_get_tls = (
+        __kuser_get_tls = binascii.unhexlify(
             '04009FE5' +  # ldr r0, [pc, #4]
             '010090e8' +  # ldm r0, {r0}
             '1eff2fe1'   # bx lr
-        ).decode('hex') + struct.pack('<I', self._arm_tls_memory)
+        ) + struct.pack('<I', self._arm_tls_memory)
 
-        tls_area = '\x00' * 12
+        tls_area = b'\x00' * 12
 
         version = struct.pack('<I', 5)
 
@@ -1276,10 +1277,10 @@ class Linux(Platform):
             -  C{0} if the calling process can access the file in the desired mode.
             - C{-1} if the calling process can not access the file in the desired mode.
         '''
-        filename = ""
+        filename = b''
         for i in range(0, 255):
             c = Operators.CHR(self.current.read_int(buf + i, 8))
-            if c == '\x00':
+            if c == b'\x00':
                 break
             filename += c
 
