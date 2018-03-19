@@ -3,7 +3,7 @@ from manticore.ethereum import ManticoreEVM
 m = ManticoreEVM()
 m.verbosity(3)
 #And now make the contract account to analyze
-source_code = file('coverage.sol').read()
+source_code = open('coverage.sol').read()
 
 user_account = m.create_account(balance=1000)
 

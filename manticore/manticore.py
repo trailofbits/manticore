@@ -1,3 +1,4 @@
+from __future__ import print_function
 from builtins import str
 from builtins import range
 from builtins import int
@@ -113,14 +114,15 @@ def make_initial_state(binary_path, **kwargs):
             return make_binja(binary_path, **kwargs)
         else:
             del kwargs['disasm']
-    magic = file(binary_path).read(4)
-    if magic == '\x7fELF':
+    with open(binary_path, 'rb') as f:
+        magic = f.read(4)
+    if magic == b'\x7fELF':
         # Linux
         state = make_linux(binary_path, **kwargs)
-    elif magic == '\x7fCGC':
+    elif magic == b'\x7fCGC':
         # Decree
         state = make_decree(binary_path, **kwargs)
-    elif magic == '#EVM':
+    elif magic == b'#EVM':
         state = make_evm(binary_path, **kwargs)
     else:
         raise NotImplementedError("Binary {} not supported.".format(binary_path))
@@ -652,7 +654,7 @@ class Manticore(Eventful):
         # XXX(yan) This is a bit obtuse; once PE support is updated this should
         # be refactored out
         if self._binary_type == 'ELF':
-            self._binary_obj = ELFFile(file(self._binary))
+            self._binary_obj = ELFFile(open(self._binary))
 
         if self._binary_obj is None:
             return NotImplementedError("Symbols aren't supported")

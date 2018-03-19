@@ -57,7 +57,7 @@ class Gdb(subprocess.Popen):
     def getPid(self):
         return int(self.correspond('info proc\n').split("\n")[0].split(" ")[-1])
     def getStack(self):
-        maps = file("/proc/%s/maps"%self.correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
+        maps = open("/proc/%s/maps"%self.correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
         i,o = [ int(x,16) for x in maps[-3].split(" ")[0].split('-')]
         print(self.correspond('dump mem lala 0x%x 0x%x\n'%(i,o)))
     def getByte(self, m):

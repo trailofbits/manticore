@@ -72,7 +72,7 @@ class Gdb(subprocess.Popen):
     def get_pid(self):
         return int(self.correspond('info proc\n').split("\n")[0].split(" ")[-1])
     def getStack(self):
-        maps = file("/proc/%s/maps"%self.correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
+        maps = open("/proc/%s/maps"%self.correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
         i,o = [ int(x,16) for x in maps[-3].split(" ")[0].split('-')]
     def getByte(self, m):
         arch = self.get_arch()
@@ -84,7 +84,7 @@ class Gdb(subprocess.Popen):
 
     def get_maps(self):
         pid = self.get_pid()
-        return file('/proc/%d/maps'%pid, 'rb').read()
+        return open('/proc/%d/maps'%pid, 'rb').read()
 
     _arch = None
     def get_arch(self):

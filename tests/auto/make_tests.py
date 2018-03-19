@@ -2,7 +2,7 @@ from __future__ import print_function
 from builtins import hex, map
 import sys, random
 tests = []
-tests_str = file(sys.argv[1], 'r').read().split('\n')
+tests_str = open(sys.argv[1], 'r').read().split('\n')
 for t_str in tests_str:
     try:
         tests.append(eval(t_str))

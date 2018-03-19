@@ -68,7 +68,8 @@ class File(object):
         # TODO: assert file is seekable otherwise we should save what was
         # read/write to the state
         mode = mode_from_flags(flags)
-        self.file = file(path, mode)
+        self.file = open(path, mode)
+
 
     def __getstate__(self):
         state = {}
@@ -81,13 +82,16 @@ class File(object):
             state['pos'] = None
         return state
 
+
     def __setstate__(self, state):
         name = state['name']
         mode = state['mode']
         pos = state['pos']
-        self.file = file(name, mode)
+        self.file = open(name, mode)
+
         if pos is not None:
             self.seek(pos)
+
 
     @property
     def name(self):
@@ -403,7 +407,7 @@ class Linux(Platform):
         }
 
         if program is not None:
-            self.elf = ELFFile(file(program))
+            self.elf = ELFFile(open(program))
             # FIXME (theo) self.arch is actually mode as initialized in the CPUs,
             # make things consistent and perhaps utilize a global mapping for this
             self.arch = {'x86': 'i386', 'x64': 'amd64', 'ARM': 'armv7'}[self.elf.get_machine_arch()]
@@ -672,7 +676,7 @@ class Linux(Platform):
     def load_vdso(self, bits):
         # load vdso #TODO or #IGNORE
         vdso_top = {32: 0x7fff0000, 64: 0x7fff00007fff0000}[bits]
-        vdso_size = len(file('vdso%2d.dump' % bits).read())
+        vdso_size = len(open('vdso%2d.dump' % bits).read())
         vdso_addr = self.memory.mmapFile(self.memory._floor(vdso_top - vdso_size),
                                          vdso_size,
                                          'r x',
@@ -834,7 +838,7 @@ class Linux(Platform):
                 continue
             interpreter_filename = elf_segment.data()[:-1]
             logger.info('Interpreter filename: %s', interpreter_filename)
-            interpreter = ELFFile(file(interpreter_filename))
+            interpreter = ELFFile(open(interpreter_filename))
             break
         if interpreter is not None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()

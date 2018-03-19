@@ -208,7 +208,7 @@ class EVMTest_%s(unittest.TestCase):
     maxDiff=None 
 '''%  os.path.split(sys.argv[1][:-5])[1]) 
 
-    js = file(filename).read()
+    js = open(filename).read()
     tests = dict(json.loads(js))
 
     #print "#processed ", len(tests.keys()), tests.keys()

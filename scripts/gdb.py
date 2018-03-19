@@ -95,7 +95,7 @@ def getM(m):
 def getPid():
     return int(correspond('info proc\n').split("\n")[0].split(" ")[-1])
 def getStack():
-    maps = file("/proc/%s/maps"%correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
+    maps = open("/proc/%s/maps"%correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
     i,o = [ int(x,16) for x in maps[-3].split(" ")[0].split('-')]
 
 def setByte(addr, val):

@@ -26,14 +26,14 @@ class Binary(object):
 
     def __new__(cls, path):
         if cls is Binary:
-            cl = cls.magics[file(path).read(4)]
+            cl = cls.magics[open(path).read(4)]
             return cl(path)
         else:
             return super(Binary, cls).__new__(cls, path)
 
     def __init__(self, path):
         self.path = path
-        self.magic = Binary.magics[file(path).read(4)]
+        self.magic = Binary.magics[open(path).read(4)]
 
     def arch(self):
         pass
@@ -92,7 +92,7 @@ class CGCElf(Binary):
 class Elf(Binary):
     def __init__(self, filename):
         super(Elf, self).__init__(filename)
-        self.elf = ELFFile(file(filename))
+        self.elf = ELFFile(open(filename))
         self.arch = {'x86': 'i386', 'x64': 'amd64'}[self.elf.get_machine_arch()]
         assert self.elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
