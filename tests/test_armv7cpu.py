@@ -10,6 +10,8 @@ from manticore.core.state import Concretize
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
 
+from functools import wraps
+
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
 
