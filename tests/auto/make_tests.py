@@ -1,6 +1,3 @@
-from __future__ import print_function
-from builtins import hex
-from builtins import map
 import sys, random
 tests = []
 tests_str = file(sys.argv[1], 'r').read().split('\n')
@@ -23,13 +20,13 @@ for test in tests:
             continue
         op_count[test['mnemonic']] = cnt+1
         test_dic["%s_%d"%(test['mnemonic'], op_count[test['mnemonic']])] = test
-    except Exception as e:
-        print("EX", e, test)
+    except Exception,e:
+        print "EX", e, test
         pass
 
 
 
-print("""
+print """
 import unittest
 import functools
 from manticore.core.cpu.x86 import *
@@ -77,7 +74,7 @@ class CPUTest(unittest.TestCase):
         def write(self, value):
             self.value = value & ((1<<self.size)-1)
             return self.value
-""")
+"""
 
 
 def isFlag(x):
@@ -110,9 +107,9 @@ def regSize(x):
 
 def get_maps(test):
     pages = set()
-    for addr in list(test['pre']['memory'].keys()):
+    for addr in test['pre']['memory'].keys():
         pages.add(addr>>12)
-    for addr in list(test['pos']['memory'].keys()):
+    for addr in test['pos']['memory'].keys():
         pages.add(addr>>12)
 
     maps = []
@@ -132,7 +129,7 @@ for test_name in sorted(test_dic.keys()):
     bits = {'i386': 32, 'amd64': 64}[test['arch']]
     pc = {'i386': 'EIP', 'amd64': 'RIP'}[test['arch']]
 
-    print("""
+    print """
     def test_%(test_name)s(self):
         ''' Instruction %(test_name)s
             Groups: %(groups)s
@@ -144,30 +141,30 @@ for test_name in sorted(test_dic.keys()):
                                         'disassembly': test['disassembly'],
                                         'bits': bits,
                                         'arch': test['arch'],
-                                        'cpu': {64:'AMD64Cpu', 32:'I386Cpu'}[bits], })
+                                        'cpu': {64:'AMD64Cpu', 32:'I386Cpu'}[bits], }
 
     for addr, size in get_maps(test):
-        print('''        mem.mmap(0x%08x, 0x%x, 'rwx')''' % (addr, size))
+        print '''        mem.mmap(0x%08x, 0x%x, 'rwx')''' % (addr, size)
 
 
 
-    for addr, byte in list(test['pre']['memory'].items()):
-        print('''        mem[0x%08x] = %r''' % (addr, byte))
+    for addr, byte in test['pre']['memory'].items():
+        print '''        mem[0x%08x] = %r''' % (addr, byte)
 
-    for reg_name, value in list(test['pre']['registers'].items()):
+    for reg_name, value in test['pre']['registers'].items():
         if isFlag(reg_name):
-            print("""        cpu.%s = %r"""%(reg_name, value))
+            print """        cpu.%s = %r"""%(reg_name, value)
         else:
-            print("""        cpu.%s = 0x%x"""%(reg_name, value))
+            print """        cpu.%s = 0x%x"""%(reg_name, value)
 
-    print("""        cpu.execute()
-    """)
+    print """        cpu.execute()
+    """
 
-    for addr, byte in list(test['pos']['memory'].items()):
-        print("""        self.assertEqual(mem[0x%x], %r)"""%(addr, byte))
+    for addr, byte in test['pos']['memory'].items():
+        print """        self.assertEqual(mem[0x%x], %r)"""%(addr, byte)
 
-    for reg_name, value in list(test['pos']['registers'].items()):
-        print("""        self.assertEqual(cpu.%s, %r)"""%(reg_name, value))
+    for reg_name, value in test['pos']['registers'].items():
+        print """        self.assertEqual(cpu.%s, %r)"""%(reg_name, value)
 
 for test_name in sorted(test_dic.keys()):
 
@@ -175,7 +172,7 @@ for test_name in sorted(test_dic.keys()):
     bits = {'i386': 32, 'amd64': 64}[test['arch']]
     pc = {'i386': 'EIP', 'amd64': 'RIP'}[test['arch']]
 
-    print("""
+    print """
     def test_%(test_name)s_symbolic(self):
         ''' Instruction %(test_name)s
             Groups: %(groups)s
@@ -188,41 +185,41 @@ for test_name in sorted(test_dic.keys()):
                                         'disassembly': test['disassembly'],
                                         'bits': bits,
                                         'arch': test['arch'],
-                                        'cpu': {64:'AMD64Cpu', 32:'I386Cpu'}[bits] })
+                                        'cpu': {64:'AMD64Cpu', 32:'I386Cpu'}[bits] }
 
     for addr, size in get_maps(test):
-        print('''        mem.mmap(0x%08x, 0x%x, 'rwx')''' % (addr, size))
+        print '''        mem.mmap(0x%08x, 0x%x, 'rwx')''' % (addr, size)
 
 
     ip = test['pre']['registers'][pc]
     text_size = len(test['text'])
-    for addr, byte in list(test['pre']['memory'].items()):
+    for addr, byte in test['pre']['memory'].items():
         if addr >= ip and addr <= ip+text_size:
-            print("""        mem[0x%x] = %r"""%(addr, byte))
+            print """        mem[0x%x] = %r"""%(addr, byte)
             continue
 
-        print('''        addr = cs.new_bitvec(%d)''' %bits)
-        print('''        cs.add(addr == 0x%x)''' % addr)
-        print('''        value = cs.new_bitvec(8)''')
-        print('''        cs.add(value == 0x%x)''' % ord(byte))
-        print('''        mem[addr] = value''')
+        print '''        addr = cs.new_bitvec(%d)''' %bits
+        print '''        cs.add(addr == 0x%x)''' % addr
+        print '''        value = cs.new_bitvec(8)'''
+        print '''        cs.add(value == 0x%x)''' % ord(byte)
+        print '''        mem[addr] = value'''
 
 
 
-    for reg_name, value in list(test['pre']['registers'].items()):
+    for reg_name, value in test['pre']['registers'].items():
         if reg_name in ('EIP', 'RIP'):
-            print("""        cpu.%s = 0x%x"""%(reg_name, value))
+            print """        cpu.%s = 0x%x"""%(reg_name, value)
             continue
         if isFlag(reg_name):
-            print("""        cpu.%s = cs.new_bool()"""%reg_name)
-            print("""        cs.add(cpu.%s == %r)"""%(reg_name, value))
+            print """        cpu.%s = cs.new_bool()"""%reg_name
+            print """        cs.add(cpu.%s == %r)"""%(reg_name, value)
         else:
-            print("""        cpu.%s = cs.new_bitvec(%d)"""%(reg_name, regSize(reg_name)))
-            print("""        cs.add(cpu.%s == 0x%x)"""%(reg_name, value))
+            print """        cpu.%s = cs.new_bitvec(%d)"""%(reg_name, regSize(reg_name))
+            print """        cs.add(cpu.%s == 0x%x)"""%(reg_name, value)
 
 
     pc_reg = 'RIP' if 'RIP' in test['pre']['registers'] else 'EIP'
-    print("""
+    print """
         done = False
         while not done:
             try:
@@ -235,8 +232,8 @@ for test_name in sorted(test_dic.keys()):
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, '{PC}', {PC_VAL})""".format(
                         PC=pc_reg,
-                        PC_VAL=hex(test['pre']['registers'][pc_reg])))
-    print("""
+                        PC_VAL=hex(test['pre']['registers'][pc_reg]))
+    print """
             except ConcretizeMemory,e:
                 symbol = getattr(cpu, '{FRAME_BASE}')
                 if isinstance(symbol, Expression):
@@ -252,31 +249,31 @@ for test_name in sorted(test_dic.keys()):
                 setattr(cpu, '{PC}', {PC_VAL})""".format(
                         FRAME_BASE='RBP' if 'RBP' in test['pre']['registers'] else 'EBP',
                         PC=pc_reg,
-                        PC_VAL=hex(test['pre']['registers'][pc_reg])))
+                        PC_VAL=hex(test['pre']['registers'][pc_reg]))
 
 
-    print("""
-        condition = True""")
+    print """
+        condition = True"""
 
-    for addr, byte in list(test['pos']['memory'].items()):
-        print("""        condition = Operators.AND(condition, cpu.read_int(0x%x, 8)== ord(%r))"""%(addr, byte))
-    for reg_name, value in list(test['pos']['registers'].items()):
+    for addr, byte in test['pos']['memory'].items():
+        print """        condition = Operators.AND(condition, cpu.read_int(0x%x, 8)== ord(%r))"""%(addr, byte)
+    for reg_name, value in test['pos']['registers'].items():
         if isFlag(reg_name):
-            print("""        condition = Operators.AND(condition, cpu.%s == %r)"""%(reg_name, value))
+            print """        condition = Operators.AND(condition, cpu.%s == %r)"""%(reg_name, value)
         else:
-            print("""        condition = Operators.AND(condition, cpu.%s == 0x%x)"""%(reg_name, value))
+            print """        condition = Operators.AND(condition, cpu.%s == 0x%x)"""%(reg_name, value)
 
 
-    print("""
+    print """
         with cs as temp_cs:
             temp_cs.add(condition)
             self.assertTrue(solver.check(temp_cs))
         with cs as temp_cs:
             temp_cs.add(condition == False)
             self.assertFalse(solver.check(temp_cs))
-          """)
+          """
 
-print("""
+print """
 if __name__ == '__main__':
     unittest.main()
-""")
+"""

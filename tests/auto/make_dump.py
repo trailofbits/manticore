@@ -1,11 +1,3 @@
-from __future__ import print_function
-from __future__ import division
-from builtins import next
-from builtins import map
-from builtins import chr
-from builtins import str
-from builtins import range
-from past.utils import old_div
 import copy
 import traceback
 import os
@@ -63,7 +55,7 @@ class Gdb(subprocess.Popen):
             reg = reg[:-1] + "&0xffff"
         val = self.correspond('p /x %s\n'%reg.lower())
         val = val.split("0x")[-1]
-        return int(val.split("\n")[0],16)
+        return long(val.split("\n")[0],16)
 
     def setR(reg, value):
         self.correspond('set $%s = %s\n'%(reg.lower(), int(value)))
@@ -75,8 +67,8 @@ class Gdb(subprocess.Popen):
         self.correspond("stepi\n")
     def getM(self, m):
         try:
-            return int(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
-        except Exception as e:
+            return long(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
+        except Exception,e:
             raise e
             return 0
     def get_pid(self):
@@ -108,7 +100,7 @@ class Gdb(subprocess.Popen):
             self._arch = 'amd64'
             return 'amd64'
         else:
-            print(infotarget)
+            print infotarget
             raise NotImplementedError()
 
 
@@ -174,15 +166,15 @@ while True:
         instruction = next(md.disasm(text, pc))
 
         if instruction.insn_name().upper() in ['CPUID', 'RDTSC', 'NOP', 'SYSCALL', 'INT', 'SYSENTER']:
-            print("#Skiping:, ", instruction.insn_name().upper())
+            print "#Skiping:, ", instruction.insn_name().upper()
             stepped=True
             gdb.stepi()
             continue
 
         #print instruction
         disassembly = "0x%x:\t%s\t%s" %(instruction.address, instruction.mnemonic, instruction.op_str)
-        print("#INSTRUCTION:", disassembly)
-        groups = list(map(instruction.group_name, instruction.groups))
+        print "#INSTRUCTION:", disassembly
+        groups = map(instruction.group_name, instruction.groups)
 
 
         PC = {'i386': 'EIP', 'amd64': 'RIP'}[arch]
@@ -231,7 +223,7 @@ while True:
                     address += instruction.operands.value 
                 elif instruction.operands[1].type == X86_OP_REG:
                     reg_name = str(instruction.reg_name(o.reg).upper())
-                    address + old_div(gdb.getR(reg_name),8)
+                    address + gdb.getR(reg_name)/8
                 memory[address] = chr(gdb.getByte(address))
 
 
@@ -309,10 +301,10 @@ while True:
         #There is a capstone branch that should fix all this annoyances .. soon
         #https://github.com/aquynh/capstone/tree/next
         used = set()
-        for ri in list(reg_sizes.keys()):
+        for ri in reg_sizes.keys():
             if instruction.reg_read(ri) or instruction.reg_write(ri):
                 if not(instruction.reg_read(reg_sizes[ri]) or instruction.reg_write(reg_sizes[ri])):
-                    if str(instruction.reg_name(reg_sizes[ri]).upper()) not in list(registers.keys()):
+                    if str(instruction.reg_name(reg_sizes[ri]).upper()) not in registers.keys():
                         used.add(ri)
 
         for ri in used:
@@ -320,7 +312,7 @@ while True:
             registers[reg_name] = gdb.getR(reg_name)
 
         #special case for flags...                
-        if instruction.mnemonic.upper() in list(flags.keys()):
+        if instruction.mnemonic.upper() in flags.keys():
             EFLAGS = gdb.getR('EFLAGS')
             for fl in flags[instruction.mnemonic.upper()]['tested']:
                 registers[fl] = (EFLAGS&flags_maks[fl]) != 0
@@ -355,7 +347,7 @@ while True:
                     registers[reg_name] = gdb.getR(reg_name)
                     address += o.mem.scale*registers[reg_name]
                 address = address&({'i386': 0xffffffff, 'amd64': 0xffffffffffffffff}[arch])
-                for i in range(address, address+o.size):
+                for i in xrange(address, address+o.size):
                     memory[i] = chr(gdb.getByte(i))
 
 
@@ -384,7 +376,7 @@ while True:
 
 
         #update registers
-        for i in list(registers.keys()):
+        for i in registers.keys():
             registers[i] = gdb.getR(i)
 
 
@@ -393,13 +385,13 @@ while True:
         if instruction.mnemonic.upper() in flags:
             for fl in flags[instruction.mnemonic.upper()]['defined']:
                 if 'OF' in registers and instruction.insn_name().upper() in ['ROL','RCL','ROR','RCR']:
-                    print(instruction.insn_name().upper(), read_operand(instruction.operands[1]))
+                    print instruction.insn_name().upper(), read_operand(instruction.operands[1])
                     del registers['OF']
                     continue
                 registers[fl] = (EFLAGS&flags_maks[fl]) != 0
  
         #update memory
-        for i in list(memory.keys()):
+        for i in memory.keys():
             memory[i] = chr(gdb.getByte(i))
 
         test['pos'] = {}
@@ -407,16 +399,16 @@ while True:
         test['pos']['registers'] = registers
 
         if not 'int' in groups:
-            print(test) 
+            print test 
 
         count += 1
 
         #check if exit
         if instruction.insn_name().upper() in ['SYSCALL', 'INT', 'SYSENTER']:
             if "The program has no registers now." in gdb.correspond("info registers \n"):
-                print("done") 
+                print "done" 
                 break
-    except Exception as e:
+    except Exception,e:
         if "The program has no registers now." in gdb.correspond("info registers\n"):
             break
         #print '-'*60
@@ -424,10 +416,10 @@ while True:
         #print '-'*60
         #import pdb
         #pdb.set_trace()
-        print("# Exception", e)
+        print "# Exception", e
         if not stepped:
             gdb.stepi()
 
-print("# Processed %d instructions." % count)
+print "# Processed %d instructions." % count
 
 

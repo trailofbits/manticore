@@ -1,6 +1,3 @@
-from __future__ import print_function
-from builtins import hex
-from builtins import range
 import copy
 import sys
 import sys
@@ -41,7 +38,7 @@ class Gdb(subprocess.Popen):
         if reg in ['$R%dW'%i for i in range(16)] :
             reg = reg[:-1] + "&0xffff"
         val = self.correspond('p /x %s\n'%reg.lower()).split("0x")[-1]
-        return int(val.split("\n")[0],16)
+        return long(val.split("\n")[0],16)
 
     def setR(reg, value):
         self.correspond('set $%s = %s\n'%(reg.lower(), int(value)))
@@ -53,10 +50,10 @@ class Gdb(subprocess.Popen):
         self.correspond("stepi\n")
     def getM(self, m):
         try:
-            return int(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
-        except Exception as e:
-            print('x/xg %s\n'%m)
-            print(self.correspond('x/xg %s\n'%m))
+            return long(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
+        except Exception,e:
+            print 'x/xg %s\n'%m
+            print self.correspond('x/xg %s\n'%m)
             raise e
             return 0
     def getPid(self):
@@ -64,7 +61,7 @@ class Gdb(subprocess.Popen):
     def getStack(self):
         maps = file("/proc/%s/maps"%self.correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
         i,o = [ int(x,16) for x in maps[-3].split(" ")[0].split('-')]
-        print(self.correspond('dump mem lala 0x%x 0x%x\n'%(i,o)))
+        print self.correspond('dump mem lala 0x%x 0x%x\n'%(i,o))
     def getByte(self, m):
         arch = self.get_arch()
         mask = {'i386': 0xffffffff, 'amd64': 0xffffffffffffffff}[arch]
@@ -85,7 +82,7 @@ class Gdb(subprocess.Popen):
             self._arch = 'amd64'
             return 'amd64'
         else:
-            print(infotarget)
+            print infotarget
             raise NotImplementedError()
 
 
@@ -122,11 +119,11 @@ while True:
     try:
         stepped = False
         pc = gdb.getR({'i386': 'EIP', 'amd64': 'RIP'}[arch]) 
-        print(hex(pc))
+        print hex(pc)
         gdb.stepi()
-        print(gdb.correspond('info registers\n'))
-    except Exception as e:
-        print(e)
-print("# Processed %d instructions." % count)
+        print gdb.correspond('info registers\n')
+    except Exception,e:
+        print e
+print "# Processed %d instructions." % count
 
 

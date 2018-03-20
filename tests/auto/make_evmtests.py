@@ -1,10 +1,5 @@
-from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import str
-from builtins import range
 from pprint import pformat
-from io import StringIO
+from cStringIO import StringIO
 
 def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
     nlch = lfchar + htchar * (indent + 1)
@@ -26,7 +21,7 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
             for item in value
         ]
         return '(%s)' % (','.join(items) + lfchar + htchar * indent)
-    elif type(value) in (str, str):
+    elif type(value) in (str, unicode):
         if len(value) ==0:
             return repr(value)
 
@@ -53,12 +48,12 @@ def spprint(x, indent=0, width=None,**kwargs):
     return (('\n'+' '*indent)).join(x.split('\n'))
 
 def i(x):
-    if isinstance(x, (int, int)):
+    if isinstance(x, (int, long)):
         return x
-    assert isinstance(x, (str, str))
+    assert isinstance(x, (str, unicode))
     if not x.startswith('0x'):
         x = '0x' + x
-    return int(x, 0)
+    return long(x, 0)
 def gen_test(testcase, testname, skip):
     output = ''
     if skip:
@@ -75,26 +70,26 @@ def gen_test(testcase, testname, skip):
         try:
             header[_key] = i(env[key])
         except:
-            print("XXXXXX" , key, env[key])
+            print "XXXXXX" , key, env[key]
     output += '        header =' + pprint (header, indent=18) +'\n'
 
     pre = testcase['pre']
     world = {}
-    for address in list(pre.keys()):
+    for address in pre.keys():
         iaddress = i(address)
         world[iaddress] = {}
         world[iaddress]['code'] = pre[address][u'code'][2:].decode('hex')
         world[iaddress]['nonce'] = i(pre[address][u'nonce'])
         world[iaddress]['balance'] = i(pre[address][u'balance'])
         world[iaddress]['storage'] = {}
-        for key, value in list(pre[address][u'storage'].items()):
+        for key, value in pre[address][u'storage'].items():
             world[iaddress]['storage'][key] = value
 
     #output += "        pre_world =" + pprint( world, indent=22)+'\n'
     pre_world = world
     exe = testcase['exec']
     transaction = {}
-    for key in list(exe.keys()):
+    for key in exe.keys():
         pkey = str(key)
         if key == 'gasPrice':
             pkey = 'price'
@@ -109,14 +104,14 @@ def gen_test(testcase, testname, skip):
     if 'post' in testcase:
         pos = testcase['post']
         world = {}
-        for address in list(pos.keys()):
+        for address in pos.keys():
             iaddress = i(address)
             world[iaddress] = {}
             world[iaddress]['code'] = pos[address][u'code'][2:].decode('hex')
             world[iaddress]['nonce'] = i(pos[address][u'nonce'])
             world[iaddress]['balance'] = i(pos[address][u'balance'])
             world[iaddress]['storage'] = {} 
-            for key, value in list(pos[address][u'storage'].items()):
+            for key, value in pos[address][u'storage'].items():
                 world[iaddress]['storage'][i(key)] = i(value)        
         output += "        pos_world = " + pprint(world, indent=27) + '\n'
     
@@ -130,7 +125,7 @@ def gen_test(testcase, testname, skip):
         constraints = ConstraintSet()
         platform = evm.EVMWorld(constraints)'''
     
-    for address, contract in list(pre_world.items()):
+    for address, contract in pre_world.items():
         output +='''           
         platform.create_account(address=%s, 
                                 balance=%s, 
@@ -194,7 +189,7 @@ if __name__ == '__main__':
 
     assert filename.endswith('.json')
 
-    print('''
+    print '''
 import struct
 import unittest
 import json
@@ -207,14 +202,14 @@ import os
 class EVMTest_%s(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None 
-'''%  os.path.split(sys.argv[1][:-5])[1]) 
+'''%  os.path.split(sys.argv[1][:-5])[1] 
 
     js = file(filename).read()
     tests = dict(json.loads(js))
 
     #print "#processed ", len(tests.keys()), tests.keys()
     count = 0
-    for test_name, testcase in list(tests.items()):
+    for test_name, testcase in tests.items():
         count +=1
         #print "#count", count , test_name, '0c423e4e26c7938c2a82ce40d05a549d617b32303a824ba5a93cb2fb0b037dfd'
         skip = False
@@ -246,8 +241,8 @@ class EVMTest_%s(unittest.TestCase):
         #print filename, test_name, tests[test_name]    
         name = 'test_%s_%s'%(filename[:-5],test_name)
         name = str(name.replace('.', '_'))
-        print(gen_test(testcase, test_name, skip))
+        print gen_test(testcase, test_name, skip)
 
-    print('''
+    print '''
 if __name__ == '__main__':
-    unittest.main()''')
+    unittest.main()'''
