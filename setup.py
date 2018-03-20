@@ -16,7 +16,7 @@ setup(
     url='https://github.com/trailofbits/manticore',
     author='Trail of Bits',
     version='0.1.7',
-    classifiers = [
+    classifiers=[
             "Programming Language :: Python :: 2.7",
     ],
     packages=find_packages(),
