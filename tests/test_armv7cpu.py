@@ -30,7 +30,7 @@ def assemble(asm, mode=CS_MODE_ARM):
         raise Exception('bad processor mode for assembly: {}'.format(mode))
     if not ords:
         raise Exception('bad assembly: {}'.format(asm))
-    return ''.join(map(chr, ords))
+    return bytes(ords)
 
 
 class Armv7CpuTest(unittest.TestCase):

@@ -145,8 +145,8 @@ class LinuxTest(unittest.TestCase):
         dir_path = tempfile.mkdtemp()
         file_name = "file"
         file_path = os.path.join(dir_path, file_name)
-        with open(file_path, 'w') as f:
-            f.write('test')
+        with open(file_path, 'wb') as f:
+            f.write(b'test')
 
         # open a file + directory
         dirname = platform.current.push_bytes(dir_path+'\x00')

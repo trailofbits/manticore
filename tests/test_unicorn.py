@@ -29,7 +29,7 @@ def assemble(asm):
     ords = ks.asm(asm)[0]
     if not ords:
         raise Exception('bad assembly: {}'.format(asm))
-    return ''.join(map(chr, ords))
+    return bytes(ords)
 
 
 def emulate_next(cpu):
