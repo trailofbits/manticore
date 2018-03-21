@@ -31,7 +31,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn('overflow at MUL', all_findings)
 
 
-class EthDetectors(unittest.TestCase):
+class EthDetectorsTest(unittest.TestCase):
     def setUp(self):
         self.io = IntegerOverflow()
         self.state = self.make_mock_evm_state()
@@ -165,7 +165,7 @@ class EthTests(unittest.TestCase):
             contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
 
 
-class EthHelpers(unittest.TestCase):
+class EthHelpersTest(unittest.TestCase):
     def setUp(self):
         self.bv = BitVec(256)
 

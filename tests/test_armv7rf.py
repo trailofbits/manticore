@@ -3,7 +3,7 @@ import unittest
 from manticore.core.cpu.arm import Armv7RegisterFile as RF
 
 
-class Armv7RF(unittest.TestCase):
+class Armv7RFTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
