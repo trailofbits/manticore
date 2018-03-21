@@ -3,7 +3,6 @@ from manticore.ethereum import ManticoreEVM
 
 m = ManticoreEVM()
 #And now make the contract account to analyze
-# cat  | solc --bin
 source_code = '''
 contract C {
     uint n;
@@ -43,6 +42,5 @@ for state in m.running_states:
     balance = state.platform.get_balance(user_account)
     print state.solve_one(balance)
 
-#Let seth know we are not sending more transactions
 m.finalize()
 print "[+] Look for results in %s"% m.workspace
