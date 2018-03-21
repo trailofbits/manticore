@@ -1,4 +1,4 @@
-from builtins import range
+from builtins import *
 import unittest
 
 from manticore.core.cpu.arm import Armv7RegisterFile as RF

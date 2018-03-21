@@ -1,7 +1,7 @@
 from __future__ import division
+from builtins import *
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str, range
 from io import BytesIO
 import unittest
 import tempfile, os

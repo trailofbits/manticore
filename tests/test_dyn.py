@@ -1,5 +1,4 @@
-
-from builtins import object
+from builtins import *
 import unittest
 from manticore.core.cpu.x86 import *
 from manticore.core.smtlib import Operators

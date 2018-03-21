@@ -1,5 +1,5 @@
 from __future__ import absolute_import, division
-from builtins import range, object
+from builtins import *
 import struct
 import unittest
 from manticore.core.cpu.x86 import *

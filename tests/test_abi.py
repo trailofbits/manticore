@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import, division, print_function
-from builtins import filter, map, range, zip
-from builtins import object
+from builtins import *
 
 import unittest
 
