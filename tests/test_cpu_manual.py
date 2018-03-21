@@ -4,8 +4,8 @@ import struct
 import unittest
 from manticore.core.cpu.x86 import *
 from manticore.core.memory import *
-from . import mockmem
 from functools import reduce
+from tests import mockmem
 
 class ROOperand(object):
     ''' Mocking class for operand ronly '''
