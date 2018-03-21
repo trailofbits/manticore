@@ -80,8 +80,8 @@ class EthTests(unittest.TestCase):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.semantics in ('REVERT', 'STOP'):
-                    with self.locked_context('insns', dict) as d:
-                        d[instruction.semantics] = True
+                    with self.locked_context('insns', set) as s:
+                        s.add(instruction.semantics)
 
         mevm = ManticoreEVM()
         p = TestDetector()
