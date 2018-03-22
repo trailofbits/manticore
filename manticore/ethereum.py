@@ -1,10 +1,11 @@
-from __future__ import division
+from __future__ import division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import str
 from builtins import map
 from builtins import range
 from builtins import int
+from builtins import bytes
 import string
 
 from . import Manticore
@@ -22,9 +23,12 @@ import json
 import logging
 import io
 import pickle as pickle
+import sys
 from .core.plugin import Plugin
 from functools import reduce
 from utils.helpers import isstring
+
+import binascii
 
 logger = logging.getLogger(__name__)
 

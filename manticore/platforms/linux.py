@@ -5,7 +5,7 @@ from builtins import hex, str, range, int, bytes
 from future import standard_library
 standard_library.install_aliases()
 
-from builtins import int
+from builtins import int, chr
 import errno
 import fcntl
 import io

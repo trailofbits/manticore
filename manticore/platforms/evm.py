@@ -6,6 +6,7 @@ from builtins import next
 from builtins import chr
 from builtins import range
 from builtins import bytes
+from builtins import int
 import random, copy
 from ..utils.helpers import issymbolic, memoized, isstring
 from ..platforms.platform import *
@@ -21,6 +22,7 @@ from collections import namedtuple
 if sys.version_info < (3, 6):
     import sha3
 import itertools
+from functools import wraps
 
 logger = logging.getLogger(__name__)
 
