@@ -1,3 +1,4 @@
+from builtins import *
 import unittest
 
 from manticore.core.smtlib import ConstraintSet, solver

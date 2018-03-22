@@ -1,3 +1,4 @@
+from builtins import *
 import unittest
 import os
 
@@ -25,7 +26,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
         mevm.multi_tx_analysis(filename)
         self.assertEqual(len(mevm.global_findings), 3)
-        all_findings = ''.join(map(lambda x: x[2], mevm.global_findings))
+        all_findings = ''.join([x[2] for x in mevm.global_findings])
         self.assertIn('underflow at SUB', all_findings)
         self.assertIn('overflow at ADD', all_findings)
         self.assertIn('overflow at MUL', all_findings)
@@ -79,8 +80,8 @@ class EthTests(unittest.TestCase):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.semantics in ('REVERT', 'STOP'):
-                    with self.locked_context('insns', dict) as d:
-                        d[instruction.semantics] = True
+                    with self.locked_context('insns', set) as s:
+                        s.add(instruction.semantics)
 
         mevm = ManticoreEVM()
         p = TestDetector()

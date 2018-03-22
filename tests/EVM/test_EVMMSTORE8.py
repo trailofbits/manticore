@@ -16,7 +16,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
         last_exception = None
         try:
             new_vm.execute()
-        except evm.Stop, e:
+        except evm.Stop as e:
             last_exception = "STOP"
         except evm.NotEnoughGas:
             last_exception = "OOG"
@@ -55,8 +55,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -81,13 +81,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(0), 255L)
+            self.assertEqual(new_vm._load(0), 255)
 
     def test_MSTORE8_3(self):
             #Make the constraint store
@@ -110,13 +110,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(1), 255L)
+            self.assertEqual(new_vm._load(1), 255)
 
     def test_MSTORE8_4(self):
             #Make the constraint store
@@ -139,8 +139,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -165,8 +165,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -191,13 +191,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(16), 255L)
+            self.assertEqual(new_vm._load(16), 255)
 
     def test_MSTORE8_7(self):
             #Make the constraint store
@@ -220,13 +220,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(32), 255L)
+            self.assertEqual(new_vm._load(32), 255)
 
     def test_MSTORE8_8(self):
             #Make the constraint store
@@ -249,13 +249,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(48), 255L)
+            self.assertEqual(new_vm._load(48), 255)
 
     def test_MSTORE8_9(self):
             #Make the constraint store
@@ -278,8 +278,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -305,7 +305,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(0)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -389,7 +389,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(0)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -415,7 +415,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(0)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -528,7 +528,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(0)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -554,7 +554,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(1)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -638,7 +638,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(1)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -664,7 +664,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(1)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -777,7 +777,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(1)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -802,8 +802,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -828,13 +828,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(0), 240L)
+            self.assertEqual(new_vm._load(0), 240)
 
     def test_MSTORE8_30(self):
             #Make the constraint store
@@ -857,13 +857,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(1), 240L)
+            self.assertEqual(new_vm._load(1), 240)
 
     def test_MSTORE8_31(self):
             #Make the constraint store
@@ -886,8 +886,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -912,8 +912,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -938,13 +938,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(16), 240L)
+            self.assertEqual(new_vm._load(16), 240)
 
     def test_MSTORE8_34(self):
             #Make the constraint store
@@ -967,13 +967,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(32), 240L)
+            self.assertEqual(new_vm._load(32), 240)
 
     def test_MSTORE8_35(self):
             #Make the constraint store
@@ -996,13 +996,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(48), 240L)
+            self.assertEqual(new_vm._load(48), 240)
 
     def test_MSTORE8_36(self):
             #Make the constraint store
@@ -1025,8 +1025,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1051,8 +1051,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1077,13 +1077,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(0), 15L)
+            self.assertEqual(new_vm._load(0), 15)
 
     def test_MSTORE8_39(self):
             #Make the constraint store
@@ -1106,13 +1106,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(1), 15L)
+            self.assertEqual(new_vm._load(1), 15)
 
     def test_MSTORE8_40(self):
             #Make the constraint store
@@ -1135,8 +1135,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1161,8 +1161,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1187,13 +1187,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(16), 15L)
+            self.assertEqual(new_vm._load(16), 15)
 
     def test_MSTORE8_43(self):
             #Make the constraint store
@@ -1216,13 +1216,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(32), 15L)
+            self.assertEqual(new_vm._load(32), 15)
 
     def test_MSTORE8_44(self):
             #Make the constraint store
@@ -1245,13 +1245,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(48), 15L)
+            self.assertEqual(new_vm._load(48), 15)
 
     def test_MSTORE8_45(self):
             #Make the constraint store
@@ -1274,8 +1274,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1301,7 +1301,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(16)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1385,7 +1385,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(16)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1411,7 +1411,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(16)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1524,7 +1524,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(16)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1550,7 +1550,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(32)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1634,7 +1634,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(32)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1660,7 +1660,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(32)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1773,7 +1773,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(32)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1799,7 +1799,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(48)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1883,7 +1883,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(48)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1909,7 +1909,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(48)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2022,7 +2022,7 @@ class EVMTest_MSTORE8(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(48)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2047,8 +2047,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2073,13 +2073,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(0), 0L)
+            self.assertEqual(new_vm._load(0), 0)
 
     def test_MSTORE8_75(self):
             #Make the constraint store
@@ -2102,13 +2102,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(1), 0L)
+            self.assertEqual(new_vm._load(1), 0)
 
     def test_MSTORE8_76(self):
             #Make the constraint store
@@ -2131,8 +2131,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2157,8 +2157,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2183,13 +2183,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(16), 0L)
+            self.assertEqual(new_vm._load(16), 0)
 
     def test_MSTORE8_79(self):
             #Make the constraint store
@@ -2212,13 +2212,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(32), 0L)
+            self.assertEqual(new_vm._load(32), 0)
 
     def test_MSTORE8_80(self):
             #Make the constraint store
@@ -2241,13 +2241,13 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm._load(48), 0L)
+            self.assertEqual(new_vm._load(48), 0)
 
     def test_MSTORE8_81(self):
             #Make the constraint store
@@ -2270,8 +2270,8 @@ class EVMTest_MSTORE8(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 

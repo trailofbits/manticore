@@ -1,10 +1,12 @@
-import StringIO
+from builtins import *
+from future import standard_library
+standard_library.install_aliases()
+
 import unittest
 import sys
 import shutil
 import tempfile
 import os
-import hashlib
 import subprocess
 import time
 
@@ -27,7 +29,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(os.path.exists(visited))
         vitems = open(visited, 'r').read().splitlines()
 
-        vitems = map(lambda x: int(x[2:], 16), vitems)
+        vitems = [int(x[2:], 16) for x in vitems]
 
         return set(vitems)
 

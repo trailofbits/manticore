@@ -16,7 +16,7 @@ class EVMTest_SSTORE(unittest.TestCase):
         last_exception = None
         try:
             new_vm.execute()
-        except evm.Stop, e:
+        except evm.Stop as e:
             last_exception = "STOP"
         except evm.NotEnoughGas:
             last_exception = "OOG"
@@ -43,7 +43,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -61,8 +61,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -77,7 +77,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {0: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {0: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -95,7 +95,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -111,7 +111,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {1: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {1: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -129,7 +129,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -145,7 +145,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -163,8 +163,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -179,7 +179,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -197,8 +197,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -213,7 +213,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {16: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {16: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -231,7 +231,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -247,7 +247,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {32: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {32: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -265,7 +265,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -281,7 +281,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {48: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {48: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -299,7 +299,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -315,7 +315,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 115792089237316195423570985008687907853269984665640564039457584007913129639935L}
+            storage = {6089590155545428825848686802984512581899718912: 115792089237316195423570985008687907853269984665640564039457584007913129639935}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -333,8 +333,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -349,7 +349,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 0}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -368,7 +368,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(0)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -451,7 +451,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 0}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -470,7 +470,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(0)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -485,7 +485,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 0}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -504,7 +504,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(0)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -621,7 +621,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 0}
+            storage = {6089590155545428825848686802984512581899718912: 0}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -640,7 +640,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(0)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -655,7 +655,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 1}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -674,7 +674,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(1)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -757,7 +757,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 1}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -776,7 +776,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(1)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -791,7 +791,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 1}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -810,7 +810,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(1)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -927,7 +927,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 1}
+            storage = {6089590155545428825848686802984512581899718912: 1}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -946,7 +946,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(1)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -961,7 +961,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -979,8 +979,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -995,7 +995,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {0: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {0: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1013,7 +1013,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1029,7 +1029,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {1: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {1: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1047,7 +1047,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1063,7 +1063,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1081,8 +1081,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1097,7 +1097,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1115,8 +1115,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1131,7 +1131,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {16: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {16: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1149,7 +1149,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1165,7 +1165,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {32: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {32: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1183,7 +1183,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1199,7 +1199,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {48: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {48: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1217,7 +1217,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1233,7 +1233,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 57896044618658097711785492504343953926634992332820282019728792003956564819952L}
+            storage = {6089590155545428825848686802984512581899718912: 57896044618658097711785492504343953926634992332820282019728792003956564819952}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1251,8 +1251,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1267,7 +1267,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1285,8 +1285,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1301,7 +1301,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {0: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {0: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1319,7 +1319,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1335,7 +1335,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {1: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {1: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1353,7 +1353,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1369,7 +1369,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1387,8 +1387,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1403,7 +1403,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1421,8 +1421,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1437,7 +1437,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {16: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {16: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1455,7 +1455,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1471,7 +1471,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {32: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {32: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1489,7 +1489,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1505,7 +1505,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {48: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {48: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1523,7 +1523,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -1539,7 +1539,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 3618502788666131106986593281521497120414687020801267626233049500247285301263L}
+            storage = {6089590155545428825848686802984512581899718912: 3618502788666131106986593281521497120414687020801267626233049500247285301263}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1557,8 +1557,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1573,7 +1573,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 16}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1592,7 +1592,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(16)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1675,7 +1675,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 16}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1694,7 +1694,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(16)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1709,7 +1709,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 16}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1728,7 +1728,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(16)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1845,7 +1845,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 16}
+            storage = {6089590155545428825848686802984512581899718912: 16}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1864,7 +1864,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(16)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1879,7 +1879,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 32}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -1898,7 +1898,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(32)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1981,7 +1981,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 32}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2000,7 +2000,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(32)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2015,7 +2015,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 32}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2034,7 +2034,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(32)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2151,7 +2151,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 32}
+            storage = {6089590155545428825848686802984512581899718912: 32}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2170,7 +2170,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(32)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2185,7 +2185,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 48}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2204,7 +2204,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(48)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2287,7 +2287,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 48}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2306,7 +2306,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(48)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2321,7 +2321,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 48}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2340,7 +2340,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(48)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2457,7 +2457,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 48}
+            storage = {6089590155545428825848686802984512581899718912: 48}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2476,7 +2476,7 @@ class EVMTest_SSTORE(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
             new_vm._push(48)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2491,7 +2491,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935L: 6089590155545428825848686802984512581899718912L}
+            storage = {115792089237316195423570985008687907853269984665640564039457584007913129639935: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2509,8 +2509,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2525,7 +2525,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {0: 6089590155545428825848686802984512581899718912L}
+            storage = {0: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2543,7 +2543,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -2559,7 +2559,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {1: 6089590155545428825848686802984512581899718912L}
+            storage = {1: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2577,7 +2577,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -2593,7 +2593,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952L: 6089590155545428825848686802984512581899718912L}
+            storage = {57896044618658097711785492504343953926634992332820282019728792003956564819952: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2611,8 +2611,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2627,7 +2627,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263L: 6089590155545428825848686802984512581899718912L}
+            storage = {3618502788666131106986593281521497120414687020801267626233049500247285301263: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2645,8 +2645,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2661,7 +2661,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {16: 6089590155545428825848686802984512581899718912L}
+            storage = {16: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2679,7 +2679,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -2695,7 +2695,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {32: 6089590155545428825848686802984512581899718912L}
+            storage = {32: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2713,7 +2713,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -2729,7 +2729,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {48: 6089590155545428825848686802984512581899718912L}
+            storage = {48: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2747,7 +2747,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
@@ -2763,7 +2763,7 @@ class EVMTest_SSTORE(unittest.TestCase):
             address = 0x222222222222222222222222222222222222200
             balance = None
             code = 'U'
-            storage = {6089590155545428825848686802984512581899718912L: 6089590155545428825848686802984512581899718912L}
+            storage = {6089590155545428825848686802984512581899718912: 6089590155545428825848686802984512581899718912}
             world.create_account( address=address, balance=balance, code=code, storage=storage)
 
             address=0x222222222222222222222222222222222222200
@@ -2781,8 +2781,8 @@ class EVMTest_SSTORE(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)

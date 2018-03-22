@@ -1,23 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
-import sys
-import shutil
-import tempfile
-import os
-import hashlib
-import subprocess
-import collections
-import time
+from __future__ import absolute_import, division, print_function
+from builtins import *
 
-from manticore import Manticore, issymbolic
+import unittest
+
 from manticore import variadic
-from manticore.core.smtlib import BitVecVariable
 from manticore.core.cpu.abstractcpu import ConcretizeArgument, ConcretizeRegister, ConcretizeMemory
 from manticore.core.cpu.arm import Armv7Cpu, Armv7LinuxSyscallAbi, Armv7CdeclAbi
 from manticore.core.cpu.x86 import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386StdcallAbi, I386CdeclAbi, AMD64LinuxSyscallAbi, SystemVAbi
-from manticore.core.memory import SMemory32, Memory32, SMemory64
+from manticore.core.memory import SMemory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
 
 class ABITest(unittest.TestCase):
@@ -44,7 +37,7 @@ class ABITest(unittest.TestCase):
         self._cpu_x64.syscall_abi = AMD64LinuxSyscallAbi(self._cpu_x64)
 
         def write(mem, where, val, size):
-            mem[where:where+size/8] = [Operators.CHR(Operators.EXTRACT(val, offset, 8)) for offset in xrange(0, size, 8)]
+            mem[where:where + size // 8] = [Operators.CHR(Operators.EXTRACT(val, offset, 8)) for offset in range(0, size, 8)]
         for val in range(0, 0x100, 4):
             write(mem32, 0x1000+val, val, 32)
         for val in range(0, 0x100, 8):
@@ -173,7 +166,7 @@ class ABITest(unittest.TestCase):
 
         base = cpu.ESP
 
-        bwidth = cpu.address_bit_size / 8
+        bwidth = cpu.address_bit_size // 8
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
 
         cpu.push(0x1234, cpu.address_bit_size)
@@ -196,7 +189,7 @@ class ABITest(unittest.TestCase):
     def test_i386_stdcall_concretize(self):
         cpu = self._cpu_x86
 
-        bwidth = cpu.address_bit_size / 8
+        bwidth = cpu.address_bit_size // 8
         self.assertEqual(cpu.read_int(cpu.ESP), 0x80)
 
         cpu.push(0x1234, cpu.address_bit_size)
