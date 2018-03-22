@@ -15,14 +15,11 @@ and common API.  interpreters? linkers? linked DLLs?
 
 '''
 
-<<<<<<< HEAD
-=======
 from __future__ import print_function
 from future import standard_library
 standard_library.install_aliases()
 from elftools.elf.elffile import ELFFile
 import io
->>>>>>> 754a8d8... Futurize manticore/binary
 
 class Binary(object):
     magics = {}
@@ -141,12 +138,7 @@ Binary.magics = {'\x7fCGC': CGCElf,
 
 if __name__ == '__main__':
     import sys
-<<<<<<< HEAD
-    print list(Binary(sys.argv[1]).threads())
-    print list(Binary(sys.argv[1]).maps())
-=======
     print(list(Binary(sys.argv[1]).threads()))
     print(list(Binary(sys.argv[1]).maps()))
 
 
->>>>>>> 754a8d8... Futurize manticore/binary
