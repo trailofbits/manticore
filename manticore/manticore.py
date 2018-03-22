@@ -177,7 +177,7 @@ class Manticore(Eventful):
         # Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
-        if isinstance(path_or_state, str):
+        if isstring(path_or_state):
             if not os.path.isfile(path_or_state):
                 raise Exception('{} is not an existing regular file'.format(path_or_state))
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)

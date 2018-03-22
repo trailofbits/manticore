@@ -2614,7 +2614,7 @@ class SLinux(Linux):
             try:
                 for c in data:
                     if issymbolic(c):
-                        c = chr(solver.get_value(self.constraints, c))
+                        c = bytes([solver.get_value(self.constraints, c)])
                     fd.write(c)
             except SolverException:
                 fd.write('{SolverException}')

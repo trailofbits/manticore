@@ -322,7 +322,7 @@ class ABI(object):
         bytes = []
         for position in range(size):
             bytes.append(Operators.EXTRACT(value, position * 8, 8))
-        chars = map(Operators.CHR, bytes)
+        chars = [Operators.CHR(b) for b in bytes]
         return tuple(reversed(chars))
 
     @staticmethod
@@ -347,7 +347,7 @@ class ABI(object):
         Makes a function hash id from a method signature
         '''
         s = sha3.keccak_256()
-        s.update(method_name_and_signature)
+        s.update(method_name_and_signature.encode('utf-8'))
         return s.hexdigest()[:8].decode('hex')
 
     @staticmethod
@@ -525,7 +525,7 @@ class EVMAccount(object):
                 def f(*args, **kwargs):
                     caller = kwargs.get('caller', None)
                     value = kwargs.get('value', 0)
-                    tx_data = ABI.make_function_call(str(self._hashes[name][0]), *args)
+                    tx_data = ABI.make_function_call(self._hashes[name][0], *args)
                     if caller is not None:
                         caller = int(caller)
                     else:
@@ -636,7 +636,7 @@ class ManticoreEVM(Manticore):
             if contract_name is None:
                 name, contract = list(contracts.items())[0]
             else:
-                for n, c in contracts:
+                for n, c in contracts.items():
                     if n.split(":")[1] == contract_name:
                         name, contract = n, c
                         break
@@ -1209,7 +1209,7 @@ class ManticoreEVM(Manticore):
                 runtime_code = blockchain.get_code(account_address)
                 if runtime_code:
                     summary.write("Code:\n")
-                    fcode = io.BytesIO(code)
+                    fcode = io.BytesIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write('\t%s\n' % chunk.encode('hex'))
                     runtime_trace = set((pc for contract, pc in state.context['seth.rt.trace'] if address == contract))
@@ -1219,7 +1219,7 @@ class ManticoreEVM(Manticore):
             if blockchain._sha3:
                 summary.write("Known hashes:\n")
                 for key, value in blockchain._sha3.items():
-                    summary.write('%s::%x\n' % (key.encode('hex'), value))
+                    summary.write('%s::%x\n' % (binascii.hexlify(key), value))
 
             if is_something_symbolic:
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
@@ -1235,8 +1235,8 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_data = ''.join(state.solve_one(tx.data))
-                tx_summary.write("Data: %s %s\n"% (tx_data.encode('hex'), flagged(issymbolic(tx.data))))
+                tx_data = state.solve_one(tx.data)
+                tx_summary.write("Data: %s %s\n"% (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
@@ -1245,7 +1245,7 @@ class ManticoreEVM(Manticore):
                 if tx.sort == 'Call':
                     if metadata is not None:
                         function_id = tx.data[:4]  # hope there is enough data
-                        function_id = state.solve_one(function_id).encode('hex')
+                        function_id = binascii.hexlify(state.solve_one(function_id))
                         signature = metadata.get_func_signature(function_id)
                         function_name, arguments = ABI.parse(signature, tx.data)
 
