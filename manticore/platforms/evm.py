@@ -1645,6 +1645,10 @@ class EVM(Eventful):
         if issymbolic(size):
             raise ConcretizeStack(3, policy='ALL')
 
+        if not issymbolic(data_offset):
+            data_offset = min(data_offset, len(self.data))
+            size = min(len(self.data) - data_offset, size)
+
         for i in range(size):
             c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
             self._store(mem_offset + i, c)
