@@ -1,9 +1,11 @@
+from __future__ import absolute_import, division
+from builtins import *
 import struct
 import unittest
 from manticore.core.cpu.x86 import *
-from manticore.core.smtlib import Operators
 from manticore.core.memory import *
-import mockmem
+from functools import reduce
+from tests import mockmem
 
 class ROOperand(object):
     ''' Mocking class for operand ronly '''
@@ -449,7 +451,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(0x1000,64), 0x5556575845464748)
 
         #cpu.writeback()
-        for i in xrange(0x10):
+        for i in range(0x10):
             self.assertEqual(mem[i+0x1000], 'HGFEXWVUhgfedcba'[i])
         self.assertItemsEqual(mem.read(0x1000,0x10), 'HGFEXWVUhgfedcba')
 
@@ -474,7 +476,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(0x1000,64), 0x5556575845464748)
 
         #cpu.writeback()
-        for i in xrange(0x10):
+        for i in range(0x10):
             self.assertEqual(mem[i+0x1000], 'HGFEXWVUhgfedcba'[i])
 
     def test_cache_003(self):
@@ -531,7 +533,7 @@ class SymCPUTest(unittest.TestCase):
 
         memory = ['\x00'] *0x1000
         written = set()
-        for _ in xrange(1000):
+        for _ in range(1000):
             address = random.randint(0x1000,0x2000-8)
             [written.add(i) for i in range(address,address+8)]
             value = random.randint(0x0,0xffffffffffffffff)
@@ -544,10 +546,10 @@ class SymCPUTest(unittest.TestCase):
         random.shuffle(written)
         for address in written:
             size = random.choice([8,16,32,64])
-            if address > 0x2000-size/8:
+            if address > 0x2000-(size // 8):
                 continue
             pattern = {8:'B', 16:'<H', 32:'<L', 64:'<Q'} [size]
-            self.assertEqual(cpu.read_int(address,size), struct.unpack(pattern, ''.join(memory[address-0x1000:address-0x1000+size/8]))[0] )
+            self.assertEqual(cpu.read_int(address,size), struct.unpack(pattern, ''.join(memory[address-0x1000:address-0x1000+(size // 8)]))[0] )
 
 
 
@@ -790,10 +792,10 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 4317452L)
+        self.assertEqual(cpu.RIP, 4317452)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.ECX, 12L)
+        self.assertEqual(cpu.ECX, 12)
 
     def test_PUSHFD_1(self):
         ''' Instruction PUSHFD_1
@@ -843,7 +845,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(mem[0x8059a8d], '\xd7')
         self.assertEqual(mem[0xffffd00a], '\x41')
         self.assertEqual(cpu.AL, 0x41)
-        self.assertEqual(cpu.EIP, 134584974L)
+        self.assertEqual(cpu.EIP, 134584974)
 
     def test_XLATB_1_symbolic(self):
         ''' Instruction XLATB_1
@@ -913,7 +915,7 @@ Using the SAR instruction to perform a division operation does not produce the s
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -985,7 +987,7 @@ Using the SAR instruction to perform a division operation does not produce the s
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -1050,7 +1052,7 @@ Using the SAR instruction to perform a division operation does not produce the s
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)

@@ -1,4 +1,4 @@
-
+from builtins import *
 import unittest
 import functools
 from manticore.core.cpu.x86 import *
@@ -12,7 +12,7 @@ def skipIfNotImplemented(f):
     def test_inner(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except NotImplementedError, e:
+        except NotImplementedError as e:
             raise unittest.SkipTest(e.message)
 
     return test_inner
@@ -86,14 +86,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197362L)
+        self.assertEqual(cpu.RIP, 4197362)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_10(self):
         ''' Instruction PCMPESTRI_10
@@ -133,14 +133,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197158L)
+        self.assertEqual(cpu.RIP, 4197158)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_11(self):
         ''' Instruction PCMPESTRI_11
@@ -180,14 +180,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197182L)
+        self.assertEqual(cpu.RIP, 4197182)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_12(self):
         ''' Instruction PCMPESTRI_12
@@ -227,14 +227,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197380L)
+        self.assertEqual(cpu.RIP, 4197380)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_13(self):
         ''' Instruction PCMPESTRI_13
@@ -274,14 +274,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197260L)
+        self.assertEqual(cpu.RIP, 4197260)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_14(self):
         ''' Instruction PCMPESTRI_14
@@ -321,14 +321,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197098L)
+        self.assertEqual(cpu.RIP, 4197098)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_15(self):
         ''' Instruction PCMPESTRI_15
@@ -368,14 +368,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197386L)
+        self.assertEqual(cpu.RIP, 4197386)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_16(self):
         ''' Instruction PCMPESTRI_16
@@ -415,14 +415,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197236L)
+        self.assertEqual(cpu.RIP, 4197236)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_17(self):
         ''' Instruction PCMPESTRI_17
@@ -462,14 +462,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197170L)
+        self.assertEqual(cpu.RIP, 4197170)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_18(self):
         ''' Instruction PCMPESTRI_18
@@ -509,14 +509,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197110L)
+        self.assertEqual(cpu.RIP, 4197110)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_19(self):
         ''' Instruction PCMPESTRI_19
@@ -556,14 +556,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197350L)
+        self.assertEqual(cpu.RIP, 4197350)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_2(self):
         ''' Instruction PCMPESTRI_2
@@ -603,14 +603,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197200L)
+        self.assertEqual(cpu.RIP, 4197200)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_20(self):
         ''' Instruction PCMPESTRI_20
@@ -650,14 +650,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197392L)
+        self.assertEqual(cpu.RIP, 4197392)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_21(self):
         ''' Instruction PCMPESTRI_21
@@ -697,14 +697,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197146L)
+        self.assertEqual(cpu.RIP, 4197146)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_22(self):
         ''' Instruction PCMPESTRI_22
@@ -744,14 +744,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197308L)
+        self.assertEqual(cpu.RIP, 4197308)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_23(self):
         ''' Instruction PCMPESTRI_23
@@ -791,14 +791,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197134L)
+        self.assertEqual(cpu.RIP, 4197134)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_24(self):
         ''' Instruction PCMPESTRI_24
@@ -838,14 +838,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197410L)
+        self.assertEqual(cpu.RIP, 4197410)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 6L)
+        self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_25(self):
         ''' Instruction PCMPESTRI_25
@@ -885,14 +885,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197344L)
+        self.assertEqual(cpu.RIP, 4197344)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_26(self):
         ''' Instruction PCMPESTRI_26
@@ -932,14 +932,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197398L)
+        self.assertEqual(cpu.RIP, 4197398)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 6L)
+        self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_27(self):
         ''' Instruction PCMPESTRI_27
@@ -979,14 +979,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197434L)
+        self.assertEqual(cpu.RIP, 4197434)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 6L)
+        self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_28(self):
         ''' Instruction PCMPESTRI_28
@@ -1026,14 +1026,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197428L)
+        self.assertEqual(cpu.RIP, 4197428)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_29(self):
         ''' Instruction PCMPESTRI_29
@@ -1073,14 +1073,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197254L)
+        self.assertEqual(cpu.RIP, 4197254)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_3(self):
         ''' Instruction PCMPESTRI_3
@@ -1120,14 +1120,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197068L)
+        self.assertEqual(cpu.RIP, 4197068)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_30(self):
         ''' Instruction PCMPESTRI_30
@@ -1167,14 +1167,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197290L)
+        self.assertEqual(cpu.RIP, 4197290)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_31(self):
         ''' Instruction PCMPESTRI_31
@@ -1214,14 +1214,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197086L)
+        self.assertEqual(cpu.RIP, 4197086)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_32(self):
         ''' Instruction PCMPESTRI_32
@@ -1261,14 +1261,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197206L)
+        self.assertEqual(cpu.RIP, 4197206)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_33(self):
         ''' Instruction PCMPESTRI_33
@@ -1308,14 +1308,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197194L)
+        self.assertEqual(cpu.RIP, 4197194)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_34(self):
         ''' Instruction PCMPESTRI_34
@@ -1355,14 +1355,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197314L)
+        self.assertEqual(cpu.RIP, 4197314)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_35(self):
         ''' Instruction PCMPESTRI_35
@@ -1402,14 +1402,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197080L)
+        self.assertEqual(cpu.RIP, 4197080)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_36(self):
         ''' Instruction PCMPESTRI_36
@@ -1449,14 +1449,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197164L)
+        self.assertEqual(cpu.RIP, 4197164)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_37(self):
         ''' Instruction PCMPESTRI_37
@@ -1496,14 +1496,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197326L)
+        self.assertEqual(cpu.RIP, 4197326)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 6L)
+        self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_38(self):
         ''' Instruction PCMPESTRI_38
@@ -1543,14 +1543,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197278L)
+        self.assertEqual(cpu.RIP, 4197278)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_39(self):
         ''' Instruction PCMPESTRI_39
@@ -1590,14 +1590,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197128L)
+        self.assertEqual(cpu.RIP, 4197128)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_4(self):
         ''' Instruction PCMPESTRI_4
@@ -1637,14 +1637,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197416L)
+        self.assertEqual(cpu.RIP, 4197416)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 6L)
+        self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_40(self):
         ''' Instruction PCMPESTRI_40
@@ -1684,14 +1684,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197440L)
+        self.assertEqual(cpu.RIP, 4197440)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 6L)
+        self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_41(self):
         ''' Instruction PCMPESTRI_41
@@ -1731,14 +1731,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197116L)
+        self.assertEqual(cpu.RIP, 4197116)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_42(self):
         ''' Instruction PCMPESTRI_42
@@ -1778,14 +1778,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197422L)
+        self.assertEqual(cpu.RIP, 4197422)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_43(self):
         ''' Instruction PCMPESTRI_43
@@ -1825,14 +1825,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197224L)
+        self.assertEqual(cpu.RIP, 4197224)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_44(self):
         ''' Instruction PCMPESTRI_44
@@ -1872,14 +1872,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197296L)
+        self.assertEqual(cpu.RIP, 4197296)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_45(self):
         ''' Instruction PCMPESTRI_45
@@ -1919,14 +1919,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197230L)
+        self.assertEqual(cpu.RIP, 4197230)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_46(self):
         ''' Instruction PCMPESTRI_46
@@ -1966,14 +1966,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197404L)
+        self.assertEqual(cpu.RIP, 4197404)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 6L)
+        self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_47(self):
         ''' Instruction PCMPESTRI_47
@@ -2013,14 +2013,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197074L)
+        self.assertEqual(cpu.RIP, 4197074)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_48(self):
         ''' Instruction PCMPESTRI_48
@@ -2060,14 +2060,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197272L)
+        self.assertEqual(cpu.RIP, 4197272)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_49(self):
         ''' Instruction PCMPESTRI_49
@@ -2107,14 +2107,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197122L)
+        self.assertEqual(cpu.RIP, 4197122)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_5(self):
         ''' Instruction PCMPESTRI_5
@@ -2154,14 +2154,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197356L)
+        self.assertEqual(cpu.RIP, 4197356)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_50(self):
         ''' Instruction PCMPESTRI_50
@@ -2201,14 +2201,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197284L)
+        self.assertEqual(cpu.RIP, 4197284)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_51(self):
         ''' Instruction PCMPESTRI_51
@@ -2248,14 +2248,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197062L)
+        self.assertEqual(cpu.RIP, 4197062)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_52(self):
         ''' Instruction PCMPESTRI_52
@@ -2295,14 +2295,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197242L)
+        self.assertEqual(cpu.RIP, 4197242)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_53(self):
         ''' Instruction PCMPESTRI_53
@@ -2342,14 +2342,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197332L)
+        self.assertEqual(cpu.RIP, 4197332)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 6L)
+        self.assertEqual(cpu.ECX, 6)
 
     def test_PCMPESTRI_54(self):
         ''' Instruction PCMPESTRI_54
@@ -2389,14 +2389,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197212L)
+        self.assertEqual(cpu.RIP, 4197212)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_55(self):
         ''' Instruction PCMPESTRI_55
@@ -2436,14 +2436,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197248L)
+        self.assertEqual(cpu.RIP, 4197248)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_56(self):
         ''' Instruction PCMPESTRI_56
@@ -2483,14 +2483,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197218L)
+        self.assertEqual(cpu.RIP, 4197218)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_57(self):
         ''' Instruction PCMPESTRI_57
@@ -2530,14 +2530,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197092L)
+        self.assertEqual(cpu.RIP, 4197092)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_58(self):
         ''' Instruction PCMPESTRI_58
@@ -2577,14 +2577,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197188L)
+        self.assertEqual(cpu.RIP, 4197188)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_59(self):
         ''' Instruction PCMPESTRI_59
@@ -2624,14 +2624,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197302L)
+        self.assertEqual(cpu.RIP, 4197302)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_6(self):
         ''' Instruction PCMPESTRI_6
@@ -2671,14 +2671,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197140L)
+        self.assertEqual(cpu.RIP, 4197140)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_60(self):
         ''' Instruction PCMPESTRI_60
@@ -2718,14 +2718,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197152L)
+        self.assertEqual(cpu.RIP, 4197152)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
 
     def test_PCMPESTRI_61(self):
         ''' Instruction PCMPESTRI_61
@@ -2765,14 +2765,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197368L)
+        self.assertEqual(cpu.RIP, 4197368)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_62(self):
         ''' Instruction PCMPESTRI_62
@@ -2812,14 +2812,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197338L)
+        self.assertEqual(cpu.RIP, 4197338)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_63(self):
         ''' Instruction PCMPESTRI_63
@@ -2859,14 +2859,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197374L)
+        self.assertEqual(cpu.RIP, 4197374)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
 
     def test_PCMPESTRI_64(self):
         ''' Instruction PCMPESTRI_64
@@ -2906,14 +2906,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197320L)
+        self.assertEqual(cpu.RIP, 4197320)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
 
     def test_PCMPESTRI_7(self):
         ''' Instruction PCMPESTRI_7
@@ -2953,14 +2953,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197266L)
+        self.assertEqual(cpu.RIP, 4197266)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
 
     def test_PCMPESTRI_8(self):
         ''' Instruction PCMPESTRI_8
@@ -3000,14 +3000,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197104L)
+        self.assertEqual(cpu.RIP, 4197104)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRI_9(self):
         ''' Instruction PCMPESTRI_9
@@ -3047,14 +3047,14 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4197176L)
+        self.assertEqual(cpu.RIP, 4197176)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
 
     def test_PCMPESTRM_1(self):
         ''' Instruction PCMPESTRM_1
@@ -3093,12 +3093,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196822L)
+        self.assertEqual(cpu.RIP, 4196822)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_10(self):
@@ -3138,12 +3138,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196786L)
+        self.assertEqual(cpu.RIP, 4196786)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_11(self):
@@ -3183,12 +3183,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196906L)
+        self.assertEqual(cpu.RIP, 4196906)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_12(self):
@@ -3228,12 +3228,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196858L)
+        self.assertEqual(cpu.RIP, 4196858)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_13(self):
@@ -3273,12 +3273,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196900L)
+        self.assertEqual(cpu.RIP, 4196900)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_14(self):
@@ -3318,12 +3318,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196996L)
+        self.assertEqual(cpu.RIP, 4196996)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_15(self):
@@ -3363,12 +3363,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196762L)
+        self.assertEqual(cpu.RIP, 4196762)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_16(self):
@@ -3408,12 +3408,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196666L)
+        self.assertEqual(cpu.RIP, 4196666)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_17(self):
@@ -3453,12 +3453,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197026L)
+        self.assertEqual(cpu.RIP, 4197026)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_18(self):
@@ -3498,12 +3498,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196660L)
+        self.assertEqual(cpu.RIP, 4196660)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_19(self):
@@ -3543,12 +3543,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196780L)
+        self.assertEqual(cpu.RIP, 4196780)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_2(self):
@@ -3588,12 +3588,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196954L)
+        self.assertEqual(cpu.RIP, 4196954)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_20(self):
@@ -3633,12 +3633,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196972L)
+        self.assertEqual(cpu.RIP, 4196972)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_21(self):
@@ -3678,12 +3678,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196702L)
+        self.assertEqual(cpu.RIP, 4196702)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_22(self):
@@ -3723,12 +3723,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196708L)
+        self.assertEqual(cpu.RIP, 4196708)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_23(self):
@@ -3768,12 +3768,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196732L)
+        self.assertEqual(cpu.RIP, 4196732)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_24(self):
@@ -3813,12 +3813,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197008L)
+        self.assertEqual(cpu.RIP, 4197008)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_25(self):
@@ -3858,12 +3858,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196888L)
+        self.assertEqual(cpu.RIP, 4196888)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_26(self):
@@ -3903,12 +3903,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196672L)
+        self.assertEqual(cpu.RIP, 4196672)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_27(self):
@@ -3948,12 +3948,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196918L)
+        self.assertEqual(cpu.RIP, 4196918)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_28(self):
@@ -3993,12 +3993,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196816L)
+        self.assertEqual(cpu.RIP, 4196816)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_29(self):
@@ -4038,12 +4038,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196930L)
+        self.assertEqual(cpu.RIP, 4196930)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_3(self):
@@ -4083,12 +4083,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196894L)
+        self.assertEqual(cpu.RIP, 4196894)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_30(self):
@@ -4128,12 +4128,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196756L)
+        self.assertEqual(cpu.RIP, 4196756)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_31(self):
@@ -4173,12 +4173,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197020L)
+        self.assertEqual(cpu.RIP, 4197020)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_32(self):
@@ -4218,12 +4218,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197014L)
+        self.assertEqual(cpu.RIP, 4197014)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_33(self):
@@ -4263,12 +4263,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196876L)
+        self.assertEqual(cpu.RIP, 4196876)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_34(self):
@@ -4308,12 +4308,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196654L)
+        self.assertEqual(cpu.RIP, 4196654)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_35(self):
@@ -4353,12 +4353,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197002L)
+        self.assertEqual(cpu.RIP, 4197002)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_36(self):
@@ -4398,12 +4398,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196984L)
+        self.assertEqual(cpu.RIP, 4196984)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_37(self):
@@ -4443,12 +4443,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196684L)
+        self.assertEqual(cpu.RIP, 4196684)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_38(self):
@@ -4488,12 +4488,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196678L)
+        self.assertEqual(cpu.RIP, 4196678)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_39(self):
@@ -4533,12 +4533,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4197032L)
+        self.assertEqual(cpu.RIP, 4197032)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_4(self):
@@ -4578,12 +4578,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196738L)
+        self.assertEqual(cpu.RIP, 4196738)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_40(self):
@@ -4623,12 +4623,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196942L)
+        self.assertEqual(cpu.RIP, 4196942)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_41(self):
@@ -4668,12 +4668,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196696L)
+        self.assertEqual(cpu.RIP, 4196696)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_42(self):
@@ -4713,12 +4713,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196690L)
+        self.assertEqual(cpu.RIP, 4196690)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_43(self):
@@ -4758,12 +4758,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196882L)
+        self.assertEqual(cpu.RIP, 4196882)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_44(self):
@@ -4803,12 +4803,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196714L)
+        self.assertEqual(cpu.RIP, 4196714)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_45(self):
@@ -4848,12 +4848,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196924L)
+        self.assertEqual(cpu.RIP, 4196924)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_46(self):
@@ -4893,12 +4893,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196768L)
+        self.assertEqual(cpu.RIP, 4196768)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_47(self):
@@ -4938,12 +4938,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196750L)
+        self.assertEqual(cpu.RIP, 4196750)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_48(self):
@@ -4983,12 +4983,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196960L)
+        self.assertEqual(cpu.RIP, 4196960)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_49(self):
@@ -5028,12 +5028,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196720L)
+        self.assertEqual(cpu.RIP, 4196720)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_5(self):
@@ -5073,12 +5073,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196792L)
+        self.assertEqual(cpu.RIP, 4196792)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_50(self):
@@ -5118,12 +5118,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196966L)
+        self.assertEqual(cpu.RIP, 4196966)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_51(self):
@@ -5163,12 +5163,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196804L)
+        self.assertEqual(cpu.RIP, 4196804)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_52(self):
@@ -5208,12 +5208,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196840L)
+        self.assertEqual(cpu.RIP, 4196840)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_53(self):
@@ -5253,12 +5253,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196828L)
+        self.assertEqual(cpu.RIP, 4196828)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_54(self):
@@ -5298,12 +5298,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196978L)
+        self.assertEqual(cpu.RIP, 4196978)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_55(self):
@@ -5343,12 +5343,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196810L)
+        self.assertEqual(cpu.RIP, 4196810)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_56(self):
@@ -5388,12 +5388,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196870L)
+        self.assertEqual(cpu.RIP, 4196870)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_57(self):
@@ -5433,12 +5433,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196846L)
+        self.assertEqual(cpu.RIP, 4196846)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_58(self):
@@ -5478,12 +5478,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196798L)
+        self.assertEqual(cpu.RIP, 4196798)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_59(self):
@@ -5523,12 +5523,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196852L)
+        self.assertEqual(cpu.RIP, 4196852)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_6(self):
@@ -5568,12 +5568,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196774L)
+        self.assertEqual(cpu.RIP, 4196774)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_60(self):
@@ -5613,12 +5613,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196726L)
+        self.assertEqual(cpu.RIP, 4196726)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_61(self):
@@ -5658,12 +5658,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196990L)
+        self.assertEqual(cpu.RIP, 4196990)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_62(self):
@@ -5703,12 +5703,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196912L)
+        self.assertEqual(cpu.RIP, 4196912)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_63(self):
@@ -5748,12 +5748,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196936L)
+        self.assertEqual(cpu.RIP, 4196936)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_64(self):
@@ -5793,12 +5793,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196948L)
+        self.assertEqual(cpu.RIP, 4196948)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_7(self):
@@ -5838,12 +5838,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196834L)
+        self.assertEqual(cpu.RIP, 4196834)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_8(self):
@@ -5883,12 +5883,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
         self.assertEqual(cpu.OF, False)
-        self.assertEqual(cpu.RIP, 4196864L)
+        self.assertEqual(cpu.RIP, 4196864)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPESTRM_9(self):
@@ -5928,12 +5928,12 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
         self.assertEqual(cpu.OF, True)
-        self.assertEqual(cpu.RIP, 4196744L)
+        self.assertEqual(cpu.RIP, 4196744)
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.EAX, 6L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.EAX, 6)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
-        self.assertEqual(cpu.EDX, 7L)
+        self.assertEqual(cpu.EDX, 7)
         self.assertEqual(cpu.SF, True)
 
     def test_PCMPISTRI_1(self):
@@ -5968,15 +5968,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400749], 'c')
         self.assertEqual(mem[0x40074a], '\xca')
         self.assertEqual(mem[0x40074b], 'm')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 4L)
+        self.assertEqual(cpu.ECX, 4)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196172L)
+        self.assertEqual(cpu.RIP, 4196172)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_10(self):
@@ -6011,15 +6011,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400653], 'c')
         self.assertEqual(mem[0x400654], '\xca')
         self.assertEqual(mem[0x400655], '\x1c')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 1L)
+        self.assertEqual(cpu.ECX, 1)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195926L)
+        self.assertEqual(cpu.RIP, 4195926)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_11(self):
@@ -6054,15 +6054,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40066b], 'c')
         self.assertEqual(mem[0x40066c], '\xca')
         self.assertEqual(mem[0x40066d], '$')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195950L)
+        self.assertEqual(cpu.RIP, 4195950)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_12(self):
@@ -6097,15 +6097,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40069b], 'c')
         self.assertEqual(mem[0x40069c], '\xca')
         self.assertEqual(mem[0x40069d], '4')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195998L)
+        self.assertEqual(cpu.RIP, 4195998)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_13(self):
@@ -6140,15 +6140,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006cb], 'c')
         self.assertEqual(mem[0x4006cc], '\xca')
         self.assertEqual(mem[0x4006cd], 'D')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196046L)
+        self.assertEqual(cpu.RIP, 4196046)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_14(self):
@@ -6183,15 +6183,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006bd], '\x0f')
         self.assertEqual(mem[0x4006be], ':')
         self.assertEqual(mem[0x4006bf], 'c')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196034L)
+        self.assertEqual(cpu.RIP, 4196034)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_15(self):
@@ -6226,15 +6226,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40068f], 'c')
         self.assertEqual(mem[0x400690], '\xca')
         self.assertEqual(mem[0x400691], '0')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195986L)
+        self.assertEqual(cpu.RIP, 4195986)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_16(self):
@@ -6269,15 +6269,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40062f], 'c')
         self.assertEqual(mem[0x400630], '\xca')
         self.assertEqual(mem[0x400631], '\x10')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195890L)
+        self.assertEqual(cpu.RIP, 4195890)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_17(self):
@@ -6312,15 +6312,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400767], 'c')
         self.assertEqual(mem[0x400768], '\xca')
         self.assertEqual(mem[0x400769], 'x')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196202L)
+        self.assertEqual(cpu.RIP, 4196202)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_18(self):
@@ -6355,15 +6355,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4005fd], '\x0f')
         self.assertEqual(mem[0x4005fe], ':')
         self.assertEqual(mem[0x4005ff], 'c')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195842L)
+        self.assertEqual(cpu.RIP, 4195842)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_19(self):
@@ -6398,15 +6398,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006d1], 'c')
         self.assertEqual(mem[0x4006d2], '\xca')
         self.assertEqual(mem[0x4006d3], 'E')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196052L)
+        self.assertEqual(cpu.RIP, 4196052)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_2(self):
@@ -6441,15 +6441,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400707], 'c')
         self.assertEqual(mem[0x400708], '\xca')
         self.assertEqual(mem[0x400709], 'X')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196106L)
+        self.assertEqual(cpu.RIP, 4196106)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_20(self):
@@ -6484,15 +6484,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006fb], 'c')
         self.assertEqual(mem[0x4006fc], '\xca')
         self.assertEqual(mem[0x4006fd], 'T')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196094L)
+        self.assertEqual(cpu.RIP, 4196094)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_21(self):
@@ -6527,15 +6527,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006c5], 'c')
         self.assertEqual(mem[0x4006c6], '\xca')
         self.assertEqual(mem[0x4006c7], 'A')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196040L)
+        self.assertEqual(cpu.RIP, 4196040)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_22(self):
@@ -6570,15 +6570,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006a3], '5')
         self.assertEqual(mem[0x40069e], 'f')
         self.assertEqual(mem[0x40069f], '\x0f')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196004L)
+        self.assertEqual(cpu.RIP, 4196004)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_23(self):
@@ -6613,15 +6613,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006b9], 'c')
         self.assertEqual(mem[0x4006ba], '\xca')
         self.assertEqual(mem[0x4006bb], '=')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 1L)
+        self.assertEqual(cpu.ECX, 1)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196028L)
+        self.assertEqual(cpu.RIP, 4196028)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_24(self):
@@ -6656,15 +6656,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400623], 'c')
         self.assertEqual(mem[0x400624], '\xca')
         self.assertEqual(mem[0x400625], '\x0c')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195878L)
+        self.assertEqual(cpu.RIP, 4195878)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_25(self):
@@ -6699,15 +6699,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400713], 'c')
         self.assertEqual(mem[0x400714], '\xca')
         self.assertEqual(mem[0x400715], '\\')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196118L)
+        self.assertEqual(cpu.RIP, 4196118)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_26(self):
@@ -6742,15 +6742,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006b3], 'c')
         self.assertEqual(mem[0x4006b4], '\xca')
         self.assertEqual(mem[0x4006b5], '<')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 1L)
+        self.assertEqual(cpu.ECX, 1)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196022L)
+        self.assertEqual(cpu.RIP, 4196022)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_27(self):
@@ -6785,15 +6785,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400743], 'c')
         self.assertEqual(mem[0x400744], '\xca')
         self.assertEqual(mem[0x400745], 'l')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196166L)
+        self.assertEqual(cpu.RIP, 4196166)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_28(self):
@@ -6828,15 +6828,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400695], 'c')
         self.assertEqual(mem[0x400696], '\xca')
         self.assertEqual(mem[0x400697], '1')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195992L)
+        self.assertEqual(cpu.RIP, 4195992)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_29(self):
@@ -6871,15 +6871,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40064d], 'c')
         self.assertEqual(mem[0x40064e], '\xca')
         self.assertEqual(mem[0x40064f], '\x19')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195920L)
+        self.assertEqual(cpu.RIP, 4195920)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_3(self):
@@ -6914,15 +6914,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40072b], 'c')
         self.assertEqual(mem[0x40072c], '\xca')
         self.assertEqual(mem[0x40072d], 'd')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196142L)
+        self.assertEqual(cpu.RIP, 4196142)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_30(self):
@@ -6999,15 +6999,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40077e], ':')
         self.assertEqual(mem[0x40077f], 'c')
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196230L)
-        self.assertEqual(cpu.RBP, 140737488347696L)
+        self.assertEqual(cpu.RIP, 4196230)
+        self.assertEqual(cpu.RBP, 140737488347696)
 
     def test_PCMPISTRI_31(self):
         ''' Instruction PCMPISTRI_31
@@ -7041,15 +7041,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400629], 'c')
         self.assertEqual(mem[0x40062a], '\xca')
         self.assertEqual(mem[0x40062b], '\r')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195884L)
+        self.assertEqual(cpu.RIP, 4195884)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_32(self):
@@ -7084,15 +7084,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006d7], 'c')
         self.assertEqual(mem[0x4006d8], '\xca')
         self.assertEqual(mem[0x4006d9], 'H')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196058L)
+        self.assertEqual(cpu.RIP, 4196058)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_33(self):
@@ -7127,15 +7127,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400689], 'c')
         self.assertEqual(mem[0x40068a], '\xca')
         self.assertEqual(mem[0x40068b], '-')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195980L)
+        self.assertEqual(cpu.RIP, 4195980)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_34(self):
@@ -7170,15 +7170,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400773], 'c')
         self.assertEqual(mem[0x400774], '\xca')
         self.assertEqual(mem[0x400775], '|')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196214L)
+        self.assertEqual(cpu.RIP, 4196214)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_35(self):
@@ -7213,15 +7213,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40071d], '\x0f')
         self.assertEqual(mem[0x40071e], ':')
         self.assertEqual(mem[0x40071f], 'c')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196130L)
+        self.assertEqual(cpu.RIP, 4196130)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_36(self):
@@ -7256,15 +7256,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400779], 'c')
         self.assertEqual(mem[0x40077a], '\xca')
         self.assertEqual(mem[0x40077b], '}')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196220L)
+        self.assertEqual(cpu.RIP, 4196220)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_37(self):
@@ -7299,15 +7299,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40075b], 'c')
         self.assertEqual(mem[0x40075c], '\xca')
         self.assertEqual(mem[0x40075d], 't')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196190L)
+        self.assertEqual(cpu.RIP, 4196190)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_38(self):
@@ -7342,15 +7342,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400605], 'c')
         self.assertEqual(mem[0x400606], '\xca')
         self.assertEqual(mem[0x400607], '\x01')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195848L)
+        self.assertEqual(cpu.RIP, 4195848)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_39(self):
@@ -7385,15 +7385,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40060b], 'c')
         self.assertEqual(mem[0x40060c], '\xca')
         self.assertEqual(mem[0x40060d], '\x04')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195854L)
+        self.assertEqual(cpu.RIP, 4195854)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_4(self):
@@ -7428,15 +7428,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400755], 'c')
         self.assertEqual(mem[0x400756], '\xca')
         self.assertEqual(mem[0x400757], 'q')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196184L)
+        self.assertEqual(cpu.RIP, 4196184)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_40(self):
@@ -7471,15 +7471,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40063b], 'c')
         self.assertEqual(mem[0x40063c], '\xca')
         self.assertEqual(mem[0x40063d], '\x14')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195902L)
+        self.assertEqual(cpu.RIP, 4195902)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_41(self):
@@ -7514,15 +7514,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40074f], 'c')
         self.assertEqual(mem[0x400750], '\xca')
         self.assertEqual(mem[0x400751], 'p')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196178L)
+        self.assertEqual(cpu.RIP, 4196178)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_42(self):
@@ -7557,15 +7557,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400737], 'c')
         self.assertEqual(mem[0x400738], '\xca')
         self.assertEqual(mem[0x400739], 'h')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 15L)
+        self.assertEqual(cpu.ECX, 15)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196154L)
+        self.assertEqual(cpu.RIP, 4196154)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_43(self):
@@ -7600,15 +7600,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400647], 'c')
         self.assertEqual(mem[0x400648], '\xca')
         self.assertEqual(mem[0x400649], '\x18')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195914L)
+        self.assertEqual(cpu.RIP, 4195914)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_44(self):
@@ -7643,15 +7643,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40065d], '\x0f')
         self.assertEqual(mem[0x40065e], ':')
         self.assertEqual(mem[0x40065f], 'c')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195938L)
+        self.assertEqual(cpu.RIP, 4195938)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_45(self):
@@ -7686,15 +7686,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40061d], 'c')
         self.assertEqual(mem[0x40061e], '\xca')
         self.assertEqual(mem[0x40061f], '\t')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195872L)
+        self.assertEqual(cpu.RIP, 4195872)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_46(self):
@@ -7729,15 +7729,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40073d], 'c')
         self.assertEqual(mem[0x40073e], '\xca')
         self.assertEqual(mem[0x40073f], 'i')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196160L)
+        self.assertEqual(cpu.RIP, 4196160)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_47(self):
@@ -7772,15 +7772,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40070d], 'c')
         self.assertEqual(mem[0x40070e], '\xca')
         self.assertEqual(mem[0x40070f], 'Y')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196112L)
+        self.assertEqual(cpu.RIP, 4196112)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_48(self):
@@ -7815,15 +7815,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006ad], 'c')
         self.assertEqual(mem[0x4006ae], '\xca')
         self.assertEqual(mem[0x4006af], '9')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196016L)
+        self.assertEqual(cpu.RIP, 4196016)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_49(self):
@@ -7858,15 +7858,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400719], 'c')
         self.assertEqual(mem[0x40071a], '\xca')
         self.assertEqual(mem[0x40071b], ']')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196124L)
+        self.assertEqual(cpu.RIP, 4196124)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_5(self):
@@ -7901,15 +7901,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400643], '\x15')
         self.assertEqual(mem[0x40063e], 'f')
         self.assertEqual(mem[0x40063f], '\x0f')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195908L)
+        self.assertEqual(cpu.RIP, 4195908)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_50(self):
@@ -7944,15 +7944,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400659], 'c')
         self.assertEqual(mem[0x40065a], '\xca')
         self.assertEqual(mem[0x40065b], '\x1d')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 1L)
+        self.assertEqual(cpu.ECX, 1)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195932L)
+        self.assertEqual(cpu.RIP, 4195932)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_51(self):
@@ -7987,15 +7987,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400731], 'c')
         self.assertEqual(mem[0x400732], '\xca')
         self.assertEqual(mem[0x400733], 'e')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196148L)
+        self.assertEqual(cpu.RIP, 4196148)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_52(self):
@@ -8030,15 +8030,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400683], 'c')
         self.assertEqual(mem[0x400684], '\xca')
         self.assertEqual(mem[0x400685], ',')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195974L)
+        self.assertEqual(cpu.RIP, 4195974)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_53(self):
@@ -8073,15 +8073,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400677], 'c')
         self.assertEqual(mem[0x400678], '\xca')
         self.assertEqual(mem[0x400679], '(')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195962L)
+        self.assertEqual(cpu.RIP, 4195962)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_54(self):
@@ -8116,15 +8116,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40067d], 'c')
         self.assertEqual(mem[0x40067e], '\xca')
         self.assertEqual(mem[0x40067f], ')')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195968L)
+        self.assertEqual(cpu.RIP, 4195968)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_55(self):
@@ -8159,15 +8159,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400725], 'c')
         self.assertEqual(mem[0x400726], '\xca')
         self.assertEqual(mem[0x400727], 'a')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196136L)
+        self.assertEqual(cpu.RIP, 4196136)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_56(self):
@@ -8202,15 +8202,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006e9], 'c')
         self.assertEqual(mem[0x4006ea], '\xca')
         self.assertEqual(mem[0x4006eb], 'M')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 4L)
+        self.assertEqual(cpu.ECX, 4)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196076L)
+        self.assertEqual(cpu.RIP, 4196076)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_57(self):
@@ -8245,15 +8245,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40076d], 'c')
         self.assertEqual(mem[0x40076e], '\xca')
         self.assertEqual(mem[0x40076f], 'y')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196208L)
+        self.assertEqual(cpu.RIP, 4196208)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_58(self):
@@ -8288,15 +8288,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006ef], 'c')
         self.assertEqual(mem[0x4006f0], '\xca')
         self.assertEqual(mem[0x4006f1], 'P')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196082L)
+        self.assertEqual(cpu.RIP, 4196082)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_59(self):
@@ -8331,15 +8331,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400635], 'c')
         self.assertEqual(mem[0x400636], '\xca')
         self.assertEqual(mem[0x400637], '\x11')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4195896L)
+        self.assertEqual(cpu.RIP, 4195896)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_6(self):
@@ -8374,15 +8374,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400671], 'c')
         self.assertEqual(mem[0x400672], '\xca')
         self.assertEqual(mem[0x400673], '%')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195956L)
+        self.assertEqual(cpu.RIP, 4195956)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_60(self):
@@ -8417,15 +8417,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006f5], 'c')
         self.assertEqual(mem[0x4006f6], '\xca')
         self.assertEqual(mem[0x4006f7], 'Q')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196088L)
+        self.assertEqual(cpu.RIP, 4196088)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_61(self):
@@ -8460,15 +8460,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400617], 'c')
         self.assertEqual(mem[0x400618], '\xca')
         self.assertEqual(mem[0x400619], '\x08')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195866L)
+        self.assertEqual(cpu.RIP, 4195866)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_62(self):
@@ -8503,15 +8503,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006dd], 'c')
         self.assertEqual(mem[0x4006de], '\xca')
         self.assertEqual(mem[0x4006df], 'I')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 7L)
+        self.assertEqual(cpu.ECX, 7)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196064L)
+        self.assertEqual(cpu.RIP, 4196064)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_63(self):
@@ -8546,15 +8546,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006a7], 'c')
         self.assertEqual(mem[0x4006a8], '\xca')
         self.assertEqual(mem[0x4006a9], '8')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 16L)
+        self.assertEqual(cpu.ECX, 16)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196010L)
+        self.assertEqual(cpu.RIP, 4196010)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_64(self):
@@ -8589,15 +8589,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400703], 'U')
         self.assertEqual(mem[0x4006fe], 'f')
         self.assertEqual(mem[0x4006ff], '\x0f')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196100L)
+        self.assertEqual(cpu.RIP, 4196100)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_65(self):
@@ -8632,15 +8632,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400665], 'c')
         self.assertEqual(mem[0x400666], '\xca')
         self.assertEqual(mem[0x400667], '!')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195944L)
+        self.assertEqual(cpu.RIP, 4195944)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_7(self):
@@ -8675,15 +8675,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4006e3], 'c')
         self.assertEqual(mem[0x4006e4], '\xca')
         self.assertEqual(mem[0x4006e5], 'L')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196070L)
+        self.assertEqual(cpu.RIP, 4196070)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_8(self):
@@ -8718,15 +8718,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400611], 'c')
         self.assertEqual(mem[0x400612], '\xca')
         self.assertEqual(mem[0x400613], '\x05')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 0L)
+        self.assertEqual(cpu.ECX, 0)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4195860L)
+        self.assertEqual(cpu.RIP, 4195860)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRI_9(self):
@@ -8761,15 +8761,15 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400763], 'u')
         self.assertEqual(mem[0x40075e], 'f')
         self.assertEqual(mem[0x40075f], '\x0f')
-        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441L)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM2, 96074494030011676290068831614766629441)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.ECX, 8L)
+        self.assertEqual(cpu.ECX, 8)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196196L)
+        self.assertEqual(cpu.RIP, 4196196)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_1(self):
@@ -8804,13 +8804,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40085a], '\xca')
         self.assertEqual(mem[0x40085b], 'A')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196444L)
+        self.assertEqual(cpu.RIP, 4196444)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_10(self):
@@ -8845,13 +8845,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007d0], '\xca')
         self.assertEqual(mem[0x4007d1], '\x14')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196306L)
+        self.assertEqual(cpu.RIP, 4196306)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_11(self):
@@ -8886,13 +8886,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40087e], '\xca')
         self.assertEqual(mem[0x40087f], 'M')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196480L)
+        self.assertEqual(cpu.RIP, 4196480)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_12(self):
@@ -8927,13 +8927,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400806], '\xca')
         self.assertEqual(mem[0x400807], '%')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196360L)
+        self.assertEqual(cpu.RIP, 4196360)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_13(self):
@@ -8968,13 +8968,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007fe], ':')
         self.assertEqual(mem[0x4007ff], 'b')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196354L)
+        self.assertEqual(cpu.RIP, 4196354)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_14(self):
@@ -9009,13 +9009,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008cc], '\xca')
         self.assertEqual(mem[0x4008cd], 'h')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196558L)
+        self.assertEqual(cpu.RIP, 4196558)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_15(self):
@@ -9050,13 +9050,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008fc], '\xca')
         self.assertEqual(mem[0x4008fd], 'x')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196606L)
+        self.assertEqual(cpu.RIP, 4196606)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_16(self):
@@ -9091,13 +9091,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400812], '\xca')
         self.assertEqual(mem[0x400813], ')')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196372L)
+        self.assertEqual(cpu.RIP, 4196372)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_17(self):
@@ -9132,13 +9132,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40089e], 'f')
         self.assertEqual(mem[0x40089f], '\x0f')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196516L)
+        self.assertEqual(cpu.RIP, 4196516)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_18(self):
@@ -9173,13 +9173,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008f6], '\xca')
         self.assertEqual(mem[0x4008f7], 'u')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196600L)
+        self.assertEqual(cpu.RIP, 4196600)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_19(self):
@@ -9214,13 +9214,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007b8], '\xca')
         self.assertEqual(mem[0x4007b9], '\x0c')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196282L)
+        self.assertEqual(cpu.RIP, 4196282)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_2(self):
@@ -9255,13 +9255,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008f0], '\xca')
         self.assertEqual(mem[0x4008f1], 't')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196594L)
+        self.assertEqual(cpu.RIP, 4196594)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_20(self):
@@ -9296,13 +9296,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007dc], '\xca')
         self.assertEqual(mem[0x4007dd], '\x18')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196318L)
+        self.assertEqual(cpu.RIP, 4196318)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_21(self):
@@ -9337,13 +9337,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400896], '\xca')
         self.assertEqual(mem[0x400897], 'U')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196504L)
+        self.assertEqual(cpu.RIP, 4196504)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_22(self):
@@ -9378,13 +9378,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40084e], '\xca')
         self.assertEqual(mem[0x40084f], '=')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196432L)
+        self.assertEqual(cpu.RIP, 4196432)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_23(self):
@@ -9419,13 +9419,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400890], '\xca')
         self.assertEqual(mem[0x400891], 'T')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196498L)
+        self.assertEqual(cpu.RIP, 4196498)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_24(self):
@@ -9460,13 +9460,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008fe], 'f')
         self.assertEqual(mem[0x4008ff], '\x0f')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196612L)
+        self.assertEqual(cpu.RIP, 4196612)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_25(self):
@@ -9501,13 +9501,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40083c], '\xca')
         self.assertEqual(mem[0x40083d], '8')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196414L)
+        self.assertEqual(cpu.RIP, 4196414)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_26(self):
@@ -9542,13 +9542,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400836], '\xca')
         self.assertEqual(mem[0x400837], '5')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196408L)
+        self.assertEqual(cpu.RIP, 4196408)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_27(self):
@@ -9583,13 +9583,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400824], '\xca')
         self.assertEqual(mem[0x400825], '0')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196390L)
+        self.assertEqual(cpu.RIP, 4196390)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_28(self):
@@ -9624,13 +9624,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400854], '\xca')
         self.assertEqual(mem[0x400855], '@')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196438L)
+        self.assertEqual(cpu.RIP, 4196438)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_29(self):
@@ -9665,13 +9665,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007d6], '\xca')
         self.assertEqual(mem[0x4007d7], '\x15')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196312L)
+        self.assertEqual(cpu.RIP, 4196312)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_3(self):
@@ -9706,13 +9706,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40082a], '\xca')
         self.assertEqual(mem[0x40082b], '1')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196396L)
+        self.assertEqual(cpu.RIP, 4196396)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_30(self):
@@ -9747,13 +9747,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40089c], '\xca')
         self.assertEqual(mem[0x40089d], 'X')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196510L)
+        self.assertEqual(cpu.RIP, 4196510)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_31(self):
@@ -9788,13 +9788,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008ae], '\xca')
         self.assertEqual(mem[0x4008af], ']')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196528L)
+        self.assertEqual(cpu.RIP, 4196528)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_32(self):
@@ -9829,13 +9829,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007ee], '\xca')
         self.assertEqual(mem[0x4007ef], '\x1d')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196336L)
+        self.assertEqual(cpu.RIP, 4196336)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_33(self):
@@ -9870,13 +9870,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007fa], '\xca')
         self.assertEqual(mem[0x4007fb], '!')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196348L)
+        self.assertEqual(cpu.RIP, 4196348)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_34(self):
@@ -9911,13 +9911,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008b4], '\xca')
         self.assertEqual(mem[0x4008b5], '`')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196534L)
+        self.assertEqual(cpu.RIP, 4196534)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_35(self):
@@ -9952,13 +9952,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008a8], '\xca')
         self.assertEqual(mem[0x4008a9], '\\')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196522L)
+        self.assertEqual(cpu.RIP, 4196522)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_36(self):
@@ -9993,13 +9993,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008e4], '\xca')
         self.assertEqual(mem[0x4008e5], 'p')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196582L)
+        self.assertEqual(cpu.RIP, 4196582)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_37(self):
@@ -10034,13 +10034,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400908], '\xca')
         self.assertEqual(mem[0x400909], '|')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196618L)
+        self.assertEqual(cpu.RIP, 4196618)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_38(self):
@@ -10075,13 +10075,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008c6], '\xca')
         self.assertEqual(mem[0x4008c7], 'e')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196552L)
+        self.assertEqual(cpu.RIP, 4196552)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_39(self):
@@ -10116,13 +10116,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40081e], '\xca')
         self.assertEqual(mem[0x40081f], '-')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196384L)
+        self.assertEqual(cpu.RIP, 4196384)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_4(self):
@@ -10157,13 +10157,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008be], ':')
         self.assertEqual(mem[0x4008bf], 'b')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196546L)
+        self.assertEqual(cpu.RIP, 4196546)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_40(self):
@@ -10198,13 +10198,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007de], 'f')
         self.assertEqual(mem[0x4007df], '\x0f')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196324L)
+        self.assertEqual(cpu.RIP, 4196324)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_41(self):
@@ -10239,13 +10239,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400818], '\xca')
         self.assertEqual(mem[0x400819], ',')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196378L)
+        self.assertEqual(cpu.RIP, 4196378)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_42(self):
@@ -10280,13 +10280,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007ca], '\xca')
         self.assertEqual(mem[0x4007cb], '\x11')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196300L)
+        self.assertEqual(cpu.RIP, 4196300)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_43(self):
@@ -10321,13 +10321,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40086c], '\xca')
         self.assertEqual(mem[0x40086d], 'H')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196462L)
+        self.assertEqual(cpu.RIP, 4196462)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_44(self):
@@ -10362,13 +10362,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008d2], '\xca')
         self.assertEqual(mem[0x4008d3], 'i')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196564L)
+        self.assertEqual(cpu.RIP, 4196564)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_45(self):
@@ -10403,13 +10403,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400878], '\xca')
         self.assertEqual(mem[0x400879], 'L')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196474L)
+        self.assertEqual(cpu.RIP, 4196474)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_46(self):
@@ -10444,13 +10444,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40085e], ':')
         self.assertEqual(mem[0x40085f], 'b')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196450L)
+        self.assertEqual(cpu.RIP, 4196450)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_47(self):
@@ -10485,13 +10485,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007ac], '\xca')
         self.assertEqual(mem[0x4007ad], '\x08')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196270L)
+        self.assertEqual(cpu.RIP, 4196270)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_48(self):
@@ -10526,13 +10526,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400830], '\xca')
         self.assertEqual(mem[0x400831], '4')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196402L)
+        self.assertEqual(cpu.RIP, 4196402)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_49(self):
@@ -10567,13 +10567,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008de], '\xca')
         self.assertEqual(mem[0x4008df], 'm')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196576L)
+        self.assertEqual(cpu.RIP, 4196576)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_5(self):
@@ -10608,13 +10608,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007a6], '\xca')
         self.assertEqual(mem[0x4007a7], '\x05')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196264L)
+        self.assertEqual(cpu.RIP, 4196264)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_50(self):
@@ -10649,13 +10649,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007e8], '\xca')
         self.assertEqual(mem[0x4007e9], '\x1c')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196330L)
+        self.assertEqual(cpu.RIP, 4196330)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_51(self):
@@ -10690,13 +10690,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400884], '\xca')
         self.assertEqual(mem[0x400885], 'P')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196486L)
+        self.assertEqual(cpu.RIP, 4196486)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_52(self):
@@ -10731,13 +10731,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40088a], '\xca')
         self.assertEqual(mem[0x40088b], 'Q')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196492L)
+        self.assertEqual(cpu.RIP, 4196492)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_53(self):
@@ -10772,13 +10772,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008ba], '\xca')
         self.assertEqual(mem[0x4008bb], 'a')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196540L)
+        self.assertEqual(cpu.RIP, 4196540)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_54(self):
@@ -10813,13 +10813,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007be], '\xca')
         self.assertEqual(mem[0x4007bf], '\r')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196288L)
+        self.assertEqual(cpu.RIP, 4196288)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_55(self):
@@ -10854,13 +10854,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40090e], '\xca')
         self.assertEqual(mem[0x40090f], '}')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196624L)
+        self.assertEqual(cpu.RIP, 4196624)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_56(self):
@@ -10895,13 +10895,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40079e], ':')
         self.assertEqual(mem[0x40079f], 'b')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196258L)
+        self.assertEqual(cpu.RIP, 4196258)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_57(self):
@@ -10936,13 +10936,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007b2], '\xca')
         self.assertEqual(mem[0x4007b3], '\t')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196276L)
+        self.assertEqual(cpu.RIP, 4196276)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_58(self):
@@ -10977,13 +10977,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400848], '\xca')
         self.assertEqual(mem[0x400849], '<')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196426L)
+        self.assertEqual(cpu.RIP, 4196426)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_59(self):
@@ -11018,13 +11018,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008ea], '\xca')
         self.assertEqual(mem[0x4008eb], 'q')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196588L)
+        self.assertEqual(cpu.RIP, 4196588)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_6(self):
@@ -11059,13 +11059,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40080c], '\xca')
         self.assertEqual(mem[0x40080d], '(')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196366L)
+        self.assertEqual(cpu.RIP, 4196366)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_60(self):
@@ -11100,13 +11100,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4008d8], '\xca')
         self.assertEqual(mem[0x4008d9], 'l')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196570L)
+        self.assertEqual(cpu.RIP, 4196570)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_61(self):
@@ -11141,13 +11141,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40079a], '\xca')
         self.assertEqual(mem[0x40079b], '\x01')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196252L)
+        self.assertEqual(cpu.RIP, 4196252)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_62(self):
@@ -11182,13 +11182,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x40083e], 'f')
         self.assertEqual(mem[0x40083f], '\x0f')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196420L)
+        self.assertEqual(cpu.RIP, 4196420)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_63(self):
@@ -11223,13 +11223,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400794], '\xca')
         self.assertEqual(mem[0x400795], '\x00')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196246L)
+        self.assertEqual(cpu.RIP, 4196246)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_64(self):
@@ -11264,13 +11264,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007c4], '\xca')
         self.assertEqual(mem[0x4007c5], '\x10')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, True)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, True)
-        self.assertEqual(cpu.RIP, 4196294L)
+        self.assertEqual(cpu.RIP, 4196294)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_7(self):
@@ -11305,13 +11305,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x4007f4], '\xca')
         self.assertEqual(mem[0x4007f5], ' ')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196342L)
+        self.assertEqual(cpu.RIP, 4196342)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_8(self):
@@ -11346,13 +11346,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400872], '\xca')
         self.assertEqual(mem[0x400873], 'I')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196468L)
+        self.assertEqual(cpu.RIP, 4196468)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPISTRM_9(self):
@@ -11387,13 +11387,13 @@ class CPUTest(unittest.TestCase):
         self.assertEqual(mem[0x400866], '\xca')
         self.assertEqual(mem[0x400867], 'E')
         self.assertEqual(cpu.XMM2, 59602136937009)
-        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441L)
+        self.assertEqual(cpu.XMM1, 96074494030011676290068831614766629441)
         self.assertEqual(cpu.PF, False)
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, True)
         self.assertEqual(cpu.CF, False)
-        self.assertEqual(cpu.RIP, 4196456L)
+        self.assertEqual(cpu.RIP, 4196456)
         self.assertEqual(cpu.SF, False)
 
     def test_PCMPESTRI_1_symbolic(self):
@@ -11440,14 +11440,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400becL)
+                setattr(cpu, 'RIP', 0x400bec)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11459,7 +11459,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400becL)
+                setattr(cpu, 'RIP', 0x400bec)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bec, 8)== ord('f'))
@@ -11533,14 +11533,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b20L)
+                setattr(cpu, 'RIP', 0x400b20)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11552,7 +11552,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b20L)
+                setattr(cpu, 'RIP', 0x400b20)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b20, 8)== ord('f'))
@@ -11626,14 +11626,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b38L)
+                setattr(cpu, 'RIP', 0x400b38)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11645,7 +11645,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b38L)
+                setattr(cpu, 'RIP', 0x400b38)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b38, 8)== ord('f'))
@@ -11719,14 +11719,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bfeL)
+                setattr(cpu, 'RIP', 0x400bfe)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11738,7 +11738,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bfeL)
+                setattr(cpu, 'RIP', 0x400bfe)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c00, 8)== ord(':'))
@@ -11812,14 +11812,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b86L)
+                setattr(cpu, 'RIP', 0x400b86)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11831,7 +11831,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b86L)
+                setattr(cpu, 'RIP', 0x400b86)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b86, 8)== ord('f'))
@@ -11905,14 +11905,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400ae4L)
+                setattr(cpu, 'RIP', 0x400ae4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11924,7 +11924,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400ae4L)
+                setattr(cpu, 'RIP', 0x400ae4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400ae4, 8)== ord('f'))
@@ -11998,14 +11998,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c04L)
+                setattr(cpu, 'RIP', 0x400c04)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12017,7 +12017,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c04L)
+                setattr(cpu, 'RIP', 0x400c04)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c04, 8)== ord('f'))
@@ -12091,14 +12091,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b6eL)
+                setattr(cpu, 'RIP', 0x400b6e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12110,7 +12110,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b6eL)
+                setattr(cpu, 'RIP', 0x400b6e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b6e, 8)== ord('f'))
@@ -12184,14 +12184,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b2cL)
+                setattr(cpu, 'RIP', 0x400b2c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12203,7 +12203,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b2cL)
+                setattr(cpu, 'RIP', 0x400b2c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b2c, 8)== ord('f'))
@@ -12277,14 +12277,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400af0L)
+                setattr(cpu, 'RIP', 0x400af0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12296,7 +12296,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400af0L)
+                setattr(cpu, 'RIP', 0x400af0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400af0, 8)== ord('f'))
@@ -12370,14 +12370,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400be0L)
+                setattr(cpu, 'RIP', 0x400be0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12389,7 +12389,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400be0L)
+                setattr(cpu, 'RIP', 0x400be0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400be0, 8)== ord('f'))
@@ -12463,14 +12463,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b4aL)
+                setattr(cpu, 'RIP', 0x400b4a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12482,7 +12482,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b4aL)
+                setattr(cpu, 'RIP', 0x400b4a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b4a, 8)== ord('f'))
@@ -12556,14 +12556,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c0aL)
+                setattr(cpu, 'RIP', 0x400c0a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12575,7 +12575,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c0aL)
+                setattr(cpu, 'RIP', 0x400c0a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c0a, 8)== ord('f'))
@@ -12649,14 +12649,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b14L)
+                setattr(cpu, 'RIP', 0x400b14)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12668,7 +12668,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b14L)
+                setattr(cpu, 'RIP', 0x400b14)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b14, 8)== ord('f'))
@@ -12742,14 +12742,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bb6L)
+                setattr(cpu, 'RIP', 0x400bb6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12761,7 +12761,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bb6L)
+                setattr(cpu, 'RIP', 0x400bb6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bb6, 8)== ord('f'))
@@ -12835,14 +12835,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b08L)
+                setattr(cpu, 'RIP', 0x400b08)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12854,7 +12854,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b08L)
+                setattr(cpu, 'RIP', 0x400b08)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b08, 8)== ord('f'))
@@ -12928,14 +12928,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c1cL)
+                setattr(cpu, 'RIP', 0x400c1c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12947,7 +12947,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c1cL)
+                setattr(cpu, 'RIP', 0x400c1c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c20, 8)== ord('\xca'))
@@ -13021,14 +13021,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bdaL)
+                setattr(cpu, 'RIP', 0x400bda)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13040,7 +13040,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bdaL)
+                setattr(cpu, 'RIP', 0x400bda)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bda, 8)== ord('f'))
@@ -13114,14 +13114,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c10L)
+                setattr(cpu, 'RIP', 0x400c10)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13133,7 +13133,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c10L)
+                setattr(cpu, 'RIP', 0x400c10)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c10, 8)== ord('f'))
@@ -13207,14 +13207,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c34L)
+                setattr(cpu, 'RIP', 0x400c34)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13226,7 +13226,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c34L)
+                setattr(cpu, 'RIP', 0x400c34)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c34, 8)== ord('f'))
@@ -13300,14 +13300,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c2eL)
+                setattr(cpu, 'RIP', 0x400c2e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13319,7 +13319,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c2eL)
+                setattr(cpu, 'RIP', 0x400c2e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c2e, 8)== ord('f'))
@@ -13393,14 +13393,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b80L)
+                setattr(cpu, 'RIP', 0x400b80)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13412,7 +13412,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b80L)
+                setattr(cpu, 'RIP', 0x400b80)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b80, 8)== ord('f'))
@@ -13486,14 +13486,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400ac6L)
+                setattr(cpu, 'RIP', 0x400ac6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13505,7 +13505,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400ac6L)
+                setattr(cpu, 'RIP', 0x400ac6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400ac6, 8)== ord('f'))
@@ -13579,14 +13579,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400ba4L)
+                setattr(cpu, 'RIP', 0x400ba4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13598,7 +13598,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400ba4L)
+                setattr(cpu, 'RIP', 0x400ba4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400ba4, 8)== ord('f'))
@@ -13672,14 +13672,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400ad8L)
+                setattr(cpu, 'RIP', 0x400ad8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13691,7 +13691,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400ad8L)
+                setattr(cpu, 'RIP', 0x400ad8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400ad8, 8)== ord('f'))
@@ -13765,14 +13765,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b50L)
+                setattr(cpu, 'RIP', 0x400b50)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13784,7 +13784,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b50L)
+                setattr(cpu, 'RIP', 0x400b50)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b50, 8)== ord('f'))
@@ -13858,14 +13858,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b44L)
+                setattr(cpu, 'RIP', 0x400b44)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13877,7 +13877,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b44L)
+                setattr(cpu, 'RIP', 0x400b44)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b44, 8)== ord('f'))
@@ -13951,14 +13951,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bbcL)
+                setattr(cpu, 'RIP', 0x400bbc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13970,7 +13970,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bbcL)
+                setattr(cpu, 'RIP', 0x400bbc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bc0, 8)== ord('\xca'))
@@ -14044,14 +14044,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400ad2L)
+                setattr(cpu, 'RIP', 0x400ad2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14063,7 +14063,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400ad2L)
+                setattr(cpu, 'RIP', 0x400ad2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400ad2, 8)== ord('f'))
@@ -14137,14 +14137,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b26L)
+                setattr(cpu, 'RIP', 0x400b26)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14156,7 +14156,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b26L)
+                setattr(cpu, 'RIP', 0x400b26)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b26, 8)== ord('f'))
@@ -14230,14 +14230,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bc8L)
+                setattr(cpu, 'RIP', 0x400bc8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14249,7 +14249,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bc8L)
+                setattr(cpu, 'RIP', 0x400bc8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bc8, 8)== ord('f'))
@@ -14323,14 +14323,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b98L)
+                setattr(cpu, 'RIP', 0x400b98)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14342,7 +14342,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b98L)
+                setattr(cpu, 'RIP', 0x400b98)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b98, 8)== ord('f'))
@@ -14416,14 +14416,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b02L)
+                setattr(cpu, 'RIP', 0x400b02)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14435,7 +14435,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b02L)
+                setattr(cpu, 'RIP', 0x400b02)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b02, 8)== ord('f'))
@@ -14509,14 +14509,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c22L)
+                setattr(cpu, 'RIP', 0x400c22)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14528,7 +14528,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c22L)
+                setattr(cpu, 'RIP', 0x400c22)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c22, 8)== ord('f'))
@@ -14602,14 +14602,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c3aL)
+                setattr(cpu, 'RIP', 0x400c3a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14621,7 +14621,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c3aL)
+                setattr(cpu, 'RIP', 0x400c3a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c3a, 8)== ord('f'))
@@ -14695,14 +14695,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400af6L)
+                setattr(cpu, 'RIP', 0x400af6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14714,7 +14714,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400af6L)
+                setattr(cpu, 'RIP', 0x400af6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400af6, 8)== ord('f'))
@@ -14788,14 +14788,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c28L)
+                setattr(cpu, 'RIP', 0x400c28)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14807,7 +14807,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c28L)
+                setattr(cpu, 'RIP', 0x400c28)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c28, 8)== ord('f'))
@@ -14881,14 +14881,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b62L)
+                setattr(cpu, 'RIP', 0x400b62)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14900,7 +14900,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b62L)
+                setattr(cpu, 'RIP', 0x400b62)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b62, 8)== ord('f'))
@@ -14974,14 +14974,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400baaL)
+                setattr(cpu, 'RIP', 0x400baa)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14993,7 +14993,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400baaL)
+                setattr(cpu, 'RIP', 0x400baa)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400baa, 8)== ord('f'))
@@ -15067,14 +15067,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b68L)
+                setattr(cpu, 'RIP', 0x400b68)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15086,7 +15086,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b68L)
+                setattr(cpu, 'RIP', 0x400b68)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b68, 8)== ord('f'))
@@ -15160,14 +15160,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400c16L)
+                setattr(cpu, 'RIP', 0x400c16)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15179,7 +15179,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400c16L)
+                setattr(cpu, 'RIP', 0x400c16)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400c16, 8)== ord('f'))
@@ -15253,14 +15253,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400accL)
+                setattr(cpu, 'RIP', 0x400acc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15272,7 +15272,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400accL)
+                setattr(cpu, 'RIP', 0x400acc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400acc, 8)== ord('f'))
@@ -15346,14 +15346,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b92L)
+                setattr(cpu, 'RIP', 0x400b92)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15365,7 +15365,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b92L)
+                setattr(cpu, 'RIP', 0x400b92)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b92, 8)== ord('f'))
@@ -15439,14 +15439,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400afcL)
+                setattr(cpu, 'RIP', 0x400afc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15458,7 +15458,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400afcL)
+                setattr(cpu, 'RIP', 0x400afc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b00, 8)== ord('\xca'))
@@ -15532,14 +15532,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400be6L)
+                setattr(cpu, 'RIP', 0x400be6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15551,7 +15551,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400be6L)
+                setattr(cpu, 'RIP', 0x400be6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400be6, 8)== ord('f'))
@@ -15625,14 +15625,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b9eL)
+                setattr(cpu, 'RIP', 0x400b9e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15644,7 +15644,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b9eL)
+                setattr(cpu, 'RIP', 0x400b9e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400ba0, 8)== ord(':'))
@@ -15718,14 +15718,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400ac0L)
+                setattr(cpu, 'RIP', 0x400ac0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15737,7 +15737,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400ac0L)
+                setattr(cpu, 'RIP', 0x400ac0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400ac0, 8)== ord('f'))
@@ -15811,14 +15811,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b74L)
+                setattr(cpu, 'RIP', 0x400b74)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15830,7 +15830,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b74L)
+                setattr(cpu, 'RIP', 0x400b74)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b74, 8)== ord('f'))
@@ -15904,14 +15904,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bceL)
+                setattr(cpu, 'RIP', 0x400bce)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15923,7 +15923,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bceL)
+                setattr(cpu, 'RIP', 0x400bce)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bce, 8)== ord('f'))
@@ -15997,14 +15997,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b56L)
+                setattr(cpu, 'RIP', 0x400b56)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16016,7 +16016,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b56L)
+                setattr(cpu, 'RIP', 0x400b56)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b56, 8)== ord('f'))
@@ -16090,14 +16090,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b7aL)
+                setattr(cpu, 'RIP', 0x400b7a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16109,7 +16109,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b7aL)
+                setattr(cpu, 'RIP', 0x400b7a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b7a, 8)== ord('f'))
@@ -16183,14 +16183,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b5cL)
+                setattr(cpu, 'RIP', 0x400b5c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16202,7 +16202,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b5cL)
+                setattr(cpu, 'RIP', 0x400b5c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b60, 8)== ord('\xca'))
@@ -16276,14 +16276,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400adeL)
+                setattr(cpu, 'RIP', 0x400ade)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16295,7 +16295,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400adeL)
+                setattr(cpu, 'RIP', 0x400ade)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400ae0, 8)== ord(':'))
@@ -16369,14 +16369,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b3eL)
+                setattr(cpu, 'RIP', 0x400b3e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16388,7 +16388,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b3eL)
+                setattr(cpu, 'RIP', 0x400b3e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b40, 8)== ord(':'))
@@ -16462,14 +16462,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bb0L)
+                setattr(cpu, 'RIP', 0x400bb0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16481,7 +16481,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bb0L)
+                setattr(cpu, 'RIP', 0x400bb0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bb0, 8)== ord('f'))
@@ -16555,14 +16555,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b0eL)
+                setattr(cpu, 'RIP', 0x400b0e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16574,7 +16574,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b0eL)
+                setattr(cpu, 'RIP', 0x400b0e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b0e, 8)== ord('f'))
@@ -16648,14 +16648,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b1aL)
+                setattr(cpu, 'RIP', 0x400b1a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16667,7 +16667,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b1aL)
+                setattr(cpu, 'RIP', 0x400b1a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b1a, 8)== ord('f'))
@@ -16741,14 +16741,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bf2L)
+                setattr(cpu, 'RIP', 0x400bf2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16760,7 +16760,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bf2L)
+                setattr(cpu, 'RIP', 0x400bf2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bf2, 8)== ord('f'))
@@ -16834,14 +16834,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bd4L)
+                setattr(cpu, 'RIP', 0x400bd4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16853,7 +16853,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bd4L)
+                setattr(cpu, 'RIP', 0x400bd4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bd4, 8)== ord('f'))
@@ -16927,14 +16927,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bf8L)
+                setattr(cpu, 'RIP', 0x400bf8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16946,7 +16946,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bf8L)
+                setattr(cpu, 'RIP', 0x400bf8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bf8, 8)== ord('f'))
@@ -17020,14 +17020,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400bc2L)
+                setattr(cpu, 'RIP', 0x400bc2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17039,7 +17039,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400bc2L)
+                setattr(cpu, 'RIP', 0x400bc2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400bc2, 8)== ord('f'))
@@ -17113,14 +17113,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b8cL)
+                setattr(cpu, 'RIP', 0x400b8c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17132,7 +17132,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b8cL)
+                setattr(cpu, 'RIP', 0x400b8c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b8c, 8)== ord('f'))
@@ -17206,14 +17206,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400aeaL)
+                setattr(cpu, 'RIP', 0x400aea)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17225,7 +17225,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400aeaL)
+                setattr(cpu, 'RIP', 0x400aea)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400aea, 8)== ord('f'))
@@ -17299,14 +17299,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400b32L)
+                setattr(cpu, 'RIP', 0x400b32)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17318,7 +17318,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400b32L)
+                setattr(cpu, 'RIP', 0x400b32)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400b32, 8)== ord('f'))
@@ -17390,14 +17390,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009d0L)
+                setattr(cpu, 'RIP', 0x4009d0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17409,7 +17409,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009d0L)
+                setattr(cpu, 'RIP', 0x4009d0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009d0, 8)== ord('f'))
@@ -17480,14 +17480,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009acL)
+                setattr(cpu, 'RIP', 0x4009ac)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17499,7 +17499,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009acL)
+                setattr(cpu, 'RIP', 0x4009ac)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009ac, 8)== ord('f'))
@@ -17570,14 +17570,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a24L)
+                setattr(cpu, 'RIP', 0x400a24)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17589,7 +17589,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a24L)
+                setattr(cpu, 'RIP', 0x400a24)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a24, 8)== ord('f'))
@@ -17660,14 +17660,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009f4L)
+                setattr(cpu, 'RIP', 0x4009f4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17679,7 +17679,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009f4L)
+                setattr(cpu, 'RIP', 0x4009f4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009f4, 8)== ord('f'))
@@ -17750,14 +17750,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a1eL)
+                setattr(cpu, 'RIP', 0x400a1e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17769,7 +17769,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a1eL)
+                setattr(cpu, 'RIP', 0x400a1e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a20, 8)== ord(':'))
@@ -17840,14 +17840,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a7eL)
+                setattr(cpu, 'RIP', 0x400a7e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17859,7 +17859,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a7eL)
+                setattr(cpu, 'RIP', 0x400a7e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a80, 8)== ord(':'))
@@ -17930,14 +17930,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400994L)
+                setattr(cpu, 'RIP', 0x400994)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17949,7 +17949,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400994L)
+                setattr(cpu, 'RIP', 0x400994)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400994, 8)== ord('f'))
@@ -18020,14 +18020,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400934L)
+                setattr(cpu, 'RIP', 0x400934)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18039,7 +18039,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400934L)
+                setattr(cpu, 'RIP', 0x400934)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400934, 8)== ord('f'))
@@ -18110,14 +18110,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a9cL)
+                setattr(cpu, 'RIP', 0x400a9c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18129,7 +18129,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a9cL)
+                setattr(cpu, 'RIP', 0x400a9c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400aa0, 8)== ord('\xca'))
@@ -18200,14 +18200,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40092eL)
+                setattr(cpu, 'RIP', 0x40092e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18219,7 +18219,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40092eL)
+                setattr(cpu, 'RIP', 0x40092e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40092e, 8)== ord('f'))
@@ -18290,14 +18290,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009a6L)
+                setattr(cpu, 'RIP', 0x4009a6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18309,7 +18309,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009a6L)
+                setattr(cpu, 'RIP', 0x4009a6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009a6, 8)== ord('f'))
@@ -18380,14 +18380,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a54L)
+                setattr(cpu, 'RIP', 0x400a54)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18399,7 +18399,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a54L)
+                setattr(cpu, 'RIP', 0x400a54)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a54, 8)== ord('f'))
@@ -18470,14 +18470,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a66L)
+                setattr(cpu, 'RIP', 0x400a66)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18489,7 +18489,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a66L)
+                setattr(cpu, 'RIP', 0x400a66)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a66, 8)== ord('f'))
@@ -18560,14 +18560,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400958L)
+                setattr(cpu, 'RIP', 0x400958)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18579,7 +18579,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400958L)
+                setattr(cpu, 'RIP', 0x400958)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400958, 8)== ord('f'))
@@ -18650,14 +18650,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40095eL)
+                setattr(cpu, 'RIP', 0x40095e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18669,7 +18669,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40095eL)
+                setattr(cpu, 'RIP', 0x40095e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400960, 8)== ord(':'))
@@ -18740,14 +18740,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400976L)
+                setattr(cpu, 'RIP', 0x400976)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18759,7 +18759,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400976L)
+                setattr(cpu, 'RIP', 0x400976)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400976, 8)== ord('f'))
@@ -18830,14 +18830,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a8aL)
+                setattr(cpu, 'RIP', 0x400a8a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18849,7 +18849,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a8aL)
+                setattr(cpu, 'RIP', 0x400a8a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a8a, 8)== ord('f'))
@@ -18920,14 +18920,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a12L)
+                setattr(cpu, 'RIP', 0x400a12)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18939,7 +18939,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a12L)
+                setattr(cpu, 'RIP', 0x400a12)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a12, 8)== ord('f'))
@@ -19010,14 +19010,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40093aL)
+                setattr(cpu, 'RIP', 0x40093a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19029,7 +19029,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40093aL)
+                setattr(cpu, 'RIP', 0x40093a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40093a, 8)== ord('f'))
@@ -19100,14 +19100,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a30L)
+                setattr(cpu, 'RIP', 0x400a30)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19119,7 +19119,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a30L)
+                setattr(cpu, 'RIP', 0x400a30)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a30, 8)== ord('f'))
@@ -19190,14 +19190,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009caL)
+                setattr(cpu, 'RIP', 0x4009ca)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19209,7 +19209,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009caL)
+                setattr(cpu, 'RIP', 0x4009ca)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009ca, 8)== ord('f'))
@@ -19280,14 +19280,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a3cL)
+                setattr(cpu, 'RIP', 0x400a3c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19299,7 +19299,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a3cL)
+                setattr(cpu, 'RIP', 0x400a3c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a40, 8)== ord('\xca'))
@@ -19370,14 +19370,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a18L)
+                setattr(cpu, 'RIP', 0x400a18)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19389,7 +19389,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a18L)
+                setattr(cpu, 'RIP', 0x400a18)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a18, 8)== ord('f'))
@@ -19460,14 +19460,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40098eL)
+                setattr(cpu, 'RIP', 0x40098e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19479,7 +19479,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40098eL)
+                setattr(cpu, 'RIP', 0x40098e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40098e, 8)== ord('f'))
@@ -19550,14 +19550,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a96L)
+                setattr(cpu, 'RIP', 0x400a96)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19569,7 +19569,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a96L)
+                setattr(cpu, 'RIP', 0x400a96)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a96, 8)== ord('f'))
@@ -19640,14 +19640,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a90L)
+                setattr(cpu, 'RIP', 0x400a90)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19659,7 +19659,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a90L)
+                setattr(cpu, 'RIP', 0x400a90)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a90, 8)== ord('f'))
@@ -19730,14 +19730,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a06L)
+                setattr(cpu, 'RIP', 0x400a06)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19749,7 +19749,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a06L)
+                setattr(cpu, 'RIP', 0x400a06)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a06, 8)== ord('f'))
@@ -19820,14 +19820,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400928L)
+                setattr(cpu, 'RIP', 0x400928)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19839,7 +19839,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400928L)
+                setattr(cpu, 'RIP', 0x400928)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400928, 8)== ord('f'))
@@ -19910,14 +19910,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a84L)
+                setattr(cpu, 'RIP', 0x400a84)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19929,7 +19929,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a84L)
+                setattr(cpu, 'RIP', 0x400a84)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a84, 8)== ord('f'))
@@ -20000,14 +20000,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a72L)
+                setattr(cpu, 'RIP', 0x400a72)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20019,7 +20019,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a72L)
+                setattr(cpu, 'RIP', 0x400a72)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a72, 8)== ord('f'))
@@ -20090,14 +20090,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400946L)
+                setattr(cpu, 'RIP', 0x400946)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20109,7 +20109,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400946L)
+                setattr(cpu, 'RIP', 0x400946)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400946, 8)== ord('f'))
@@ -20180,14 +20180,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400940L)
+                setattr(cpu, 'RIP', 0x400940)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20199,7 +20199,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400940L)
+                setattr(cpu, 'RIP', 0x400940)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400940, 8)== ord('f'))
@@ -20270,14 +20270,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400aa2L)
+                setattr(cpu, 'RIP', 0x400aa2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20289,7 +20289,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400aa2L)
+                setattr(cpu, 'RIP', 0x400aa2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400aa2, 8)== ord('f'))
@@ -20360,14 +20360,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40097cL)
+                setattr(cpu, 'RIP', 0x40097c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20379,7 +20379,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40097cL)
+                setattr(cpu, 'RIP', 0x40097c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400980, 8)== ord('\xca'))
@@ -20450,14 +20450,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a48L)
+                setattr(cpu, 'RIP', 0x400a48)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20469,7 +20469,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a48L)
+                setattr(cpu, 'RIP', 0x400a48)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a48, 8)== ord('f'))
@@ -20540,14 +20540,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400952L)
+                setattr(cpu, 'RIP', 0x400952)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20559,7 +20559,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400952L)
+                setattr(cpu, 'RIP', 0x400952)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400952, 8)== ord('f'))
@@ -20630,14 +20630,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40094cL)
+                setattr(cpu, 'RIP', 0x40094c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20649,7 +20649,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40094cL)
+                setattr(cpu, 'RIP', 0x40094c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40094c, 8)== ord('f'))
@@ -20720,14 +20720,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a0cL)
+                setattr(cpu, 'RIP', 0x400a0c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20739,7 +20739,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a0cL)
+                setattr(cpu, 'RIP', 0x400a0c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a0c, 8)== ord('f'))
@@ -20810,14 +20810,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400964L)
+                setattr(cpu, 'RIP', 0x400964)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20829,7 +20829,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400964L)
+                setattr(cpu, 'RIP', 0x400964)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400964, 8)== ord('f'))
@@ -20900,14 +20900,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a36L)
+                setattr(cpu, 'RIP', 0x400a36)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20919,7 +20919,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a36L)
+                setattr(cpu, 'RIP', 0x400a36)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a36, 8)== ord('f'))
@@ -20990,14 +20990,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40099aL)
+                setattr(cpu, 'RIP', 0x40099a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21009,7 +21009,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40099aL)
+                setattr(cpu, 'RIP', 0x40099a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40099a, 8)== ord('f'))
@@ -21080,14 +21080,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400988L)
+                setattr(cpu, 'RIP', 0x400988)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21099,7 +21099,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400988L)
+                setattr(cpu, 'RIP', 0x400988)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400988, 8)== ord('f'))
@@ -21170,14 +21170,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a5aL)
+                setattr(cpu, 'RIP', 0x400a5a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21189,7 +21189,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a5aL)
+                setattr(cpu, 'RIP', 0x400a5a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a5a, 8)== ord('f'))
@@ -21260,14 +21260,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40096aL)
+                setattr(cpu, 'RIP', 0x40096a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21279,7 +21279,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40096aL)
+                setattr(cpu, 'RIP', 0x40096a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40096a, 8)== ord('f'))
@@ -21350,14 +21350,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009b2L)
+                setattr(cpu, 'RIP', 0x4009b2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21369,7 +21369,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009b2L)
+                setattr(cpu, 'RIP', 0x4009b2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009b2, 8)== ord('f'))
@@ -21440,14 +21440,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a60L)
+                setattr(cpu, 'RIP', 0x400a60)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21459,7 +21459,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a60L)
+                setattr(cpu, 'RIP', 0x400a60)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a60, 8)== ord('f'))
@@ -21530,14 +21530,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009beL)
+                setattr(cpu, 'RIP', 0x4009be)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21549,7 +21549,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009beL)
+                setattr(cpu, 'RIP', 0x4009be)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009c0, 8)== ord(':'))
@@ -21620,14 +21620,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009e2L)
+                setattr(cpu, 'RIP', 0x4009e2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21639,7 +21639,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009e2L)
+                setattr(cpu, 'RIP', 0x4009e2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009e2, 8)== ord('f'))
@@ -21710,14 +21710,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009d6L)
+                setattr(cpu, 'RIP', 0x4009d6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21729,7 +21729,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009d6L)
+                setattr(cpu, 'RIP', 0x4009d6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009d6, 8)== ord('f'))
@@ -21800,14 +21800,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a6cL)
+                setattr(cpu, 'RIP', 0x400a6c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21819,7 +21819,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a6cL)
+                setattr(cpu, 'RIP', 0x400a6c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a6c, 8)== ord('f'))
@@ -21890,14 +21890,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009c4L)
+                setattr(cpu, 'RIP', 0x4009c4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21909,7 +21909,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009c4L)
+                setattr(cpu, 'RIP', 0x4009c4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009c4, 8)== ord('f'))
@@ -21980,14 +21980,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a00L)
+                setattr(cpu, 'RIP', 0x400a00)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21999,7 +21999,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a00L)
+                setattr(cpu, 'RIP', 0x400a00)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a00, 8)== ord('f'))
@@ -22070,14 +22070,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009e8L)
+                setattr(cpu, 'RIP', 0x4009e8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22089,7 +22089,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009e8L)
+                setattr(cpu, 'RIP', 0x4009e8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009e8, 8)== ord('f'))
@@ -22160,14 +22160,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009b8L)
+                setattr(cpu, 'RIP', 0x4009b8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22179,7 +22179,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009b8L)
+                setattr(cpu, 'RIP', 0x4009b8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009b8, 8)== ord('f'))
@@ -22250,14 +22250,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009eeL)
+                setattr(cpu, 'RIP', 0x4009ee)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22269,7 +22269,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009eeL)
+                setattr(cpu, 'RIP', 0x4009ee)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009ee, 8)== ord('f'))
@@ -22340,14 +22340,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009a0L)
+                setattr(cpu, 'RIP', 0x4009a0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22359,7 +22359,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009a0L)
+                setattr(cpu, 'RIP', 0x4009a0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009a0, 8)== ord('f'))
@@ -22430,14 +22430,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400970L)
+                setattr(cpu, 'RIP', 0x400970)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22449,7 +22449,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400970L)
+                setattr(cpu, 'RIP', 0x400970)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400970, 8)== ord('f'))
@@ -22520,14 +22520,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a78L)
+                setattr(cpu, 'RIP', 0x400a78)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22539,7 +22539,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a78L)
+                setattr(cpu, 'RIP', 0x400a78)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a78, 8)== ord('f'))
@@ -22610,14 +22610,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a2aL)
+                setattr(cpu, 'RIP', 0x400a2a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22629,7 +22629,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a2aL)
+                setattr(cpu, 'RIP', 0x400a2a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a2a, 8)== ord('f'))
@@ -22700,14 +22700,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a42L)
+                setattr(cpu, 'RIP', 0x400a42)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22719,7 +22719,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a42L)
+                setattr(cpu, 'RIP', 0x400a42)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a42, 8)== ord('f'))
@@ -22790,14 +22790,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400a4eL)
+                setattr(cpu, 'RIP', 0x400a4e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22809,7 +22809,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400a4eL)
+                setattr(cpu, 'RIP', 0x400a4e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400a4e, 8)== ord('f'))
@@ -22880,14 +22880,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009dcL)
+                setattr(cpu, 'RIP', 0x4009dc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22899,7 +22899,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009dcL)
+                setattr(cpu, 'RIP', 0x4009dc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009e0, 8)== ord('\xca'))
@@ -22970,14 +22970,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4009faL)
+                setattr(cpu, 'RIP', 0x4009fa)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22989,7 +22989,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4009faL)
+                setattr(cpu, 'RIP', 0x4009fa)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4009fa, 8)== ord('f'))
@@ -23060,14 +23060,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400982L)
+                setattr(cpu, 'RIP', 0x400982)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23079,7 +23079,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400982L)
+                setattr(cpu, 'RIP', 0x400982)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400982, 8)== ord('f'))
@@ -23148,14 +23148,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400746L)
+                setattr(cpu, 'RIP', 0x400746)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23167,7 +23167,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400746L)
+                setattr(cpu, 'RIP', 0x400746)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400746, 8)== ord('f'))
@@ -23235,14 +23235,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400650L)
+                setattr(cpu, 'RIP', 0x400650)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23254,7 +23254,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400650L)
+                setattr(cpu, 'RIP', 0x400650)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400650, 8)== ord('f'))
@@ -23322,14 +23322,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400668L)
+                setattr(cpu, 'RIP', 0x400668)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23341,7 +23341,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400668L)
+                setattr(cpu, 'RIP', 0x400668)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400668, 8)== ord('f'))
@@ -23409,14 +23409,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400698L)
+                setattr(cpu, 'RIP', 0x400698)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23428,7 +23428,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400698L)
+                setattr(cpu, 'RIP', 0x400698)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400698, 8)== ord('f'))
@@ -23496,14 +23496,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006c8L)
+                setattr(cpu, 'RIP', 0x4006c8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23515,7 +23515,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006c8L)
+                setattr(cpu, 'RIP', 0x4006c8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006c8, 8)== ord('f'))
@@ -23583,14 +23583,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006bcL)
+                setattr(cpu, 'RIP', 0x4006bc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23602,7 +23602,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006bcL)
+                setattr(cpu, 'RIP', 0x4006bc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006c0, 8)== ord('\xca'))
@@ -23670,14 +23670,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40068cL)
+                setattr(cpu, 'RIP', 0x40068c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23689,7 +23689,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40068cL)
+                setattr(cpu, 'RIP', 0x40068c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40068c, 8)== ord('f'))
@@ -23757,14 +23757,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40062cL)
+                setattr(cpu, 'RIP', 0x40062c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23776,7 +23776,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40062cL)
+                setattr(cpu, 'RIP', 0x40062c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40062c, 8)== ord('f'))
@@ -23844,14 +23844,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400764L)
+                setattr(cpu, 'RIP', 0x400764)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23863,7 +23863,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400764L)
+                setattr(cpu, 'RIP', 0x400764)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400764, 8)== ord('f'))
@@ -23931,14 +23931,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4005fcL)
+                setattr(cpu, 'RIP', 0x4005fc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23950,7 +23950,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4005fcL)
+                setattr(cpu, 'RIP', 0x4005fc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400600, 8)== ord('\xca'))
@@ -24018,14 +24018,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006ceL)
+                setattr(cpu, 'RIP', 0x4006ce)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24037,7 +24037,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006ceL)
+                setattr(cpu, 'RIP', 0x4006ce)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006ce, 8)== ord('f'))
@@ -24105,14 +24105,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400704L)
+                setattr(cpu, 'RIP', 0x400704)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24124,7 +24124,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400704L)
+                setattr(cpu, 'RIP', 0x400704)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400704, 8)== ord('f'))
@@ -24192,14 +24192,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006f8L)
+                setattr(cpu, 'RIP', 0x4006f8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24211,7 +24211,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006f8L)
+                setattr(cpu, 'RIP', 0x4006f8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006f8, 8)== ord('f'))
@@ -24279,14 +24279,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006c2L)
+                setattr(cpu, 'RIP', 0x4006c2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24298,7 +24298,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006c2L)
+                setattr(cpu, 'RIP', 0x4006c2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006c2, 8)== ord('f'))
@@ -24366,14 +24366,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40069eL)
+                setattr(cpu, 'RIP', 0x40069e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24385,7 +24385,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40069eL)
+                setattr(cpu, 'RIP', 0x40069e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006a0, 8)== ord(':'))
@@ -24453,14 +24453,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006b6L)
+                setattr(cpu, 'RIP', 0x4006b6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24472,7 +24472,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006b6L)
+                setattr(cpu, 'RIP', 0x4006b6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006b6, 8)== ord('f'))
@@ -24540,14 +24540,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400620L)
+                setattr(cpu, 'RIP', 0x400620)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24559,7 +24559,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400620L)
+                setattr(cpu, 'RIP', 0x400620)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400620, 8)== ord('f'))
@@ -24627,14 +24627,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400710L)
+                setattr(cpu, 'RIP', 0x400710)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24646,7 +24646,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400710L)
+                setattr(cpu, 'RIP', 0x400710)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400710, 8)== ord('f'))
@@ -24714,14 +24714,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006b0L)
+                setattr(cpu, 'RIP', 0x4006b0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24733,7 +24733,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006b0L)
+                setattr(cpu, 'RIP', 0x4006b0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006b0, 8)== ord('f'))
@@ -24801,14 +24801,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400740L)
+                setattr(cpu, 'RIP', 0x400740)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24820,7 +24820,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400740L)
+                setattr(cpu, 'RIP', 0x400740)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400740, 8)== ord('f'))
@@ -24888,14 +24888,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400692L)
+                setattr(cpu, 'RIP', 0x400692)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24907,7 +24907,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400692L)
+                setattr(cpu, 'RIP', 0x400692)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400692, 8)== ord('f'))
@@ -24975,14 +24975,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40064aL)
+                setattr(cpu, 'RIP', 0x40064a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24994,7 +24994,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40064aL)
+                setattr(cpu, 'RIP', 0x40064a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40064a, 8)== ord('f'))
@@ -25062,14 +25062,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400728L)
+                setattr(cpu, 'RIP', 0x400728)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25081,7 +25081,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400728L)
+                setattr(cpu, 'RIP', 0x400728)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400728, 8)== ord('f'))
@@ -25234,14 +25234,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40077cL)
+                setattr(cpu, 'RIP', 0x40077c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'RBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25253,7 +25253,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40077cL)
+                setattr(cpu, 'RIP', 0x40077c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400780, 8)== ord('\x8d'))
@@ -25341,14 +25341,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400626L)
+                setattr(cpu, 'RIP', 0x400626)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25360,7 +25360,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400626L)
+                setattr(cpu, 'RIP', 0x400626)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400626, 8)== ord('f'))
@@ -25428,14 +25428,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006d4L)
+                setattr(cpu, 'RIP', 0x4006d4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25447,7 +25447,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006d4L)
+                setattr(cpu, 'RIP', 0x4006d4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006d4, 8)== ord('f'))
@@ -25515,14 +25515,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400686L)
+                setattr(cpu, 'RIP', 0x400686)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25534,7 +25534,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400686L)
+                setattr(cpu, 'RIP', 0x400686)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400686, 8)== ord('f'))
@@ -25602,14 +25602,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400770L)
+                setattr(cpu, 'RIP', 0x400770)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25621,7 +25621,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400770L)
+                setattr(cpu, 'RIP', 0x400770)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400770, 8)== ord('f'))
@@ -25689,14 +25689,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40071cL)
+                setattr(cpu, 'RIP', 0x40071c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25708,7 +25708,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40071cL)
+                setattr(cpu, 'RIP', 0x40071c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400720, 8)== ord('\xca'))
@@ -25776,14 +25776,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400776L)
+                setattr(cpu, 'RIP', 0x400776)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25795,7 +25795,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400776L)
+                setattr(cpu, 'RIP', 0x400776)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400776, 8)== ord('f'))
@@ -25863,14 +25863,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400758L)
+                setattr(cpu, 'RIP', 0x400758)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25882,7 +25882,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400758L)
+                setattr(cpu, 'RIP', 0x400758)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400758, 8)== ord('f'))
@@ -25950,14 +25950,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400602L)
+                setattr(cpu, 'RIP', 0x400602)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25969,7 +25969,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400602L)
+                setattr(cpu, 'RIP', 0x400602)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400602, 8)== ord('f'))
@@ -26037,14 +26037,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400608L)
+                setattr(cpu, 'RIP', 0x400608)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26056,7 +26056,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400608L)
+                setattr(cpu, 'RIP', 0x400608)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400608, 8)== ord('f'))
@@ -26124,14 +26124,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400752L)
+                setattr(cpu, 'RIP', 0x400752)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26143,7 +26143,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400752L)
+                setattr(cpu, 'RIP', 0x400752)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400752, 8)== ord('f'))
@@ -26211,14 +26211,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400638L)
+                setattr(cpu, 'RIP', 0x400638)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26230,7 +26230,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400638L)
+                setattr(cpu, 'RIP', 0x400638)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400638, 8)== ord('f'))
@@ -26298,14 +26298,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40074cL)
+                setattr(cpu, 'RIP', 0x40074c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26317,7 +26317,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40074cL)
+                setattr(cpu, 'RIP', 0x40074c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40074c, 8)== ord('f'))
@@ -26385,14 +26385,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400734L)
+                setattr(cpu, 'RIP', 0x400734)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26404,7 +26404,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400734L)
+                setattr(cpu, 'RIP', 0x400734)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400734, 8)== ord('f'))
@@ -26472,14 +26472,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400644L)
+                setattr(cpu, 'RIP', 0x400644)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26491,7 +26491,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400644L)
+                setattr(cpu, 'RIP', 0x400644)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400644, 8)== ord('f'))
@@ -26559,14 +26559,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40065cL)
+                setattr(cpu, 'RIP', 0x40065c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26578,7 +26578,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40065cL)
+                setattr(cpu, 'RIP', 0x40065c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400660, 8)== ord('\xca'))
@@ -26646,14 +26646,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40061aL)
+                setattr(cpu, 'RIP', 0x40061a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26665,7 +26665,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40061aL)
+                setattr(cpu, 'RIP', 0x40061a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40061a, 8)== ord('f'))
@@ -26733,14 +26733,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40073aL)
+                setattr(cpu, 'RIP', 0x40073a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26752,7 +26752,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40073aL)
+                setattr(cpu, 'RIP', 0x40073a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40073a, 8)== ord('f'))
@@ -26820,14 +26820,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40070aL)
+                setattr(cpu, 'RIP', 0x40070a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26839,7 +26839,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40070aL)
+                setattr(cpu, 'RIP', 0x40070a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40070a, 8)== ord('f'))
@@ -26907,14 +26907,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006aaL)
+                setattr(cpu, 'RIP', 0x4006aa)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26926,7 +26926,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006aaL)
+                setattr(cpu, 'RIP', 0x4006aa)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006aa, 8)== ord('f'))
@@ -26994,14 +26994,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400716L)
+                setattr(cpu, 'RIP', 0x400716)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27013,7 +27013,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400716L)
+                setattr(cpu, 'RIP', 0x400716)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400716, 8)== ord('f'))
@@ -27081,14 +27081,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40063eL)
+                setattr(cpu, 'RIP', 0x40063e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27100,7 +27100,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40063eL)
+                setattr(cpu, 'RIP', 0x40063e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400640, 8)== ord(':'))
@@ -27168,14 +27168,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400656L)
+                setattr(cpu, 'RIP', 0x400656)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27187,7 +27187,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400656L)
+                setattr(cpu, 'RIP', 0x400656)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400656, 8)== ord('f'))
@@ -27255,14 +27255,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40072eL)
+                setattr(cpu, 'RIP', 0x40072e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27274,7 +27274,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40072eL)
+                setattr(cpu, 'RIP', 0x40072e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40072e, 8)== ord('f'))
@@ -27342,14 +27342,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400680L)
+                setattr(cpu, 'RIP', 0x400680)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27361,7 +27361,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400680L)
+                setattr(cpu, 'RIP', 0x400680)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400680, 8)== ord('f'))
@@ -27429,14 +27429,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400674L)
+                setattr(cpu, 'RIP', 0x400674)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27448,7 +27448,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400674L)
+                setattr(cpu, 'RIP', 0x400674)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400674, 8)== ord('f'))
@@ -27516,14 +27516,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40067aL)
+                setattr(cpu, 'RIP', 0x40067a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27535,7 +27535,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40067aL)
+                setattr(cpu, 'RIP', 0x40067a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40067a, 8)== ord('f'))
@@ -27603,14 +27603,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400722L)
+                setattr(cpu, 'RIP', 0x400722)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27622,7 +27622,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400722L)
+                setattr(cpu, 'RIP', 0x400722)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400722, 8)== ord('f'))
@@ -27690,14 +27690,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006e6L)
+                setattr(cpu, 'RIP', 0x4006e6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27709,7 +27709,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006e6L)
+                setattr(cpu, 'RIP', 0x4006e6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006e6, 8)== ord('f'))
@@ -27777,14 +27777,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40076aL)
+                setattr(cpu, 'RIP', 0x40076a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27796,7 +27796,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40076aL)
+                setattr(cpu, 'RIP', 0x40076a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40076a, 8)== ord('f'))
@@ -27864,14 +27864,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006ecL)
+                setattr(cpu, 'RIP', 0x4006ec)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27883,7 +27883,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006ecL)
+                setattr(cpu, 'RIP', 0x4006ec)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006ec, 8)== ord('f'))
@@ -27951,14 +27951,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400632L)
+                setattr(cpu, 'RIP', 0x400632)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27970,7 +27970,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400632L)
+                setattr(cpu, 'RIP', 0x400632)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400632, 8)== ord('f'))
@@ -28038,14 +28038,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40066eL)
+                setattr(cpu, 'RIP', 0x40066e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28057,7 +28057,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40066eL)
+                setattr(cpu, 'RIP', 0x40066e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40066e, 8)== ord('f'))
@@ -28125,14 +28125,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006f2L)
+                setattr(cpu, 'RIP', 0x4006f2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28144,7 +28144,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006f2L)
+                setattr(cpu, 'RIP', 0x4006f2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006f2, 8)== ord('f'))
@@ -28212,14 +28212,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400614L)
+                setattr(cpu, 'RIP', 0x400614)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28231,7 +28231,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400614L)
+                setattr(cpu, 'RIP', 0x400614)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400614, 8)== ord('f'))
@@ -28299,14 +28299,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006daL)
+                setattr(cpu, 'RIP', 0x4006da)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28318,7 +28318,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006daL)
+                setattr(cpu, 'RIP', 0x4006da)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006da, 8)== ord('f'))
@@ -28386,14 +28386,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006a4L)
+                setattr(cpu, 'RIP', 0x4006a4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28405,7 +28405,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006a4L)
+                setattr(cpu, 'RIP', 0x4006a4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006a4, 8)== ord('f'))
@@ -28473,14 +28473,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006feL)
+                setattr(cpu, 'RIP', 0x4006fe)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28492,7 +28492,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006feL)
+                setattr(cpu, 'RIP', 0x4006fe)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400700, 8)== ord(':'))
@@ -28560,14 +28560,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400662L)
+                setattr(cpu, 'RIP', 0x400662)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28579,7 +28579,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400662L)
+                setattr(cpu, 'RIP', 0x400662)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400662, 8)== ord('f'))
@@ -28647,14 +28647,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4006e0L)
+                setattr(cpu, 'RIP', 0x4006e0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28666,7 +28666,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4006e0L)
+                setattr(cpu, 'RIP', 0x4006e0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4006e0, 8)== ord('f'))
@@ -28734,14 +28734,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40060eL)
+                setattr(cpu, 'RIP', 0x40060e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28753,7 +28753,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40060eL)
+                setattr(cpu, 'RIP', 0x40060e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40060e, 8)== ord('f'))
@@ -28821,14 +28821,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40075eL)
+                setattr(cpu, 'RIP', 0x40075e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28840,7 +28840,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40075eL)
+                setattr(cpu, 'RIP', 0x40075e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400760, 8)== ord(':'))
@@ -28906,14 +28906,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400856L)
+                setattr(cpu, 'RIP', 0x400856)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28925,7 +28925,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400856L)
+                setattr(cpu, 'RIP', 0x400856)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400856, 8)== ord('f'))
@@ -28990,14 +28990,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007ccL)
+                setattr(cpu, 'RIP', 0x4007cc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29009,7 +29009,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007ccL)
+                setattr(cpu, 'RIP', 0x4007cc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007cc, 8)== ord('f'))
@@ -29074,14 +29074,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40087aL)
+                setattr(cpu, 'RIP', 0x40087a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29093,7 +29093,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40087aL)
+                setattr(cpu, 'RIP', 0x40087a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40087a, 8)== ord('f'))
@@ -29158,14 +29158,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400802L)
+                setattr(cpu, 'RIP', 0x400802)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29177,7 +29177,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400802L)
+                setattr(cpu, 'RIP', 0x400802)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400802, 8)== ord('f'))
@@ -29242,14 +29242,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007fcL)
+                setattr(cpu, 'RIP', 0x4007fc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29261,7 +29261,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007fcL)
+                setattr(cpu, 'RIP', 0x4007fc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400800, 8)== ord('\xca'))
@@ -29326,14 +29326,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008c8L)
+                setattr(cpu, 'RIP', 0x4008c8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29345,7 +29345,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008c8L)
+                setattr(cpu, 'RIP', 0x4008c8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008c8, 8)== ord('f'))
@@ -29410,14 +29410,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008f8L)
+                setattr(cpu, 'RIP', 0x4008f8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29429,7 +29429,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008f8L)
+                setattr(cpu, 'RIP', 0x4008f8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008f8, 8)== ord('f'))
@@ -29494,14 +29494,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40080eL)
+                setattr(cpu, 'RIP', 0x40080e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29513,7 +29513,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40080eL)
+                setattr(cpu, 'RIP', 0x40080e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40080e, 8)== ord('f'))
@@ -29578,14 +29578,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40089eL)
+                setattr(cpu, 'RIP', 0x40089e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29597,7 +29597,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40089eL)
+                setattr(cpu, 'RIP', 0x40089e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008a0, 8)== ord(':'))
@@ -29662,14 +29662,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008f2L)
+                setattr(cpu, 'RIP', 0x4008f2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29681,7 +29681,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008f2L)
+                setattr(cpu, 'RIP', 0x4008f2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008f2, 8)== ord('f'))
@@ -29746,14 +29746,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007b4L)
+                setattr(cpu, 'RIP', 0x4007b4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29765,7 +29765,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007b4L)
+                setattr(cpu, 'RIP', 0x4007b4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007b4, 8)== ord('f'))
@@ -29830,14 +29830,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008ecL)
+                setattr(cpu, 'RIP', 0x4008ec)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29849,7 +29849,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008ecL)
+                setattr(cpu, 'RIP', 0x4008ec)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008ec, 8)== ord('f'))
@@ -29914,14 +29914,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007d8L)
+                setattr(cpu, 'RIP', 0x4007d8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29933,7 +29933,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007d8L)
+                setattr(cpu, 'RIP', 0x4007d8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007d8, 8)== ord('f'))
@@ -29998,14 +29998,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400892L)
+                setattr(cpu, 'RIP', 0x400892)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30017,7 +30017,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400892L)
+                setattr(cpu, 'RIP', 0x400892)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400892, 8)== ord('f'))
@@ -30082,14 +30082,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40084aL)
+                setattr(cpu, 'RIP', 0x40084a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30101,7 +30101,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40084aL)
+                setattr(cpu, 'RIP', 0x40084a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40084a, 8)== ord('f'))
@@ -30166,14 +30166,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40088cL)
+                setattr(cpu, 'RIP', 0x40088c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30185,7 +30185,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40088cL)
+                setattr(cpu, 'RIP', 0x40088c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40088c, 8)== ord('f'))
@@ -30250,14 +30250,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008feL)
+                setattr(cpu, 'RIP', 0x4008fe)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30269,7 +30269,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008feL)
+                setattr(cpu, 'RIP', 0x4008fe)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400900, 8)== ord(':'))
@@ -30334,14 +30334,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400838L)
+                setattr(cpu, 'RIP', 0x400838)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30353,7 +30353,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400838L)
+                setattr(cpu, 'RIP', 0x400838)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400838, 8)== ord('f'))
@@ -30418,14 +30418,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400832L)
+                setattr(cpu, 'RIP', 0x400832)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30437,7 +30437,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400832L)
+                setattr(cpu, 'RIP', 0x400832)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400832, 8)== ord('f'))
@@ -30502,14 +30502,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400820L)
+                setattr(cpu, 'RIP', 0x400820)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30521,7 +30521,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400820L)
+                setattr(cpu, 'RIP', 0x400820)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400820, 8)== ord('f'))
@@ -30586,14 +30586,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400850L)
+                setattr(cpu, 'RIP', 0x400850)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30605,7 +30605,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400850L)
+                setattr(cpu, 'RIP', 0x400850)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400850, 8)== ord('f'))
@@ -30670,14 +30670,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007d2L)
+                setattr(cpu, 'RIP', 0x4007d2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30689,7 +30689,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007d2L)
+                setattr(cpu, 'RIP', 0x4007d2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007d2, 8)== ord('f'))
@@ -30754,14 +30754,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400826L)
+                setattr(cpu, 'RIP', 0x400826)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30773,7 +30773,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400826L)
+                setattr(cpu, 'RIP', 0x400826)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400826, 8)== ord('f'))
@@ -30838,14 +30838,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400898L)
+                setattr(cpu, 'RIP', 0x400898)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30857,7 +30857,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400898L)
+                setattr(cpu, 'RIP', 0x400898)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400898, 8)== ord('f'))
@@ -30922,14 +30922,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008aaL)
+                setattr(cpu, 'RIP', 0x4008aa)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30941,7 +30941,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008aaL)
+                setattr(cpu, 'RIP', 0x4008aa)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008aa, 8)== ord('f'))
@@ -31006,14 +31006,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007eaL)
+                setattr(cpu, 'RIP', 0x4007ea)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31025,7 +31025,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007eaL)
+                setattr(cpu, 'RIP', 0x4007ea)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007ea, 8)== ord('f'))
@@ -31090,14 +31090,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007f6L)
+                setattr(cpu, 'RIP', 0x4007f6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31109,7 +31109,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007f6L)
+                setattr(cpu, 'RIP', 0x4007f6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007f6, 8)== ord('f'))
@@ -31174,14 +31174,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008b0L)
+                setattr(cpu, 'RIP', 0x4008b0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31193,7 +31193,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008b0L)
+                setattr(cpu, 'RIP', 0x4008b0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008b0, 8)== ord('f'))
@@ -31258,14 +31258,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008a4L)
+                setattr(cpu, 'RIP', 0x4008a4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31277,7 +31277,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008a4L)
+                setattr(cpu, 'RIP', 0x4008a4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008a4, 8)== ord('f'))
@@ -31342,14 +31342,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008e0L)
+                setattr(cpu, 'RIP', 0x4008e0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31361,7 +31361,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008e0L)
+                setattr(cpu, 'RIP', 0x4008e0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008e0, 8)== ord('f'))
@@ -31426,14 +31426,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400904L)
+                setattr(cpu, 'RIP', 0x400904)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31445,7 +31445,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400904L)
+                setattr(cpu, 'RIP', 0x400904)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400904, 8)== ord('f'))
@@ -31510,14 +31510,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008c2L)
+                setattr(cpu, 'RIP', 0x4008c2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31529,7 +31529,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008c2L)
+                setattr(cpu, 'RIP', 0x4008c2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008c2, 8)== ord('f'))
@@ -31594,14 +31594,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40081aL)
+                setattr(cpu, 'RIP', 0x40081a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31613,7 +31613,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40081aL)
+                setattr(cpu, 'RIP', 0x40081a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40081a, 8)== ord('f'))
@@ -31678,14 +31678,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008bcL)
+                setattr(cpu, 'RIP', 0x4008bc)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31697,7 +31697,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008bcL)
+                setattr(cpu, 'RIP', 0x4008bc)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008c0, 8)== ord('\xca'))
@@ -31762,14 +31762,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007deL)
+                setattr(cpu, 'RIP', 0x4007de)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31781,7 +31781,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007deL)
+                setattr(cpu, 'RIP', 0x4007de)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007e0, 8)== ord(':'))
@@ -31846,14 +31846,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400814L)
+                setattr(cpu, 'RIP', 0x400814)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31865,7 +31865,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400814L)
+                setattr(cpu, 'RIP', 0x400814)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400814, 8)== ord('f'))
@@ -31930,14 +31930,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007c6L)
+                setattr(cpu, 'RIP', 0x4007c6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31949,7 +31949,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007c6L)
+                setattr(cpu, 'RIP', 0x4007c6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007c6, 8)== ord('f'))
@@ -32014,14 +32014,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400868L)
+                setattr(cpu, 'RIP', 0x400868)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32033,7 +32033,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400868L)
+                setattr(cpu, 'RIP', 0x400868)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400868, 8)== ord('f'))
@@ -32098,14 +32098,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008ceL)
+                setattr(cpu, 'RIP', 0x4008ce)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32117,7 +32117,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008ceL)
+                setattr(cpu, 'RIP', 0x4008ce)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008ce, 8)== ord('f'))
@@ -32182,14 +32182,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400874L)
+                setattr(cpu, 'RIP', 0x400874)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32201,7 +32201,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400874L)
+                setattr(cpu, 'RIP', 0x400874)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400874, 8)== ord('f'))
@@ -32266,14 +32266,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40085cL)
+                setattr(cpu, 'RIP', 0x40085c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32285,7 +32285,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40085cL)
+                setattr(cpu, 'RIP', 0x40085c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400860, 8)== ord('\xca'))
@@ -32350,14 +32350,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007a8L)
+                setattr(cpu, 'RIP', 0x4007a8)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32369,7 +32369,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007a8L)
+                setattr(cpu, 'RIP', 0x4007a8)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007a8, 8)== ord('f'))
@@ -32434,14 +32434,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40082cL)
+                setattr(cpu, 'RIP', 0x40082c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32453,7 +32453,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40082cL)
+                setattr(cpu, 'RIP', 0x40082c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40082c, 8)== ord('f'))
@@ -32518,14 +32518,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008daL)
+                setattr(cpu, 'RIP', 0x4008da)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32537,7 +32537,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008daL)
+                setattr(cpu, 'RIP', 0x4008da)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008da, 8)== ord('f'))
@@ -32602,14 +32602,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007a2L)
+                setattr(cpu, 'RIP', 0x4007a2)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32621,7 +32621,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007a2L)
+                setattr(cpu, 'RIP', 0x4007a2)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007a2, 8)== ord('f'))
@@ -32686,14 +32686,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007e4L)
+                setattr(cpu, 'RIP', 0x4007e4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32705,7 +32705,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007e4L)
+                setattr(cpu, 'RIP', 0x4007e4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007e4, 8)== ord('f'))
@@ -32770,14 +32770,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400880L)
+                setattr(cpu, 'RIP', 0x400880)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32789,7 +32789,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400880L)
+                setattr(cpu, 'RIP', 0x400880)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400880, 8)== ord('f'))
@@ -32854,14 +32854,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400886L)
+                setattr(cpu, 'RIP', 0x400886)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32873,7 +32873,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400886L)
+                setattr(cpu, 'RIP', 0x400886)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400886, 8)== ord('f'))
@@ -32938,14 +32938,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008b6L)
+                setattr(cpu, 'RIP', 0x4008b6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32957,7 +32957,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008b6L)
+                setattr(cpu, 'RIP', 0x4008b6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008b6, 8)== ord('f'))
@@ -33022,14 +33022,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007baL)
+                setattr(cpu, 'RIP', 0x4007ba)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33041,7 +33041,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007baL)
+                setattr(cpu, 'RIP', 0x4007ba)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007ba, 8)== ord('f'))
@@ -33106,14 +33106,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40090aL)
+                setattr(cpu, 'RIP', 0x40090a)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33125,7 +33125,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40090aL)
+                setattr(cpu, 'RIP', 0x40090a)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40090a, 8)== ord('f'))
@@ -33190,14 +33190,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40079cL)
+                setattr(cpu, 'RIP', 0x40079c)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33209,7 +33209,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40079cL)
+                setattr(cpu, 'RIP', 0x40079c)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007a0, 8)== ord('\xca'))
@@ -33274,14 +33274,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007aeL)
+                setattr(cpu, 'RIP', 0x4007ae)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33293,7 +33293,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007aeL)
+                setattr(cpu, 'RIP', 0x4007ae)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007ae, 8)== ord('f'))
@@ -33358,14 +33358,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400844L)
+                setattr(cpu, 'RIP', 0x400844)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33377,7 +33377,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400844L)
+                setattr(cpu, 'RIP', 0x400844)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400844, 8)== ord('f'))
@@ -33442,14 +33442,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008e6L)
+                setattr(cpu, 'RIP', 0x4008e6)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33461,7 +33461,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008e6L)
+                setattr(cpu, 'RIP', 0x4008e6)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008e6, 8)== ord('f'))
@@ -33526,14 +33526,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400808L)
+                setattr(cpu, 'RIP', 0x400808)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33545,7 +33545,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400808L)
+                setattr(cpu, 'RIP', 0x400808)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400808, 8)== ord('f'))
@@ -33610,14 +33610,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4008d4L)
+                setattr(cpu, 'RIP', 0x4008d4)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33629,7 +33629,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4008d4L)
+                setattr(cpu, 'RIP', 0x4008d4)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4008d4, 8)== ord('f'))
@@ -33694,14 +33694,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400796L)
+                setattr(cpu, 'RIP', 0x400796)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33713,7 +33713,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400796L)
+                setattr(cpu, 'RIP', 0x400796)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400796, 8)== ord('f'))
@@ -33778,14 +33778,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40083eL)
+                setattr(cpu, 'RIP', 0x40083e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33797,7 +33797,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40083eL)
+                setattr(cpu, 'RIP', 0x40083e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400840, 8)== ord(':'))
@@ -33862,14 +33862,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400790L)
+                setattr(cpu, 'RIP', 0x400790)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33881,7 +33881,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400790L)
+                setattr(cpu, 'RIP', 0x400790)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400790, 8)== ord('f'))
@@ -33946,14 +33946,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007c0L)
+                setattr(cpu, 'RIP', 0x4007c0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33965,7 +33965,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007c0L)
+                setattr(cpu, 'RIP', 0x4007c0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007c0, 8)== ord('f'))
@@ -34030,14 +34030,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x4007f0L)
+                setattr(cpu, 'RIP', 0x4007f0)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -34049,7 +34049,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x4007f0L)
+                setattr(cpu, 'RIP', 0x4007f0)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x4007f0, 8)== ord('f'))
@@ -34114,14 +34114,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x40086eL)
+                setattr(cpu, 'RIP', 0x40086e)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -34133,7 +34133,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x40086eL)
+                setattr(cpu, 'RIP', 0x40086e)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x40086e, 8)== ord('f'))
@@ -34198,14 +34198,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
-                setattr(cpu, 'RIP', 0x400862L)
+                setattr(cpu, 'RIP', 0x400862)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -34217,7 +34217,7 @@ class CPUTest(unittest.TestCase):
                         values = solver.get_all_values(cs, symbol)
                         self.assertEqual(len(values), 1)
                         mem[e.address+i] = values[0]
-                setattr(cpu, 'RIP', 0x400862L)
+                setattr(cpu, 'RIP', 0x400862)
 
         condition = True
         condition = Operators.AND(condition, cpu.read_int(0x400862, 8)== ord('f'))

@@ -1,11 +1,8 @@
-import signal
+from builtins import *
 import unittest
 
-from multiprocessing.managers import SyncManager
-
 from manticore.platforms import linux
-from manticore.core.state import State
-from manticore.core.smtlib import BitVecVariable, ConstraintSet
+from manticore.core.smtlib import ConstraintSet
 from manticore.core.workspace import *
 from manticore.utils.event import Eventful
 
@@ -97,7 +94,7 @@ class StateTest(unittest.TestCase):
             if 'messages' in entry:
                 self.assertTrue(message in data)
 
-        keys = [x.split('.')[1] for x in workspace.keys()]
+        keys = [x.split('.')[1] for x in workspace]
 
         for key in self.state.platform.generate_workspace_files():
             self.assertIn(key, keys)

@@ -1,3 +1,6 @@
+from builtins import *
+from future import standard_library
+standard_library.install_aliases()
 import unittest
 from manticore.utils.event import Eventful
 from manticore.platforms import linux
@@ -96,7 +99,7 @@ class StateTest(unittest.TestCase):
         self.state.constrain(expr < 100)
         solved = self.state.concretize(expr, 'ONE')
         self.assertEqual(len(solved), 1)
-        self.assertIn(solved[0], xrange(100))
+        self.assertIn(solved[0], range(100))
 
     def test_state(self):
         constraints = ConstraintSet()
@@ -148,7 +151,7 @@ class StateTest(unittest.TestCase):
         self.assertEqual(expr.taint, frozenset(taint))
 
     def testContextSerialization(self):
-        import cPickle as pickle
+        import pickle as pickle
         initial_file = ''
         new_file = ''
         new_new_file = ''
@@ -208,7 +211,7 @@ class StateTest(unittest.TestCase):
         raise _CallbackExecuted
 
     def testContextSerialization(self):
-        import cPickle as pickle
+        import pickle as pickle
         initial_file = ''
         new_file = ''
         new_new_file = ''

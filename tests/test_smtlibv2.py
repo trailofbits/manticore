@@ -1,9 +1,8 @@
+from __future__ import division
+from builtins import *
 from manticore.core.smtlib import *
 import unittest
-import fcntl
-import resource
-import gc
-import sys
+
 #logging.basicConfig(filename = "test.log",
 #                format = "%(asctime)s: %(name)s:%(levelname)s: %(message)s",
 #                level = logging.DEBUG)
@@ -439,7 +438,7 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86) #-122
         cs.add(c == 0x11) #17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b/c)
+        cs.add(d == b // c)
         cs.add(a == d)
 
         self.assertTrue(solver.check(cs))
@@ -448,7 +447,7 @@ class ExpressionTest(unittest.TestCase):
 
     def test_SAR(self):
         A = 0xbadf00d
-        for B in xrange(32):
+        for B in range(32):
             cs = ConstraintSet()
             a = cs.new_bitvec(32)
             b = cs.new_bitvec(32)
@@ -692,7 +691,7 @@ class ExpressionTest(unittest.TestCase):
         cs.add(b == 0x86) #-122
         cs.add(c == 0x11) #17
         cs.add(a == Operators.SDIV(b, c))
-        cs.add(d == b/c)
+        cs.add(d == b // c)
         cs.add(a == d)
 
         self.assertTrue(solver.check(cs))

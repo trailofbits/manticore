@@ -1,3 +1,6 @@
+from __future__ import absolute_import, division, print_function
+from builtins import *
+
 import unittest
 
 from manticore.core.cpu import bitwise
@@ -24,7 +27,7 @@ class BitwiseTest(unittest.TestCase):
     def test_lsl_carry(self):
         val = 0x80000000
         result, carry = bitwise.LSL_C(val, 1, 32)
-        print hex(result), "", hex(carry)
+        print(hex(result), "", hex(carry))
         self.assertEqual(result, 0)
         self.assertEqual(carry , 1)
 
@@ -55,14 +58,14 @@ class BitwiseTest(unittest.TestCase):
     def test_ror_nocarry(self):
         val = 0x00F0
         result, carry = bitwise.ROR_C(val, 4, 32)
-        print hex(result)
+        print(hex(result))
         self.assertEqual(result, 0xF)
         self.assertEqual(carry, 0)
 
     def test_ror_carry(self):
         val = 0x0003
         result, carry = bitwise.ROR_C(val, 1, 32)
-        print hex(result)
+        print(hex(result))
         self.assertEqual(result, 0x80000001)
         self.assertEqual(carry, 1)
 
@@ -75,7 +78,7 @@ class BitwiseTest(unittest.TestCase):
     def test_rrx_carry(self):
         val = 0x0001
         result, carry = bitwise.RRX_C(val, 1, 32)
-        print hex(result)
+        print(hex(result))
         self.assertEqual(result, 0x80000000)
         self.assertEqual(carry, 1)
 

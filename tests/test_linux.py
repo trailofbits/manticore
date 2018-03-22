@@ -1,10 +1,10 @@
+from __future__ import print_function
+from builtins import *
 import os
-import shutil
 import tempfile
 import unittest
 
 from manticore.platforms import linux, linux_syscalls
-from manticore.core.smtlib import *
 from manticore.core.smtlib import *
 from manticore.core.cpu.abstractcpu import ConcretizeRegister
 
@@ -29,7 +29,7 @@ class LinuxTest(unittest.TestCase):
         }
         cpu = self.linux.current
 
-        for reg, val in x86_defaults.iteritems():
+        for reg, val in x86_defaults.items():
             self.assertEqual(cpu.regfile.read(reg), val)
 
     def test_stack_init(self):
@@ -75,7 +75,7 @@ class LinuxTest(unittest.TestCase):
 
         # open a file
         filename = platform.current.push_bytes('/bin/true\x00')
-        fd = platform.sys_open(filename, os.O_RDONLY, 0600)
+        fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
 
         stat = platform.current.SP - 0x100
         platform.current.R0 = fd
@@ -85,7 +85,7 @@ class LinuxTest(unittest.TestCase):
 
         platform.syscall()
 
-        print ''.join(platform.current.read_bytes(stat, 100)).encode('hex')
+        print(''.join(platform.current.read_bytes(stat, 100)).encode('hex'))
 
     def test_linux_workspace_files(self):
         files = self.symbolic_linux.generate_workspace_files()
@@ -119,7 +119,7 @@ class LinuxTest(unittest.TestCase):
         platform.current.subscribe('did_execute_instruction', r.did_exec)
 
         filename = platform.current.push_bytes('/bin/true\x00')
-        fd = platform.sys_open(filename, os.O_RDONLY, 0600)
+        fd = platform.sys_open(filename, os.O_RDONLY, 0o600)
 
         stat = platform.current.SP - 0x100
         platform.current.R0 = fd
@@ -145,19 +145,19 @@ class LinuxTest(unittest.TestCase):
         dir_path = tempfile.mkdtemp()
         file_name = "file"
         file_path = os.path.join(dir_path, file_name)
-        with open(file_path, 'w') as f:
-            f.write('test')
+        with open(file_path, 'wb') as f:
+            f.write(b'test')
 
         # open a file + directory
         dirname = platform.current.push_bytes(dir_path+'\x00')
-        dirfd = platform.sys_open(dirname, os.O_RDONLY, 0700)
+        dirfd = platform.sys_open(dirname, os.O_RDONLY, 0o700)
         filename = platform.current.push_bytes(file_name+'\x00')
 
         stat = platform.current.SP - 0x100
         platform.current.R0 = dirfd
         platform.current.R1 = filename
         platform.current.R2 = os.O_RDONLY
-        platform.current.R3 = 0700
+        platform.current.R3 = 0o700
         platform.current.R7 = nr_openat
         self.assertEquals(linux_syscalls.armv7[nr_openat], 'sys_openat')
 
