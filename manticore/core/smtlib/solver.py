@@ -14,11 +14,7 @@ from __future__ import absolute_import
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
-from builtins import str
-from builtins import chr
-from builtins import map
-from builtins import range
-from builtins import bytes
+from builtins import *
 from subprocess import PIPE, Popen, check_output
 from abc import ABCMeta, abstractmethod
 from copy import copy, deepcopy

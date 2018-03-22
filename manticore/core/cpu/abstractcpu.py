@@ -1,7 +1,7 @@
 from __future__ import division
 from future import standard_library
 standard_library.install_aliases()
-from builtins import next, str, map, range, int
+from builtins import *
 import inspect
 import logging
 import io

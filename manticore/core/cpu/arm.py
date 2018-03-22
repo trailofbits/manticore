@@ -1,5 +1,5 @@
 from __future__ import division
-from builtins import range, int
+from builtins import *
 from functools import wraps
 import logging
 import struct

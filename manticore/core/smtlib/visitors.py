@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import
-from builtins import str, zip, range
+from builtins import *
 from .expression import *
 import operator
 import logging

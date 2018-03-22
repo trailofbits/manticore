@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import
-from builtins import map, int, chr, bytes
+from builtins import *
 from .expression import *
 from ...utils.helpers import issymbolic
 import math

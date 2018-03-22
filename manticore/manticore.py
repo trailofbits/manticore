@@ -1,6 +1,4 @@
-from builtins import str
-from builtins import range
-from builtins import int
+from builtins import *
 import os
 import sys
 import time

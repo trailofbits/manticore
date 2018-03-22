@@ -1,6 +1,6 @@
 from future import standard_library
 standard_library.install_aliases()
-from builtins import map, chr, str, bytes
+from builtins import *
 import os
 import sys
 import glob

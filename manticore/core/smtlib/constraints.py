@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from builtins import str
+from builtins import *
 from .expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy
 from .visitors import GetDeclarations, TranslatorSmtlib, translate_to_smtlib, get_variables, arithmetic_simplifier
 import logging

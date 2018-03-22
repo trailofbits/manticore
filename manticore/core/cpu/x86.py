@@ -1,5 +1,5 @@
 from __future__ import division
-from builtins import map, range, int
+from builtins import *
 import collections
 import logging
 

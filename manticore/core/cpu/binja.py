@@ -1,5 +1,5 @@
 from __future__ import division
-from builtins import hex, map, chr, str, range, int
+from builtins import *
 import ctypes
 import logging
 import os

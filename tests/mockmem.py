@@ -1,4 +1,4 @@
-from builtins import object, range
+from builtins import *
 from manticore.core.smtlib import Operators
 
 class Memory(object):  #todo Mock

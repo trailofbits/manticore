@@ -1,9 +1,7 @@
 from __future__ import absolute_import
 from future import standard_library
 standard_library.install_aliases()
-from builtins import next
-from builtins import str
-from builtins import range
+from builtins import *
 from . import cgcrandom
 import weakref
 import sys, os, struct

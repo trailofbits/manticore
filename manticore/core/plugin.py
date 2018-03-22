@@ -1,4 +1,4 @@
-from builtins import str
+from builtins import *
 import logging
 
 from capstone import CS_GRP_JUMP

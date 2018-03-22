@@ -1,5 +1,4 @@
-from builtins import zip
-from builtins import range
+from builtins import *
 import logging
 import sys
 import types

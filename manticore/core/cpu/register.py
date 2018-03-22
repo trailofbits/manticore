@@ -1,4 +1,4 @@
-from builtins import int
+from builtins import *
 from ..smtlib import Operators, BitVec, Bool
 
 

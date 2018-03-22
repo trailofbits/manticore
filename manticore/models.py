@@ -2,7 +2,7 @@
 Models here are intended to be passed to :meth:`~manticore.core.state.State.invoke_model`, not invoked directly.
 """
 
-from builtins import range
+from builtins import *
 from .core.cpu.abstractcpu import ConcretizeArgument
 from .utils.helpers import issymbolic
 from .core.smtlib.solver import solver

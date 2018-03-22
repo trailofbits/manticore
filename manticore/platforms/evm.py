@@ -1,12 +1,5 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
-from builtins import str
-from builtins import hex
-from builtins import map
-from builtins import next
-from builtins import chr
-from builtins import range
-from builtins import bytes
-from builtins import int
+from builtins import *
 import random, copy
 from ..utils.helpers import issymbolic, memoized, isstring
 from ..platforms.platform import *
