@@ -38,6 +38,9 @@ from future.utils import with_metaclass
 logger = logging.getLogger(__name__)
 
 
+LINEBUF = 1
+
+
 class Z3NotFoundError(EnvironmentError):
     pass
 
@@ -179,7 +182,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to spawn the external solver process'''
         assert '_proc' not in dir(self) or self._proc is None
         try:
-            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE)
+            self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE, bufsize=LINEBUF, universal_newlines=True)
         except OSError:
             # Z3 was removed from the system in the middle of operation
             raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
