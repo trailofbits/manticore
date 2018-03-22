@@ -111,6 +111,9 @@ class Bool(Expression):
     def __eq__(self, other):
         return BoolEq(self, self.cast(other))
 
+    def __hash__(self):
+        return object.__hash__(self)
+
     def __ne__(self, other):
         return BoolNot(self == self.cast(other))
 
@@ -336,6 +339,9 @@ class BitVec(Expression):
 
     def __eq__(self, other):
         return Equal(self, self.cast(other))
+
+    def __hash__(self):
+        return object.__hash__(self)
 
     def __ne__(self, other):
         return BoolNot(Equal(self, self.cast(other)))
