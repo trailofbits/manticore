@@ -1,5 +1,7 @@
+from builtins import *
 import inspect
 import logging
+from itertools import takewhile
 from weakref import ref, WeakKeyDictionary
 from future.utils import with_metaclass
 
@@ -15,14 +17,13 @@ class EventsGatherMetaclass(type):
         eventful_sub = super(EventsGatherMetaclass, cls).__new__(cls, name, parents, d)
 
         bases = inspect.getmro(parents[0])
-        if len(bases) < 2:
+
+        if name is 'Eventful':
             return eventful_sub
 
-        # bases[-1] is always 'object', bases[-2] is next super class, which
-        # will always be Eventful.
-        eventful_cls = bases[-2]
-        subclasses = bases[:-2]
+        subclasses = takewhile(lambda c: c is not Eventful, bases)
         relevant_classes = [eventful_sub] + list(subclasses)
+
         # Add a class that defines '_published_events' classmethod to a dict for
         # later lookup. Aggregate the events of all subclasses.
         relevant_events = set()
@@ -31,7 +32,7 @@ class EventsGatherMetaclass(type):
             # defined.
             if '_published_events' in sub.__dict__:
                 relevant_events.update(sub._published_events)
-        eventful_cls.__all_events__[eventful_sub] = relevant_events
+        Eventful.__all_events__[eventful_sub] = relevant_events
 
         return eventful_sub
 
