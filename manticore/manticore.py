@@ -629,12 +629,24 @@ class Manticore(Eventful):
                 t.cancel()
         self._finish_run(profiling=should_profile)
 
+    #Fixme remove. terminate is used to TerminateState. May be confusing
     def terminate(self):
         '''
         Gracefully terminate the currently-executing run. Typically called from within
         a :func:`~hook`.
         '''
         self._executor.shutdown()
+
+    def shutdown(self):
+        '''
+        Gracefully terminate the currently-executing run. Typically called from within
+        a :func:`~hook`.
+        '''
+        self._executor.shutdown()
+
+    def is_shutdown(self):
+        ''' Returns True if shutdown was requested '''
+        return self._executor.is_shutdown()
 
     #############################################################################
     #############################################################################

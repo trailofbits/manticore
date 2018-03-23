@@ -15,7 +15,13 @@ class EVMTest_CALLCODE(unittest.TestCase):
         last_returned = None
         last_exception = None
         try:
+            
+            try:
+                new_vm.execute()
+            except evm.StartTx:
+                pass
             new_vm.execute()
+
         except evm.Stop, e:
             last_exception = "STOP"
         except evm.NotEnoughGas:

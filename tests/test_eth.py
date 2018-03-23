@@ -127,6 +127,27 @@ class EthTests(unittest.TestCase):
                 contract_name="C", owner=owner, args=[x])
 
 
+
+    def test_reachability(self):
+        class StopAtFirstJump414141(Detector):
+            def will_decode_instruction_callback(self, state, pc):
+                if pc == 0x4141414141414141414141414141414141414141:
+                    print "FOUND!"
+                    with self.locked_context('flags', dict) as d:
+                        d['found'] = True
+                    self.manticore.terminate()
+
+        mevm = ManticoreEVM()
+        p = StopAtFirstJump414141()
+        mevm.register_detector(p)
+
+        filename = os.path.join(THIS_DIR, 'binaries/reached.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=2)
+
+        context = p.context.get('flags', {})
+        self.assertTrue(context.get('found', False))
+
+
 class EthHelpers(unittest.TestCase):
     def setUp(self):
         self.bv = BitVec(256)

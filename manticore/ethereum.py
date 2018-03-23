@@ -160,6 +160,21 @@ class SolidityMetadata(object):
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
+    def add_function(self, method_name_and_signature):
+        #TODO: use re, and check it's sane
+        if name in self.abi:
+            raise Exception("Function already defined")
+        hsh = ABI.make_function_id(method_name_and_signature)
+        name = method_name_and_signature.split('(')[0]
+        self.hashes.append(method_name_and_signature, hsh)
+
+        input_types = method_name_and_signature.split('(')[1].split(')')[0].split(',')
+        output_types = method_name_and_signature.split(')')[1].split(',')
+        self.abi[name] = { 'inputs': [{'type': ty} for ty in input_types],
+                            'name': name,
+                            'outputs': [{'type': ty} for ty in output_types]
+                         }
+
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
@@ -223,7 +238,11 @@ class SolidityMetadata(object):
         else:
             srcmap = self.srcmap
 
-        beg, size, _, _ = srcmap[asm_offset]
+        try:
+            beg, size, _, _ = srcmap[asm_offset]
+        except:
+            #asm_offset pointing outside the known bytecode
+            return ''
 
         output = ''
         nl = self.source_code.count('\n')
@@ -470,6 +489,11 @@ class EVMAccount(object):
         self._hashes = None
         self._init_hashes()
 
+    def add_function(self, signature):
+        func_id = ABI.make_function_id(signature)
+        func_name = str(signature.split('(')[0])
+        self._hashes[func_name] = signature, func_id
+
     def __int__(self):
         return self._address
 
@@ -651,7 +675,7 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        initial_state.context['tx'] = []
+        #@@initial_state.context['tx'] = []
         super(ManticoreEVM, self).__init__(initial_state, **kwargs)
 
         self.detectors = {}
@@ -831,6 +855,7 @@ class ManticoreEVM(Manticore):
                                        balance=balance,
                                        address=address,
                                        init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
+
         if not self.count_running_states() or self.get_code(account) == '':
             return None
         return account
@@ -944,7 +969,7 @@ class ManticoreEVM(Manticore):
         prev_coverage = 0
         current_coverage = 0
 
-        while current_coverage < 100:
+        while current_coverage < 100 and not self.is_shutdown():
             run_symbolic_tx()
 
             if tx_limit is not None:
@@ -1049,15 +1074,28 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing last transaction we save it in
             our private list
         '''
-        assert state.platform.current_transaction is None, "Should not be an ongoing tx"
         world = state.platform
         tx = world.last_transaction
+
+        if tx and not tx.is_human():
+            logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
+
         state.context['last_exception'] = e
-        if tx.sort == 'CREATE':
-            if tx.result == 'RETURN':
-                world.set_code(tx.address, tx.return_data)
-            else:
-                world.delete_account(address)
+
+        if state.platform.current_transaction is not None:
+            logger.debug("Something was wrong. Search terminated in the middle of an ongoing tx")
+            self.save(state, final=True)
+            e.testcase=True
+            return 
+
+        #is we initiated the Tx we need process the outcome for now.
+        #Fixme incomplete. 
+        if tx.is_human():
+            if tx.sort == 'CREATE':
+                if tx.result == 'RETURN':
+                    world.set_code(tx.address, tx.return_data)
+                else:
+                    world.delete_account(address)
 
         if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
@@ -1080,7 +1118,16 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             # take current global transaction we need to apply to all running states
             ty, caller, address, value, data = context['_pending_transaction']
+            '''
             txnum = len(state.context['tx'])
+            #Fixme[felipe] context['tx'] not needed
+            if not txnum == len(world.human_transactions):
+                print "AAAAX"*10 , txnum == len(world.human_transactions),  txnum,  len(world.human_transactions)
+                print map(str, world.human_transactions)
+                print state.context['tx']
+            '''
+
+        txnum = len(world.human_transactions)
 
         # Replace any None by symbolic values
         if value is None:
@@ -1099,7 +1146,9 @@ class ManticoreEVM(Manticore):
         else:
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data)
-        state.context['tx'].append((ty, caller, address, value, data))
+
+        #Fixme[felipe] not needed
+        #state.context['tx'].append((ty, caller, address, value, data))
 
     def _will_execute_instruction_callback(self, state, pc, instruction):
         ''' INTERNAL USE '''
@@ -1177,7 +1226,9 @@ class ManticoreEVM(Manticore):
                 if metadata is not None:
                     summary.write('Last instruction at contract %x offset %x\n' %(address, offset))
                     at_runtime = blockchain.transactions[-1].sort != 'CREATE'
-                    summary.write(metadata.get_source_for(offset, at_runtime))
+                    source_code_snippet = metadata.get_source_for(offset, at_runtime)
+                    if source_code_snippet:
+                        summary.write(source_code_snippet)
                     summary.write('\n')
 
             # Accounts summary
@@ -1308,7 +1359,7 @@ class ManticoreEVM(Manticore):
         Terminate and generate testcases for all currently alive states (contract states that cleanly executed
         to a STOP or RETURN in the last symbolic transaction).
         """
-        logger.debug("Finalizing %d states.", self.count_states)
+        logger.debug("Finalizing %d states.", self.count_states())
         q = Queue()
         map(q.put, self._running_state_ids)
 

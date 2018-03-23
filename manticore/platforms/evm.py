@@ -77,6 +77,9 @@ class Transaction(object):
             raise EVMException('Invalid transaction result')
         self._result = result
 
+    def is_human(self):
+        return self.depth == 0
+
     @property
     def return_data(self):
         return self._return_data
@@ -1166,7 +1169,7 @@ class EVM(Eventful):
             raise StackOverflow()
 
         self.stack.append(simplify(value & TT256M1))
-
+        
     def _pop(self):
         if len(self.stack) == 0:
             raise StackUnderflow()
@@ -1208,6 +1211,18 @@ class EVM(Eventful):
         for arg in reversed(arguments[start:]):
             self._push(arg)
 
+    def _push_results(self, instruction, result):
+        # Check result (push)
+        if instruction.pushes > 1:
+            assert len(result) == instruction.pushes
+            for value in reversed(result):
+                self._push(value)
+        elif instruction.pushes == 1:
+            self._push(result)
+        else:
+            assert instruction.pushes == 0
+            assert result is None
+
     def _handler(self, *arguments):
         current = self.instruction
         implementation = getattr(self, current.semantics, None)
@@ -1227,22 +1242,28 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
+
+        #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
+        if self._on_transaction is False:
+            self._publish('will_decode_instruction', self.pc)
+
         last_pc = self.pc
         current = self.instruction
+
+        if self._on_transaction is False:
+            self._publish('will_execute_instruction', self.pc, current)
+
         arguments = self._pop_arguments()
         result = None
 
         if self._on_transaction is False:
-            self._publish('will_decode_instruction', self.pc)
-            #Consume some gas
-            self._consume(current.fee)
-            self._publish('will_execute_instruction', self.pc, current)
             self._publish('will_evm_execute_instruction', current, arguments)
 
+
+        ex = None
         try:
+            self._consume(current.fee)
             result = self._handler(*arguments)
-            self._publish('did_evm_execute_instruction', current, arguments, result)
-            self._publish('did_execute_instruction', last_pc, self.pc, current)
         except ConcretizeStack as ex:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
@@ -1260,24 +1281,22 @@ class EVM(Eventful):
             self._push_arguments(arguments)
             self._indemnify(current.fee)
             raise
-        except EndTx:
+
+        except EndTx as ex:
+            #do not push result nor advance the pc
             self._publish('did_evm_execute_instruction', current, arguments, result)
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
 
-        # Check result (push)
-        if current.pushes > 1:
-            assert len(result) == current.pushes
-            for value in reversed(result):
-                self._push(value)
-        elif current.pushes == 1:
-            self._push(result)
-        else:
-            assert current.pushes == 0
-            assert result is None
+        self._push_results(current, result)
+
         if not current.is_branch:
             #advance pc pointer
             self.pc += self.instruction.size
+
+        self._publish('did_evm_execute_instruction', current, arguments, result)
+        self._publish('did_execute_instruction', last_pc, self.pc, current)
+ 
 
     def read_buffer(self, offset, size):
         if issymbolic(size):
@@ -1487,8 +1506,8 @@ class EVM(Eventful):
 
             data = ''.join(concrete_data)
         except:
-
             pass
+
         if any(map(issymbolic, data)):
             return self.world.HASH(data)
         else:
@@ -1528,7 +1547,7 @@ class EVM(Eventful):
         data_length = len(self.data)
         bytes = []
         for i in range(32):
-            bytes.append( Operators.ITEBV(8, offset+i< data_length, self.data[offset+i], 0))
+            bytes.append( Operators.ITEBV(8, offset + i < data_length, self.data[offset+i], 0))
         value = Operators.CONCAT(256, *bytes)
         return value
 
@@ -1771,9 +1790,30 @@ class EVM(Eventful):
 
         return self.world.last_transaction.return_value
 
-    def CALLCODE(self, gas, to, value, in_offset, in_size, out_offset, out_size):
+    @transact
+    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
+    def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into this account with alternative account's code'''
-        raise NotImplemented
+        self.world.start_transaction('CALL',
+                                     address=self.address,
+                                     origin=self.origin,
+                                     price=self.price,
+                                     data=self.read_buffer(in_offset, in_size),
+                                     caller=self.address,
+                                     value=value,
+                                     gas=self.gas)
+        raise StartTx()
+
+    @CALL.pos
+    def CALLCODE(self, gas, _ignored_, value, in_offset, in_size, out_offset, out_size):
+        data = self.world.current_transaction.return_data
+
+        if data is not None:
+            data_size = len(data)
+            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+            self.current_vm.write_buffer(out_offset, data[:size])
+
+        return self.world.last_transaction.return_value
 
     def RETURN(self, offset, size):
         '''Halt execution returning output data'''
@@ -1902,6 +1942,17 @@ class EVMWorld(Platform):
         self._sha3 = {}
         self._pending_transaction = None
         self._transactions = list()
+        self._do_events()
+
+        for var_i in range(5):
+            for offset_i in range(10):
+                data = ("%064x%064x"%(var_i, offset_i) ).decode('hex')
+                value = int(sha3.keccak_256(data).hexdigest(), 16)
+                self._concrete_sha3_callback(data, value)
+                for offset_j in range(10):
+                    data = ("%064x"%offset_j).decode('hex') + data
+                    value = int(sha3.keccak_256(data).hexdigest(), 16)
+                    self._concrete_sha3_callback(data, value)
 
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
@@ -1964,12 +2015,9 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
-    @property
-    def transactions(self):
-        return self._transactions
 
     def _open_transaction(self, sort, address, origin, price, data, caller, value):
-        tx = Transaction(sort, address, origin, price, data, caller, value, depth=self.depth+1)
+        tx = Transaction(sort, address, origin, price, data, caller, value, depth=self.depth)
 
         if sort == 'CREATE':
             bytecode = data
@@ -2004,10 +2052,24 @@ class EVMWorld(Platform):
 
         tx.set_result(result, data)
         self._transactions.append(tx)
+        if self.depth == 0:
+            raise TerminateState(tx.result)
 
     @property
     def all_transactions(self):
         return tuple(self._transactions)
+
+    @property
+    def transactions(self):
+        return tuple(self._transactions)
+
+    @property
+    def human_transactions(self):
+        txs = []
+        for tx in self._transactions:
+            if tx.depth==0:
+                txs.append(tx)
+        return tuple(txs)
 
     @property
     def last_transaction(self):
@@ -2041,6 +2103,8 @@ class EVMWorld(Platform):
         """ current tx """
         try:
             tx, _, _, _, _ = self._callstack[-1]
+            if tx.result is not None:
+                return None
             return tx
         except IndexError:
             return None
@@ -2213,17 +2277,17 @@ class EVMWorld(Platform):
         return new_address
 
     def execute(self):
+        self._process_pending_transaction()
+        if self.current_vm is None:
+            raise TerminateState("Trying to execute an empty transaction", testcase=False)
+
         try:
-            self._process_pending_transaction()
-            if self.current_vm is None:
-                raise TerminateState("Trying to execute an empty transaction", testcase=False)
             self.current_vm.execute()
         except StartTx:
             pass
         except EndTx as ex:
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
-            if self.depth == 0:
-                raise TerminateState(ex.result, testcase=True)
+
 
     def run(self):
         while True:
@@ -2352,10 +2416,9 @@ class EVMWorld(Platform):
         self._open_transaction(ty, address, origin, price, data, caller, value)
 
         if failed:
-            raise EndTx('TXERROR')
+            self._close_transaction('TXERROR', rollback=True)
 
     def HASH(self, data):
-
         def compare_buffers(a, b):
             if len(a) != len(b):
                 return False
@@ -2371,17 +2434,17 @@ class EVMWorld(Platform):
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         # Broadcast the signal
         self._publish('on_symbolic_sha3', data, self._sha3.items())
-
         results = []
 
         # If know_hashes is true then there is a _known_ solution for the hash
         known_hashes = False
         for key, value in self._sha3.items():
-            assert not any(map(issymbolic, key))
+            assert not any(map(issymbolic, key)), "Saved sha3 data,hash pairs should be concrete"
             cond = compare_buffers(key, data)
             if solver.can_be_true(self._constraints, cond):
                 results.append((cond, value))
                 known_hashes = Operators.OR(cond, known_hashes)
+
         # results contains all the possible and known solutions
 
         # If known_hashes can be False then data can take at least one concrete
@@ -2406,6 +2469,7 @@ class EVMWorld(Platform):
                 self._publish('on_concrete_sha3', a_buffer, a_value)
                 results.append((cond, a_value))
                 known_hashes = Operators.OR(cond, known_hashes)
+
 
         if solver.can_be_true(self._constraints, known_hashes):
             self._constraints.add(known_hashes)

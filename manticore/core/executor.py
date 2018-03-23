@@ -502,7 +502,7 @@ class Executor(Eventful):
                     current_state = None
                     logger.setState(None)
 
-            assert current_state is None
+            assert current_state is None or self.is_shutdown()
 
             # notify siblings we are about to stop this run
             self._notify_stop_run()
