@@ -132,7 +132,7 @@ class Store(object):
         self.save_value(key, s.getvalue())
 
     @contextmanager
-    def load_stream(self, key):
+    def load_stream(self, key, binary=False):
         """
         Return a managed file-like object from which the calling code can read
         previously-serialized data.
