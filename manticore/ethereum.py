@@ -611,13 +611,14 @@ class ManticoreEVM(Manticore):
         #check solc version
         supported_versions = ('0.4.18', '0.4.21')
         installed_version = check_output(["solc", "--version"])
-        print supported_versions
         for line in installed_version.split('\n'):
             if 'ersion:' in line:
                 installed_version = line.split(":")[1].split('+')[0]
                 break
         if installed_version not in supported_versions:
-            logger.warning("Unsupported solc version %s", installed_version)
+            #Fixme 
+            #logger.warning("Unsupported solc version %s", installed_version)
+            pass
 
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
