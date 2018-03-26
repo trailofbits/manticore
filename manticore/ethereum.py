@@ -143,7 +143,7 @@ def calculate_coverage(runtime_bytecode, seen):
     end = None
     if ''.join(runtime_bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
-        end = -9 - 33 - 2  # Size of metadata at the end of most contracts
+        end = -9 - 32 - 2  # Size of metadata at the end of most contracts
 
     count, total = 0, 0
     for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]):
@@ -167,13 +167,17 @@ class SolidityMetadata(object):
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
-    def __build_source_map(self, bytecode, srcmap):
-        # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
-        new_srcmap = {}
+    def _remove_tail(self, bytecode):
         end = None
         if ''.join(bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
                 and ''.join(bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
+            end = -9 - 32 - 2  # Size of metadata at the end of most contracts
+        return bytecode[:end]
+
+    def __build_source_map(self, bytecode, srcmap):
+        # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
+        new_srcmap = {}
+        bytecode = self._remove_tail(bytecode)
 
         asm_offset = 0
         asm_pos = 0
@@ -206,20 +210,12 @@ class SolidityMetadata(object):
     @property
     def runtime_bytecode(self):
         # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._runtime_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._runtime_bytecode[:end]
+        return self._remove_tail(self._runtime_bytecode)
 
     @property
     def init_bytecode(self):
         # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._init_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._init_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._init_bytecode[:end]
+        return self._remove_tail(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
