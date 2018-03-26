@@ -1,6 +1,7 @@
 import string
 
 from . import Manticore
+from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import simplify, translate_to_smtlib
 from .platforms import evm
@@ -20,6 +21,14 @@ from functools import reduce
 logger = logging.getLogger(__name__)
 
 ################ Detectors ####################
+
+
+class EthereumError(ManticoreError):
+    pass
+
+
+class NoAliveStates(EthereumError):
+    pass
 
 
 class Detector(Plugin):
@@ -61,7 +70,7 @@ class IntegerOverflow(Detector):
     @staticmethod
     def _can_add_overflow(state, result, a, b):
         # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
-        return state.can_be_true(result < a) or state.can_be_true(result < b)
+        return state.can_be_true(operators.ULT(result, a) | operators.ULT(result, b))
 
     @staticmethod
     def _can_mul_overflow(state, result, a, b):
@@ -127,19 +136,22 @@ class UninitializedStorage(Detector):
 
 def calculate_coverage(code, seen):
     ''' Calculates what percentage of code has been seen '''
+
     def array_to_string(arr):
+        #Get a string out of constant Array
         result = ''
-        for c in arr:
-            result += chr(c.value)
+        for i in range(len(arr)):
+            result += chr(simplify(arr[i]).value)
         return result
-    runtime_bytecode = array_to_string(code)
+    bytecode = array_to_string(code)
+
     end = None
-    if runtime_bytecode[-44: -34] == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and runtime_bytecode[-2:] == '\x00\x29':
+    if bytecode[-44: -34] == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+            and bytecode[-2:] == '\x00\x29':
         end = -9 - 33 - 2  # Size of metadata at the end of most contracts
 
     count, total = 0, 0
-    for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]):
+    for i in evm.EVMAsm.disassemble_all(bytecode[:end]):
         if i.offset in seen:
             count += 1
         total += 1
@@ -690,8 +702,7 @@ class ManticoreEVM(Manticore):
 
         self._executor.subscribe('did_load_state', self._load_state_callback)
         self._executor.subscribe('will_terminate_state', self._terminate_state_callback)
-        self._executor.subscribe('will_execute_instruction', self._will_execute_instruction_callback)
-        self._executor.subscribe('did_execute_instruction', self._did_execute_instruction_callback)
+        self._executor.subscribe('did_evm_execute_instruction', self._did_evm_execute_instruction_callback)
         self._executor.subscribe('did_read_code', self._did_evm_read_code)
         self._executor.subscribe('on_symbolic_sha3', self._symbolic_sha3)
         self._executor.subscribe('on_concrete_sha3', self._concrete_sha3)
@@ -915,7 +926,7 @@ class ManticoreEVM(Manticore):
         return address
 
     def transaction(self, caller, address, value, data):
-        ''' Issue a transaction
+        ''' Issue a symbolic transaction
 
             :param caller: the address of the account sending the transaction
             :type caller: int or EVMAccount
@@ -925,11 +936,17 @@ class ManticoreEVM(Manticore):
             :type value: int or SValue
             :param data: initial data
             :return: an EVMAccount
+            :raises NoAliveStates: if there are no alive states to execute
         '''
         if isinstance(address, EVMAccount):
             address = int(address)
         if isinstance(caller, EVMAccount):
             caller = int(caller)
+
+        with self.locked_context('seth') as context:
+            has_alive_states = context['_saved_states'] or self.initial_state is not None
+            if not has_alive_states:
+                raise NoAliveStates
 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
@@ -946,18 +963,25 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_account="attacker"):
         with open(solidity_filename) as f:
             source_code = f.read()
 
-        user_account = self.create_account(balance=1000)
+        owner_account = self.create_account(balance=1000)
+        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=user_account)
+
+        if tx_account == "attacker":
+            tx_account = attacker_account
+        elif tx_account == "owner":
+            tx_account = owner_account
+        else:
+            raise EthereumError('The account to perform the symbolic exploration of the contract should be either "attacker" or "owner"')
 
         def run_symbolic_tx():
             symbolic_data = self.make_symbolic_buffer(320)
             symbolic_value = self.make_symbolic_value()
-            self.transaction(caller=attacker_account,
+            self.transaction(caller=tx_account,
                              address=contract_account,
                              data=symbolic_data,
                              value=symbolic_value)
@@ -970,7 +994,10 @@ class ManticoreEVM(Manticore):
         current_coverage = 0
 
         while current_coverage < 100 and not self.is_shutdown():
-            run_symbolic_tx()
+            try:
+                run_symbolic_tx()
+            except NoAliveStates:
+                break
 
             if tx_limit is not None:
                 tx_limit -= 1
@@ -992,8 +1019,7 @@ class ManticoreEVM(Manticore):
         # Check if there is a pending transaction
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is not None
-            # there is at least one states in seth saved states
-            assert context['_saved_states'] or self.initial_state is not None
+
             # there is no states added to the executor queue
             assert len(self._executor.list()) == 0
 
@@ -1003,7 +1029,7 @@ class ManticoreEVM(Manticore):
 
         # A callback will use _pending_transaction and issue the transaction
         # in each state (see load_state_callback)
-        result = super(ManticoreEVM, self).run(**kwargs)
+        super(ManticoreEVM, self).run(**kwargs)
 
         with self.locked_context('seth') as context:
             if len(context['_saved_states']) == 1:
@@ -1013,7 +1039,6 @@ class ManticoreEVM(Manticore):
 
             # clear pending transcations. We are done.
             context['_pending_transaction'] = None
-        return result
 
     def save(self, state, final=False):
         ''' Save a state in secondary storage and add it to running or final lists
@@ -1075,11 +1100,10 @@ class ManticoreEVM(Manticore):
             our private list
         '''
         world = state.platform
-        tx = world.last_transaction
+        tx = world.all_transactions[-1]
 
         if tx and not tx.is_human():
             logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
-
         state.context['last_exception'] = e
 
         if state.platform.current_transaction is not None:
@@ -1088,6 +1112,7 @@ class ManticoreEVM(Manticore):
             e.testcase=True
             return 
 
+        print world.all_transactions, tx, e
         #is we initiated the Tx we need process the outcome for now.
         #Fixme incomplete. 
         if tx.is_human():
@@ -1097,8 +1122,12 @@ class ManticoreEVM(Manticore):
                 else:
                     world.delete_account(address)
 
+        #Human tx that ends in this wont modify the storage so finalize and
+        # generate a testcase. FIXME This should be configurable as REVERT and 
+        # THROWit actually changes the balance and nonce? of some accounts
         if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
+            e.testcase = True
         else:
             assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
             # if not a revert we save the state for further transactioning
@@ -1118,14 +1147,6 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             # take current global transaction we need to apply to all running states
             ty, caller, address, value, data = context['_pending_transaction']
-            '''
-            txnum = len(state.context['tx'])
-            #Fixme[felipe] context['tx'] not needed
-            if not txnum == len(world.human_transactions):
-                print "AAAAX"*10 , txnum == len(world.human_transactions),  txnum,  len(world.human_transactions)
-                print map(str, world.human_transactions)
-                print state.context['tx']
-            '''
 
         txnum = len(world.human_transactions)
 
@@ -1147,26 +1168,22 @@ class ManticoreEVM(Manticore):
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data)
 
-        #Fixme[felipe] not needed
-        #state.context['tx'].append((ty, caller, address, value, data))
 
-    def _will_execute_instruction_callback(self, state, pc, instruction):
+    def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         ''' INTERNAL USE '''
-        assert state.constraints == state.platform.constraints
-        assert state.platform.constraints == state.platform.current_vm.constraints
         logger.debug("%s", state.platform.current_vm)
-
-        if state.platform.current_transaction.sort == 'CALL':
-            coverage_context_name = 'runtime_coverage'
-        else:
+        #TODO move to a plugin
+        at_init = state.platform.current_transaction.sort == 'CREATE'
+        pc = instruction.offset
+        if at_init:
             coverage_context_name = 'init_coverage'
+        else:
+            coverage_context_name = 'runtime_coverage'
 
         with self.locked_context(coverage_context_name, set) as coverage:
-            coverage.add((state.platform.current_vm.address, state.platform.current_vm.pc))
+            coverage.add((state.platform.current_vm.address, pc))
 
-    def _did_execute_instruction_callback(self, state, prev_pc, pc, instruction):
-        ''' INTERNAL USE '''
-        state.context.setdefault('seth.trace', []).append((state.platform.current_vm.address, prev_pc))
+        state.context.setdefault('evm.trace', []).append((state.platform.current_vm.address, pc, at_init))
 
     def _did_evm_read_code(self, state, offset, size):
         ''' INTERNAL USE '''
@@ -1178,7 +1195,7 @@ class ManticoreEVM(Manticore):
         ''' Gets the solidity metadata for address.
             This is available only if address is a contract created from solidity
         '''
-        return self.metadata.get(address)
+        return self.metadata.get(int(address))
 
     def register_detector(self, d):
         if not isinstance(d, Detector):
@@ -1218,14 +1235,15 @@ class ManticoreEVM(Manticore):
         with testcase.open_stream('summary') as summary:
             summary.write("Last exception: %s\n" % state.context['last_exception'])
 
-            address, offset = state.context['seth.trace'][-1]
+            at_runtime = blockchain.last_transaction.sort != 'CREATE'
+            address, offset, at_init = state.context['evm.trace'][-1]
+            assert at_runtime != at_init            
 
             #Last instruction if last tx vas valid
             if state.context['last_exception'].message != 'TXERROR':
-                metadata = self.get_metadata(blockchain.transactions[-1].address)
+                metadata = self.get_metadata(blockchain.last_transaction.address)
                 if metadata is not None:
                     summary.write('Last instruction at contract %x offset %x\n' %(address, offset))
-                    at_runtime = blockchain.transactions[-1].sort != 'CREATE'
                     source_code_snippet = metadata.get_source_for(offset, at_runtime)
                     if source_code_snippet:
                         summary.write(source_code_snippet)
@@ -1253,14 +1271,15 @@ class ManticoreEVM(Manticore):
                         summary.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
                 '''
-                code = blockchain.get_code(account_address)
-                if len(code):
+
+                runtime_code = blockchain.get_code(account_address)
+                if runtime_code:
                     summary.write("Code:\n")
-                    fcode = StringIO.StringIO(code)
+                    fcode = StringIO.StringIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write('\t%s\n' % chunk.encode('hex'))
-                    trace = set((offset for address_i, offset in state.context['seth.trace'] if address == address_i))
-                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(code, trace))  # coverage % for address in this account/state
+                    runtime_trace = set((pc for contract, pc, at_init in state.context['evm.trace'] if address == contract and not at_init))
+                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
                 summary.write("\n")
 
             if blockchain._sha3:
@@ -1353,6 +1372,23 @@ class ManticoreEVM(Manticore):
                 from .utils import iterpickle
                 logger.debug("Using iterpickle to dump state")
                 statef.write(iterpickle.dumps(state, 2))
+
+        with testcase.open_stream('trace') as f:
+            self._emit_trace_file(f, state.context['evm.trace'])
+
+
+    @staticmethod
+    def _emit_trace_file(filestream, trace):
+        """
+        :param filestream: file object for the workspace trace file
+        :param trace: list of (contract address, pc) tuples
+        :type trace: list[tuple(int, int)]
+        """
+        for contract, pc, at_init in trace:
+            if pc == 0:
+                filestream.write('---\n')
+            ln = '0x{:x}:0x{:x} {}\n'.format(contract, pc, '*' if at_init else '')
+            filestream.write(ln)
 
     def finalize(self):
         """

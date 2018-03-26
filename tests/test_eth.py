@@ -1,12 +1,14 @@
 import unittest
 import os
 
+from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args
 
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates
+from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, EVMAsm
+import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,7 +31,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn('overflow at MUL', all_findings)
 
 
-class EthDetectors(unittest.TestCase):
+class EthDetectorsTest(unittest.TestCase):
     def setUp(self):
         self.io = IntegerOverflow()
         self.state = self.make_mock_evm_state()
@@ -73,6 +75,14 @@ class EthDetectors(unittest.TestCase):
 
 
 class EthTests(unittest.TestCase):
+    def setUp(self):
+        self.mevm = ManticoreEVM()
+        self.worksp = self.mevm.workspace
+
+    def tearDown(self):
+        self.mevm=None
+        shutil.rmtree(self.worksp)
+
     def test_emit_did_execute_end_instructions(self):
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
@@ -80,7 +90,7 @@ class EthTests(unittest.TestCase):
                     with self.locked_context('insns', dict) as d:
                         d[instruction.semantics] = True
 
-        mevm = ManticoreEVM()
+        mevm = self.mevm
         p = TestDetector()
         mevm.register_detector(p)
 
@@ -93,40 +103,90 @@ class EthTests(unittest.TestCase):
         self.assertIn('RETURN', context)
         self.assertIn('REVERT', context)
 
-    def test_can_create(self):
-        mevm = ManticoreEVM()
-        source_code = """
-        contract X { function X(address x) {} }
-        contract C { function C(address x) { new X(x); }
-        }
+    def test_end_instruction_trace(self):
         """
-        # Make sure that we can can call CREATE without raising an exception
-        owner = mevm.create_account(balance=1000)
-        x = mevm.create_account(balance=0)
-        contract_account = mevm.solidity_create_contract(source_code,
-                contract_name="C", owner=owner, args=[x])
+        Make sure that the trace files are correct, and include the end instructions
+        """
+        class TestPlugin(Plugin):
+            """
+            Record the pcs of all end instructions encountered. Source of truth.
+            """
+            def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+            #def will_evm_execute_instruction_callback(self, state, instruction, arguments):
+                world = state.platform
+                if world.current_transaction.sort == 'CREATE':
+                    name = 'init'
+                else:
+                    name = 'rt'
 
-    def test_writebuffer_doesnt_raise(self):
-        mevm = ManticoreEVM()
-        source_code = """
-	contract X {
-	    mapping(address => uint) private balance;
-	    function f(address z) returns (uint) { return balance[z]; }
-	}
-	contract C {
-	  X y;
-	  function C() {
-	    y = new X();
-	    uint z = y.f(0);
-	  }
-	}"""
-        # Make sure that write_buffer (used by RETURN) succeeds without errors
-        owner = mevm.create_account(balance=1000)
-        x = mevm.create_account(balance=0)
-        contract_account = mevm.solidity_create_contract(source_code,
-                contract_name="C", owner=owner, args=[x])
+                # collect all end instructions based on whether they are in init or rt
+                if instruction.is_endtx:
+                    with self.locked_context(name) as d:
+                        d.append(instruction.offset)
+
+        mevm = self.mevm
+        p = TestPlugin()
+        mevm.register_plugin(p)
 
 
+        filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+
+        mevm.multi_tx_analysis(filename, tx_limit=1)
+
+        worksp = mevm.workspace
+        listdir = os.listdir(worksp)
+
+        def get_concatenated_files(directory, suffix, init):
+            paths = [os.path.join(directory, f) for f in listdir if f.endswith(suffix)]
+            concatenated = ''.join(open(path).read() for path in paths)
+            result = set()
+            for x in concatenated.split('\n'):
+                if ':' in x:
+                    address = int(x.split(':')[0],16)
+                    pc = int(x.split(':')[1].split(' ')[0],16)
+                    at_init = '*' in x
+                    if at_init == init:
+                        result.add(pc)
+            return result
+
+        all_init_traces = get_concatenated_files(worksp, 'trace', init=True)
+        all_rt_traces = get_concatenated_files(worksp, 'trace', init=False)
+
+        # make sure all init end insns appear somewhere in the init traces
+        for pc in p.context['init']:
+            self.assertIn(pc, all_init_traces)
+
+        # and all rt end insns appear somewhere in the rt traces
+        for pc in p.context['rt']:
+            self.assertIn(pc, all_rt_traces)
+
+
+
+
+    def test_graceful_handle_no_alive_states(self):
+        """
+        If there are no alive states, or no initial states, we should not crash. issue #795
+        """
+        # initiate the blockchain
+        m = self.mevm
+        source_code = '''
+        contract Simple {
+            function f(uint a) payable public {
+                if (a == 65) {
+                    revert();
+                }
+            }
+        }
+        '''
+
+        # Initiate the accounts
+        user_account = m.create_account(balance=1000)
+        contract_account = m.solidity_create_contract(source_code, owner=user_account, balance=0)
+
+        contract_account.f(1)  # it works
+        contract_account.f(65)  # it works
+        with self.assertRaises(NoAliveStates):
+            contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
 
     def test_reachability(self):
         class StopAtFirstJump414141(Detector):
@@ -137,7 +197,7 @@ class EthTests(unittest.TestCase):
                         d['found'] = True
                     self.manticore.terminate()
 
-        mevm = ManticoreEVM()
+        mevm = self.mevm
         p = StopAtFirstJump414141()
         mevm.register_detector(p)
 
@@ -147,8 +207,7 @@ class EthTests(unittest.TestCase):
         context = p.context.get('flags', {})
         self.assertTrue(context.get('found', False))
 
-
-class EthHelpers(unittest.TestCase):
+class EthHelpersTest(unittest.TestCase):
     def setUp(self):
         self.bv = BitVec(256)
 

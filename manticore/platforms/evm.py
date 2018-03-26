@@ -1149,11 +1149,9 @@ class EVM(Eventful):
             for pc in range(self.pc,len(bytecode)):
                 yield chr(bytecode[pc].value)
 
-            #for byte in self.bytecode[self.pc:]:
-            #    yield chr(byte.value)
             while True:
                 yield '\x00'
-        return EVMAsm.disassemble_one(getcode())
+        return EVMAsm.disassemble_one(getcode(), offset=self.pc)
 
     # auxiliar funcs
     # Stack related
@@ -1284,18 +1282,22 @@ class EVM(Eventful):
 
         except EndTx as ex:
             #do not push result nor advance the pc
+            if not current.is_branch:
+                #advance pc pointer
+                self.pc += self.instruction.size
             self._publish('did_evm_execute_instruction', current, arguments, result)
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
 
         self._push_results(current, result)
-
         if not current.is_branch:
             #advance pc pointer
             self.pc += self.instruction.size
-
         self._publish('did_evm_execute_instruction', current, arguments, result)
         self._publish('did_execute_instruction', last_pc, self.pc, current)
+
+
+
  
 
     def read_buffer(self, offset, size):
@@ -2061,25 +2063,25 @@ class EVMWorld(Platform):
 
     @property
     def transactions(self):
-        return tuple(self._transactions)
+        return tuple((tx for tx in self._transactions if tx.result != 'TXERROR'))
 
     @property
     def human_transactions(self):
         txs = []
-        for tx in self._transactions:
+        for tx in self.transactions:
             if tx.depth==0:
                 txs.append(tx)
         return tuple(txs)
 
+
     @property
     def last_transaction(self):
         ''' Last completed transaction '''
-        if self._transactions:
-            return self._transactions[-1]
+        return self.transactions[-1]
 
     @property
     def last_human_transaction(self):
-        for tx in reversed(self._transactions):
+        for tx in reversed(self.transactions):
             if tx.depth==0:
                 return tx
         
@@ -2409,7 +2411,6 @@ class EVMWorld(Platform):
 
         #Here we have enough funds and room in the callstack
         self.send_funds(caller, address, value)
-
 
         if ty == 'CREATE':
             data = bytecode
