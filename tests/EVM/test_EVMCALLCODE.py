@@ -1,3 +1,4 @@
+from builtins import bytes
 
 import struct
 import unittest
@@ -44,7 +45,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -74,7 +75,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -104,7 +105,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -134,7 +135,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -164,7 +165,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -194,7 +195,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -224,7 +225,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -254,7 +255,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -284,7 +285,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -314,7 +315,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -344,7 +345,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -374,7 +375,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='\xf2'
+            bytecode=bytes(b'\xf2')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,

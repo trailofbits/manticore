@@ -1,3 +1,4 @@
+from builtins import bytes
 
 import struct
 import unittest
@@ -44,7 +45,7 @@ class EVMTest_CODESIZE(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='8'
+            bytecode=bytes(b'8')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,

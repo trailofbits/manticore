@@ -1,4 +1,6 @@
+from builtins import bytes
 
+import sys
 import struct
 import unittest
 import json
@@ -44,7 +46,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -71,7 +73,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -86,8 +88,12 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            #Currently the hash("1NONCE")
-            self.assertEqual(new_vm.stack, [4191156306509761637738076877631970127621839175651556722833009931314104461609])
+            #Currently the hash("1NONCE") or hash("1LNONCE") depending on Python version
+            if sys.version_info[0] == 2:
+                hash = 4191156306509761637738076877631970127621839175651556722833009931314104461609
+            else:
+                hash = 26452271797455398068136729426596048315606538397681157548245481838556859410503
+            self.assertEqual(new_vm.stack, [hash])
 
     def test_BLOCKHASH_3(self):
             #Make the constraint store
@@ -99,7 +105,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -126,7 +132,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -153,7 +159,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -180,7 +186,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -207,7 +213,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -234,7 +240,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
@@ -261,7 +267,7 @@ class EVMTest_BLOCKHASH(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='@'
+            bytecode=bytes(b'@')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,

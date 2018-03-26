@@ -1,3 +1,4 @@
+from builtins import bytes
 
 import struct
 import unittest
@@ -44,7 +45,7 @@ class EVMTest_JUMPDEST(unittest.TestCase):
             caller=origin=0x111111111111111111111111111111111111100
             price=0
             value=10000
-            bytecode='['
+            bytecode=bytes(b'[')
             data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
             header = { 'coinbase': 0,
                         'timestamp': 0,
