@@ -7,7 +7,7 @@ from .core.smtlib.visitors import arithmetic_simplifier
 from .platforms import evm
 from .core.state import State
 import tempfile
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
 import sha3
@@ -141,7 +141,7 @@ class UninitializedStorage(Detector):
 def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
     end = None
-    if ''.join(runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+    if ''.join(runtime_bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
             and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
         end = -9 - 33 - 2  # Size of metadata at the end of most contracts
 
@@ -171,7 +171,7 @@ class SolidityMetadata(object):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
         end = None
-        if ''.join(bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+        if ''.join(bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
                 and ''.join(bytecode[-2:]) == '\x00\x29':
             end = -9 - 33 - 2  # Size of metadata at the end of most contracts
 
@@ -607,6 +607,18 @@ class ManticoreEVM(Manticore):
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
+
+        #check solc version
+        supported_versions = ('0.4.18', '0.4.21')
+        installed_version = check_output(["solc", "--version"])
+        print supported_versions
+        for line in installed_version.split('\n'):
+            if 'ersion:' in line:
+                installed_version = line.split(":")[1].split('+')[0]
+                break
+        if installed_version not in supported_versions:
+            logger.warning("Unsupported solc version %s", installed_version)
+
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
