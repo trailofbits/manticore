@@ -1,4 +1,5 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
+
 from builtins import str
 from builtins import int
 from builtins import hex
@@ -7,7 +8,19 @@ from builtins import next
 from builtins import chr
 from builtins import range
 from builtins import bytes
-import random, copy
+
+import random
+import copy
+import inspect
+import logging
+import sys
+import binascii
+#if sys.version_info < (3, 6):
+import sha3
+from collections import namedtuple
+from itertools import chain
+from functools import wraps
+
 from ..utils.helpers import issymbolic, memoized, isstring
 from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
@@ -16,14 +29,6 @@ from ..core.state import ForkState, TerminateState
 from ..utils.event import Eventful
 from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
 from ..core.state import Concretize, TerminateState
-import inspect
-import logging
-import sys
-from collections import namedtuple
-if sys.version_info < (3, 6):
-    import sha3
-from itertools import chain
-from functools import wraps
 
 logger = logging.getLogger(__name__)
 
@@ -450,7 +455,7 @@ class EVMAsm(object):
                 operand = 0
                 for _ in range(self.operand_size):
                     operand <<= 8
-                    operand |= ord(next(buf))
+                    operand |= next(buf)
                 self._operand = operand
             except StopIteration:
                 raise Exception("Not enough data for decoding")
@@ -831,7 +836,7 @@ class EVMAsm(object):
 
             :param bytecode: the bytecode stream
             :param offset: offset of the instruction in the bytecode(optional)
-            :type bytecode: iterator/sequence/str
+            :type bytecode: iterator/sequence/bytes
             :return: an Instruction object
 
             Example use::
@@ -840,7 +845,8 @@ class EVMAsm(object):
 
         '''
         bytecode = iter(bytecode)
-        opcode = ord(next(bytecode))
+        opcode = next(bytecode)
+        assert isinstance(opcode, int)
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
         name, operand_size, pops, pushes, gas, description = EVMAsm._table.get(opcode, invalid)
         instruction = EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, offset=offset)
@@ -888,14 +894,13 @@ class EVMAsm(object):
     def disassemble(bytecode, offset=0):
         ''' Disassemble an EVM bytecode
 
-            :param bytecode: binary representation of an evm bytecode (hexadecimal)
-            :param offset: offset of the first instruction in the bytecode(optional)
-            :type bytecode: str
-            :return: the text representation of the aseembler code
+            :param bytes bytecode: binary representation of an evm bytecode (hexadecimal)
+            :param int offset: offset of the first instruction in the bytecode(optional)
+            :return: the text representation of the assembler code
 
             Example use::
 
-                >>> EVMAsm.disassemble("\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00")
+                >>> EVMAsm.disassemble(bytes.fromhex("\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00"))
                 ...
                 PUSH1 0x60
                 BLOCKHASH
@@ -927,7 +932,7 @@ class EVMAsm(object):
                 ...
                 "\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00"
         '''
-        return ''.join([x.bytes for x in EVMAsm.assemble_all(asmcode, offset=offset)])
+        return b''.join(x.bytes for x in EVMAsm.assemble_all(asmcode, offset=offset))
 
     @staticmethod
     def disassemble_hex(bytecode, offset=0):
@@ -951,7 +956,7 @@ class EVMAsm(object):
         '''
         if bytecode.startswith('0x'):
             bytecode = bytecode[2:]
-        bytecode = bytecode.decode('hex')
+        bytecode = bytes(binascii.unhexlify(bytecode))
         return EVMAsm.disassemble(bytecode, offset=offset)
 
     @staticmethod
@@ -975,7 +980,7 @@ class EVMAsm(object):
                 ...
                 "0x6060604052600261010"
         '''
-        return '0x' + EVMAsm.assemble(asmcode, offset=offset).encode('hex')
+        return '0x' + binascii.hexlify(EVMAsm.assemble(asmcode, offset=offset)).decode('ascii')
 
 
 # Exceptions...
@@ -1151,6 +1156,9 @@ class EVM(Eventful):
 
         '''
         super(EVM, self).__init__(**kwargs)
+
+        assert isinstance(code, bytes)
+
         self._constraints = constraints
         self.last_exception = None
         self.memory = EVMMemory(constraints)
@@ -1306,7 +1314,7 @@ class EVM(Eventful):
             for byte in self.bytecode[self.pc:]:
                 yield byte
             while True:
-                yield '\x00'
+                yield 0
 
         return EVMAsm.disassemble_one(getcode())
 
@@ -1590,11 +1598,10 @@ class EVM(Eventful):
         if any(map(issymbolic, data)):
             raise Sha3(data)
 
-        buf = ''.join(data)
-        value = sha3.keccak_256(buf).hexdigest()
+        value = sha3.keccak_256(data).hexdigest()
         value = int('0x' + value, 0)
-        self._publish('on_concrete_sha3', buf, value)
-        logger.info("Found a concrete SHA3 example %r -> %x", buf, value)
+        self._publish('on_concrete_sha3', data, value)
+        logger.info("Found a concrete SHA3 example %r -> %x", data, value)
         return value
 
     ##########################################################################
@@ -1711,7 +1718,7 @@ class EVM(Eventful):
 
         # We are not maintaining an actual -block-chain- so we just generate
         # some hashes for each virtual block
-        value = sha3.keccak_256(repr(a) + 'NONCE').hexdigest()
+        value = sha3.keccak_256((repr(a) + 'NONCE').encode('utf-8')).hexdigest()
         value = int('0x' + value, 0)
 
         # 0 is left on the stack if the looked for block number is greater than the current block number
@@ -1848,7 +1855,7 @@ class EVM(Eventful):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
         else:
-            data = ''.join(data)
+            data = b''.join(data)
 
         return data
 
