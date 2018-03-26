@@ -25,7 +25,7 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
             for item in value
         ]
         return '(%s)' % (','.join(items) + lfchar + htchar * indent)
-    elif type(value) in (str, str):
+    elif type(value) is str:
         if len(value) ==0:
             return repr(value)
 
@@ -36,6 +36,18 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
             for pos in range(0, len(value), width): 
                 o.append(repr(value[pos: pos+width]) )
             return ('\\' + lfchar + htchar * indent).join(o)
+        return repr(value)
+    elif type(value) is bytes:
+        if len(value) ==0:
+            return repr(value)
+
+        if width is not None and isstring(value):
+            width = width - indent
+            width = max(1, width)
+            o = []
+            for pos in range(0, len(value), width): 
+                o.append(repr(value[pos: pos+width]) )
+            return 'bytes(b' + ('\\' + lfchar + htchar * indent).join(o) + ')'
         return repr(value)
 
     else:
