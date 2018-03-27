@@ -287,7 +287,8 @@ class Executor(Eventful):
         self._running.value -= 1
         if self._running.value < 0:
             raise SystemExit
-        self._lock.notify_all()
+        with self._lock:
+            self._lock.notify_all()
 
     ################################################
     # Public API
@@ -310,7 +311,8 @@ class Executor(Eventful):
     def put(self, state_id):
         ''' Enqueue it for processing '''
         self._states.append(state_id)
-        self._lock.notify_all()
+        with self._lock:
+            self._lock.notify_all()
         return state_id
 
     @sync
@@ -331,7 +333,8 @@ class Executor(Eventful):
                 return None
             # if there is actually some workers running wait for state forks
             logger.debug("Waiting for available states")
-            self._lock.wait()
+            with self._lock:
+                self._lock.wait()
 
         state_id = self._policy.choice(list(self._states))
         if state_id is None:
