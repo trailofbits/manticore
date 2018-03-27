@@ -918,7 +918,7 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_account="attacker"):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_stop_using_coverage=True, tx_account="attacker"):
         with open(solidity_filename) as f:
             source_code = f.read()
 
@@ -944,7 +944,7 @@ class ManticoreEVM(Manticore):
         prev_coverage = 0
         current_coverage = 0
 
-        while current_coverage < 100:
+        while current_coverage < 100 or not tx_stop_using_coverage:
             try:
                 run_symbolic_tx()
             except NoAliveStates:
@@ -959,7 +959,7 @@ class ManticoreEVM(Manticore):
             current_coverage = self.global_coverage(contract_account)
             found_new_coverage = prev_coverage < current_coverage
 
-            if not found_new_coverage:
+            if not found_new_coverage and tx_stop_using_coverage:
                 break
 
         self.finalize()
