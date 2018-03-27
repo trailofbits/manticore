@@ -122,7 +122,7 @@ class Bool(Expression):
         return BoolXor(self.cast(other), self)
 
     def __bool__(self):
-        raise NotImplementedError("__nonzero__ for Bool")
+        raise NotImplementedError("__bool__ for Bool")
 
     def __nonzero__(self):
         raise NotImplementedError("__nonzero__ for Bool")
@@ -146,7 +146,7 @@ class BoolConstant(Bool, Constant):
         return self.value
 
     def __nonzero__(self):
-        return self.__bool__()
+        return bool(self)
 
 
 class BoolOperation(Operation, Bool):
