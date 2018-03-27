@@ -155,7 +155,7 @@ while True:
 
         COUNTER = {'i386': 'ECX', 'amd64': 'RCX'}[arch]
         wordsize =  {'i386': 4, 'amd64': 8}[arch]
-        text = ''.join([chr(gdb.getByte(pc+i)) for i in range(16)])
+        text = ''.join(chr(gdb.getByte(pc+i)) for i in range(16))
 
         cap_arch = {'i386': CS_ARCH_X86, 'amd64': CS_ARCH_X86}[arch] 
         cap_mode = {'i386': CS_MODE_32, 'amd64': CS_MODE_64}[arch] 

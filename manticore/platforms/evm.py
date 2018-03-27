@@ -1886,7 +1886,7 @@ class EVM(Eventful):
 
     def __str__(self):
         def hexdump(src, length=16):
-            FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
+            FILTER = ''.join(len(repr(chr(x))) == 3 and chr(x) or '.' for x in range(256))
             lines = []
             for c in range(0, len(src), length):
                 chars = src[c:c + length]
@@ -1895,7 +1895,7 @@ class EVM(Eventful):
                         return '??'
                     else:
                         return "%02x" % x
-                hex = ' '.join([p(x) for x in chars])
+                hex = ' '.join(p(x) for x in chars)
 
                 def p1(x):
                     if issymbolic(x):
@@ -1903,7 +1903,7 @@ class EVM(Eventful):
                     else:
                         return "%s" % ((x <= 127 and FILTER[x]) or '.')
 
-                printable = ''.join([p1(x) for x in chars])
+                printable = ''.join(p1(x) for x in chars)
                 lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
             return lines
 

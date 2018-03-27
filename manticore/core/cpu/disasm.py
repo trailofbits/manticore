@@ -222,7 +222,7 @@ class BinjaILDisasm(Disasm):
 
         @property
         def op_str(self):
-            return " ".join([str(x.op) for x in self.llil.operands])
+            return " ".join(str(x.op) for x in self.llil.operands)
 
         @property
         def operands(self):

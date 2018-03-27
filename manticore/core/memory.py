@@ -681,7 +681,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         return sorted(result)
 
     def __str__(self):
-        return '\n'.join(['%016x-%016x % 4s %08x %s' % (start, end, p, offset, name or '') for start, end, p, offset, name in self.mappings()])
+        return '\n'.join('%016x-%016x % 4s %08x %s' % (start, end, p, offset, name or '') for start, end, p, offset, name in self.mappings())
 
     def _maps_in_range(self, start, end):
         '''

@@ -576,7 +576,7 @@ class Decree(Platform):
                 data.append(value)
             self.files[fd].transmit(data)
 
-            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join([str(x) for x in data])))
+            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join(str(x) for x in data)))
             self.syscall_trace.append(("_transmit", fd, data))
             self.signal_transmit(fd)
 
@@ -776,7 +776,7 @@ class Decree(Platform):
 
         if len(self.running) == 0:
             logger.info("None running checking if there is some process waiting for a timeout")
-            if all([x is None for x in self.timers]):
+            if all(x is None for x in self.timers):
                 raise Deadlock()
             self.clocks = min(x for x in self.timers if x is not None) + 1
             self.check_timers()
@@ -820,7 +820,7 @@ class Decree(Platform):
         if self._current not in self.running:
             logger.info("\tCurrent not running. Checking for timers...")
             self._current = None
-            if all([x is None for x in self.timers]):
+            if all(x is None for x in self.timers):
                 raise Deadlock()
             self.check_timers()
 
