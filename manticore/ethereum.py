@@ -391,17 +391,23 @@ class ABI(object):
 
         if ty.startswith('uint') and 0 <= int(ty[4:]) <= 256:
             size = int(ty[4:])
-            assert((size % 8) == 0)
+            if not ((size % 8) == 0):
+                raise EthereumError('Invalid uint size %s' % size)
+
             return get_uint(size, offset), offset + 32
+        if ty.startswith('int') and 0 <= int(ty[3:]) <= 256:
+            size = int(ty[4:])
+            if not ((size % 8) == 0):
+                raise EthereumError('Invalid int size %s' % size)
+
+            value = get_uint(size, offset)
+            mask = 2**(size - 1)
+            value = -(value & mask) + (value & ~mask)
+            return value, offset + 32
         elif ty in (u'bool'):
             return get_uint(8, offset), offset + 32
         elif ty == u'address':
             return get_uint(160, offset), offset + 32
-        elif ty == u'int256':
-            value = get_uint(256, offset)
-            mask = 2**(256 - 1)
-            value = -(value & mask) + (value & ~mask)
-            return value, offset + 32
         elif ty == u'':
             return None, offset
         elif ty in (u'bytes', u'string'):

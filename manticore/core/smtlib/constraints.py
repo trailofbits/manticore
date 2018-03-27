@@ -205,7 +205,8 @@ class ConstraintSet(object):
                          if not uniq a numeric nonce will be appended
             :return: a fresh BitVecVariable
         '''
-        assert (size == 1 or size % 8 == 0)
+        if not (size == 1 or size % 8 == 0):
+            raise Exception('Invalid bitvec size %s' % size)
         name = self._get_new_name(name)
         return BitVecVariable(size, name, taint=taint)
 
