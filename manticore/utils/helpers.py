@@ -1,5 +1,8 @@
+from __future__ import print_function
 from builtins import *
+from types import StringType
 import collections
+import sys
 
 def issymbolic(value):
     '''
@@ -22,7 +25,14 @@ def isstring(value):
     :return: whether `value` can be treated as string
     :rtype: bool
     '''
-    return hasattr(value, 'strip')
+
+    # in python3, string types are 'str', 'bytes'
+    # in python2, strings are type 'unicode', 'str'
+    if sys.version_info[0] == 2:
+        # we want to refer to the str type imported by futurize as well as the builtin
+        return isinstance(value, (unicode, str, StringType))
+    elif sys.version_info[0] == 3:
+        return isinstance(value, (str, bytes))
 
 import functools
 
