@@ -1,7 +1,5 @@
 from builtins import *
 import collections
-from ..core.smtlib import Expression
-
 
 def issymbolic(value):
     '''
@@ -12,6 +10,7 @@ def issymbolic(value):
     :return: whether `value` is symbolic
     :rtype: bool
     '''
+    from ..core.smtlib import Expression
     return isinstance(value, Expression)
 
 def isstring(value):

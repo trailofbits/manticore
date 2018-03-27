@@ -1,18 +1,7 @@
 from __future__ import division, absolute_import
 from builtins import *
 from functools import reduce
-
-# TODO (phoebe) find a better place for this, can't be in helpers rn because of circular import
-def isstring(value):
-    '''
-    Helper to determine whether an object is string-y, which is nontrivial when targeting Python 2 and 3 at the same
-    time.
-
-    :param object value: object to check
-    :return: whether `value` can be treated as string
-    :rtype: bool
-    '''
-    return hasattr(value, 'strip')
+from manticore.utils.helpers import isstring
 
 class Expression(object):
     ''' Abstract taintable Expression. '''

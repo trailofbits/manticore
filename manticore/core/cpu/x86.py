@@ -5022,12 +5022,10 @@ class X86Cpu(Cpu):
         stepsize = self._pcmpxstrx_srcdat_format(ctlbyte)
         if Operators.EXTRACT(ctlbyte, 4, 2) == 0:
             res2 = res1
-            pass
         if Operators.EXTRACT(ctlbyte, 4, 2) == 1:
             res2 = ((1 << (128 // stepsize)) - 1) ^ res1
         if Operators.EXTRACT(ctlbyte, 4, 2) == 2:
             res2 = res1
-            pass
         if Operators.EXTRACT(ctlbyte, 4, 2) == 3:
             res2 = ((1 << arg2len) - 1) ^ res1
         return res2

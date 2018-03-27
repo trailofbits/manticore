@@ -159,7 +159,7 @@ class EVMMemory(object):
             offset in self._symbols
 
     def items(self):
-        offsets = set(itertools.chain(self._symbols.keys() + self._memory.keys()))
+        offsets = set(itertools.chain(self._symbols.keys(), self._memory.keys()))
         return [(x, self[x]) for x in offsets]
 
     def get(self, offset, default=0):

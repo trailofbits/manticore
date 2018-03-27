@@ -254,12 +254,13 @@ class AnonMap(Map):
             len(value) == index.stop - index.start
         index = self._get_offset(index)
         if isinstance(index, slice):
+            # check that the values this slice points to are ints
             if not isinstance(value[0], int):
-                value = [ord(n) for n in value]
+                value = [Operators.ORD(n) for n in value]
             for i in range(index.stop - index.start):
                 self._data[index.start + i] = value[i]
         else:
-            self._data[index] = ord(value)
+            self._data[index] = Operators.ORD(value)
 
     def __getitem__(self, index):
         index = self._get_offset(index)

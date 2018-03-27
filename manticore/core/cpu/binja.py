@@ -16,6 +16,7 @@ from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
 from ...utils.helpers import issymbolic, isstring
 from functools import reduce
+from itertools import chain
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger('{}.registers'.format(__name__))
@@ -129,7 +130,7 @@ class BinjaRegisterFile(RegisterFile):
 
     @property
     def all_registers(self):
-        return tuple(list(self.registers.keys()) + list(self._aliases.keys()))
+        return tuple(chain(self.registers.keys(), self._aliases.keys()))
 
     @property
     def canonical_registers(self):

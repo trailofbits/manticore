@@ -18,7 +18,7 @@ import sha3
 import json
 import logging
 import io
-import pickle as pickle
+import pickle
 import sys
 from .core.plugin import Plugin
 from functools import reduce
@@ -300,7 +300,7 @@ class ABI(object):
         '''
         if isstring(value) or isinstance(value, tuple):
             return ABI.serialize_string(value)
-        if isinstance(value, (list)):
+        if isinstance(value, list):
             return ABI.serialize_array(value)
         if isinstance(value, int):
             return ABI.serialize_uint(value)
@@ -630,7 +630,7 @@ class ManticoreEVM(Manticore):
 
             name, contract = None, None
             if contract_name is None:
-                name, contract = list(contracts.items())[0]
+                name, contract = next(iter(contracts.items()))
             else:
                 for n, c in contracts.items():
                     if n.split(":")[1] == contract_name:
