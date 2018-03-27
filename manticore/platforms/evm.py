@@ -844,6 +844,7 @@ class EVMAsm(object):
                 >>> print EVMAsm.assemble_one('PUSH1 0x10')
 
         '''
+
         bytecode = iter(bytecode)
         opcode = next(bytecode)
         assert isinstance(opcode, int)
@@ -1157,8 +1158,6 @@ class EVM(Eventful):
         '''
         super(EVM, self).__init__(**kwargs)
 
-        assert isinstance(code, bytes)
-
         self._constraints = constraints
         self.last_exception = None
         self.memory = EVMMemory(constraints)
@@ -1288,9 +1287,7 @@ class EVM(Eventful):
         '''
         assert address < len(self.bytecode)
         value = self.bytecode[address:address + size]
-        if len(value) < size:
-            value += '\x00' * (size - len(value))  # pad with null (spec)
-        return value
+        return value.ljust(size, 0) # pad with null (spec)
 
     def disassemble(self):
         return EVMAsm.disassemble(self.bytecode)
@@ -1792,7 +1789,7 @@ class EVM(Eventful):
     def JUMPI(self, dest, cond):
         '''Conditionally alter the program counter'''
         self.pc = Operators.ITEBV(256, cond != 0, dest, self.pc + self.instruction.size)
-        assert self.bytecode[dest] == '\x5b', "Must be jmpdest instruction"  # fixme what if dest == self.pc + self.instruction.size?
+        assert self.bytecode[dest] == 0x5b, "Must be jmpdest instruction"  # fixme what if dest == self.pc + self.instruction.size?
 
     def GETPC(self):
         '''Get the value of the program counter prior to the increment'''
@@ -1847,7 +1844,7 @@ class EVM(Eventful):
             self._allocate(offset + size)
         data = []
         for i in range(size):
-            data.append(Operators.CHR(self._load(offset + i)))
+            data.append(self._load(offset+i))#Operators.CHR(self._load(offset + i)))
 
         if any(map(issymbolic, data)):
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
@@ -1855,7 +1852,7 @@ class EVM(Eventful):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
         else:
-            data = b''.join(data)
+            data = bytes(data)
 
         return data
 
@@ -2266,7 +2263,7 @@ class EVMWorld(Platform):
 
         return address
 
-    def create_contract(self, origin=None, price=0, address=None, caller=None, balance=0, init='', run=False, header=None):
+    def create_contract(self, origin=None, price=0, address=None, caller=None, balance=0, init=b'', run=False, header=None):
         assert len(init) > 0
         '''
         The way that the Solidity compiler expects the constructor arguments to
@@ -2297,7 +2294,7 @@ class EVMWorld(Platform):
 
         self.storage[address]['storage'] = EVMMemory(self.constraints, 256, 256)
 
-        self._pending_transaction = PendingTransaction('Create', address, origin, price, '', origin, balance, ''.join(init), header)
+        self._pending_transaction = PendingTransaction('Create', address, origin, price, '', origin, balance, init, header)
 
         if run:
             assert False

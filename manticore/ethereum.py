@@ -8,12 +8,16 @@ from builtins import int
 from builtins import bytes
 
 import string
+import binascii
 
 from . import Manticore
+from .core.plugin import Plugin
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import arithmetic_simplifier
-from .platforms import evm
 from .core.state import State
+from .platforms import evm
+from .utils.helpers import isstring, hex_encode
+
 import tempfile
 from subprocess import Popen, PIPE
 from multiprocessing import Process, Queue
@@ -23,10 +27,10 @@ import json
 import logging
 import io
 import pickle as pickle
-from .core.plugin import Plugin
-from utils.helpers import isstring, hex_encode
 from functools import reduce
+
 logger = logging.getLogger(__name__)
+
 
 ################ Detectors ####################
 
@@ -67,6 +71,7 @@ class IntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
+
     @staticmethod
     def _can_add_overflow(state, result, a, b):
         # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
@@ -138,16 +143,25 @@ class UninitializedStorage(Detector):
         state.context.setdefault('seth.detectors.initialized_storage', set()).add(offset)
 
 
+def without_metadata(code):
+    """
+    Return provided bytecode without the metadata
+
+    :param bytes code: bytecode
+    :rtype bytes:
+    """
+    end = None
+    if code[-44:-34] == bytes(b'\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20') and code[-2:] == bytes(b'\x00\x29'):
+        end = -9 - 33 - 2
+    return code[:end]
+
+
 def calculate_coverage(code, seen):
     ''' Calculates what percentage of code has been seen '''
-    runtime_bytecode = code
-    end = None
-    if ''.join(runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
-        end = -9 - 33 - 2  # Size of metadata at the end of most contracts
+    runtime_bytecode = without_metadata(code)
 
     count, total = 0, 0
-    for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]):
+    for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
         if i.offset in seen:
             count += 1
         total += 1
@@ -171,10 +185,7 @@ class SolidityMetadata(object):
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
-        end = None
-        if ''.join(bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
+        bytecode = without_metadata(bytecode)
 
         asm_offset = 0
         asm_pos = 0
@@ -184,7 +195,7 @@ class SolidityMetadata(object):
         f = int(md.get(2, 0))
         j = md.get(3, None)
 
-        for i in evm.EVMAsm.disassemble_all(bytecode[:end]):
+        for i in evm.EVMAsm.disassemble_all(bytecode):
             if asm_pos in srcmap and len(srcmap[asm_pos]):
                 md = srcmap[asm_pos]
                 if len(md):
@@ -206,21 +217,11 @@ class SolidityMetadata(object):
 
     @property
     def runtime_bytecode(self):
-        # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._runtime_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._runtime_bytecode[:end]
+        return without_metadata(self._runtime_bytecode)
 
     @property
     def init_bytecode(self):
-        # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._init_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._init_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._init_bytecode[:end]
+        return without_metadata(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
@@ -273,6 +274,7 @@ class ABI(object):
         and for contract-to-contract interaction.
 
     '''
+
     class SByte(object):
         ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
 
@@ -631,18 +633,18 @@ class ManticoreEVM(Manticore):
                         name, contract = n, c
                         break
 
-            assert(name is not None)
+            assert (name is not None)
             name = name.split(':')[1]
 
             if contract['bin'] == '':
                 raise Exception('Solidity failed to compile your contract.')
-                
-            bytecode = contract['bin'].decode('hex')
+
+            bytecode = bytes.fromhex(contract['bin'])
+            runtime = bytes.fromhex(contract['bin-runtime'])
             srcmap = contract['srcmap'].split(';')
             srcmap_runtime = contract['srcmap-runtime'].split(';')
             hashes = contract['hashes']
             abi = json.loads(contract['abi'])
-            runtime = contract['bin-runtime'].decode('hex')
             warnings = p.stderr.read()
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
@@ -1220,8 +1222,8 @@ class ManticoreEVM(Manticore):
 
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: %s %s\n" % (hex_encode(''.join(return_data)), flagged(issymbolic(tx.return_data))))
-                
+                    tx_summary.write("Return_data: %s %s\n" % (hex_encode(return_data), flagged(issymbolic(tx.return_data))))
+
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'Call':
                     if metadata is not None:

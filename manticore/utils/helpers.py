@@ -1,3 +1,4 @@
+from builtins import bytes
 import collections
 from ..core.smtlib import Expression
 import binascii
@@ -26,6 +27,8 @@ def isstring(value):
     return hasattr(value, 'strip')
 
 def hex_encode(s):
+    if isinstance(s, tuple):
+        s = bytes(*s)
     return binascii.hexlify(s)
 
 import functools
