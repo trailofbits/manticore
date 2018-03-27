@@ -1170,72 +1170,72 @@ class ManticoreEVM(Manticore):
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
         with testcase.open_stream('summary') as summary:
-            summary.write("Last exception: %s\n" % state.context['last_exception'])
+            summary.write(u"Last exception: %s\n" % state.context['last_exception'])
 
             address, offset = state.context['seth.rt.trace'][-1]
 
             # Last instruction
             metadata = self.get_metadata(blockchain.transactions[-1].address)
             if metadata is not None:
-                summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
+                summary.write(u'Last instruction at contract %x offset %x\n' % (address, offset))
                 at_runtime = blockchain.transactions[-1].sort != 'Create'
-                summary.write(metadata.get_source_for(offset, at_runtime))
-                summary.write('\n')
+                summary.write(metadata.get_source_for(offset, at_runtime).decode('utf-8'))
+                summary.write(u'\n')
 
             # Accounts summary
             is_something_symbolic = False
-            summary.write("%d accounts.\n" % len(blockchain.accounts))
+            summary.write(u"%d accounts.\n" % len(blockchain.accounts))
             for account_address in blockchain.accounts:
-                summary.write("Address: 0x%x\n" % account_address)
+                summary.write(u"Address: 0x%x\n" % account_address)
                 balance = blockchain.get_balance(account_address)
                 is_balance_symbolic = issymbolic(balance)
                 is_something_symbolic = is_something_symbolic or is_balance_symbolic
                 balance = state.solve_one(balance)
-                summary.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+                summary.write(u"Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
 
                 if blockchain.has_storage(account_address):
-                    summary.write("Storage:\n")
+                    summary.write(u"Storage:\n")
                     for offset, value in blockchain.get_storage_items(account_address):
                         is_storage_symbolic = issymbolic(offset) or issymbolic(value)
                         offset = state.solve_one(offset)
                         value = state.solve_one(value)
-                        summary.write("\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
+                        summary.write(u"\t%032x -> %032x %s\n" % (offset, value, flagged(is_storage_symbolic)))
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
 
                 runtime_code = blockchain.get_code(account_address)
                 if runtime_code:
-                    summary.write("Code:\n")
+                    summary.write(u"Code:\n")
                     fcode = io.BytesIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
-                        summary.write('\t%s\n' % chunk.encode('hex'))
+                        summary.write(u'\t%s\n' % chunk.encode('hex'))
                     runtime_trace = set((pc for contract, pc in state.context['seth.rt.trace'] if address == contract))
-                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
-                summary.write("\n")
+                    summary.write(u"Coverage %d%% (on this state)\n" % calculate_coverage(runtime_code, runtime_trace))  # coverage % for address in this account/state
+                summary.write(u"\n")
 
             if blockchain._sha3:
-                summary.write("Known hashes:\n")
+                summary.write(u"Known hashes:\n")
                 for key, value in blockchain._sha3.items():
-                    summary.write('%s::%x\n' % (binascii.hexlify(key), value))
+                    summary.write(u'%s::%x\n' % (binascii.hexlify(key), value))
 
             if is_something_symbolic:
-                summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+                summary.write(u'\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # Transactions
         with testcase.open_stream('tx') as tx_summary:
             is_something_symbolic = False
             for tx in blockchain.transactions:  # external transactions
-                tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
+                tx_summary.write(u"Transactions Nr. %d\n" % blockchain.transactions.index(tx))
 
                 # The result if any RETURN or REVERT
-                tx_summary.write("Type: %s\n" % tx.sort)
-                tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
-                tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
-                tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
+                tx_summary.write(u"Type: %s\n" % tx.sort)
+                tx_summary.write(u"From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
+                tx_summary.write(u"To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
+                tx_summary.write(u"Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
                 tx_data = state.solve_one(tx.data)
-                tx_summary.write("Data: %s %s\n"% (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
+                tx_summary.write(u"Data: %s %s\n"% (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
+                    tx_summary.write(u"Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
 
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'Call':
@@ -1250,13 +1250,13 @@ class ManticoreEVM(Manticore):
                             ret_types = metadata.get_func_return_types(function_id)
                             return_data = ABI.parse(ret_types, tx.return_data)  # function return
 
-                        tx_summary.write('\n')
-                        tx_summary.write("Function call:\n")
-                        tx_summary.write("%s(" % state.solve_one(function_name))
-                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
+                        tx_summary.write(u'\n')
+                        tx_summary.write(u"Function call:\n")
+                        tx_summary.write(u"%s(" % state.solve_one(function_name))
+                        tx_summary.write(u','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
-                        tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
+                        tx_summary.write(u') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
 
                         if return_data is not None:
                             is_return_symbolic = any(map(issymbolic, return_data))
@@ -1264,13 +1264,13 @@ class ManticoreEVM(Manticore):
                             if len(return_values) == 1:
                                 return_values = return_values[0]
 
-                            tx_summary.write('return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
+                            tx_summary.write(u'return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
                             is_something_symbolic = is_something_symbolic or is_return_symbolic
 
-                tx_summary.write('\n\n')
+                tx_summary.write(u'\n\n')
 
             if is_something_symbolic:
-                tx_summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
+                tx_summary.write(u'\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # logs
         with testcase.open_stream('logs') as logs_summary:
@@ -1281,16 +1281,16 @@ class ManticoreEVM(Manticore):
                 solved_memlog = state.solve_one(log_item.memlog)
                 printable_bytes = ''.join([c for c in solved_memlog if c in string.printable])
 
-                logs_summary.write("Address: %x\n" % log_item.address)
-                logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
-                logs_summary.write("Topics:\n")
+                logs_summary.write(u"Address: %x\n" % log_item.address)
+                logs_summary.write(u"Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
+                logs_summary.write(u"Topics:\n")
                 for i, topic in enumerate(log_item.topics):
-                    logs_summary.write("\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
+                    logs_summary.write(u"\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
 
-        with testcase.open_stream('pkl') as statef:
+        with testcase.open_stream('pkl', binary=True) as statef:
             try:
                 statef.write(pickle.dumps(state, 2))
             except RuntimeError:
@@ -1314,8 +1314,8 @@ class ManticoreEVM(Manticore):
         """
         for contract, pc in trace:
             if pc == 0:
-                filestream.write('---\n')
-            ln = '0x{:x}:0x{:x}\n'.format(contract, pc)
+                filestream.write(u'---\n')
+            ln = u'0x{:x}:0x{:x}\n'.format(contract, pc)
             filestream.write(ln)
 
     def finalize(self):
@@ -1363,35 +1363,35 @@ class ManticoreEVM(Manticore):
         #global summary
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
-            global_summary.write("Global coverage:\n")
+            global_summary.write(u"Global coverage:\n")
             for address in self.contract_accounts:
-                global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))  # coverage % for address in this state
+                global_summary.write(u"%x: %d%%\n" % (address, self.global_coverage(address)))  # coverage % for address in this state
 
             if len(self.global_findings):
-                global_summary.write("Global Findings:\n")
+                global_summary.write(u"Global Findings:\n")
 
                 for address, pc, finding in self.global_findings:
-                    global_summary.write('- %s -\n' % finding)
-                    global_summary.write('\t Contract: %s\n' % address)
-                    global_summary.write('\t Program counter: %s\n' % pc)
+                    global_summary.write(u'- %s -\n' % finding)
+                    global_summary.write(u'\t Contract: %s\n' % address)
+                    global_summary.write(u'\t Program counter: %s\n' % pc)
                     md = self.get_metadata(address)
                     if md is not None:
                         src = md.get_source_for(pc)
-                        global_summary.write('\t Snippet:\n')
-                        global_summary.write('\n'.join(('\t\t' + x for x in src.split('\n'))))
-                        global_summary.write('\n\n')
+                        global_summary.write(u'\t Snippet:\n')
+                        global_summary.write(u'\n'.join(('\t\t' + x for x in src.split('\n'))))
+                        global_summary.write(u'\n\n')
 
             md = self.get_metadata(address)
             if md is not None and len(md.warnings) > 0:
-                global_summary.write('\n\nCompiler warnings for %s:\n' % md.name)
-                global_summary.write(md.warnings)
+                global_summary.write(u'\n\nCompiler warnings for %s:\n' % md.name)
+                global_summary.write(md.warnings.decode('utf-8'))
 
         for address, md in self.metadata.items():
             with self._output.save_stream('global_%s.sol' % md.name) as global_src:
                 global_src.write(md.source_code)
-            with self._output.save_stream('global_%s_runtime.bytecode' % md.name) as global_runtime_bytecode:
+            with self._output.save_stream('global_%s_runtime.bytecode' % md.name, binary=True) as global_runtime_bytecode:
                 global_runtime_bytecode.write(md.runtime_bytecode)
-            with self._output.save_stream('global_%s_init.bytecode' % md.name) as global_init_bytecode:
+            with self._output.save_stream('global_%s_init.bytecode' % md.name, binary=True) as global_init_bytecode:
                 global_init_bytecode.write(md.init_bytecode)
 
             with self._output.save_stream('global_%s.runtime_asm' % md.name) as global_runtime_asm:
@@ -1403,11 +1403,11 @@ class ManticoreEVM(Manticore):
                     for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
                         if (address, i.offset) in seen:
                             count += 1
-                            global_runtime_asm.write('*')
+                            global_runtime_asm.write(u'*')
                         else:
-                            global_runtime_asm.write(' ')
+                            global_runtime_asm.write(u' ')
 
-                        global_runtime_asm.write('%4x: %s\n' % (i.offset, i))
+                        global_runtime_asm.write(u'%4x: %s\n' % (i.offset, i))
                         total += 1
 
             with self._output.save_stream('global_%s.init_asm' % md.name) as global_init_asm:
@@ -1416,18 +1416,18 @@ class ManticoreEVM(Manticore):
                     for i in evm.EVMAsm.disassemble_all(md.init_bytecode):
                         if (address, i.offset) in seen:
                             count += 1
-                            global_init_asm.write('*')
+                            global_init_asm.write(u'*')
                         else:
-                            global_init_asm.write(' ')
+                            global_init_asm.write(u' ')
 
-                        global_init_asm.write('%4x: %s\n' % (i.offset, i))
+                        global_init_asm.write(u'%4x: %s\n' % (i.offset, i))
                         total += 1
 
             with self._output.save_stream('global_%s.init_visited' % md.name) as f:
                 with self.locked_context('init_coverage') as seen:
                     visited = set((o for (a, o) in seen if a == address))
                     for o in sorted(visited):
-                        f.write('0x%x\n' % o)
+                        f.write(u'0x%x\n' % o)
 
             with self._output.save_stream('global_%s.runtime_visited' % md.name) as f:
                 with self.locked_context('runtime_coverage') as seen:
@@ -1436,9 +1436,9 @@ class ManticoreEVM(Manticore):
                         if a == address:
                             visited.add(o)
                     for o in sorted(visited):
-                        f.write('0x%x\n' % o)
+                        f.write(u'0x%x\n' % o)
 
-        logger.info("Results in %s", self.workspace)
+        logger.info(u"Results in %s", self.workspace)
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
