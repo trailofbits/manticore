@@ -24,7 +24,7 @@ from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented
-from ..utils.helpers import issymbolic, is_binja_disassembler
+from ..utils.helpers import issymbolic, is_binja_disassembler, isunicode
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
@@ -2603,16 +2603,15 @@ class SLinux(Linux):
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
-            def make_chr(c):
-                if isinstance(c, int):
-                    return bytes([c])
-                return c
-
             try:
                 for c in data:
                     if issymbolic(c):
                         c = bytes([solver.get_value(self.constraints, c)])
-                    fd.write(c)
+                    # TODO (phoebe) unicode data should ideally never reach this point
+                    if isunicode(c):
+                        fd.write(c.encode('utf-8'))
+                    else:
+                        fd.write(c)
             except SolverException:
                 fd.write('{SolverException}')
 
