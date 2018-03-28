@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division
-from builtins import range, object
+from builtins import range, object, bytes
+import sys
 import struct
 import unittest
 from manticore.core.cpu.x86 import *
@@ -21,6 +22,19 @@ class RWOperand(ROOperand):
         return self.value
 
 sizes = {'RAX': 64, 'EAX': 32, 'AX': 16, 'AL': 8, 'AH': 8, 'RCX': 64, 'ECX': 32, 'CX': 16, 'CL': 8, 'CH': 8, 'RDX': 64, 'EDX': 32, 'DX': 16, 'DL': 8, 'DH': 8, 'RBX': 64, 'EBX': 32, 'BX': 16, 'BL': 8, 'BH': 8, 'RSP': 64, 'ESP': 32, 'SP': 16, 'SPL': 8, 'RBP': 64, 'EBP': 32, 'BP': 16, 'BPL': 8, 'RSI': 64, 'ESI': 32, 'SI': 16, 'SIL': 8, 'RDI': 64, 'EDI': 32, 'DI': 16, 'DIL': 8, 'R8': 64, 'R8D': 32, 'R8W': 16, 'R8B': 8, 'R9': 64, 'R9D': 32, 'R9W': 16, 'R9B': 8, 'R10': 64, 'R10D': 32, 'R10W': 16, 'R10B': 8, 'R11': 64, 'R11D': 32, 'R11W': 16, 'R11B': 8, 'R12': 64, 'R12D': 32, 'R12W': 16, 'R12B': 8, 'R13': 64, 'R13D': 32, 'R13W': 16, 'R13B': 8, 'R14': 64, 'R14D': 32, 'R14W': 16, 'R14B': 8, 'R15': 64, 'R15D': 32, 'R15W': 16, 'R15B': 8, 'ES': 16, 'CS': 16, 'SS': 16, 'DS': 16, 'FS': 16, 'GS': 16, 'RIP': 64, 'EIP':32, 'IP': 16, 'RFLAGS': 64, 'EFLAGS': 32, 'FLAGS': 16, 'XMM0': 128, 'XMM1': 128, 'XMM2': 128, 'XMM3': 128, 'XMM4': 128, 'XMM5': 128, 'XMM6': 128, 'XMM7': 128, 'XMM8': 128, 'XMM9': 128, 'XMM10': 128, 'XMM11': 128, 'XMM12': 128, 'XMM13': 128, 'XMM14': 128, 'XMM15': 128, 'YMM0': 256, 'YMM1': 256, 'YMM2': 256, 'YMM3': 256, 'YMM4': 256, 'YMM5': 256, 'YMM6': 256, 'YMM7': 256, 'YMM8': 256, 'YMM9': 256, 'YMM10': 256, 'YMM11': 256, 'YMM12': 256, 'YMM13': 256, 'YMM14': 256, 'YMM15': 256}
+
+def to_bytelist(bs):
+    return [bytes([b]) for b in bs]
+
+def assertEqItems(test, a, b):
+    if isinstance(b, bytes):
+        b = [bytes([x]) for x in b]
+    if sys.version_info[0] == 2:
+        return test.assertItemsEqual(a, b)
+    elif sys.version_info[0] == 3:
+        return test.assertCountEqual(a, b)
+    else:
+        raise Exception("Unsupported Python version")
 
 class SymCPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -452,8 +466,8 @@ class SymCPUTest(unittest.TestCase):
 
         #cpu.writeback()
         for i in range(0x10):
-            self.assertEqual(mem[i+0x1000], 'HGFEXWVUhgfedcba'[i])
-        self.assertItemsEqual(mem.read(0x1000,0x10), 'HGFEXWVUhgfedcba')
+            self.assertEqual(mem[i+0x1000], b'HGFEXWVUhgfedcba'[i:i+1])
+        self.assertEqual(mem.read(0x1000,0x10), to_bytelist(b'HGFEXWVUhgfedcba'))
 
     def test_cache_002(self):
         cs = ConstraintSet()
@@ -477,7 +491,7 @@ class SymCPUTest(unittest.TestCase):
 
         #cpu.writeback()
         for i in range(0x10):
-            self.assertEqual(mem[i+0x1000], 'HGFEXWVUhgfedcba'[i])
+            self.assertEqual(mem[i+0x1000], b'HGFEXWVUhgfedcba'[i:i+1])
 
     def test_cache_003(self):
         cs = ConstraintSet()
@@ -507,7 +521,7 @@ class SymCPUTest(unittest.TestCase):
         # 48 47 46 45 58 43 42 41 68 67 66 65 64 63 62 61
 
         value = cpu.read_int(0x1004, 16)
-        self.assertItemsEqual(solver.get_all_values(cs, value), [0x4358] )
+        assertEqItems(self, solver.get_all_values(cs, value), [0x4358] )
 
         addr2 = cs.new_bitvec(64)
         cs.add(Operators.AND(addr2>=0x1000, addr2<=0x100c))
@@ -531,7 +545,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(addr, 0x1000)
 
 
-        memory = ['\x00'] *0x1000
+        memory = bytearray(0x1000)
         written = set()
         for _ in range(1000):
             address = random.randint(0x1000,0x2000-8)
@@ -549,7 +563,12 @@ class SymCPUTest(unittest.TestCase):
             if address > 0x2000-(size // 8):
                 continue
             pattern = {8:'B', 16:'<H', 32:'<L', 64:'<Q'} [size]
-            self.assertEqual(cpu.read_int(address,size), struct.unpack(pattern, ''.join(memory[address-0x1000:address-0x1000+(size // 8)]))[0] )
+            start = address-0x1000
+            print(repr(memory[start:start+(size // 8)]))
+            print(struct.unpack(pattern, bytes(memory[start:start+(size // 8)])))
+            print(cpu.read_int(address,size))
+            self.assertEqual(cpu.read_int(address,size),
+                    struct.unpack(pattern, bytes(memory[start:start+(size // 8)]))[0])
 
 
 
@@ -734,7 +753,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(0x2000,64), 0)
         self.assertEqual(cpu.read_int(0x2100,64), 0)
         self.assertEqual(cpu.read_int(0x2200,64), 0)
-        self.assertItemsEqual(solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0])
+        assertEqItems(self, solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0])
         #self.assertEqual(cpu.read_int(cpu.EDI,64), 0 )
 
         cpu.write_int(0x2100, 0x4142434445464748, 64)
@@ -747,7 +766,7 @@ class SymCPUTest(unittest.TestCase):
         cpu.execute()
         self.assertTrue(solver.check(cs))
 
-        self.assertItemsEqual(solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0, 4702394921427289928])
+        assertEqItems(self, solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0, 4702394921427289928])
 
     def test_POPCNT(self):
         '''POPCNT EAX, EAX
@@ -788,7 +807,7 @@ class SymCPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.ECX = 0xd
         cpu.execute()
-        self.assertItemsEqual(mem[0x41e10a:0x41e10c], '\xff\xc9')
+        assertEqItems(self, mem[0x41e10a:0x41e10c], bytes(b'\xff\xc9'))
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
@@ -819,8 +838,9 @@ class SymCPUTest(unittest.TestCase):
         cpu.PF = True
         cpu.execute()
 
-        self.assertItemsEqual(mem[0xffffc600:0xffffc609], '\x55\x08\x00\x00\x02\x03\x00\x00\x00')
-        self.assertEqual(mem[0x8065f6f], '\x9c')
+        print(mem[0xffffc600:0xffffc609])
+        self.assertEqual(mem[0xffffc600:0xffffc609], [bytes([c]) for c in b'\x55\x08\x00\x00\x02\x03\x00\x00\x00'])
+        self.assertEqual(mem[0x8065f6f], b'\x9c')
         self.assertEqual(cpu.EIP, 0x8065f70)
         self.assertEqual(cpu.EBP, 0xffffb600)
         self.assertEqual(cpu.ESP, 0xffffc600)
@@ -842,8 +862,8 @@ class SymCPUTest(unittest.TestCase):
         cpu.EIP = 0x8059a8d
         cpu.execute()
 
-        self.assertEqual(mem[0x8059a8d], '\xd7')
-        self.assertEqual(mem[0xffffd00a], '\x41')
+        self.assertEqual(mem[0x8059a8d], b'\xd7')
+        self.assertEqual(mem[0xffffd00a], b'\x41')
         self.assertEqual(cpu.AL, 0x41)
         self.assertEqual(cpu.EIP, 134584974)
 

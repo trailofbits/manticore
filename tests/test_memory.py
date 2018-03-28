@@ -3,6 +3,7 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import str, range
 from io import BytesIO
+import sys
 import unittest
 import tempfile, os
 import gc, pickle
@@ -15,6 +16,15 @@ def issymbolic(value):
 
 def isconcrete(value):
     return not issymbolic(value)
+
+
+def assertItemsEqual(self, a, b):
+    if isinstance(b, bytes):
+        b = [bytes([x]) for x in b]
+    if sys.version_info[0] == 3:
+        return self.assertCountEqual(a, b)
+    else:
+        return self.assertItemsEqual(a, b)
 
 
 class MemoryTest(unittest.TestCase):
@@ -204,7 +214,7 @@ class MemoryTest(unittest.TestCase):
 
 
         self.assertEqual(first, 0x1000)
-        self.assertEqual(mem[0x1000], '\x00')
+        self.assertEqual(mem[0x1000], b'\x00')
         self.assertRaises(MemoryException, mem.__getitem__, sym)
         self.assertRaises(MemoryException, mem.__setitem__, 0x1000, '\x41')
         self.assertRaises(MemoryException, mem.__setitem__, 0x1000, val)
@@ -259,7 +269,7 @@ class MemoryTest(unittest.TestCase):
 
         #Okay 3 maps
         self.assertEqual(len(mem.mappings()), 3)
-        self.assertItemsEqual((first,second,third), (0x1000,0x2000,0x3000))
+        assertItemsEqual(self,(first,second,third), (0x1000,0x2000,0x3000))
 
         #not mapped implies no access
         self.assertFalse(mem.access_ok(first-1, 'r'))
@@ -376,8 +386,8 @@ class MemoryTest(unittest.TestCase):
         addr = mem.mmap(None, 0x10, 'rw')
         mem[addr] = 'a'
 
-        mem[addr+0x10:addr+0x20] = 'Y'*0x10
-        self.assertItemsEqual(mem[addr+0x10-1:addr+0x20+1], '\x00' + 'Y'*0x10 +'\x00')
+        mem[addr+0x10:addr+0x20] = b'Y'*0x10
+        assertItemsEqual(self,mem[addr+0x10-1:addr+0x20+1], b'\x00' + b'Y'*0x10 +b'\x00')
 
 
     def test_basic_put_char_get_char(self):
@@ -412,7 +422,7 @@ class MemoryTest(unittest.TestCase):
         for c in range(0, 0x10):
             mem[addr+c] = 'a'
         for c in range(0, 0x10):
-            self.assertEquals(mem[addr+c], 'a')
+            self.assertEquals(mem[addr+c], b'a')
 
     def testBasicMappingsLimits(self):
         mem = Memory32()
@@ -448,7 +458,7 @@ class MemoryTest(unittest.TestCase):
         #check all characters go and come back the same...
         for c in range(0, 0x100):
             mem[addr+0x800] = Operators.CHR(c)
-            self.assertEqual(mem[addr+0x800], Operators.CHR(c))
+            self.assertEqual(mem[addr+0x800], bytes([c]))
 
     def testBasicMappingsPermissions(self):
         mem = SMemory32(ConstraintSet())
@@ -893,57 +903,57 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(len(mem.mappings()), 0)
 
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('a'*0x1001)
+        rwx_file.file.write(b'a'*0x1001)
         rwx_file.close()
 
         addr_a = mem.mmapFile(0, 0x1000, 'rwx', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 1)
 
-        self.assertEqual(mem[addr_a], 'a')
-        self.assertEqual(mem[addr_a+0x1000//2], 'a')
-        self.assertEqual(mem[addr_a+(0x1000-1)], 'a')
+        self.assertEqual(mem[addr_a], b'a')
+        self.assertEqual(mem[addr_a+0x1000//2], b'a')
+        self.assertEqual(mem[addr_a+(0x1000-1)], b'a')
         self.assertRaises(MemoryException, mem.__getitem__, addr_a+(0x1000))
 
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('b'*0x1001)
+        rwx_file.file.write(b'b'*0x1001)
         rwx_file.close()
 
         addr_b = mem.mmapFile(0, 0x1000, 'rw', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 2)
 
-        self.assertEqual(mem[addr_b], 'b')
-        self.assertEqual(mem[addr_b+(0x1000//2)], 'b')
-        self.assertEqual(mem[addr_b+(0x1000-1)], 'b')
+        self.assertEqual(mem[addr_b], b'b')
+        self.assertEqual(mem[addr_b+(0x1000//2)], b'b')
+        self.assertEqual(mem[addr_b+(0x1000-1)], b'b')
 
 
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('c'*0x1001)
+        rwx_file.file.write(b'c'*0x1001)
         rwx_file.close()
 
         addr_c = mem.mmapFile(0, 0x1000, 'rx', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 3)
 
-        self.assertEqual(mem[addr_c], 'c')
-        self.assertEqual(mem[addr_c+(0x1000//2)], 'c')
-        self.assertEqual(mem[addr_c+(0x1000-1)], 'c')
+        self.assertEqual(mem[addr_c], b'c')
+        self.assertEqual(mem[addr_c+(0x1000//2)], b'c')
+        self.assertEqual(mem[addr_c+(0x1000-1)], b'c')
 
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('d'*0x1001)
+        rwx_file.file.write(b'd'*0x1001)
         rwx_file.close()
 
         addr_d = mem.mmapFile(0, 0x1000, 'r', rwx_file.name)
 
         self.assertEqual(len(mem.mappings()), 4)
 
-        self.assertEqual(mem[addr_d], 'd')
-        self.assertEqual(mem[addr_d+(0x1000//2)], 'd')
-        self.assertEqual(mem[addr_d+(0x1000-1)], 'd')
+        self.assertEqual(mem[addr_d], b'd')
+        self.assertEqual(mem[addr_d+(0x1000//2)], b'd')
+        self.assertEqual(mem[addr_d+(0x1000-1)], b'd')
 
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('e'*0x1001)
+        rwx_file.file.write(b'e'*0x1001)
         rwx_file.close()
 
         addr_e = mem.mmapFile(0, 0x1000, 'w', rwx_file.name)
@@ -961,7 +971,7 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(len(mem.mappings()), 0)
 
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('d'*0x1001)
+        rwx_file.file.write(b'd'*0x1001)
         rwx_file.close()
         addr = mem.mmapFile(0, 0x1000, 'rwx', rwx_file.name)
 
@@ -990,7 +1000,7 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(len(mem.mappings()), 1)
 
         r_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        r_file.file.write('b'*0x1000)
+        r_file.file.write(b'b'*0x1000)
         r_file.close()
         mem.mmapFile(0, 0x1000, 'r', r_file.name)
 
@@ -999,21 +1009,21 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(len(mem.mappings()), 2)
 
         rw_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rw_file.file.write('abcd' * (0x1000 // 4))
+        rw_file.file.write(b'abcd' * (0x1000 // 4))
         rw_file.close()
         addr = mem.mmapFile(None, 0x1000, 'rw', rw_file.name)
 
-        self.assertItemsEqual(mem[addr:addr+6],   'abcdab')
-        self.assertItemsEqual(mem[addr+1:addr+7], 'bcdabc')
-        self.assertItemsEqual(mem[addr+2:addr+8], 'cdabcd')
-        self.assertItemsEqual(mem[addr+3:addr+9], 'dabcda')
+        assertItemsEqual(self,mem[addr:addr+6],   b'abcdab')
+        assertItemsEqual(self,mem[addr+1:addr+7], b'bcdabc')
+        assertItemsEqual(self,mem[addr+2:addr+8], b'cdabcd')
+        assertItemsEqual(self,mem[addr+3:addr+9], b'dabcda')
 
         #Three mapping
         self.assertEqual(len(mem.mappings()), 3)
 
         size = 0x30000
         w_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        w_file.file.write('abc'*(size//3))
+        w_file.file.write(b'abc'*(size//3))
         w_file.close()
         addr = mem.mmapFile(0x20000000, size, 'w', w_file.name)
 
@@ -1230,11 +1240,12 @@ class MemoryTest(unittest.TestCase):
         sol = solver.get_value(cs, c)
         self.assertTrue(Operators.ORD(sol)==100)
 
-        self.assertItemsEqual(mem[x:x+4], "defg")
-        self.assertItemsEqual(mem[addr:addr+4], "defg")
+        defg = [bytes([ord(c)]) for c in 'defg']
+        assertItemsEqual(self,mem[x:x+4], defg)
+        assertItemsEqual(self,mem[addr:addr+4], defg)
         mem, x = pickle.loads(pickle.dumps((mem,x)))
-        self.assertItemsEqual(mem[x:x+4], "defg")
-        self.assertItemsEqual(mem[addr:addr+4], "defg")
+        assertItemsEqual(self,mem[x:x+4], defg)
+        assertItemsEqual(self,mem[addr:addr+4], defg)
 
 
     def testMultiSymbolic(self):
@@ -1280,7 +1291,7 @@ class MemoryTest(unittest.TestCase):
         addr = mem.mmap(None, size, 'rwx')
         mem[addr] = 'a'
 
-        self.assertEqual(mem[addr], 'a')
+        self.assertEqual(mem[addr], b'a')
 
         mem.mprotect(addr, size, 'w')
         with self.assertRaisesRegexp(InvalidMemoryAccess, 'Invalid memory access \(mode:.\) <{:x}>'.format(addr)):
@@ -1318,8 +1329,8 @@ class MemoryTest(unittest.TestCase):
         mem[addr+0x2000] = 'b'
 
         #check it....
-        self.assertEqual(mem[addr], 'a')
-        self.assertEqual(mem[addr+0x2000], 'b')
+        self.assertEqual(mem[addr], b'a')
+        self.assertEqual(mem[addr+0x2000], b'b')
 
         #make a free symbol of 32 bits
         x = cs.new_bitvec(32)
@@ -1372,7 +1383,7 @@ class MemoryTest(unittest.TestCase):
             _ = mem[addr]
 
         mem.mprotect(addr, size, 'r')
-        self.assertEqual(mem[addr], 'a')
+        self.assertEqual(mem[addr], b'a')
 
     def test_COW(self):
         m = AnonMap(0x10000000, 0x2000, 'rwx')
@@ -1385,9 +1396,9 @@ class MemoryTest(unittest.TestCase):
         m[0x10002000-1] = 'Z'
 
         #check it is initialized with zero
-        self.assertItemsEqual(m[0x10001000:0x10001002], 'AB')
-        self.assertEqual(m[0x10002000-1], 'Z')
-        self.assertItemsEqual(m[0x10001000:0x10002000], 'AB'+ 0xffd*'\x00' +'Z')
+        assertItemsEqual(self,m[0x10001000:0x10001002], b'AB')
+        self.assertEqual(m[0x10002000-1], b'Z')
+        assertItemsEqual(self,m[0x10001000:0x10002000], b'AB'+ 0xffd*b'\x00' +b'Z')
 
         #Make COW
         cow = COWMap(m, 0x1000)
@@ -1396,54 +1407,54 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(len(cow), 0x1000)
 
         #check it is initialized with zero
-        self.assertItemsEqual(m[0x10001000:0x10001002], 'AB')
-        self.assertEqual(m[0x10002000-1], 'Z')
-        self.assertItemsEqual(m[0x10001000:0x10002000], 'AB'+ 0xffd*'\x00' +'Z')
-        self.assertItemsEqual(cow[0x10001000:0x10002000], 'AB'+ 0xffd*'\x00' +'Z')
+        assertItemsEqual(self,m[0x10001000:0x10001002], b'AB')
+        self.assertEqual(m[0x10002000-1], b'Z')
+        assertItemsEqual(self,m[0x10001000:0x10002000], b'AB'+ 0xffd*b'\x00' +b'Z')
+        assertItemsEqual(self,cow[0x10001000:0x10002000], b'AB'+ 0xffd*b'\x00' +b'Z')
 
         #Set and check some chars
-        cow[0x10001000:0x10001002] = 'ab'
-        cow[0x10002000-1] = 'z'
-        self.assertItemsEqual(cow[0x10001000:0x10001002], 'ab')
-        self.assertEqual(cow[0x10002000-1], 'z')
-        self.assertItemsEqual(m[0x10001000:0x10001002], 'AB')
-        self.assertEqual(m[0x10002000-1], 'Z')
-        self.assertItemsEqual(cow[0x10001000:0x10002000], 'ab'+ 0xffd*'\x00' +'z')
+        cow[0x10001000:0x10001002] = b'ab'
+        cow[0x10002000-1] = b'z'
+        assertItemsEqual(self,cow[0x10001000:0x10001002], b'ab')
+        self.assertEqual(cow[0x10002000-1], b'z')
+        assertItemsEqual(self,m[0x10001000:0x10001002], b'AB')
+        self.assertEqual(m[0x10002000-1], b'Z')
+        assertItemsEqual(self,cow[0x10001000:0x10002000], b'ab'+ 0xffd*b'\x00' +b'z')
 
 
         #Set and check some chars
-        cow[0x10002000-1] = 'z'
-        self.assertEqual(cow[0x10001000], 'a')
-        self.assertEqual(cow[0x10002000-1], 'z')
-        self.assertEqual(m[0x10001000], 'A')
-        self.assertEqual(m[0x10002000-1], 'Z')
+        cow[0x10002000-1] = b'z'
+        self.assertEqual(cow[0x10001000], b'a')
+        self.assertEqual(cow[0x10002000-1], b'z')
+        self.assertEqual(m[0x10001000], b'A')
+        self.assertEqual(m[0x10002000-1], b'Z')
 
     def test_pickle_mmap_anon(self):
         m = AnonMap(0x10000000, 0x3000, 'rwx')
         m[0x10001000] = 'A'
         s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
-        self.assertEqual(m[0x10001000], 'A')
+        self.assertEqual(m[0x10001000], b'A')
 
 
     def test_pickle_mmap_file(self):
         #file mapping
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('X'*0x3000)
+        rwx_file.file.write(b'X'*0x3000)
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, 'rwx', rwx_file.name)
         m[0x10000000] = 'Y'
         s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
-        self.assertEqual(m[0x10001000], 'X')
-        self.assertEqual(m[0x10000000], 'Y')
+        self.assertEqual(m[0x10001000], b'X')
+        self.assertEqual(m[0x10000000], b'Y')
 
     def test_pickle_mmap_anon_cow(self):
         m = AnonMap(0x10000000, 0x3000, 'rwx', 'X'*0x1000+'Y'*0x1000+'Z'*0x1000)
         m = COWMap(m)
         s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
-        self.assertEqual(m[0x10001000], 'Y')
+        self.assertEqual(m[0x10001000], b'Y')
         self.assertEqual(m.start, 0x10000000)
         self.assertEqual(m.end, 0x10003000)
 
@@ -1452,7 +1463,7 @@ class MemoryTest(unittest.TestCase):
         m = COWMap(m, offset=0x1000, size=0x1000)
         s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
-        self.assertEqual(m[0x10001000], 'Y')
+        self.assertEqual(m[0x10001000], b'Y')
         self.assertEqual(m.start, 0x10001000)
         self.assertEqual(m.end, 0x10002000)
 
@@ -1460,26 +1471,26 @@ class MemoryTest(unittest.TestCase):
     def test_pickle_mmap_file_cow(self):
         #file mapping
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('X'*0x1000+'Y'*0x1000+'Z'*0x1000)
+        rwx_file.file.write(b'X'*0x1000+b'Y'*0x1000+b'Z'*0x1000)
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, 'rwx', rwx_file.name)
         m = COWMap(m)
         s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
-        self.assertEqual(m[0x10001000], 'Y')
+        self.assertEqual(m[0x10001000], b'Y')
         self.assertEqual(m.start, 0x10000000)
         self.assertEqual(m.end, 0x10003000)
 
     def test_pickle_mmap_file_cow_offset(self):
         #file mapping
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('X'*0x1000+'Y'*0x1000+'Z'*0x1000)
+        rwx_file.file.write(b'X'*0x1000+b'Y'*0x1000+b'Z'*0x1000)
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, 'rwx', rwx_file.name)
         m = COWMap(m, size=0x1000, offset=0x1000)
         s = BytesIO(pickle.dumps(m))
         m = pickle.load(s)
-        self.assertEqual(m[0x10001000], 'Y')
+        self.assertEqual(m[0x10001000], b'Y')
         self.assertEqual(m.start, 0x10001000)
         self.assertEqual(m.end, 0x10002000)
 
@@ -1498,7 +1509,7 @@ class MemoryTest(unittest.TestCase):
 
         #file mapping
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('a'*0x3000)
+        rwx_file.file.write(b'a'*0x3000)
         rwx_file.close()
         addr_f = mem.mmapFile(0, 0x3000, 'rwx', rwx_file.name)
         mem.munmap(addr_f+0x1000, 0x1000)
@@ -1540,8 +1551,8 @@ class MemoryTest(unittest.TestCase):
         cs.add(value1 == 0x42)
         mem[addr1] = value1
 
-        self.assertItemsEqual(solver.get_all_values(cs, mem[0x10000]), [0x41, 0x42])
-        self.assertItemsEqual(solver.get_all_values(cs, mem[0x10001]), [0x00, 0x42])
+        assertItemsEqual(self,solver.get_all_values(cs, mem[0x10000]), [0x41, 0x42])
+        assertItemsEqual(self,solver.get_all_values(cs, mem[0x10001]), [0x00, 0x42])
 
         addr2 = cs.new_bitvec(64)
         cs.add(Operators.OR(addr2 == 0x10000, addr2 == 0x10001, addr2 == 0x10002))
@@ -1549,21 +1560,21 @@ class MemoryTest(unittest.TestCase):
         cs.add(value2 == 0x43)
         mem[addr2] = value2
 
-        self.assertItemsEqual(solver.get_all_values(cs, mem[0x10000]), [0x41, 0x42, 0x43])
-        self.assertItemsEqual(solver.get_all_values(cs, mem[0x10001]), [0x00,   0x42, 0x43])
-        self.assertItemsEqual(solver.get_all_values(cs, mem[0x10002]), [0x00, 0x43])
+        assertItemsEqual(self,solver.get_all_values(cs, mem[0x10000]), [0x41, 0x42, 0x43])
+        assertItemsEqual(self,solver.get_all_values(cs, mem[0x10001]), [0x00,   0x42, 0x43])
+        assertItemsEqual(self,solver.get_all_values(cs, mem[0x10002]), [0x00, 0x43])
 
 
     def test_mmap_file(self):
         #file mapping
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('X'*0x3000)
+        rwx_file.file.write(b'X'*0x3000)
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, 'rwx', rwx_file.name)
-        m[0x10000000:0x10000002] = 'YZ'
-        self.assertEqual(m[0x10000000], 'Y')
-        self.assertEqual(m[0x10000001], 'Z')
-        self.assertItemsEqual(m[0x10000000:0x10000003], 'YZX')
+        m[0x10000000:0x10000002] = b'YZ'
+        self.assertEqual(m[0x10000000], b'Y')
+        self.assertEqual(m[0x10000001], b'Z')
+        assertItemsEqual(self,m[0x10000000:0x10000003], b'YZX')
 
         head, tail = m.split(0)
         self.assertEqual(head, None)
@@ -1586,9 +1597,9 @@ class MemoryTest(unittest.TestCase):
         #file mapping
         m = AnonMap(0x10000000, 0x3000, 'rwx')
         m[0x10000000:0x10000002] = 'YZ'
-        self.assertEqual(m[0x10000000], 'Y')
-        self.assertEqual(m[0x10000001], 'Z')
-        self.assertItemsEqual(m[0x10000000:0x10000003], 'YZ\x00')
+        self.assertEqual(m[0x10000000], b'Y')
+        self.assertEqual(m[0x10000001], b'Z')
+        assertItemsEqual(self,m[0x10000000:0x10000003], b'YZ\x00')
 
         head, tail = m.split(0)
         self.assertEqual(head, None)
@@ -1608,22 +1619,22 @@ class MemoryTest(unittest.TestCase):
         self.assertEqual(len(tail), 1)
 
         m = pickle.loads(pickle.dumps(m))
-        self.assertItemsEqual(m[0x10000000:0x10000003], 'YZ\x00')
+        assertItemsEqual(self,m[0x10000000:0x10000003], b'YZ\x00')
 
 
     def test_mmap_file_extra(self):
         #file mapping
         rwx_file = tempfile.NamedTemporaryFile('w+b', delete=False)
-        rwx_file.file.write('X'*0x2800)
+        rwx_file.file.write(b'X'*0x2800)
         rwx_file.close()
         m = FileMap(0x10000000, 0x3000, 'rwx', rwx_file.name)
-        self.assertItemsEqual(m[0x10000000:0x10003000], 'X'*0x2800 + '\x00'*0x800)
+        assertItemsEqual(self,m[0x10000000:0x10003000], b'X'*0x2800 + bytes(0x800))
 
         m[0x100027f0:0x10002810] = 'Y'*0x20
-        self.assertItemsEqual(m[0x10000000:0x10003000], 'X'*0x27f0 + 'Y'*0x20 + '\x00'*0x7f0)
+        assertItemsEqual(self,m[0x10000000:0x10003000], b'X'*0x27f0 + b'Y'*0x20 + bytes(0x7f0))
 
         m = pickle.loads(pickle.dumps(m))
-        self.assertItemsEqual(m[0x10000000:0x10003000], 'X'*0x27f0 + 'Y'*0x20 + '\x00'*0x7f0)
+        assertItemsEqual(self,m[0x10000000:0x10003000], b'X'*0x27f0 + b'Y'*0x20 + b'\x00'*0x7f0)
 
     def test_mem_basic_trace(self):
         cs = ConstraintSet()
@@ -1705,7 +1716,7 @@ class MemoryTest(unittest.TestCase):
         nul = mem.mmap(0x4000, 0x1000, '')
 
         self.assertEqual(len(mem.mappings()), 4)
-        self.assertItemsEqual((ro,wo,xo, nul), (0x1000,0x2000,0x3000, 0x4000))
+        assertItemsEqual(self,(ro,wo,xo, nul), (0x1000,0x2000,0x3000, 0x4000))
 
         self.assertTrue(mem.access_ok(ro, 'r'))
         self.assertFalse(mem.access_ok(ro, 'w'))

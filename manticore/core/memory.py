@@ -67,6 +67,20 @@ class InvalidSymbolicMemoryAccess(InvalidMemoryAccess):
         self.constraint = constraint
         self.size = size
 
+def _normalize(c):
+    """
+    Convert a byte-like value into a canonical byte (a value of type 'bytes' of len 1)
+
+    :param c:
+    :return:
+    """
+    if isinstance(c, int):
+        return bytes([c])
+    elif isinstance(c, str):
+        return bytes([ord(c)])
+    else:
+        return c
+
 
 class Map(with_metaclass(ABCMeta, object)):
     '''
@@ -327,17 +341,18 @@ class FileMap(Map):
     def __getitem__(self, index):
         def get_byte_at_offset(offset):
             if offset in self._overlay:
-                return self._overlay[offset]
+                return _normalize(self._overlay[offset])
             else:
                 if offset >= self._mapped_size:
-                    return '\x00'  # , 'Extra data must initially be zero'
-                return self._data[offset]
+                    return bytes([0])  # , 'Extra data must initially be zero'
+                return _normalize(self._data[offset])
 
         index = self._get_offset(index)
+
         if isinstance(index, slice):
             result = []
-            for i in range(index.stop - index.start):
-                result.append(get_byte_at_offset(i + index.start))
+            for i in range(index.start, index.stop):
+                result.append(get_byte_at_offset(i))
             return result
         else:
             return get_byte_at_offset(index)
@@ -386,9 +401,9 @@ class COWMap(Map):
         assert self._in_range(index)
         if isinstance(index, slice):
             for i in range(index.stop - index.start):
-                self._cow[index.start + i] = value[i]
+                self._cow[index.start + i] = _normalize(value[i])
         else:
-            self._cow[index] = value
+            self._cow[index] = _normalize(value)
 
     def __getitem__(self, index):
         assert self._in_range(index)
@@ -396,16 +411,11 @@ class COWMap(Map):
         if isinstance(index, slice):
             result = []
             for i in range(index.start, index.stop):
-                if i in self._cow:
-                    result.append(self._cow[i])
-                else:
-                    result.append(self._parent[i])
+                c = self._cow.get(i, self._parent[i])
+                result.append(_normalize(c))
             return result
         else:
-            if index in self._cow:
-                return self._cow[index]
-            else:
-                return self._parent[index]
+            return _normalize(self._cow.get(index, self._parent[index]))
 
     def split(self, address):
         if address <= self.start:
@@ -516,7 +526,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         '''
         assert size & self.page_mask == 0
         if start is None:
-            end = {32: 0xf8000000, 64: 0x0000800000000000}[self.memory_bit_size]
+            end = {32: 0xf8000000, 64: 0x000000000000000}[self.memory_bit_size]
             start = end - size
         else:
             if start > self.memory_size - size:
@@ -558,7 +568,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         '''
         #If addr is NULL, the system determines where to allocate the region.
         assert addr is None or isinstance(addr, int), 'Address shall be concrete'
-        assert addr < self.memory_size, 'Address too big'
+        assert addr is None or addr < self.memory_size, 'Address too big'
         assert size > 0
 
         # address is rounded down to the nearest multiple of the allocation granularity
