@@ -1284,7 +1284,7 @@ class MemoryTest(unittest.TestCase):
             _ = mem[addr]
 
 
-    @unittest.skip('test times out on travis')
+
     def testmprotectFailSymbReading(self):
         cs = ConstraintSet()
 

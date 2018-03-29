@@ -461,7 +461,7 @@ class ExpressionTest(unittest.TestCase):
             self.assertTrue(solver.check(cs))
             self.assertEqual(solver.get_value(cs, c), Operators.SAR(32, A, B))
 
-    @unittest.skip('test times out on travis')
+
     def test_ConstraintsForking(self):
         import pickle
         cs =  ConstraintSet()
