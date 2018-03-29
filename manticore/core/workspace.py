@@ -132,7 +132,10 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         """
-        s = io.BytesIO()
+        if kwargs.get('binary', True):
+            s = io.BytesIO()
+        else:
+            s = io.StringIO()
         yield s
         self.save_value(key, s.getvalue())
 
@@ -148,7 +151,7 @@ class Store(object):
         value = self.load_value(key)
         yield io.BytesIO(value)
 
-    def save_state(self, state, key, binary=False):
+    def save_state(self, state, key):
         """
         Save a state to storage.
 
@@ -157,7 +160,7 @@ class Store(object):
         :param binary bool:
         :return:
         """
-        with self.save_stream(key, binary=binary) as f:
+        with self.save_stream(key, binary=True) as f:
             self._serializer.serialize(state, f)
 
     def load_state(self, key, delete=True, binary=False):
@@ -407,7 +410,7 @@ class Workspace(object):
         """
         assert isinstance(state, State)
         id_ = self._get_id()
-        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix), binary=True)
+        self._store.save_state(state, '{}{:08x}{}'.format(self._prefix, id_, self._suffix))
         return id_
 
     def rm_state(self, state_id):
@@ -505,7 +508,9 @@ class ManticoreOutput(object):
         self.save_input_symbols(state)
 
         for stream_name, data in state.platform.generate_workspace_files().items():
-            with self._named_stream(stream_name) as stream:
+            with self._named_stream(stream_name, binary=True) as stream:
+                if isinstance(data, str):
+                    data = str.encode('utf-8')
                 stream.write(data)
 
         self._store.save_state(state, self._named_key('pkl'))
@@ -515,18 +520,18 @@ class ManticoreOutput(object):
         return self._store.save_stream(key, *rest, **kwargs)
 
     @contextmanager
-    def _named_stream(self, name):
+    def _named_stream(self, name, *args, **kwargs):
         """
         Create an indexed output stream i.e. 'test_00000001.name'
 
         :param name: Identifier for the stream
         :return: A context-managed stream-like object
         """
-        with self._store.save_stream(self._named_key(name)) as s:
+        with self._store.save_stream(self._named_key(name), *args, **kwargs) as s:
             yield s
 
     def save_summary(self, state, message):
-        with self._named_stream('messages') as summary:
+        with self._named_stream('messages', binary=False) as summary:
             summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
             summary.write('Status:\n  {}\n\n'.format(message))
 
@@ -545,7 +550,7 @@ class ManticoreOutput(object):
                 summary.write("================ PROC: %02d ================\n" % idx)
                 summary.write("Memory:\n")
                 if hash(cpu.memory) not in memories:
-                    summary.write(bytes(cpu.memory).replace('\n', '\n  '))
+                    summary.write(str(cpu.memory).replace('\n', '\n  '))
                     memories.add(hash(cpu.memory))
 
                 summary.write("CPU:\n{}".format(cpu))
@@ -559,7 +564,7 @@ class ManticoreOutput(object):
                     summary.write("  Instruction: {symbolic}\n")
 
     def save_trace(self, state):
-        with self._named_stream('trace') as f:
+        with self._named_stream('trace', binary=False) as f:
             if 'trace' not in state.context:
                 return
             for entry in state.context['trace']:
@@ -569,14 +574,14 @@ class ManticoreOutput(object):
         # XXX(yan): We want to conditionally enable this check
         # assert solver.check(state.constraints)
 
-        with self._named_stream('smt') as f:
-            f.write(bytes(state.constraints))
+        with self._named_stream('smt', binary=False) as f:
+            f.write(str(state.constraints))
 
     def save_input_symbols(self, state):
-        with self._named_stream('input') as f:
+        with self._named_stream('input', binary=False) as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
-                f.write('%s: %s\n' % (symbol.name, repr(buf)))
+                f.write('{}: {}\n'.format(symbol.name, repr(buf)))
 
     def save_syscall_trace(self, state):
         with self._named_stream('syscalls') as f:

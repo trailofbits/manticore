@@ -240,7 +240,7 @@ class Visited(Plugin):
         executor_visited = _shared_context.get('visited', set())
         # Fixme this is duplicated?
         if self.coverage_file is not None:
-            with self.manticore._output.save_stream(self.coverage_file) as f:
+            with self.manticore._output.save_stream(self.coverage_file, binary=False) as f:
                 fmt = "0x{:016x}\n"
                 for m in executor_visited:
                     f.write(fmt.format(m))
