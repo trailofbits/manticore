@@ -110,6 +110,10 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('APSR_C'), c)
         self.assertEqual(self.rf.read('APSR_V'), v)
 
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
+
     # MOV
 
     @itest("mov r0, 0x0")
@@ -750,7 +754,9 @@ class Armv7UnicornInstructions(unittest.TestCase):
         emulate_next(self.cpu)
         sp = self.cpu.STACK
         self.assertEqual(self.rf.read('SP'), pre_sp - (3 * 4))
-        self.assertItemsEqual(self.cpu.stack_peek(), struct.pack('<I', 3))
+        a = self.cpu.stack_peek()
+        b = struct.pack('<I', 3)
+        self.assertItemsEqual(a, b)
         self.assertEqual(self.cpu.read_int(sp + 4, self.cpu.address_bit_size), 0x55)
         self.assertEqual(self.cpu.read_int(sp + 8, self.cpu.address_bit_size), 0xffffffff)
 

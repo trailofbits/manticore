@@ -14,6 +14,11 @@ class ExpressionTest(unittest.TestCase):
         self.solver = Z3Solver()
 
 
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
+
+
     def tearDown(self):
         del self.solver
 

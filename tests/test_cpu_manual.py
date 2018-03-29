@@ -26,15 +26,6 @@ sizes = {'RAX': 64, 'EAX': 32, 'AX': 16, 'AL': 8, 'AH': 8, 'RCX': 64, 'ECX': 32,
 def to_bytelist(bs):
     return [bytes([b]) for b in bs]
 
-def assertEqItems(test, a, b):
-    if isinstance(b, bytes):
-        b = [bytes([x]) for x in b]
-    if sys.version_info[0] == 2:
-        return test.assertItemsEqual(a, b)
-    elif sys.version_info[0] == 3:
-        return test.assertCountEqual(a, b)
-    else:
-        raise Exception("Unsupported Python version")
 
 class SymCPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
@@ -77,8 +68,19 @@ class SymCPUTest(unittest.TestCase):
         mem = mockmem.Memory()
         self.cpu = I386Cpu(mem) #TODO reset cpu in between tests...
                     #TODO mock getchar/putchar in case the instructon access memory directly
+
     def tearDown(self):
         self.cpu = None
+
+    def assertItemsEqual(self, a, b):
+        # Required for Python3 compatibility
+        self.assertEqual(sorted(a), sorted(b))
+
+    def assertEqItems(self, a, b):
+        if isinstance(b, bytes):
+            b = [bytes([x]) for x in b]
+        return self.assertItemsEqual(a, b)
+
     def testInitialRegState(self):
         cpu = self.cpu
         #'CR0', 'CR1', 'CR2', 'CR3', 'CR4', 'CR5', 'CR6', 'CR7', 'CR8',
@@ -521,7 +523,7 @@ class SymCPUTest(unittest.TestCase):
         # 48 47 46 45 58 43 42 41 68 67 66 65 64 63 62 61
 
         value = cpu.read_int(0x1004, 16)
-        assertEqItems(self, solver.get_all_values(cs, value), [0x4358] )
+        self.assertEqItems(solver.get_all_values(cs, value), [0x4358])
 
         addr2 = cs.new_bitvec(64)
         cs.add(Operators.AND(addr2>=0x1000, addr2<=0x100c))
@@ -753,7 +755,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.read_int(0x2000,64), 0)
         self.assertEqual(cpu.read_int(0x2100,64), 0)
         self.assertEqual(cpu.read_int(0x2200,64), 0)
-        assertEqItems(self, solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0])
+        self.assertEqItems(solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0])
         #self.assertEqual(cpu.read_int(cpu.EDI,64), 0 )
 
         cpu.write_int(0x2100, 0x4142434445464748, 64)
@@ -766,7 +768,7 @@ class SymCPUTest(unittest.TestCase):
         cpu.execute()
         self.assertTrue(solver.check(cs))
 
-        assertEqItems(self, solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0, 4702394921427289928])
+        self.assertEqItems(solver.get_all_values(cs, cpu.read_int(cpu.EDI,64)), [0, 4702394921427289928])
 
     def test_POPCNT(self):
         '''POPCNT EAX, EAX
@@ -807,7 +809,7 @@ class SymCPUTest(unittest.TestCase):
         cpu.SF = False
         cpu.ECX = 0xd
         cpu.execute()
-        assertEqItems(self, mem[0x41e10a:0x41e10c], bytes(b'\xff\xc9'))
+        self.assertEqItems(mem[0x41e10a:0x41e10c], bytes(b'\xff\xc9'))
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
