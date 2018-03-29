@@ -186,7 +186,7 @@ class UnicornEmulator(object):
                         raise ConcretizeMemory(self._cpu.memory, offset, 8,
                                                "Concretizing for emulation")
 
-                self._emu.mem_write(address, ''.join(values))
+                self._emu.mem_write(address, b''.join(values))
 
             # Try emulation
             self._should_try_again = False
@@ -236,7 +236,7 @@ class UnicornEmulator(object):
         # Bring in the instruction itself
         instruction = self._cpu.decode_instruction(self._cpu.PC)
         text_bytes = self._cpu.read_bytes(self._cpu.PC, instruction.size)
-        self._emu.mem_write(self._cpu.PC, ''.join(text_bytes))
+        self._emu.mem_write(self._cpu.PC, b''.join(text_bytes))
 
         self._emu.hook_add(UC_HOOK_MEM_READ_UNMAPPED, self._hook_unmapped)
         self._emu.hook_add(UC_HOOK_MEM_WRITE_UNMAPPED, self._hook_unmapped)
