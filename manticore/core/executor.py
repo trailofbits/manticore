@@ -18,13 +18,6 @@ from contextlib import contextmanager
 # This is the single global manager that will handle all shared memory among workers
 
 
-def mgr_init():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-
-manager = SyncManager()
-manager.start(mgr_init)
-
 logger = logging.getLogger(__name__)
 
 
@@ -178,24 +171,27 @@ class Executor(Eventful):
 
         self.subscribe('did_load_state', self._register_state_callbacks)
 
+        self.manager = SyncManager()
+        self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+
         # The main executor lock. Acquire this for accessing shared objects
-        self._lock = manager.Condition(manager.RLock())
+        self._lock = self.manager.Condition(self.manager.RLock())
 
         # Shutdown Event
-        self._shutdown = manager.Event()
+        self._shutdown = self.manager.Event()
 
         # States on storage. Shared dict state name ->  state stats
-        self._states = manager.list()
+        self._states = self.manager.list()
 
         # Number of currently running workers. Initially no running workers
-        self._running = manager.Value('i', 0)
+        self._running = self.manager.Value('i', 0)
 
         self._workspace = Workspace(self._lock, store)
 
         # Executor wide shared context
         if context is None:
             context = {}
-        self._shared_context = manager.dict(context)
+        self._shared_context = self.manager.dict(context)
 
         # scheduling priority policy (wip)
         # Set policy
