@@ -34,6 +34,12 @@ def forAllTests(decorator):
 class CPUTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
+    # Used while transitioning to py3
+    def assertEqual(self, a, b):
+        if isinstance(b, str):
+            b = bytes([ord(c) for c in b])
+        return super(CPUTest, self).assertEqual(a, b)
+
     class ROOperand(object):
         ''' Mocking class for operand ronly '''
         def __init__(self, size, value):
