@@ -609,6 +609,10 @@ class ManticoreEVM(Manticore):
             :param contract_name: a string with the name of the contract to analyze
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
+
+        if isinstance(source_code, str):
+            source_code = source_code.encode('utf-8')
+
         solc = "solc"
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
