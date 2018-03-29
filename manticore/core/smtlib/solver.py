@@ -130,7 +130,7 @@ class Z3Solver(Solver):
         '''
         super(Z3Solver, self).__init__()
         self._proc = None
-        self._log = ''  # this should be enabled only if we are debugging
+        self._log = []  # this should be enabled only if we are debugging
 
         self.version = self._solver_version()
 
@@ -239,10 +239,9 @@ class Z3Solver(Solver):
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s', cmd)
-        self._log += str(cmd) + '\n'
+        self._log.append(str(cmd))
         try:
-            buf = str(cmd)
-            self._proc.stdin.write(buf + '\n')
+            self._proc.stdin.write('{}\n'.format(cmd))
         except IOError as e:
             raise SolverException(e)
 
