@@ -2614,12 +2614,14 @@ class SLinux(Linux):
             def make_chr(c):
                 if isinstance(c, int):
                     return bytes([c])
+                elif isinstance(c, str):
+                    return bytes([ord(c)])
                 return c
             try:
                 for c in data:
                     if issymbolic(c):
-                        c = make_chr(solver.get_value(self.constraints, c))
-                    fd.write(c)
+                        c = solver.get_value(self.constraints, c)
+                    fd.write(make_chr(c))
             except SolverException:
                 fd.write('{SolverException}')
 
