@@ -14,7 +14,10 @@ Bugs
 '''
 
 import sys
-import Queue
+try:
+    import Queue
+except:
+    import queue as Queue
 import struct
 import itertools
 
@@ -36,7 +39,7 @@ def _partition(pred, iterable):
     return (list(itertools.ifilterfalse(pred, t1)), filter(pred, t2))
 
 def log(s):
-    print '[+]', s
+    print('[+] {}'.format(s))
 
 class TraceReceiver(Plugin):
     def __init__(self, tracer):
