@@ -502,4 +502,79 @@ class Z3Solver(Solver):
         raise NotImplementedError("get_value only implemented for Bool and BitVec")
 
 
-solver = Z3Solver()
+class LazyZ3Solver(Solver):
+    """
+    Wrap Z3Solver and only initialize it if it's used.
+    
+    Not all instances need a solver, such as the majority of unit tests
+    """
+    def __init__(self, z3cls=Z3Solver):
+        super(LazyZ3Solver, self).__init__()
+        self.cls=z3cls
+        self.obj = None
+
+    def ensure_initialized(self):
+        if self.obj is None:
+            self.obj = self.cls()
+
+    def _start_proc(self):
+        self.ensure_initialized()
+        return self.obj._start_proc()
+
+    def _stop_proc(self):
+        self.ensure_initialized()
+        return self.obj._stop_proc()
+
+    def __del__(self):
+        self.ensure_initialized()
+        return self.obj.__del__()
+
+    def _reset(self, constraints=None):
+        self.ensure_initialized()
+        return self.obj._reset(constraints)
+
+    def _send(self, cmd):
+        self.ensure_initialized()
+        return self.obj._send(cmd)
+
+    def _recv(self):
+        self.ensure_initialized()
+        return self.obj._recv()
+
+    def _check(self):
+        self.ensure_initialized()
+        return self.obj._check()
+
+    def _assert(self, expression):
+        self.ensure_initialized()
+        return self.obj._assert(expression)
+
+    def _getvalue(self, expression):
+        self.ensure_initialized()
+        return self.obj._getvalue(expression)
+
+    def _push(self):
+        self.ensure_initialized()
+        return self.obj._push()
+
+    def _pop(self):
+        self.ensure_initialized()
+        return self.obj._pop()
+
+    def can_be_true(self, constraints, expression):
+        self.ensure_initialized()
+        return self.obj.can_be_true(constraints, expression)
+
+    def get_all_values(self, constraints, expression, maxcnt=3000, silent=False):
+        self.ensure_initialized()
+        return self.obj.get_all_values(constraints, expression, maxcnt, silent)
+
+    def optimize(self, constraints, x, goal, M=10000):
+        self.ensure_initialized()
+        return self.obj.optimize(constraints, x,goal,M)
+
+    def get_value(self, constraints, expression):
+        self.ensure_initialized()
+        return self.obj.get_value(constraints, expression)
+
+solver = LazyZ3Solver()
