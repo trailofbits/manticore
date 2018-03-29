@@ -176,7 +176,7 @@ class Executor(Eventful):
         self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
 
         # The main executor lock. Acquire this for accessing shared objects
-        self._lock = self.manager.Condition(self.manager.RLock())
+        self._lock = self.manager.Condition()
 
         # Shutdown Event
         self._shutdown = self.manager.Event()
