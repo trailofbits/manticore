@@ -1293,13 +1293,13 @@ class MemoryTest(unittest.TestCase):
 
         #In the beggining the solver was 'sat' ...
         self.assertTrue(solver.check(cs))
-        print('!', end='')
+        print('!')
 
         mem = SMemory32(cs)
 
         #start with no maps
         self.assertEqual(len(mem.mappings()), 0)
-        print('!', end='')
+        print('!')
 
         size = 0x3000
         #alloc/map a little mem
@@ -1307,14 +1307,14 @@ class MemoryTest(unittest.TestCase):
 
         #okay we should have 1 map
         self.assertEqual(len(mem.mappings()), 1)
-        print('!', end='')
+        print('!')
 
         #free middle page
         mem.munmap(addr+0x1000 , 1)
 
         #And now just 2
         self.assertEqual(len(mem.mappings()), 2)
-        print('!', end='')
+        print('!')
 
         #lets write some chars at the beginning of each page
         mem[addr] = 'a'
@@ -1322,9 +1322,9 @@ class MemoryTest(unittest.TestCase):
 
         #check it....
         self.assertEqual(mem[addr], 'a')
-        print('!', end='')
+        print('!')
         self.assertEqual(mem[addr+0x2000], 'b')
-        print('!', end='')
+        print('!')
 
         #make a free symbol of 32 bits
         x = cs.new_bitvec(32)
@@ -1334,15 +1334,15 @@ class MemoryTest(unittest.TestCase):
 
         #Well.. x is symbolic
         self.assertTrue(issymbolic(x))
-        print('!', end='')
+        print('!')
         #It shall be a solution
         self.assertTrue(solver.check(cs))
-        print('!', end='')
+        print('!')
         #if we ask for a possible solution (an x that comply with the constraints)
         sol = solver.get_value(cs, x)
         #it should comply..
         self.assertTrue(sol >= addr and sol<=addr+0x2000)
-        print('!', end='')
+        print('!')
         #print map(hex,sorted(solver.get_all_values(cs, x, 0x100000))),  map(hex,solver.minmax(cs, x)), mem[x]
 
                                                    #No Access Reading <4160741376>
