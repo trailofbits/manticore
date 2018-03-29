@@ -2315,7 +2315,7 @@ class EVMWorld(Platform):
         self.create_contract(origin, price, address=None, balance=value, init=bytecode, run=False)
         self._process_pending_transaction()
 
-    def transaction(self, address, origin=None, price=0, data='', caller=None, value=0, header=None, run=False):
+    def transaction(self, address, origin=None, price=0, data=b'', caller=None, value=0, header=None, run=False):
         assert self._pending_transaction is None
         if caller is None and origin is not None:
             caller = origin
@@ -2334,7 +2334,7 @@ class EVMWorld(Platform):
                       'gaslimit': 0,
                       'difficulty': 0
                       }
-        if any([isinstance(data[i], Expression) for i in range(len(data))]):
+        if any(isinstance(c, Expression) for c in data):
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
             for i in range(len(data)):
                 data_symb[i] = Operators.ORD(data[i])
