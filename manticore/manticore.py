@@ -686,7 +686,7 @@ class Manticore(Eventful):
         _shared_context = self.context
 
         with self._output.save_stream('command.sh', binary=False) as f:
-            f.write(' '.join(sys.argv))
+            f.write(u' '.join(sys.argv))
 
         elapsed = time.time() - self._time_started
         logger.info('Results in %s', self._output.store.uri)

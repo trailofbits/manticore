@@ -241,9 +241,8 @@ class Visited(Plugin):
         # Fixme this is duplicated?
         if self.coverage_file is not None:
             with self.manticore._output.save_stream(self.coverage_file, binary=False) as f:
-                fmt = "0x{:016x}\n"
                 for m in executor_visited:
-                    f.write(fmt.format(m))
+                    f.write(u"0x{:016x}\n".format(m))
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
 
 

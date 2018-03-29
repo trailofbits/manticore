@@ -532,43 +532,43 @@ class ManticoreOutput(object):
 
     def save_summary(self, state, message):
         with self._named_stream('messages', binary=False) as summary:
-            summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
-            summary.write('Status:\n  {}\n\n'.format(message))
+            summary.write(u"Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
+            summary.write(u'Status:\n  {}\n\n'.format(message))
 
             # FIXME(mark) This is a temporary hack for EVM. We need to sufficiently
             # abstract the below code to work on many platforms, not just Linux. Then
             # we can remove this hack.
             if getattr(state.platform, 'procs', None) is None:
                 import pprint
-                summary.write("EVM World:\n")
+                summary.write(u"EVM World:\n")
                 summary.write(pprint.pformat(state.platform._global_storage))
                 return
 
             memories = set()
             for cpu in [f for f in state.platform.procs if f]:
                 idx = state.platform.procs.index(cpu)
-                summary.write("================ PROC: %02d ================\n" % idx)
-                summary.write("Memory:\n")
+                summary.write(u"================ PROC: %02d ================\n" % idx)
+                summary.write(u"Memory:\n")
                 if hash(cpu.memory) not in memories:
                     summary.write(str(cpu.memory).replace('\n', '\n  '))
                     memories.add(hash(cpu.memory))
 
-                summary.write("CPU:\n{}".format(cpu))
+                summary.write(u"CPU:\n{}".format(cpu))
 
                 if hasattr(cpu, "instruction") and cpu.instruction is not None:
                     i = cpu.instruction
-                    summary.write('Instruction: 0x%x\t(%s %s)\n' % (i.address,
+                    summary.write(u'Instruction: 0x%x\t(%s %s)\n' % (i.address,
                                                                     i.mnemonic.encode('utf-16be'),
                                                                     i.op_str.encode('utf-16be')))
                 else:
-                    summary.write("  Instruction: {symbolic}\n")
+                    summary.write(u"  Instruction: {symbolic}\n")
 
     def save_trace(self, state):
         with self._named_stream('trace', binary=False) as f:
             if 'trace' not in state.context:
                 return
             for entry in state.context['trace']:
-                f.write('0x{:x}\n'.format(entry))
+                f.write(u'0x{:x}\n'.format(entry))
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check
@@ -581,7 +581,7 @@ class ManticoreOutput(object):
         with self._named_stream('input', binary=False) as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
-                f.write('{}: {}\n'.format(symbol.name, repr(buf)))
+                f.write(u'{}: {}\n'.format(symbol.name, repr(buf)))
 
     def save_syscall_trace(self, state):
         with self._named_stream('syscalls') as f:
@@ -593,7 +593,7 @@ class ManticoreOutput(object):
                 for c in data:
                     fd.write(bytes[solver.get_value(state.constraints, c)])
             except SolverException:
-                fd.write('{SolverException}')
+                fd.write(u'{SolverException}')
 
         with self._named_stream('stdout') as _out:
             with self._named_stream('stderr') as _err:
