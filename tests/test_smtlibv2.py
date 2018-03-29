@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 from builtins import *
 from manticore.core.smtlib import *
 import unittest
@@ -462,6 +462,7 @@ class ExpressionTest(unittest.TestCase):
 
 
     def test_ConstraintsForking(self):
+        # this has a lot of extra output to ensure travis builds do not timeout
         import pickle
         cs =  ConstraintSet()
         #make free 32bit bitvectors
@@ -482,88 +483,125 @@ class ExpressionTest(unittest.TestCase):
 
 
         with cs as cs_up:
+            print('!', end='')
             cs_up.add(y.uge(0x80))
             self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
+            print('!', end='')
 
             saved_up = pickle.dumps((x,y,cs_up))
 
             self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
+            print('!', end='')
 
             with cs_up as cs_up_right:
                 cs_up_right.add(x.uge(0x80))
                 saved_up_right = pickle.dumps((x,y,cs_up_right))
                 self.assertItemsEqual(solver.get_all_values(cs_up_right, x), range(0x80, 0x100))
+                print('!', end='')
                 self.assertItemsEqual(solver.get_all_values(cs_up_right, y), range(0x80, 0x100))
+                print('!', end='')
 
             self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
+            print('!', end='')
+
 
             with cs_up as cs_up_left:
                 cs_up_left.add(x.ult(0x80))
                 saved_up_left = pickle.dumps((x,y,cs_up_left))
                 self.assertItemsEqual(solver.get_all_values(cs_up_left, x), range(0, 0x80))
+                print('!', end='')
                 self.assertItemsEqual(solver.get_all_values(cs_up_left, y), range(0x80, 0x100))
+                print('!', end='')
 
             self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
+            print('!', end='')
+
 
 
         with cs as cs_down:
             cs_down.add(y.ult(0x80))
 
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
-
+            print('!', end='')
             saved_down = pickle.dumps((x,y,cs_down))
-
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
+            print('!', end='')
 
 
             with cs_down as cs_down_right:
                 cs_down_right.add(x.uge(0x80))
                 saved_down_right = pickle.dumps((x,y,cs_down_right))
                 self.assertItemsEqual(solver.get_all_values(cs_down_right, x), range(0x80, 0x100))
+                print('!', end='')
                 self.assertItemsEqual(solver.get_all_values(cs_down_right, y), range(0, 0x80))
+                print('!', end='')
 
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
+            print('!', end='')
 
             with cs_down as cs_down_left:
                 cs_down_left.add(x.ult(0x80))
                 saved_down_left = pickle.dumps((x,y,cs_down_left))
                 self.assertItemsEqual(solver.get_all_values(cs_down_left, x), range(0, 0x80))
+                print('!', end='')
                 self.assertItemsEqual(solver.get_all_values(cs_down_left, y), range(0, 0x80))
+                print('!', end='')
 
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
+            print('!', end='')
 
 
             x,y,cs_up= pickle.loads(saved_up)
             self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80, 0x100))
+            print('!', end='')
 
             x,y,cs_up_right= pickle.loads(saved_up_right)
             self.assertItemsEqual(solver.get_all_values(cs_up_right, x), range(0x80, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_up_right, y), range(0x80, 0x100))
+            print('!', end='')
 
             x,y,cs_up_left= pickle.loads(saved_up_left)
             self.assertItemsEqual(solver.get_all_values(cs_up_left, x), range(0x00, 0x80))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_up_left, y), range(0x80, 0x100))
+            print('!', end='')
 
             x,y, cs_down= pickle.loads(saved_down)
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0x0, 0x80))
+            print('!', end='')
 
             x,y,cs_down_right= pickle.loads(saved_down_right)
             self.assertItemsEqual(solver.get_all_values(cs_down_right, x), range(0x80, 0x100))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_down_right, y), range(0x00, 0x80))
+            print('!', end='')
 
             x,y,cs_down_left= pickle.loads(saved_down_left)
             self.assertItemsEqual(solver.get_all_values(cs_down_left, x), range(0x00, 0x80))
+            print('!', end='')
             self.assertItemsEqual(solver.get_all_values(cs_down_left, y), range(0x00, 0x80))
+            print('!', end='')
 
     def test_ORD(self):
         cs = ConstraintSet()
