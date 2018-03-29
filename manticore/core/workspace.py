@@ -19,8 +19,13 @@ from .state import State
 
 logger = logging.getLogger(__name__)
 
-manager = SyncManager()
-manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+_manager = None
+def manager():
+    global _manager
+    if _manager is None:
+        _manager = SyncManager()
+        _manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+    return _manager
 
 
 class StateSerializer(object):
@@ -347,7 +352,7 @@ class Workspace(object):
         else:
             self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
-        self._last_id = manager.Value('i', 0)
+        self._last_id = manager().Value('i', 0)
         self._lock = lock
         self._prefix = 'state_'
         self._suffix = '.pkl'
@@ -433,8 +438,8 @@ class ManticoreOutput(object):
         self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
         self._last_id = 0
-        self._id_gen = manager.Value('i', self._last_id)
-        self._lock = manager.Condition(manager.RLock())
+        self._id_gen = manager().Value('i', self._last_id)
+        self._lock = manager().Condition(manager().RLock())
 
     def testcase(self, prefix='test'):
         class Testcase(object):
