@@ -527,7 +527,8 @@ class LazyZ3Solver(Solver):
 
     def __del__(self):
         self.ensure_initialized()
-        return self.obj.__del__()
+        del self.obj
+        self.obj = None
 
     def _reset(self, constraints=None):
         self.ensure_initialized()
