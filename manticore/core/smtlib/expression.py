@@ -146,7 +146,7 @@ class BoolConstant(Bool, Constant):
         return self.value
 
     def __nonzero__(self):
-        return bool(self)
+        return self.__bool__()
 
 
 class BoolOperation(Operation, Bool):
