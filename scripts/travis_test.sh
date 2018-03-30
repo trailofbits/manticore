@@ -76,7 +76,10 @@ echo Ran example scripts
 popd
 
 coverage erase
-coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
+
+# Disable resource warnings 
+PYTHONWARNINGS="ignore:ResourceWarning" coverage run -m unittest discover tests/ 2>&1 >/dev/null | tee travis_tests.log
+
 DID_OK=$(tail -n1 travis_tests.log)
 if [[ "${DID_OK}" == OK* ]]
 then
