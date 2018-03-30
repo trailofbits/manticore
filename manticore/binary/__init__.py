@@ -24,16 +24,9 @@ import io
 class Binary(object):
     magics = {}
 
-    def __new__(cls, path):
-        if cls is Binary:
-            cl = cls.magics[open(path).read(4)]
-            return cl(path)
-        else:
-            return super(Binary, cls).__new__(cls, path)
-
     def __init__(self, path):
         self.path = path
-        self.magic = Binary.magics[open(path).read(4)]
+        self.magic = Binary.magics[open(path, 'rb').read(4)]
 
     def arch(self):
         pass
@@ -51,7 +44,7 @@ class CGCElf(Binary):
         # hack begin so we can use upstream Elftool
         with open(filename, 'rb') as fd:
             stream = io.BytesIO(fd.read())
-            stream.write('\x7fELF')
+            stream.write(b'\x7fELF')
             stream.name = fd.name
             return stream
 
@@ -132,8 +125,8 @@ class Elf(Binary):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
 
 
-Binary.magics = {'\x7fCGC': CGCElf,
-                 '\x7fELF': Elf}
+Binary.magics = {b'\x7fCGC': CGCElf,
+                 b'\x7fELF': Elf}
 
 
 if __name__ == '__main__':

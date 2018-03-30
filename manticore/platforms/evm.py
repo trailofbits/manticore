@@ -156,9 +156,9 @@ class EVMMemory(object):
 
     def __delitem__(self, index):
         def delete(offset):
-            if offset in self.memory:
+            if offset in self._memory:
                 del self._memory[offset]
-            if offset in self._symbol:
+            if offset in self._symbols:
                 del self._symbols[offset]
 
         if isinstance(index, slice):
