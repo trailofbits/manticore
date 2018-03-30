@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## 0.1.8 - 2018-03-30
 
+### Added
+
+- Ethereum: `--txaccount` cli argument to control caller of transaction
+- Ethereum: Per state execution trace files in workspace
+
+### Fixed
+
+- Linux: `--data` cli argument to specify concrete stdin
+- Numerous Ethereum fixes and stability improvements
+- Fixes for native cpu emulation
+
 ## 0.1.7 - 2018-02-23
 
 This release brings EVM, performance, Linux emulation, and API improvements, along with numerous bug fixes. Thanks again to our external contributors!
