@@ -45,10 +45,14 @@ class StateSerializer(object):
 
 
 class PickleSerializer(StateSerializer):
+    def __init__(self):
+        super(PickleSerializer, self).__init__()
+        sys.setrecursionlimit(9999)
+
     def serialize(self, state, f):
         try:
             f.write(pickle.dumps(state, 2))
-        except RuntimeError:
+        except RuntimeError as e:
             # recursion exceeded. try a slower, iterative solution
             from ..utils import iterpickle
             logger.debug("Using iterpickle to dump state")
@@ -455,9 +459,9 @@ class ManticoreOutput(object):
             def num(self):
                 return self._num
 
-            def open_stream(self, suffix=''):
+            def open_stream(self, suffix='', binary=True):
                 stream_name = '{}_{:08x}.{}'.format(self._prefix, self._num, suffix)
-                return self._ws.save_stream(stream_name)
+                return self._ws.save_stream(stream_name, binary=binary)
 
         return Testcase(self, prefix)
 
