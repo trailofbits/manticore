@@ -24,6 +24,7 @@ class TerminateState(StateException):
     def __init__(self, message, testcase=False):
         super(TerminateState, self).__init__(message)
         self.testcase = testcase
+        self.message = message
 
 
 class Concretize(StateException):
