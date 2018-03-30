@@ -8,6 +8,8 @@ from manticore.platforms import linux, linux_syscalls
 from manticore.core.smtlib import *
 from manticore.core.cpu.abstractcpu import ConcretizeRegister
 
+def to_bytes(s):
+    return bytes([ord(c) for c in s])
 
 class LinuxTest(unittest.TestCase):
     '''
@@ -45,10 +47,10 @@ class LinuxTest(unittest.TestCase):
         envp_ptr = argv_ptr + len(real_argv)*8 + 8
 
         for i, arg in enumerate(real_argv):
-            self.assertEqual(cpu.read_string(cpu.read_int(argv_ptr + i*8)), arg)
+            self.assertEqual(cpu.read_string(cpu.read_int(argv_ptr + i*8)), to_bytes(arg))
 
         for i, env in enumerate(envp):
-            self.assertEqual(cpu.read_string(cpu.read_int(envp_ptr + i*8)), env)
+            self.assertEqual(cpu.read_string(cpu.read_int(envp_ptr + i*8)), to_bytes(env))
 
     def test_load_maps(self):
         mappings = self.linux.current.memory.mappings()
@@ -85,7 +87,7 @@ class LinuxTest(unittest.TestCase):
 
         platform.syscall()
 
-        print(''.join(platform.current.read_bytes(stat, 100)).encode('hex'))
+        #print(''.join(platform.current.read_bytes(stat, 100)).encode('hex'))
 
     def test_linux_workspace_files(self):
         files = self.symbolic_linux.generate_workspace_files()

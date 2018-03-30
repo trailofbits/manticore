@@ -177,7 +177,7 @@ class SolidityMetadata(object):
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self.hashes = hashes
-        self.abi = {item.get('name', '{fallback}'): item for item in abi}
+        self.abi = {item.get(u'name', '{fallback}'): item for item in abi}
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)

@@ -29,7 +29,7 @@ def isstring(value):
 def hex_encode(s):
     if isinstance(s, tuple):
         s = bytes(s)
-    return binascii.hexlify(s)
+    return binascii.hexlify(s).decode('utf-8')
 
 import functools
 
