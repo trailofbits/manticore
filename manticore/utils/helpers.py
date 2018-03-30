@@ -28,7 +28,7 @@ def isstring(value):
 
 def hex_encode(s):
     if isinstance(s, tuple):
-        s = bytes(*s)
+        s = bytes(s)
     return binascii.hexlify(s)
 
 import functools
