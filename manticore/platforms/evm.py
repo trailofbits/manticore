@@ -887,7 +887,10 @@ class EVMAsm(object):
 
         bytecode = iter(bytecode)
         while True:
-            instr = EVMAsm.disassemble_one(bytecode, offset=offset)
+            try:
+                instr = EVMAsm.disassemble_one(bytecode, offset=offset)
+            except StopIteration:
+                return
             offset += instr.size
             yield instr
 
@@ -910,7 +913,7 @@ class EVMAsm(object):
                 PUSH2 0x100
 
         '''
-        return '\n'.join(map(str, EVMAsm.disassemble_all(bytecode, offset=offset)))
+        return '\n'.join(str(i) for i in EVMAsm.disassemble_all(bytecode, offset=offset))
 
     @staticmethod
     def assemble(asmcode, offset=0):
@@ -2340,7 +2343,7 @@ class EVMWorld(Platform):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
         else:
-            data = b''.join(data)
+            data = bytes(data)
         bytecode = self.get_code(address)
 
         self._pending_transaction = PendingTransaction('Call', address, origin, price, data, caller, value, bytecode, header)

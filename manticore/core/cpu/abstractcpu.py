@@ -303,7 +303,10 @@ class Abi(object):
         :return: Arguments to be passed to the model
         :rtype: tuple
         '''
-        spec = inspect.getargspec(model)
+        try:
+            spec = inspect.getfullargspec(model)
+        except AttributeError:
+            spec = inspect.getargspec(model)
 
         if spec.varargs:
             logger.warning("ABI: A vararg model must be a unary function.")

@@ -14,7 +14,7 @@ from . import Manticore
 from .core.plugin import Plugin
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import arithmetic_simplifier
-from .core.state import State
+from .core.state import State, TerminateState
 from .platforms import evm
 from .utils.helpers import isstring, hex_encode
 
@@ -26,7 +26,7 @@ import sha3
 import json
 import logging
 import io
-import pickle as pickle
+import pickle
 from functools import reduce
 
 logger = logging.getLogger(__name__)
@@ -1047,7 +1047,7 @@ class ManticoreEVM(Manticore):
         state.context['last_exception'] = e
         # TODO(mark): This will break if we ever change the message text. Use a less
         # brittle check.
-        if e.message not in {'REVERT', 'THROW', 'TXERROR'}:
+        if isinstance(e, TerminateState) and e.message not in {'REVERT', 'THROW', 'TXERROR'}:
             # if not a revert we save the state for further transactioning
             state.context['processed'] = False
             if e.message == 'RETURN':

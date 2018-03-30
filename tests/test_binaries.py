@@ -26,7 +26,8 @@ class IntegrationTest(unittest.TestCase):
     def _loadVisitedSet(self, visited):
 
         self.assertTrue(os.path.exists(visited))
-        vitems = open(visited, 'r').read().splitlines()
+        with open(visited, 'r') as f:
+            vitems = f.read().splitlines()
 
         vitems = [int(x[2:], 16) for x in vitems]
 
@@ -100,7 +101,8 @@ class IntegrationTest(unittest.TestCase):
         filename = filename[len(os.getcwd())+1:]
         workspace = '%s/workspace'%self.test_dir
         assertions = '%s/assertions.txt'%self.test_dir
-        open(assertions, 'w').write('0x0000000000401003 ZF == 1')
+        with open(assertions, 'w') as f:
+            f.write('0x0000000000401003 ZF == 1')
         with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,

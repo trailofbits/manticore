@@ -1,5 +1,6 @@
 from __future__ import division
 from past.builtins import cmp
+from functools import total_ordering
 from future import standard_library
 standard_library.install_aliases()
 from builtins import int, map, range, str, bytes
@@ -82,6 +83,7 @@ def _normalize(c):
         return c
 
 
+@total_ordering
 class Map(with_metaclass(ABCMeta, object)):
     '''
     A memory map.
@@ -159,18 +161,24 @@ class Map(with_metaclass(ABCMeta, object)):
         '''
         return '<%s 0x%016x-0x%016x %s>' % (self.__class__.__name__, self.start, self.end, self.perms)
 
-    def __cmp__(self, other):
-        result = cmp(self.start, other.start)
-        if result != 0:
-            return result
-        result = cmp(self.end, other.end)
-        if result != 0:
-            return result
+    def __eq__(self, other):
+        return self.start == other.start and \
+               self.end == other.end and \
+               self.perms == other.perms and \
+               self.name == other.name
+
+    def __lt__(self, other):
+        if self.start != other.start:
+            return self.start < other.start
+        if self.end != other.end:
+            return self.end < other.end
         # go by each char permission
-        result = cmp(self.perms, other.perms)
-        if result != 0:
-            return result
-        return cmp(self.name, other.name)
+        if self.perms != other.perms:
+            return self.perms < other.perms
+        return self.name < other.name
+
+    def __hash__(self):
+        return object.__hash__(self)
 
     def _in_range(self, index):
         ''' Returns True if index is in range '''

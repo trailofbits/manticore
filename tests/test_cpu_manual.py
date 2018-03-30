@@ -572,9 +572,9 @@ class SymCPUTest(unittest.TestCase):
                 continue
             pattern = {8:'B', 16:'<H', 32:'<L', 64:'<Q'} [size]
             start = address-0x1000
-            print(repr(memory[start:start+(size // 8)]))
-            print(struct.unpack(pattern, bytes(memory[start:start+(size // 8)])))
-            print(cpu.read_int(address,size))
+            #print(repr(memory[start:start+(size // 8)]))
+            #print(struct.unpack(pattern, bytes(memory[start:start+(size // 8)])))
+            #print(cpu.read_int(address,size))
             self.assertEqual(cpu.read_int(address,size),
                     struct.unpack(pattern, bytes(memory[start:start+(size // 8)]))[0])
 
@@ -846,7 +846,7 @@ class SymCPUTest(unittest.TestCase):
         cpu.PF = True
         cpu.execute()
 
-        print(mem[0xffffc600:0xffffc609])
+        #print(mem[0xffffc600:0xffffc609])
         self.assertEqual(mem[0xffffc600:0xffffc609], [bytes([c]) for c in b'\x55\x08\x00\x00\x02\x03\x00\x00\x00'])
         self.assertEqual(mem[0x8065f6f], b'\x9c')
         self.assertEqual(cpu.EIP, 0x8065f70)
