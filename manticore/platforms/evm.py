@@ -11,6 +11,7 @@ from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translat
 from ..core.state import Concretize, TerminateState
 import logging
 import sys
+import inspect
 from collections import namedtuple
 if sys.version_info < (3, 6):
     import sha3
