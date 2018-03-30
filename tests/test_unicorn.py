@@ -1,4 +1,5 @@
 from builtins import map, range, bytes
+import sys
 import unittest
 import struct
 from functools import wraps
@@ -24,6 +25,15 @@ Test the Unicorn emulation stub.  Armv7UnicornInstructions includes all
 semantics from ARM tests to ensure that they match. UnicornConcretization tests
 to make sure symbolic values get properly concretized.
 '''
+
+
+def assertItemsEqual(self, a, b):
+    if isinstance(b, bytes):
+        b = [bytes([x]) for x in b]
+    if sys.version_info[0] == 3:
+        return self.assertCountEqual(a, b)
+    else:
+        return self.assertItemsEqual(a, b)
 
 def assemble(asm):
     ords = ks.asm(asm)[0]
@@ -109,10 +119,6 @@ class Armv7UnicornInstructions(unittest.TestCase):
         self.assertEqual(self.rf.read('APSR_Z'), z)
         self.assertEqual(self.rf.read('APSR_C'), c)
         self.assertEqual(self.rf.read('APSR_V'), v)
-
-    def assertItemsEqual(self, a, b):
-        # Required for Python3 compatibility
-        self.assertEqual(sorted(a), sorted(b))
 
     # MOV
 
@@ -745,7 +751,7 @@ class Armv7UnicornInstructions(unittest.TestCase):
     @itest_setregs("R1=3")
     def test_push_one_reg(self):
         emulate_next(self.cpu)
-        self.assertItemsEqual(self.cpu.stack_peek(), struct.pack('<I', 3))
+        assertItemsEqual(self, self.cpu.stack_peek(), bytes(struct.pack('<I', 3)))
 
     @itest_custom("push {r1, r2, r3}")
     @itest_setregs("R1=3", "R2=0x55", "R3=0xffffffff")
@@ -755,8 +761,8 @@ class Armv7UnicornInstructions(unittest.TestCase):
         sp = self.cpu.STACK
         self.assertEqual(self.rf.read('SP'), pre_sp - (3 * 4))
         a = self.cpu.stack_peek()
-        b = struct.pack('<I', 3)
-        self.assertItemsEqual(a, b)
+        b = bytes(struct.pack('<I', 3))
+        assertItemsEqual(self, a, b)
         self.assertEqual(self.cpu.read_int(sp + 4, self.cpu.address_bit_size), 0x55)
         self.assertEqual(self.cpu.read_int(sp + 8, self.cpu.address_bit_size), 0xffffffff)
 
