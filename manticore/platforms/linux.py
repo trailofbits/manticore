@@ -24,7 +24,7 @@ from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented
-from ..utils.helpers import issymbolic, is_binja_disassembler, isunicode
+from ..utils.helpers import issymbolic, is_binja_disassembler, isunicode, isint
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
@@ -249,7 +249,7 @@ class SymbolicFile(File):
         :rtype: int
         :return: the file offset.
         '''
-        assert isinstance(offset, int)
+        assert isint(offset)
         assert whence in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END)
 
         new_position = 0

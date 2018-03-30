@@ -14,7 +14,7 @@ from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
 from .cpufactory import CpuFactory
 from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
-from ...utils.helpers import issymbolic, isstring
+from ...utils.helpers import issymbolic, isstring, isint
 from functools import reduce
 from itertools import chain
 
@@ -720,12 +720,12 @@ class BinjaCpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, int):
+        if isint(divisor):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
 
-        if isinstance(dividend, int):
+        if isint(dividend):
             if dividend_sign:
                 dividend = ((~dividend) + 1) & mask
                 dividend = -dividend
@@ -760,7 +760,7 @@ class BinjaCpu(Cpu):
     def GOTO(cpu, expr):
         # FIXME
         try:
-            if isinstance(expr.op, int):
+            if isint(expr.op):
                 addr = cpu.disasm.current_llil_func[expr.op].address
             else:
                 raise NotImplementedError
@@ -786,7 +786,7 @@ class BinjaCpu(Cpu):
                             for x in cond_il.operands]
         res = implementation(*cond_il.operands)
         idx = true.op if res else false.op
-        assert isinstance(idx, int)
+        assert isint(idx)
 
         try:
             next_il = cpu.disasm.current_llil_func[idx]
@@ -951,18 +951,18 @@ class BinjaCpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, int):
+        if isint(divisor):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
 
-        if isinstance(dividend, int):
+        if isint(dividend):
             if dividend_sign:
                 dividend = ((~dividend) + 1) & mask
                 dividend = -dividend
 
         quotient = Operators.SDIV(dividend, divisor)
-        if (isinstance(divisor, int) and isinstance(dividend, int)):
+        if isinstance(divisor) and isint(dividend):
             remainder = dividend - (quotient * divisor)
         else:
             remainder = Operators.SREM(dividend, divisor)

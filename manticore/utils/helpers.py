@@ -47,10 +47,24 @@ def isunicode(value):
     # in python3, string types are 'str', 'bytes'
     # in python2, strings are type 'unicode', 'str'
     if sys.version_info[0] == 2:
-        # we want to refer to the str type imported by futurize as well as the builtin
         return isinstance(value, unicode)
     elif sys.version_info[0] == 3:
         return isinstance(value, str)
+
+def isint(value):
+    '''
+    Helper to determine whether an object is an int, which is nontrivial when targeting Python 2 and 3 at the same
+    time.
+
+    :param object value: object to check
+    :return: whether `value` can be treated as string
+    :rtype: bool
+    '''
+
+    if sys.version_info[0] == 2:
+        return isinstance(value, (int, long))
+    elif sys.version_info[0] == 3:
+        return isinstance(value, int)
 
 import functools
 

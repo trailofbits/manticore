@@ -22,7 +22,7 @@ from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
 from .platforms import linux, decree, evm
-from .utils.helpers import issymbolic, is_binja_disassembler, isstring
+from .utils.helpers import issymbolic, is_binja_disassembler, isstring, isint
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
 from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited, Tracer
@@ -459,7 +459,7 @@ class Manticore(Eventful):
         :type pc: int or None
         :param callable callback: Hook function
         '''
-        if not (isinstance(pc, int) or pc is None):
+        if not (isint(pc) or pc is None):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
         else:
             self._hooks.setdefault(pc, set()).add(callback)

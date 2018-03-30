@@ -17,7 +17,7 @@ from ..smtlib import Expression, BitVec, Operators, Constant
 from ..memory import (
     ConcretizeMemory, InvalidMemoryAccess
 )
-from ...utils.helpers import issymbolic, isstring
+from ...utils.helpers import issymbolic, isstring, isint
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
@@ -906,7 +906,7 @@ class Cpu(Eventful):
         if issymbolic(value):
             aux = "%3s: " % reg_name + "%16s" % value
             result += aux
-        elif isinstance(value, int):
+        elif isint(value):
             result += "%3s: 0x%016x" % (reg_name, value)
         else:
             result += "%3s: %r" % (reg_name, value)

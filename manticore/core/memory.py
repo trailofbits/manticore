@@ -8,7 +8,7 @@ from weakref import WeakValueDictionary
 from .smtlib import *
 import logging
 from ..utils.mappings import _mmap, _munmap
-from ..utils.helpers import issymbolic, isstring
+from ..utils.helpers import issymbolic, isstring, isint
 from future.utils import with_metaclass
 logger = logging.getLogger(__name__)
 
@@ -89,8 +89,8 @@ class Map(with_metaclass(ABCMeta, object)):
         :param size: the size of the map.
         :param perms: the access permissions of the map (rwx).
         '''
-        assert isinstance(start, int) and start >= 0, 'Invalid start address'
-        assert isinstance(size, int) and size > 0, 'Invalid end address'
+        assert isint(start) and start >= 0, 'Invalid start address'
+        assert isint(size) and size > 0, 'Invalid end address'
 
         super(Map, self).__init__()
         self._start = start
@@ -230,7 +230,7 @@ class AnonMap(Map):
         self._data = bytearray(size)
         if data_init is not None:
             assert len(data_init) <= size, 'More initial data than reserved memory'
-            if isinstance(data_init[0], int):
+            if isint(data_init[0]):
                 self._data[0:len(data_init)] = data_init
             else:
                 self._data[0:len(data_init)] = [ord(s) for s in data_init]
@@ -255,7 +255,7 @@ class AnonMap(Map):
         index = self._get_offset(index)
         if isinstance(index, slice):
             # check that the values this slice points to are ints
-            if not isinstance(value[0], int):
+            if not isint(value[0]):
                 value = [Operators.ORD(n) for n in value]
             for i in range(index.stop - index.start):
                 self._data[index.start + i] = value[i]
@@ -292,7 +292,7 @@ class FileMap(Map):
                 This offset must be a multiple of pagebitsize.
         '''
         super(FileMap, self).__init__(addr, size, perms, **kwargs)
-        assert isinstance(offset, int)
+        assert isint(offset)
         assert offset >= 0
         self._filename = filename
         self._offset = offset
@@ -558,7 +558,7 @@ class Memory(with_metaclass(ABCMeta, object)):
                    - 'Map already used' if the piece of memory starting in C{addr} and with length C{size} isn't free.
         '''
         #If addr is NULL, the system determines where to allocate the region.
-        assert addr is None or isinstance(addr, int), 'Address shall be concrete'
+        assert addr is None or isint(addr), 'Address shall be concrete'
         assert addr < self.memory_size, 'Address too big'
         assert size > 0
 
@@ -603,7 +603,7 @@ class Memory(with_metaclass(ABCMeta, object)):
 
         '''
         #If addr is NULL, the system determines where to allocate the region.
-        assert addr is None or isinstance(addr, int), 'Address shall be concrete'
+        assert addr is None or isint(addr), 'Address shall be concrete'
         assert addr < self.memory_size, 'Address too big'
 
         # address is rounded down to the nearest multiple of the allocation granularity

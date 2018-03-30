@@ -22,7 +22,7 @@ import pickle
 import sys
 from .core.plugin import Plugin
 from functools import reduce
-from .utils.helpers import isstring
+from .utils.helpers import isstring, isint
 
 import binascii
 
@@ -302,7 +302,7 @@ class ABI(object):
             return ABI.serialize_string(value)
         if isinstance(value, list):
             return ABI.serialize_array(value)
-        if isinstance(value, int):
+        if isint(value):
             return ABI.serialize_uint(value)
         if isinstance(value, ABI.SByte):
             return ABI.serialize_uint(value.size) + (None,) * value.size + (('\x00',) * (32 - (value.size % 32)))

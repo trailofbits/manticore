@@ -1,6 +1,6 @@
 from builtins import *
 from ..smtlib import Operators, BitVec, Bool
-
+from ...utils.helpers import isint
 
 class Register(object):
     '''
@@ -23,7 +23,7 @@ class Register(object):
             self.value = val
         elif isinstance(val, BitVec):
             self.value = val.Bool() if self.is_flag() else val
-        elif isinstance(val, int):
+        elif isint(val):
             self.value = Operators.EXTRACT(val, 0, self.width)
             if self.is_flag():
                 self.value = bool(self.value)

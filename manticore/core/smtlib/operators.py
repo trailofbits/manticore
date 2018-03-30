@@ -1,7 +1,7 @@
 from __future__ import division, absolute_import
 from builtins import *
 from .expression import *
-from ...utils.helpers import issymbolic
+from ...utils.helpers import issymbolic, isint
 import math
 
 
@@ -11,7 +11,7 @@ def ORD(s):
             return s
         else:
             return BitVecExtract(s, 0, 7)
-    elif isinstance(s, int):
+    elif isint(s):
         return s & 0xff
     else:
         return ord(s)
@@ -23,7 +23,7 @@ def CHR(s):
             return s
         else:
             return BitVecExtract(s, 0, 8)
-    elif isinstance(s, int):
+    elif isint(s):
         return bytes([s & 0xff])
     else:
         assert len(s) == 1
@@ -33,7 +33,7 @@ def CHR(s):
 def NOT(a):
     if isinstance(a, bool):
         return not a
-    if isinstance(a, (Bool, int)):
+    if isint(a) or isinstance(a, Bool):
         return ~a
     return a == False
 
@@ -57,14 +57,14 @@ def OR(a, b, *others):
     if isinstance(b, Bool):
         return b | a
     result = a | b
-    if isinstance(result, (BitVec, int)):
+    if isint(result) or isinstance(result, BitVec):
         result = ITE(result != 0, True, False)
     return result
 
 
 def XOR(a, b):
     result = a ^ b
-    if isinstance(result, (BitVec, int)):
+    if isint(result) or isinstance(result, BitVec):
         result = ITE(result != 0, True, False)
     return result
 
@@ -131,7 +131,7 @@ def EXTRACT(x, offset, size):
 
 
 def SEXTEND(x, size_src, size_dest):
-    if isinstance(x, int):
+    if isint(x):
         if x >= (1 << (size_src - 1)):
             x -= 1 << size_src
         return x & ((1 << size_dest) - 1)
@@ -140,7 +140,7 @@ def SEXTEND(x, size_src, size_dest):
 
 
 def ZEXTEND(x, size):
-    if isinstance(x, int):
+    if isint(x):
         return x & ((1 << size) - 1)
     assert isinstance(x, BitVec) and size - x.size >= 0
     if size - x.size > 0:
@@ -154,7 +154,7 @@ def CONCAT(total_size, *args):
     if any(issymbolic(x) for x in args):
         if len(args) > 1:
             def cast(x):
-                if isinstance(x, int):
+                if isint(x):
                     return BitVecConstant(arg_size, x)
                 return x
             return BitVecConcat(total_size, *list(map(cast, args)))
@@ -168,8 +168,8 @@ def CONCAT(total_size, *args):
 
 
 def ITE(cond, true_value, false_value):
-    assert isinstance(true_value, (Bool, bool, BitVec, int))
-    assert isinstance(false_value, (Bool, bool, BitVec, int))
+    assert isint(true_value) or isinstance(true_value, (Bool, bool, BitVec))
+    assert isint(false_value) or isinstance(false_value, (Bool, bool, BitVec))
     assert isinstance(cond, (Bool, bool))
     if isinstance(cond, bool):
         if cond:
@@ -189,13 +189,13 @@ def ITE(cond, true_value, false_value):
 def ITEBV(size, cond, true_value, false_value):
     if isinstance(cond, BitVec):
         cond = cond.Bool()
-    if isinstance(cond, int):
+    if isint(cond):
         cond = (cond != 0)
 
     assert isinstance(cond, (Bool, bool))
-    assert isinstance(true_value, (BitVec, int))
-    assert isinstance(false_value, (BitVec, int))
-    assert isinstance(size, int)
+    assert isint(true_value) or isinstance(true_value, BitVec)
+    assert isint(false_value) or isinstance(false_value, BitVec)
+    assert isint(size)
 
     if isinstance(cond, bool):
         if cond:
@@ -203,10 +203,10 @@ def ITEBV(size, cond, true_value, false_value):
         else:
             return false_value
 
-    if isinstance(true_value, int):
+    if isint(true_value):
         true_value = BitVecConstant(size, true_value)
 
-    if isinstance(false_value, int):
+    if isint(false_value):
         false_value = BitVecConstant(size, false_value)
     return BitVecITE(size, cond, true_value, false_value)
 
@@ -261,7 +261,7 @@ def simplify(value):
 
 
 def SAR(size, a, b):
-    assert isinstance(size, int)
+    assert isint(size)
     if isinstance(b, BitVec) and b.size != size:
         b = ZEXTEND(b, size)
     if isinstance(a, BitVec):

@@ -1,7 +1,7 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
 from builtins import *
 import random, copy
-from ..utils.helpers import issymbolic, memoized, isstring
+from ..utils.helpers import issymbolic, memoized, isstring, isint
 from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
     SolverException
@@ -1311,7 +1311,7 @@ class EVM(Eventful):
                    ITEM2
              sp->  {empty}
         '''
-        assert isinstance(value, int) or isinstance(value, BitVec) and value.size == 256
+        assert isint(value) or isinstance(value, BitVec) and value.size == 256
         if len(self.stack) >= 1024:
             raise StackOverflow()
         self.stack.append(value & TT256M1)
@@ -2006,7 +2006,7 @@ class EVMWorld(Platform):
         self._sha3[buf] = value
 
     def __getitem__(self, index):
-        assert isinstance(index, int)
+        assert isint(index)
         return self.storage[index]
 
     def __str__(self):

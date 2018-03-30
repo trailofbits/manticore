@@ -11,7 +11,7 @@ from .abstractcpu import instruction as abstract_instruction
 from .bitwise import *
 from .register import Register
 from ..smtlib import Operators, BitVecConstant
-from ...utils.helpers import issymbolic, isstring
+from ...utils.helpers import issymbolic, isstring, isint
 
 logger = logging.getLogger(__name__)
 
@@ -479,7 +479,7 @@ class Armv7Cpu(Cpu):
 
     # TODO add to abstract cpu, and potentially remove stacksub/add from it?
     def stack_push(self, data, nbytes=None):
-        if isinstance(data, int):
+        if isint(data):
             nbytes = nbytes or self.address_bit_size // 8
             self.SP -= nbytes
             self.write_int(self.SP, data, nbytes * 8)
