@@ -235,8 +235,9 @@ class SolidityMetadata(object):
         beg, size, _, _ = srcmap[asm_offset]
 
         output = ''
-        nl = self.source_code.count('\n')
-        snippet = self.source_code[beg:beg + size]
+        source = self.source_code.decode('utf-8')
+        nl = source.count('\n')
+        snippet = source[beg:beg + size]
         for l in snippet.split('\n'):
             output += '    %s  %s\n' % (nl, l)
             nl += 1
@@ -1159,7 +1160,7 @@ class ManticoreEVM(Manticore):
         testcase = self._output.testcase()
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
-        with testcase.open_stream('summary') as summary:
+        with testcase.open_stream('summary', binary=False) as summary:
             summary.write("Last exception: %s\n" %state.context['last_exception'])
 
             address, offset = state.context['seth.trace'][-1]
@@ -1197,7 +1198,7 @@ class ManticoreEVM(Manticore):
                     summary.write("Code:\n")
                     fcode = io.BytesIO(code)
                     for chunk in iter(lambda: fcode.read(32), b''):
-                        summary.write('\t%s\n' % chunk.encode('hex'))
+                        summary.write('\t{}\n'.format(binascii.hexlify(chunk)))
                     trace = set((offset for address_i, offset in state.context['seth.trace'] if address == address_i))
                     summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(code, trace))  # coverage % for address in this account/state
                 summary.write("\n")
@@ -1211,7 +1212,7 @@ class ManticoreEVM(Manticore):
                 summary.write('\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # Transactions
-        with testcase.open_stream('tx') as tx_summary:
+        with testcase.open_stream('tx', binary=False) as tx_summary:
             is_something_symbolic = False
             for tx in blockchain.transactions:  # external transactions
                 tx_summary.write("Transactions Nr. %d\n" % blockchain.transactions.index(tx))
@@ -1276,10 +1277,10 @@ class ManticoreEVM(Manticore):
                 for i, topic in enumerate(log_item.topics):
                     logs_summary.write("\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
 
-        with testcase.open_stream('constraints') as smt_summary:
+        with testcase.open_stream('constraints', binary=False) as smt_summary:
             smt_summary.write(str(state.constraints))
 
-        with testcase.open_stream('pkl') as statef:
+        with testcase.open_stream('pkl', binary=True) as statef:
             try:
                 statef.write(pickle.dumps(state, 2))
             except RuntimeError:
@@ -1354,14 +1355,14 @@ class ManticoreEVM(Manticore):
             md = self.get_metadata(address)
             if md is not None and len(md.warnings) > 0:
                 global_summary.write('\n\nCompiler warnings for %s:\n' % md.name)
-                global_summary.write(md.warnings)
+                global_summary.write(md.warnings.decode('utf-8'))
 
         for address, md in self.metadata.items():
             with self._output.save_stream('global_%s.sol' % md.name) as global_src:
-                global_src.write(md.source_code)
-            with self._output.save_stream('global_%s_runtime.bytecode' % md.name) as global_runtime_bytecode:
+                global_src.write(md.source_code.decode('utf-8'))
+            with self._output.save_stream('global_%s_runtime.bytecode' % md.name, binary=True) as global_runtime_bytecode:
                 global_runtime_bytecode.write(md.runtime_bytecode)
-            with self._output.save_stream('global_%s_init.bytecode' % md.name) as global_init_bytecode:
+            with self._output.save_stream('global_%s_init.bytecode' % md.name, binary=True) as global_init_bytecode:
                 global_init_bytecode.write(md.init_bytecode)
 
             with self._output.save_stream('global_%s.runtime_asm' % md.name) as global_runtime_asm:

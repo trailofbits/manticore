@@ -2340,8 +2340,9 @@ class EVMWorld(Platform):
                 data_symb[i] = Operators.ORD(data[i])
             data = data_symb
         else:
-            data = ''.join(data)
+            data = b''.join(data)
         bytecode = self.get_code(address)
+
         self._pending_transaction = PendingTransaction('Call', address, origin, price, data, caller, value, bytecode, header)
 
         if run:
@@ -2428,7 +2429,7 @@ class EVMWorld(Platform):
         else:
             n = len(self._transactions)
             if len(self._internal_transactions) <= n:
-                for _ in xrange(n-len(self._internal_transactions)+1):
+                for _ in range(n-len(self._internal_transactions)+1):
                     self._internal_transactions.append([])
             self._internal_transactions[n].append(tx)
 
