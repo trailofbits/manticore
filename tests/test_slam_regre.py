@@ -21,6 +21,11 @@ class CPUTest(unittest.TestCase):
             self.value = value & ((1<<self.size)-1)
             return self.value
 
+    # Used while transitioning to py3
+    def assertEqual(self, a, b):
+        if isinstance(b, str):
+            b = bytes([ord(c) for c in b])
+        return super(CPUTest, self).assertEqual(a, b)
 
 
     def test_PUNPCKHDQ_1(self):
