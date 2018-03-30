@@ -1743,9 +1743,8 @@ class EVM(Eventful):
     # Logging Operations
     @concretized_args(size='ONE')
     def LOG(self, address, size, *topics):
-
         memlog = self.read_buffer(address, size)
-        self.world.log(memlog, topic, data)
+        self.world.log(self.address, topics, memlog)
 
     ############################################################################
     # System operations
@@ -2202,9 +2201,9 @@ class EVMWorld(Platform):
     def has_code(self, address):
         return len(self.world_state[address]['code']) > 0
 
-    def log(self, address, topic, data):
+    def log(self, address, topics, data):
         self._logs.append(EVMLog(address, data, topics))
-        logger.info('LOG %r %r', memlog, topics)
+        logger.info('LOG %r %r', data, topics)
 
     def log_storage(self, addr):
         pass
