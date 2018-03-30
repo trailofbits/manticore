@@ -2,9 +2,11 @@ from builtins import range
 import unittest
 
 from manticore.core.cpu.arm import Armv7RegisterFile as RF
+from manticore.core.cpu.arm import *
 
+from capstone.arm import *
 
-class Armv7RFTest(unittest.TestCase):
+class Armv7RF(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
@@ -34,9 +36,9 @@ class Armv7RFTest(unittest.TestCase):
             nonexistant_reg = "Pc"
             self.r.read(nonexistant_reg)
 
-    def test_flag_wr_aspr(self):
+    def test_flag_wr(self):
         self.r.write('APSR', 0xffffffff)
-        self.assertEqual(self.r.read('APSR'), 0xf0000000)  # 4 more significant bits used
+        self.assertEqual(self.r.read('APSR'), 0xf0000000) #4 more significant bits used
         self.assertEqual(self.r.read('APSR_V'), True)
         self.assertEqual(self.r.read('APSR_C'), True)
         self.assertEqual(self.r.read('APSR_Z'), True)
@@ -55,10 +57,9 @@ class Armv7RFTest(unittest.TestCase):
         self.assertEqual(self.r.read('APSR'), 0x00000000)
 
     def test_register_independence_wr(self):
-        regs = ('R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',
-                'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15')
-        aliases = {'SB': 'R9', 'SL': 'R10', 'FP': 'R11', 'IP': 'R12', 'STACK': 'R13', 'SP': 'R13', 'LR': 'R14',
-                   'PC': 'R15'}
+        regs = ( 'R0', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8',
+                          'R9', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15' )
+        aliases = {'SB':'R9', 'SL':'R10', 'FP':'R11', 'IP': 'R12', 'STACK': 'R13', 'SP': 'R13', 'LR': 'R14', 'PC': 'R15' }
 
         for j in range(16):
             for i in range(16):
@@ -67,10 +68,11 @@ class Armv7RFTest(unittest.TestCase):
                 else:
                     self.r.write(regs[i], 0)
             for a, b in aliases.items():
-                self.assertEqual(self.r.read(a), self.r.read(b))
+                    self.assertEqual(self.r.read(a), self.r.read(b))
 
             for i in range(16):
                 if i == j:
-                    self.assertEqual(self.r.read(regs[i]), 0x41424344)
+                    self.assertEqual(self.r.read(regs[i]), 0x41424344 )
                 else:
-                    self.assertEqual(self.r.read(regs[i]), 0x00000000)
+                    self.assertEqual(self.r.read(regs[i]), 0x00000000 )
+

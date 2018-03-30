@@ -6,7 +6,7 @@ import tempfile
 from manticore import Manticore, issymbolic
 from manticore.core.smtlib import BitVecVariable
 
-class ManticoreDriverTest(unittest.TestCase):
+class ManticoreDriver(unittest.TestCase):
     _multiprocess_can_split_ = True
     def setUp(self):
         # Create a temporary directory

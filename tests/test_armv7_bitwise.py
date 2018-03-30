@@ -6,7 +6,7 @@ import unittest
 from manticore.core.cpu import bitwise
 
 
-class BitwiseTest(unittest.TestCase):
+class Armv7RF(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def test_mask(self):
