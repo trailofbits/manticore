@@ -1137,7 +1137,7 @@ class Linux(Platform):
         chdir - Change current working directory
         :param int path: Pointer to path
         '''
-        path_str = self.current.read_string(path)
+        path_str = self.current.read_string(path).decode('ascii')
         logger.debug("chdir(%s)", path_str)
         try:
             os.chdir(path_str)
@@ -1381,7 +1381,7 @@ class Linux(Platform):
         :param flags: file access bits
         :param mode: file permission mode
         '''
-        filename = self.current.read_string(buf)
+        filename = self.current.read_string(buf).decode('ascii')
         try:
             f = self._sys_open_get_file(filename, flags)
             logger.debug("Opening file %s for real fd %d",
@@ -1404,7 +1404,7 @@ class Linux(Platform):
         :param mode: file permission mode
         '''
 
-        filename = self.current.read_string(buf)
+        filename = self.current.read_string(buf).decode('ascii')
         dirfd = self._to_signed_dword(dirfd)
 
         if os.path.isabs(filename) or dirfd == self.FCNTL_FDCWD:
@@ -1439,8 +1439,8 @@ class Linux(Platform):
         :param int oldnamep: pointer to oldname
         :param int newnamep: pointer to newname
         '''
-        oldname = self.current.read_string(oldnamep)
-        newname = self.current.read_string(newnamep)
+        oldname = self.current.read_string(oldnamep).decode('ascii')
+        newname = self.current.read_string(newnamep).decode('ascii')
 
         ret = 0
         try:
@@ -1571,7 +1571,7 @@ class Linux(Platform):
         '''
         if bufsize <= 0:
             return -errno.EINVAL
-        filename = self.current.read_string(path)
+        filename = self.current.read_string(path).decode('ascii')
         if filename == '/proc/self/exe':
             data = os.path.abspath(self.program)
         else:
@@ -1848,7 +1848,7 @@ class Linux(Platform):
         return 1000  # tha pid
 
     def sys_faccessat(self, dirfd, pathname, mode, flags):
-        filename = self.current.read_string(pathname)
+        filename = self.current.read_string(pathname).decode('ascii')
         return -1
 
     def sys_set_robust_list(self, head, length):
