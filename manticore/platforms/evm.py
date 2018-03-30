@@ -887,7 +887,10 @@ class EVMAsm(object):
 
         bytecode = iter(bytecode)
         while True:
-            instr = EVMAsm.disassemble_one(bytecode, offset=offset)
+            try:
+                instr = EVMAsm.disassemble_one(bytecode, offset=offset)
+            except StopIteration:
+                return
             offset += instr.size
             yield instr
 
