@@ -839,7 +839,8 @@ class Linux(Platform):
                 continue
             interpreter_filename = elf_segment.data()[:-1]
             logger.info('Interpreter filename: %s', interpreter_filename)
-            interpreter = ELFFile(open(interpreter_filename))
+            if os.path.exists(interpreter_filename.decode('utf-8')):
+                interpreter = ELFFile(open(interpreter_filename, 'rb'))
             break
         if interpreter is not None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()
