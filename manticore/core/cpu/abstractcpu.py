@@ -415,7 +415,7 @@ class SyscallAbi(Abi):
                     s = self._cpu.read_string(arg, max_arg_expansion)
                     if all(chr(c) in string.printable for c in s):
                         if len(s) == max_arg_expansion:
-                            s = s + '..'
+                            s = s + b'..'
                         if len(s) > 2:
                             arg_s = arg_s + ' ({})'.format(s.decode('utf-8').replace('\n',''))
                 args.append(arg_s)
@@ -669,7 +669,7 @@ class Cpu(Eventful):
             limit.
         :param force: whether to ignore memory permissions
         :return: string read
-        :rtype: str
+        :rtype: bytes
         '''
         s = io.BytesIO()
         while True:
