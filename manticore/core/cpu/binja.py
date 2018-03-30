@@ -8,11 +8,14 @@ import capstone as cs
 
 from .x86 import AMD64Operand
 
-from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
+from .abstractcpu import (ConcretizeMemory, ConcretizeRegister, Cpu,
+                          DecodeException, RegisterFile, Operand, Syscall)
 from .cpufactory import CpuFactory
 from ...core.cpu.disasm import BinjaILDisasm
-from ..smtlib import Operators, BitVecConstant, operator
+from ..smtlib import Operators, BitVec, BitVecConstant, operator
+from ..smtlib.expression import Constant
 from ...utils.helpers import issymbolic
+from manticore.core.memory import InvalidMemoryAccess
 from functools import reduce
 
 logger = logging.getLogger(__name__)
@@ -175,8 +178,6 @@ class BinjaOperand(Operand):
         return self.op.info.size
 
     def read(self):
-        import binaryninja.enums as enums
-
         cpu, op = self.cpu, self.op
         if self.type == 'register':
             return cpu.regfile.read(op.name)
@@ -650,7 +651,6 @@ class BinjaCpu(Cpu):
         raise NotImplementedError
 
     def CALL(cpu, expr):
-        import binaryninja.enums as enums
         f = cpu.disasm.current_llil_func
         il = cpu.disasm.disasm_il
 

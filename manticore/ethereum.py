@@ -2,10 +2,13 @@ import string
 
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
+from .core.smtlib import (ConstraintSet, Operators, issymbolic, Constant,
+                          operators)
+from .core.smtlib.expression import BitVec
 from .core.smtlib.visitors import arithmetic_simplifier
 from .platforms import evm
 from .core.state import State
+from elftools.elf.sections import Symbol
 import tempfile
 from subprocess import Popen, PIPE
 from multiprocessing import Process, Queue
@@ -638,7 +641,7 @@ class ManticoreEVM(Manticore):
 
             if contract['bin'] == '':
                 raise Exception('Solidity failed to compile your contract.')
-                
+
             bytecode = contract['bin'].decode('hex')
             srcmap = contract['srcmap'].split(';')
             srcmap_runtime = contract['srcmap-runtime'].split(';')
@@ -1147,7 +1150,7 @@ class ManticoreEVM(Manticore):
 
     def generate_testcase(self, state, name, message=''):
         self._generate_testcase_callback(state, name, message)
-    
+
     def _generate_testcase_callback(self, state, name, message):
         '''
         Create a serialized description of a given state.
@@ -1161,7 +1164,7 @@ class ManticoreEVM(Manticore):
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         def flagged(flag):
-            return '(*)' if flag else '' 
+            return '(*)' if flag else ''
         testcase = self._output.testcase(name)
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
@@ -1226,9 +1229,9 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("Type: %s\n" % tx.sort)
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
-                tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
+                tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
                 tx_data = ''.join(state.solve_one(tx.data))
-                tx_summary.write("Data: %s %s\n"% (tx_data.encode('hex'), flagged(issymbolic(tx.data))))
+                tx_summary.write("Data: %s %s\n" % (tx_data.encode('hex'), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
@@ -1252,7 +1255,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
-                        tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
+                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
 
                         if return_data is not None:
                             is_return_symbolic = any(map(issymbolic, return_data))
@@ -1260,7 +1263,7 @@ class ManticoreEVM(Manticore):
                             if len(return_values) == 1:
                                 return_values = return_values[0]
 
-                            tx_summary.write('return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
+                            tx_summary.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
                             is_something_symbolic = is_something_symbolic or is_return_symbolic
 
                 tx_summary.write('\n\n')
@@ -1281,7 +1284,7 @@ class ManticoreEVM(Manticore):
                 logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write("Topics:\n")
                 for i, topic in enumerate(log_item.topics):
-                    logs_summary.write("\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
+                    logs_summary.write("\t%d) %x %s" % (i, state.solve_one(topic), flagged(issymbolic(topic))))
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
