@@ -51,7 +51,7 @@ class CGCElf(Binary):
         # hack begin so we can use upstream Elftool
         with open(filename, 'rb') as fd:
             stream = io.BytesIO(fd.read())
-            stream.write('\x7fELF')
+            stream.write(b'\x7fELF')
             stream.name = fd.name
             return stream
 
@@ -132,8 +132,8 @@ class Elf(Binary):
         yield(('Running', {'EIP': self.elf.header.e_entry}))
 
 
-Binary.magics = {'\x7fCGC': CGCElf,
-                 '\x7fELF': Elf}
+Binary.magics = {b'\x7fCGC': CGCElf,
+                 b'\x7fELF': Elf}
 
 
 if __name__ == '__main__':
