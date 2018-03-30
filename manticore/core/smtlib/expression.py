@@ -1,7 +1,7 @@
 from __future__ import division, absolute_import
 from builtins import *
 from functools import reduce
-from manticore.utils.helpers import isstring
+from .utils.helpers import isstring
 
 class Expression(object):
     ''' Abstract taintable Expression. '''

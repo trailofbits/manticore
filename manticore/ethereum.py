@@ -22,7 +22,7 @@ import pickle
 import sys
 from .core.plugin import Plugin
 from functools import reduce
-from utils.helpers import isstring
+from .utils.helpers import isstring
 
 import binascii
 
