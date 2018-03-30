@@ -2511,6 +2511,7 @@ class EVMWorld(Platform):
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
+        self.current._push(0)
         # we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 
