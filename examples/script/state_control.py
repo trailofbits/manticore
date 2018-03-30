@@ -33,9 +33,9 @@ if __name__ == '__main__':
 
     @m.hook(to_abandon)
     def explore(state):
-        print "Abandoning state at PC: ", hex(state.cpu.PC)
+        print("Abandoning state at PC: {}".format(hex(state.cpu.PC)))
         state.abandon()
 
-    print "Adding hook to: {:x}".format(to_abandon)
+    print("Adding hook to: {:x}".format(to_abandon))
 
     m.run()

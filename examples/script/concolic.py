@@ -36,7 +36,7 @@ VERBOSITY = 0
 
 def _partition(pred, iterable):
     t1, t2 = itertools.tee(iterable)
-    return (list(itertools.ifilterfalse(pred, t1)), filter(pred, t2))
+    return (list(itertools.filterfalse(pred, t1)), filter(pred, t2))
 
 def log(s):
     print('[+] {}'.format(s))
@@ -57,7 +57,7 @@ class TraceReceiver(Plugin):
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
         total = len(self._trace)
         log('Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
-            len(instructions), total, len(writes), total))
+            len(list(instructions)), total, len(list(writes)), total))
 
 def flip(constraint):
     '''
@@ -234,7 +234,12 @@ def concrete_input_to_constraints(ci, prev=None):
     trc = concrete_run_get_trace(ci)
 
     # Only heed new traces
-    trace_rips = tuple(x['values']['RIP'] for x in trc if x['type'] == 'regs')
+    trace_rips = []
+    for x in trc:
+        if x['type'] == 'regs':
+            if 'RIP' in x['values']:
+                trace_rips.append(x['values']['RIP'])
+    trace_rips = tuple(trace_rips)
     if trace_rips in traces:
         return [], []
     traces.add(trace_rips)

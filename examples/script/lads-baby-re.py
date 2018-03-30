@@ -23,7 +23,7 @@ if __name__ == '__main__':
             # TODO apis to contrain input to ascii
             concrete_input = state.solve_one(symbolic_input)
             flag += chr(concrete_input & 0xff)
-        print 'flag is:', flag
+        print('flag is: {}'.format(flag))
         m.terminate()
 
     m.run()
