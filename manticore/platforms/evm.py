@@ -1022,9 +1022,8 @@ class Create(Call):
     def __init__(self, value, bytecode):
         super(Create, self).__init__(gas=None, to=None, value=value, data=bytecode)
 
-
     def __reduce__(self):
-        return (self.__class__, (self.value, None, None))
+        return (self.__class__, (self.value, None))
 
 
 class DelegateCall(Call):
