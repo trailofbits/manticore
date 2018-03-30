@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## 0.1.8 - 2018-03-30
 
+Thanks to our external contributors!
+
+- [khorben](https://github.com/khorben)
+- [disconnect3d](https://github.com/disconnect3d)
+- [arunjohnkuruvilla](https://github.com/arunjohnkuruvilla)
+- [mroll](https://github.com/mroll)
+
 ### Added
 
 - Ethereum: `--txaccount` cli argument to control caller of transaction
