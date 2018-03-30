@@ -28,6 +28,7 @@ from . import operators as Operators
 from .expression import *
 from .constraints import *
 import logging
+import io
 import re
 import time
 from .visitors import *
@@ -132,6 +133,7 @@ class Z3Solver(Solver):
         self._proc = None
         self._log = []  # this should be enabled only if we are debugging
 
+        self.debug = False
         self.version = self._solver_version()
 
         self.support_maximize = False
@@ -239,7 +241,8 @@ class Z3Solver(Solver):
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s', cmd)
-        self._log.append(str(cmd))
+        if self.debug:
+            self._log.append(str(cmd))
         try:
             self._proc.stdin.write('{}\n'.format(cmd))
         except IOError as e:
@@ -247,25 +250,24 @@ class Z3Solver(Solver):
 
     def _recv(self):
         ''' Reads the response from the solver '''
+
         def readline():
             buf = self._proc.stdout.readline()
             return buf, buf.count('('), buf.count(')')
-        bufl = []
+        bufl = io.StringIO()
         left = 0
         right = 0
-        buf, l, r = readline()
-        bufl.append(buf)
-        left += l
-        right += r
+        buf, left, right = readline()
+        if '(error' in buf:
+            raise Exception("Error in smtlib: {}".format(bufl))
+        bufl.write(buf)
         while left != right:
             buf, l, r = readline()
-            bufl.append(buf)
+            bufl.write(buf)
             left += l
             right += r
-        buf = ''.join(bufl).strip()
+        buf = bufl.getvalue().strip()
         logger.debug('<%s', buf)
-        if '(error' in bufl[0]:
-            raise Exception("Error in smtlib: {}".format(bufl[0]))
         return buf
 
     # UTILS: check-sat get-value
