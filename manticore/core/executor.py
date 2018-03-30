@@ -5,8 +5,9 @@ import signal
 
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
-from .smtlib import solver, Expression, SolverException
+from .smtlib import solver, Z3Solver, Expression, SolverException
 from .state import Concretize, TerminateState
+
 from workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
@@ -423,7 +424,7 @@ class Executor(Eventful):
             self._notify_start_run()
 
             logger.debug("Starting Manticore Symbolic Emulator Worker (pid %d).", os.getpid())
-
+            solver = Z3Solver()
             while not self.is_shutdown():
                 try:  # handle fatal errors: exceptions in Manticore
                     try:  # handle external (e.g. solver) errors, and executor control exceptions

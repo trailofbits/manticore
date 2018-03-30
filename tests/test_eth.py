@@ -191,11 +191,17 @@ class EthTests(unittest.TestCase):
     def test_reachability(self):
         class StopAtFirstJump414141(Detector):
             def will_decode_instruction_callback(self, state, pc):
+                #Once this address is reached the challenge is won
                 if pc == 0x4141414141414141414141414141414141414141:
-                    print "FOUND!"
                     with self.locked_context('flags', dict) as d:
                         d['found'] = True
                     self.manticore.terminate()
+                #Once this address is reached the challenge is lost
+                if pc == 0x4242424242424242424242424242424242424242:
+                    with self.locked_context('flags', dict) as d:
+                        d['found'] = False
+                    self.manticore.terminate()
+                #otherwise keep exploring
 
         mevm = self.mevm
         p = StopAtFirstJump414141()

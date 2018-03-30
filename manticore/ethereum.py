@@ -1101,18 +1101,15 @@ class ManticoreEVM(Manticore):
         '''
         world = state.platform
         tx = world.all_transactions[-1]
-
-        if tx and not tx.is_human():
-            logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
         state.context['last_exception'] = e
 
-        if state.platform.current_transaction is not None:
+        if tx is None:
+        #if state.platform.current_transaction is not None:
             logger.debug("Something was wrong. Search terminated in the middle of an ongoing tx")
             self.save(state, final=True)
             e.testcase=True
             return 
 
-        print world.all_transactions, tx, e
         #is we initiated the Tx we need process the outcome for now.
         #Fixme incomplete. 
         if tx.is_human():
@@ -1121,6 +1118,9 @@ class ManticoreEVM(Manticore):
                     world.set_code(tx.address, tx.return_data)
                 else:
                     world.delete_account(address)
+        else:
+            logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
+
 
         #Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and 

@@ -1201,6 +1201,7 @@ class EVM(Eventful):
                 arguments[i] = simplify(arguments[i])
             if isinstance(arguments[i], Constant):
                 arguments[i] = arguments[i].value
+
         return arguments
 
     def _push_arguments(self, arguments):
@@ -1251,16 +1252,16 @@ class EVM(Eventful):
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
 
+        #Need to consume before potential out of stack exception 
+        self._consume(current.fee)
         arguments = self._pop_arguments()
         result = None
 
         if self._on_transaction is False:
             self._publish('will_evm_execute_instruction', current, arguments)
 
-
         ex = None
         try:
-            self._consume(current.fee)
             result = self._handler(*arguments)
         except ConcretizeStack as ex:
             #Revert the stack and gas so it looks like before executing the instruction
@@ -1549,7 +1550,14 @@ class EVM(Eventful):
         data_length = len(self.data)
         bytes = []
         for i in range(32):
-            bytes.append( Operators.ITEBV(8, offset + i < data_length, self.data[offset+i], 0))
+            if issymbolic(offset):
+                value = Operators.ITEBV(8, offset + i < data_length, value, 0)
+            else:
+                if offset + i < data_length:
+                    value = self.data[offset+i]
+                else:
+                    value = 0
+            bytes.append( value )
         value = Operators.CONCAT(256, *bytes)
         return value
 
@@ -2020,7 +2028,6 @@ class EVMWorld(Platform):
 
     def _open_transaction(self, sort, address, origin, price, data, caller, value):
         tx = Transaction(sort, address, origin, price, data, caller, value, depth=self.depth)
-
         if sort == 'CREATE':
             bytecode = data
             data = None
@@ -2106,6 +2113,7 @@ class EVMWorld(Platform):
         try:
             tx, _, _, _, _ = self._callstack[-1]
             if tx.result is not None:
+                #That tx finished. No current tx.
                 return None
             return tx
         except IndexError:
@@ -2189,17 +2197,6 @@ class EVMWorld(Platform):
     def set_code(self, address, data):
         if self.world_state[address]['code']:
             raise EVMException("Code already set")
-        '''
-        if issymbolic(data):
-            size = len(data)
-            constant_data = []
-            for i in range(size):
-                c = simplify(data[i])
-                if not isinstance(c, Constant):
-                    raise Exception('Setting symbolic bytecode code')
-                constant_data.append(chr(c.value))
-            data = constant_data
-        '''
         self.world_state[address]['code'] = data
 
     def has_code(self, address):

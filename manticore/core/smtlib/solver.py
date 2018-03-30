@@ -120,7 +120,6 @@ class Z3Solver(Solver):
         '''
         super(Z3Solver, self).__init__()
         self._proc = None
-        self._log = ''  # this should be enabled only if we are debugging
 
         self.version = self._solver_version()
 
@@ -184,8 +183,12 @@ class Z3Solver(Solver):
 
     def _stop_proc(self):
         ''' Auxiliary method to stop the external solver process'''
-        if self._proc is not None:
-            self._send("(exit)")
+        if self._proc is not None and self._proc.returncode is None:
+            try:
+                self._send("(exit)")
+            except SolverException:
+                #z3 was too fast to close
+                pass
             self._proc.stdin.close()
             self._proc.stdout.close()
             self._proc.wait()
@@ -230,7 +233,6 @@ class Z3Solver(Solver):
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s', cmd)
-        self._log += str(cmd) + '\n'
         try:
             buf = str(cmd)
             self._proc.stdin.write(buf + '\n')
