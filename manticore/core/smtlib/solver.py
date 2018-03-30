@@ -131,9 +131,10 @@ class Z3Solver(Solver):
         '''
         super(Z3Solver, self).__init__()
         self._proc = None
-        self._log = []  # this should be enabled only if we are debugging
 
         self.debug = False
+        if self.debug:
+            self._send_log = []
         self.version = self._solver_version()
 
         self.support_maximize = False
@@ -242,7 +243,7 @@ class Z3Solver(Solver):
         '''
         logger.debug('>%s', cmd)
         if self.debug:
-            self._log.append(str(cmd))
+            self._send_log.append(str(cmd))
         try:
             self._proc.stdin.write('{}\n'.format(cmd))
         except IOError as e:
@@ -253,20 +254,18 @@ class Z3Solver(Solver):
 
         def readline():
             buf = self._proc.stdout.readline()
-            return buf, buf.count('('), buf.count(')')
-        bufl = io.StringIO()
-        left = 0
-        right = 0
+            return buf.encode('utf-8'), buf.count('('), buf.count(')')
+        received = io.BytesIO()
         buf, left, right = readline()
-        if '(error' in buf:
-            raise Exception("Error in smtlib: {}".format(bufl))
-        bufl.write(buf)
+        if b'(error' in buf:
+            raise Exception("Error in smtlib: {}".format(buf))
+        received.write(buf)
         while left != right:
             buf, l, r = readline()
-            bufl.write(buf)
+            received.write(buf)
             left += l
             right += r
-        buf = bufl.getvalue().strip()
+        buf = received.getvalue().decode('utf-8').strip()
         logger.debug('<%s', buf)
         return buf
 
