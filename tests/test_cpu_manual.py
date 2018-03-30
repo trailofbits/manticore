@@ -5,7 +5,13 @@ import struct
 import unittest
 from manticore.core.cpu.x86 import *
 from manticore.core.memory import *
-from . import mockmem
+try:
+    from . import mockmem
+except ImportError:
+    import os
+    sys.path.append(os.path.dirname(__file__))
+    import mockmem
+
 from functools import reduce
 
 class ROOperand(object):
