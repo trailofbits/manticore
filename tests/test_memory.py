@@ -422,7 +422,7 @@ class MemoryTest(unittest.TestCase):
         for c in range(0, 0x10):
             mem[addr+c] = 'a'
         for c in range(0, 0x10):
-            self.assertEquals(mem[addr+c], b'a')
+            self.assertEqual(mem[addr+c], b'a')
 
     def testBasicMappingsLimits(self):
         mem = Memory32()
