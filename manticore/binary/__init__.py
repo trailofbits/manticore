@@ -24,16 +24,9 @@ import io
 class Binary(object):
     magics = {}
 
-    def __new__(cls, path):
-        if cls is Binary:
-            cl = cls.magics[open(path).read(4)]
-            return cl(path)
-        else:
-            return super(Binary, cls).__new__(cls, path)
-
     def __init__(self, path):
         self.path = path
-        self.magic = Binary.magics[open(path).read(4)]
+        self.magic = Binary.magics[open(path, 'rb').read(4)]
 
     def arch(self):
         pass
