@@ -187,7 +187,7 @@ class SolidityMetadata(object):
         f = int(md.get(2, 0))
         j = md.get(3, None)
 
-        for i in evm.EVMAsm.disassemble_all(bytecode[:end]):
+        for i in evm.EVMAsm.disassemble_all(bytecode):
             if asm_pos in srcmap and len(srcmap[asm_pos]):
                 md = srcmap[asm_pos]
                 if len(md):
