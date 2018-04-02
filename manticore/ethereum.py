@@ -226,7 +226,10 @@ class SolidityMetadata(object):
         else:
             srcmap = self.srcmap
 
-        beg, size, _, _ = srcmap[asm_offset]
+        try:
+            beg, size, _, _ = srcmap[asm_offset]
+        except KeyError:
+            return ''
 
         output = ''
         nl = self.source_code.count('\n')
