@@ -424,6 +424,9 @@ class ABI(object):
                 mask = 2**(size - 1)
                 value = -(value & mask) + (value & ~mask)
                 return value, offset + 32
+            else:
+                raise NotImplementedError(ty)
+
         elif ty in (u'bool'):
             return get_uint(8, offset), offset + 32
         elif ty == u'address':
