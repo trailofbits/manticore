@@ -1594,7 +1594,16 @@ class EVM(Eventful):
 
         for i in range(max_size):
             default = Operators.ITEBV(256, i < size, 0, self.memory.get(mem_offset + i, 0))  # Fixme. sometime reading mem
-            value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
+
+            if issymbolic(code_offset):
+                value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
+            else:
+                if code_offset+i >= len(self.bytecode):
+                    value = default
+                else:
+                    value = self.bytecode[code_offset + i]
+
+
             self._store(mem_offset + i, value)
         self._publish('did_evm_read_code', code_offset, size)
 

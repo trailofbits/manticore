@@ -1100,15 +1100,16 @@ class ManticoreEVM(Manticore):
             our private list
         '''
         world = state.platform
-        tx = world.all_transactions[-1]
         state.context['last_exception'] = e
 
-        if tx is None:
+        if not world.all_transactions:
         #if state.platform.current_transaction is not None:
             logger.debug("Something was wrong. Search terminated in the middle of an ongoing tx")
             self.save(state, final=True)
             e.testcase=True
             return 
+
+        tx = world.all_transactions[-1]
 
         #is we initiated the Tx we need process the outcome for now.
         #Fixme incomplete. 
@@ -1331,7 +1332,6 @@ class ManticoreEVM(Manticore):
                         if return_data is not None:
                             is_return_symbolic = any(map(issymbolic, return_data))
                             return_values = tuple(map(state.solve_one, return_data))
-                            return_values = ''.join(map(chr, return_values))
                             if len(return_values) == 1:
                                 return_values = return_values[0]
 
