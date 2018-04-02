@@ -20,7 +20,7 @@ from manticore.core.cpu.x86 import I386Cpu, AMD64Cpu, I386LinuxSyscallAbi, I386S
 from manticore.core.memory import SMemory32, Memory32, SMemory64
 from manticore.core.smtlib import ConstraintSet, Operators
 
-class ABITests(unittest.TestCase):
+class ABITest(unittest.TestCase):
     _multiprocess_can_split_ = True
     def setUp(self):
         mem32 = SMemory32(ConstraintSet())
