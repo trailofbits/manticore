@@ -397,21 +397,33 @@ class ABI(object):
             value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size])))
             return simplify(value)
 
-        if ty.startswith('uint') and 0 <= int(ty[4:]) <= 256:
-            size = int(ty[4:])
-            if not ((size % 8) == 0):
-                raise EthereumError('Invalid uint size %s' % size)
+        if ty.startswith('uint'):
+            try:
+                size = int(ty[4:])
+            except ValueError:
+                raise NotImplementedError(ty)
 
-            return get_uint(size, offset), offset + 32
-        if ty.startswith('int') and 0 <= int(ty[3:]) <= 256:
-            size = int(ty[4:])
-            if not ((size % 8) == 0):
-                raise EthereumError('Invalid int size %s' % size)
+            if 0 <= size <= 256:
+                if not ((size % 8) == 0):
+                    raise EthereumError('Invalid uint size %s' % size)
+                return get_uint(size, offset), offset + 32
+            else:
+                raise NotImplementedError(ty)
 
-            value = get_uint(size, offset)
-            mask = 2**(size - 1)
-            value = -(value & mask) + (value & ~mask)
-            return value, offset + 32
+        if ty.startswith('int'):
+            try:
+                size = int(ty[3:])
+            except ValueError:
+                raise NotImplementedError(ty)
+
+            if 0 <= size <= 256:
+                if not ((size % 8) == 0):
+                    raise EthereumError('Invalid int size %s' % size)
+
+                value = get_uint(size, offset)
+                mask = 2**(size - 1)
+                value = -(value & mask) + (value & ~mask)
+                return value, offset + 32
         elif ty in (u'bool'):
             return get_uint(8, offset), offset + 32
         elif ty == u'address':
