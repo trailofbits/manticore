@@ -266,7 +266,7 @@ class ConstantFolderSimplifier(Visitor):
                   GreaterOrEqual: operator.__ge__,
                   BoolAnd: operator.__and__,
                   BoolOr: operator.__or__,
-                  BoolNot: operator.__not__ }
+                  BoolNot: operator.__not__}
 
     def visit_BitVecConcat(self, expression, *operands):
         if all(isinstance(o, Constant) for o in operands):
@@ -475,10 +475,10 @@ class ArithmeticSimplifier(Visitor):
         if isinstance(arr, ArrayVariable):
             return
 
-        while isinstance(arr, ArrayStore) \
-              and isinstance(index, BitVecConstant) \
-              and isinstance(arr.index, BitVecConstant)\
-              and arr.index.value != index.value:
+        while isinstance(arr, ArrayStore) and\
+              isinstance(index, BitVecConstant) and\
+              isinstance(arr.index, BitVecConstant) and\
+              arr.index.value != index.value:
             arr = arr.array
 
         if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
@@ -495,6 +495,7 @@ class ArithmeticSimplifier(Visitor):
 
 # FIXME this should forget old expressions lru?
 arithmetic_simplifier_cache = {}
+
 
 def arithmetic_simplifier(expression):
     #global arithmetic_simplifier_cache

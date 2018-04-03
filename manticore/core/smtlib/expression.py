@@ -725,7 +725,7 @@ class ArrayProxy(Array):
             index = self.cast_index(index)
         if self.index_max is not None:
             from manticore.core.smtlib.visitors import simplify
-            index = simplify(BitVecITE(self.index_bits, index<0, self.index_max+index+1, index))
+            index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
         else:

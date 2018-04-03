@@ -44,6 +44,7 @@ def to_signed(i):
 
 class Transaction(object):
     __slots__ = '_sort', 'address', 'origin', 'price', 'data', 'caller', 'value', 'depth', '_return_data', '_result', 'gas'
+
     def __init__(self, sort, address, origin, price, data, caller, value, gas=0, depth=None, result=None, return_data=None):
         self.sort = sort
         self.address = address
@@ -1146,7 +1147,7 @@ class EVM(Eventful):
 
         def getcode():
             bytecode = self.bytecode
-            for pc in range(self.pc,len(bytecode)):
+            for pc in range(self.pc, len(bytecode)):
                 yield chr(bytecode[pc].value)
 
             while True:
@@ -1167,7 +1168,7 @@ class EVM(Eventful):
             raise StackOverflow()
 
         self.stack.append(simplify(value & TT256M1))
-        
+
     def _pop(self):
         if len(self.stack) == 0:
             raise StackUnderflow()
@@ -1252,7 +1253,7 @@ class EVM(Eventful):
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
 
-        #Need to consume before potential out of stack exception 
+        #Need to consume before potential out of stack exception
         self._consume(current.fee)
         arguments = self._pop_arguments()
         result = None
@@ -1297,15 +1298,11 @@ class EVM(Eventful):
         self._publish('did_evm_execute_instruction', current, arguments, result)
         self._publish('did_execute_instruction', last_pc, self.pc, current)
 
-
-
- 
-
     def read_buffer(self, offset, size):
         if issymbolic(size):
             raise EVMException("Symbolic size not supported")
 
-        if size==0:
+        if size == 0:
             return ''
 
         self._allocate(offset + size)
@@ -1557,7 +1554,7 @@ class EVM(Eventful):
                     value = self.data[offset+i]
                 else:
                     value = 0
-            bytes.append( value )
+            bytes.append(value)
         value = Operators.CONCAT(256, *bytes)
         return value
 
@@ -1588,9 +1585,9 @@ class EVM(Eventful):
         self._allocate(mem_offset + size)
 
         if issymbolic(size):
-             max_size = solver.max(self.constraints, size)
+            max_size = solver.max(self.constraints, size)
         else:
-             max_size = size
+            max_size = size
 
         for i in range(max_size):
             default = Operators.ITEBV(256, i < size, 0, self.memory.get(mem_offset + i, 0))  # Fixme. sometime reading mem
@@ -1602,7 +1599,6 @@ class EVM(Eventful):
                     value = default
                 else:
                     value = self.bytecode[code_offset + i]
-
 
             self._store(mem_offset + i, value)
         self._publish('did_evm_read_code', code_offset, size)
@@ -1688,7 +1684,7 @@ class EVM(Eventful):
     def MSTORE8(self, address, value):
         '''Save byte to memory'''
         self._allocate(address)
-        self._store(address,  Operators.EXTRACT(value, 0, 8))
+        self._store(address, Operators.EXTRACT(value, 0, 8))
 
     def SLOAD(self, offset):
         '''Load word from storage'''
@@ -1718,7 +1714,7 @@ class EVM(Eventful):
 
     def MSIZE(self):
         '''Get the size of active memory in bytes'''
-        return self._allocated 
+        return self._allocated
 
     def GAS(self):
         '''Get the amount of available gas, including the corresponding reduction the amount of available gas'''
@@ -1762,13 +1758,13 @@ class EVM(Eventful):
         '''Create a new account with associated code'''
         address = self.world.create_account()
         self.world.start_transaction('CREATE',
-                               address,
-                               origin=self.origin,
-                               price=self.price,
-                               data=self.read_buffer(offset, size),
-                               caller=self.address,
-                               value=value,
-                               gas=self.gas)
+                                     address,
+                                     origin=self.origin,
+                                     price=self.price,
+                                     data=self.read_buffer(offset, size),
+                                     caller=self.address,
+                                     value=value,
+                                     gas=self.gas)
         raise StartTx()
 
     @CREATE.pos
@@ -1862,8 +1858,8 @@ class EVM(Eventful):
         #FIXME for on the known addresses
         if issymbolic(recipient):
             logger.info("Symbolic recipient on self destruct")
-            recipient = solver.get_value(self.constraints, recipient) 
-            
+            recipient = solver.get_value(self.constraints, recipient)
+
         if recipient not in self.world:
             self.world.create_account(address=recipient, balance=0, code='', storage=None)
 
@@ -1964,11 +1960,11 @@ class EVMWorld(Platform):
 
         for var_i in range(5):
             for offset_i in range(10):
-                data = ("%064x%064x"%(var_i, offset_i) ).decode('hex')
+                data = ("%064x%064x" % (var_i, offset_i)).decode('hex')
                 value = int(sha3.keccak_256(data).hexdigest(), 16)
                 self._concrete_sha3_callback(data, value)
                 for offset_j in range(10):
-                    data = ("%064x"%offset_j).decode('hex') + data
+                    data = ("%064x" % offset_j).decode('hex') + data
                     value = int(sha3.keccak_256(data).hexdigest(), 16)
                     self._concrete_sha3_callback(data, value)
 
@@ -2011,7 +2007,7 @@ class EVMWorld(Platform):
         return self._world_state
 
     def __getitem__(self, index):
-        assert isinstance(index, (int,long))
+        assert isinstance(index, (int, long))
         return self.world_state[index]
 
     def __contains__(self, key):
@@ -2020,7 +2016,7 @@ class EVMWorld(Platform):
 
     def __str__(self):
         return "WORLD:" + str(self._world_state)
-        
+
     @property
     def logs(self):
         return self._logs
@@ -2032,7 +2028,6 @@ class EVMWorld(Platform):
     @property
     def constraints(self):
         return self._constraints
-
 
     def _open_transaction(self, sort, address, origin, price, data, caller, value):
         tx = Transaction(sort, address, origin, price, data, caller, value, depth=self.depth)
@@ -2084,10 +2079,9 @@ class EVMWorld(Platform):
     def human_transactions(self):
         txs = []
         for tx in self.transactions:
-            if tx.depth==0:
+            if tx.depth == 0:
                 txs.append(tx)
         return tuple(txs)
-
 
     @property
     def last_transaction(self):
@@ -2097,7 +2091,7 @@ class EVMWorld(Platform):
     @property
     def last_human_transaction(self):
         for tx in reversed(self.transactions):
-            if tx.depth==0:
+            if tx.depth == 0:
                 return tx
         
     @constraints.setter
@@ -2295,7 +2289,6 @@ class EVMWorld(Platform):
         except EndTx as ex:
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
-
     def run(self):
         while True:
             self.execute()
@@ -2348,7 +2341,7 @@ class EVMWorld(Platform):
             :param gas: gas budget for this transaction.
 
         '''
-        assert self._pending_transaction is None, "Already started tx" 
+        assert self._pending_transaction is None, "Already started tx"
 
         if sort not in {'CALL', 'CREATE'}:
             raise EVMException('Type of transaction not supported')
@@ -2475,7 +2468,6 @@ class EVMWorld(Platform):
                 self._publish('on_concrete_sha3', a_buffer, a_value)
                 results.append((cond, a_value))
                 known_hashes = Operators.OR(cond, known_hashes)
-
 
         if solver.can_be_true(self._constraints, known_hashes):
             self._constraints.add(known_hashes)

@@ -100,12 +100,12 @@ class UninitializedMemory(Detector):
     '''
 
     def did_evm_read_memory_callback(self, state, offset, value):
-        initialized_memory = state.context.get('seth.detectors.initialized_memory',set())
+        initialized_memory = state.context.get('seth.detectors.initialized_memory', set())
         cbu = True  # Can be unknown
         for known_address in initialized_memory:
             cbu = Operators.AND(cbu, offset != known_address)
         if state.can_be_true(cbu):
-            self.add_finding(state, "Potentially reading uninitialized memory at instruction (offset %r)"%offset)
+            self.add_finding(state, "Potentially reading uninitialized memory at instruction (offset %r)" % offset)
 
     def did_evm_write_memory_callback(self, state, offset, value):
         # concrete or symbolic write
@@ -183,8 +183,8 @@ class SolidityMetadata(object):
         input_types = method_name_and_signature.split('(')[1].split(')')[0].split(',')
         output_types = method_name_and_signature.split(')')[1].split(',')
         self.abi[name] = { 'inputs': [{'type': ty} for ty in input_types],
-                            'name': name,
-                            'outputs': [{'type': ty} for ty in output_types]
+                           'name': name,
+                           'outputs': [{'type': ty} for ty in output_types]
                          }
 
     def __build_source_map(self, bytecode, srcmap):
@@ -1103,10 +1103,9 @@ class ManticoreEVM(Manticore):
         state.context['last_exception'] = e
 
         if not world.all_transactions:
-        #if state.platform.current_transaction is not None:
             logger.debug("Something was wrong. Search terminated in the middle of an ongoing tx")
             self.save(state, final=True)
-            e.testcase=True
+            e.testcase = True
             return 
 
         tx = world.all_transactions[-1]
@@ -1121,7 +1120,6 @@ class ManticoreEVM(Manticore):
                     world.delete_account(address)
         else:
             logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
-
 
         #Human tx that ends in this wont modify the storage so finalize and
         # generate a testcase. FIXME This should be configurable as REVERT and 
@@ -1162,13 +1160,11 @@ class ManticoreEVM(Manticore):
                         symbolic_data[i] = data[i]
                 data = symbolic_data
 
-
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value)
         else:
             assert ty == 'CREATE_CONTRACT'
             world.create_contract(caller=caller, address=address, balance=value, init=data)
-
 
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         ''' INTERNAL USE '''
@@ -1375,7 +1371,6 @@ class ManticoreEVM(Manticore):
 
         with testcase.open_stream('trace') as f:
             self._emit_trace_file(f, state.context['evm.trace'])
-
 
     @staticmethod
     def _emit_trace_file(filestream, trace):

@@ -92,7 +92,6 @@ class ConstraintSet(object):
                 related_variables |= get_variables(constraint)
             related_constraints = set(self.constraints)
 
-
         return related_variables, related_constraints
 
     def to_string(self, related_to=None, replace_constants=False):
@@ -139,7 +138,6 @@ class ConstraintSet(object):
             if constraint_str != 'true':
                 result += '(assert %s)\n' % constraint_str
             constraint_str = translator.pop()
-
 
         return result
 

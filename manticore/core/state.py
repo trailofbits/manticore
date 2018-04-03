@@ -316,11 +316,11 @@ class State(Eventful):
             try:
                 return ''.join(map(chr, value))
             except:
-                pass         
+                pass
             try:
                 return ''.join(value)
             except:
-                pass         
+                pass
         return value
 
     def solve_n(self, expr, nsolves):
