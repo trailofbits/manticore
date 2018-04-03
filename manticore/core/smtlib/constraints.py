@@ -1,8 +1,9 @@
 from expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BitVecConstant, BoolConstant, ArrayProxy
 from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplify
-import logging, weakref
+import logging
 
 logger = logging.getLogger(__name__)
+
 
 class ConstraintSet(object):
     ''' Constraint Sets
@@ -10,15 +11,15 @@ class ConstraintSet(object):
         An object containing a set of constraints. Serves also as a factory for
         new variables.
     '''
+
     def __init__(self):
         self._constraints = list()
         self._parent = None
         self._sid = 0
         self._child = None
 
-
     def __reduce__(self):
-        return (self.__class__, ( ), {'_parent': self._parent, '_constraints': self._constraints, '_sid':self._sid} )
+        return (self.__class__, (), {'_parent': self._parent, '_constraints': self._constraints, '_sid': self._sid})
 
     def __enter__(self):
         assert self._child is None
@@ -31,7 +32,6 @@ class ConstraintSet(object):
         self._child._parent = None
         self._child = None
 
-        
     def __len__(self):
         if self._parent is not None:
             return len(self._constraints) + len(self._parent)
@@ -52,7 +52,7 @@ class ConstraintSet(object):
         constraint = arithmetic_simplify(constraint)
         if isinstance(constraint, BoolConstant) and not constraint.value:
             logger.info("Adding an imposible constant constraint")
-        # If self._child is not None this constraint set has been forked and a 
+        # If self._child is not None this constraint set has been forked and a
         # a derived constraintset may be using this. So we can't add any more
         # constraints to this one. After the child constraintSet is deleted
         # we regain the ability to add constraints.
@@ -86,7 +86,7 @@ class ConstraintSet(object):
                     related_constraints.add(constraint)
                     related_variables |= variables
                     added = True
-                    
+
         result = ''
         for var in related_variables:
             result += var.declaration + '\n'
@@ -99,7 +99,7 @@ class ConstraintSet(object):
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
-                result += '(declare-fun %s () (_ BitVec %d))'%(name, exp.size)
+                result += '(declare-fun %s () (_ BitVec %d))' % (name, exp.size)
             elif isinstance(exp, Bool):
                 result += '(declare-fun %s () Bool)' % name
             elif isinstance(exp, Array):
@@ -124,8 +124,8 @@ class ConstraintSet(object):
         for a in self.constraints:
             try:
                 declarations.visit(a)
-            except:
-                # there recursion limit exceeded problem, 
+            except BaseException:
+                # there recursion limit exceeded problem,
                 # try a slower, iterative solution
                 #logger.info('WARNING: using iterpickle to dump recursive expression')
                 #from utils import iterpickle
@@ -159,7 +159,7 @@ class ConstraintSet(object):
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
-                result += '(declare-fun %s () (_ BitVec %d))'%(name, exp.size)
+                result += '(declare-fun %s () (_ BitVec %d))' % (name, exp.size)
             elif isinstance(exp, Bool):
                 result += '(declare-fun %s () Bool)' % name
             elif isinstance(exp, Array):
@@ -220,5 +220,3 @@ class ConstraintSet(object):
         '''
         name = self._get_new_name(name)
         return ArrayProxy(ArrayVariable(index_bits, index_max, value_bits, name, taint=taint))
-
-

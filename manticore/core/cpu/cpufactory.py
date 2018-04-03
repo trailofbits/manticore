@@ -1,6 +1,7 @@
 from .x86 import AMD64Cpu, I386Cpu, AMD64LinuxSyscallAbi, I386LinuxSyscallAbi, I386CdeclAbi, SystemVAbi
 from .arm import Armv7Cpu, Armv7CdeclAbi, Armv7LinuxSyscallAbi
 
+
 class CpuFactory(object):
     _cpus = {
         'i386': I386Cpu,
@@ -33,5 +34,3 @@ class CpuFactory(object):
             return Armv7LinuxSyscallAbi(cpu)
         else:
             return NotImplementedError("OS and machine combination not supported: {}/{}".format(os, machine))
-
-
