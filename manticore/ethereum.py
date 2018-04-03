@@ -252,7 +252,7 @@ class SolidityMetadata(object):
 
         try:
             beg, size, _, _ = srcmap[asm_offset]
-        except:
+        except KeyError:
             #asm_offset pointing outside the known bytecode
             return ''
 
