@@ -15,9 +15,6 @@ from .workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 
-# This is the single global manager that will handle all shared memory among workers
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -171,6 +168,7 @@ class Executor(Eventful):
 
         self.subscribe('did_load_state', self._register_state_callbacks)
 
+        # This is the global manager that will handle all shared memory access among workers
         self.manager = SyncManager()
         self.manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
 
