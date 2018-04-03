@@ -1,3 +1,4 @@
+from builtins import *
 
 import struct
 import unittest

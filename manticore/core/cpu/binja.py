@@ -1,3 +1,5 @@
+from __future__ import division
+from builtins import *
 import ctypes
 import logging
 import os
@@ -12,8 +14,9 @@ from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
 from .cpufactory import CpuFactory
 from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
-from ...utils.helpers import issymbolic
+from ...utils.helpers import issymbolic, isstring, isint
 from functools import reduce
+from itertools import chain
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger('{}.registers'.format(__name__))
@@ -39,23 +42,21 @@ class BinjaRegisterFile(RegisterFile):
         # with the X86 CPU
         f_regs = [f + "f" for f in arch.flags]
         # get (full width) architecture registers
-        arch_regs = list(set([arch.regs[r].full_width_reg
-                              for r in arch.regs.keys()]))
+        arch_regs = list(set([arch.regs[r].full_width_reg for r in arch.regs]))
 
         self.pl2b_map, self.b2pl_map = binja_platform_regmap(arch_regs,
                                                              f_regs,
                                                              self.reg_aliases,
                                                              platform_regs)
 
-        new_aliases = filter(lambda x: (x[0] not in self.reg_aliases.keys() and
+        new_aliases = [x for x in self.pl2b_map.items() if (x[0] not in self.reg_aliases and
                                         x[1] is not None and
-                                        not isinstance(x[1], tuple)),
-                             self.pl2b_map.items())
+                                        not isinstance(x[1], tuple))]
         self.reg_aliases.update(new_aliases)
 
         # all regs are: architecture, aliases and flags
-        all_regs = arch_regs + self.reg_aliases.values() + f_regs
-        self.registers = {reg: 0 for reg in all_regs}
+        all_regs = arch_regs + list(self.reg_aliases.values()) + f_regs
+        self.registers = {reg : 0 for reg in all_regs}
 
         # FIXME get these from the platform!! they are already part of registers
         self.segment_registers = (['cs', 'ds', 'es', 'ss'] +
@@ -129,7 +130,7 @@ class BinjaRegisterFile(RegisterFile):
 
     @property
     def all_registers(self):
-        return tuple(self.registers.keys() + self._aliases.keys())
+        return tuple(chain(self.registers.keys(), self._aliases.keys()))
 
     @property
     def canonical_registers(self):
@@ -260,7 +261,7 @@ def binja_platform_regmap(binja_arch_regs, binja_arch_flags, binja_arch_aliases,
                 x86_to_binja[f] = (f[:-1].lower(), 'high')
             elif "r" + f[:-1].lower() in binja_arch_regs:
                 x86_to_binja[f] = ("r" + f[:-1].lower(), 'high')
-        elif f.upper() in binja_arch_aliases.keys():
+        elif f.upper() in binja_arch_aliases:
             x86_to_binja[f.upper()] = f.upper()
 
     # still unmapped
@@ -271,7 +272,7 @@ def binja_platform_regmap(binja_arch_regs, binja_arch_flags, binja_arch_aliases,
     for x86_reg, binja_reg in x86_to_binja.items():
         if isinstance(binja_reg, tuple):
             binja_to_x86["high_mappings"].append(binja_reg[0])
-        elif isinstance(binja_reg, str):
+        elif isstring(binja_reg):
             binja_to_x86[binja_reg] = x86_reg
 
     return x86_to_binja, binja_to_x86
@@ -328,8 +329,7 @@ class BinjaCpu(Cpu):
         else:
             fm = bn.FileMetadata()
             db = fm.open_existing_database(dbpath)
-            vtypes = filter(lambda x: x.name != "Raw",
-                            bview.open(program_path).available_view_types)
+            vtypes = [x for x in bview.open(program_path).available_view_types if x.name != "Raw"]
             bv = db.get_view_of_type(vtypes[0].name)
             bv.update_analysis_and_wait()
         self.program_path = program_path
@@ -344,9 +344,9 @@ class BinjaCpu(Cpu):
         '''
         text = ''
         # Read Instruction from memory
-        for address in xrange(pc, pc + self.max_instr_width):
-            # This reads a byte from memory ignoring permissions
-            # and concretize it if symbolic
+        for address in range(pc, pc + self.max_instr_width):
+            #This reads a byte from memory ignoring permissions
+            #and concretize it if symbolic
             if not self.memory.access_ok(address, 'x'):
                 break
 
@@ -606,7 +606,7 @@ class BinjaCpu(Cpu):
         :param value: the value to put in the stack.
         :param size: the size of the value.
         '''
-        cpu.STACK -= size / 8
+        cpu.STACK -= size // 8
         base, _, _ = cpu.get_descriptor(cpu.ss)
         address = cpu.STACK + base
         cpu.write_int(address, value, size)
@@ -622,7 +622,7 @@ class BinjaCpu(Cpu):
         base, _, _ = cpu.get_descriptor(cpu.ss)
         address = cpu.STACK + base
         value = cpu.read_int(address, size)
-        cpu.STACK += size / 8
+        cpu.STACK += size // 8
         return value
 
     def ADC(cpu, left, right):
@@ -720,12 +720,12 @@ class BinjaCpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, (int, long)):
+        if isint(divisor):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
 
-        if isinstance(dividend, (int, long)):
+        if isint(dividend):
             if dividend_sign:
                 dividend = ((~dividend) + 1) & mask
                 dividend = -dividend
@@ -760,7 +760,7 @@ class BinjaCpu(Cpu):
     def GOTO(cpu, expr):
         # FIXME
         try:
-            if isinstance(expr.op, long):
+            if isint(expr.op):
                 addr = cpu.disasm.current_llil_func[expr.op].address
             else:
                 raise NotImplementedError
@@ -786,7 +786,7 @@ class BinjaCpu(Cpu):
                             for x in cond_il.operands]
         res = implementation(*cond_il.operands)
         idx = true.op if res else false.op
-        assert isinstance(idx, long)
+        assert isint(idx)
 
         try:
             next_il = cpu.disasm.current_llil_func[idx]
@@ -951,19 +951,18 @@ class BinjaCpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, (int, long)):
+        if isint(divisor):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
 
-        if isinstance(dividend, (int, long)):
+        if isint(dividend):
             if dividend_sign:
                 dividend = ((~dividend) + 1) & mask
                 dividend = -dividend
 
         quotient = Operators.SDIV(dividend, divisor)
-        if (isinstance(dividend, (int, long)) and
-                isinstance(dividend, (int, long))):
+        if isint(divisor) and isint(dividend):
             remainder = dividend - (quotient * divisor)
         else:
             remainder = Operators.SREM(dividend, divisor)
@@ -1268,7 +1267,7 @@ def x86_get_eflags(cpu, reg):
     }
 
     flags = []
-    for flag, offset in x86_flags.iteritems():
+    for flag, offset in x86_flags.items():
         flags.append((cpu.regfile.registers.get(flag, 0), offset))
 
     if any(issymbolic(flag) for flag, offset in flags):

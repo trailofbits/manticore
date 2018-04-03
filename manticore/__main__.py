@@ -1,3 +1,4 @@
+from builtins import *
 import sys
 import logging
 import argparse
@@ -110,7 +111,7 @@ def main():
         ethereum_cli(args)
         return
 
-    env = {key: val for key, val in map(lambda env: env[0].split('='), args.env)}
+    env = dict(v[0].split('=') for v in args.env)
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 

@@ -1,3 +1,4 @@
+from builtins import *
 import os
 import sys
 import time
@@ -21,7 +22,7 @@ from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
 from .platforms import linux, decree, evm
-from .utils.helpers import issymbolic, is_binja_disassembler
+from .utils.helpers import issymbolic, is_binja_disassembler, isstring, isint
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
 from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited, Tracer
@@ -153,7 +154,7 @@ class Manticore(Eventful):
     def __init__(self, path_or_state, argv=None, workspace_url=None, policy='random', **kwargs):
         super(Manticore, self).__init__()
 
-        if isinstance(workspace_url, str):
+        if isstring(workspace_url):
             if ':' not in workspace_url:
                 ws_path = 'fs:' + workspace_url
             else:
@@ -174,7 +175,7 @@ class Manticore(Eventful):
         # Link Executor events to default callbacks in manticore object
         self.forward_events_from(self._executor)
 
-        if isinstance(path_or_state, str):
+        if isstring(path_or_state):
             if not os.path.isfile(path_or_state):
                 raise Exception('{} is not an existing regular file'.format(path_or_state))
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
@@ -458,7 +459,7 @@ class Manticore(Eventful):
         :type pc: int or None
         :param callable callback: Hook function
         '''
-        if not (isinstance(pc, (int, long)) or pc is None):
+        if not (isint(pc) or pc is None):
             raise TypeError("pc must be either an int or None, not {}".format(pc.__class__.__name__))
         else:
             self._hooks.setdefault(pc, set()).add(callback)
@@ -471,7 +472,8 @@ class Manticore(Eventful):
         # Ignore symbolic pc.
         # TODO(yan): Should we ask the solver if any of the hooks are possible,
         # and execute those that are?
-        if not isinstance(pc, (int, long)):
+
+        if issymbolic(pc):
             return
 
         # Invoke all pc-specific hooks
@@ -565,7 +567,7 @@ class Manticore(Eventful):
         logger.info("Generated testcase No. {} - {}".format(testcase_id, message))
 
     def _produce_profiling_data(self):
-        class PstatsFormatted:
+        class PstatsFormatted(object):
             def __init__(self, d):
                 self.stats = dict(d)
 
@@ -688,7 +690,7 @@ class Manticore(Eventful):
         _shared_context = self.context
 
         with self._output.save_stream('command.sh') as f:
-            f.write(' '.join(sys.argv))
+            f.write(u' '.join(sys.argv))
 
         elapsed = time.time() - self._time_started
         logger.info('Results in %s', self._output.store.uri)

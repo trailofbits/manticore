@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 # Solver
 # A solver maintains a companion smtlib capable process connected via stdio.
@@ -13,17 +14,20 @@
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
+from builtins import *
 from subprocess import PIPE, Popen, check_output
 from abc import ABCMeta, abstractmethod
-import operators as Operators
-from expression import *
-from constraints import *
+from copy import copy, deepcopy
+from . import operators as Operators
+from .expression import *
+from .constraints import *
 import logging
 import re
 import time
-from visitors import *
+from .visitors import *
 from ...utils.helpers import issymbolic, memoized
 import collections
+from future.utils import with_metaclass
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +50,7 @@ class TooManySolutions(SolverException):
         self.solutions = solutions
 
 
-class Solver(object):
-    __metaclass__ = ABCMeta
-
+class Solver(with_metaclass(ABCMeta, object)):
     @abstractmethod
     def __init__(self):
         pass
@@ -120,7 +122,7 @@ class Z3Solver(Solver):
         '''
         super(Z3Solver, self).__init__()
         self._proc = None
-        self._log = ''  # this should be enabled only if we are debugging
+        self._log = []  # this should be enabled only if we are debugging
 
         self.version = self._solver_version()
 
@@ -163,7 +165,7 @@ class Z3Solver(Solver):
             raise Z3NotFoundError
         try:
             version = version_cmd_output.split()[2]
-            their_version = Version(*map(int, version.split('.')))
+            their_version = Version(*[int(s) for s in version.split('.')])
         except (IndexError, ValueError, TypeError):
             pass
         return their_version
@@ -202,11 +204,8 @@ class Z3Solver(Solver):
         raise Exception()
 
     def __del__(self):
-        try:
+        if self._proc is not None:
             self._proc.stdin.writelines(('(exit)\n',))
-            self._proc.wait()
-        except Exception:
-            pass
 
     def _reset(self, constraints=None):
         ''' Auxiliary method to reset the smtlib external solver to initial defaults'''
@@ -229,10 +228,9 @@ class Z3Solver(Solver):
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s', cmd)
-        self._log += str(cmd) + '\n'
+        self._log.append(str(cmd))
         try:
-            buf = str(cmd)
-            self._proc.stdin.write(buf + '\n')
+            self._proc.stdin.write('{}\n'.format(cmd))
         except IOError as e:
             raise SolverException(e)
 
@@ -460,7 +458,7 @@ class Z3Solver(Solver):
             elif isinstance(expression, Array):
                 var = []
                 result = ''
-                for i in xrange(expression.index_max):
+                for i in range(expression.index_max):
                     subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
                     temp_cs.add(subvar == expression[i])
@@ -469,14 +467,15 @@ class Z3Solver(Solver):
                 if self._check() != 'sat':
                     raise SolverException('Model is not available')
 
-                for i in xrange(expression.index_max):
+
+                for i in range(expression.index_max):
                     self._send('(get-value (%s))' % var[i].name)
                     ret = self._recv()
                     assert ret.startswith('((') and ret.endswith('))')
                     pattern, base = self._get_value_fmt
                     m = pattern.match(ret)
                     expr, value = m.group('expr'), m.group('value')
-                    result += chr(int(value, base))
+                    result += bytes([int(value, base)])
                 return result
 
             temp_cs.add(var == expression)

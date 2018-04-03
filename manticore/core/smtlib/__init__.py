@@ -1,8 +1,9 @@
-from expression import Expression, Bool, BitVec, Array
-from constraints import ConstraintSet
-from solver import *
-import operators as Operators
-
+from __future__ import absolute_import
+from builtins import *
+from .expression import Expression, Bool, BitVec, Array
+from .constraints import ConstraintSet
+from .solver import *
+from . import operators as Operators
 
 import logging
 logger = logging.getLogger(__name__)

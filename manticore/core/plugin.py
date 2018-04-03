@@ -1,3 +1,4 @@
+from builtins import *
 import logging
 
 from capstone import CS_GRP_JUMP
@@ -240,7 +241,7 @@ class Visited(Plugin):
         # Fixme this is duplicated?
         if self.coverage_file is not None:
             with self.manticore._output.save_stream(self.coverage_file) as f:
-                fmt = "0x{:016x}\n"
+                fmt = u"0x{:016x}\n"
                 for m in executor_visited:
                     f.write(fmt.format(m))
         logger.info('Coverage: %d different instructions executed', len(executor_visited))
@@ -289,9 +290,9 @@ class ExamplePlugin(Plugin):
         logger.info('did_execute_instruction', state, pc, target_pc, instruction)
 
     def will_start_run_callback(self, state):
-        ''' Called once at the begining of the run.
-            state is the initial root state
-        '''
+        ''' Called once at the beginning of the run.
+            state is the initial root state 
+        ''' 
         logger.info('will_start_run')
 
     def did_finish_run_callback(self):

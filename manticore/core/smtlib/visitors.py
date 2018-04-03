@@ -1,4 +1,7 @@
-from expression import *
+from __future__ import division, absolute_import
+from builtins import *
+from .expression import *
+import operator
 import logging
 import operator
 logger = logging.getLogger(__name__)
@@ -50,7 +53,6 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = 'visit_%s' % sort
@@ -89,7 +91,7 @@ class Visitor(object):
                 self.push(cache[node])
             elif isinstance(node, Operation):
                 if node in visited:
-                    operands = [self.pop() for _ in xrange(len(node.operands))]
+                    operands = [self.pop() for _ in range(len(node.operands))]
                     if use_fixed_point:
                         new_node = self._rebuild(node, operands)
                         value = self._method(new_node, *operands)
@@ -191,7 +193,6 @@ class PrettyPrinter(Visitor):
         Overload Visitor._method because we want to stop to iterate over the
         visit_ functions as soon as a valide visit_ function is found
         '''
-        assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = 'visit_%s' % sort
@@ -300,7 +301,7 @@ class ConstantFolderSimplifier(Visitor):
                 isinstance(expression, Bool)
                 return BoolConstant(value, taint=expression.taint)
         else:
-            if any(operands[i] is not expression.operands[i] for i in xrange(len(operands))):
+            if any(operands[i] is not expression.operands[i] for i in range(len(operands))):
                 expression = type(expression)(*operands, taint=expression.taint)
         return expression
 
@@ -370,8 +371,12 @@ class ArithmeticSimplifier(Visitor):
                         new_operands.append(item)
                     bitcount += item.size
             if begining != expression.begining:
-                return BitVecExtract(BitVecConcat(sum(map(lambda x: x.size, new_operands)), *reversed(new_operands)),
-                                     begining, expression.size, taint=expression.taint)
+
+                return BitVecExtract(BitVecConcat(sum(x.size for x in new_operands),
+                                                  *reversed(new_operands)),
+                                     begining,
+                                     expression.size,
+                                     taint=expression.taint)
 
     def visit_BitVecAdd(self, expression, *operands):
         ''' a + 0  ==> a
@@ -572,8 +577,7 @@ class TranslatorSmtlib(Visitor):
         if expression.size == 1:
             return '#' + bin(expression.value & expression.mask)[1:]
         else:
-            return '#x%0*x' % (int(expression.size / 4),
-                               expression.value & expression.mask)
+            return '#x%0*x' % (expression.size // 4, expression.value & expression.mask)
 
     def visit_BoolConstant(self, expression):
         return expression.value and 'true' or 'false'
@@ -588,7 +592,7 @@ class TranslatorSmtlib(Visitor):
         elif isinstance(expression, BitVecExtract):
             operation = operation % (expression.end, expression.begining)
 
-        operands = map(lambda x: self._add_binding(*x), zip(expression.operands, operands))
+        operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
         smtlib = '(%s %s)' % (operation, ' '.join(operands))
         return smtlib
 

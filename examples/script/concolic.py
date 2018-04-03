@@ -53,8 +53,10 @@ class TraceReceiver(Plugin):
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
         total = len(self._trace)
+        len_inst = len(instructions)
+        len_writes = len(list(writes))
         log('Recorded concrete trace: {}/{} instructions, {}/{} writes'.format(
-            len(instructions), total, len(writes), total))
+            len_inst, total, len_writes, total))
 
 def flip(constraint):
     '''

@@ -1,20 +1,23 @@
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *
 import inspect
 import logging
-import StringIO
+import io
 import string
 
 from functools import wraps
-from itertools import islice, imap
+from itertools import islice
 
-import capstone as cs
 import unicorn
 
 from .disasm import init_disassembler
-from ..smtlib import Expression, Bool, BitVec, Array, Operators, Constant
+from ..smtlib import Expression, BitVec, Operators, Constant
 from ..memory import (
-    ConcretizeMemory, InvalidMemoryAccess, MemoryException, FileMap, AnonMap
+    ConcretizeMemory, InvalidMemoryAccess
 )
-from ...utils.helpers import issymbolic
+from ...utils.helpers import issymbolic, isstring, isint
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
@@ -285,7 +288,7 @@ class Abi(object):
         A reusable generator for increasing pointer-sized values from an address
         (usually the stack).
         '''
-        word_bytes = self._cpu.address_bit_size / 8
+        word_bytes = self._cpu.address_bit_size // 8
         while True:
             yield base
             base += word_bytes
@@ -312,14 +315,14 @@ class Abi(object):
             nargs -= 1
 
         def resolve_argument(arg):
-            if isinstance(arg, str):
+            if isstring(arg):
                 return self._cpu.read_register(arg)
             else:
                 return self._cpu.read_int(arg)
 
         # Create a stream of resolved arguments from argument descriptors
         descriptors = self.get_arguments()
-        argument_iter = imap(resolve_argument, descriptors)
+        argument_iter = map(resolve_argument, descriptors)
 
         # TODO(mark) this is here as a hack to avoid circular import issues
         from ...models import isvariadic
@@ -358,7 +361,7 @@ class Abi(object):
             src = next(islice(descriptors, idx, idx + 1))
 
             msg = 'Concretizing due to model invocation'
-            if isinstance(src, str):
+            if isstring(src):
                 raise ConcretizeRegister(self._cpu, src, msg)
             else:
                 raise ConcretizeMemory(self._cpu.memory, src, self._cpu.address_bit_size, msg)
@@ -423,7 +426,7 @@ class SyscallAbi(Abi):
             if ret > min_hex_expansion:
                 ret_s = ret_s + '(0x{:x})'.format(ret)
 
-            platform_logger.debug('%s(%s) -> %s', model.im_func.func_name, args_s, ret_s)
+            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, args_s, ret_s)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
@@ -585,7 +588,7 @@ class Cpu(Eventful):
         assert size in SANE_SIZES
         self._publish('will_write_memory', where, expression, size)
 
-        data = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in xrange(0, size, 8)]
+        data = [Operators.CHR(Operators.EXTRACT(expression, offset, 8)) for offset in range(0, size, 8)]
         self._memory.write(where, data, force)
 
         self._publish('did_write_memory', where, expression, size)
@@ -605,9 +608,9 @@ class Cpu(Eventful):
         assert size in SANE_SIZES
         self._publish('will_read_memory', where, size)
 
-        data = self._memory.read(where, size / 8, force)
+        data = self._memory.read(where, size // 8, force)
         assert (8 * len(data)) == size
-        value = Operators.CONCAT(size, *map(Operators.ORD, reversed(data)))
+        value = Operators.CONCAT(size, *(Operators.ORD(d) for d in reversed(data)))
 
         self._publish('did_read_memory', where, value, size)
         return value
@@ -621,7 +624,7 @@ class Cpu(Eventful):
         :type data: str or list
         :param force: whether to ignore memory permissions
         '''
-        for i in xrange(len(data)):
+        for i in range(len(data)):
             self.write_int(where + i, Operators.ORD(data[i]), 8, force)
 
     def read_bytes(self, where, size, force=False):
@@ -635,7 +638,7 @@ class Cpu(Eventful):
         :rtype: list[int or Expression]
         '''
         result = []
-        for i in xrange(size):
+        for i in range(size):
             result.append(Operators.CHR(self.read_int(where + i, 8, force)))
         return result
 
@@ -667,7 +670,7 @@ class Cpu(Eventful):
         :return: string read
         :rtype: str
         '''
-        s = StringIO.StringIO()
+        s = io.BytesIO()
         while True:
             c = self.read_int(where, 8, force)
 
@@ -714,7 +717,7 @@ class Cpu(Eventful):
         :param force: whether to ignore memory permissions
         :return: New stack pointer
         '''
-        self.STACK -= self.address_bit_size / 8
+        self.STACK -= self.address_bit_size // 8
         self.write_int(self.STACK, value, force=force)
         return self.STACK
 
@@ -726,7 +729,7 @@ class Cpu(Eventful):
         :return: Value read
         '''
         value = self.read_int(self.STACK, force=force)
-        self.STACK += self.address_bit_size / 8
+        self.STACK += self.address_bit_size // 8
         return value
 
     #######################################
@@ -750,11 +753,12 @@ class Cpu(Eventful):
         if pc in self._instruction_cache:
             return self._instruction_cache[pc]
 
-        text = ''
+        text = b''
+
         # Read Instruction from memory
-        for address in xrange(pc, pc + self.max_instr_width):
-            # This reads a byte from memory ignoring permissions
-            # and concretize it if symbolic
+        for address in range(pc, pc + self.max_instr_width):
+            #This reads a byte from memory ignoring permissions
+            #and concretize it if symbolic
             if not self.memory.access_ok(address, 'x'):
                 break
 
@@ -763,7 +767,7 @@ class Cpu(Eventful):
             if issymbolic(c):
                 assert isinstance(c, BitVec) and c.size == 8
                 if isinstance(c, Constant):
-                    c = chr(c.value)
+                    c = c.value
                 else:
                     logger.error('Concretize executable memory %r %r', c, text)
                     raise ConcretizeMemory(self.memory,
@@ -902,7 +906,7 @@ class Cpu(Eventful):
         if issymbolic(value):
             aux = "%3s: " % reg_name + "%16s" % value
             result += aux
-        elif isinstance(value, (int, long)):
+        elif isint(value):
             result += "%3s: 0x%016x" % (reg_name, value)
         else:
             result += "%3s: %r" % (reg_name, value)
@@ -913,8 +917,8 @@ class Cpu(Eventful):
         # backup, null, use, then restore the list.
         # will disabled_signals(self):
         #    return map(self.render_register, self._regfile.canonical_registers)
-        return map(self.render_register,
-                   sorted(self._regfile.canonical_registers))
+        return list(map(self.render_register,
+                   sorted(self._regfile.canonical_registers)))
 
     # Generic string representation
     def __str__(self):

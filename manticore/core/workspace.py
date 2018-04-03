@@ -1,14 +1,14 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *
 import os
 import sys
 import glob
 import signal
-import cPickle
+import pickle
 import logging
 import tempfile
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
+import io
 
 from contextlib import contextmanager
 from multiprocessing.managers import SyncManager
@@ -19,8 +19,13 @@ from .state import State
 
 logger = logging.getLogger(__name__)
 
-manager = SyncManager()
-manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+_manager = None
+def manager():
+    global _manager
+    if _manager is None:
+        _manager = SyncManager()
+        _manager.start(lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+    return _manager
 
 
 class StateSerializer(object):
@@ -42,7 +47,7 @@ class StateSerializer(object):
 class PickleSerializer(StateSerializer):
     def serialize(self, state, f):
         try:
-            f.write(cPickle.dumps(state, 2))
+            f.write(pickle.dumps(state, 2))
         except RuntimeError:
             # recursion exceeded. try a slower, iterative solution
             from ..utils import iterpickle
@@ -50,7 +55,7 @@ class PickleSerializer(StateSerializer):
             f.write(iterpickle.dumps(state, 2))
 
     def deserialize(self, f):
-        return cPickle.load(f)
+        return pickle.load(f)
 
 
 class Store(object):
@@ -108,18 +113,18 @@ class Store(object):
         with self.save_stream(key) as s:
             s.write(value)
 
-    def load_value(self, key):
+    def load_value(self, key, binary=False):
         """
         Load an arbitrary value identified by `key`.
 
         :param str key: The key that identifies the value
         :return: The loaded value
         """
-        with self.load_stream(key) as s:
+        with self.load_stream(key, binary=binary) as s:
             return s.read()
 
     @contextmanager
-    def save_stream(self, key, *rest, **kwargs):
+    def save_stream(self, key, binary=False, *rest, **kwargs):
         """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
@@ -127,12 +132,12 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         """
-        s = StringIO.StringIO()
+        s = io.BytesIO() if binary else io.StringIO()
         yield s
         self.save_value(key, s.getvalue())
 
     @contextmanager
-    def load_stream(self, key):
+    def load_stream(self, key, binary=False):
         """
         Return a managed file-like object from which the calling code can read
         previously-serialized data.
@@ -140,8 +145,8 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         """
-        value = self.load_value(key)
-        yield StringIO.StringIO(value)
+        value = self.load_value(key, binary=binary)
+        yield io.BytesIO(value) if binary else io.StringIO(value)
 
     def save_state(self, state, key):
         """
@@ -151,7 +156,7 @@ class Store(object):
         :param str key:
         :return:
         """
-        with self.save_stream(key) as f:
+        with self.save_stream(key, binary=True) as f:
             self._serializer.serialize(state, f)
 
     def load_state(self, key, delete=True):
@@ -161,7 +166,7 @@ class Store(object):
         :param key: key that identifies state
         :rtype: manticore.core.State
         """
-        with self.load_stream(key) as f:
+        with self.load_stream(key, binary=True) as f:
             state = self._serializer.deserialize(f)
             if delete:
                 self.rm(key)
@@ -218,12 +223,13 @@ class FilesystemStore(Store):
             yield f
 
     @contextmanager
-    def load_stream(self, key):
+    def load_stream(self, key, binary=False):
         """
         :param key:
         :return:
         """
-        with open(os.path.join(self.uri, key), 'r') as f:
+        mode = 'rb' if binary else 'r'
+        with open(os.path.join(self.uri, key), mode) as f:
             yield f
 
     def rm(self, key):
@@ -243,7 +249,7 @@ class FilesystemStore(Store):
         :return: list of matched keys
         """
         path = os.path.join(self.uri, glob_str)
-        return map(lambda s: os.path.split(s)[1], glob.glob(path))
+        return [os.path.split(s)[1] for s in glob.glob(path)]
 
 
 class MemoryStore(Store):
@@ -265,7 +271,7 @@ class MemoryStore(Store):
     def save_value(self, key, value):
         self._data[key] = value
 
-    def load_value(self, key):
+    def load_value(self, key, binary=False):
         return self._data.get(key)
 
     def rm(self, key):
@@ -344,7 +350,7 @@ class Workspace(object):
         else:
             self._store = Store.fromdescriptor(store_or_desc)
         self._serializer = PickleSerializer()
-        self._last_id = manager.Value('i', 0)
+        self._last_id = manager().Value('i', 0)
         self._lock = lock
         self._prefix = 'state_'
         self._suffix = '.pkl'
@@ -355,7 +361,7 @@ class Workspace(object):
         def get_state_id(name):
             return int(name[len(self._prefix):-len(self._suffix)], 16)
 
-        state_ids = map(get_state_id, state_names)
+        state_ids = list(map(get_state_id, state_names))
 
         if not state_ids:
             return []
@@ -426,8 +432,8 @@ class ManticoreOutput(object):
         self._descriptor = desc
         self._store = Store.fromdescriptor(desc)
         self._last_id = 0
-        self._id_gen = manager.Value('i', self._last_id)
-        self._lock = manager.Condition(manager.RLock())
+        self._id_gen = manager().Value('i', self._last_id)
+        self._lock = manager().Condition(manager().RLock())
 
     def testcase(self, prefix='test'):
         class Testcase(object):
@@ -440,9 +446,9 @@ class ManticoreOutput(object):
             def num(self):
                 return self._num
 
-            def open_stream(self, suffix=''):
+            def open_stream(self, suffix='', binary=False):
                 stream_name = '{}_{:08x}.{}'.format(self._prefix, self._num, suffix)
-                return self._ws.save_stream(stream_name)
+                return self._ws.save_stream(stream_name, binary=binary)
 
         return Testcase(self, prefix)
 
@@ -493,7 +499,7 @@ class ManticoreOutput(object):
         self.save_input_symbols(state)
 
         for stream_name, data in state.platform.generate_workspace_files().items():
-            with self._named_stream(stream_name) as stream:
+            with self._named_stream(stream_name, binary=True) as stream:
                 stream.write(data)
 
         self._store.save_state(state, self._named_key('pkl'))
@@ -503,67 +509,69 @@ class ManticoreOutput(object):
         return self._store.save_stream(key, *rest, **kwargs)
 
     @contextmanager
-    def _named_stream(self, name):
+    def _named_stream(self, name, binary=False):
         """
         Create an indexed output stream i.e. 'test_00000001.name'
 
         :param name: Identifier for the stream
         :return: A context-managed stream-like object
         """
-        with self._store.save_stream(self._named_key(name)) as s:
+        with self._store.save_stream(self._named_key(name), binary=binary) as s:
             yield s
 
     def save_summary(self, state, message):
         with self._named_stream('messages') as summary:
-            summary.write("Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
-            summary.write('Status:\n  {}\n\n'.format(message))
+            summary.write(u"Command line:\n  '{}'\n" .format(u' '.join(sys.argv)))
+            summary.write(u'Status:\n  {}\n\n'.format(message))
 
             # FIXME(mark) This is a temporary hack for EVM. We need to sufficiently
             # abstract the below code to work on many platforms, not just Linux. Then
             # we can remove this hack.
             if getattr(state.platform, 'procs', None) is None:
                 import pprint
-                summary.write("EVM World:\n")
+                summary.write(u"EVM World:\n")
                 summary.write(pprint.pformat(state.platform._global_storage))
                 return
 
             memories = set()
-            for cpu in filter(None, state.platform.procs):
+            for cpu in [f for f in state.platform.procs if f]:
                 idx = state.platform.procs.index(cpu)
-                summary.write("================ PROC: %02d ================\n" % idx)
-                summary.write("Memory:\n")
+                summary.write(u"================ PROC: %02d ================\n" % idx)
+                summary.write(u"Memory:\n")
                 if hash(cpu.memory) not in memories:
-                    summary.write(str(cpu.memory).replace('\n', '\n  '))
+                    b = bytes(cpu.memory).replace('\n', '\n  ').decode('utf-8')
+                    summary.write(b)
                     memories.add(hash(cpu.memory))
 
-                summary.write("CPU:\n{}".format(cpu))
+                summary.write(u"CPU:\n{}".format(cpu))
 
                 if hasattr(cpu, "instruction") and cpu.instruction is not None:
                     i = cpu.instruction
-                    summary.write("  Instruction: 0x%x\t(%s %s)\n" % (
-                        i.address, i.mnemonic, i.op_str))
+                    summary.write(u'Instruction: 0x%x\t(%s %s)\n' % (i.address,
+                                                                    i.mnemonic.encode('utf-16be'),
+                                                                    i.op_str.encode('utf-16be')))
                 else:
-                    summary.write("  Instruction: {symbolic}\n")
+                    summary.write(u"  Instruction: {symbolic}\n")
 
     def save_trace(self, state):
         with self._named_stream('trace') as f:
             if 'trace' not in state.context:
                 return
             for entry in state.context['trace']:
-                f.write('0x{:x}\n'.format(entry))
+                f.write(u'0x{:x}\n'.format(entry))
 
     def save_constraints(self, state):
         # XXX(yan): We want to conditionally enable this check
         # assert solver.check(state.constraints)
 
         with self._named_stream('smt') as f:
-            f.write(str(state.constraints))
+            f.write(bytes(state.constraints).decode('utf-8'))
 
     def save_input_symbols(self, state):
         with self._named_stream('input') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
-                f.write('%s: %s\n' % (symbol.name, repr(buf)))
+                f.write(u'%s: %s\n' % (symbol.name, repr(buf)))
 
     def save_syscall_trace(self, state):
         with self._named_stream('syscalls') as f:
@@ -573,7 +581,7 @@ class ManticoreOutput(object):
         def solve_to_fd(data, fd):
             try:
                 for c in data:
-                    fd.write(chr(solver.get_value(state.constraints, c)))
+                    fd.write(bytes([solver.get_value(state.constraints, c)]))
             except SolverException:
                 fd.write('{SolverException}')
 

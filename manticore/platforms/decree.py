@@ -1,13 +1,21 @@
-import cgcrandom
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import *
+from . import cgcrandom
+import weakref
+import sys, os, struct
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.memory import SMemory32
 from ..core.smtlib import *
 from ..core.executor import TerminateState
-from ..utils.helpers import issymbolic
+from ..utils.helpers import issymbolic, isstring
 from ..binary import CGCElf
 from ..platforms.platform import Platform
+from contextlib import closing
+import io
 import logging
 import random
 
@@ -62,7 +70,7 @@ class Socket(object):
     def receive(self, size):
         rx_bytes = min(size, len(self.buffer))
         ret = []
-        for i in xrange(rx_bytes):
+        for i in range(rx_bytes):
             ret.append(self.buffer.pop())
         return ret
 
@@ -137,14 +145,14 @@ class Decree(Platform):
         nprocs = len(self.procs)
         nfiles = len(self.files)
         assert nprocs > 0
-        self.running = range(nprocs)
+        self.running = list(range(nprocs))
         self._current = 0
 
         # Each process can wait for one timeout
         self.timers = [None] * nprocs
         # each fd has a waitlist
-        self.rwait = [set() for _ in xrange(nfiles)]
-        self.twait = [set() for _ in xrange(nfiles)]
+        self.rwait = [set() for _ in range(nfiles)]
+        self.twait = [set() for _ in range(nfiles)]
 
         # Install event forwarders
         for proc in self.procs:
@@ -217,7 +225,7 @@ class Decree(Platform):
         :todo: FIX. move to cpu or memory
         """
         filename = ""
-        for i in xrange(0, 1024):
+        for i in range(0, 1024):
             c = Operators.CHR(cpu.read_int(buf + i, 8))
             if c == '\x00':
                 break
@@ -560,15 +568,15 @@ class Decree(Platform):
                 self.wait([], [fd], None)
                 raise RestartSyscall()
 
-            for i in xrange(0, count):
+            for i in range(0, count):
                 value = Operators.CHR(cpu.read_int(buf + i, 8))
-                if not isinstance(value, str):
+                if not isstring(value):
                     logger.debug("TRANSMIT: Writing symbolic values to file %d", fd)
                     #value = str(value)
                 data.append(value)
             self.files[fd].transmit(data)
 
-            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join([str(x) for x in data])))
+            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join(str(x) for x in data)))
             self.syscall_trace.append(("_transmit", fd, data))
             self.signal_transmit(fd)
 
@@ -742,11 +750,11 @@ class Decree(Platform):
                     0x00000006: self.sys_deallocate,
                     0x00000007: self.sys_random,
                     }
-        if cpu.EAX not in syscalls.keys():
+        if cpu.EAX not in list(syscalls.keys()):
             raise TerminateState("32 bit DECREE system call number {} Not Implemented".format(cpu.EAX))
         func = syscalls[cpu.EAX]
-        logger.debug("SYSCALL32: %s (nargs: %d)", func.func_name, func.func_code.co_argcount)
-        nargs = func.func_code.co_argcount
+        logger.debug("SYSCALL32: %s (nargs: %d)", func.__name__, func.__code__.co_argcount)
+        nargs = func.__code__.co_argcount
         args = [cpu, cpu.EBX, cpu.ECX, cpu.EDX, cpu.ESI, cpu.EDI, cpu.EBP]
         cpu.EAX = func(*args[:nargs - 1])
 
@@ -768,9 +776,9 @@ class Decree(Platform):
 
         if len(self.running) == 0:
             logger.info("None running checking if there is some process waiting for a timeout")
-            if all([x is None for x in self.timers]):
+            if all(x is None for x in self.timers):
                 raise Deadlock()
-            self.clocks = min(filter(lambda x: x is not None, self.timers)) + 1
+            self.clocks = min(x for x in self.timers if x is not None) + 1
             self.check_timers()
             assert len(self.running) != 0, "DEADLOCK!"
             self._current = self.running[0]
@@ -812,7 +820,7 @@ class Decree(Platform):
         if self._current not in self.running:
             logger.info("\tCurrent not running. Checking for timers...")
             self._current = None
-            if all([x is None for x in self.timers]):
+            if all(x is None for x in self.timers):
                 raise Deadlock()
             self.check_timers()
 
@@ -855,8 +863,8 @@ class Decree(Platform):
     def check_timers(self):
         ''' Awake proccess if timer has expired '''
         if self._current is None:
-            # Advance the clocks. Go to future!!
-            advance = min(filter(lambda x: x is not None, self.timers)) + 1
+            #Advance the clocks. Go to future!!
+            advance = min(x for x in self.timers if x is not None) + 1
             logger.info("Advancing the clock from %d to %d", self.clocks, advance)
             self.clocks = advance
         for procid in range(len(self.timers)):
@@ -1027,7 +1035,7 @@ class SDecree(Decree):
             raise SymbolicSyscallArgument(cpu, 2)
 
         data = []
-        for i in xrange(count):
+        for i in range(count):
             if False:
                 # Too slow for the new age.
                 value = self.constraints.new_bitvec(8, name="RANDOM_%04d" % self.random)
@@ -1055,7 +1063,7 @@ class DecreeEmu(object):
 
     @staticmethod
     def cgc_random(platform, buf, count, rnd_bytes):
-        import cgcrandom
+        from . import cgcrandom
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
             raise ConcretizeArgument(platform.current, 0)
@@ -1069,7 +1077,7 @@ class DecreeEmu(object):
             raise ConcretizeArgument(platform.current, 2)
 
         data = []
-        for i in xrange(count):
+        for i in range(count):
             value = cgcrandom.stream[DecreeEmu.RANDOM]
             data.append(value)
             DecreeEmu.random += 1

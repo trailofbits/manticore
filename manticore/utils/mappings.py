@@ -1,3 +1,4 @@
+from builtins import *
 import sys
 import ctypes
 import mmap as MMAP
