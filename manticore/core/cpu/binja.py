@@ -962,7 +962,7 @@ class BinjaCpu(Cpu):
                 dividend = -dividend
 
         quotient = Operators.SDIV(dividend, divisor)
-        if isinstance(divisor) and isint(dividend):
+        if isint(divisor) and isint(dividend):
             remainder = dividend - (quotient * divisor)
         else:
             remainder = Operators.SREM(dividend, divisor)
