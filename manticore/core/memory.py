@@ -257,8 +257,6 @@ class AnonMap(Map):
             # check that the values this slice points to are ints
             if not isint(value[0]):
                 value = [Operators.ORD(n) for n in value]
-            #for i in range(index.stop - index.start):
-            #
             self._data[index] = value
         else:
             self._data[index] = Operators.ORD(value)
