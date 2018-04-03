@@ -1,5 +1,4 @@
-
-from builtins import object
+from builtins import *
 import unittest
 from manticore.core.cpu.x86 import *
 from manticore.core.smtlib import *
@@ -10124,7 +10123,6 @@ class CPUTest(unittest.TestCase):
         cpu.XMM1 = 0x2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f2f
         cpu.RIP = 0x4579e8
         cpu.execute()
-        #cpu.writeback()
         self.assertEqual(mem[0x4579e8], b'f')
         self.assertEqual(mem[0x4579e9], b'\x0f')
         self.assertEqual(mem[0x4579ea], b't')

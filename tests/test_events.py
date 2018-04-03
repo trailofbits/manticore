@@ -1,5 +1,4 @@
-
-from builtins import map, object
+from builtins import *
 import unittest
 
 from manticore.utils.event import Eventful

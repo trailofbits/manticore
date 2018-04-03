@@ -1,3 +1,4 @@
+from builtins import *
 import unittest
 
 from manticore import Manticore

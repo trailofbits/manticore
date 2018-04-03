@@ -1,5 +1,5 @@
 from __future__ import print_function
-from builtins import object
+from builtins import *
 import os
 import tempfile
 import unittest
@@ -87,7 +87,6 @@ class LinuxTest(unittest.TestCase):
 
         platform.syscall()
 
-        #print(''.join(platform.current.read_bytes(stat, 100)).encode('hex'))
 
     def test_linux_workspace_files(self):
         files = self.symbolic_linux.generate_workspace_files()
@@ -147,8 +146,8 @@ class LinuxTest(unittest.TestCase):
         dir_path = tempfile.mkdtemp()
         file_name = "file"
         file_path = os.path.join(dir_path, file_name)
-        with open(file_path, 'w') as f:
-            f.write('test')
+        with open(file_path, 'wb') as f:
+            f.write(b'test')
 
         # open a file + directory
         dirname = platform.current.push_bytes(dir_path+'\x00')

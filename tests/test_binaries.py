@@ -1,6 +1,7 @@
+from builtins import *
 from future import standard_library
 standard_library.install_aliases()
-import io
+
 import unittest
 import sys
 import shutil

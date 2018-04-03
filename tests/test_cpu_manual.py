@@ -1,18 +1,11 @@
 from __future__ import absolute_import, division
-from builtins import range, object, bytes
-import sys
+from builtins import *
 import struct
 import unittest
 from manticore.core.cpu.x86 import *
 from manticore.core.memory import *
-try:
-    from . import mockmem
-except (ImportError, ValueError):
-    import os
-    sys.path.append(os.path.dirname(__file__))
-    import mockmem
-
 from functools import reduce
+from tests import mockmem
 
 class ROOperand(object):
     ''' Mocking class for operand ronly '''

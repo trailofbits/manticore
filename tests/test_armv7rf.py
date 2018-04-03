@@ -1,4 +1,4 @@
-from builtins import range
+from builtins import *
 import unittest
 
 from manticore.core.cpu.arm import Armv7RegisterFile as RF
@@ -68,8 +68,7 @@ class Armv7RF(unittest.TestCase):
                 else:
                     self.r.write(regs[i], 0)
             for a, b in aliases.items():
-                    self.assertEqual(self.r.read(a), self.r.read(b))
-
+                self.assertEqual(self.r.read(a), self.r.read(b))
             for i in range(16):
                 if i == j:
                     self.assertEqual(self.r.read(regs[i]), 0x41424344 )

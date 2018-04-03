@@ -1,5 +1,5 @@
 from __future__ import division
-from builtins import range
+from builtins import *
 from manticore.core.smtlib import *
 import unittest
 

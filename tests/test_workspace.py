@@ -1,4 +1,4 @@
-from builtins import object, str, zip
+from builtins import *
 import unittest
 
 from manticore.platforms import linux

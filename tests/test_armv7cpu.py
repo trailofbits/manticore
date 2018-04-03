@@ -1,7 +1,7 @@
-from builtins import map, range, bytes
+from builtins import *
+
 import unittest
 import struct
-from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
 from manticore.core.memory import SMemory32
@@ -10,6 +10,8 @@ from manticore.core.state import Concretize
 
 from capstone import CS_MODE_THUMB, CS_MODE_ARM
 from keystone import Ks, KS_ARCH_ARM, KS_MODE_ARM, KS_MODE_THUMB
+
+from functools import wraps
 
 ks = Ks(KS_ARCH_ARM, KS_MODE_ARM)
 ks_thumb = Ks(KS_ARCH_ARM, KS_MODE_THUMB)
@@ -28,7 +30,7 @@ def assemble(asm, mode=CS_MODE_ARM):
         raise Exception('bad processor mode for assembly: {}'.format(mode))
     if not ords:
         raise Exception('bad assembly: {}'.format(asm))
-    return [bytes([s]) for s in ords]
+    return bytes(ords)
 
 
 class Armv7CpuTest(unittest.TestCase):

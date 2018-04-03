@@ -1,6 +1,5 @@
-from builtins import bytes
-from builtins import zip
-from operator import eq
+from builtins import *
+
 import struct
 import unittest
 import json
