@@ -581,7 +581,7 @@ class ManticoreOutput(object):
         def solve_to_fd(data, fd):
             try:
                 for c in data:
-                    fd.write(bytes[solver.get_value(state.constraints, c)])
+                    fd.write(bytes([solver.get_value(state.constraints, c)]))
             except SolverException:
                 fd.write('{SolverException}')
 
