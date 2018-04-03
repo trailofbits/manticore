@@ -573,6 +573,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         # If zero search for a spot
         addr = self._search(size, addr)
 
+        # It should not be allocated
         for i in range(self._page(addr), self._page(addr + size)):
             assert not i in self._page2map, 'Map already used'
 
