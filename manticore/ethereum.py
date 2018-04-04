@@ -380,6 +380,23 @@ class ABI(object):
         return reduce(lambda x, y: x + y, result)
 
     @staticmethod
+    def _check_size(num):
+        """
+
+        :param str num:
+        :return:
+        :raises EthereumError:
+        """
+        try:
+            size = int(num)
+        except ValueError:
+            raise EthereumError('Invalid type size: {}'.format(size))
+        if size < 8 or size > 256 or size % 8 != 0:
+            raise EthereumError('Invalid type size: {}'.format(size))
+        return size
+
+
+    @staticmethod
     def _consume_type(ty, data, offset):
         ''' INTERNAL parses a value of type from data '''
         def get_uint(size, offset):
@@ -398,34 +415,15 @@ class ABI(object):
             return simplify(value)
 
         if ty.startswith('uint'):
-            try:
-                size = int(ty[4:])
-            except ValueError:
-                raise NotImplementedError(ty)
+            size = ABI._check_size(ty[4:])
+            return get_uint(size, offset), offset + 32
 
-            if 0 <= size <= 256:
-                if not ((size % 8) == 0):
-                    raise EthereumError('Invalid uint size %s' % size)
-                return get_uint(size, offset), offset + 32
-            else:
-                raise NotImplementedError(ty)
-
-        if ty.startswith('int'):
-            try:
-                size = int(ty[3:])
-            except ValueError:
-                raise NotImplementedError(ty)
-
-            if 0 <= size <= 256:
-                if not ((size % 8) == 0):
-                    raise EthereumError('Invalid int size %s' % size)
-
-                value = get_uint(size, offset)
-                mask = 2**(size - 1)
-                value = -(value & mask) + (value & ~mask)
-                return value, offset + 32
-            else:
-                raise NotImplementedError(ty)
+        elif ty.startswith('int'):
+            size = ABI._check_size(ty[3:])
+            value = get_uint(size, offset)
+            mask = 2**(size - 1)
+            value = -(value & mask) + (value & ~mask)
+            return value, offset + 32
 
         elif ty in (u'bool'):
             return get_uint(8, offset), offset + 32
