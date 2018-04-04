@@ -8,6 +8,7 @@ import tempfile, os
 import gc, pickle
 import fcntl
 import resource
+import sys
 from manticore.core.memory import *
 
 def issymbolic(value):

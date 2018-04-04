@@ -1,6 +1,7 @@
 from builtins import *
 import unittest
 import struct
+import sys
 from functools import wraps
 
 from manticore.core.cpu.arm import Armv7Cpu as Cpu, Mask, Interruption
@@ -38,11 +39,7 @@ def assemble(asm):
     ords = ks.asm(asm)[0]
     if not ords:
         raise Exception('bad assembly: {}'.format(asm))
-<<<<<<< HEAD
     return [bytes([s]) for s in ords]
-=======
-    return bytes(ords)
->>>>>>> python3-staging
 
 
 def emulate_next(cpu):

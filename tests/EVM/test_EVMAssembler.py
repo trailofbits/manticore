@@ -1,5 +1,5 @@
 from builtins import *
-
+from operator import eq
 import struct
 import unittest
 import json
