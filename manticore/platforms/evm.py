@@ -43,12 +43,11 @@ def to_signed(i):
 
 
 class Transaction(object):
-    __slots__ = '_sort', 'address', 'origin', 'price', 'data', 'caller', 'value', 'depth', '_return_data', '_result', 'gas'
+    __slots__ = '_sort', 'address', 'price', 'data', 'caller', 'value', 'depth', '_return_data', '_result', 'gas'
 
-    def __init__(self, sort, address, origin, price, data, caller, value, gas=0, depth=None, result=None, return_data=None):
+    def __init__(self, sort, address, price, data, caller, value, gas=0, depth=None, result=None, return_data=None):
         self.sort = sort
         self.address = address
-        self.origin = origin
         self.price = price
         self.data = data
         self.caller = caller
@@ -101,7 +100,7 @@ class Transaction(object):
 
     def __reduce__(self):
         ''' Implements serialization/pickle '''
-        return (self.__class__, (self.sort, self.address, self.origin, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
+        return (self.__class__, (self.sort, self.address, self.price, self.data, self.caller, self.value, self.gas, self.depth, self.result, self.return_data))
 
     def __str__(self):
         try:
@@ -976,14 +975,12 @@ class EVM(Eventful):
         def pos(self, pos):
             return type(self)(self._pre, pos)
 
-    def __init__(self, constraints, address, origin, price, data, caller, value, bytecode, world=None, gas=1000000000, **kwargs):
+    def __init__(self, constraints, address, data, caller, value, bytecode, world=None, gas=1000000000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
         :param memory: the initial memory
         :param address: the address of the account which owns the code that is executing.
-        :param origin: the sender address of the transaction that originated this execution. A 160-bit code used for identifying Accounts.
-        :param price: the price of gas in the transaction that originated this execution.
         :param data: the byte array that is the input data to this execution
         :param caller: the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
         :param value: the value, in Wei, passed to this account as part of the same procedure as execution. One Ether is defined as being 10**18 Wei
@@ -1010,10 +1007,8 @@ class EVM(Eventful):
         self._constraints = constraints
         self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
         self.address = address
-        self.origin = origin  # always an account with empty associated code
         self.caller = caller  # address of the account that is directly responsible for this execution
         self.data = data
-        self.price = price  # This is gas price specified by the originating transaction
         self.value = value
         self._bytecode = bytecode
         self.suicides = set()
@@ -1052,10 +1047,8 @@ class EVM(Eventful):
         state['world'] = self._world
         state['constraints'] = self.constraints
         state['address'] = self.address
-        state['origin'] = self.origin
         state['caller'] = self.caller
         state['data'] = self.data
-        state['price'] = self.price
         state['value'] = self.value
         state['bytecode'] = self._bytecode
         state['pc'] = self.pc
@@ -1075,10 +1068,8 @@ class EVM(Eventful):
         self._world = state['world']
         self.constraints = state['constraints']
         self.address = state['address']
-        self.origin = state['origin']
         self.caller = state['caller']
         self.data = state['data']
-        self.price = state['price']
         self.value = state['value']
         self._bytecode = state['bytecode']
         self.pc = state['pc']
@@ -1532,7 +1523,7 @@ class EVM(Eventful):
 
     def ORIGIN(self):
         '''Get execution origination address'''
-        return self.origin
+        return self.world.tx_origin()
 
     def CALLER(self):
         '''Get caller address'''
@@ -1605,7 +1596,7 @@ class EVM(Eventful):
 
     def GASPRICE(self):
         '''Get price of gas in current environment'''
-        return self.price
+        return self.world.tx_price()
 
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
@@ -1759,8 +1750,6 @@ class EVM(Eventful):
         address = self.world.create_account()
         self.world.start_transaction('CREATE',
                                      address,
-                                     origin=self.origin,
-                                     price=self.price,
                                      data=self.read_buffer(offset, size),
                                      caller=self.address,
                                      value=value,
@@ -1785,8 +1774,6 @@ class EVM(Eventful):
         '''Message-call into an account'''
         self.world.start_transaction('CALL',
                                      address,
-                                     origin=self.origin,
-                                     price=self.price,
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
                                      value=value,
@@ -1810,8 +1797,6 @@ class EVM(Eventful):
         '''Message-call into this account with alternative account's code'''
         self.world.start_transaction('CALL',
                                      address=self.address,
-                                     origin=self.origin,
-                                     price=self.price,
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
                                      value=value,
@@ -2029,8 +2014,13 @@ class EVMWorld(Platform):
     def constraints(self):
         return self._constraints
 
-    def _open_transaction(self, sort, address, origin, price, data, caller, value):
-        tx = Transaction(sort, address, origin, price, data, caller, value, depth=self.depth)
+    def _open_transaction(self, sort, address, price, data, caller, value):
+        
+        if self.depth > 0:
+            origin = self.tx_origin()
+        else:
+            origin = caller
+        tx = Transaction(sort, address, price, data, caller, value, depth=self.depth)
         if sort == 'CREATE':
             bytecode = data
             data = None
@@ -2038,8 +2028,7 @@ class EVMWorld(Platform):
             data = data
             bytecode = self.get_code(address)
 
-        #self._push_vm(address, origin, price, data, caller, value, bytecode)
-        vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, world=self)
+        vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self)
 
         if self.depth == 1024:
             #FIXME this should just close the tx
@@ -2233,39 +2222,12 @@ class EVMWorld(Platform):
         return 0
 
     def tx_origin(self):
-        return self.current_vm.origin
+        if self.last_human_transaction:
+            return self.last_human_transaction.caller
 
     def tx_gasprice(self):
-        return 0
-    '''
-    # CALLSTACK
-    def _push_vm(self, address, origin, price, data, caller, value, bytecode):
-        vm = EVM(self._constraints, address, origin, price, data, caller, value, bytecode, world=self)
+        return self.last_human_transaction.price
 
-        if self.depth == 1024:
-            #FIXME this should just close the tx
-            raise TerminateState("Maximum call depth limit is reached", testcase=True)
-
-        self._callstack.append((self.logs, self.deleted_accounts, copy.copy(self.world_state[vm.address]['storage']), vm))
-
-        # self.forward_events_from(self.current)
-        self._do_events()
-
-    def _pop_vm(self, rollback=False):
-        logs, deleted_accounts, account_storage, vm = self._callstack.pop()
-        assert self.constraints == vm.constraints
-        if self.current:
-            self.current_vm.constraints = vm.constraints
-
-        if rollback:
-            for address, account in self._deleted_accounts:
-                self.world_state[address] = account
-            self.world_state[vm.address]['storage'] = account_storage
-            self._deleted_accounts = self._deleted_accounts
-            self._logs = logs
-
-        return vm
-    '''
     @property
     def depth(self):
         return len(self._callstack)
@@ -2328,7 +2290,7 @@ class EVMWorld(Platform):
         self.start_transaction('CALL', address, origin=origin, price=price, data=data, caller=caller, value=value)
         self._process_pending_transaction()
 
-    def start_transaction(self, sort, address, origin=None, price=0, data=None, caller=None, value=0, gas=2300):
+    def start_transaction(self, sort, address, origin=None, price=None, data=None, caller=None, value=0, gas=2300):
         ''' Initiate a transaction
             :param sort: the type of transaction. CREATE or CALL
             :param address: the address of the account which owns the code that is executing.
@@ -2342,6 +2304,15 @@ class EVMWorld(Platform):
 
         '''
         assert self._pending_transaction is None, "Already started tx"
+
+        if self.depth > 0:
+            origin = self.tx_origin()
+            price = self.tx_price()
+        else:
+            if price is None:
+                raise EVMException("Need to set a gas price on human tx")
+            origin = caller
+
 
         if sort not in {'CALL', 'CREATE'}:
             raise EVMException('Type of transaction not supported')
@@ -2411,7 +2382,7 @@ class EVMWorld(Platform):
 
         if ty == 'CREATE':
             data = bytecode
-        self._open_transaction(ty, address, origin, price, data, caller, value)
+        self._open_transaction(ty, address, price, data, caller, value)
 
         if failed:
             self._close_transaction('TXERROR', rollback=True)

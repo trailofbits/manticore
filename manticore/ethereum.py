@@ -910,10 +910,10 @@ class ManticoreEVM(Manticore):
             :return: an EVMAccount
         '''
         if self.count_running_states() != 1:
-            raise EVMException("This works only when there is a single state")
+            raise Exception("This works only when there is a single state")
         with self.locked_context('seth') as context:
             if context['_pending_transaction'] is not None:
-                raise EVMException("It should be no other pending transaction")
+                raise Exception("It should be no other pending transaction")
 
         #self.world refers to the evm world of the single state in existance
         address = self.world.new_address()
