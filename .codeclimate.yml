@@ -40,6 +40,8 @@ checks:
     enabled: true
     config:
       threshold: 65
+  E712:
+    enabled: false
 plugins:
   pep8:
     enabled: true
