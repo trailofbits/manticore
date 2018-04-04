@@ -388,8 +388,8 @@ class ABI(object):
         """
         nbytes = arithmetic_simplify(nbytes)
         offset = arithmetic_simplify(offset)
-        padding = 32 - nbytes # for 160
-        value = Operators.CONCAT(nbytes*8, *map(Operators.ORD, data[offset+padding:offset+padding+nbytes]))
+        padding = 32 - nbytes
+        value = Operators.CONCAT(nbytes*8, *map(Operators.ORD, data[offset + padding:offset + padding + nbytes]))
         return arithmetic_simplify(value)
 
     @staticmethod        
@@ -408,30 +408,30 @@ class ABI(object):
         # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
         # should be something the caller keeps track of.
         if ty == u'uint256':
-            return ABI.get_uint(data, 32, offset), offset+32 #256 bits
+            return ABI.get_uint(data, 32, offset), offset + 32
         elif ty in (u'bool', u'uint8'):
-            return ABI.get_uint(data, 1, offset), offset+32 #8 bits
+            return ABI.get_uint(data, 1, offset), offset + 32
         elif ty == u'address':
-            return ABI.get_uint(data, 20, offset), offset+32 #160 bits
+            return ABI.get_uint(data, 20, offset), offset + 32
         elif ty == u'int256':
-            value = ABI.get_uint(data, 32, offset) #256 bits
-            mask = 2**(256 - 1)
+            value = ABI.get_uint(data, 32, offset)
+            mask = 2 ** (256 - 1)
             value = -(value & mask) + (value & ~mask)
             return value, offset + 32
         elif ty == u'':
             return None, offset
         elif ty in (u'bytes', u'string'):
-            dyn_offset = ABI.get_uint(data, 32,offset)  #256 bits
-            size = ABI.get_uint(data, 32, dyn_offset)  #256 bits
-            return data[dyn_offset+32:dyn_offset+32+size], offset+32
+            dyn_offset = ABI.get_uint(data, 32, offset)
+            size = ABI.get_uint(data, 32, dyn_offset)
+            return data[dyn_offset + 32:dyn_offset + 32 + size], offset + 32
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
-            return data[offset:offset+size], offset+32
+            return data[offset:offset + size], offset + 32
         elif ty == u'address[]':
             dyn_offset = arithmetic_simplify(ABI.get_uint(data, 32, offset))
             size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
-            result = [ABI.get_uint(data, 20, dyn_offset+32 + 32*i) for i in range(size)]
-            return result, offset+32
+            result = [ABI.get_uint(data, 20, dyn_offset + 32 + 32 * i) for i in range(size)]
+            return result, offset + 32
         else:
             raise NotImplementedError(repr(ty))
 
