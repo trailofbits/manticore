@@ -389,7 +389,8 @@ class ABI(object):
         nbytes = arithmetic_simplify(nbytes)
         offset = arithmetic_simplify(offset)
         padding = 32 - nbytes
-        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[offset + padding:offset + padding + nbytes]])
+        start = offset + padding
+        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
         return arithmetic_simplify(value)
 
     @staticmethod        
