@@ -720,9 +720,9 @@ class ArrayProxy(Array):
             size = self._get_size(index)
 
             if isinstance(start, Expression) or isinstance(stop, Expression):
-                name = '%s_sliced' % (self.name)
+                name = '{}_sliced'.format(self.name)
             else:
-                name = '%s_sliced_b%d_e%d' % (self.name, start, stop)
+                name = '{}_sliced_b{}_e{}'.format(self.name, start, stop)
 
             new_array_var = ArrayVariable(self.index_bits, size, self.value_bits, name=name, taint=self.taint)
             new_array = ArrayProxy(new_array_var)
