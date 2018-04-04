@@ -392,12 +392,16 @@ class ABI(object):
         """
         if not num:
             return 256
+
+        malformed = False
         try:
             size = int(num)
         except ValueError:
+            malformed = True
+
+        if malformed or size < 8 or size > 256 or size % 8 != 0:
             raise EthereumError('Invalid type size: {}'.format(num))
-        if size < 8 or size > 256 or size % 8 != 0:
-            raise EthereumError('Invalid type size: {}'.format(num))
+
         return size
 
 
