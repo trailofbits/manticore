@@ -1312,14 +1312,14 @@ class EVM(Eventful):
     def _load(self, offset, size=1):
         value = self.memory.read_BE(offset, size)
         for i in range(size):
-            self._publish('did_evm_read_memory', offset+i, Operators.EXTRACT(value, (size-i-1)*8, 8) )
+            self._publish('did_evm_read_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
         return value
 
     def _store(self, offset, value, size=1):
         ''' Stores value in memory as a big endian '''
         self.memory.write_BE(offset, value, size)
         for i in range(size):
-            self._publish('did_evm_write_memory', offset+i, Operators.EXTRACT(value, (size-i-1)*8, 8) )
+            self._publish('did_evm_write_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
     ############################################################################
     #INSTRUCTIONS
 
@@ -1592,7 +1592,6 @@ class EVM(Eventful):
                 else:
                     default = self._load(mem_offset + i)
 
-
             if issymbolic(code_offset):
                 value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
             else:
@@ -1683,7 +1682,7 @@ class EVM(Eventful):
     def MSTORE8(self, address, value):
         '''Save byte to memory'''
         self._allocate(address)
-        self._store(address, value, 1) 
+        self._store(address, value, 1)
 
     def SLOAD(self, offset):
         '''Load word from storage'''
@@ -2024,12 +2023,12 @@ class EVMWorld(Platform):
         return self._constraints
 
     def _open_transaction(self, sort, address, price, data, caller, value):
-        
+
         if self.depth > 0:
             origin = self.tx_origin()
         else:
             origin = caller
-        assert (price is not None and price >0)
+        assert (price is not None and price > 0)
 
         tx = Transaction(sort, address, price, data, caller, value, depth=self.depth)
         if sort == 'CREATE':
@@ -2133,7 +2132,7 @@ class EVMWorld(Platform):
             if tx.result is not None:
                 #That tx finished. No current tx.
                 return None
-            assert tx.depth==0
+            assert tx.depth == 0
             return tx
         except IndexError:
             return None
@@ -2299,7 +2298,7 @@ class EVMWorld(Platform):
 
         return address
 
-    def create_contract(self, origin=None, price=0, address=None, caller=None, balance=0, init=None):
+    def create_contract(self, price=0, address=None, caller=None, balance=0, init=None):
         '''
         The way that the Solidity compiler expects the constructor arguments to
         be passed is by appending the arguments to the byte code produced by the
@@ -2310,20 +2309,19 @@ class EVMWorld(Platform):
         on the network.
         '''
         address = self.create_account(address)
-        self.start_transaction('CREATE', address, origin, price, init, caller, balance)
+        self.start_transaction('CREATE', address, price, init, caller, balance)
         self._process_pending_transaction()
 
         return address
 
-    def transaction(self, address, origin=None, price=0, data='', caller=None, value=0):
-        self.start_transaction('CALL', address, origin=origin, price=price, data=data, caller=caller, value=value)
+    def transaction(self, address, price=0, data='', caller=None, value=0):
+        self.start_transaction('CALL', address, price=price, data=data, caller=caller, value=value)
         self._process_pending_transaction()
 
-    def start_transaction(self, sort, address, origin=None, price=None, data=None, caller=None, value=0, gas=2300):
+    def start_transaction(self, sort, address, price=None, data=None, caller=None, value=0, gas=2300):
         ''' Initiate a transaction
             :param sort: the type of transaction. CREATE or CALL
             :param address: the address of the account which owns the code that is executing.
-            :param origin: the sender address of the transaction that originated this execution. A 160-bit code used for identifying Accounts.
             :param price: the price of gas in the transaction that originated this execution.
             :param data: the byte array that is the input data to this execution
             :param caller: the address of the account which caused the code to be executing. A 160-bit code used for identifying Accounts
@@ -2342,7 +2340,6 @@ class EVMWorld(Platform):
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
 
-
         if sort not in {'CALL', 'CREATE'}:
             raise EVMException('Type of transaction not supported')
         if issymbolic(address):
@@ -2351,11 +2348,6 @@ class EVMWorld(Platform):
             raise EVMException("Symbolic origin address not supported yet.")
         if issymbolic(caller):
             raise EVMException("Symbolic caller address not supported yet.")
-
-        if caller is None:
-            caller = origin
-        if origin is None:
-            origin = caller
 
         if address not in self.accounts or\
            caller not in self.accounts or \
