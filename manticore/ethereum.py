@@ -407,33 +407,38 @@ class ABI(object):
         """
         # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
         # should be something the caller keeps track of.
+
+        new_offset = offset + 32
+
         if ty == u'uint256':
-            return ABI.get_uint(data, 32, offset), offset + 32
+            result = ABI.get_uint(data, 32, offset)
         elif ty in (u'bool', u'uint8'):
-            return ABI.get_uint(data, 1, offset), offset + 32
+            result = ABI.get_uint(data, 1, offset)
         elif ty == u'address':
-            return ABI.get_uint(data, 20, offset), offset + 32
+            result = ABI.get_uint(data, 20, offset)
         elif ty == u'int256':
             value = ABI.get_uint(data, 32, offset)
             mask = 2 ** (256 - 1)
             value = -(value & mask) + (value & ~mask)
-            return value, offset + 32
+            result = value
         elif ty == u'':
-            return None, offset
+            new_offset = offset
+            result = None
         elif ty in (u'bytes', u'string'):
             dyn_offset = ABI.get_uint(data, 32, offset)
             size = ABI.get_uint(data, 32, dyn_offset)
-            return data[dyn_offset + 32:dyn_offset + 32 + size], offset + 32
+            result = data[dyn_offset + 32:dyn_offset + 32 + size]
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
-            return data[offset:offset + size], offset + 32
+            result = data[offset:offset + size]
         elif ty == u'address[]':
             dyn_offset = arithmetic_simplify(ABI.get_uint(data, 32, offset))
             size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
             result = [ABI.get_uint(data, 20, dyn_offset + 32 + 32 * i) for i in range(size)]
-            return result, offset + 32
         else:
             raise NotImplementedError(repr(ty))
+
+        return result, new_offset
 
     @staticmethod
     def parse_type_spec(type_spec):
