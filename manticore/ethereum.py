@@ -102,14 +102,18 @@ class UninitializedMemory(Detector):
     def did_evm_read_memory_callback(self, state, offset, value):
         initialized_memory = state.context.get('seth.detectors.initialized_memory', set())
         cbu = True  # Can be unknown
-        for known_address in initialized_memory:
-            cbu = Operators.AND(cbu, offset != known_address)
+        current_contract = state.platform.current_vm.address
+        for known_contract, known_offset in initialized_memory:
+            if current_contract == known_contract:
+                cbu = Operators.AND(cbu, offset != known_offset)
         if state.can_be_true(cbu):
-            self.add_finding(state, "Potentially reading uninitialized memory at instruction (offset %r)" % offset)
+            self.add_finding(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
 
     def did_evm_write_memory_callback(self, state, offset, value):
+        current_contract = state.platform.current_vm.address
+
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_memory', set()).add(offset)
+        state.context.setdefault('seth.detectors.initialized_memory', set()).add((current_contract, offset))
 
 
 class UninitializedStorage(Detector):
@@ -890,7 +894,7 @@ class ManticoreEVM(Manticore):
 
         with self.locked_context('seth') as context:
             assert context['_pending_transaction'] is None
-            context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init)
+            context['_pending_transaction'] = ('CREATE_CONTRACT', owner, address, balance, init, 10)
 
         self.run(procs=self._config_procs)
 
@@ -942,15 +946,13 @@ class ManticoreEVM(Manticore):
         if isinstance(caller, EVMAccount):
             caller = int(caller)
 
-        with self.locked_context('seth') as context:
-            has_alive_states = context['_saved_states'] or self.initial_state is not None
-            if not has_alive_states:
-                raise NoAliveStates
+        if not self.count_running_states():
+            raise NoAliveStates
 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
         with self.locked_context('seth') as context:
-            context['_pending_transaction'] = ('CALL', caller, address, value, data)
+            context['_pending_transaction'] = ('CALL', caller, address, value, data, 10)
 
         logger.info("Starting symbolic transaction: %d", self.completed_transactions + 1)
         status = self.run(procs=self._config_procs)
@@ -1116,7 +1118,7 @@ class ManticoreEVM(Manticore):
                 if tx.result == 'RETURN':
                     world.set_code(tx.address, tx.return_data)
                 else:
-                    world.delete_account(address)
+                    world.delete_account(tx.address)
         else:
             logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
 
@@ -1144,7 +1146,7 @@ class ManticoreEVM(Manticore):
         state.context['processed'] = True
         with self.locked_context('seth') as context:
             # take current global transaction we need to apply to all running states
-            ty, caller, address, value, data = context['_pending_transaction']
+            ty, caller, address, value, data, price = context['_pending_transaction']
 
         txnum = len(world.human_transactions)
 
@@ -1160,10 +1162,10 @@ class ManticoreEVM(Manticore):
                 data = symbolic_data
 
         if ty == 'CALL':
-            world.transaction(address=address, caller=caller, data=data, value=value)
+            world.transaction(address=address, caller=caller, data=data, value=value, price=price)
         else:
             assert ty == 'CREATE_CONTRACT'
-            world.create_contract(caller=caller, address=address, balance=value, init=data)
+            world.create_contract(caller=caller, address=address, balance=value, init=data, price=price)
 
     def _did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
         ''' INTERNAL USE '''

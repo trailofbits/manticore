@@ -1309,14 +1309,17 @@ class EVM(Eventful):
         for i, c in enumerate(data):
             self._store(offset + i, Operators.ORD(c))
 
-    def _load(self, offset):
-        value = self.memory.get(offset, 0)
-        self._publish('did_evm_read_memory', offset, value)
+    def _load(self, offset, size=1):
+        value = self.memory.read_BE(offset, size)
+        for i in range(size):
+            self._publish('did_evm_read_memory', offset+i, Operators.EXTRACT(value, (size-i-1)*8, 8) )
         return value
 
-    def _store(self, offset, value):
-        self.memory[offset] = value
-        self._publish('did_evm_write_memory', offset, value)
+    def _store(self, offset, value, size=1):
+        ''' Stores value in memory as a big endian '''
+        self.memory.write_BE(offset, value, size)
+        for i in range(size):
+            self._publish('did_evm_write_memory', offset+i, Operators.EXTRACT(value, (size-i-1)*8, 8) )
     ############################################################################
     #INSTRUCTIONS
 
@@ -1581,7 +1584,14 @@ class EVM(Eventful):
             max_size = size
 
         for i in range(max_size):
-            default = Operators.ITEBV(256, i < size, 0, self.memory.get(mem_offset + i, 0))  # Fixme. sometime reading mem
+            if issymbolic(i < size):
+                default = Operators.ITEBV(256, i < size, 0, self._load(mem_offset + i))  # Fixme. unnecessary memory read
+            else:
+                if i < size:
+                    default = 0
+                else:
+                    default = self._load(mem_offset + i)
+
 
             if issymbolic(code_offset):
                 value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
@@ -1596,7 +1606,7 @@ class EVM(Eventful):
 
     def GASPRICE(self):
         '''Get price of gas in current environment'''
-        return self.world.tx_price()
+        return self.world.tx_gasprice()
 
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
@@ -1662,20 +1672,18 @@ class EVM(Eventful):
     def MLOAD(self, address):
         '''Load word from memory'''
         self._allocate(address+32)
-        value = self.memory.read_BE(address, 32)
-        value = simplify(value)
-        self._publish('did_evm_read_memory', address, value)
+        value = self._load(address, 32)
         return value
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
         self._allocate(address+32)
-        self.memory.write_BE(address, value, 32)
+        self._store(address, value, 32)
 
     def MSTORE8(self, address, value):
         '''Save byte to memory'''
         self._allocate(address)
-        self._store(address, Operators.EXTRACT(value, 0, 8))
+        self._store(address, value, 1) 
 
     def SLOAD(self, offset):
         '''Load word from storage'''
@@ -1877,17 +1885,18 @@ class EVM(Eventful):
                 lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
             return lines
 
-        '''
-        #FIXME
         m = []
-        if len(self.memory._memory.keys()):
-            for i in range(max([0] + self.memory._memory.keys()) + 1):
-                c = self.memory.read(i, 1)[0]
-                m.append(c)
+        for offset in range(128):
+            c = simplify(self.memory[offset])
+            try:
+                c = c.value
+            except:
+                pass
+            m.append(c)
 
         hd = hexdump(m)
-        '''
-        hd = ''  # str(self.memory)
+
+        #hd = ''  # str(self.memory)
         result = ['-' * 147]
         if issymbolic(self.pc):
             result.append('<Symbolic PC>')
@@ -2020,6 +2029,8 @@ class EVMWorld(Platform):
             origin = self.tx_origin()
         else:
             origin = caller
+        assert (price is not None and price >0)
+
         tx = Transaction(sort, address, price, data, caller, value, depth=self.depth)
         if sort == 'CREATE':
             bytecode = data
@@ -2058,14 +2069,17 @@ class EVMWorld(Platform):
 
     @property
     def all_transactions(self):
-        return tuple(self._transactions)
+        txs = tuple(self._transactions)
+        return txs + tuple((x[0] for x in reversed(self._callstack)))
 
     @property
     def transactions(self):
+        ''' Completed completed transaction '''
         return tuple((tx for tx in self._transactions if tx.result != 'TXERROR'))
 
     @property
     def human_transactions(self):
+        ''' Completed transaction '''
         txs = []
         for tx in self.transactions:
             if tx.depth == 0:
@@ -2079,6 +2093,7 @@ class EVMWorld(Platform):
 
     @property
     def last_human_transaction(self):
+        ''' Last completed human transaction '''
         for tx in reversed(self.transactions):
             if tx.depth == 0:
                 return tx
@@ -2106,6 +2121,19 @@ class EVMWorld(Platform):
             if tx.result is not None:
                 #That tx finished. No current tx.
                 return None
+            return tx
+        except IndexError:
+            return None
+
+    @property
+    def current_human_transaction(self):
+        ''' Current ongoing human transaction '''
+        try:
+            tx, _, _, _, _ = self._callstack[0]
+            if tx.result is not None:
+                #That tx finished. No current tx.
+                return None
+            assert tx.depth==0
             return tx
         except IndexError:
             return None
@@ -2222,11 +2250,12 @@ class EVMWorld(Platform):
         return 0
 
     def tx_origin(self):
-        if self.last_human_transaction:
-            return self.last_human_transaction.caller
+        if self.current_human_transaction:
+            return self.current_human_transaction.caller
 
     def tx_gasprice(self):
-        return self.last_human_transaction.price
+        if self.current_human_transaction:
+            return self.current_human_transaction.price
 
     @property
     def depth(self):
@@ -2307,11 +2336,11 @@ class EVMWorld(Platform):
 
         if self.depth > 0:
             origin = self.tx_origin()
-            price = self.tx_price()
+            price = self.tx_gasprice()
         else:
-            if price is None:
-                raise EVMException("Need to set a gas price on human tx")
             origin = caller
+        if price is None:
+            raise EVMException("Need to set a gas price on human tx")
 
 
         if sort not in {'CALL', 'CREATE'}:
