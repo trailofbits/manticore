@@ -89,6 +89,11 @@ class EthereumAbiTests(unittest.TestCase):
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242, 2**255 - 1,-(2**255) ))
 
+    def test_address0(self):
+        data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
+        parsed = ABI.parse('address', data)
+        self.assertEqual(parsed, 0x55 << (8 * 19) )
+
     def test_mult_dyn_types(self):
         d = [
             'AAAA',                    # function hash
