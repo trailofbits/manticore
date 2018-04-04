@@ -6,7 +6,7 @@ from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
 
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, EthereumError, ABI
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, Create, concretized_args
 
 
@@ -73,6 +73,38 @@ class EthDetectorsTest(unittest.TestCase):
         check = self.io._can_mul_overflow(self.state, result, *arguments)
         self.assertTrue(check)
 
+class EthAbiTests(unittest.TestCase):
+    _multiprocess_can_split_ = True
+
+    def test_parse_invalid_int(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("intXXX", "\xFF")
+
+    def test_parse_invalid_int_too_big(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int3000", "\xFF")
+
+    def test_parse_invalid_int_negative(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int-8", "\xFF")
+
+    def test_parse_invalid_int_not_pow_of_two(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int31", "\xFF")
+
+    def test_parse_valid_int(self):
+        ret = ABI.parse("int8", "\x00"*31 + '\x10')
+        self.assertEqual(ret, 0x10)
+
+    # def test_parse_invalid_int_negative(self):
+    #     for i in range(8, 257, 1):
+    #         try:
+    #             datatype = "int"+str(i)
+    #             data = "\xFF"*32
+    #             ABI.parse(datatype, data)
+    #             self.assertEqual(i % 8, 0)
+    #         except EthereumError:
+    #             self.assertNotEqual(i % 8, 0)
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
