@@ -475,10 +475,7 @@ class ArithmeticSimplifier(Visitor):
         if isinstance(arr, ArrayVariable):
             return
 
-        while isinstance(arr, ArrayStore) and\
-              isinstance(index, BitVecConstant) and\
-              isinstance(arr.index, BitVecConstant) and\
-              arr.index.value != index.value:
+        while isinstance(arr, ArrayStore) and isinstance(index, BitVecConstant) and isinstance(arr.index, BitVecConstant) and arr.index.value != index.value:
             arr = arr.array
 
         if isinstance(index, BitVecConstant) and isinstance(arr, ArrayStore) and isinstance(arr.index, BitVecConstant) and arr.index.value == index.value:
@@ -532,7 +529,7 @@ class TranslatorSmtlib(Visitor):
                 return nm #fixme change to dict
             if smtlib == smt:
                 return nm #fixme change to dict
-    
+
         if expression in self._cache:
             return self._cache[expression]
         '''
@@ -595,8 +592,7 @@ class TranslatorSmtlib(Visitor):
         if expression.size == 1:
             return '#' + bin(expression.value & expression.mask)[1:]
         else:
-            return '#x%0*x' % (int(expression.size / 4),
-                                 expression.value & expression.mask)
+            return '#x%0*x' % (int(expression.size / 4), expression.value & expression.mask)
 
     def visit_BoolConstant(self, expression):
         return expression.value and 'true' or 'false'

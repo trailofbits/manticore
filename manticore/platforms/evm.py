@@ -2093,7 +2093,7 @@ class EVMWorld(Platform):
         for tx in reversed(self.transactions):
             if tx.depth == 0:
                 return tx
-        
+
     @constraints.setter
     def constraints(self, constraints):
         self._constraints = constraints
@@ -2376,7 +2376,6 @@ class EVMWorld(Platform):
         if self._pending_transaction is None:
             return
         ty, address, origin, price, data, caller, value, bytecode, gas = self._pending_transaction
-
 
         # discarding absurd amount of ether (no ether overflow)
         src_balance = self.get_balance(caller)

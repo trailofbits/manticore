@@ -184,8 +184,7 @@ class SolidityMetadata(object):
         output_types = method_name_and_signature.split(')')[1].split(',')
         self.abi[name] = { 'inputs': [{'type': ty} for ty in input_types],
                            'name': name,
-                           'outputs': [{'type': ty} for ty in output_types]
-                         }
+                           'outputs': [{'type': ty} for ty in output_types]}
 
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
