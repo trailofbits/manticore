@@ -37,9 +37,6 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 
 
 class EthereumAbiTests(unittest.TestCase):
-    def setUp(self):
-        self.state = make_mock_evm_state()
-
     @staticmethod
     def _pack_int_to_32(x):
         return '\x00' * 28 + struct.pack('>I', x)
