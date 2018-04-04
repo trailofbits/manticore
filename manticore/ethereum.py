@@ -380,19 +380,24 @@ class ABI(object):
         return reduce(lambda x, y: x + y, result)
 
     @staticmethod
-    def _check_size(num):
+    def _parse_size(num):
         """
+        Parses the size part of a uint or int Solidity declaration.
+        If empty string, returns 256
 
         :param str num:
-        :return:
-        :raises EthereumError:
+        :return: uint or int size
+        :rtype: int
+        :raises EthereumError: if invalid size
         """
+        if not num:
+            return 256
         try:
             size = int(num)
         except ValueError:
-            raise EthereumError('Invalid type size: {}'.format(size))
+            raise EthereumError('Invalid type size: {}'.format(num))
         if size < 8 or size > 256 or size % 8 != 0:
-            raise EthereumError('Invalid type size: {}'.format(size))
+            raise EthereumError('Invalid type size: {}'.format(num))
         return size
 
 
@@ -415,11 +420,11 @@ class ABI(object):
             return simplify(value)
 
         if ty.startswith('uint'):
-            size = ABI._check_size(ty[4:])
+            size = ABI._parse_size(ty[4:])
             return get_uint(size, offset), offset + 32
 
         elif ty.startswith('int'):
-            size = ABI._check_size(ty[3:])
+            size = ABI._parse_size(ty[3:])
             value = get_uint(size, offset)
             mask = 2**(size - 1)
             value = -(value & mask) + (value & ~mask)

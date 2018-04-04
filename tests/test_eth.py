@@ -1,5 +1,6 @@
 import unittest
 import os
+import struct
 
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
@@ -76,35 +77,52 @@ class EthDetectorsTest(unittest.TestCase):
 class EthAbiTests(unittest.TestCase):
     _multiprocess_can_split_ = True
 
+    @staticmethod
+    def _pack_int_to_32(x):
+        return '\x00' * 28 + struct.pack('>I', x)
+
     def test_parse_invalid_int(self):
         with self.assertRaises(EthereumError):
             ABI.parse("intXXX", "\xFF")
+            ABI.parse("uintXXX", "\xFF")
 
     def test_parse_invalid_int_too_big(self):
         with self.assertRaises(EthereumError):
             ABI.parse("int3000", "\xFF")
+            ABI.parse("uint3000", "\xFF")
 
     def test_parse_invalid_int_negative(self):
         with self.assertRaises(EthereumError):
             ABI.parse("int-8", "\xFF")
+            ABI.parse("uint-8", "\xFF")
 
     def test_parse_invalid_int_not_pow_of_two(self):
         with self.assertRaises(EthereumError):
             ABI.parse("int31", "\xFF")
+            ABI.parse("uint31", "\xFF")
 
-    def test_parse_valid_int(self):
-        ret = ABI.parse("int8", "\x00"*31 + '\x10')
+    def test_parse_valid_int0(self):
+        ret = ABI.parse("int8", "\x10"*32)
         self.assertEqual(ret, 0x10)
 
-    # def test_parse_invalid_int_negative(self):
-    #     for i in range(8, 257, 1):
-    #         try:
-    #             datatype = "int"+str(i)
-    #             data = "\xFF"*32
-    #             ABI.parse(datatype, data)
-    #             self.assertEqual(i % 8, 0)
-    #         except EthereumError:
-    #             self.assertNotEqual(i % 8, 0)
+    def test_parse_valid_int1(self):
+        ret = ABI.parse("int", "\x10".ljust(32, '\0'))
+        self.assertEqual(ret, 1 << 252)
+
+    def test_parse_valid_int2(self):
+        ret = ABI.parse("int40", "\x40\x00\x00\x00\x00".rjust(32, '\0'))
+        self.assertEqual(ret, 1 << 38)
+
+    def test_valid_uint(self):
+        data = "\xFF"*32
+
+        parsed = ABI.parse('uint', data)
+        self.assertEqual(parsed, 2**256 - 1)
+
+        for i in range(8, 257, 8):
+            parsed = ABI.parse('uint{}'.format(i), data)
+            self.assertEqual(parsed, 2**i - 1)
+
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
