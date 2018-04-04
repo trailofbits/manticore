@@ -563,18 +563,6 @@ class EVMAccount(object):
         return object.__getattribute__(self, name)
 
 
-def pack32(val):
-    """
-    Pack an integer into a big endian 32 byte str
-
-    :param int val:
-    :return: big endian 32 byte str
-    :rtype: str
-    """
-
-    return "{:064x}".format(val).decode('hex')
-
-
 class ManticoreEVM(Manticore):
     ''' Manticore EVM manager
 
