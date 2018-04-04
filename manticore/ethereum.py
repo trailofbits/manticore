@@ -389,7 +389,7 @@ class ABI(object):
         nbytes = arithmetic_simplify(nbytes)
         offset = arithmetic_simplify(offset)
         padding = 32 - nbytes
-        value = Operators.CONCAT(nbytes*8, *map(Operators.ORD, data[offset + padding:offset + padding + nbytes]))
+        value = Operators.CONCAT(nbytes * 8, *map(Operators.ORD, data[offset + padding:offset + padding + nbytes]))
         return arithmetic_simplify(value)
 
     @staticmethod        
@@ -556,6 +556,7 @@ class EVMAccount(object):
                 return f
 
         return object.__getattribute__(self, name)
+
 
 def pack32(val):
     """
@@ -940,7 +941,7 @@ class ManticoreEVM(Manticore):
                 raise NoAliveStates
 
         if isinstance(data, self.SByte):
-            data = (None,)*data.size
+            data = (None,) * data.size
 
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)

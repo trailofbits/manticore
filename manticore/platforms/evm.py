@@ -1233,13 +1233,12 @@ class EVM(Eventful):
         need_to_allocate = address > self.memory._allocated
 
         if issymbolic(need_to_allocate):
-            #FIXME we should explore the other case too
+            # FIXME we should explore the other case too
             if solver.can_be_true(self.constraints, need_to_allocate):
                 self.constraints.add(need_to_allocate)
                 need_to_allocate = True
             else:
                 need_to_allocate = False
-
 
         if need_to_allocate:
             GMEMORY = 3
@@ -1249,7 +1248,7 @@ class EVM(Eventful):
             old_totalfee = old_size * GMEMORY + old_size * old_size // GQUADRATICMEMDENOM
             new_size = ceil32(address) // 32
             increased = new_size - old_size
-            fee = increased * GMEMORY + increased*increased // GQUADRATICMEMDENOM
+            fee = increased * GMEMORY + increased * increased // GQUADRATICMEMDENOM
             self._consume(fee)
 
     def _store(self, address, value):
@@ -1630,7 +1629,7 @@ class EVM(Eventful):
         #FIXME Document and make it configurable
         #Do not explore offsets much bigger than actual data
         if issymbolic(offset):
-            self.constraints.add(offset<len(self.data)+32)
+            self.constraints.add(offset < len(self.data) + 32)
 
         bytes = list(self.data[offset:offset + 32])
         bytes += list('\x00' * (32 - len(bytes)))
