@@ -385,7 +385,7 @@ class ABI(object):
         Parses the size part of a uint or int Solidity declaration.
         If empty string, returns 256
 
-        :param str num:
+        :param str num: text following uint/int in a Solidity type declaration
         :return: uint or int size
         :rtype: int
         :raises EthereumError: if invalid size
