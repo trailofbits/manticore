@@ -450,7 +450,7 @@ class ABI(object):
         elif ty in (u'bool'):
             result = ABI.get_uint(data, 1, offset)
         elif ty == u'address':
-            return ABI.get_uint(data, 20, offset)
+            result = ABI.get_uint(data, 20, offset)
         elif ty == u'':
             new_offset = offset
             result = None
