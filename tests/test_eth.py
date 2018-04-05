@@ -1,12 +1,13 @@
 import struct
 import unittest
 import os
+import struct
 
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, Create, concretized_args
 
 
@@ -36,7 +37,46 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn('overflow at MUL', all_findings)
 
 
-class EthereumAbiTests(unittest.TestCase):
+class EthDetectorsTest(unittest.TestCase):
+    def setUp(self):
+        self.io = IntegerOverflow()
+        self.state = make_mock_evm_state()
+
+    def test_mul_no_overflow(self):
+        """
+        Regression test added for issue 714, where we were using the ADD ovf check for MUL
+        """
+        arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
+        # effectively copy pasting what the MUL does
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertFalse(check)
+
+    def test_mul_overflow0(self):
+        arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertTrue(check)
+
+    def test_mul_overflow1(self):
+        arguments = [1 << 255, self.state.new_symbolic_value(256)]
+
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertTrue(check)
+
+
+class EthAbiTests(unittest.TestCase):
+    _multiprocess_can_split = True
+
     @staticmethod
     def _pack_int_to_32(x):
         return '\x00' * 28 + struct.pack('>I', x)
@@ -120,41 +160,47 @@ class EthereumAbiTests(unittest.TestCase):
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
 
-class EthDetectorsTest(unittest.TestCase):
-    def setUp(self):
-        self.io = IntegerOverflow()
-        self.state = make_mock_evm_state()
+    def test_parse_invalid_int(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("intXXX", "\xFF")
+            ABI.parse("uintXXX", "\xFF")
 
-    def test_mul_no_overflow(self):
-        """
-        Regression test added for issue 714, where we were using the ADD ovf check for MUL
-        """
-        arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
-        self.state.constrain(operators.ULT(arguments[1], 256))
+    def test_parse_invalid_int_too_big(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int3000", "\xFF")
+            ABI.parse("uint3000", "\xFF")
 
-        # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
-        # effectively copy pasting what the MUL does
-        result = arguments[0] * arguments[1]
+    def test_parse_invalid_int_negative(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int-8", "\xFF")
+            ABI.parse("uint-8", "\xFF")
 
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
-        self.assertFalse(check)
+    def test_parse_invalid_int_not_pow_of_two(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int31", "\xFF")
+            ABI.parse("uint31", "\xFF")
 
-    def test_mul_overflow0(self):
-        arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
-        self.state.constrain(operators.ULT(arguments[1], 256))
+    def test_parse_valid_int0(self):
+        ret = ABI.parse("int8", "\x10"*32)
+        self.assertEqual(ret, 0x10)
 
-        result = arguments[0] * arguments[1]
+    def test_parse_valid_int1(self):
+        ret = ABI.parse("int", "\x10".ljust(32, '\0'))
+        self.assertEqual(ret, 1 << 252)
 
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
-        self.assertTrue(check)
+    def test_parse_valid_int2(self):
+        ret = ABI.parse("int40", "\x40\x00\x00\x00\x00".rjust(32, '\0'))
+        self.assertEqual(ret, 1 << 38)
 
-    def test_mul_overflow1(self):
-        arguments = [1 << 255, self.state.new_symbolic_value(256)]
+    def test_valid_uint(self):
+        data = "\xFF"*32
 
-        result = arguments[0] * arguments[1]
+        parsed = ABI.parse('uint', data)
+        self.assertEqual(parsed, 2**256 - 1)
 
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
-        self.assertTrue(check)
+        for i in range(8, 257, 8):
+            parsed = ABI.parse('uint{}'.format(i), data)
+            self.assertEqual(parsed, 2**i - 1)
 
 
 class EthTests(unittest.TestCase):

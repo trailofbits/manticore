@@ -377,6 +377,31 @@ class ABI(object):
         return reduce(lambda x, y: x + y, result)
 
     @staticmethod
+    def _parse_size(num):
+        """
+        Parses the size part of a uint or int Solidity declaration.
+        If empty string, returns 256
+
+        :param str num: text following uint/int in a Solidity type declaration
+        :return: uint or int size
+        :rtype: int
+        :raises EthereumError: if invalid size
+        """
+        if not num:
+            return 256
+
+        malformed = False
+        try:
+            size = int(num)
+        except ValueError:
+            malformed = True
+
+        if malformed or size < 8 or size > 256 or size % 8 != 0:
+            raise EthereumError('Invalid type size: {}'.format(num))
+
+        return size
+
+    @staticmethod
     def get_uint(data, nbytes, offset):
         """
         Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
@@ -411,17 +436,21 @@ class ABI(object):
 
         new_offset = offset + 32
 
-        if ty == u'uint256':
-            result = ABI.get_uint(data, 32, offset)
-        elif ty in (u'bool', u'uint8'):
+        if ty.startswith('uint'):
+            size = ABI._parse_size(ty[4:]) // 8
+            result = ABI.get_uint(data, size, offset)
+
+        elif ty.startswith('int'):
+            size = ABI._parse_size(ty[3:])
+            value = ABI.get_uint(data, size // 8, offset)
+            mask = 2**(size - 1)
+            value = -(value & mask) + (value & ~mask)
+            result = value
+
+        elif ty in (u'bool'):
             result = ABI.get_uint(data, 1, offset)
         elif ty == u'address':
             result = ABI.get_uint(data, 20, offset)
-        elif ty == u'int256':
-            value = ABI.get_uint(data, 32, offset)
-            mask = 2 ** (256 - 1)
-            value = -(value & mask) + (value & ~mask)
-            result = value
         elif ty == u'':
             new_offset = offset
             result = None
