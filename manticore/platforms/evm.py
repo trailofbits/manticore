@@ -1317,7 +1317,7 @@ class EVM(Eventful):
                 value = value.value
         except:
             pass
-        
+
         for i in range(size):
             self._publish('did_evm_read_memory', offset + i, Operators.EXTRACT(value, (size - i - 1) * 8, 8))
         return value
