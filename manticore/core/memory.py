@@ -891,7 +891,7 @@ class SMemory(Memory):
 
     def _get_size(self, size):
         if isinstance(size, BitVec):
-            size = arithmetic_simplifier(size)
+            size = arithmetic_simplify(size)
         else:
             size = BitVecConstant(self.memory_bit_size, size)
         assert isinstance(size, BitVecConstant)

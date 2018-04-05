@@ -1,5 +1,5 @@
 from expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BitVecConstant, BoolConstant, ArrayProxy
-from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplifier
+from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplify
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class ConstraintSet(object):
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
-        constraint = arithmetic_simplifier(constraint)
+        constraint = arithmetic_simplify(constraint)
         if isinstance(constraint, BoolConstant) and not constraint.value:
             logger.info("Adding an imposible constant constraint")
         # If self._child is not None this constraint set has been forked and a

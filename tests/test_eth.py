@@ -1,3 +1,4 @@
+import struct
 import unittest
 import os
 import struct
@@ -6,8 +7,7 @@ from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
-
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, EthereumError, ABI
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, Create, concretized_args
 
 
@@ -17,6 +17,11 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 from manticore.utils.log import init_logging
 
 init_logging()
+
+def make_mock_evm_state():
+    cs = ConstraintSet()
+    fakestate = State(cs, EVMWorld(cs))
+    return fakestate
 
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
@@ -35,13 +40,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 class EthDetectorsTest(unittest.TestCase):
     def setUp(self):
         self.io = IntegerOverflow()
-        self.state = self.make_mock_evm_state()
-
-    @staticmethod
-    def make_mock_evm_state():
-        cs = ConstraintSet()
-        fakestate = State(cs, EVMWorld(cs))
-        return fakestate
+        self.state = make_mock_evm_state()
 
     def test_mul_no_overflow(self):
         """
@@ -74,12 +73,90 @@ class EthDetectorsTest(unittest.TestCase):
         check = self.io._can_mul_overflow(self.state, result, *arguments)
         self.assertTrue(check)
 
-class EthAbiTests(unittest.TestCase):
-    _multiprocess_can_split_ = True
 
+class EthAbiTests(unittest.TestCase):
     @staticmethod
     def _pack_int_to_32(x):
         return '\x00' * 28 + struct.pack('>I', x)
+
+    def test_dyn_address(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),  # offset to data start
+            self._pack_int_to_32(2),   # data start; # of elements
+            self._pack_int_to_32(42),  # element 1
+            self._pack_int_to_32(43),  # element 2
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(address[])', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ([42, 43],))
+
+    def test_dyn_bytes(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),  # offset to data start
+            self._pack_int_to_32(30),   # data start; # of elements
+            'Z'*30, '\x00'*2
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(bytes)', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ('Z'*30,))
+
+    def test_simple_types(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),
+            '\xff' * 32,
+            '\xff'.rjust(32, '\0'),
+            self._pack_int_to_32(0x424242),
+            '\x7f' + '\xff' *31, # int256 max
+            '\x80'.ljust(32, '\0'), # int256 min
+
+
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(uint256,uint256,bool,address,int256,int256)', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242, 2**255 - 1,-(2**255) ))
+
+    def test_address0(self):
+        data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
+        parsed = ABI.parse('address', data)
+        self.assertEqual(parsed, 0x55 << (8 * 19) )
+
+    def test_mult_dyn_types(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(0x40),  # offset to data 1 start
+            self._pack_int_to_32(0x80),  # offset to data 2 start
+            self._pack_int_to_32(10),  # data 1 size
+            'helloworld'.ljust(32, '\x00'), # data 1
+            self._pack_int_to_32(3),  # data 2 size
+            self._pack_int_to_32(3),  # data 2
+            self._pack_int_to_32(4),
+            self._pack_int_to_32(5),
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ('helloworld', [3, 4, 5]))
+
+    def test_self_make_and_parse_multi_dyn(self):
+        d = ABI.make_function_call('func', 'h'*50, [1, 1, 2, 2, 3, 3] )
+        d = ''.join(d)
+        funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
 
     def test_parse_invalid_int(self):
         with self.assertRaises(EthereumError):
@@ -126,6 +203,10 @@ class EthAbiTests(unittest.TestCase):
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
+        """
+        Tests whether the did_evm_execute_instruction event is fired for instructions that internally trigger
+        an exception
+        """
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.semantics in ('REVERT', 'STOP'):

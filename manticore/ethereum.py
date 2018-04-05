@@ -3,7 +3,7 @@ import string
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
-from .core.smtlib.visitors import arithmetic_simplifier
+from .core.smtlib.visitors import arithmetic_simplify, pretty_print
 from .platforms import evm
 from .core.state import State
 import tempfile
@@ -230,7 +230,10 @@ class SolidityMetadata(object):
         else:
             srcmap = self.srcmap
 
-        beg, size, _, _ = srcmap[asm_offset]
+        try:
+            beg, size, _, _ = srcmap[asm_offset]
+        except KeyError:
+            return ''
 
         output = ''
         nl = self.source_code.count('\n')
@@ -273,8 +276,7 @@ class ABI(object):
 
     '''
     class SByte():
-        ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
-
+        ''' Unconstrained symbolic byte string, not associated with any ConstraintSet '''
         def __init__(self, size=1):
             self.size = size
 
@@ -369,11 +371,6 @@ class ABI(object):
     @staticmethod
     def make_function_call(method_name, *args):
         function_id = ABI.make_function_id(method_name)
-
-        def check_bitsize(value, size):
-            if isinstance(value, BitVec):
-                return value.size == size
-            return (value & ~((1 << size) - 1)) == 0
         assert len(function_id) == 4
         result = [tuple(function_id)]
         result.append(ABI.make_function_arguments(*args))
@@ -405,67 +402,103 @@ class ABI(object):
         return size
 
     @staticmethod
-    def _consume_type(ty, data, offset):
-        ''' INTERNAL parses a value of type from data '''
-        def get_uint(size, offset):
-            def simplify(x):
-                value = arithmetic_simplifier(x)
-                if isinstance(value, Constant) and not value.taint:
-                    return value.value
-                else:
-                    return value
+    def get_uint(data, nbytes, offset):
+        """
+        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
 
-            size = simplify(size)
-            offset = simplify(offset)
-            byte_size = size / 8
-            padding = 32 - byte_size  # for 160
-            value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size])))
-            return simplify(value)
+        :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
+        :param offset: byte offset
+        :param nbytes: number of bytes to read starting from least significant byte
+        :rtype: int or Expression
+        """
+        nbytes = arithmetic_simplify(nbytes)
+        offset = arithmetic_simplify(offset)
+        padding = 32 - nbytes
+        start = offset + padding
+        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
+        return arithmetic_simplify(value)
+
+    @staticmethod        
+    def _consume_type(ty, data, offset):
+        """
+        Parses a value of type from data
+
+        Further info: http://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+
+        :param data: transaction data WITHOUT the function hash first 4 bytes
+        :param offset: offset into data of the first byte of the "head part" of the ABI element
+        :return: tuple where the first element is the extracted ABI element, and the second is the offset of
+            the next ABI element
+        :rtype: tuple
+        """
+        # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
+        # should be something the caller keeps track of.
+
+        new_offset = offset + 32
 
         if ty.startswith('uint'):
             size = ABI._parse_size(ty[4:])
-            return get_uint(size, offset), offset + 32
+            result = ABI.get_uint(data, size, offset)
 
         elif ty.startswith('int'):
             size = ABI._parse_size(ty[3:])
-            value = get_uint(size, offset)
+            value = ABI.get_uint(data, size, offset)
             mask = 2**(size - 1)
             value = -(value & mask) + (value & ~mask)
-            return value, offset + 32
+            result = value
 
         elif ty in (u'bool'):
-            return get_uint(8, offset), offset + 32
+            result = ABI.get_uint(data, 1, offset)
         elif ty == u'address':
-            return get_uint(160, offset), offset + 32
+            return ABI.get_uint(data, 20, offset)
         elif ty == u'':
-            return None, offset
+            new_offset = offset
+            result = None
         elif ty in (u'bytes', u'string'):
-            dyn_offset = 4 + get_uint(256, offset)
-            size = get_uint(256, dyn_offset)
-            return data[dyn_offset + 32:dyn_offset + 32 + size], offset + 4
+            dyn_offset = ABI.get_uint(data, 32, offset)
+            size = ABI.get_uint(data, 32, dyn_offset)
+            result = data[dyn_offset + 32:dyn_offset + 32 + size]
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
-            return data[offset:offset + size], offset + 32
+            result = data[offset:offset + size]
+        elif ty == u'address[]':
+            dyn_offset = arithmetic_simplify(ABI.get_uint(data, 32, offset))
+            size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
+            result = [ABI.get_uint(data, 20, dyn_offset + 32 + 32 * i) for i in range(size)]
         else:
-            raise NotImplementedError(ty)
+            raise NotImplementedError(repr(ty))
+
+        return result, new_offset
 
     @staticmethod
-    def parse(signature, data):
-        ''' Deserialize function ID and arguments specified in `signature` from `data` '''
-
-        is_multiple = '(' in signature
+    def parse_type_spec(type_spec):
+        is_multiple = '(' in type_spec
         if is_multiple:
-            func_name = signature.split('(')[0]
-            types = signature.split('(')[1][:-1].split(',')
-            if len(func_name) > 0:
-                off = 4
-            else:
+            func_name = type_spec.split('(')[0]
+            types = type_spec.split('(')[1][:-1].split(',')
+            if not func_name:
                 func_name = None
-                off = 0
         else:
             func_name = None
-            types = (signature,)
-            off = 0
+            types = (type_spec,)
+        return is_multiple, func_name, types
+
+    @staticmethod
+    def parse(type_spec, data):
+        ''' Deserialize function ID and arguments specified in `type_spec` from `data`
+
+        :param str type_spec: EVM ABI function specification. function name is optional
+        :param data: ethereum transaction data
+        :type data: str or Array
+        :return:
+        '''
+        is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
+
+        off = 0
+
+        #If it parsed the function name from the spec, skip 4 bytes from the data
+        if func_name:
+            data = data[4:]
 
         arguments = []
         for ty in types:
@@ -932,6 +965,7 @@ class ManticoreEVM(Manticore):
 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
+
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
 
