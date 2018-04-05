@@ -404,7 +404,6 @@ class ABI(object):
 
         return size
 
-
     @staticmethod
     def _consume_type(ty, data, offset):
         ''' INTERNAL parses a value of type from data '''
