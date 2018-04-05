@@ -1,12 +1,13 @@
 import struct
 import unittest
 import os
+import struct
 
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, Create, concretized_args
 
 
@@ -73,7 +74,9 @@ class EthDetectorsTest(unittest.TestCase):
         self.assertTrue(check)
 
 
-class EthereumAbiTests(unittest.TestCase):
+class EthAbiTests(unittest.TestCase):
+    _multiprocess_can_split = True
+
     def setUp(self):
         self.state = make_mock_evm_state()
 
@@ -229,6 +232,48 @@ class EthereumAbiTests(unittest.TestCase):
         self.assertTrue(self.state.must_be_true(nelements1 == 2))
         self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
         self.assertTrue(self.state.must_be_true(nelements2 == 64))
+
+    def test_parse_invalid_int(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("intXXX", "\xFF")
+            ABI.parse("uintXXX", "\xFF")
+
+    def test_parse_invalid_int_too_big(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int3000", "\xFF")
+            ABI.parse("uint3000", "\xFF")
+
+    def test_parse_invalid_int_negative(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int-8", "\xFF")
+            ABI.parse("uint-8", "\xFF")
+
+    def test_parse_invalid_int_not_pow_of_two(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int31", "\xFF")
+            ABI.parse("uint31", "\xFF")
+
+    def test_parse_valid_int0(self):
+        ret = ABI.parse("int8", "\x10"*32)
+        self.assertEqual(ret, 0x10)
+
+    def test_parse_valid_int1(self):
+        ret = ABI.parse("int", "\x10".ljust(32, '\0'))
+        self.assertEqual(ret, 1 << 252)
+
+    def test_parse_valid_int2(self):
+        ret = ABI.parse("int40", "\x40\x00\x00\x00\x00".rjust(32, '\0'))
+        self.assertEqual(ret, 1 << 38)
+
+    def test_valid_uint(self):
+        data = "\xFF"*32
+
+        parsed = ABI.parse('uint', data)
+        self.assertEqual(parsed, 2**256 - 1)
+
+        for i in range(8, 257, 8):
+            parsed = ABI.parse('uint{}'.format(i), data)
+            self.assertEqual(parsed, 2**i - 1)
 
 
 class EthTests(unittest.TestCase):
