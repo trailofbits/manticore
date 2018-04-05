@@ -75,6 +75,8 @@ class EthDetectorsTest(unittest.TestCase):
 
 
 class EthAbiTests(unittest.TestCase):
+    _multiprocess_can_split = True
+
     @staticmethod
     def _pack_int_to_32(x):
         return '\x00' * 28 + struct.pack('>I', x)
