@@ -323,12 +323,13 @@ class Z3Solver(Solver):
             if not expression:
                 return expression
             else:
+                #Still need to check if the constraints are feasible
                 expression = BoolConstant(expression)
         assert isinstance(expression, Bool)
 
         with constraints as temp_cs:
             temp_cs.add(expression)
-            self._reset(temp_cs.related_to(expression))
+            self._reset(temp_cs)
             return self._check() == 'sat'
 
     # get-all-values min max minmax
