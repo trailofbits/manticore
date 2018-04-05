@@ -36,6 +36,43 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         self.assertIn('overflow at MUL', all_findings)
 
 
+class EthDetectorsTest(unittest.TestCase):
+    def setUp(self):
+        self.io = IntegerOverflow()
+        self.state = make_mock_evm_state()
+
+    def test_mul_no_overflow(self):
+        """
+        Regression test added for issue 714, where we were using the ADD ovf check for MUL
+        """
+        arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
+        # effectively copy pasting what the MUL does
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertFalse(check)
+
+    def test_mul_overflow0(self):
+        arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
+        self.state.constrain(operators.ULT(arguments[1], 256))
+
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertTrue(check)
+
+    def test_mul_overflow1(self):
+        arguments = [1 << 255, self.state.new_symbolic_value(256)]
+
+        result = arguments[0] * arguments[1]
+
+        check = self.io._can_mul_overflow(self.state, result, *arguments)
+        self.assertTrue(check)
+
+
 class EthereumAbiTests(unittest.TestCase):
     def setUp(self):
         self.state = make_mock_evm_state()
@@ -91,6 +128,11 @@ class EthereumAbiTests(unittest.TestCase):
 
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242, 2**255 - 1,-(2**255) ))
+
+    def test_address0(self):
+        data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
+        parsed = ABI.parse('address', data)
+        self.assertEqual(parsed, 0x55 << (8 * 19) )
 
     def test_mult_dyn_types(self):
         d = [
@@ -187,43 +229,6 @@ class EthereumAbiTests(unittest.TestCase):
         self.assertTrue(self.state.must_be_true(nelements1 == 2))
         self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
         self.assertTrue(self.state.must_be_true(nelements2 == 64))
-
-
-class EthDetectorsTest(unittest.TestCase):
-    def setUp(self):
-        self.io = IntegerOverflow()
-        self.state = make_mock_evm_state()
-
-    def test_mul_no_overflow(self):
-        """
-        Regression test added for issue 714, where we were using the ADD ovf check for MUL
-        """
-        arguments = [1 << (8 * 31), self.state.new_symbolic_value(256)]
-        self.state.constrain(operators.ULT(arguments[1], 256))
-
-        # TODO(mark) We should actually call into the EVM cpu here, and below, rather than
-        # effectively copy pasting what the MUL does
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
-        self.assertFalse(check)
-
-    def test_mul_overflow0(self):
-        arguments = [2 << (8 * 31), self.state.new_symbolic_value(256)]
-        self.state.constrain(operators.ULT(arguments[1], 256))
-
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
-        self.assertTrue(check)
-
-    def test_mul_overflow1(self):
-        arguments = [1 << 255, self.state.new_symbolic_value(256)]
-
-        result = arguments[0] * arguments[1]
-
-        check = self.io._can_mul_overflow(self.state, result, *arguments)
-        self.assertTrue(check)
 
 
 class EthTests(unittest.TestCase):
