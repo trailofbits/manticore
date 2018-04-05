@@ -40,25 +40,18 @@ class EVMTest_GASPRICE(unittest.TestCase):
             #make the ethereum world state
             world = evm.EVMWorld(constraints)
 
-            address=0x222222222222222222222222222222222222200
-            caller=origin=0x111111111111111111111111111111111111100
-            price=0
-            value=10000
-            bytecode=':'
-            data = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-            header = { 'coinbase': 0,
-                        'timestamp': 0,
-                        'number': 0,
-                        'difficulty': 0,
-                        'gaslimit': 0,
-                        }
-            gas = 1000000
+            owner_account = world.create_account(balance=1000)
+            contract_account = world.create_account(balance=1000, code=':')
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            world._open_transaction('CALL', contract_account, 10, '', owner_account, 0)
+            world._open_transaction('CALL', contract_account, 100, '', owner_account, 0)
+            world._open_transaction('CALL', contract_account, 100, '', owner_account, 0)
+
+            new_vm = world.current_vm
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0])
+            self.assertEqual(new_vm.stack, [10])
 
 if __name__ == '__main__':
     unittest.main()

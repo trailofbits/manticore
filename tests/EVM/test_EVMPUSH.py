@@ -54,7 +54,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 2)
@@ -80,7 +80,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 3)
@@ -106,7 +106,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 4)
@@ -132,7 +132,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 5)
@@ -158,7 +158,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 6)
@@ -184,7 +184,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 7)
@@ -210,7 +210,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 8)
@@ -236,7 +236,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 9)
@@ -262,7 +262,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 10)
@@ -288,7 +288,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 11)
@@ -314,7 +314,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 12)
@@ -340,7 +340,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 13)
@@ -366,7 +366,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 14)
@@ -392,7 +392,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 15)
@@ -418,7 +418,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 16)
@@ -444,7 +444,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 17)
@@ -470,7 +470,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 18)
@@ -496,7 +496,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 19)
@@ -522,7 +522,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 20)
@@ -548,7 +548,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 21)
@@ -574,7 +574,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 22)
@@ -600,7 +600,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 23)
@@ -626,7 +626,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 24)
@@ -652,7 +652,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 25)
@@ -678,7 +678,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 26)
@@ -704,7 +704,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 27)
@@ -730,7 +730,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 28)
@@ -756,7 +756,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 29)
@@ -782,7 +782,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 30)
@@ -808,7 +808,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 31)
@@ -834,7 +834,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 32)
@@ -860,7 +860,7 @@ class EVMTest_PUSH(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 33)

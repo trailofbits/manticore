@@ -54,7 +54,7 @@ class EVMTest_MSIZE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, gas=gas, world=world)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm.MSTORE8(124, 0x41)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
