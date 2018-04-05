@@ -437,12 +437,12 @@ class ABI(object):
         new_offset = offset + 32
 
         if ty.startswith('uint'):
-            size = ABI._parse_size(ty[4:])
+            size = ABI._parse_size(ty[4:]) // 8
             result = ABI.get_uint(data, size, offset)
 
         elif ty.startswith('int'):
             size = ABI._parse_size(ty[3:])
-            value = ABI.get_uint(data, size, offset)
+            value = ABI.get_uint(data, size // 8, offset)
             mask = 2**(size - 1)
             value = -(value & mask) + (value & ~mask)
             result = value
