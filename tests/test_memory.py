@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 from builtins import *
 from future import standard_library
 standard_library.install_aliases()
@@ -9,6 +9,7 @@ import gc, pickle
 import fcntl
 import resource
 from manticore.core.memory import *
+import sys
 
 def issymbolic(value):
     return isinstance(value, Expression)
@@ -1297,14 +1298,11 @@ class MemoryTest(unittest.TestCase):
             _ = mem[addr]
 
 
-
     def testmprotectFailSymbReading(self):
         cs = ConstraintSet()
 
         #In the beggining the solver was 'sat' ...
         self.assertTrue(solver.check(cs))
-
-
         mem = SMemory32(cs)
 
         #start with no maps

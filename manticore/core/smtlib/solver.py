@@ -15,12 +15,7 @@ from __future__ import absolute_import
 # You can create new symbols operate on them. The declarations will be sent to the smtlib process when needed.
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
-from builtins import str
-from builtins import chr
-from builtins import map
-from builtins import range
-from builtins import bytes
-
+from builtins import *
 from subprocess import PIPE, Popen, check_output
 from abc import ABCMeta, abstractmethod
 from copy import copy, deepcopy
@@ -58,6 +53,7 @@ class TooManySolutions(SolverException):
     def __init__(self, solutions):
         super(TooManySolutions, self).__init__("Max number of different solutions hit")
         self.solutions = solutions
+
 
 class Solver(with_metaclass(ABCMeta, object)):
     @abstractmethod
@@ -215,11 +211,8 @@ class Z3Solver(Solver):
         raise Exception()
 
     def __del__(self):
-        try:
+        if self._proc is not None:
             self._proc.stdin.writelines(('(exit)\n',))
-            self._proc.wait()
-        except Exception:
-            pass
 
     def _reset(self, constraints=None):
         ''' Auxiliary method to reset the smtlib external solver to initial defaults'''

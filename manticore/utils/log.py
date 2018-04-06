@@ -1,8 +1,8 @@
-from builtins import zip
-from builtins import range
+from builtins import *
 import logging
 import sys
 import types
+from .helpers import isint
 
 class ContextFilter(logging.Filter):
     '''
@@ -19,7 +19,7 @@ class ContextFilter(logging.Filter):
         return '{}.{}'.format(prefix, components[-1])
 
     def filter(self, record):
-        if hasattr(self, 'stateid') and isinstance(self.stateid, int):
+        if hasattr(self, 'stateid') and isint(self.stateid):
             record.stateid = '[%d]' % self.stateid
         else:
             record.stateid = ''
@@ -35,7 +35,6 @@ all_loggers = []
 def init_logging():
     global all_loggers
     loggers = logging.getLogger().manager.loggerDict.keys()
-
     ctxfilter = ContextFilter()
     logfmt = ("%(asctime)s: [%(process)d]%(stateid)s %(name)s:%(levelname)s:"
               " %(message)s")

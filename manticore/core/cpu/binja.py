@@ -1,5 +1,5 @@
 from __future__ import division
-from builtins import hex, map, chr, str, range, int
+from builtins import *
 import ctypes
 import logging
 import os
@@ -14,8 +14,9 @@ from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
 from .cpufactory import CpuFactory
 from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
-from ...utils.helpers import issymbolic, isstring
+from ...utils.helpers import issymbolic, isstring, isint
 from functools import reduce
+from itertools import chain
 
 logger = logging.getLogger(__name__)
 register_logger = logging.getLogger('{}.registers'.format(__name__))
@@ -129,7 +130,7 @@ class BinjaRegisterFile(RegisterFile):
 
     @property
     def all_registers(self):
-        return tuple(list(self.registers.keys()) + list(self._aliases.keys()))
+        return tuple(chain(self.registers.keys(), self._aliases.keys()))
 
     @property
     def canonical_registers(self):
@@ -343,7 +344,7 @@ class BinjaCpu(Cpu):
         '''
         text = ''
         # Read Instruction from memory
-        for address in range(pc, pc+self.max_instr_width):
+        for address in range(pc, pc + self.max_instr_width):
             #This reads a byte from memory ignoring permissions
             #and concretize it if symbolic
             if not self.memory.access_ok(address, 'x'):
@@ -719,12 +720,12 @@ class BinjaCpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, int):
+        if isint(divisor):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
 
-        if isinstance(dividend, int):
+        if isint(dividend):
             if dividend_sign:
                 dividend = ((~dividend) + 1) & mask
                 dividend = -dividend
@@ -759,7 +760,7 @@ class BinjaCpu(Cpu):
     def GOTO(cpu, expr):
         # FIXME
         try:
-            if isinstance(expr.op, int):
+            if isint(expr.op):
                 addr = cpu.disasm.current_llil_func[expr.op].address
             else:
                 raise NotImplementedError
@@ -785,7 +786,7 @@ class BinjaCpu(Cpu):
                             for x in cond_il.operands]
         res = implementation(*cond_il.operands)
         idx = true.op if res else false.op
-        assert isinstance(idx, int)
+        assert isint(idx)
 
         try:
             next_il = cpu.disasm.current_llil_func[idx]
@@ -950,19 +951,18 @@ class BinjaCpu(Cpu):
         dividend_sign = (dividend & sign_mask) != 0
         divisor_sign = (divisor & sign_mask) != 0
 
-        if isinstance(divisor, int):
+        if isint(divisor):
             if divisor_sign:
                 divisor = ((~divisor) + 1) & mask
                 divisor = -divisor
 
-        if isinstance(dividend, int):
+        if isint(dividend):
             if dividend_sign:
                 dividend = ((~dividend) + 1) & mask
                 dividend = -dividend
 
         quotient = Operators.SDIV(dividend, divisor)
-        if (isinstance(dividend, int) and
-                isinstance(dividend, int)):
+        if isint(divisor) and isint(dividend):
             remainder = dividend - (quotient * divisor)
         else:
             remainder = Operators.SREM(dividend, divisor)

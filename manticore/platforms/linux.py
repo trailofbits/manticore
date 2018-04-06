@@ -1,11 +1,8 @@
 from __future__ import division
 from __future__ import print_function
-from builtins import chr
-from builtins import hex, str, range, int, bytes
+from builtins import *
 from future import standard_library
 standard_library.install_aliases()
-
-from builtins import int
 import errno
 import fcntl
 import io
@@ -28,7 +25,7 @@ from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented
-from ..utils.helpers import issymbolic, is_binja_disassembler
+from ..utils.helpers import issymbolic, is_binja_disassembler, isunicode, isint
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)
@@ -257,7 +254,7 @@ class SymbolicFile(File):
         :rtype: int
         :return: the file offset.
         '''
-        assert isinstance(offset, int)
+        assert isint(offset)
         assert whence in (os.SEEK_SET, os.SEEK_CUR, os.SEEK_END)
 
         new_position = 0
@@ -1256,7 +1253,7 @@ class Linux(Platform):
             data = self._transform_write_data(data)
             write_fd.write(data)
 
-            for line in ''.join([str(x) for x in data]).split('\n'):
+            for line in ''.join(str(x) for x in data).split('\n'):
                 logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>",
                              fd,
                              buf,
@@ -1770,6 +1767,7 @@ class Linux(Platform):
             size = cpu.read_int(iov + i * sizeof_iovec + (sizeof_iovec // 2), ptrsize)
 
             data = ""
+
             for j in range(0, size):
                 data += Operators.CHR(cpu.read_int(buf + j, 8))
             data = self._transform_write_data(data)
@@ -2038,9 +2036,9 @@ class Linux(Platform):
 
         if len(self.running) == 0:
             logger.debug("None running checking if there is some process waiting for a timeout")
-            if all([x is None for x in self.timers]):
+            if all(x is None for x in self.timers):
                 raise Deadlock()
-            self.clocks = min([x for x in self.timers if x is not None]) + 1
+            self.clocks = min(x for x in self.timers if x is not None) + 1
             self.check_timers()
             assert len(self.running) != 0, "DEADLOCK!"
             self._current = self.running[0]

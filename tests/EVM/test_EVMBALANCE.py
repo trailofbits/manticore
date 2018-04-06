@@ -1,5 +1,4 @@
-from builtins import bytes
-
+from builtins import *
 import struct
 import unittest
 import json

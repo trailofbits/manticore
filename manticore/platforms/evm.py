@@ -1,13 +1,6 @@
 ''' Symbolic EVM implementation based on the yellow paper: http://gavwood.com/paper.pdf '''
 
-from builtins import str
-from builtins import int
-from builtins import hex
-from builtins import map
-from builtins import next
-from builtins import chr
-from builtins import range
-from builtins import bytes
+from builtins import *
 
 import random
 import copy
@@ -21,7 +14,7 @@ from collections import namedtuple
 from itertools import chain
 from functools import wraps
 
-from ..utils.helpers import issymbolic, memoized, isstring
+from ..utils.helpers import issymbolic, memoized, isstring, isint
 from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
     SolverException
@@ -150,7 +143,7 @@ class EVMMemory(object):
             size = self._get_size(index)
             assert len(value) == size
             for i in range(size):
-                self.write(index.start+  i, [value[i]])
+                self.write(index.start + i, [value[i]])
         else:
             self.write(index, [value])
 
@@ -1038,6 +1031,9 @@ class Create(Call):
     def __init__(self, value, bytecode):
         super(Create, self).__init__(gas=None, to=None, value=value, data=bytecode)
 
+    def __reduce__(self):
+        return (self.__class__, (self.value, None))
+
 
     def __reduce__(self):
         return (self.__class__, (self.value, None, None))
@@ -1327,7 +1323,7 @@ class EVM(Eventful):
                    ITEM2
              sp->  {empty}
         '''
-        assert isinstance(value, int) or isinstance(value, BitVec) and value.size == 256
+        assert isint(value) or isinstance(value, BitVec) and value.size == 256
         if len(self.stack) >= 1024:
             raise StackOverflow()
         self.stack.append(value & TT256M1)
@@ -1847,7 +1843,7 @@ class EVM(Eventful):
             self._allocate(offset + size)
         data = []
         for i in range(size):
-            data.append(self._load(offset+i))#Operators.CHR(self._load(offset + i)))
+            data.append(self._load(offset+i))
 
         if any(map(issymbolic, data)):
             data_symb = self._constraints.new_array(index_bits=256, index_max=len(data))
@@ -1901,7 +1897,7 @@ class EVM(Eventful):
 
     def __str__(self):
         def hexdump(src, length=16):
-            FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
+            FILTER = ''.join(len(repr(chr(x))) == 3 and chr(x) or '.' for x in range(256))
             lines = []
             for c in range(0, len(src), length):
                 chars = src[c:c + length]
@@ -1910,14 +1906,15 @@ class EVM(Eventful):
                         return '??'
                     else:
                         return "%02x" % x
-                hex = ' '.join([p(x) for x in chars])
+                hex = ' '.join(p(x) for x in chars)
+
                 def p1(x):
                     if issymbolic(x):
                         return '.'
                     else:
                         return "%s" % ((x <= 127 and FILTER[x]) or '.')
 
-                printable = ''.join([p1(x) for x in chars])
+                printable = ''.join(p1(x) for x in chars)
                 lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
             return lines
 
@@ -2020,7 +2017,7 @@ class EVMWorld(Platform):
         self._sha3[buf] = value
 
     def __getitem__(self, index):
-        assert isinstance(index, int)
+        assert isint(index)
         return self.storage[index]
 
     def __str__(self):
