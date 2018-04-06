@@ -10,7 +10,10 @@ osname = sys.platform.lower()
 if osname == "darwin" or osname.startswith("linux"):
 
     if osname == "darwin":
-        libc = ctypes.cdll.LoadLibrary("libc.dylib")
+        try:
+            libc = ctypes.cdll.LoadLibrary("libc.dylib")
+        except:
+            libc = ctypes.cdll.LoadLibrary("/usr/lib/libc.dylib")
     else:
         libc = ctypes.cdll.LoadLibrary("libc.so.6")
 
