@@ -554,7 +554,7 @@ class ManticoreOutput(object):
                 summary.write(u"================ PROC: %02d ================\n" % idx)
                 summary.write(u"Memory:\n")
                 if hash(cpu.memory) not in memories:
-                    b = bytes(cpu.memory).replace('\n', '\n  ').decode('utf-8')
+                    b = str(cpu.memory).replace('\n', '\n  ')
                     summary.write(b)
                     memories.add(hash(cpu.memory))
 

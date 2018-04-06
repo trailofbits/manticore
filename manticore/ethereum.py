@@ -1161,7 +1161,7 @@ class ManticoreEVM(Manticore):
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
         with testcase.open_stream('summary', binary=False) as summary:
-            summary.write("Last exception: %s\n" %state.context['last_exception'])
+            summary.write(u"Last exception: %s\n" %state.context['last_exception'])
 
             address, offset = state.context['seth.trace'][-1]
 
@@ -1170,7 +1170,7 @@ class ManticoreEVM(Manticore):
             if metadata is not None:
                 summary.write(u'Last instruction at contract %x offset %x\n' % (address, offset))
                 at_runtime = blockchain.transactions[-1].sort != 'Create'
-                summary.write(metadata.get_source_for(offset, at_runtime).decode('utf-8'))
+                summary.write(metadata.get_source_for(offset, at_runtime))
                 summary.write(u'\n')
 
             # Accounts summary
@@ -1195,18 +1195,18 @@ class ManticoreEVM(Manticore):
 
                 code = blockchain.get_code(account_address)
                 if len(code):
-                    summary.write("Code:\n")
+                    summary.write(u"Code:\n")
                     fcode = io.BytesIO(code)
                     for chunk in iter(lambda: fcode.read(32), b''):
-                        summary.write('\t{}\n'.format(binascii.hexlify(chunk)))
+                        summary.write(u'\t{}\n'.format(binascii.hexlify(chunk)))
                     trace = set((offset for address_i, offset in state.context['seth.trace'] if address == address_i))
-                    summary.write("Coverage %d%% (on this state)\n" % calculate_coverage(code, trace))  # coverage % for address in this account/state
-                summary.write("\n")
+                    summary.write(u"Coverage %d%% (on this state)\n" % calculate_coverage(code, trace))  # coverage % for address in this account/state
+                summary.write(u"\n")
 
             if blockchain._sha3:
                 summary.write(u"Known hashes:\n")
                 for key, value in blockchain._sha3.items():
-                    summary.write('%s::%x\n' % (hex_encode(key), value))
+                    summary.write(u'%s::%x\n' % (hex_encode(key), value))
 
             if is_something_symbolic:
                 summary.write(u'\n\n(*) Example solution given. Value is symbolic and may take other values\n')
@@ -1218,16 +1218,16 @@ class ManticoreEVM(Manticore):
                 tx_summary.write(u"Transactions Nr. %d\n" % blockchain.transactions.index(tx))
 
                 # The result if any RETURN or REVERT
-                tx_summary.write("Type: %s\n" % tx.sort)
-                tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
-                tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
-                tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_summary.write("Data: %s %s\n"% (hex_encode(state.solve_one(tx.data)), flagged(issymbolic(tx.data))))
+                tx_summary.write(u"Type: %s\n" % tx.sort)
+                tx_summary.write(u"From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
+                tx_summary.write(u"To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
+                tx_summary.write(u"Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
+                tx_summary.write(u"Data: %s %s\n"% (hex_encode(state.solve_one(tx.data)), flagged(issymbolic(tx.data))))
 
 
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: %s %s\n" % (hex_encode(return_data), flagged(issymbolic(tx.return_data))))
+                    tx_summary.write(u"Return_data: %s %s\n" % (hex_encode(return_data), flagged(issymbolic(tx.return_data))))
 
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'Call':
