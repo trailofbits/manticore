@@ -1400,7 +1400,7 @@ class UnicornConcretization(unittest.TestCase):
         '''
 
         code = assemble(asm)
-        code += '\x78\x56\x34\x12'
+        code += b'\x78\x56\x34\x12'
 
         self.mem.write(start, code)
 
