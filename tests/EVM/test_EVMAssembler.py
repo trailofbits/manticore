@@ -1,11 +1,11 @@
 from builtins import *
-from operator import eq
 import struct
 import unittest
 import json
 from manticore.platforms import evm
 from manticore.core import state
 from manticore.core.smtlib import Operators, ConstraintSet
+from operator import eq
 import os
 
 

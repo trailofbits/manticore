@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-from builtins import int
+from builtins import *
 from ..smtlib import Operators
 from ..smtlib.expression import BitVec
+from ...utils.helpers import isint
 
 
 def Mask(width):
@@ -38,7 +39,7 @@ def GetNBits(value, nbits):
     :rtype int or long or BitVec
     '''
     # NOP if sizes are the same
-    if isinstance(value, int):
+    if isint(value):
         return Operators.EXTRACT(value, 0, nbits)
     elif isinstance(value, BitVec):
         if value.size < nbits:

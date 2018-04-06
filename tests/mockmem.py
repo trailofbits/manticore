@@ -1,6 +1,6 @@
-from builtins import object, range
+from builtins import *
 from manticore.core.smtlib import Operators
-from manticore.utils.helpers import isstring
+from manticore.utils.helpers import isstring, isint
 
 class Memory(object):  #todo Mock
     def getchar(self, addr):
@@ -43,12 +43,12 @@ class SMem(object):
             self.mem[addr] = val
 
     def getchar(self, addr):
-        if isinstance(addr, int) and addr in self.code:
+        if isint(addr) and addr in self.code:
             return self.code[addr]
         return self.mem[addr]
 
     def putchar(self, addr, char):
-        assert isinstance(addr,int)
+        assert isint(addr)
         assert isstring(char) and len(char) == 1
         self.mem[addr]=char
 

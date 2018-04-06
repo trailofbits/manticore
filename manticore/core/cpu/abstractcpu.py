@@ -1,7 +1,7 @@
 from __future__ import division
 from future import standard_library
 standard_library.install_aliases()
-from builtins import next, str, map, range, int
+from builtins import *
 import inspect
 import logging
 import io
@@ -17,7 +17,7 @@ from ..smtlib import Expression, BitVec, Operators, Constant
 from ..memory import (
     ConcretizeMemory, InvalidMemoryAccess
 )
-from ...utils.helpers import issymbolic, isstring
+from ...utils.helpers import issymbolic, isstring, isint
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
 
@@ -760,7 +760,7 @@ class Cpu(Eventful):
         text = b''
 
         # Read Instruction from memory
-        for address in range(pc, pc+self.max_instr_width):
+        for address in range(pc, pc + self.max_instr_width):
             #This reads a byte from memory ignoring permissions
             #and concretize it if symbolic
             if not self.memory.access_ok(address, 'x'):
@@ -909,7 +909,7 @@ class Cpu(Eventful):
         if issymbolic(value):
             aux = "%3s: " % reg_name + "%16s" % value
             result += aux
-        elif isinstance(value, int):
+        elif isint(value):
             result += "%3s: 0x%016x" % (reg_name, value)
         else:
             result += "%3s: %r" % (reg_name, value)

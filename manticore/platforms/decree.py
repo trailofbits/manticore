@@ -1,9 +1,7 @@
 from __future__ import absolute_import
 from future import standard_library
 standard_library.install_aliases()
-from builtins import next
-from builtins import str
-from builtins import range
+from builtins import *
 from . import cgcrandom
 import weakref
 import sys, os, struct
@@ -152,7 +150,7 @@ class Decree(Platform):
 
         #Each process can wait for one timeout
         self.timers = [None] * nprocs
-        #each fd has a waitlist
+        # each fd has a waitlist
         self.rwait = [set() for _ in range(nfiles)]
         self.twait = [set() for _ in range(nfiles)]
 
@@ -578,7 +576,7 @@ class Decree(Platform):
                 data.append(value)
             self.files[fd].transmit(data)
 
-            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join([str(x) for x in data])))
+            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join(str(x) for x in data)))
             self.syscall_trace.append(("_transmit", fd, data))
             self.signal_transmit(fd)
 
@@ -778,9 +776,9 @@ class Decree(Platform):
 
         if len(self.running) == 0:
             logger.info("None running checking if there is some process waiting for a timeout")
-            if all([x is None for x in self.timers]):
+            if all(x is None for x in self.timers):
                 raise Deadlock()
-            self.clocks = min([x for x in self.timers if x is not None]) + 1
+            self.clocks = min(x for x in self.timers if x is not None) + 1
             self.check_timers()
             assert len(self.running) != 0, "DEADLOCK!"
             self._current = self.running[0]
@@ -822,7 +820,7 @@ class Decree(Platform):
         if self._current not in self.running:
             logger.info("\tCurrent not running. Checking for timers...")
             self._current = None
-            if all([x is None for x in self.timers]):
+            if all(x is None for x in self.timers):
                 raise Deadlock()
             self.check_timers()
 
@@ -866,7 +864,7 @@ class Decree(Platform):
         ''' Awake proccess if timer has expired '''
         if self._current is None:
             #Advance the clocks. Go to future!!
-            advance = min([x for x in self.timers if x is not None]) + 1
+            advance = min(x for x in self.timers if x is not None) + 1
             logger.info("Advancing the clock from %d to %d", self.clocks, advance)
             self.clocks = advance
         for procid in range(len(self.timers)):

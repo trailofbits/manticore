@@ -1,3 +1,4 @@
+from builtins import *
 import sys
 import logging
 import argparse

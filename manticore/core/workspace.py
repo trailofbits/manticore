@@ -1,6 +1,6 @@
 from future import standard_library
 standard_library.install_aliases()
-from builtins import map, chr, str, bytes
+from builtins import *
 import os
 import sys
 import glob
@@ -117,7 +117,7 @@ class Store(object):
         with self.save_stream(key) as s:
             s.write(value)
 
-    def load_value(self, key):
+    def load_value(self, key, binary=False):
         """
         Load an arbitrary value identified by `key`.
 
@@ -280,7 +280,7 @@ class MemoryStore(Store):
     def save_value(self, key, value):
         self._data[key] = value
 
-    def load_value(self, key):
+    def load_value(self, key, binary=False):
         return self._data.get(key)
 
     def rm(self, key):
@@ -554,7 +554,8 @@ class ManticoreOutput(object):
                 summary.write(u"================ PROC: %02d ================\n" % idx)
                 summary.write(u"Memory:\n")
                 if hash(cpu.memory) not in memories:
-                    summary.write(str(cpu.memory).replace('\n', '\n  '))
+                    b = bytes(cpu.memory).replace('\n', '\n  ').decode('utf-8')
+                    summary.write(b)
                     memories.add(hash(cpu.memory))
 
                 summary.write(u"CPU:\n{}".format(cpu))

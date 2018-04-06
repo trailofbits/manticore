@@ -1,5 +1,4 @@
-from builtins import bytes
-
+from builtins import *
 import sys
 import struct
 import unittest

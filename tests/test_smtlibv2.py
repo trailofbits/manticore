@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 from builtins import *
 from manticore.core.smtlib import *
 import unittest
@@ -465,8 +465,8 @@ class ExpressionTest(unittest.TestCase):
             self.assertTrue(solver.check(cs))
             self.assertEqual(solver.get_value(cs, c), Operators.SAR(32, A, B))
 
-
     def test_ConstraintsForking(self):
+        # this has a lot of extra output to ensure travis builds do not timeout
         import pickle
         cs =  ConstraintSet()
         #make free 32bit bitvectors
@@ -505,6 +505,7 @@ class ExpressionTest(unittest.TestCase):
             self.assertItemsEqual(solver.get_all_values(cs_up, x), range(0x0, 0x100))
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
 
+
             with cs_up as cs_up_left:
                 cs_up_left.add(x.ult(0x80))
                 saved_up_left = pickle.dumps((x,y,cs_up_left))
@@ -515,14 +516,13 @@ class ExpressionTest(unittest.TestCase):
             self.assertItemsEqual(solver.get_all_values(cs_up, y), range(0x80,0x100))
 
 
+
         with cs as cs_down:
             cs_down.add(y.ult(0x80))
 
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
-
             saved_down = pickle.dumps((x,y,cs_down))
-
             self.assertItemsEqual(solver.get_all_values(cs_down, x), range(0x0, 0x100))
             self.assertItemsEqual(solver.get_all_values(cs_down, y), range(0, 0x80))
 

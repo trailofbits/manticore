@@ -1,8 +1,11 @@
-from builtins import bytes
+from __future__ import print_function
+from builtins import *
 import collections
-from ..core.smtlib import Expression
+import sys
 import binascii
 
+if sys.version_info[0] == 2:
+    from types import StringType
 
 def issymbolic(value):
     '''
@@ -13,7 +16,13 @@ def issymbolic(value):
     :return: whether `value` is symbolic
     :rtype: bool
     '''
+    from ..core.smtlib import Expression
     return isinstance(value, Expression)
+
+def hex_encode(s):
+    if isinstance(s, tuple):
+        s = bytes(s)
+    return binascii.hexlify(s).decode('utf-8')
 
 def isstring(value):
     '''
@@ -24,12 +33,46 @@ def isstring(value):
     :return: whether `value` can be treated as string
     :rtype: bool
     '''
-    return hasattr(value, 'strip')
 
-def hex_encode(s):
-    if isinstance(s, tuple):
-        s = bytes(s)
-    return binascii.hexlify(s).decode('utf-8')
+    # in python3, string types are 'str', 'bytes'
+    # in python2, strings are type 'unicode', 'str'
+    if sys.version_info[0] == 2:
+        # we want to refer to the str type imported by futurize as well as the builtin
+        return isinstance(value, (unicode, str, StringType))
+    elif sys.version_info[0] == 3:
+        return isinstance(value, (str, bytes))
+
+def isunicode(value):
+    '''
+    Helper to determine whether an object is a unicode string, which is nontrivial when targeting Python 2 and 3 at the same
+    time.
+
+    :param object value: object to check
+    :return: whether `value` can be treated as string
+    :rtype: bool
+    '''
+
+    # in python3, string types are 'str', 'bytes'
+    # in python2, strings are type 'unicode', 'str'
+    if sys.version_info[0] == 2:
+        return isinstance(value, unicode)
+    elif sys.version_info[0] == 3:
+        return isinstance(value, str)
+
+def isint(value):
+    '''
+    Helper to determine whether an object is an int, which is nontrivial when targeting Python 2 and 3 at the same
+    time.
+
+    :param object value: object to check
+    :return: whether `value` can be treated as string
+    :rtype: bool
+    '''
+
+    if sys.version_info[0] == 2:
+        return isinstance(value, (int, long))
+    elif sys.version_info[0] == 3:
+        return isinstance(value, int)
 
 import functools
 

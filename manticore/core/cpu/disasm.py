@@ -1,4 +1,4 @@
-from builtins import next, hex, str, range
+from builtins import *
 from abc import abstractproperty, abstractmethod
 
 import capstone as cs
@@ -222,7 +222,7 @@ class BinjaILDisasm(Disasm):
 
         @property
         def op_str(self):
-            return " ".join([str(x.op) for x in self.llil.operands])
+            return " ".join(str(x.op) for x in self.llil.operands)
 
         @property
         def operands(self):

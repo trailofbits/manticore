@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import
-from builtins import str, zip, range
+from builtins import *
 from .expression import *
 import operator
 import logging
@@ -53,7 +53,6 @@ class Visitor(object):
         return self._stack[-1]
 
     def _method(self, expression, *args):
-        assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = 'visit_%s' % sort
@@ -194,7 +193,6 @@ class PrettyPrinter(Visitor):
         Overload Visitor._method because we want to stop to iterate over the
         visit_ functions as soon as a valide visit_ function is found
         '''
-        assert expression.__class__.__mro__[-1] is object
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
             methodname = 'visit_%s' % sort
