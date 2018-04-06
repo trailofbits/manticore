@@ -39,12 +39,7 @@ def assemble(asm):
     ords = ks.asm(asm)[0]
     if not ords:
         raise Exception('bad assembly: {}'.format(asm))
-<<<<<<< HEAD
-    return [bytes([s]) for s in ords]
-=======
     return bytes(ords)
->>>>>>> imerge/origin/python3-staging
-
 
 def emulate_next(cpu):
     'Read the next instruction and emulate it with Unicorn '
