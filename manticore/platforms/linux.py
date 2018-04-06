@@ -388,6 +388,8 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
+        self.envp = envp
+        self.argv = argv
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -513,6 +515,8 @@ class Linux(Platform):
         state['twait'] = self.twait
         state['timers'] = self.timers
         state['syscall_trace'] = self.syscall_trace
+        state['argv'] = self.argv
+        state['envp'] = self.envp
         state['base'] = self.base
         state['elf_bss'] = self.elf_bss
         state['end_code'] = self.end_code
@@ -565,6 +569,8 @@ class Linux(Platform):
         self.clocks = state['clocks']
 
         self.syscall_trace = state['syscall_trace']
+        self.argv = state['argv']
+        self.envp = state['envp']
         self.base = state['base']
         self.elf_bss = state['elf_bss']
         self.end_code = state['end_code']
@@ -2623,6 +2629,8 @@ class SLinux(Linux):
 
         ret = {
             'syscalls': repr(self.syscall_trace),
+            'argv': repr(self.argv),
+            'env': repr(self.envp),
             'stdout': out.getvalue(),
             'stdin': inn.getvalue(),
             'stderr': err.getvalue(),
