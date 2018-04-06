@@ -36,6 +36,11 @@ def parse_arguments():
                         help=argparse.SUPPRESS)
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Specify symbolic environment variable VARNAME=++++++')
+    #TODO allow entry as an address
+    #parser.add_argument('--entry', type=str, default=None,
+    #                    help='address as entry point')
+    parser.add_argument('--entrysymbol', type=str, default=None,
+                        help='symbol as entry point')
     parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
@@ -115,7 +120,7 @@ def main():
 
     env = {key: val for key, val in map(lambda env: env[0].split('='), args.env)}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 
     # Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
