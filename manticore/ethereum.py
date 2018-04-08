@@ -26,6 +26,12 @@ logger = logging.getLogger(__name__)
 class EthereumError(ManticoreError):
     pass
 
+class DependencyError(EthereumError):
+    def __init__(self, lib_names):
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        self.lib_names = lib_names
+
+
 
 class NoAliveStates(EthereumError):
     pass
@@ -655,17 +661,50 @@ class ManticoreEVM(Manticore):
         return ABI.SValue
 
     @staticmethod
-    def compile(source_code, contract_name=None):
+    def compile(source_code, contract_name=None, libraries=None):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name)
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
         return bytecode
 
+
     @staticmethod
-    def _compile(source_code, contract_name):
+    def _link(bytecode, libraries=None):
+        has_dependencies = '_' in bytecode
+        hex_contract = bytecode
+        if has_dependencies:
+            deps = {} # library -> (pos,)
+            pos = 0
+            while pos < len(hex_contract):
+                if hex_contract[pos] == '_':
+                    # __/tmp/tmp_9k7_l:Manticore______________
+                    lib_placeholder = hex_contract[pos:pos+40]
+                    lib_name = lib_placeholder.split(':')[1].split('_')[0]
+                    deps.setdefault(lib_name, []).append(pos)
+                    pos += 40
+                else:
+                    pos += 2
+
+            if libraries is None:
+                raise DependencyError(deps.keys())
+            libraries = dict(libraries)
+            hex_contract_lst = list(hex_contract)
+            for lib_name, pos_lst in deps.items():
+                try:
+                    lib_address = libraries[lib_name]
+                except IndexError:
+                    raise DependencyError([lib_name])
+                for pos in pos_lst:
+                    hex_contract_lst[pos:pos+40] = '%040x'%lib_address
+            hex_contract = ''.join(hex_contract_lst)
+        return hex_contract
+
+    @staticmethod
+    def _compile(source_code, contract_name, libraries=None):
         """ Compile a Solidity contract, used internally
 
             :param source_code: a solidity source code
             :param contract_name: a string with the name of the contract to analyze
+            :param libraries: an itemizable of piars (library_name, address) 
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
@@ -697,14 +736,16 @@ class ManticoreEVM(Manticore):
 
             if contract['bin'] == '':
                 raise Exception('Solidity failed to compile your contract.')
-                
-            bytecode = contract['bin'].decode('hex')
+
+
+            bytecode = ManticoreEVM._link(contract['bin'], libraries).decode('hex')
             srcmap = contract['srcmap'].split(';')
             srcmap_runtime = contract['srcmap-runtime'].split(';')
             hashes = contract['hashes']
             abi = json.loads(contract['abi'])
-            runtime = contract['bin-runtime'].decode('hex')
+            runtime = ManticoreEVM._link(contract['bin-runtime'], libraries).decode('hex')
             warnings = p.stderr.read()
+
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1, **kwargs):
@@ -866,7 +907,7 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, contract_name=None, balance=0, address=None, args=()):
+    def solidity_create_contract(self, source_code, owner, contract_name=None, libraries=None, balance=0, address=None, args=()):
         ''' Creates a solidity contract
 
             :param str source_code: solidity source code
@@ -881,7 +922,7 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-        compile_results = self._compile(source_code, contract_name)
+        compile_results = self._compile(source_code, contract_name, libraries=libraries)
         init_bytecode = compile_results[2]
 
         if address is None:
@@ -986,8 +1027,16 @@ class ManticoreEVM(Manticore):
             source_code = f.read()
 
         owner_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
+
+        try:
+            contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
+        except DependencyError as e:
+            deps = []
+            for lib_name in e.lib_names:
+                lib_account = self.solidity_create_contract(source_code, contract_name=lib_name, owner=owner_account)
+                deps.append((lib_name,lib_account))
+            contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account, libraries=deps)
 
         if tx_account == "attacker":
             tx_account = attacker_account
