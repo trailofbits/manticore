@@ -26,11 +26,11 @@ logger = logging.getLogger(__name__)
 class EthereumError(ManticoreError):
     pass
 
+
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
         super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
         self.lib_names = lib_names
-
 
 
 class NoAliveStates(EthereumError):
@@ -666,18 +666,17 @@ class ManticoreEVM(Manticore):
         name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
         return bytecode
 
-
     @staticmethod
     def _link(bytecode, libraries=None):
         has_dependencies = '_' in bytecode
         hex_contract = bytecode
         if has_dependencies:
-            deps = {} # library -> (pos,)
+            deps = {}
             pos = 0
             while pos < len(hex_contract):
                 if hex_contract[pos] == '_':
                     # __/tmp/tmp_9k7_l:Manticore______________
-                    lib_placeholder = hex_contract[pos:pos+40]
+                    lib_placeholder = hex_contract[pos:pos + 40]
                     lib_name = lib_placeholder.split(':')[1].split('_')[0]
                     deps.setdefault(lib_name, []).append(pos)
                     pos += 40
@@ -694,7 +693,7 @@ class ManticoreEVM(Manticore):
                 except IndexError:
                     raise DependencyError([lib_name])
                 for pos in pos_lst:
-                    hex_contract_lst[pos:pos+40] = '%040x'%lib_address
+                    hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
             hex_contract = ''.join(hex_contract_lst)
         return hex_contract
 
@@ -736,7 +735,6 @@ class ManticoreEVM(Manticore):
 
             if contract['bin'] == '':
                 raise Exception('Solidity failed to compile your contract.')
-
 
             bytecode = ManticoreEVM._link(contract['bin'], libraries).decode('hex')
             srcmap = contract['srcmap'].split(';')
@@ -1035,7 +1033,7 @@ class ManticoreEVM(Manticore):
             deps = []
             for lib_name in e.lib_names:
                 lib_account = self.solidity_create_contract(source_code, contract_name=lib_name, owner=owner_account)
-                deps.append((lib_name,lib_account))
+                deps.append((lib_name, lib_account))
             contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account, libraries=deps)
 
         if tx_account == "attacker":
