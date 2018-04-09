@@ -1027,7 +1027,6 @@ class ManticoreEVM(Manticore):
         owner_account = self.create_account(balance=1000)
         attacker_account = self.create_account(balance=1000)
 
-
         deps = {}
         contract_names = [contract_name]
         while contract_names:
@@ -1040,7 +1039,6 @@ class ManticoreEVM(Manticore):
                 for lib_name in e.lib_names:
                     if lib_name not in deps:
                         contract_names.append(lib_name)
-
 
         if tx_account == "attacker":
             tx_account = attacker_account

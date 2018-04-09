@@ -3,7 +3,7 @@ checks:
   argument-count:
     enabled: true
     config:
-      threshold: 7
+      threshold: 8
   complex-logic:
     enabled: true
     config:
