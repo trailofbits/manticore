@@ -16,7 +16,7 @@ class EVMTest_CALLDATACOPY(unittest.TestCase):
         last_exception = None
         try:
             new_vm.execute()
-        except evm.Stop, e:
+        except evm.Stop:
             last_exception = "STOP"
         except evm.NotEnoughGas:
             last_exception = "OOG"
