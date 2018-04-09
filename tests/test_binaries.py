@@ -146,6 +146,7 @@ class IntegrationTest(unittest.TestCase):
             {'number': 795, 'contract': None},
             {'number': 799, 'contract': 'C'},
             {'number': 807, 'contract': 'C'},
+            {'number': 808, 'contract': 'C'},
         ]
 
         for issue in issues:
