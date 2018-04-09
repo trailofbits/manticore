@@ -690,7 +690,7 @@ class ManticoreEVM(Manticore):
             for lib_name, pos_lst in deps.items():
                 try:
                     lib_address = libraries[lib_name]
-                except IndexError:
+                except KeyError:
                     raise DependencyError([lib_name])
                 for pos in pos_lst:
                     hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
@@ -1027,14 +1027,20 @@ class ManticoreEVM(Manticore):
         owner_account = self.create_account(balance=1000)
         attacker_account = self.create_account(balance=1000)
 
-        try:
-            contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
-        except DependencyError as e:
-            deps = []
-            for lib_name in e.lib_names:
-                lib_account = self.solidity_create_contract(source_code, contract_name=lib_name, owner=owner_account)
-                deps.append((lib_name, lib_account))
-            contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account, libraries=deps)
+
+        deps = {}
+        contract_names = [contract_name]
+        while contract_names:
+            contract_name = contract_names.pop()
+            try:
+                contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account, libraries=deps)
+                deps[contract_name] = contract_account
+            except DependencyError as e:
+                contract_names.append(contract_name)
+                for lib_name in e.lib_names:
+                    if lib_name not in deps:
+                        contract_names.append(lib_name)
+
 
         if tx_account == "attacker":
             tx_account = attacker_account
