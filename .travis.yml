@@ -4,7 +4,8 @@ os:
   - linux
 language: python
 python:
-  - 3.6
+  - 2.7
+  - 3.5
 
 env:
   global:
@@ -18,8 +19,10 @@ branches:
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python3.6/lib/python3.6/site-packages
-  - $HOME/virtualenv/python3.6/bin/
+  - $HOME/virtualenv/python2.7/lib/python2.7/site-packages
+  - $HOME/virtualenv/python2.7/bin/
+  - $HOME/virtualenv/python3.5/lib/python3.5/site-packages
+  - $HOME/virtualenv/python3.5/bin/
 
 install:
   - scripts/travis_install.sh
