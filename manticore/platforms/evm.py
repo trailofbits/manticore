@@ -788,6 +788,9 @@ class EVMException(Exception):
     pass
 
 
+class Emulated(EVMException):
+    pass
+
 class ConcretizeStack(EVMException):
     '''
     Raised when a symbolic memory cell needs to be concretized.
@@ -1248,11 +1251,11 @@ class EVM(Eventful):
         arguments = self._pop_arguments()
         result = None
 
-        if self._on_transaction is False:
-            self._publish('will_evm_execute_instruction', current, arguments)
 
         ex = None
         try:
+            if self._on_transaction is False:
+                self._publish('will_evm_execute_instruction', current, arguments)
             result = self._handler(*arguments)
         except ConcretizeStack as ex:
             #Revert the stack and gas so it looks like before executing the instruction
@@ -1280,6 +1283,8 @@ class EVM(Eventful):
             self._publish('did_evm_execute_instruction', current, arguments, result)
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
+        except Emulated:
+            return
 
         self._push_results(current, result)
         if not current.is_branch:
@@ -2033,7 +2038,7 @@ class EVMWorld(Platform):
             origin = self.tx_origin()
         else:
             origin = caller
-        assert (price is not None and price > 0)
+        assert price is not None
 
         tx = Transaction(sort, address, price, data, caller, value, depth=self.depth)
         if sort == 'CREATE':

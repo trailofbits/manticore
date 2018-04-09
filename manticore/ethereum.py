@@ -26,6 +26,12 @@ logger = logging.getLogger(__name__)
 class EthereumError(ManticoreError):
     pass
 
+class DependencyError(EthereumError):
+    def __init__(self, lib_names):
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        self.lib_names = lib_names
+
+
 
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
@@ -695,6 +701,8 @@ class ManticoreEVM(Manticore):
     def compile(source_code, contract_name=None, libraries=None):
         ''' Get initialization bytecode from a Solidity source code '''
         name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
+        if runtime:
+            return runtime_bytecode
         return bytecode
 
     @staticmethod
@@ -789,7 +797,6 @@ class ManticoreEVM(Manticore):
         # make the ethereum world state
         world = evm.EVMWorld(constraints)
         initial_state = State(constraints, world)
-        #@@initial_state.context['tx'] = []
         super(ManticoreEVM, self).__init__(initial_state, **kwargs)
 
         self.detectors = {}

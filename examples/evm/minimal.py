@@ -2,40 +2,36 @@ from manticore.ethereum import ManticoreEVM
 ################ Script #######################
 
 m = ManticoreEVM()
+m.verbosity(9)
 #And now make the contract account to analyze
-# cat  | solc --bin 
 source_code = '''
-pragma solidity ^0.4.13;
-contract NoDistpatcher {
-    event Log(string);
-
-    function() payable {
-        if (msg.data[0] == 'A') {
-            Log("Got an A");
-        }
-        else{
-            Log("Got something else");
-        }
-    } 
+contract InternalAttacker {
+    function internalAttack(address _target) payable {
+        address(this).call(bytes4(keccak256("dive(address)")), _target);
+        msg.sender.transfer(this.balance);
+    }
+    function dive(address _target) {
+        _target.transfer(this.balance);
+        revert();
+    }
 }
 '''
 
+owner_account = m.create_account(balance=1000)
 user_account = m.create_account(balance=1000)
-print "[+] Creating a user account", user_account
-
+target_account = m.create_account(balance=1000)
 contract_account = m.solidity_create_contract(source_code, owner=user_account)
-print "[+] Creating a contract account", contract_account
+print "[+] User account", user_account
+print "[+] target account", target_account
+print "[+] Contract account", contract_account
 print "[+] Source code:"
 print source_code
 
-print "[+] Now the symbolic values"
-symbolic_data = m.make_symbolic_buffer(320) 
-symbolic_value = None 
-m.transaction(caller=user_account,
-                address=contract_account,
-                data=symbolic_data,
-                value=symbolic_value )
 
+contract_account.internalAttack(target_account)
+
+print target_account, m.get_balance(target_account)
+print user_account, m.get_balance(user_account)
 #Let seth know we are not sending more transactions 
 m.finalize()
 print "[+] Look for results in %s"% m.workspace

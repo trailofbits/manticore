@@ -8,7 +8,7 @@ def rtd_dependent_deps():
     if on_rtd:
         return []
     else:
-        return ['z3-solver']
+        return []
 
 setup(
     name='manticore',

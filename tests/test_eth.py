@@ -342,7 +342,7 @@ class EthTests(unittest.TestCase):
         mevm.register_detector(p)
 
         filename = os.path.join(THIS_DIR, 'binaries/reached.sol')
-        mevm.multi_tx_analysis(filename, tx_limit=2)
+        mevm.multi_tx_analysis(filename, tx_limit=2, contract_name='Reachable')
 
         context = p.context.get('flags', {})
         self.assertTrue(context.get('found', False))

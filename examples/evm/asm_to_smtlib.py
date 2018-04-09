@@ -32,34 +32,24 @@ def printi(instruction):
 
 
 constraints = ConstraintSet()
-address = constraints.new_bitvec(256, name='address')
-origin = constraints.new_bitvec(256, name='origin')
-price = constraints.new_bitvec(256, name='price')
-caller = constraints.new_bitvec(256, name='caller')
-value = constraints.new_bitvec(256, name='value')
-balance = constraints.new_bitvec(256, name='balance')
 
 
 code = EVMAsm.assemble(
 '''
-PUSH1 00
-DUP5
-SWAP1
-SWAP2
-SWAP1
-SWAP2
-POP   
+	PUSH1 0x0
+	DUP2
+	SWAP1
+	POP
+	SWAP2
+	SWAP1
+	POP
+	JUMP 
 '''
 )
 
 
 data = constraints.new_array(index_bits=256, name='array')
-header = {'timestamp': constraints.new_bitvec(256, name='timestamp'),
-          'coinbase': constraints.new_bitvec(256, name='coinbase'),
-          'gaslimit': constraints.new_bitvec(256, name='gaslimit'),
-          'difficulty': constraints.new_bitvec(256, name='difficulty'),
-          'number': constraints.new_bitvec(256, name='number')
-        }
+header = {         }
 
 class callbacks():
     initial_stack = []
@@ -67,24 +57,99 @@ class callbacks():
         for i in range(len(evm.stack), instr.pops):
             e = constraints.new_bitvec(256, name='stack_%d'%len(self.initial_stack))
             self.initial_stack.append(e)
-            evm.stack.append(e)
+            evm.stack.insert(0, e)
 
+    def COINBASE(self):
+        '''Get the block's beneficiary address'''
+        return self.world.block_coinbase()
+
+    def TIMESTAMP(self):
+        '''Get the block's timestamp'''
+        return self.world.block_timestamp()
+
+    def NUMBER(self):
+        '''Get the block's number'''
+        return self.world.block_number()
+
+    def DIFFICULTY(self):
+        '''Get the block's difficulty'''
+        return self.world.block_difficulty()
+
+    def GASLIMIT(self):
+        '''Get the block's gas limit'''
+        return self.world.block_gaslimit()
+
+class DummyWorld():
+    def __init__(self, constraints):
+        self.balances = constraints.new_array(index_bits=256, value_bits=256, name='balances')
+        self.storage = constraints.new_array(index_bits=256, value_bits=256, name='storage')
+        self.origin = constraints.new_bitvec(256, name='origin')
+        self.price = constraints.new_bitvec(256, name='price')
+        self.timestamp = constraints.new_bitvec(256, name='timestamp')
+        self.coinbase = constraints.new_bitvec(256, name='coinbase')
+        self.gaslimit = constraints.new_bitvec(256, name='gaslimit')
+        self.difficulty = constraints.new_bitvec(256, name='difficulty')
+        self.number = constraints.new_bitvec(256, name='number')
+
+    def get_balance(self, address):
+         return self.balances[address]
+    def tx_origin(self):
+        return self.origin
+    def tx_gasprice(self):
+        return self.price
+    def block_coinbase(self):
+        return self.coinbase
+    def block_timestamp(self):
+        return self.timestamp
+    def block_number(self):
+        return self.number
+    def block_difficulty(self):
+        return self.difficulty
+    def block_gaslimit(self):
+        return self.gaslimit
+
+    def get_storage_data(self, address, offset):
+        #This works on a single account address 
+        return self.storage[offset]
+        
+    def set_storage_data(self, address, offset, value):
+         self.storage[offset] = value
+
+    def log(self, address, topics, memlog):
+        pass
+
+    def send_funds(address, recipient, value):
+        orig = self.balances[address] - value
+        dest = self.balances[recipient] + value
+        self.balances[address] = orig
+        self.balances[recipient] = dest
+
+
+caller = constraints.new_bitvec(256, name='caller')
+value = constraints.new_bitvec(256, name='value')
+
+world = DummyWorld(constraints)
 callbacks = callbacks()
-world = EVMWorld(constraints)
-address = world.create_account(balance=balance, code='')
 
-
-evm = EVM(constraints, address, origin, price, data, caller, value, code, header, world=world, depth=0, gas=1000000)
+#evm = world.current_vm
+evm = EVM(constraints, 0x41424344454647484950, data, caller, value, code, world=world, gas=1000000)
 evm.subscribe('will_execute_instruction', callbacks.will_execute_instruction)
+
+
 
 
 print "CODE:"
 while not issymbolic(evm.pc):
     print '\t',evm.pc, evm.instruction
-    evm.execute()
+    try:
+        evm.execute()
+        print evm
+    except EndTx:
+        break
+
 
 #print translate_to_smtlib(arithmetic_simplifier(evm.stack[0]))
-print "STORAGE =",  translate_to_smtlib(world.get_storage(address))
+print "STORAGE =",  translate_to_smtlib(world.storage)
 print "MEM =",  translate_to_smtlib(evm.memory)
 
 
