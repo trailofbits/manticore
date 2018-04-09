@@ -1080,7 +1080,6 @@ class EVM(Eventful):
 
     def _allocate(self, address):
         allocated = self.allocated
-
         GMEMORY = 3
         GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
         old_size = Operators.ZEXTEND(Operators.UDIV(ceil32(allocated), 32), 512)
@@ -1556,8 +1555,7 @@ class EVM(Eventful):
                 else:
                     value = 0
             bytes.append(value)
-        value = Operators.CONCAT(256, *bytes)
-        return value
+        return Operators.CONCAT(256, *bytes)
 
     def CALLDATASIZE(self):
         '''Get size of input data in current environment'''

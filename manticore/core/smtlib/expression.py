@@ -746,6 +746,9 @@ class ArrayProxy(Array):
         return auxiliar
 
     def _fix_index(self, index):
+        """
+        :param slice index:
+        """
         stop, start = index.stop, index.start
         if start is None:
             start = 0
@@ -768,7 +771,11 @@ class ArrayProxy(Array):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
-            new_array = ArrayVariable(self.index_bits, size, self.value_bits, name='%s_slice'%(self.name), taint=self.taint)
+            if isinstance(start, Expression) or isinstance(stop, Expression):
+                name = '{}_sliced'.format(self.name)
+            else:
+                name = '{}_sliced_b{}_e{}'.format(self.name, start, stop)
+            new_array = ArrayVariable(self.index_bits, size, self.value_bits, name=name, taint=self.taint)
             new_array = ArrayProxy(new_array)
             for i in xrange(size):
                 if self.index_max is not None and not isinstance(i + start, Expression) and i + start >= self.index_max:

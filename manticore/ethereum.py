@@ -3,7 +3,7 @@ import string
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
-from .core.smtlib.visitors import simplify, translate_to_smtlib
+from .core.smtlib.visitors import simplify
 from .platforms import evm
 from .core.state import State
 import tempfile
@@ -25,6 +25,12 @@ logger = logging.getLogger(__name__)
 
 class EthereumError(ManticoreError):
     pass
+
+
+class DependencyError(EthereumError):
+    def __init__(self, lib_names):
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        self.lib_names = lib_names
 
 
 class NoAliveStates(EthereumError):
@@ -300,8 +306,7 @@ class ABI(object):
 
     '''
     class SByte():
-        ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
-
+        ''' Unconstrained symbolic byte string, not associated with any ConstraintSet '''
         def __init__(self, size=1):
             self.size = size
 
@@ -396,78 +401,139 @@ class ABI(object):
     @staticmethod
     def make_function_call(method_name, *args):
         function_id = ABI.make_function_id(method_name)
-
-        def check_bitsize(value, size):
-            if isinstance(value, BitVec):
-                return value.size == size
-            return (value & ~((1 << size) - 1)) == 0
         assert len(function_id) == 4
         result = [tuple(function_id)]
         result.append(ABI.make_function_arguments(*args))
         return reduce(lambda x, y: x + y, result)
 
     @staticmethod
-    def _consume_type(ty, data, offset):
-        ''' INTERNAL parses a value of type from data '''
-        def get_uint(size, offset):
-            def _simplify(x):
-                value = simplify(x)
-                if isinstance(value, Constant) and not value.taint:
-                    return value.value
-                else:
-                    return value
+    def _parse_size(num):
+        """
+        Parses the size part of a uint or int Solidity declaration.
+        If empty string, returns 256
 
-            size = _simplify(size)
-            offset = _simplify(offset)
-            byte_size = size / 8
-            padding = 32 - byte_size  # for 160
-            value = Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size]))
-            return _simplify(value)
+        :param str num: text following uint/int in a Solidity type declaration
+        :return: uint or int size
+        :rtype: int
+        :raises EthereumError: if invalid size
+        """
+        if not num:
+            return 256
 
-        if ty == u'uint256':
-            return get_uint(256, offset), offset + 32
-        elif ty in (u'bool', u'uint8'):
-            return get_uint(8, offset), offset + 32
-        elif ty == u'address':
-            return get_uint(160, offset), offset + 32
-        elif ty == u'int256':
-            value = get_uint(256, offset)
-            mask = 2**(256 - 1)
-            value = -(value & mask) + (value & ~mask)
-            return value, offset + 32
-        elif ty == u'':
-            return None, offset
-        elif ty in (u'bytes', u'string'):
-            dyn_offset = 4 + get_uint(256, offset)
-            size = get_uint(256, dyn_offset)
-            return data[dyn_offset + 32:dyn_offset + 32 + size], offset + 4
-        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
-            size = int(ty[5:])
-            return data[offset:offset + size], offset + 32
-        elif ty == u'address[]':
-            dyn_offset = 4 + get_uint(256, offset)
-            size = get_uint(256, dyn_offset)
-            return data[dyn_offset + 32:dyn_offset + 32 + size], offset + 4
-        else:
-            raise NotImplementedError(ty)
+        malformed = False
+        try:
+            size = int(num)
+        except ValueError:
+            malformed = True
+
+        if malformed or size < 8 or size > 256 or size % 8 != 0:
+            raise EthereumError('Invalid type size: {}'.format(num))
+
+        return size
 
     @staticmethod
-    def parse(signature, data):
-        ''' Deserialize function ID and arguments specified in `signature` from `data` '''
+    def get_uint(data, nbytes, offset):
+        """
+        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
 
-        is_multiple = '(' in signature
-        if is_multiple:
-            func_name = signature.split('(')[0]
-            types = signature.split('(')[1][:-1].split(',')
-            if len(func_name) > 0:
-                off = 4
+        :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
+        :param offset: byte offset
+        :param nbytes: number of bytes to read starting from least significant byte
+        :rtype: int or Expression
+        """
+        def _simplify(x):
+            value = simplify(x)
+            if isinstance(value, Constant) and not value.taint:
+                return value.value
             else:
+                return value
+
+        nbytes = _simplify(nbytes)
+        offset = _simplify(offset)
+        padding = 32 - nbytes
+        start = offset + padding
+        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
+        return _simplify(value)
+
+    @staticmethod        
+    def _consume_type(ty, data, offset):
+        """
+        Parses a value of type from data
+
+        Further info: http://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+
+        :param data: transaction data WITHOUT the function hash first 4 bytes
+        :param offset: offset into data of the first byte of the "head part" of the ABI element
+        :return: tuple where the first element is the extracted ABI element, and the second is the offset of
+            the next ABI element
+        :rtype: tuple
+        """
+        # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
+        # should be something the caller keeps track of.
+
+        new_offset = offset + 32
+
+        if ty.startswith('uint'):
+            size = ABI._parse_size(ty[4:]) // 8
+            result = ABI.get_uint(data, size, offset)
+        elif ty.startswith('int'):
+            size = ABI._parse_size(ty[3:])
+            value = ABI.get_uint(data, size // 8, offset)
+            mask = 2**(size - 1)
+            value = -(value & mask) + (value & ~mask)
+            result = value
+        elif ty in (u'bool'):
+            result = ABI.get_uint(data, 1, offset)
+        elif ty == u'address':
+            result = ABI.get_uint(data, 20, offset)
+        elif ty == u'':
+            new_offset = offset
+            result = None
+        elif ty in (u'bytes', u'string'):
+            dyn_offset = ABI.get_uint(data, 32, offset)
+            size = ABI.get_uint(data, 32, dyn_offset)
+            result = data[dyn_offset + 32:dyn_offset + 32 + size]
+        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
+            size = int(ty[5:])
+            result = data[offset:offset + size]
+        elif ty == u'address[]':
+            dyn_offset = simplify(ABI.get_uint(data, 32, offset))
+            size = simplify(ABI.get_uint(data, 32, dyn_offset))
+            result = [ABI.get_uint(data, 20, dyn_offset + 32 + 32 * i) for i in range(size)]
+        else:
+            raise NotImplementedError(repr(ty))
+
+        return result, new_offset
+
+    @staticmethod
+    def parse_type_spec(type_spec):
+        is_multiple = '(' in type_spec
+        if is_multiple:
+            func_name = type_spec.split('(')[0]
+            types = type_spec.split('(')[1][:-1].split(',')
+            if not func_name:
                 func_name = None
-                off = 0
         else:
             func_name = None
-            types = (signature,)
-            off = 0
+            types = (type_spec,)
+        return is_multiple, func_name, types
+
+    @staticmethod
+    def parse(type_spec, data):
+        ''' Deserialize function ID and arguments specified in `type_spec` from `data`
+
+        :param str type_spec: EVM ABI function specification. function name is optional
+        :param data: ethereum transaction data
+        :type data: str or Array
+        :return:
+        '''
+        is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
+
+        off = 0
+
+        #If it parsed the function name from the spec, skip 4 bytes from the data
+        if func_name:
+            data = data[4:]
 
         arguments = []
         for ty in types:
@@ -626,17 +692,49 @@ class ManticoreEVM(Manticore):
         return ABI.SValue
 
     @staticmethod
-    def compile(source_code, contract_name=None):
+    def compile(source_code, contract_name=None, libraries=None):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name)
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
         return bytecode
 
     @staticmethod
-    def _compile(source_code, contract_name):
+    def _link(bytecode, libraries=None):
+        has_dependencies = '_' in bytecode
+        hex_contract = bytecode
+        if has_dependencies:
+            deps = {}
+            pos = 0
+            while pos < len(hex_contract):
+                if hex_contract[pos] == '_':
+                    # __/tmp/tmp_9k7_l:Manticore______________
+                    lib_placeholder = hex_contract[pos:pos + 40]
+                    lib_name = lib_placeholder.split(':')[1].split('_')[0]
+                    deps.setdefault(lib_name, []).append(pos)
+                    pos += 40
+                else:
+                    pos += 2
+
+            if libraries is None:
+                raise DependencyError(deps.keys())
+            libraries = dict(libraries)
+            hex_contract_lst = list(hex_contract)
+            for lib_name, pos_lst in deps.items():
+                try:
+                    lib_address = libraries[lib_name]
+                except KeyError:
+                    raise DependencyError([lib_name])
+                for pos in pos_lst:
+                    hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
+            hex_contract = ''.join(hex_contract_lst)
+        return hex_contract
+
+    @staticmethod
+    def _compile(source_code, contract_name, libraries=None):
         """ Compile a Solidity contract, used internally
 
             :param source_code: a solidity source code
             :param contract_name: a string with the name of the contract to analyze
+            :param libraries: an itemizable of piars (library_name, address) 
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
@@ -668,14 +766,15 @@ class ManticoreEVM(Manticore):
 
             if contract['bin'] == '':
                 raise Exception('Solidity failed to compile your contract.')
-                
-            bytecode = contract['bin'].decode('hex')
+
+            bytecode = ManticoreEVM._link(contract['bin'], libraries).decode('hex')
             srcmap = contract['srcmap'].split(';')
             srcmap_runtime = contract['srcmap-runtime'].split(';')
             hashes = contract['hashes']
             abi = json.loads(contract['abi'])
-            runtime = contract['bin-runtime'].decode('hex')
+            runtime = ManticoreEVM._link(contract['bin-runtime'], libraries).decode('hex')
             warnings = p.stderr.read()
+
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1, **kwargs):
@@ -840,7 +939,7 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, contract_name=None, balance=0, address=None, args=()):
+    def solidity_create_contract(self, source_code, owner, contract_name=None, libraries=None, balance=0, address=None, args=()):
         ''' Creates a solidity contract
 
             :param str source_code: solidity source code
@@ -855,7 +954,7 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-        compile_results = self._compile(source_code, contract_name)
+        compile_results = self._compile(source_code, contract_name, libraries=libraries)
         init_bytecode = compile_results[2]
 
         if address is None:
@@ -951,6 +1050,7 @@ class ManticoreEVM(Manticore):
 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
+
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data, 10)
 
@@ -969,8 +1069,20 @@ class ManticoreEVM(Manticore):
             source_code = f.read()
 
         owner_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
+
+        deps = {}
+        contract_names = [contract_name]
+        while contract_names:
+            contract_name = contract_names.pop()
+            try:
+                contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account, libraries=deps)
+                deps[contract_name] = contract_account
+            except DependencyError as e:
+                contract_names.append(contract_name)
+                for lib_name in e.lib_names:
+                    if lib_name not in deps:
+                        contract_names.append(lib_name)
 
         if tx_account == "attacker":
             tx_account = attacker_account
