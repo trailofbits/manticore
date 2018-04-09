@@ -7,6 +7,11 @@ function install_solc {
 
 install_solc
 
-pip3 install -U pip
-pip3 uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
-pip3 install --no-binary keystone-engine -e .[dev]  # ks can have pip install issues
+# if pip3 exists, use it instead of pip
+if command pip3 2>/dev/null; then
+    alias pip=pip3
+fi
+
+pip install -U pip
+pip uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
+pip install --no-binary keystone-engine -e .[dev]  # ks can have pip install issues
