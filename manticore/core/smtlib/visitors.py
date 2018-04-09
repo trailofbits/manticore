@@ -372,7 +372,7 @@ class ArithmeticSimplifier(Visitor):
                         new_operands.append(item)
                     bitcount += item.size
             if begining != expression.begining:
-                return BitVecExtract(BitVecConcat(sum([x.size for x in new_operands]), *reversed(new_operands)),
+                return BitVecExtract(BitVecConcat(sum(x.size for x in new_operands), *reversed(new_operands)),
                                      begining, expression.size, taint=expression.taint)
 
     def visit_BitVecAdd(self, expression, *operands):

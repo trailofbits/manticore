@@ -631,7 +631,7 @@ class ManticoreEVM(Manticore):
 
             name, contract = None, None
             if contract_name is None:
-                name, contract = list(contracts.items())[0]
+                name, contract = next(iter(contracts.items()))
             else:
                 for n, c in contracts.items():
                     if n.split(":")[1] == contract_name:
@@ -1269,7 +1269,7 @@ class ManticoreEVM(Manticore):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = ''.join([c for c in solved_memlog if c in string.printable])
+                printable_bytes = ''.join(c for c in solved_memlog if c in string.printable)
 
                 logs_summary.write(u"Address: %x\n" % log_item.address)
                 logs_summary.write(u"Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))

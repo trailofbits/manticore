@@ -14,9 +14,7 @@ import unicorn
 
 from .disasm import init_disassembler
 from ..smtlib import Expression, BitVec, Operators, Constant
-from ..memory import (
-    ConcretizeMemory, InvalidMemoryAccess
-)
+from ..memory import ConcretizeMemory, InvalidMemoryAccess
 from ...utils.helpers import issymbolic, isstring, isint
 from ...utils.emulate import UnicornEmulator
 from ...utils.event import Eventful
