@@ -5,7 +5,7 @@ import sys
 import binascii
 
 if sys.version_info[0] == 2:
-    from types import StringType
+    from types import IntType, StringType
 
 def issymbolic(value):
     '''
@@ -19,9 +19,30 @@ def issymbolic(value):
     from ..core.smtlib import Expression
     return isinstance(value, Expression)
 
+def all_ints(ns):
+    '''
+    Convert a potentially heterogenous sequence to an iterable of ints.
+    '''
+
+    for n in ns:
+        if isint(n):
+            yield n
+        elif isbytestr(n):
+            if len(n) == 1:
+                yield n[0]
+            else:
+                raise ValueError('received a bytestring with len >1 where int was needed')
+        elif isstring(n):
+            if len(n) == 1:
+                yield ord(n)
+            else:
+                raise ValueError('received a string with len >1 where int was needed')
+        else:
+            raise ValueError('received a {} where int was needed'.format(type(n)))
+
 def hex_encode(s):
     if isinstance(s, tuple):
-        s = bytes(s)
+        s = bytes(list(all_ints(s)))
     return binascii.hexlify(s).decode('utf-8')
 
 def isstring(value):
@@ -59,6 +80,23 @@ def isunicode(value):
     elif sys.version_info[0] == 3:
         return isinstance(value, str)
 
+def isbytestr(value):
+    '''
+    Helper to determine whether an object is a bytestring, which is nontrivial when targeting Python 2 and 3 at the same
+    time.
+
+    :param object value: object to check
+    :return: whether `value` can be treated as string
+    :rtype: bool
+    '''
+
+    # in python3, bytestring types are 'bytes'
+    # in python2, bytestring types are 'str'
+    if sys.version_info[0] == 2:
+        return isinstance(value, str)
+    elif sys.version_info[0] == 3:
+        return isinstance(value, bytes)
+
 def isint(value):
     '''
     Helper to determine whether an object is an int, which is nontrivial when targeting Python 2 and 3 at the same
@@ -70,7 +108,7 @@ def isint(value):
     '''
 
     if sys.version_info[0] == 2:
-        return isinstance(value, (int, long))
+        return isinstance(value, (int, long, IntType))
     elif sys.version_info[0] == 3:
         return isinstance(value, int)
 

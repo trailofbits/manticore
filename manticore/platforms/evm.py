@@ -14,7 +14,7 @@ from collections import namedtuple
 from itertools import chain
 from functools import wraps
 
-from ..utils.helpers import issymbolic, memoized, isstring, isint
+from ..utils.helpers import issymbolic, memoized, isstring, isint, isbytestr, all_ints
 from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
     SolverException
