@@ -16,11 +16,11 @@ contract_account = m.create_contract(owner=user_account,
                                           balance=0, 
                                           init=bytecode)
 
-m.transaction(  caller=user_account,
-                    address=contract_account,
-                    value=None,
-                    data=m.SByte(164),
-                 )
+m.transaction(caller=user_account,
+              address=contract_account,
+              value=None,
+              data=m.SByte(164),
+              )
 
 #Up to here we get only ~30% coverage. 
 #We need 2 transactions to fully explore the contract

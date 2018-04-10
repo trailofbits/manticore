@@ -32,7 +32,7 @@ printi(instruction)
 instruction = ea.assemble_one('PUSH1 0x10')
 printi(instruction)
 
-for instruction in ea.disassemble_all('\x30\x31'):
+for instruction in ea.disassemble_all(b'\x30\x31'):
     printi(instruction)
 
 for instruction in ea.assemble_all('ADDRESS\nBALANCE'):

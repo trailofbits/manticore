@@ -341,7 +341,7 @@ class ABI(object):
         '''
         s = sha3.keccak_256()
         s.update(method_name_and_signature.encode('utf-8'))
-        return s.hexdigest()[:8].decode('hex')
+        return bytes.fromhex(s.hexdigest()[:8])
 
     @staticmethod
     def make_function_arguments(*args):
@@ -1263,16 +1263,16 @@ class ManticoreEVM(Manticore):
                 tx_summary.write(u'\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # logs
-        with testcase.open_stream('logs') as logs_summary:
+        with testcase.open_stream('logs', binary=False) as logs_summary:
             is_something_symbolic = False
             for log_item in blockchain.logs:
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = ''.join(c for c in solved_memlog if c in string.printable)
+                printable_bytes = bytes(c for c in solved_memlog if chr(c) in string.printable)
 
                 logs_summary.write(u"Address: %x\n" % log_item.address)
-                logs_summary.write(u"Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
+                logs_summary.write(u"Memlog: %s (%s) %s\n" % (solved_memlog.hex(), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write(u"Topics:\n")
                 for i, topic in enumerate(log_item.topics):
                     logs_summary.write(u"\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
