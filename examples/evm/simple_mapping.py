@@ -1,3 +1,4 @@
+from __future__ import print_function
 from manticore.ethereum import ManticoreEVM
 ################ Script #######################
 
@@ -43,6 +44,6 @@ m.transaction(  caller=user_account,
                  )
 
 m.finalize()
-print "[+] Look for results in %s"% m.workspace
+print("[+] Look for results in %s"% m.workspace)
 
 

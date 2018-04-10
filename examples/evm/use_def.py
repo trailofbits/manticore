@@ -1,3 +1,4 @@
+from __future__ import print_function
 from manticore.ethereum import ManticoreEVM, Plugin
 from manticore.core.smtlib import solver
 from manticore.core.smtlib.visitors import arithmetic_simplifier, pretty_print, constant_folder
@@ -35,7 +36,7 @@ contract C {
     }
 }
 '''
-print source_code
+print(source_code)
 class EVMUseDef(Plugin):
     def _get_concrete_hex(self, state, array):
         r = ''
@@ -99,12 +100,12 @@ m.transaction(  caller=user_account,
                    value=symbolic_value,
                    data=symbolic_data
                  )
-print "READS", p.context['storage_reads']
-print "WRITES", p.context['storage_writes']
+print("READS", p.context['storage_reads'])
+print("WRITES", p.context['storage_writes'])
 
-print "It makes no sense to try f3() after 1 tx"
+print("It makes no sense to try f3() after 1 tx")
 
 m.finalize()
-print "[+] Look for results in %s"% m.workspace
+print("[+] Look for results in %s"% m.workspace)
 
 
