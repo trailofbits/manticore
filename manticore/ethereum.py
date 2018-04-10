@@ -69,8 +69,7 @@ class IntegerOverflow(Detector):
     '''
     @staticmethod
     def _can_add_overflow(state, result, a, b):
-        # TODO FIXME (mark) this is using a signed LT. need to check if this is correct
-        return state.can_be_true(result < a) or state.can_be_true(result < b)
+        return state.can_be_true(operators.ULT(result, a) | operators.ULT(result, b))
 
     @staticmethod
     def _can_mul_overflow(state, result, a, b):
