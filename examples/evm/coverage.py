@@ -5,7 +5,8 @@ m = ManticoreEVM()
 m.verbosity(3)
 
 #And now make the contract account to analyze
-source_code = open('coverage.sol').read()
+with open('coverage.sol') as f:
+    source_code = f.read()
 
 user_account = m.create_account(balance=1000)
 
