@@ -388,6 +388,8 @@ class Linux(Platform):
         # Many programs to support SLinux
         self.programs = program
         self.disasm = disasm
+        self.envp = envp
+        self.argv = argv
 
         # dict of [int -> (int, int)] where tuple is (soft, hard) limits
         self._rlimits = {
@@ -513,6 +515,8 @@ class Linux(Platform):
         state['twait'] = self.twait
         state['timers'] = self.timers
         state['syscall_trace'] = self.syscall_trace
+        state['argv'] = self.argv
+        state['envp'] = self.envp
         state['base'] = self.base
         state['elf_bss'] = self.elf_bss
         state['end_code'] = self.end_code
@@ -565,6 +569,8 @@ class Linux(Platform):
         self.clocks = state['clocks']
 
         self.syscall_trace = state['syscall_trace']
+        self.argv = state['argv']
+        self.envp = state['envp']
         self.base = state['base']
         self.elf_bss = state['elf_bss']
         self.end_code = state['end_code']
@@ -2609,6 +2615,8 @@ class SLinux(Linux):
         inn = StringIO.StringIO()
         err = StringIO.StringIO()
         net = StringIO.StringIO()
+        argIO = StringIO.StringIO()
+        envIO = StringIO.StringIO()
 
         for name, fd, data in self.syscall_trace:
             if name in ('_transmit', '_write'):
@@ -2621,8 +2629,34 @@ class SLinux(Linux):
             if name in ('_receive', '_read') and fd == 0:
                 solve_to_fd(data, inn)
 
+        first = True
+        argIO.write("[")
+        for a in self.argv:
+            if first:
+                first = False
+            else:
+                argIO.write(", ")
+            argIO.write("'")
+            solve_to_fd(a, argIO)
+            argIO.write("'")
+        argIO.write("]")
+
+        first = True
+        envIO.write("[")
+        for e in self.envp:
+            if first:
+                first = False
+            else:
+                envIO.write(", ")
+            envIO.write("'")
+            solve_to_fd(e, envIO)
+            envIO.write("'")
+        envIO.write("]")
+
         ret = {
             'syscalls': repr(self.syscall_trace),
+            'argv': argIO.getvalue(),
+            'env': envIO.getvalue(),
             'stdout': out.getvalue(),
             'stdin': inn.getvalue(),
             'stderr': err.getvalue(),
