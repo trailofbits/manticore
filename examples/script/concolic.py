@@ -266,7 +266,7 @@ def main():
         main_end = int(sys.argv[1], 0)
         log("Got end of main: {:x}".format(main_end))
 
-    q = queue.queue()
+    q = queue.Queue()
 
     # todo randomly generated concrete start
     stdin = ints2inp(0, 5, 0)
