@@ -1,5 +1,5 @@
 import string
-
+import re
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
@@ -140,13 +140,9 @@ class UninitializedStorage(Detector):
 
 def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
-    end = None
-    if ''.join(runtime_bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
-        end = -9 - 32 - 2  # Size of metadata at the end of most contracts
-
     count, total = 0, 0
-    for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]):
+    bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
+    for i in evm.EVMAsm.disassemble_all(bytecode):
         if i.offset in seen:
             count += 1
         total += 1
@@ -167,7 +163,8 @@ class SolidityMetadata(object):
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
-    def _remove_tail(self, bytecode):
+    @staticmethod
+    def _without_metadata(bytecode):
         end = None
         if ''.join(bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
                 and ''.join(bytecode[-2:]) == '\x00\x29':
@@ -177,7 +174,7 @@ class SolidityMetadata(object):
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
-        bytecode = self._remove_tail(bytecode)
+        bytecode = self._without_metadata(bytecode)
 
         asm_offset = 0
         asm_pos = 0
@@ -210,12 +207,12 @@ class SolidityMetadata(object):
     @property
     def runtime_bytecode(self):
         # Removes metadata from the tail of bytecode
-        return self._remove_tail(self._runtime_bytecode)
+        return self._without_metadata(self._runtime_bytecode)
 
     @property
     def init_bytecode(self):
         # Removes metadata from the tail of bytecode
-        return self._remove_tail(self._init_bytecode)
+        return self._without_metadata(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
@@ -609,13 +606,14 @@ class ManticoreEVM(Manticore):
 
         #check solc version
         supported_versions = ('0.4.18', '0.4.21')
-        installed_version = check_output(["solc", "--version"])
-        for line in installed_version.split('\n'):
-            if 'ersion:' in line:
-                installed_version = line.split(":")[1].split('+')[0]
-                break
+        installed_version_output = check_output([solc, "--version"])
+
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL|re.IGNORECASE)
+
+        print m.groupdict()
+        installed_version = m.groupdict()['version']
         if installed_version not in supported_versions:
-            #Fixme 
+            #Fixme https://github.com/trailofbits/manticore/issues/847
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
 
