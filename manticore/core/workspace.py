@@ -16,7 +16,7 @@ from multiprocessing.managers import SyncManager
 from .smtlib import solver
 from .smtlib.solver import SolverException
 from .state import State
-from ..utils.helpers import isstring
+from ..utils.helpers import isunicode
 
 logger = logging.getLogger(__name__)
 
@@ -510,8 +510,8 @@ class ManticoreOutput(object):
 
         for stream_name, data in state.platform.generate_workspace_files().items():
             with self._named_stream(stream_name, binary=True) as stream:
-                if isstring(data):
-                    data = str.encode('utf-8')
+                if isunicode(data):
+                    data = data.encode('utf-8')
                 stream.write(data)
 
         self._store.save_state(state, self._named_key('pkl'))
