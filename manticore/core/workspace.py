@@ -16,6 +16,7 @@ from multiprocessing.managers import SyncManager
 from .smtlib import solver
 from .smtlib.solver import SolverException
 from .state import State
+from ..utils.helpers import isstring
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +125,7 @@ class Store(object):
         :param str key: The key that identifies the value
         :return: The loaded value
         """
-        with self.load_stream(key, binary=True) as s:
+        with self.load_stream(key, binary=binary) as s:
             return s.read()
 
     @contextmanager
@@ -152,8 +153,8 @@ class Store(object):
         :param key:
         :return: A managed stream-like object
         """
-        value = self.load_value(key)
-        yield io.BytesIO(value)
+        value = self.load_value(key, binary=binary)
+        yield io.BytesIO(value) if binary else io.StringIO(value)
 
     def save_state(self, state, key):
         """
@@ -398,11 +399,7 @@ class Workspace(object):
         :return: The deserialized state
         :rtype: State
         """
-        if self._suffix == '.pkl':
-            binary = True
-        else:
-            binary = False
-        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete, binary=binary)
+        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete, binary=True)
 
     def save_state(self, state):
         """
@@ -513,7 +510,7 @@ class ManticoreOutput(object):
 
         for stream_name, data in state.platform.generate_workspace_files().items():
             with self._named_stream(stream_name, binary=True) as stream:
-                if isinstance(data, str):
+                if isstring(data):
                     data = str.encode('utf-8')
                 stream.write(data)
 

@@ -14,12 +14,10 @@ Bugs
 '''
 
 import sys
-try:
-    import Queue
-except:
-    import queue as Queue
 import struct
 import itertools
+
+from queue import queue
 
 from manticore import Manticore
 from manticore.core.plugin import ExtendedTracer, Follower, Plugin
@@ -266,7 +264,7 @@ def main():
         main_end = int(sys.argv[1], 0)
         log("Got end of main: {:x}".format(main_end))
 
-    q = Queue.Queue()
+    q = queue()
 
     # todo randomly generated concrete start
     stdin = ints2inp(0, 5, 0)

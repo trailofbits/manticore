@@ -75,9 +75,9 @@ def _normalize(c):
     :param c:
     :return:
     """
-    if isinstance(c, int):
+    if isint(c):
         return bytes([c])
-    elif isinstance(c, str):
+    elif isstring(c):
         return bytes([ord(c)])
     else:
         return c
@@ -276,12 +276,12 @@ class AnonMap(Map):
             len(value) == index.stop - index.start
         index = self._get_offset(index)
         if isinstance(index, slice):
-            if not isinstance(value[0], int):
-                value = [ord(n) for n in value]
+            if not isint(value[0]):
+                value = [Operators.ORD(n) for n in value]
             for i in range(index.stop - index.start):
                 self._data[index.start + i] = value[i]
         else:
-            self._data[index] = ord(value)
+            self._data[index] = Operators.ORD(value)
 
     def __getitem__(self, index):
         index = self._get_offset(index)
@@ -352,7 +352,7 @@ class FileMap(Map):
                 return _normalize(self._overlay[offset])
             else:
                 if offset >= self._mapped_size:
-                    return bytes([0])  # , 'Extra data must initially be zero'
+                    return bytes(1)  # , 'Extra data must initially be zero'
                 return _normalize(self._data[offset])
 
         index = self._get_offset(index)

@@ -611,7 +611,7 @@ class ManticoreEVM(Manticore):
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
 
-        if isinstance(source_code, str):
+        if isstring(source_code):
             source_code = source_code.encode('utf-8')
 
         solc = "solc"
@@ -638,7 +638,7 @@ class ManticoreEVM(Manticore):
                         name, contract = n, c
                         break
 
-            assert (name is not None)
+            assert name is not None
             name = name.split(':')[1]
 
             if contract['bin'] == '':

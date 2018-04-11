@@ -3,7 +3,7 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import str, range
 from pprint import pformat
-from manticore.utils.helpers import isstring
+from manticore.utils.helpers import isstring, isint
 
 def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
     nlch = lfchar + htchar * (indent + 1)
@@ -47,7 +47,7 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
             o = []
             for pos in range(0, len(value), width): 
                 o.append(repr(value[pos: pos+width]) )
-            return 'bytes(b' + ('\\' + lfchar + htchar * indent).join(o) + ')'
+            return 'b' + ('\\' + lfchar + htchar * indent).join(o)
         return repr(value)
 
     else:
@@ -64,7 +64,7 @@ def spprint(x, indent=0, width=None,**kwargs):
     return (('\n'+' '*indent)).join(x.split('\n'))
 
 def i(x):
-    if isinstance(x, (int, int)):
+    if isint(x):
         return x
     assert isstring(x)
     if not x.startswith('0x'):
@@ -206,6 +206,8 @@ if __name__ == '__main__':
     assert filename.endswith('.json')
 
     print('''
+from builtins import *    
+
 import struct
 import unittest
 import json

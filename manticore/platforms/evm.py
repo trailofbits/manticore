@@ -8,7 +8,6 @@ import inspect
 import logging
 import sys
 import binascii
-#if sys.version_info < (3, 6):
 import sha3
 from collections import namedtuple
 from itertools import chain
@@ -840,7 +839,7 @@ class EVMAsm(object):
 
         bytecode = iter(bytecode)
         opcode = next(bytecode)
-        assert isinstance(opcode, int)
+        assert isint(opcode)
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
         name, operand_size, pops, pushes, gas, description = EVMAsm._table.get(opcode, invalid)
         instruction = EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, offset=offset)

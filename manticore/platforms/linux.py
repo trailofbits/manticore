@@ -2609,11 +2609,10 @@ class SLinux(Linux):
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
-            # TODO (phoebe) move to a helpers module
             def make_chr(c):
-                if isinstance(c, int):
+                if isint(c):
                     return bytes([c])
-                elif isinstance(c, str):
+                elif isstring(c):
                     return bytes([ord(c)])
                 return c
             try:

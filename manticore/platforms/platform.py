@@ -1,6 +1,5 @@
 from builtins import *
 from manticore.utils.event import Eventful
-from itertools import islice
 
 class OSException(Exception):
     pass

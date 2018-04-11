@@ -107,7 +107,7 @@ def main():
         ethereum_cli(args)
         return
 
-    env = {key:val for key, val in [env[0].split('=') for env in args.env]}
+    env = dict(v[0].split('=') for v in args.env)
 
     m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 
