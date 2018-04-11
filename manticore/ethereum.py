@@ -608,7 +608,7 @@ class ManticoreEVM(Manticore):
         supported_versions = ('0.4.18', '0.4.21')
         installed_version_output = check_output([solc, "--version"])
 
-        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL|re.IGNORECASE)
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
         installed_version = m.groupdict()['version']
         if installed_version not in supported_versions:
