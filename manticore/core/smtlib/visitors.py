@@ -495,7 +495,8 @@ arithmetic_simplifier_cache = {}
 
 
 def arithmetic_simplify(expression):
-    global arithmetic_simplifier_cache
+    #global arithmetic_simplifier_cache
+    arithmetic_simplifier_cache = {}
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     value = simp.result
@@ -509,7 +510,8 @@ def to_constant(expression):
     else:
         return value
 
-
+from functools32 import lru_cache
+@lru_cache(maxsize=128)
 def simplify(expression):
     expression = constant_folder(expression)
     expression = arithmetic_simplify(expression)

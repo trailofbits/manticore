@@ -1143,7 +1143,7 @@ class EVM(Eventful):
         def getcode():
             bytecode = self.bytecode
             for pc in range(self.pc, len(bytecode)):
-                yield chr(bytecode[pc].value)
+                yield chr(simplify(bytecode[pc]).value)
 
             while True:
                 yield '\x00'
@@ -1162,7 +1162,10 @@ class EVM(Eventful):
         if len(self.stack) >= 1024:
             raise StackOverflow()
 
-        self.stack.append(simplify(value & TT256M1))
+        value = simplify(value & TT256M1)
+        if isinstance(value, Constant) and not value.taint:
+            value = value.value
+        self.stack.append(value)
 
     def _pop(self):
         if len(self.stack) == 0:
@@ -1237,7 +1240,7 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-        #logger.info(str(self))
+
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)
@@ -1301,17 +1304,11 @@ class EVM(Eventful):
     def read_buffer(self, offset, size):
         if issymbolic(size):
             raise EVMException("Symbolic size not supported")
-
         if size == 0:
             return ''
-
         self._allocate(offset + size)
+        return self.memory[offset: offset+size]
 
-        data_symbolic = self.constraints.new_array(index_bits=256, value_bits=8, index_max=size, name='BUFFER')
-        for i in range(size):
-            value = simplify(self._load(offset + i))
-            data_symbolic[i] = value
-        return data_symbolic
 
     def write_buffer(self, offset, data):
         self._allocate(offset + len(data))
@@ -1557,14 +1554,13 @@ class EVM(Eventful):
         data_length = len(self.data)
         bytes = []
         for i in range(32):
-            if issymbolic(offset):
-                value = Operators.ITEBV(8, offset + i < data_length, value, 0)
-            else:
-                if offset + i < data_length:
-                    value = self.data[offset+i]
-                else:
-                    value = 0
-            bytes.append(value)
+            try:
+                c = Operators.ITEBV(8, offset + i < data_length, self.data[offset+i], 0)
+            except IndexError:
+                # offset + i is concrete and outside data
+                c = 0
+
+            bytes.append(c)
         return Operators.CONCAT(256, *bytes)
 
     def CALLDATASIZE(self):
@@ -1581,7 +1577,11 @@ class EVM(Eventful):
 
         self._allocate(mem_offset + size)
         for i in range(size):
-            c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
+            try:
+                c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
+            except IndexError:
+                # data_offset + i is concrete and outside data
+                c = 0
             self._store(mem_offset + i, c)
 
     def CODESIZE(self):
@@ -1702,15 +1702,28 @@ class EVM(Eventful):
     def SLOAD(self, offset):
         '''Load word from storage'''
         self._publish('will_evm_read_storage', offset)
-        value = self.world.get_storage_data(self.address, offset)
-        self._publish('did_evm_read_storage', offset, value)
+        tx = self.world.current_transaction
+        storage_address = tx.address
+        if tx.sort == 'DELEGATECALL':
+            storage_address = tx.caller
+
+        value = self.world.get_storage_data(storage_address, offset)
+        address = self.address
+        if self.world.current_transaction.sort == 'DELEGATECALL':
+            address = self.world.current_transaction.caller
+        self._publish('did_evm_read_storage', address, offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
         self._publish('will_evm_write_storage', offset, value)
-        self.world.set_storage_data(self.address, offset, value)
-        self._publish('did_evm_write_storage', offset, value)
+        tx = self.world.current_transaction
+        storage_address = tx.address
+        if tx.sort == 'DELEGATECALL':
+            storage_address = tx.caller
+
+        self.world.set_storage_data(storage_address, offset, value)
+        self._publish('did_evm_write_storage', storage_address, offset, value)
 
     def JUMP(self, dest):
         '''Alter the program counter'''
@@ -1845,6 +1858,30 @@ class EVM(Eventful):
         '''Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code'''
         raise NotImplemented
 
+    @transact
+    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
+    def DELEGATECALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+        '''Message-call into an account'''
+        self.world.start_transaction('DELEGATECALL',
+                                     address,
+                                     data=self.read_buffer(in_offset, in_size),
+                                     caller=self.address,
+                                     value=value,
+                                     gas=self.gas)
+        raise StartTx()
+
+    @CALL.pos
+    def DELEGATECALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+        data = self.world.current_transaction.return_data
+
+        if data is not None:
+            data_size = len(data)
+            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+            self.current_vm.write_buffer(out_offset, data[:size])
+
+        return self.world.last_transaction.return_value
+
+
     def REVERT(self, offset, size):
         data = self.read_buffer(offset, size)
         self.world.send_funds(self.address, self.caller, self.value)
@@ -1965,7 +2002,6 @@ class EVMWorld(Platform):
         self._pending_transaction = None
         self._transactions = list()
         self._do_events()
-
         '''
         for var_i in range(5):
             for offset_i in range(10):
@@ -1976,7 +2012,7 @@ class EVMWorld(Platform):
                     data = ("%064x" % offset_j).decode('hex') + data
                     value = int(sha3.keccak_256(data).hexdigest(), 16)
                     self._concrete_sha3_callback(data, value)
-            '''
+        '''
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
         state['sha3'] = self._sha3
@@ -2060,7 +2096,11 @@ class EVMWorld(Platform):
             #FIXME this should just close the tx
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
-        self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.world_state[vm.address]['storage']), vm))
+        storage_address = tx.address
+        if tx.sort == 'DELEGATECALL':
+            storage_address = tx.caller
+
+        self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(storage_address)), vm))
 
         self._do_events()
 
@@ -2073,7 +2113,11 @@ class EVMWorld(Platform):
         if rollback:
             for address, account in self._deleted_accounts:
                 self.world_state[address] = account
-            self.world_state[vm.address]['storage'] = account_storage
+            storage_address = tx.address
+            if tx.sort == 'DELEGATECALL':
+                storage_address = tx.caller
+
+            self.set_storage(storage_address, account_storage)
             self._deleted_accounts = self._deleted_accounts
             self._logs = logs
 
@@ -2183,13 +2227,12 @@ class EVMWorld(Platform):
             del self.world_state[address]
             self._deleted_accounts.append(deleted_account)
 
-    def set_storage_data(self, address, offset, value):
-        self.world_state[address]['storage'][offset] = value
-        assert not solver.can_be_true(self.constraints, self.world_state[address]['storage'][offset] != value)
-
-    def get_storage_data(self, address, offset):
-        value = self.world_state[address]['storage'].get(offset, 0)
+    def get_storage_data(self, storage_address, offset):
+        value = self.world_state[storage_address]['storage'].get(offset, 0)
         return simplify(value)
+
+    def set_storage_data(self, storage_address, offset, value):
+        self.world_state[storage_address]['storage'][offset] = value
 
     def get_storage_items(self, address):
         storage = self.world_state[address]['storage']
@@ -2206,6 +2249,9 @@ class EVMWorld(Platform):
 
     def get_storage(self, address):
         return self.world_state[address]['storage']
+
+    def set_storage(self, address, storage):
+        self.world_state[address]['storage'] = storage
 
     def set_balance(self, address, value):
         self.world_state[int(address)]['balance'] = value
@@ -2333,7 +2379,7 @@ class EVMWorld(Platform):
 
     def start_transaction(self, sort, address, price=None, data=None, caller=None, value=0, gas=2300):
         ''' Initiate a transaction
-            :param sort: the type of transaction. CREATE or CALL
+            :param sort: the type of transaction. CREATE or CALL or DELEGATECALL
             :param address: the address of the account which owns the code that is executing.
             :param price: the price of gas in the transaction that originated this execution.
             :param data: the byte array that is the input data to this execution
@@ -2352,7 +2398,7 @@ class EVMWorld(Platform):
         if price is None:
             raise EVMException("Need to set a gas price on human tx")
 
-        if sort not in {'CALL', 'CREATE'}:
+        if sort not in {'CALL', 'CREATE', 'DELEGATECALL'}:
             raise EVMException('Type of transaction not supported')
         if issymbolic(address):
             raise EVMException("Symbolic target address not supported yet. (need to fork on all available addresses)")

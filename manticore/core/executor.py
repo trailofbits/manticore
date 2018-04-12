@@ -384,7 +384,7 @@ class Executor(Eventful):
             setstate(state, solutions[0])
             return state
 
-        logger.info("Forking, about to store. (policy: %s, values: %s)",
+        logger.info("Forking. Policy: %s. Values: %s",
                     policy,
                     ', '.join('0x{:x}'.format(sol) for sol in solutions))
 
@@ -407,7 +407,8 @@ class Executor(Eventful):
                 # maintain a list of childres for logging purpose
                 children.append(state_id)
 
-        logger.debug("Forking current state into states %r", children)
+        print "Forking current state into states %r" % children
+        logger.info("Forking current state into states %r", children)
         return None
 
     def run(self):

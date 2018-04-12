@@ -1222,6 +1222,9 @@ class ManticoreEVM(Manticore):
             Every time a state finishes executing last transaction we save it in
             our private list
         '''
+        if str(e) == 'Abandoned state':
+            #do nothing
+            return
         world = state.platform
         state.context['last_exception'] = e
         e.testcase = False  # Do not generate a testcase file
@@ -1250,7 +1253,7 @@ class ManticoreEVM(Manticore):
         if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
         else:
-            #assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
+            assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
             # if not a revert we save the state for further transactioning
             del state.context['processed']
             self.save(state)  # Add tu running states
@@ -1275,7 +1278,7 @@ class ManticoreEVM(Manticore):
             value = state.new_symbolic_value(256, label='tx%d_value' % txnum)
         if isinstance(data, tuple):
             if any(x is None for x in data):
-                symbolic_data = state.new_symbolic_buffer(label='tx%d_data' % txnum, nbytes=len(data))
+                symbolic_data = state.constraints.new_array(index_bits=256, name='tx%d_data' % txnum, index_max=len(data))
                 for i in range(len(data)):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
@@ -1355,7 +1358,6 @@ class ManticoreEVM(Manticore):
 
             at_runtime = blockchain.last_transaction.sort != 'CREATE'
             address, offset, at_init = state.context['evm.trace'][-1]
-            print at_runtime, blockchain.last_transaction, at_init
             assert at_runtime != at_init
 
             #Last instruction if last tx vas valid
