@@ -56,11 +56,8 @@ def _dict_diff(d1, d2):
 
 
 class Tracer(Plugin):
-    def will_start_run_callback(self, state):
-        state.context['trace'] = []
-
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        state.context['trace'].append(pc)
+        state.context.setdefault('trace',[]).append(pc)
 
 
 class ExtendedTracer(Plugin):
@@ -72,9 +69,6 @@ class ExtendedTracer(Plugin):
         self.last_dict = {}
         self.current_pc = None
         self.context_key = 'e_trace'
-
-    def will_start_run_callback(self, state):
-        state.context[self.context_key] = []
 
     def register_state_to_dict(self, cpu):
         d = {}
@@ -93,7 +87,7 @@ class ExtendedTracer(Plugin):
             'values': _dict_diff(self.last_dict, reg_state)
         }
         self.last_dict = reg_state
-        state.context[self.context_key].append(entry)
+        state.context.get(self.context_key,[]).append(entry)
 
     def will_read_memory_callback(self, state, where, size):
         if self.current_pc == where:
@@ -170,12 +164,9 @@ class Follower(Plugin):
 
 
 class RecordSymbolicBranches(Plugin):
-    def will_start_run_callback(self, state):
-        state.context['branches'] = {}
-
     def did_execute_instruction_callback(self, state, last_pc, target_pc, instruction):
         if state.context.get('forking_pc', False):
-            branches = state.context['branches']
+            branches = state.context.get('branches', {})
             branch = (last_pc, target_pc)
             if branch in branches:
                 branches[branch] += 1

@@ -640,7 +640,7 @@ def translate_to_smtlib(expression, **kwargs):
 class Replace(Visitor):
     ''' Simple visitor to replaces expresions '''
     def __init__(self, bindings, **kwargs):
-        super(GetDeclarations, self).__init__(**kwargs)
+        super(Replace, self).__init__(**kwargs)
         self.bindings = bindings
 
     def visit_Variable(self, expression):

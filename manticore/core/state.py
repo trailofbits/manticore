@@ -271,7 +271,6 @@ class State(Eventful):
             This raises TooManySolutions if more solutions than maxcount
         '''
         assert self.constraints == self.platform.constraints
-
         vals = []
         if policy == 'MINMAX':
             vals = self._solver.minmax(self._constraints, symbolic)
@@ -291,7 +290,7 @@ class State(Eventful):
             vals = solver.get_all_values(self._constraints, symbolic, maxcnt=maxcount,
                                          silent=False)
 
-        return list(set(vals))
+        return tuple(set(vals))
 
     @property
     def _solver(self):

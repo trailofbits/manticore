@@ -1,4 +1,4 @@
-from expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BitVecConstant, BoolConstant, ArrayProxy
+from expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BoolConstant, ArrayProxy, BoolEq, Variable, Constant
 from visitors import GetDeclarations, TranslatorSmtlib, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, simplify, replace
 import logging
 
@@ -50,16 +50,22 @@ class ConstraintSet(object):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
         constraint = simplify(constraint)
-        if isinstance(constraint, BoolConstant) and not constraint.value:
-            logger.info("Adding an imposible constant constraint")
         # If self._child is not None this constraint set has been forked and a
         # a derived constraintset may be using this. So we can't add any more
         # constraints to this one. After the child constraintSet is deleted
         # we regain the ability to add constraints.
         if self._child is not None:
             raise Exception('ConstraintSet is frozen')
-        self._constraints.append(constraint)
 
+        if isinstance(constraint, BoolConstant):
+            if not constraint.value:
+                logger.info("Adding an imposible constant constraint")
+                self._constraints = [constraint]
+            else:
+                return
+
+        self._constraints.append(constraint)
+        
     def _get_sid(self):
         ''' Returns an unique id. '''
         assert self._child is None
@@ -78,6 +84,13 @@ class ConstraintSet(object):
                 added = False
                 logger.debug('Related variables %r', map(lambda x: x.name, related_variables))
                 for constraint in list(remaining_constraints):
+                    if isinstance(constraint, BoolConstant):
+                        if constraint.value:
+                            continue
+                        else:
+                            related_constraints=set((constraint,))
+                            break
+
                     variables = get_variables(constraint)
                     if related_variables & variables:
                         remaining_constraints.remove(constraint)
@@ -95,14 +108,15 @@ class ConstraintSet(object):
         return related_variables, related_constraints
 
     def to_string(self, related_to=None, replace_constants=False):
+        replace_constants=True
         related_variables, related_constraints = self.__get_related(related_to)
 
         if replace_constants:
             constant_bindings = {}
             for expression in self.constraints:
-                if isinstance(expression, BitVecEq) and \
-                   isinstance(expression.operands[0], BitVecVar) and \
-                   isinstance(expression.operands[1], BitVecConstant):
+                if isinstance(expression, BoolEq) and \
+                   isinstance(expression.operands[0], Variable) and \
+                   isinstance(expression.operands[1], Constant):
                     constant_bindings[expression.operands[0]] = expression.operands[1]
 
         tmp = set()
@@ -119,7 +133,7 @@ class ConstraintSet(object):
         translator = TranslatorSmtlib(use_bindings=True)
         for constraint in related_constraints:
             if replace_constants:
-                constraint = replace(constraint, constant_bindings)
+                constraint = simplify(replace(constraint, constant_bindings))
             translator.visit(constraint)
 
         for name, exp, smtlib in translator.bindings:

@@ -789,7 +789,9 @@ class EVMException(Exception):
 
 
 class Emulated(EVMException):
-    pass
+    def __init__(self, result):
+        super(Emulated, self).__init__("Emulated instruction")
+        self.result = result
 
 class ConcretizeStack(EVMException):
     '''
@@ -1235,7 +1237,7 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-
+        #logger.info(str(self))
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)
@@ -1283,8 +1285,11 @@ class EVM(Eventful):
             self._publish('did_evm_execute_instruction', current, arguments, result)
             self._publish('did_execute_instruction', last_pc, self.pc, current)
             raise
-        except Emulated:
-            return
+        except Emulated as e:
+            if not current.is_branch:
+                #advance pc pointer
+                self.pc += self.instruction.size
+            result = e.result
 
         self._push_results(current, result)
         if not current.is_branch:
@@ -1961,6 +1966,7 @@ class EVMWorld(Platform):
         self._transactions = list()
         self._do_events()
 
+        '''
         for var_i in range(5):
             for offset_i in range(10):
                 data = ("%064x%064x" % (var_i, offset_i)).decode('hex')
@@ -1970,7 +1976,7 @@ class EVMWorld(Platform):
                     data = ("%064x" % offset_j).decode('hex') + data
                     value = int(sha3.keccak_256(data).hexdigest(), 16)
                     self._concrete_sha3_callback(data, value)
-
+            '''
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
         state['sha3'] = self._sha3
@@ -2179,10 +2185,10 @@ class EVMWorld(Platform):
 
     def set_storage_data(self, address, offset, value):
         self.world_state[address]['storage'][offset] = value
+        assert not solver.can_be_true(self.constraints, self.world_state[address]['storage'][offset] != value)
 
     def get_storage_data(self, address, offset):
         value = self.world_state[address]['storage'].get(offset, 0)
-        value = simplify(value)
         return simplify(value)
 
     def get_storage_items(self, address):
@@ -2289,13 +2295,10 @@ class EVMWorld(Platform):
         except EndTx as ex:
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
-    def run(self):
-        while True:
-            self.execute()
-
     def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
         ''' code is the runtime code '''
-        storage = {} if storage is None else storage
+        if storage is None:
+            storage = self.constraints.new_array(index_bits=256, value_bits=256, name='STORAGE')
 
         if address is None:
             address = self.new_address()
@@ -2341,7 +2344,6 @@ class EVMWorld(Platform):
 
         '''
         assert self._pending_transaction is None, "Already started tx"
-
         if self.depth > 0:
             origin = self.tx_origin()
             price = self.tx_gasprice()
@@ -2379,8 +2381,6 @@ class EVMWorld(Platform):
             return
         ty, address, origin, price, data, caller, value, bytecode, gas = self._pending_transaction
 
-        # discarding absurd amount of ether (no ether overflow)
-        src_balance = self.get_balance(caller)
 
         failed = False
 
@@ -2388,6 +2388,7 @@ class EVMWorld(Platform):
             failed = True
 
         if not failed:
+            src_balance = self.get_balance(caller)
             enough_balance = src_balance >= value
             if issymbolic(enough_balance):
                 self.constraints.add(src_balance + value >= src_balance)

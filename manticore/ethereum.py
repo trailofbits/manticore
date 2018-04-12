@@ -785,7 +785,7 @@ class ManticoreEVM(Manticore):
 
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
-    def __init__(self, procs=1, **kwargs):
+    def __init__(self, procs=10, **kwargs):
         ''' A Manticore EVM manager
             :param int procs: number of workers to use in the exploration
         '''
@@ -893,7 +893,11 @@ class ManticoreEVM(Manticore):
         if state_id != -1:
             with self.locked_context('seth') as seth_context:
                 lst = seth_context['_saved_states']
-                lst.remove(state_id)
+                try:
+                    lst.remove(state_id)
+                except ValueError:
+                    print "SD@!#!@#", state_id
+                    pass
                 seth_context['_saved_states'] = lst
 
         state = self.load(state_id)
@@ -1063,7 +1067,6 @@ class ManticoreEVM(Manticore):
 
         logger.info("Starting symbolic transaction: %d", self.completed_transactions + 1)
         status = self.run(procs=self._config_procs)
-
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
@@ -1221,11 +1224,11 @@ class ManticoreEVM(Manticore):
         '''
         world = state.platform
         state.context['last_exception'] = e
+        e.testcase = False  # Do not generate a testcase file
 
         if not world.all_transactions:
             logger.debug("Something was wrong. Search terminated in the middle of an ongoing tx")
             self.save(state, final=True)
-            e.testcase = True
             return 
 
         tx = world.all_transactions[-1]
@@ -1246,13 +1249,11 @@ class ManticoreEVM(Manticore):
         # THROWit actually changes the balance and nonce? of some accounts
         if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
-            e.testcase = True
         else:
-            assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
+            #assert tx.result in {'SELFDESTRUCT', 'RETURN', 'STOP'}
             # if not a revert we save the state for further transactioning
             del state.context['processed']
-            self.save(state)
-            e.testcase = False  # Do not generate a testcase file
+            self.save(state)  # Add tu running states
     
     #Callbacks
     def _load_state_callback(self, state, state_id):
@@ -1354,7 +1355,8 @@ class ManticoreEVM(Manticore):
 
             at_runtime = blockchain.last_transaction.sort != 'CREATE'
             address, offset, at_init = state.context['evm.trace'][-1]
-            assert at_runtime != at_init            
+            print at_runtime, blockchain.last_transaction, at_init
+            assert at_runtime != at_init
 
             #Last instruction if last tx vas valid
             if state.context['last_exception'].message != 'TXERROR':
@@ -1378,7 +1380,34 @@ class ManticoreEVM(Manticore):
                 is_something_symbolic = is_something_symbolic or is_balance_symbolic
                 balance = state.solve_one(balance)
                 summary.write("Balance: %d %s\n" % (balance, flagged(is_balance_symbolic)))
+                from .core.smtlib.visitors import translate_to_smtlib
 
+                storage = blockchain.get_storage(account_address)
+                summary.write("Storage: %s" % translate_to_smtlib(storage))
+
+                all_used_indexes = []
+                with state.constraints as temp_cs:
+                    index = temp_cs.new_bitvec(256)
+                    storage = blockchain.get_storage(account_address)
+                    temp_cs.add(storage.get(index) != 0)
+
+                    try:
+                        while True:
+                            a_index = solver.get_value(temp_cs, index)
+                            all_used_indexes.append(a_index)
+
+                            temp_cs.add(storage.get(a_index) != 0)
+                            temp_cs.add(index != a_index)
+                            #print "AINDEX:", a_index, solver.get_value(temp_cs, storage[a_index])
+                    except:
+                        pass
+
+                if all_used_indexes:
+                    summary.write("Storage:\n")
+                    for i in all_used_indexes:
+                        value = storage.get(i)
+                        is_storage_symbolic = issymbolic(value)
+                        summary.write("storage[%x] = %x %s\n" % (state.solve_one(i), state.solve_one(value), flagged(is_storage_symbolic)))
                 '''if blockchain.has_storage(account_address):
                     summary.write("Storage:\n")
                     for offset, value in blockchain.get_storage_items(account_address):
@@ -1491,6 +1520,7 @@ class ManticoreEVM(Manticore):
 
         with testcase.open_stream('trace') as f:
             self._emit_trace_file(f, state.context['evm.trace'])
+        return testcase
 
     @staticmethod
     def _emit_trace_file(filestream, trace):
@@ -1512,7 +1542,7 @@ class ManticoreEVM(Manticore):
         """
         logger.debug("Finalizing %d states.", self.count_states())
         q = Queue()
-        map(q.put, self._running_state_ids)
+        map(q.put, self._all_state_ids)
 
         def f(q):
             try:

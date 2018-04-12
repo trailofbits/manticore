@@ -129,8 +129,8 @@ class Z3Solver(Solver):
         logger.debug('Z3 version: %s', self.version)
 
         if self.version >= Version(4, 5, 0):
-            self.support_maximize = False
-            self.support_minimize = False
+            self.support_maximize = True
+            self.support_minimize = True
             self.support_reset = True
         elif self.version >= Version(4, 4, 1):
             self.support_maximize = True
@@ -365,12 +365,6 @@ class Z3Solver(Solver):
                 # Triggered with two consecutive calls to check-sat
                 # Yet, if the number of solution is large, sending back
                 # the whole formula is more expensive
-                '''
-                if len(result) < 50:
-                    self._reset(temp_cs.to_string(related_to=var))
-                    for value in result:
-                        self._assert(var != value)
-                else:'''
                 self._assert(var != value)
 
                 if len(result) >= maxcnt:

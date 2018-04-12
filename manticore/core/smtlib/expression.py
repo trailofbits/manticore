@@ -681,7 +681,8 @@ class ArrayProxy(Array):
             self._array = array._array
             self._name = array._name
             self._concrete_cache = dict(array._concrete_cache)
-            self._written = set(array._written)
+            if array._written is not None:
+                self._written = set(array._written)
         elif isinstance(array, ArrayVariable):
             #fresh array proxy
             super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)

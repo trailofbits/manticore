@@ -594,9 +594,9 @@ class Manticore(Eventful):
 
     def _start_run(self):
         assert not self.running
-        if self._initial_state is not None:
-            self._publish('will_start_run', self._initial_state)
+        self._publish('will_start_run', self._initial_state)
 
+        if self._initial_state is not None:
             self.enqueue(self._initial_state)
             self._initial_state = None
 
