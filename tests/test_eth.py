@@ -202,6 +202,11 @@ class EthAbiTests(unittest.TestCase):
             parsed = ABI.parse('uint{}'.format(i), data)
             self.assertEqual(parsed, 2**i - 1)
 
+    def test_empty_types(self):
+        name, args = ABI.parse('func()', '\0'*32)
+        self.assertEqual(name, 'func')
+        self.assertEqual(args, tuple())
+
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
