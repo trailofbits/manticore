@@ -63,7 +63,7 @@ class EVMTest_CALLDATACOPY(unittest.TestCase):
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(list(new_vm.memory.read(0, 9)), [ord(c) for c in string.ascii_uppercase[9:18]])
+            self.assertEqual(new_vm.memory.read(0, 9), [ord(c) for c in string.ascii_uppercase[9:18]])
 
     def test_CALLDATACOPY_overflow(self):
             #Make the constraint store
@@ -129,7 +129,7 @@ class EVMTest_CALLDATACOPY(unittest.TestCase):
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(list(new_vm.memory.read(0, 3)), [ord(c) for c in data[-remainder:]])
+            self.assertEqual(new_vm.memory.read(0, 3), [ord(c) for c in data[-remainder:]])
             # make sure all 9999 bytes were written (even though they're mostly zeroes)
             self.assertEqual(len(new_vm.memory.items()), 9999)
             # make sure all but the first |remainder| items are 0
