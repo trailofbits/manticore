@@ -23,7 +23,7 @@ import io
 import pickle
 from .core.plugin import Plugin
 from functools import reduce
-from .utils.helpers import isstring, isint
+from .utils.helpers import isunicode, isint
 
 import binascii
 
@@ -622,7 +622,7 @@ class ManticoreEVM(Manticore):
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
 
-        if isstring(source_code):
+        if isunicode(source_code):
             source_code = source_code.encode()
 
         solc = "solc"
