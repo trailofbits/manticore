@@ -19,9 +19,9 @@ branches:
 cache:
   pip: true
   directories:
-  - $HOME/virtualenv/python2.7/lib/python2.7/site-packages
+  - $HOME/virtualenv/python2.7.14/lib/python2.7/site-packages
   - $HOME/virtualenv/python2.7/bin/
-  - $HOME/virtualenv/python3.5/lib/python3.5/site-packages
+  - $HOME/virtualenv/python3.5.5/lib/python3.5/site-packages
   - $HOME/virtualenv/python3.5/bin/
 
 install:
