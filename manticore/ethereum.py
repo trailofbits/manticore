@@ -332,7 +332,8 @@ class ABI(object):
         '''
         Translates a string or a tuple of chars its EVM ABI serialization
         '''
-        assert isstring(value) or isinstance(value, tuple)
+        if not isstring(value) or isinstance(value, tuple):
+            raise ValueError('serialize_string epxected string or tuple, received {}'.format(type(value)))
         return ABI.serialize_uint(len(value)) + tuple(value) + tuple('\x00'  * (32 - len(value) % 32))
 
     @staticmethod
