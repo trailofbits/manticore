@@ -1,5 +1,6 @@
 
 import struct
+import string
 import unittest
 import json
 from manticore.platforms import evm
@@ -75,7 +76,7 @@ class EVMTest_CALLDATACOPY(unittest.TestCase):
             price=0
             value=10000
             bytecode='7'
-            data = map(chr, range(ord('A'), ord('Z')))
+            data = string.ascii_uppercase
             header = { 'coinbase': 0,
                         'timestamp': 0,
                         'number': 0,
@@ -85,15 +86,18 @@ class EVMTest_CALLDATACOPY(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(9)
-            new_vm._push(999999)
-            new_vm._push(0)
+            length = 9
+            new_vm._push(length) # length
+            new_vm._push(999999) # offset
+            new_vm._push(0)      # memoffset
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            # nothing should get written with huge offset
-            self.assertEqual(len(new_vm.memory), 0)
+            # we should have written 9 bytes ..
+            self.assertEqual(len(new_vm.memory.items()), length)
+            # .. and they should have all been zero
+            self.assertTrue(all(val == 0 for addr, val in new_vm.memory.items()))
 
     def test_CALLDATACOPY_partialoverflow(self):
             #Make the constraint store
@@ -106,24 +110,32 @@ class EVMTest_CALLDATACOPY(unittest.TestCase):
             price=0
             value=10000
             bytecode='7'
-            data = map(chr, range(ord('A'), ord('Z')))
+            data = string.ascii_uppercase
             header = { 'coinbase': 0,
                         'timestamp': 0,
                         'number': 0,
                         'difficulty': 0,
                         'gaslimit': 0,
                         }
-            gas = 1000000
+            gas = 10000000000
 
             new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
-            new_vm._push(9999) # size
-            new_vm._push(22)   # data_offset
-            new_vm._push(0)    # mem_offset
+            offset = 23
+            remainder = len(data) - offset
+            new_vm._push(9999)   # size
+            new_vm._push(offset) # data_offset
+            new_vm._push(0)      # mem_offset
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
             self.assertEqual(new_vm.stack, [])
-            self.assertEqual(new_vm.memory.read(0, 3), map(ord, data[-3:]))
+            self.assertEqual(new_vm.memory.read(0, 3), [ord(c) for c in data[-remainder:]])
+            # make sure all 9999 bytes were written (even though they're mostly zeroes)
+            self.assertEqual(len(new_vm.memory.items()), 9999)
+            # make sure all but the first |remainder| items are 0
+            self.assertTrue(all(val == 0 for addr, val in new_vm.memory.items() if addr > remainder - 1))
+            # and make sure there's 9999-remainder of them
+            self.assertEqual(sum(1 for addr, _ in new_vm.memory.items() if addr > remainder - 1), 9999-remainder)
 
 if __name__ == '__main__':
     unittest.main()

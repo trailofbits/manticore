@@ -1639,7 +1639,6 @@ class EVM(Eventful):
 
         # FIXME put zero if not enough data
         if issymbolic(size) or issymbolic(data_offset):
-            #self._constraints.add(Operators.ULE(data_offset, len(self.data)))
             self._constraints.add(Operators.ULE(size + data_offset, len(self.data) + (32 - len(self.data) % 32)))
 
         if issymbolic(size):
@@ -1647,10 +1646,18 @@ class EVM(Eventful):
 
         if not issymbolic(data_offset):
             data_offset = min(data_offset, len(self.data))
-            size = min(len(self.data) - data_offset, size)
+
+        # The loop below will try to dereference data[data_offset+i] in the ITEBV expression,
+        # but since all Python function invocations are eagerly evaluated, it will try to
+        # dereference even if it's out of bounds. The helper below works around that.
+        def safe_index_with_ord(data, idx, default=0):
+            if idx < len(data):
+                return Operators.ORD(data[idx])
+            else:
+                return default
 
         for i in range(size):
-            c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
+            c = Operators.ITEBV(8, data_offset + i < len(self.data), safe_index_with_ord(self.data, data_offset + i), 0)
             self._store(mem_offset + i, c)
 
     def CODESIZE(self):
