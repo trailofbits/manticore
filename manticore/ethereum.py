@@ -436,7 +436,10 @@ class ABI(object):
 
         new_offset = offset + 32
 
-        if ty.startswith('uint'):
+        if ty == u'':
+            new_offset = offset
+            result = None
+        elif ty.startswith('uint'):
             size = ABI._parse_size(ty[4:]) // 8
             result = ABI.get_uint(data, size, offset)
 
@@ -447,13 +450,10 @@ class ABI(object):
             value = -(value & mask) + (value & ~mask)
             result = value
 
-        elif ty in (u'bool'):
+        elif ty == u'bool':
             result = ABI.get_uint(data, 1, offset)
         elif ty == u'address':
             result = ABI.get_uint(data, 20, offset)
-        elif ty == u'':
-            new_offset = offset
-            result = None
         elif ty in (u'bytes', u'string'):
             dyn_offset = ABI.get_uint(data, 32, offset)
             size = ABI.get_uint(data, 32, dyn_offset)
