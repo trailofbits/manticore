@@ -135,7 +135,7 @@ class EVMTest_CALLDATACOPY(unittest.TestCase):
             # make sure all but the first |remainder| items are 0
             self.assertTrue(all(val == 0 for addr, val in new_vm.memory.items() if addr > remainder - 1))
             # and make sure there's 9999-remainder of them
-            self.assertEqual(sum(1 for addr, _ in new_vm.memory.items() if addr > remainder - 1), 9999-remainder)
+            self.assertEqual(sum(1 for addr, _ in new_vm.memory.items() if addr >= remainder), 9999-remainder)
 
 if __name__ == '__main__':
     unittest.main()
