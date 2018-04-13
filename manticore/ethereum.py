@@ -175,9 +175,12 @@ def calculate_coverage(code, seen):
 
 class SolidityMetadata(object):
     def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings):
-        ''' Contract metadata for Solidity-based contracts '''
+        ''' Contract metadata for Solidity-based contracts
+
+            :param bytes source_code
+        '''
         self.name = name
-        self.source_code = source_code
+        self.source_code = source_code.decode()
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
         self.hashes = hashes
@@ -242,7 +245,7 @@ class SolidityMetadata(object):
             return ''
 
         output = ''
-        source = self.source_code.decode()
+        source = self.source_code
         nl = source.count('\n')
         snippet = source[beg:beg + size]
         for l in snippet.split('\n'):
