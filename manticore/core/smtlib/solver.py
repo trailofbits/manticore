@@ -247,7 +247,7 @@ class Z3Solver(Solver):
 
         def readline():
             buf = self._proc.stdout.readline()
-            return buf.encode('utf-8'), buf.count('('), buf.count(')')
+            return buf.encode(), buf.count('('), buf.count(')')
         received = io.BytesIO()
         buf, left, right = readline()
         if b'(error' in buf:
@@ -258,7 +258,7 @@ class Z3Solver(Solver):
             received.write(buf)
             left += l
             right += r
-        buf = received.getvalue().decode('utf-8').strip()
+        buf = received.getvalue().decode().strip()
         logger.debug('<%s', buf)
         return buf
 

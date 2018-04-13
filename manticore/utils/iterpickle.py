@@ -509,7 +509,7 @@ class Pickler:
 
     def save_unicode(self, obj, pack=struct.pack):
         if self.bin:
-            encoding = obj.encode('utf-8')
+            encoding = obj.encode()
             n = len(encoding)
             self.write(BINUNICODE + pack("<i", n) + encoding)
         else:
@@ -526,7 +526,7 @@ class Pickler:
 
             if self.bin:
                 if unicode:
-                    obj = obj.encode("utf-8")
+                    obj = obj.encode()
                 l = len(obj)
                 if l < 256 and not unicode:
                     self.write(SHORT_BINSTRING + chr(l) + obj)

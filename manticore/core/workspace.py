@@ -511,7 +511,7 @@ class ManticoreOutput(object):
         for stream_name, data in state.platform.generate_workspace_files().items():
             with self._named_stream(stream_name, binary=True) as stream:
                 if isunicode(data):
-                    data = data.encode('utf-8')
+                    data = data.encode()
                 stream.write(data)
 
         self._store.save_state(state, self._named_key('pkl'))

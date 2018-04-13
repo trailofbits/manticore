@@ -43,7 +43,7 @@ def all_ints(ns):
 def hex_encode(s):
     if isinstance(s, tuple):
         s = bytes(list(all_ints(s)))
-    return binascii.hexlify(s).decode('utf-8')
+    return binascii.hexlify(s).decode()
 
 def isstring(value):
     '''

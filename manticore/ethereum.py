@@ -242,7 +242,7 @@ class SolidityMetadata(object):
             return ''
 
         output = ''
-        source = self.source_code.decode('utf-8')
+        source = self.source_code.decode()
         nl = source.count('\n')
         snippet = source[beg:beg + size]
         for l in snippet.split('\n'):
@@ -347,7 +347,7 @@ class ABI(object):
         Makes a function hash id from a method signature
         '''
         s = sha3.keccak_256()
-        s.update(method_name_and_signature.encode('utf-8'))
+        s.update(method_name_and_signature.encode())
         return bytes.fromhex(s.hexdigest()[:8])
 
     @staticmethod
@@ -619,7 +619,7 @@ class ManticoreEVM(Manticore):
         """
 
         if isstring(source_code):
-            source_code = source_code.encode('utf-8')
+            source_code = source_code.encode()
 
         solc = "solc"
         with tempfile.NamedTemporaryFile() as temp:
@@ -628,7 +628,7 @@ class ManticoreEVM(Manticore):
             p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths', '.', temp.name], stdout=PIPE, stderr=PIPE)
 
             try:
-                output = json.loads(p.stdout.read().decode('utf-8'))
+                output = json.loads(p.stdout.read().decode())
             except ValueError:
                 raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
 
@@ -1326,7 +1326,7 @@ class ManticoreEVM(Manticore):
         for contract, pc in trace:
             if pc == 0:
                 filestream.write(b'---\n')
-            ln = '0x{:x}:0x{:x}\n'.format(contract, pc).encode('utf-8')
+            ln = '0x{:x}:0x{:x}\n'.format(contract, pc).encode()
             filestream.write(ln)
 
     def finalize(self):
@@ -1395,11 +1395,11 @@ class ManticoreEVM(Manticore):
             md = self.get_metadata(address)
             if md is not None and len(md.warnings) > 0:
                 global_summary.write('\n\nCompiler warnings for %s:\n' % md.name)
-                global_summary.write(md.warnings.decode('utf-8'))
+                global_summary.write(md.warnings.decode())
 
         for address, md in self.metadata.items():
             with self._output.save_stream('global_%s.sol' % md.name) as global_src:
-                global_src.write(md.source_code.decode('utf-8'))
+                global_src.write(md.source_code.decode())
             with self._output.save_stream('global_%s_runtime.bytecode' % md.name, binary=True) as global_runtime_bytecode:
                 global_runtime_bytecode.write(md.runtime_bytecode)
             with self._output.save_stream('global_%s_init.bytecode' % md.name, binary=True) as global_init_bytecode:
