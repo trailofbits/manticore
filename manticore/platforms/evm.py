@@ -6,7 +6,6 @@ import random
 import copy
 import inspect
 import logging
-import sys
 import binascii
 import sha3
 from collections import namedtuple
@@ -15,11 +14,10 @@ from functools import wraps
 
 from ..utils.helpers import issymbolic, memoized, isstring, isint, isbytestr, all_ints
 from ..platforms.platform import *
-from ..core.smtlib import solver, TooManySolutions, Expression, Bool, BitVec, Array, Operators, Constant, BitVecConstant, ConstraintSet, \
-    SolverException
-from ..core.state import ForkState, TerminateState
+from ..core.smtlib import solver, TooManySolutions, Expression, BitVec, Operators, Constant, BitVecConstant, ConstraintSet
+from ..core.state import ForkState
 from ..utils.event import Eventful
-from ..core.smtlib.visitors import pretty_print, arithmetic_simplifier, translate_to_smtlib
+from ..core.smtlib.visitors import arithmetic_simplifier
 from ..core.state import Concretize, TerminateState
 
 logger = logging.getLogger(__name__)
@@ -2508,6 +2506,7 @@ class EVMWorld(Platform):
             raise TerminateState("REVERT", testcase=True)
 
         self.current.last_exception = None
+        self.current._push(0)
         # we are still on the CALL/CREATE
         self.current.pc += self.current.instruction.size
 

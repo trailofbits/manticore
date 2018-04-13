@@ -65,6 +65,8 @@ def parse_arguments():
                         help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
+    parser.add_argument('--txaccount', type=str, default="attacker",
+                        help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
     parser.add_argument('--contract', type=str,
                         help='Contract name to analyze in case of multiple ones (Ethereum only)')
 
@@ -93,7 +95,7 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit)
+    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, args.txaccount)
 
 
 def main():

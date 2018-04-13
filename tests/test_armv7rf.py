@@ -6,7 +6,7 @@ from manticore.core.cpu.arm import *
 
 from capstone.arm import *
 
-class Armv7RF(unittest.TestCase):
+class Armv7RFTest(unittest.TestCase):
     _multiprocess_can_split_ = True
 
     def setUp(self):
@@ -36,9 +36,9 @@ class Armv7RF(unittest.TestCase):
             nonexistant_reg = "Pc"
             self.r.read(nonexistant_reg)
 
-    def test_flag_wr(self):
+    def test_flag_wr_aspr(self):
         self.r.write('APSR', 0xffffffff)
-        self.assertEqual(self.r.read('APSR'), 0xf0000000) #4 more significant bits used
+        self.assertEqual(self.r.read('APSR'), 0xf0000000) # 4 more significant bits used
         self.assertEqual(self.r.read('APSR_V'), True)
         self.assertEqual(self.r.read('APSR_C'), True)
         self.assertEqual(self.r.read('APSR_Z'), True)
@@ -69,9 +69,10 @@ class Armv7RF(unittest.TestCase):
                     self.r.write(regs[i], 0)
             for a, b in aliases.items():
                 self.assertEqual(self.r.read(a), self.r.read(b))
+
             for i in range(16):
                 if i == j:
-                    self.assertEqual(self.r.read(regs[i]), 0x41424344 )
+                    self.assertEqual(self.r.read(regs[i]), 0x41424344)
                 else:
-                    self.assertEqual(self.r.read(regs[i]), 0x00000000 )
+                    self.assertEqual(self.r.read(regs[i]), 0x00000000)
 

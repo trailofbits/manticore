@@ -44,13 +44,12 @@ class MemoryTest(unittest.TestCase):
         import sys
         sys.setrecursionlimit(10000)
         solver._stop_proc()
-        self.fds = self.get_open_fds()
+
     def tearDown(self):
         solver._stop_proc()
         gc.collect()
         gc.garbage = []
         gc.collect()
-        self.assertEqual(self.fds, self.get_open_fds())
 
     def test_ceil_floor_page_memory_page_12(self):
         mem = Memory32()

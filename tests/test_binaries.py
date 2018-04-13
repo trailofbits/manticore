@@ -34,7 +34,7 @@ class IntegrationTest(unittest.TestCase):
 
         return set(vitems)
 
-    def _simple_cli_run(self, filename):
+    def _simple_cli_run(self, filename, contract=None):
         """
         Simply run the Manticore command line with `filename`
         :param filename: Name of file inside the `tests/binaries` directory
@@ -42,7 +42,12 @@ class IntegrationTest(unittest.TestCase):
         """
         dirname = os.path.dirname(__file__)
         filename = '{}/binaries/{}'.format(dirname, filename)
-        subprocess.check_call(['python', '-m', 'manticore', filename], stdout=subprocess.PIPE)
+        command = ['python', '-m', 'manticore']
+        if contract:
+            command.append('--contract')
+            command.append(contract)
+        command.append(filename)
+        subprocess.check_call(command, stdout=subprocess.PIPE)
 
     def _runWithTimeout(self, procargs, logfile, timeout=1200):
 
@@ -132,9 +137,21 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(len(actual) > 100 )
 
     def test_eth_regressions(self):
-        contracts = [676, 678, 701, 714, 735, 760]
-        for contract in contracts:
-            self._simple_cli_run('{}.sol'.format(contract))
+        issues = [
+            {'number': 676, 'contract': None},
+            {'number': 678, 'contract': None},
+            {'number': 701, 'contract': None},
+            {'number': 714, 'contract': None},
+            {'number': 735, 'contract': None},
+            {'number': 760, 'contract': None},
+            {'number': 780, 'contract': None},
+            {'number': 795, 'contract': None},
+            {'number': 799, 'contract': 'C'},
+            {'number': 807, 'contract': 'C'},
+        ]
+
+        for issue in issues:
+            self._simple_cli_run('{}.sol'.format(issue['number']), contract = issue['contract'])
 
     def test_eth_705(self):
         # This test needs to run inside tests/binaries because the contract imports a file
