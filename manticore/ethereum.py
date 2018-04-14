@@ -661,6 +661,26 @@ class ManticoreEVM(Manticore):
         return bytecode
 
     @staticmethod
+    def _run_solc(source_file):
+        ''' Compile a source file with the Solidity compiler
+
+            :param source_file: a file object for the source file
+            :return: output, warnings
+        '''
+        solc_invocation = [
+            'solc',
+            '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
+            '--allow-paths', '.',
+            source_file.name
+        ]
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE)
+        with p.stdout as stdout, p.stderr as stderr:
+            try:
+                return json.loads(stdout.read()), stderr.read()
+            except ValueError:
+                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
+
+    @staticmethod
     def _compile(source_code, contract_name):
         """ Compile a Solidity contract, used internally
 
@@ -668,44 +688,42 @@ class ManticoreEVM(Manticore):
             :param contract_name: a string with the name of the contract to analyze
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
-        solc = "solc"
-        with tempfile.NamedTemporaryFile() as temp:
-            temp.write(source_code)
-            temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths', '.', temp.name], stdout=PIPE, stderr=PIPE)
+        if isinstance(source_code, str):
+            with tempfile.NamedTemporaryFile() as temp:
+                temp.write(source_code)
+                temp.flush()
+                output, warnings = ManticoreEVM._run_solc(temp)
+        elif isinstance(source_code, file):
+            output, warnings = ManticoreEVM._run_solc(source_code)
+        else:
+            raise TypeError
 
-            try:
-                output = json.loads(p.stdout.read())
-            except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
+        contracts = output.get('contracts', [])
+        if len(contracts) != 1 and contract_name is None:
+            raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
-            contracts = output.get('contracts', [])
-            if len(contracts) != 1 and contract_name is None:
-                raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+        name, contract = None, None
+        if contract_name is None:
+            name, contract = contracts.items()[0]
+        else:
+            for n, c in contracts.items():
+                if n.split(":")[1] == contract_name:
+                    name, contract = n, c
+                    break
 
-            name, contract = None, None
-            if contract_name is None:
-                name, contract = contracts.items()[0]
-            else:
-                for n, c in contracts.items():
-                    if n.split(":")[1] == contract_name:
-                        name, contract = n, c
-                        break
+        assert(name is not None)
+        name = name.split(':')[1]
 
-            assert(name is not None)
-            name = name.split(':')[1]
+        if contract['bin'] == '':
+            raise Exception('Solidity failed to compile your contract.')
 
-            if contract['bin'] == '':
-                raise Exception('Solidity failed to compile your contract.')
-                
-            bytecode = contract['bin'].decode('hex')
-            srcmap = contract['srcmap'].split(';')
-            srcmap_runtime = contract['srcmap-runtime'].split(';')
-            hashes = contract['hashes']
-            abi = json.loads(contract['abi'])
-            runtime = contract['bin-runtime'].decode('hex')
-            warnings = p.stderr.read()
-            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+        bytecode = contract['bin'].decode('hex')
+        srcmap = contract['srcmap'].split(';')
+        srcmap_runtime = contract['srcmap-runtime'].split(';')
+        hashes = contract['hashes']
+        abi = json.loads(contract['abi'])
+        runtime = contract['bin-runtime'].decode('hex')
+        return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1, **kwargs):
         ''' A Manticore EVM manager

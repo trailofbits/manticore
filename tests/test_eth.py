@@ -1,7 +1,8 @@
+import shutil
 import struct
+import tempfile
 import unittest
 import os
-import struct
 
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
@@ -345,3 +346,32 @@ class EthHelpersTest(unittest.TestCase):
         inner_func(None, self.bv, 123)
 
 
+class EthSolidityCompilerTest(unittest.TestCase):
+    def test_run_solc(self):
+        source_a = '''
+        import "./B.sol";
+        contract A {
+            function callB(B _b) public { _b.fromA(); }
+            function fromB() public { revert(); }
+        }
+        '''
+        source_b = '''
+        import "./A.sol";
+        contract B {
+            function callA(A _a) public { _a.fromB(); }
+            function fromA() public { revert(); }
+        }
+        '''
+        d = tempfile.mkdtemp()
+        try:
+            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(d, 'B.sol'), 'w') as b:
+                a.write(source_a)
+                a.flush()
+                b.write(source_b)
+                b.flush()
+                output, warnings = ManticoreEVM._run_solc(a)
+                source_list = output.get('sourceList', [])
+                self.assertIn(a.name, source_list)
+                self.assertIn(b.name, source_list)
+        finally:
+            shutil.rmtree(d)
