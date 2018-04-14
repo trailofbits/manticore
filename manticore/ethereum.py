@@ -461,6 +461,10 @@ class ABI(object):
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
             result = data[offset:offset + size]
+        elif ty == u'function':
+            # `function` is a special case of `bytes24`
+            size = 24
+            result = data[offset:offset + size]
         elif ty == u'address[]':
             dyn_offset = arithmetic_simplify(ABI.get_uint(data, 32, offset))
             size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
