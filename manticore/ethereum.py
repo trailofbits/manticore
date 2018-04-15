@@ -1000,11 +1000,9 @@ class ManticoreEVM(Manticore):
         return status
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
-        with open(solidity_filename) as f:
-            source_code = f.read()
-
         owner_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
+        with open(solidity_filename) as f:
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
 
         if tx_account == "attacker":
