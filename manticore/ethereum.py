@@ -288,6 +288,76 @@ class ABI(object):
     SValue = None
 
     @staticmethod
+    def _tuple_bytes_to_long(tpl):
+        return reduce(lambda acc, b: (acc << 8) + ord(b), tpl, 0L)
+
+    class StaticBytes(object):
+        def __init__(self, value, size=32):
+            if not 0 < size <= 32:
+                raise ValueError('bytes<M>: binary type of M bytes, 0 < M <= 32.')
+            if isinstance(value, (int, long)):
+                if not 0 <= value < (2 ** (size*8)):
+                    raise Value("value '%s' exceeds size %s" % (hex(value), size))
+                self.sub_word = ABI.serialize_uint(value, size)
+            elif isinstance(value, str) and value[:2] == '0x':
+                if not 3 <= len(value) <= 42:
+                    raise ValueError("hex '%s' does not fix in 32-byte bounds" % value)
+                # len(value) - 2 is the hex length
+                # (n + 1) // 2 gives the ceiling (accounts for odd length hex)
+                byte_len = (len(value) - 1) // 2
+                self.sub_word = ABI.serialize_uint(long(value, 16), byte_len)
+            elif isinstance(value, tuple):
+                if not 0 < len(value) <= 32:
+                    raise ValueError("value %s does not fix in 32-byte bounds" % value)
+                self.sub_word = value
+            else:
+                raise TypeError('Expected int, long, str, or tuple')
+
+        def size(self):
+            return len(self.sub_word)
+
+        def serialize(self):
+            return self.sub_word + tuple('\0' * (32 - len(self.sub_word)))
+
+    class Address(object):
+        def __init__(self, value):
+            if isinstance(value, (int, long)):
+                if not 0 <= value < (2 ** 160):
+                    raise Value("value '%s' is too large to be an address" % hex(value))
+                self.value = value
+            elif isinstance(value, str) and value[:2] == '0x':
+                if len(value) != 42:
+                    raise ValueError("hex '%s' does not have 'address'-length" % value)
+                self.value = long(value, 16)
+            elif isinstance(value, tuple):
+                if len(value) != 20:
+                    raise ValueError("value %s does not have 'address'-length" % (value, size))
+                self.value = ABI._tuple_bytes_to_long(value)
+            else:
+                raise TypeError('Expected int, long, str, or tuple')
+
+        def serialize(self):
+            return ABI.serialize_uint(self.value)
+
+    class ExternalFunction(object):
+        def __init__(self, address, selector):
+            if not isinstance(address, ABI.Address):
+                raise TypeError("Expected ABI.Address, found %s" % type(address))
+            if not isinstance(selector, ABI.StaticBytes):
+                raise TypeError("Expected ABI.StaticBytes, found %s" % type(selector))
+            if selector.size() != 4:
+                raise ValueError("Expected selector size of 4, found %s", selector.size())
+            self.address = address
+            self.selector = selector
+
+        def serialize(self):
+            return (
+                ABI.serialize_uint(self.address.value, 20) +
+                self.selector.sub_word +
+                tuple('\0' * 8)
+            )
+
+    @staticmethod
     def serialize(value):
         '''
         Translates a Python object to its EVM ABI serialization.
@@ -298,6 +368,12 @@ class ABI(object):
             return ABI.serialize_array(value)
         if isinstance(value, (int, long)):
             return ABI.serialize_uint(value)
+        if isinstance(value, ABI.StaticBytes):
+            return value.serialize()
+        if isinstance(value, ABI.Address):
+            return value.serialize()
+        if isinstance(value, ABI.ExternalFunction):
+            return value.serialize()
         if isinstance(value, ABI.SByte):
             return ABI.serialize_uint(value.size) + (None,) * value.size + (('\x00',) * (32 - (value.size % 32)))
         if value is None:
