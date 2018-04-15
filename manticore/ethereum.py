@@ -712,6 +712,11 @@ class ManticoreEVM(Manticore):
                     break
 
         assert(name is not None)
+        # capture source code if file handle was passed as arg
+        if isinstance(source_code, file):
+            source_path = name.split(':')[0]
+            with open(source_path) as f:
+                source_code = f.read()
         name = name.split(':')[1]
 
         if contract['bin'] == '':
