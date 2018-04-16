@@ -39,4 +39,4 @@ m.transaction(caller=user_account,
 
 #Let seth know we are not sending more transactions 
 m.finalize()
-print("[+] Look for results in %s"% m.workspace)
+print("[+] Look for results in {}".format(m.workspace))

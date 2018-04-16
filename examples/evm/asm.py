@@ -5,7 +5,7 @@ from __future__ import print_function
 from manticore.platforms.evm import EVMAsm as ea
 
 def printi(instruction):
-    print('Instruction: %s'% instruction)
+    print('Instruction: {}'.format(instruction))
     print('\tdescription:', instruction.description)
     print('\tgroup:', instruction.group)
     print('\taddress:', instruction.offset)

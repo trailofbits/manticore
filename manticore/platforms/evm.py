@@ -57,7 +57,11 @@ class Transaction(object):
         return (self.__class__, (self.sort, self.address, self.origin, self.price, self.data, self.caller, self.value, self.return_data, self.result))
 
     def __str__(self):
-        return 'Transaction(%s, from=0x%x, to=0x%x, value=%r, data=%r..)' % (self.sort, self.caller, self.address, self.value, self.data)
+        return 'Transaction({:!s}, from=0x{:x}, to=0x{:x}, value={!r}, data={!r}..)'.format(self.sort,
+                                                                                            self.caller,
+                                                                                            self.address,
+                                                                                            self.value,
+                                                                                            self.data)
 
 
 class EVMLog(object):
@@ -231,12 +235,12 @@ class EVMMemory(object):
         if issymbolic(address):
             address = arithmetic_simplifier(address)
             assert solver.check(self.constraints)
-            logger.debug('Reading %d items from symbolic offset %s', size, address)
+            logger.debug('Reading {:d} items from symbolic offset {!s}'.format(size, address))
             try:
                 solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000)  # if more than 0x3000 exception
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
-                logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
+                logger.debug('Got TooManySolutions on a symbolic read. Range [{:x}, {:x}]. Not crashing!'.format(m, M))
                 logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
                 condition = False
                 for base in e.solutions:
@@ -392,7 +396,7 @@ class EVMAsm(object):
             if operand_size != 0 and operand is not None:
                 mask = (1 << operand_size * 8) - 1
                 if ~mask & operand:
-                    raise ValueError("operand should be %d bits long" % (operand_size * 8))
+                    raise ValueError("operand should be {:d} bits long".format(operand_size * 8))
             self._offset = offset
 
         def __eq__(self, other):
@@ -408,12 +412,19 @@ class EVMAsm(object):
                 self._description == other._description
 
         def __repr__(self):
-            output = 'Instruction(0x%x, %r, %d, %d, %d, %d, %r, %r, %r)' % (self._opcode, self._name, self._operand_size,
-                                                                            self._pops, self._pushes, self._fee, self._description, self._operand, self._offset)
+            output = 'Instruction(0x{:x}, {!r}, {:d}, {:d}, {:d}, {:d}, {!r}, {!r}, {!r})'.format(self._opcode,
+                                                                                                  self._name,
+                                                                                                  self._operand_size,
+                                                                                                  self._pops,
+                                                                                                  self._pushes,
+                                                                                                  self._fee,
+                                                                                                  self._description,
+                                                                                                  self._operand,
+                                                                                                  self._offset)
             return output
 
         def __str__(self):
-            output = self.name + (' 0x%x' % self.operand if self.has_operand else '')
+            output = self.name + (' 0x{:x}'.format(self.operand) if self.has_operand else '')
             return output
 
         @property
@@ -425,13 +436,13 @@ class EVMAsm(object):
         def name(self):
             ''' The instruction name/mnemonic '''
             if self._name == 'PUSH':
-                return 'PUSH%d' % self.operand_size
+                return 'PUSH{:d}'.format(self.operand_size)
             elif self._name == 'DUP':
-                return 'DUP%d' % self.pops
+                return 'DUP{:d}'.format(self.pops)
             elif self._name == 'SWAP':
-                return 'SWAP%d' % (self.pops - 1)
+                return 'SWAP{:d}'.format(self.pops - 1)
             elif self._name == 'LOG':
-                return 'LOG%d' % (self.pops - 2)
+                return 'LOG{:d}'.format(self.pops - 2)
             return self._name
 
         def parse_operand(self, buf):
@@ -751,9 +762,9 @@ class EVMAsm(object):
         for (opcode, (name, immediate_operand_size, pops, pushes, gas, description)) in EVMAsm._table.items():
             mnemonic = name
             if name == 'PUSH':
-                mnemonic = '%s%d' % (name, (opcode & 0x1f) + 1)
+                mnemonic = '{!s}{:d}'.format(name, (opcode & 0x1f) + 1)
             elif name in ('SWAP', 'LOG', 'DUP'):
-                mnemonic = '%s%d' % (name, (opcode & 0xf) + 1)
+                mnemonic = '{!s}{:d}'.format(name, (opcode & 0xf) + 1)
 
             reverse_table[mnemonic] = opcode, name, immediate_operand_size, pops, pushes, gas, description
         return reverse_table
@@ -785,7 +796,7 @@ class EVMAsm(object):
 
             return EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, operand=operand, offset=offset)
         except BaseException:
-            raise Exception("Something wrong at offset %d" % offset)
+            raise Exception("Something wrong at offset {:d}".format(offset))
 
     @staticmethod
     def assemble_all(assembler, offset=0):
@@ -1359,7 +1370,7 @@ class EVM(Eventful):
 
         implementation = getattr(self, current.semantics, None)
         if implementation is None:
-            raise TerminateState("Instruction not implemented %s" % current.semantics, testcase=True)
+            raise TerminateState("Instruction not implemented {:s}".format(current.semantics), testcase=True)
 
         # Get arguments (imm, pop)
         arguments = []
@@ -1594,7 +1605,7 @@ class EVM(Eventful):
         value = sha3.keccak_256(data).hexdigest()
         value = int('0x' + value, 0)
         self._publish('on_concrete_sha3', data, value)
-        logger.info("Found a concrete SHA3 example %r -> %x", data, value)
+        logger.info("Found a concrete SHA3 example {!r} -> {:x}".format(data, value))
         return value
 
     ##########################################################################
@@ -1831,7 +1842,7 @@ class EVM(Eventful):
         memlog = self.read_buffer(address, size)
 
         self.logs.append(EVMLog(self.address, memlog, topics))
-        logger.info('LOG %r %r', memlog, topics)
+        logger.info('LOG {!r} {!r}'.format(memlog, topics))
 
     ##########################################################################
     # System operations
@@ -1902,17 +1913,17 @@ class EVM(Eventful):
                     if issymbolic(x):
                         return '??'
                     else:
-                        return "%02x" % x
+                        return "{:02x}".format(x)
                 hex = ' '.join(p(x) for x in chars)
 
                 def p1(x):
                     if issymbolic(x):
                         return '.'
                     else:
-                        return "%s" % ((x <= 127 and FILTER[x]) or '.')
+                        return str((x <= 127 and FILTER[x]) or '.')
 
                 printable = ''.join(p1(x) for x in chars)
-                lines.append("%04x  %-*s  %s" % (c, length * 3, hex, printable))
+                lines.append("{0:04x}  {1:<{width}} {2}".format(c, hex, printable, width=length*3))
             return lines
 
         m = []
@@ -1927,17 +1938,19 @@ class EVM(Eventful):
             result.append('<Symbolic PC>')
 
         else:
-            result.append('0x%04x: %s %s %s\n' % (self.pc, self.instruction.name, self.instruction.has_operand and '0x%x' %
-                                                  self.instruction.operand or '', self.instruction.description))
+            result.append('0x{:04x}: {} {} {}\n'.format(self.pc,
+                                                        self.instruction.name,
+                                                        self.instruction.has_operand and '0x{:x}'.format(self.instruction.operand) or '',
+                                                        self.instruction.description))
 
         result.append('Stack                                                                      Memory')
         sp = 0
         for i in list(reversed(self.stack))[:10]:
             r = ''
             if issymbolic(i):
-                r = '%s %r' % (sp == 0 and 'top> ' or '     ', i)
+                r = '{!s} {!r}'.format(sp == 0 and 'top> ' or '     ', i)
             else:
-                r = '%s 0x%064x' % (sp == 0 and 'top> ' or '     ', i)
+                r = '{!s} 0x{:064x}'.format(sp == 0 and 'top> ' or '     ', i)
             sp += 1
 
             h = ''
@@ -2131,7 +2144,7 @@ class EVMWorld(Platform):
 
     def log(self, address, topic, data):
         self.logs.append((address, data, topics))
-        logger.info('LOG %r %r', memlog, topics)
+        logger.info('LOG {!r} {!r}'.format(memlog, topics))
 
     def log_storage(self, addr):
         pass
@@ -2322,7 +2335,7 @@ class EVMWorld(Platform):
         if address not in self.accounts or\
            caller not in self.accounts or \
            origin != caller and origin not in self.accounts:
-            raise TerminateState('Account does not exist %x' % address, testcase=True)
+            raise TerminateState('Account does not exist {:x}'.format(address), testcase=True)
 
         if header is None:
             header = {'timestamp': 0,
@@ -2539,7 +2552,7 @@ class EVMWorld(Platform):
             return cond
 
         assert any(map(issymbolic, data))
-        logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
+        logger.info("SHA3 Searching over {:d} known hashes".format(len(self._sha3)))
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         #Broadcast the signal
         self._publish('on_symbolic_sha3', data, list(self._sha3.items()))

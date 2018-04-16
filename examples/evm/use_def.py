@@ -43,7 +43,7 @@ class EVMUseDef(Plugin):
         for i in array:
             l = state.solve_n(i, 2)
             if len(l) == 1:
-                r += '%02x'%l[0]
+                r += '{:02x}'.format(l[0])
         if len(r) != 8:
             return
         return r
@@ -106,6 +106,6 @@ print("WRITES", p.context['storage_writes'])
 print("It makes no sense to try f3() after 1 tx")
 
 m.finalize()
-print("[+] Look for results in %s"% m.workspace)
+print("[+] Look for results in {}".format(m.workspace))
 
 
