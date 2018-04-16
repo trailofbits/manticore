@@ -23,7 +23,7 @@ import io
 import pickle
 from .core.plugin import Plugin
 from functools import reduce
-from .utils.helpers import isunicode, isint
+from .utils.helpers import isunicode, isint, isstring
 
 import binascii
 
