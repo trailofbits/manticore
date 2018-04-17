@@ -1,5 +1,5 @@
 import string
-
+import re
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
@@ -7,7 +7,7 @@ from .core.smtlib.visitors import arithmetic_simplify, pretty_print
 from .platforms import evm
 from .core.state import State
 import tempfile
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
 import sha3
@@ -140,13 +140,9 @@ class UninitializedStorage(Detector):
 
 def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
-    end = None
-    if ''.join(runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
-        end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-
     count, total = 0, 0
-    for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]):
+    bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
+    for i in evm.EVMAsm.disassemble_all(bytecode):
         if i.offset in seen:
             count += 1
         total += 1
@@ -167,13 +163,18 @@ class SolidityMetadata(object):
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
+    @staticmethod
+    def _without_metadata(bytecode):
+        end = None
+        if ''.join(bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+                and ''.join(bytecode[-2:]) == '\x00\x29':
+            end = -9 - 32 - 2  # Size of metadata at the end of most contracts
+        return bytecode[:end]
+
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
-        end = None
-        if ''.join(bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
+        bytecode = self._without_metadata(bytecode)
 
         asm_offset = 0
         asm_pos = 0
@@ -183,7 +184,7 @@ class SolidityMetadata(object):
         f = int(md.get(2, 0))
         j = md.get(3, None)
 
-        for i in evm.EVMAsm.disassemble_all(bytecode[:end]):
+        for i in evm.EVMAsm.disassemble_all(bytecode):
             if asm_pos in srcmap and len(srcmap[asm_pos]):
                 md = srcmap[asm_pos]
                 if len(md):
@@ -206,20 +207,12 @@ class SolidityMetadata(object):
     @property
     def runtime_bytecode(self):
         # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._runtime_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._runtime_bytecode[:end]
+        return self._without_metadata(self._runtime_bytecode)
 
     @property
     def init_bytecode(self):
         # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._init_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._init_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._init_bytecode[:end]
+        return self._without_metadata(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
@@ -673,6 +666,19 @@ class ManticoreEVM(Manticore):
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
+
+        #check solc version
+        supported_versions = ('0.4.18', '0.4.21')
+        installed_version_output = check_output([solc, "--version"])
+
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+
+        installed_version = m.groupdict()['version']
+        if installed_version not in supported_versions:
+            #Fixme https://github.com/trailofbits/manticore/issues/847
+            #logger.warning("Unsupported solc version %s", installed_version)
+            pass
+
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
