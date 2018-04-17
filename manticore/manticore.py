@@ -54,7 +54,7 @@ def make_binja(program, disasm, argv, env, symbolic_files, concrete_start=''):
                 raise SystemExit(err)
     _check_disassembler_present(disasm)
     constraints = ConstraintSet()
-    logger.info('Loading binary ninja IL from %s', program)
+    logger.info('Loading binary ninja IL from {!s}'.format(program))
     platform = linux.SLinux(program,
                             argv=argv,
                             envp=env,
@@ -68,7 +68,7 @@ def make_decree(program, concrete_start='', **kwargs):
     constraints = ConstraintSet()
     platform = decree.SDecree(constraints, program)
     initial_state = State(constraints, platform)
-    logger.info('Loading program %s', program)
+    logger.info('Loading program {!s}'.format(program))
 
     if concrete_start != '':
         logger.info('Starting with concrete input: {}'.format(concrete_start))
@@ -80,9 +80,9 @@ def make_decree(program, concrete_start='', **kwargs):
 def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
-    env = ['%s=%s' % (k, v) for k, v in env.items()]
+    env = ['{!s}={!s}'.format(k, v) for k, v in env.items()]
 
-    logger.info('Loading program %s', program)
+    logger.info('Loading program {!s}'.format(program))
 
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
@@ -91,13 +91,13 @@ def make_linux(program, argv=None, env=None, symbolic_files=None, concrete_start
     initial_state = State(constraints, platform)
 
     if concrete_start != '':
-        logger.info('Starting with concrete input: %s', concrete_start)
+        logger.info('Starting with concrete input: {!s}'.format(concrete_start))
 
     for i, arg in enumerate(argv):
-        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV%d' % (i + 1))
+        argv[i] = initial_state.symbolicate_buffer(arg, label='ARGV{:d}'.format(i + 1))
 
     for i, evar in enumerate(env):
-        env[i] = initial_state.symbolicate_buffer(evar, label='ENV%d' % (i + 1))
+        env[i] = initial_state.symbolicate_buffer(evar, label='ENV{:d}'.format(i + 1))
 
     # If any of the arguments or environment refer to symbolic values, re-
     # initialize the stack
@@ -227,7 +227,7 @@ class Manticore(Eventful):
             if callback_name.endswith('_callback'):
                 event_name = callback_name[:-9]
                 if event_name not in all_events:
-                    logger.warning("There is no event named %s for callback on plugin %s", event_name, type(plugin).__name__)
+                    logger.warning("There is no event named {!s} for callback on plugin {!s}".format(event_name, type(plugin).__name__))
 
         for event_name in all_events:
             for plugin_method_name in dir(plugin):
@@ -236,13 +236,13 @@ class Manticore(Eventful):
                         if plugin_method_name.startswith('on_') or \
                            plugin_method_name.startswith('will_') or \
                            plugin_method_name.startswith('did_'):
-                            logger.warning("Plugin methods named '%s()' should end with '_callback' on plugin %s", plugin_method_name, type(plugin).__name__)
+                            logger.warning("Plugin methods named '{!s}()' should end with '_callback' on plugin {!s}".format(plugin_method_name, type(plugin).__name__))
                     if plugin_method_name.endswith('_callback') and \
                             not plugin_method_name.startswith('on_') and \
                             not plugin_method_name.startswith('will_') and \
                             not plugin_method_name.startswith('did_'):
-                        logger.warning("Plugin methods named '%s()' should start with 'on_', 'will_' or 'did_' on plugin %s",
-                                       plugin_method_name, type(plugin).__name__)
+                        logger.warning("Plugin methods named '{!s}()' should start with 'on_', 'will_' or 'did_' on plugin {!s}".format(
+                                       plugin_method_name, type(plugin).__name__))
 
     def unregister_plugin(self, plugin):
         assert plugin in self.plugins, "Plugin instance not registered"
@@ -389,7 +389,7 @@ class Manticore(Eventful):
     def _start_workers(self, num_processes, profiling=False):
         assert num_processes > 0, "Must have more than 0 worker processes"
 
-        logger.debug("Starting %d processes.", num_processes)
+        logger.debug("Starting {:d} processes.".format(num_processes))
 
         if profiling:
             def profile_this(func):
@@ -529,7 +529,7 @@ class Manticore(Eventful):
             for line in f.readlines():
                 pc = int(line.split(' ')[0], 16)
                 if pc in self._assertions:
-                    logger.debug("Repeated PC in assertions file %s", path)
+                    logger.debug("Repeated PC in assertions file {!s}".format(path))
                 self._assertions[pc] = ' '.join(line.split(' ')[1:])
                 self.subscribe('will_execute_instruction', self._assertions_callback)
 
@@ -546,8 +546,8 @@ class Manticore(Eventful):
         assertion = parse(program, state.cpu.read_int, state.cpu.read_register)
         if not solver.can_be_true(state.constraints, assertion):
             logger.info(str(state.cpu))
-            logger.info("Assertion %x -> {%s} does not hold. Aborting state.",
-                        state.cpu.pc, program)
+            logger.info("Assertion {:x} -> {{{!s}}} does not hold. Aborting state.".format(
+                        state.cpu.pc, program))
             raise TerminateState()
 
         # Everything is good add it.
@@ -693,5 +693,5 @@ class Manticore(Eventful):
             f.write(u' '.join(sys.argv))
 
         elapsed = time.time() - self._time_started
-        logger.info('Results in %s', self._output.store.uri)
-        logger.info('Total time: %s', elapsed)
+        logger.info('Results in {!s}'.format(self._output.store.uri))
+        logger.info('Total time: {!s}'.format(elapsed))

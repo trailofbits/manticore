@@ -20,7 +20,7 @@ class ContextFilter(logging.Filter):
 
     def filter(self, record):
         if hasattr(self, 'stateid') and isint(self.stateid):
-            record.stateid = '[%d]' % self.stateid
+            record.stateid = '[{:d}]'.format(self.stateid)
         else:
             record.stateid = ''
 
