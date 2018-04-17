@@ -296,7 +296,7 @@ class ABI(object):
             if not 0 < size <= 32:
                 raise ValueError('bytes<M>: binary type of M bytes, 0 < M <= 32.')
             if isinstance(value, (int, long)):
-                if not 0 <= value < (2 ** (size*8)):
+                if not 0 <= value < (2 ** (size * 8)):
                     raise Value("value '%s' exceeds size %s" % (hex(value), size))
                 self.sub_word = ABI.serialize_uint(value, size)
             elif isinstance(value, str) and value[:2] == '0x':
@@ -363,21 +363,24 @@ class ABI(object):
         Translates a Python object to its EVM ABI serialization.
         '''
         if isinstance(value, (str, tuple)):
-            return ABI.serialize_string(value)
-        if isinstance(value, (list)):
-            return ABI.serialize_array(value)
-        if isinstance(value, (int, long)):
-            return ABI.serialize_uint(value)
-        if isinstance(value, ABI.StaticBytes):
-            return value.serialize()
-        if isinstance(value, ABI.Address):
-            return value.serialize()
-        if isinstance(value, ABI.ExternalFunction):
-            return value.serialize()
-        if isinstance(value, ABI.SByte):
-            return ABI.serialize_uint(value.size) + (None,) * value.size + (('\x00',) * (32 - (value.size % 32)))
-        if value is None:
-            return (None,) * 32
+            result = ABI.serialize_string(value)
+        elif isinstance(value, (list)):
+            result = ABI.serialize_array(value)
+        elif isinstance(value, (int, long)):
+            result = ABI.serialize_uint(value)
+        elif isinstance(value, ABI.StaticBytes):
+            result = value.serialize()
+        elif isinstance(value, ABI.Address):
+            result = value.serialize()
+        elif isinstance(value, ABI.ExternalFunction):
+            result = value.serialize()
+        elif isinstance(value, ABI.SByte):
+            result = ABI.serialize_uint(value.size) + (None,) * value.size + (('\x00',) * (32 - (value.size % 32)))
+        elif value is None:
+            result = (None,) * 32
+        else:
+            raise TypeError
+        return result
 
     @staticmethod
     def serialize_uint(value, size=32):
