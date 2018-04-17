@@ -17,6 +17,7 @@ import StringIO
 import cPickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
+import binascii
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ class EthereumError(ManticoreError):
 
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
-        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses {libname:address, ...} for %r" % lib_names)
         self.lib_names = lib_names
 
 
@@ -668,6 +669,16 @@ class ManticoreEVM(Manticore):
 
     @staticmethod
     def _link(bytecode, libraries=None):
+        '''
+        Fill bytecode placeholders with library addresses.
+
+        From https://solidity.readthedocs.io/en/v0.4.21/contracts.html:
+        `If the addresses are not given as arguments to the compiler, the 
+        compiled hex code will contain placeholders of the form __Set______
+        (where Set is the name of the library). The address can be filled
+        manually by replacing all those 40 symbols by the hex encoding of 
+        the address of the library contract.`
+        '''
         has_dependencies = '_' in bytecode
         hex_contract = bytecode
         if has_dependencies:
@@ -686,7 +697,7 @@ class ManticoreEVM(Manticore):
             if libraries is None:
                 raise DependencyError(deps.keys())
             libraries = dict(libraries)
-            hex_contract_lst = list(hex_contract)
+            hex_contract_lst = bytearray(hex_contract)
             for lib_name, pos_lst in deps.items():
                 try:
                     lib_address = libraries[lib_name]
@@ -694,8 +705,7 @@ class ManticoreEVM(Manticore):
                     raise DependencyError([lib_name])
                 for pos in pos_lst:
                     hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
-            hex_contract = ''.join(hex_contract_lst)
-        return hex_contract
+        return bytes(hex_contract)
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None):
@@ -703,7 +713,7 @@ class ManticoreEVM(Manticore):
 
             :param source_code: a solidity source code
             :param contract_name: a string with the name of the contract to analyze
-            :param libraries: an itemizable of piars (library_name, address) 
+            :param libraries: an itemizable of pairs (library_name, address) 
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
@@ -736,12 +746,12 @@ class ManticoreEVM(Manticore):
             if contract['bin'] == '':
                 raise Exception('Solidity failed to compile your contract.')
 
-            bytecode = ManticoreEVM._link(contract['bin'], libraries).decode('hex')
+            bytecode = binascii.unhexlify(ManticoreEVM._link(contract['bin'], libraries))
             srcmap = contract['srcmap'].split(';')
             srcmap_runtime = contract['srcmap-runtime'].split(';')
             hashes = contract['hashes']
             abi = json.loads(contract['abi'])
-            runtime = ManticoreEVM._link(contract['bin-runtime'], libraries).decode('hex')
+            runtime = binascii.unhexlify(ManticoreEVM._link(contract['bin-runtime'], libraries))
             warnings = p.stderr.read()
 
             return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
