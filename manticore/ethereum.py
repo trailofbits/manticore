@@ -680,16 +680,16 @@ class ManticoreEVM(Manticore):
         the address of the library contract.`
         '''
         has_dependencies = '_' in bytecode
-        hex_contract = bytecode
+        hex_contract = bytearray(bytecode, 'utf8')
         if has_dependencies:
             deps = {}
             pos = 0
             while pos < len(hex_contract):
-                if hex_contract[pos] == '_':
+                if hex_contract[pos] == ord('_'):
                     # __/tmp/tmp_9k7_l:Manticore______________
                     lib_placeholder = hex_contract[pos:pos + 40]
                     lib_name = lib_placeholder.split(':')[1].split('_')[0]
-                    deps.setdefault(lib_name, []).append(pos)
+                    deps.setdefault(bytes(lib_name), []).append(pos)
                     pos += 40
                 else:
                     pos += 2
@@ -697,14 +697,13 @@ class ManticoreEVM(Manticore):
             if libraries is None:
                 raise DependencyError(deps.keys())
             libraries = dict(libraries)
-            hex_contract_lst = bytearray(hex_contract)
             for lib_name, pos_lst in deps.items():
                 try:
                     lib_address = libraries[lib_name]
                 except KeyError:
                     raise DependencyError([lib_name])
                 for pos in pos_lst:
-                    hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
+                    hex_contract[pos:pos + 40] = '%040x' % lib_address
         return bytes(hex_contract)
 
     @staticmethod
