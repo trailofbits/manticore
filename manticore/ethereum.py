@@ -669,7 +669,7 @@ class ManticoreEVM(Manticore):
 
     @staticmethod
     def _link(bytecode, libraries=None):
-        '''
+        """
         Fill bytecode placeholders with library addresses.
 
         From https://solidity.readthedocs.io/en/v0.4.21/contracts.html:
@@ -678,7 +678,7 @@ class ManticoreEVM(Manticore):
         (where Set is the name of the library). The address can be filled
         manually by replacing all those 40 symbols by the hex encoding of 
         the address of the library contract.`
-        '''
+        """
         has_dependencies = '_' in bytecode
         hex_contract = bytecode
         if has_dependencies:
