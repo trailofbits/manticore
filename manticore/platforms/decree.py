@@ -49,7 +49,7 @@ class Socket(object):
         self.peer = None
 
     def __repr__(self):
-        return "SOCKET(%x, %r, %x)" % (hash(self), self.buffer, hash(self.peer))
+        return "SOCKET({:x}, {!r}, {:x})".format(hash(self), self.buffer, hash(self.peer))
 
     def is_connected(self):
         return self.peer is not None
@@ -258,7 +258,7 @@ class Decree(Platform):
         # load elf See https://github.com/CyberdyneNYC/linux-source-3.13.2-cgc/blob/master/fs/binfmt_cgc.c
         # read the ELF object file
         cgc = CGCElf(filename)
-        logger.info("Loading %s as a %s elf" % (filename, cgc.arch))
+        logger.info("Loading {!s} as a {!s} elf".format(filename, cgc.arch))
         # make cpu and memory (Only 1 thread in Decree)
         cpu = self._mk_proc()
 
@@ -305,7 +305,7 @@ class Decree(Platform):
                 try:
                     cpu.memory[lo:hi] = '\x00' * (hi - lo)
                 except Exception as e:
-                    logger.debug("Exception zeroing main elf fractional pages: %s" % str(e))
+                    logger.debug("Exception zeroing main elf fractional pages: {!s}".format(e))
                 cpu.memory.mprotect(lo, hi, old_perms)
 
             if addr is None:
@@ -356,12 +356,12 @@ class Decree(Platform):
         cpu.memory.mmap(0x4347c000, 0x1000, 'r')
         # cpu.memory[0x4347c000:0x4347d000] = 'A' 0x1000
 
-        logger.info("Entry point: %016x", cpu.EIP)
-        logger.info("Stack start: %016x", cpu.ESP)
-        logger.info("Brk: %016x", brk)
+        logger.info("Entry point: {:016x}".format(cpu.EIP))
+        logger.info("Stack start: {:016x}".format(cpu.ESP))
+        logger.info("Brk: {:016x}".format(brk))
         logger.info("Mappings:")
         for m in str(cpu.memory).split('\n'):
-            logger.info("  %s", m)
+            logger.info("  {!s}".format(m))
         return [cpu]
 
     def _open(self, f):
@@ -433,10 +433,10 @@ class Decree(Platform):
         try:
             result = cpu.memory.mmap(None, length, perms)
         except Exception as e:
-            logger.info("ALLOCATE exception %s. Returning ENOMEM %r", str(e), length)
+            logger.info("ALLOCATE exception {!s}. Returning ENOMEM {!r}".format(e, length))
             return Decree.CGC_ENOMEM
         cpu.write_int(addr, result, 32)
-        logger.info("ALLOCATE(%d, %s, 0x%08x) -> 0x%08x" % (length, perms, addr, result))
+        logger.info("ALLOCATE({:d}, {!s}, 0x{:08x}) -> 0x{:08x}".format(length, perms, addr, result))
         self.syscall_trace.append(("_allocate", -1, length))
         return 0
 
@@ -478,7 +478,7 @@ class Decree(Platform):
                 return Decree.CGC_EFAULT
             cpu.write_int(rx_bytes, len(data), 32)
 
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> <%s>)" % (buf, count, rnd_bytes, repr(data[:10])))
+        logger.info("RANDOM(0x{:08x}, {:d}, 0x{:08x}) -> <{!s}>)".format(buf, count, rnd_bytes, repr(data[:10])))
         return ret
 
     def sys_receive(self, cpu, fd, buf, count, rx_bytes):
@@ -533,7 +533,7 @@ class Decree(Platform):
                 return Decree.CGC_EFAULT
             cpu.write_int(rx_bytes, len(data), 32)
 
-        logger.info("RECEIVE(%d, 0x%08x, %d, 0x%08x) -> <%s> (size:%d)" % (fd, buf, count, rx_bytes, repr(data)[:min(count, 10)], len(data)))
+        logger.info("RECEIVE({:d}, 0x{:08x}, {:d}, 0x{:08x}) -> <{!s}> (size:{:d})".format(fd, buf, count, rx_bytes, repr(data)[:min(count, 10)], len(data)))
         return 0
 
     def sys_transmit(self, cpu, fd, buf, count, tx_bytes):
@@ -555,7 +555,7 @@ class Decree(Platform):
         if count != 0:
 
             if not self._is_open(fd):
-                logger.error("TRANSMIT: Not valid file descriptor. Returning EBADFD %d", fd)
+                logger.error("TRANSMIT: Not valid file descriptor. Returning EBADFD {:d}".format(fd))
                 return Decree.CGC_EBADF
 
             # TODO check count bytes from buf
@@ -571,12 +571,12 @@ class Decree(Platform):
             for i in range(0, count):
                 value = Operators.CHR(cpu.read_int(buf + i, 8))
                 if not isstring(value):
-                    logger.debug("TRANSMIT: Writing symbolic values to file %d", fd)
+                    logger.debug("TRANSMIT: Writing symbolic values to file {:d}".format(fd))
                     #value = str(value)
                 data.append(value)
             self.files[fd].transmit(data)
 
-            logger.info("TRANSMIT(%d, 0x%08x, %d, 0x%08x) -> <%.24r>" % (fd, buf, count, tx_bytes, ''.join(str(x) for x in data)))
+            logger.info("TRANSMIT({:d}, 0x{:08x}, {:d}, 0x{:08x}) -> <{!r:.24}>".format(fd, buf, count, tx_bytes, ''.join(str(x) for x in data)))
             self.syscall_trace.append(("_transmit", fd, data))
             self.signal_transmit(fd)
 
@@ -600,9 +600,9 @@ class Decree(Platform):
         self.running.remove(procid)
         # self.procs[procid] = None #let it there so we can report?
         if issymbolic(error_code):
-            logger.info("TERMINATE PROC_%02d with symbolic exit code [%d,%d]", procid, solver.minmax(self.constraints, error_code))
+            logger.info("TERMINATE PROC_{:02d} with symbolic exit code [{:d},{:d}]".format(procid, solver.minmax(self.constraints, error_code)))
         else:
-            logger.info("TERMINATE PROC_%02d %x", procid, error_code)
+            logger.info("TERMINATE PROC_{:02d} {:x}".format(procid, error_code))
         if len(self.running) == 0:
             raise TerminateState('Process exited correctly. Code: {}'.format(error_code))
         return error_code
@@ -634,7 +634,7 @@ class Decree(Platform):
         :param cpu: current CPU.
         :return: C{0} on success.
         '''
-        logger.info("DEALLOCATE(0x%08x, %d)" % (addr, size))
+        logger.info("DEALLOCATE(0x{:08x}, {:d})".format(addr, size))
 
         if addr & 0xfff != 0:
             logger.info("DEALLOCATE: addr is not page aligned")
@@ -654,7 +654,7 @@ class Decree(Platform):
     def sys_fdwait(self, cpu, nfds, readfds, writefds, timeout, readyfds):
         ''' fdwait - wait for file descriptors to become ready
         '''
-        logger.debug("FDWAIT(%d, 0x%08x, 0x%08x, 0x%08x, 0x%08x)" % (nfds, readfds, writefds, timeout, readyfds))
+        logger.debug("FDWAIT({:d}, 0x{:08x}, 0x{:08x}, 0x{:08x}, 0x{:08x})".format(nfds, readfds, writefds, timeout, readyfds))
 
         if timeout:
             if timeout not in cpu.memory:  # todo: size
@@ -702,14 +702,17 @@ class Decree(Platform):
             if timeout != 0:
                 seconds = cpu.read_int(timeout, 32)
                 microseconds = cpu.read_int(timeout + 4, 32)
-                logger.info("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: %d", repr(
-                    list(readfds_wait)), repr(list(writefds_wait)), microseconds + 1000 * seconds)
+                logger.info("FDWAIT: waiting for read on fds: {{{!r}}} and write to: {{{!r}}} timeout: {:d}".format(
+                    list(readfds_wait),
+                    list(writefds_wait),
+                    microseconds + 1000 * seconds))
                 to = microseconds + 1000 * seconds
                 # no ready file, wait
             else:
                 to = None
-                logger.info("FDWAIT: waiting for read on fds: {%s} and write to: {%s} timeout: INDIFENITELY",
-                            repr(list(readfds_wait)), repr(list(writefds_wait)))
+                logger.info("FDWAIT: waiting for read on fds: {{{!r}}} and write to: {{{!r}}} timeout: INDEFINITELY".format(
+                    list(readfds_wait),
+                    list(writefds_wait)))
 
             cpu.PC -= cpu.instruction.size
             self.wait(readfds_wait, writefds_wait, to)
@@ -729,7 +732,7 @@ class Decree(Platform):
             for byte in range(0, nfds, 8):
                 cpu.write_int(writefds, (bits >> byte) & 0xff, 8)
 
-        logger.info("FDWAIT: continuing. Some file is ready Readyfds: %08x", readyfds)
+        logger.info("FDWAIT: continuing. Some file is ready Readyfds: {:08x}".format(readyfds))
         if readyfds:
             cpu.write_int(readyfds, n, 32)
 
@@ -753,7 +756,7 @@ class Decree(Platform):
         if cpu.EAX not in list(syscalls.keys()):
             raise TerminateState("32 bit DECREE system call number {} Not Implemented".format(cpu.EAX))
         func = syscalls[cpu.EAX]
-        logger.debug("SYSCALL32: %s (nargs: %d)", func.__name__, func.__code__.co_argcount)
+        logger.debug("SYSCALL32: {!s} (nargs: {:d})".format(func.__name__, func.__code__.co_argcount))
         nargs = func.__code__.co_argcount
         args = [cpu, cpu.EBX, cpu.ECX, cpu.EDX, cpu.ESI, cpu.EDI, cpu.EBP]
         cpu.EAX = func(*args[:nargs - 1])
@@ -766,13 +769,13 @@ class Decree(Platform):
         '''
         if len(self.procs) > 1:
             logger.info("SCHED:")
-            logger.info("\tProcess: %r", self.procs)
-            logger.info("\tRunning: %r", self.running)
-            logger.info("\tRWait: %r", self.rwait)
-            logger.info("\tTWait: %r", self.twait)
-            logger.info("\tTimers: %r", self.timers)
-            logger.info("\tCurrent clock: %d", self.clocks)
-            logger.info("\tCurrent cpu: %d", self._current)
+            logger.info("\tProcess: {!r}".format(self.procs))
+            logger.info("\tRunning: {!r}".format(self.running))
+            logger.info("\tRWait: {!r}".format(self.rwait))
+            logger.info("\tTWait: {!r}".format(self.twait))
+            logger.info("\tTimers: {!r}".format(self.timers))
+            logger.info("\tCurrent clock: {:d}".format(self.clocks))
+            logger.info("\tCurrent cpu: {:d}".format(self._current))
 
         if len(self.running) == 0:
             logger.info("None running checking if there is some process waiting for a timeout")
@@ -786,7 +789,7 @@ class Decree(Platform):
         next_index = (self.running.index(self._current) + 1) % len(self.running)
         next = self.running[next_index]
         if len(self.procs) > 1:
-            logger.info("\tTransfer control from process %d to %d", self._current, next)
+            logger.info("\tTransfer control from process {:d} to {:d}".format(self._current, next))
         self._current = next
 
     def wait(self, readfds, writefds, timeout):
@@ -795,12 +798,12 @@ class Decree(Platform):
             yield the cpu to another running process.
         '''
         logger.info("WAIT:")
-        logger.info("\tProcess %d is going to wait for [ %r %r %r ]", self._current, readfds, writefds, timeout)
-        logger.info("\tProcess: %r", self.procs)
-        logger.info("\tRunning: %r", self.running)
-        logger.info("\tRWait: %r", self.rwait)
-        logger.info("\tTWait: %r", self.twait)
-        logger.info("\tTimers: %r", self.timers)
+        logger.info("\tProcess {:d} is going to wait for [ {!r} {!r} {!r} ]".format(self._current, readfds, writefds, timeout))
+        logger.info("\tProcess: {!r}".format(self.procs))
+        logger.info("\tRunning: {!r}".format(self.running))
+        logger.info("\tRWait: {!r}".format(self.rwait))
+        logger.info("\tTWait: {!r}".format(self.twait))
+        logger.info("\tTimers: {!r}".format(self.timers))
 
         for fd in readfds:
             self.rwait[fd].add(self._current)
@@ -814,8 +817,8 @@ class Decree(Platform):
         # self.sched()
         next_index = (self.running.index(procid) + 1) % len(self.running)
         self._current = self.running[next_index]
-        logger.info("\tTransfer control from process %d to %d", procid, self._current)
-        logger.info("\tREMOVING %r from %r. Current: %r", procid, self.running, self._current)
+        logger.info("\tTransfer control from process {:d} to {:d}".format(procid, self._current))
+        logger.info("\tREMOVING {!r} from {!r}. Current: {!r}".format(procid, self.running, self._current))
         self.running.remove(procid)
         if self._current not in self.running:
             logger.info("\tCurrent not running. Checking for timers...")
@@ -826,7 +829,7 @@ class Decree(Platform):
 
     def awake(self, procid):
         ''' Remove procid from waitlists and restablish it in the running list '''
-        logger.info("Remove procid:%d from waitlists and restablish it in the running list", procid)
+        logger.info("Remove procid:{:d} from waitlists and restablish it in the running list".format(procid))
         for wait_list in self.rwait:
             if procid in wait_list:
                 wait_list.remove(procid)
@@ -865,7 +868,7 @@ class Decree(Platform):
         if self._current is None:
             #Advance the clocks. Go to future!!
             advance = min(x for x in self.timers if x is not None) + 1
-            logger.info("Advancing the clock from %d to %d", self.clocks, advance)
+            logger.info("Advancing the clock from {:d} to {:d}".format(self.clocks, advance))
             self.clocks = advance
         for procid in range(len(self.timers)):
             if self.timers[procid] is not None:
@@ -1038,7 +1041,7 @@ class SDecree(Decree):
         for i in range(count):
             if False:
                 # Too slow for the new age.
-                value = self.constraints.new_bitvec(8, name="RANDOM_%04d" % self.random)
+                value = self.constraints.new_bitvec(8, name="RANDOM_{:04d}".format(self.random))
                 self.constraints.add(symb == cgcrandom.stream[self.random])
             else:
                 value = cgcrandom.stream[self.random]
@@ -1048,7 +1051,7 @@ class SDecree(Decree):
         cpu.write_bytes(buf, data)
         if rnd_bytes:
             cpu.write_int(rnd_bytes, len(data), 32)
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf, count, rnd_bytes, len(data))
+        logger.info("RANDOM(0x{:08x}, {:d}, 0x{:08x}) -> {:d}".format(buf, count, rnd_bytes, len(data)))
         return 0
 
 
@@ -1086,5 +1089,5 @@ class DecreeEmu(object):
         cpu.write(buf, data)
         if rnd_bytes:
             cpu.store(rnd_bytes, len(data), 32)
-        logger.info("RANDOM(0x%08x, %d, 0x%08x) -> %d", buf, count, rnd_bytes, len(data))
+        logger.info("RANDOM(0x{:08x}, {:d}, 0x{:08x}) -> {:d}".format(buf, count, rnd_bytes, len(data)))
         return 0
