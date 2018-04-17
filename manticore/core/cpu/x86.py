@@ -559,7 +559,7 @@ class AMD64RegFile(RegisterFile):
     def write(self, name, value):
         name = self._alias(name)
         if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = 'FP%d' % ((self.read('TOP') + int(name[2])) & 7)
+            name = 'FP{:d}'.format((self.read('TOP') + int(name[2])) & 7)
 
         # Special EFLAGS/RFLAGS case
         if 'FLAGS' in name:
@@ -588,7 +588,7 @@ class AMD64RegFile(RegisterFile):
     def read(self, name):
         name = self._alias(name)
         if name in ('ST0', 'ST1', 'ST2', 'ST3', 'ST4', 'ST5', 'ST6', 'ST7'):
-            name = 'FP%d' % ((self.read('TOP') + int(name[2])) & 7)
+            name = 'FP{:d}'.format((self.read('TOP') + int(name[2])) & 7)
         if name in self._cache:
             return self._cache[name]
         if 'FLAGS' in name:
@@ -839,7 +839,7 @@ class X86Cpu(Cpu):
                 }
 
         if cpu.EAX not in conf:
-            logger.warning('CPUID with EAX=%x not implemented @ %x', cpu.EAX, cpu.PC)
+            logger.warning('CPUID with EAX={:x} not implemented @ {:x}'.format(cpu.EAX, cpu.PC))
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
             return
 
@@ -848,7 +848,7 @@ class X86Cpu(Cpu):
             return
 
         if cpu.ECX not in conf[cpu.EAX]:
-            logger.warning('CPUID with EAX=%x ECX=%x not implemented', cpu.EAX, cpu.ECX)
+            logger.warning('CPUID with EAX={:x} ECX={:x} not implemented'.format(cpu.EAX, cpu.ECX))
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
             return
 
@@ -3491,7 +3491,7 @@ class X86Cpu(Cpu):
         '''
         We are just going to ignore the CS selector for now.
         '''
-        logger.info("LJMP: Jumping to: %r:%r", cs_selector.read(), target.read())
+        logger.info("LJMP: Jumping to: {!r}:{!r}".format(cs_selector.read(), target.read()))
         cpu.CS = cs_selector.read()
         cpu.PC = target.read()
 
@@ -5805,7 +5805,7 @@ class X86Cpu(Cpu):
         # Checks that the segment selector is not null.
         if selector == 0 or selector not in cpu._segments:  # Shouldn't we need check for max GDTR limit instead?
             cpu.ZF = False
-            logger.info("Invalid selector %s. Clearing ZF", selector)
+            logger.info("Invalid selector {!s}. Clearing ZF".format(selector))
             return
 
         base, limit, ty = cpu.get_descriptor(selector)
@@ -6056,7 +6056,7 @@ class AMD64Cpu(X86Cpu):
         result = ""
         try:
             instruction = self.instruction
-            result += "Instruction: 0x%016x:\t%s\t%s\n" % (instruction.address, instruction.mnemonic, instruction.op_str)
+            result += "Instruction: 0x{:016x}:\t{!s}\t{!s}\n".format(instruction.address, instruction.mnemonic, instruction.op_str)
         except BaseException:
             result += "{can't decode instruction }\n"
 
@@ -6064,11 +6064,11 @@ class AMD64Cpu(X86Cpu):
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%3s: " % reg_name + CFAIL
+                result += "{!s:>3} ".format(reg_name) + CFAIL
                 result += visitors.pretty_print(value, depth=10)
                 result += CEND
             else:
-                result += "%3s: 0x%016x" % (reg_name, value)
+                result += "{!s:>3}: 0x{:016x}".format(reg_name, value)
             pos = 0
             result += '\n'
 
@@ -6076,22 +6076,22 @@ class AMD64Cpu(X86Cpu):
         for reg_name in ('CF', 'SF', 'ZF', 'OF', 'AF', 'PF', 'IF', 'DF'):
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%s:" % reg_name + CFAIL
+                result += "{!s}:".format(reg_name) + CFAIL
                 #"%16s"%value+CEND
                 result += visitors.pretty_print(value, depth=10) + CEND
             else:
-                result += "%s: %1x" % (reg_name, value)
+                result += "{!s}: {:1x}".format(reg_name, value)
 
             pos = 0
             result += '\n'
 
         for reg_name in ['CS', 'DS', 'ES', 'SS', 'FS', 'GS']:
             base, size, ty = self.get_descriptor(self.read_register(reg_name))
-            result += '%s: %x, %x (%s)\n' % (reg_name, base, size, ty)
+            result += '{!s}: {:x}, {:x} ({!s})\n'.format(reg_name, base, size, ty)
 
         for reg_name in ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'TOP']:
             value = getattr(self, reg_name)
-            result += "%3s: %r" % (reg_name, value)
+            result += "{!s:>3}: {!r}".format(reg_name, value)
             pos = 0
             result += '\n'
 
@@ -6166,7 +6166,7 @@ class I386Cpu(X86Cpu):
         result = ""
         try:
             instruction = self.instruction
-            result += "Instruction: 0x%016x:\t%s\t%s\n" % (instruction.address, instruction.mnemonic, instruction.op_str)
+            result += "Instruction: 0x{:016x}:\t{!s}\t{!s}\n".format(instruction.address, instruction.mnemonic, instruction.op_str)
         except BaseException:
             result += "{can't decode instruction }\n"
 
@@ -6174,10 +6174,10 @@ class I386Cpu(X86Cpu):
         for reg_name in regs:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%3s: " % reg_name + CFAIL
+                result += "{!s:>3}: ".format(reg_name) + CFAIL
                 result += visitors.pretty_print(value, depth=10) + CEND
             else:
-                result += "%3s: 0x%016x" % (reg_name, value)
+                result += "{!s:>3}: 0x{:016x}".format(reg_name, value)
             pos = 0
             result += '\n'
 
@@ -6185,22 +6185,22 @@ class I386Cpu(X86Cpu):
         for reg_name in ['CF', 'SF', 'ZF', 'OF', 'AF', 'PF', 'IF', 'DF']:
             value = self.read_register(reg_name)
             if issymbolic(value):
-                result += "%s:" % reg_name + CFAIL
+                result += "{!s}:".format(reg_name) + CFAIL
                 #"%16s"%value+CEND
                 result += visitors.pretty_print(value, depth=10) + CEND
             else:
-                result += "%s: %1x" % (reg_name, value)
+                result += "{!s}: {:1x}".format(reg_name, value)
 
             pos = 0
             result += '\n'
 
         for reg_name in ['CS', 'DS', 'ES', 'SS', 'FS', 'GS']:
             base, size, ty = self.get_descriptor(self.read_register(reg_name))
-            result += '%s: %x, %x (%s)\n' % (reg_name, base, size, ty)
+            result += '{!s}: {:x}, {:x} ({!s})\n'.format(reg_name, base, size, ty)
 
         for reg_name in ['FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'TOP']:
             value = getattr(self, reg_name)
-            result += "%3s: %r" % (reg_name, value)
+            result += "{!s:>3}: {!r}".format(reg_name, value)
             pos = 0
             result += '\n'
 

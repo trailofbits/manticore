@@ -258,9 +258,9 @@ class BinjaILDisasm(Disasm):
                     op == enums.LowLevelILOperation.LLIL_GOTO)
 
         def __repr__(self):
-            return ("%d %s\t%s %s %x") % (self.llil.instr_index,
-                                          hex(self.llil.address),
-                                          str(self.llil),
+            return "{:d} {:x}\t{!s} {!s} {:x}".format(self.llil.instr_index,
+                                          self.llil.address,
+                                          self.llil,
                                           self.llil.operation.name,
                                           self.llil.address)
 

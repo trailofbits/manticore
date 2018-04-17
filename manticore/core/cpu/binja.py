@@ -357,7 +357,7 @@ class BinjaCpu(Cpu):
                 if isinstance(c, Constant):
                     c = chr(c.value)
                 else:
-                    logger.error('Concretize executable memory %r %r', c, text)
+                    logger.error('Concretize executable memory {!r} {!r}'.format(c, text))
                     raise ConcretizeMemory(self.memory,
                                            address=pc,
                                            size=8 * self.max_instr_width,
@@ -421,9 +421,9 @@ class BinjaCpu(Cpu):
                 # XXX after this point self.PC != self._last_pc but that is
                 # OK because we will update the PC  properly
             else:
-                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                            insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                text_bytes = ' '.join('{:02x}'.format(x) for x in insn.bytes)
+                logger.info("Unimplemented instruction: 0x{:016}:\t{!s}\t{!s}\t{!s}".format(
+                            insn.address, text_bytes, insn.mnemonic, insn.op_str))
 
                 self._publish('will_emulate_instruction', insn)
                 self.emulate(insn)
@@ -477,7 +477,7 @@ class BinjaCpu(Cpu):
             if (insn is None or
                     not isinstance(insn, BinjaILDisasm.BinjaILInstruction)):
                 insn = self.instruction
-                return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
+                return "INSTRUCTION: 0x{:016x}:\t{!s}\t{!s}".format(insn.address,
                                                           insn.mnemonic,
                                                           insn.op_str)
             else:
@@ -1219,9 +1219,9 @@ class BinjaCpu(Cpu):
     def FALLBACK(cpu, name, *operands):
         """Fallback for unimplemented instructions
         """
-        logger.warning('%s: Fallback to concrete cpu for instruction %s',
-                       hex(cpu.disasm.current_pc),
-                       name)
+        logger.warning('{:x}: Fallback to concrete cpu for instruction {!s}'.format(
+                       cpu.disasm.current_pc,
+                       name))
         # update registers
         for pl_reg, binja_reg in cpu.regfile.pl2b_map.items():
             if isinstance(binja_reg, tuple) or binja_reg is None:

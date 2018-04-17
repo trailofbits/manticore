@@ -34,7 +34,7 @@ class DecodeException(CpuException):
     Raised when trying to decode an unknown or invalid instruction '''
 
     def __init__(self, pc, bytes):
-        super(DecodeException, self).__init__("Error decoding instruction @%08x", pc)
+        super(DecodeException, self).__init__("Error decoding instruction @{:08x}".format(pc))
         self.pc = pc
         self.bytes = bytes
 
@@ -60,7 +60,7 @@ class Interruption(CpuException):
     ''' A software interrupt. '''
 
     def __init__(self, N):
-        super(Interruption, self).__init__("CPU Software Interruption %08x", N)
+        super(Interruption, self).__init__("CPU Software Interruption {:08x}".format(N))
         self.N = N
 
 
@@ -90,7 +90,7 @@ class ConcretizeArgument(CpuException):
     '''
 
     def __init__(self, cpu, argnum, policy='MINMAX'):
-        self.message = "Concretizing argument #%d." % (argnum,)
+        self.message = "Concretizing argument #{:d}.".format(argnum)
         self.cpu = cpu
         self.policy = policy
         self.argnum = argnum
@@ -427,7 +427,7 @@ class SyscallAbi(Abi):
             if ret > min_hex_expansion:
                 ret_s = ret_s + '(0x{:x})'.format(ret)
 
-            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, args_s, ret_s)
+            platform_logger.debug('{!s}({!s}) -> {!s}'.format(model.__func__.__name__, args_s, ret_s))
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
@@ -770,7 +770,7 @@ class Cpu(Eventful):
                 if isinstance(c, Constant):
                     c = c.value
                 else:
-                    logger.error('Concretize executable memory %r %r', c, text)
+                    logger.error('Concretize executable memory {!r} {!r}'.format(c, text))
                     raise ConcretizeMemory(self.memory,
                                            address=pc,
                                            size=8 * self.max_instr_width,
@@ -845,9 +845,9 @@ class Cpu(Eventful):
                 implementation(*insn.operands)
 
             else:
-                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
-                            insn.address, text_bytes, insn.mnemonic, insn.op_str)
+                text_bytes = ' '.join('{:02x}'.format(x) for x in insn.bytes)
+                logger.info("Unimplemented instruction: 0x{:016x}:\t{!s}\t{!s}\t{!s}".format(
+                            insn.address, text_bytes, insn.mnemonic, insn.op_str))
                 self.emulate(insn)
 
         except (Interruption, Syscall) as e:
@@ -879,8 +879,8 @@ class Cpu(Eventful):
             emu.emulate(insn)
         except unicorn.UcError as e:
             if e.errno == unicorn.UC_ERR_INSN_INVALID:
-                text_bytes = ' '.join('%02x' % x for x in insn.bytes)
-                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                text_bytes = ' '.join('{:02x}'.format(x) for x in insn.bytes)
+                logger.error("Unimplemented instruction: 0x{:016x}:\t{!s}\t{!s}\t{!s}",
                              insn.address, text_bytes, insn.mnemonic, insn.op_str)
             raise InstructionEmulationError(str(e))
         finally:
@@ -892,7 +892,7 @@ class Cpu(Eventful):
     def render_instruction(self, insn=None):
         try:
             insn = self.instruction
-            return "INSTRUCTION: 0x%016x:\t%s\t%s" % (insn.address,
+            return "INSTRUCTION: 0x{:016x}:\t{!s}\t{!s}".format(insn.address,
                                                       insn.mnemonic,
                                                       insn.op_str)
         except Exception as e:
@@ -904,12 +904,12 @@ class Cpu(Eventful):
         value = self.read_register(reg_name)
 
         if issymbolic(value):
-            aux = "%3s: " % reg_name + "%16s" % value
+            aux = "{:>3s}: {:>16s}".format(reg_name, value)
             result += aux
         elif isint(value):
-            result += "%3s: 0x%016x" % (reg_name, value)
+            result += "{:>3s}: 0x{:016x}".format(reg_name, value)
         else:
-            result += "%3s: %r" % (reg_name, value)
+            result += "{:>3s}: {!r}".format(reg_name, value)
         return result
 
     def render_registers(self):
