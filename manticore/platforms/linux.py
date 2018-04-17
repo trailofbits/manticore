@@ -218,14 +218,11 @@ class SymbolicFile(File):
                 symbols_cnt += 1
 
         if symbols_cnt > max_size:
-            logger.warning(("Found more wilcards in the file than free ",
-                            "symbolic values allowed (%d > %d)"),
+            logger.warning("Found more wildcards in the file than free symbolic values allowed ({:d} > {:d})".format(
                            symbols_cnt,
-                           max_size)
+                           max_size))
         else:
-            logger.debug("Found %d free symbolic values on file %s",
-                         symbols_cnt,
-                         self.name)
+            logger.debug("Found {:d} free symbolic values on file {!s}".format(symbols_cnt, self.name))
 
     def __getstate__(self):
         state = {}
@@ -325,7 +322,7 @@ class Socket(object):
         self.peer = None
 
     def __repr__(self):
-        return "SOCKET(%x, %r, %x)" % (hash(self), self.buffer, hash(self.peer))
+        return "SOCKET({:x}, {!r}, {:x})".format(hash(self), self.buffer, hash(self.peer))
 
     def is_connected(self):
         return self.peer is not None
@@ -468,7 +465,7 @@ class Linux(Platform):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
-        logger.debug("Loading %s as a %s elf", program, self.arch)
+        logger.debug("Loading {!s} as a {!s} elf".format(program, self.arch))
 
         self.load(program)
         self._arch_specific_init()
@@ -674,7 +671,7 @@ class Linux(Platform):
     def load_vdso(self, bits):
         # load vdso #TODO or #IGNORE
         vdso_top = {32: 0x7fff0000, 64: 0x7fff00007fff0000}[bits]
-        vdso_size = len(open('vdso%2d.dump' % bits).read())
+        vdso_size = len(open('vdso{:2d}.dump'.format(bits)).read())
         vdso_addr = self.memory.mmapFile(self.memory._floor(vdso_top - vdso_size),
                                          vdso_size,
                                          'r x',
@@ -726,15 +723,15 @@ class Linux(Platform):
 
         auxv = self.auxv
         logger.debug("Setting argv, envp and auxv.")
-        logger.debug("\tArguments: %s", repr(argv))
+        logger.debug("\tArguments: {!r}".format(argv))
         if envp:
             logger.debug("\tEnvironment:")
             for e in envp:
-                logger.debug("\t\t%s", repr(e))
+                logger.debug("\t\t{!r}".format(e))
 
         logger.debug("\tAuxv:")
         for name, val in auxv.items():
-            logger.debug("\t\t%s: %s", name, hex(val))
+            logger.debug("\t\t{!s}: {:x}".format(name, val))
 
         # We save the argument and environment pointers
         argvlst = []
@@ -825,7 +822,7 @@ class Linux(Platform):
         elf = self.elf
         arch = self.arch
         addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32}[elf.get_machine_arch()]
-        logger.debug("Loading %s as a %s elf", filename, arch)
+        logger.debug("Loading {!s} as a {!s} elf".format(filename, arch))
 
         assert elf.header.e_type in ['ET_DYN', 'ET_EXEC', 'ET_CORE']
 
@@ -835,7 +832,7 @@ class Linux(Platform):
             if elf_segment.header.p_type != 'PT_INTERP':
                 continue
             interpreter_filename = elf_segment.data()[:-1]
-            logger.info('Interpreter filename: %s', interpreter_filename)
+            logger.info('Interpreter filename: {!s}'.format(interpreter_filename))
             if os.path.exists(interpreter_filename.decode()):
                 interpreter = ELFFile(open(interpreter_filename, 'rb'))
             break
@@ -887,7 +884,7 @@ class Linux(Platform):
             if hint == 0:
                 hint = None
 
-            logger.debug("Loading elf offset: %08x addr:%08x %08x %s" % (offset, base + vaddr, base + vaddr + memsz, perms))
+            logger.debug("Loading elf offset: {:08x} addr:{:08x} {:08x} {!s}".format(offset, base + vaddr, base + vaddr + memsz, perms))
             base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) - vaddr
 
             if load_addr == 0:
@@ -913,8 +910,8 @@ class Linux(Platform):
         # We need to explicitly clear bss, as fractional pages will have data from the file
         bytes_to_clear = elf_brk - elf_bss
         if bytes_to_clear > 0:
-            logger.debug("Zeroing main elf fractional pages. From bss(%x) to brk(%x), %d bytes.",
-                         elf_bss, elf_brk, bytes_to_clear)
+            logger.debug("Zeroing main elf fractional pages. From bss({:x}) to brk({:x}), {:d} bytes.".format(
+                         elf_bss, elf_brk, bytes_to_clear))
             cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
         stack_size = 0x21000
@@ -968,16 +965,13 @@ class Linux(Platform):
                 base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset)
                 base -= vaddr
                 logger.debug(
-                    "Loading interpreter offset: %08x addr:%08x %08x %s%s%s" %
-                    (offset,
-                     base +
-                     vaddr,
-                     base +
-                     vaddr +
-                     memsz,
-                     (flags & 1 and 'r' or ' '),
-                        (flags & 2 and 'w' or ' '),
-                        (flags & 4 and 'x' or ' ')))
+                    "Loading interpreter offset: {:08x} addr:{:08x} {:08x} {!s}{!s}{!s}".format(
+                        offset,
+                        base + vaddr,
+                        base + vaddr + memsz,
+                        flags & 1 and 'r' or ' ',
+                        flags & 2 and 'w' or ' ',
+                        flags & 4 and 'x' or ' '))
 
                 k = base + vaddr + filesz
                 if k > elf_bss:
@@ -996,7 +990,7 @@ class Linux(Platform):
 
             bytes_to_clear = elf_brk - elf_bss
             if bytes_to_clear > 0:
-                logger.debug("Zeroing interpreter elf fractional pages. From bss(%x) to brk(%x), %d bytes.",
+                logger.debug("Zeroing interpreter elf fractional pages. From bss({:x}) to brk({:x}), {:d} bytes.",
                              elf_bss, elf_brk, bytes_to_clear)
                 cpu.write_bytes(elf_bss, '\x00' * bytes_to_clear, force=True)
 
@@ -1009,12 +1003,12 @@ class Linux(Platform):
         cpu.STACK = stack
         cpu.PC = entry
 
-        logger.debug("Entry point: %016x", entry)
-        logger.debug("Stack start: %016x", stack)
-        logger.debug("Brk: %016x", real_elf_brk)
+        logger.debug("Entry point: {:016x}".format(entry))
+        logger.debug("Stack start: {:016x}".format(stack))
+        logger.debug("Brk: {:016x}".format(real_elf_brk))
         logger.debug("Mappings:")
         for m in str(cpu.memory).split('\n'):
-            logger.debug("  %s", m)
+            logger.debug("  {!s}".format(m))
         self.base = base
         self.elf_bss = elf_bss
         self.end_code = end_code
@@ -1126,7 +1120,7 @@ class Linux(Platform):
         umask - Set file creation mode mask
         :param int mask: New mask
         '''
-        logger.debug("umask(%o)", mask)
+        logger.debug("umask({:o})".format(mask))
         return os.umask(mask)
 
     def sys_chdir(self, path):
@@ -1135,7 +1129,7 @@ class Linux(Platform):
         :param int path: Pointer to path
         '''
         path_str = self.current.read_string(path).decode('ascii')
-        logger.debug("chdir(%s)", path_str)
+        logger.debug("chdir({!s})".format(path_str))
         try:
             os.chdir(path_str)
             return 0
@@ -1164,7 +1158,7 @@ class Linux(Platform):
                 return -errno.EFAULT
 
             self.current.write_string(buf, current_dir)
-            logger.debug("getcwd(0x%08x, %u) -> <%s> (Size %d)", buf, size, current_dir, length)
+            logger.debug("getcwd(0x{:08x}, {:d}) -> <{!s}> (Size {:d})".format(buf, size, current_dir, length))
             return length
 
         except OSError as e:
@@ -1236,7 +1230,7 @@ class Linux(Platform):
             try:
                 write_fd = self._get_fd(fd)
             except FdError as e:
-                logger.error("WRITE: Not valid file descriptor (%d). Returning -%d", fd, e.err)
+                logger.error("WRITE: Not valid file descriptor ({:d}). Returning -{:d}".format(fd, e.err))
                 return -e.err
 
             # TODO check count bytes from buf
@@ -1254,11 +1248,11 @@ class Linux(Platform):
             write_fd.write(data)
 
             for line in ''.join(str(x) for x in data).split('\n'):
-                logger.debug("WRITE(%d, 0x%08x, %d) -> <%.48r>",
+                logger.debug("WRITE({:d}, 0x{:08x}, {:d}) -> <{!r:.48}>".format(
                              fd,
                              buf,
                              count,
-                             line)
+                             line))
             self.syscall_trace.append(("_write", fd, data))
             self.signal_transmit(fd)
 
@@ -1381,10 +1375,10 @@ class Linux(Platform):
         filename = self.current.read_string(buf).decode('ascii')
         try:
             f = self._sys_open_get_file(filename, flags)
-            logger.debug("Opening file %s for real fd %d",
-                         filename, f.fileno())
+            logger.debug("Opening file {!s} for real fd {:d}".format(
+                         filename, f.fileno()))
         except IOError as e:
-            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            logger.info("Could not open file {!s}. Reason: {!s}".format(filename, e))
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
@@ -1422,9 +1416,9 @@ class Linux(Platform):
         filename = os.path.join(dir_path, filename)
         try:
             f = self._sys_open_get_file(filename, flags)
-            logger.debug("Opening file %s for real fd %d", filename, f.fileno())
+            logger.debug("Opening file {!s} for real fd {:d}".format(filename, f.fileno()))
         except IOError as e:
-            logger.info("Could not open file %s. Reason: %s", filename, str(e))
+            logger.info("Could not open file {!s}. Reason: {!s}".format(filename, e))
             return -e.errno if e.errno is not None else -errno.EINVAL
 
         return self._open(f)
@@ -1478,7 +1472,7 @@ class Linux(Platform):
 
     # Signals..
     def sys_kill(self, pid, sig):
-        logger.debug("KILL, Ignoring Sending signal %d to pid %d", sig, pid)
+        logger.debug("KILL, Ignoring Sending signal {:d} to pid {:d}".format(sig, pid))
         return 0
 
     def sys_rt_sigaction(self, signum, act, oldact):
@@ -1486,8 +1480,7 @@ class Linux(Platform):
         return self.sys_sigaction(signum, act, oldact)
 
     def sys_sigaction(self, signum, act, oldact):
-        logger.debug("SIGACTION, Ignoring changing signal handler for signal %d",
-                     signum)
+        logger.debug("SIGACTION, Ignoring changing signal handler for signal {:d}".format(signum))
         return 0
 
     def sys_rt_sigprocmask(self, cpu, how, newset, oldset):
@@ -1495,7 +1488,7 @@ class Linux(Platform):
         return self.sys_sigprocmask(cpu, how, newset, oldset)
 
     def sys_sigprocmask(self, cpu, how, newset, oldset):
-        logger.debug("SIGACTION, Ignoring changing signal mask set cmd:%d", how)
+        logger.debug("SIGACTION, Ignoring changing signal mask set cmd:{:d}".format(how))
         return 0
 
     def sys_dup(self, fd):
@@ -1553,7 +1546,7 @@ class Linux(Platform):
             self._close(fd)
         else:
             return -errno.EBADF
-        logger.debug('sys_close(%d)', fd)
+        logger.debug('sys_close({:d})'.format(fd))
         return 0
 
     def sys_readlink(self, path, buf, bufsize):
@@ -2026,13 +2019,13 @@ class Linux(Platform):
         '''
         if len(self.procs) > 1:
             logger.debug("SCHED:")
-            logger.debug("\tProcess: %r", self.procs)
-            logger.debug("\tRunning: %r", self.running)
-            logger.debug("\tRWait: %r", self.rwait)
-            logger.debug("\tTWait: %r", self.twait)
-            logger.debug("\tTimers: %r", self.timers)
-            logger.debug("\tCurrent clock: %d", self.clocks)
-            logger.debug("\tCurrent cpu: %d", self._current)
+            logger.debug("\tProcess: {!r}".format(self.procs))
+            logger.debug("\tRunning: {!r}".format(self.running))
+            logger.debug("\tRWait: {!r}".format(self.rwait))
+            logger.debug("\tTWait: {!r}".format(self.twait))
+            logger.debug("\tTimers: {!r}".format(self.timers))
+            logger.debug("\tCurrent clock: {:d}".format(self.clocks))
+            logger.debug("\tCurrent cpu: {:d}".format(self._current))
 
         if len(self.running) == 0:
             logger.debug("None running checking if there is some process waiting for a timeout")
@@ -2046,9 +2039,9 @@ class Linux(Platform):
         next_index = (self.running.index(self._current) + 1) % len(self.running)
         next_running_idx = self.running[next_index]
         if len(self.procs) > 1:
-            logger.debug("\tTransfer control from process %d to %d",
+            logger.debug("\tTransfer control from process {:d} to {:d}".format(
                          self._current,
-                         next_running_idx)
+                         next_running_idx))
         self._current = next_running_idx
 
     def wait(self, readfds, writefds, timeout):
@@ -2057,16 +2050,16 @@ class Linux(Platform):
             yield the cpu to another running process.
         '''
         logger.debug("WAIT:")
-        logger.debug("\tProcess %d is going to wait for [ %r %r %r ]",
+        logger.debug("\tProcess {:d} is going to wait for [ {!r} {!r} {!r} ]".format(
                      self._current,
                      readfds,
                      writefds,
-                     timeout)
-        logger.debug("\tProcess: %r", self.procs)
-        logger.debug("\tRunning: %r", self.running)
-        logger.debug("\tRWait: %r", self.rwait)
-        logger.debug("\tTWait: %r", self.twait)
-        logger.debug("\tTimers: %r", self.timers)
+                     timeout))
+        logger.debug("\tProcess: {!r}".format(self.procs))
+        logger.debug("\tRunning: {!r}".format(self.running))
+        logger.debug("\tRWait: {!r}".format(self.rwait))
+        logger.debug("\tTWait: {!r}".format(self.twait))
+        logger.debug("\tTimers: {!r}".format(self.timers))
 
         for fd in readfds:
             self.rwait[fd].add(self._current)
@@ -2078,8 +2071,8 @@ class Linux(Platform):
         # self.sched()
         next_index = (self.running.index(procid) + 1) % len(self.running)
         self._current = self.running[next_index]
-        logger.debug("\tTransfer control from process %d to %d", procid, self._current)
-        logger.debug("\tREMOVING %r from %r. Current: %r", procid, self.running, self._current)
+        logger.debug("\tTransfer control from process {:d} to {:d}".format(procid, self._current))
+        logger.debug("\tREMOVING {!r} from {!r}. Current: {!r}".format(procid, self.running, self._current))
         self.running.remove(procid)
         if self._current not in self.running:
             logger.debug("\tCurrent not running. Checking for timers...")
@@ -2088,7 +2081,7 @@ class Linux(Platform):
 
     def awake(self, procid):
         ''' Remove procid from waitlists and reestablish it in the running list '''
-        logger.debug("Remove procid:%d from waitlists and reestablish it in the running list", procid)
+        logger.debug("Remove procid:{:d} from waitlists and reestablish it in the running list".format(procid))
         for wait_list in self.rwait:
             if procid in wait_list:
                 wait_list.remove(procid)
@@ -2135,7 +2128,7 @@ class Linux(Platform):
         if self._current is None:
             #Advance the clocks. Go to future!!
             advance = min([self.clocks] + [x for x in self.timers if x is not None]) + 1
-            logger.debug("Advancing the clock from %d to %d", self.clocks, advance)
+            logger.debug("Advancing the clock from {:d} to {:d}".format(self.clocks, advance))
             self.clocks = advance
         for procid in range(len(self.timers)):
             if self.timers[procid] is not None:
@@ -2439,7 +2432,7 @@ class SLinux(Linux):
 
     def _sys_open_get_file(self, filename, flags):
         if filename in self.symbolic_files:
-            logger.debug("%s file is considered symbolic", filename)
+            logger.debug("{!s} file is considered symbolic".format(filename))
             f = SymbolicFile(self.constraints, filename, flags)
         else:
             f = super(SLinux, self)._sys_open_get_file(filename, flags)
