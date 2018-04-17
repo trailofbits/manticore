@@ -136,7 +136,7 @@ class Z3Solver(Solver):
         self.support_maximize = False
         self.support_minimize = False
         self.support_reset = True
-        logger.debug('Z3 version: %s', self.version)
+        logger.debug('Z3 version: {!s}'.format(self.version))
 
         if self.version >= Version(4, 5, 0):
             self.support_maximize = False
@@ -234,7 +234,7 @@ class Z3Solver(Solver):
         ''' Send a string to the solver.
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
-        logger.debug('>%s', cmd)
+        logger.debug('>{!s}'.format(cmd))
         if self.debug:
             self._send_log.append(str(cmd))
         try:
@@ -259,7 +259,7 @@ class Z3Solver(Solver):
             left += l
             right += r
         buf = received.getvalue().decode().strip()
-        logger.debug('<%s', buf)
+        logger.debug('<{!s}'.format(buf))
         return buf
 
     # UTILS: check-sat get-value
@@ -269,7 +269,7 @@ class Z3Solver(Solver):
         start = time.time()
         self._send('(check-sat)')
         _status = self._recv()
-        logger.debug("Check took %s seconds (%s)", time.time() - start, _status)
+        logger.debug("Check took {!s} seconds ({!s})".format(time.time() - start, _status))
         if _status not in ('sat', 'unsat', 'unknown'):
             raise SolverException(_status)
         if consider_unknown_as_unsat:
@@ -286,7 +286,7 @@ class Z3Solver(Solver):
         ''' Auxiliary method to send an assert '''
         assert isinstance(expression, Bool)
         smtlib = translate_to_smtlib(expression)
-        self._send('(assert %s)' % smtlib)
+        self._send('(assert {!s})'.format(smtlib))
 
     def _getvalue(self, expression):
         ''' Ask the solver for one possible assignment for val using current set
@@ -297,7 +297,7 @@ class Z3Solver(Solver):
             return expression
         assert isinstance(expression, Variable)
 
-        self._send('(get-value (%s))' % expression.name)
+        self._send('(get-value ({!s}))'.format(expression.name))
         ret = self._recv()
         assert ret.startswith('((') and ret.endswith('))')
 
@@ -395,7 +395,7 @@ class Z3Solver(Solver):
                 self._push()
                 try:
                     self._assert(operation(X, aux))
-                    self._send('(%s %s)' % (goal, aux.name))
+                    self._send('({!s} {!s})'.format(goal, aux.name))
                     self._send('(check-sat)')
                     _status = self._recv()
                     if _status not in ('sat', 'unsat', 'unknown'):
@@ -464,7 +464,7 @@ class Z3Solver(Solver):
                     raise SolverException('Model is not available')
 
                 for i in range(expression.index_max):
-                    self._send('(get-value (%s))' % var[i].name)
+                    self._send('(get-value ({!s}))'.format(var[i].name))
                     ret = self._recv()
                     assert ret.startswith('((') and ret.endswith('))')
                     pattern, base = self._get_value_fmt
@@ -480,10 +480,10 @@ class Z3Solver(Solver):
         if self._check() != 'sat':
             raise SolverException('Model is not available')
 
-        self._send('(get-value (%s))' % var.name)
+        self._send('(get-value ({!s}))'.format(var.name))
         ret = self._recv()
         if not (ret.startswith('((') and ret.endswith('))')):
-            raise SolverException('SMTLIB error parsing response: %s' % ret)
+            raise SolverException('SMTLIB error parsing response: {!s}'.format(ret))
 
         if isinstance(expression, Bool):
             return {'true': True, 'false': False}[ret[2:-2].split(' ')[1]]

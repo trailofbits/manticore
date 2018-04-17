@@ -39,11 +39,11 @@ class Concretize(StateException):
     _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
 
     def __init__(self, message, expression, setstate=None, policy='ALL', **kwargs):
-        assert policy in self._ValidPolicies, "Policy must be one of: %s" % (', '.join(self._ValidPolicies),)
+        assert policy in self._ValidPolicies, "Policy must be one of: {!s}".format(', '.join(self._ValidPolicies),)
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
-        self.message = "Concretize: %s (Policy: %s)" % (message, policy)
+        self.message = "Concretize: {!s} (Policy: {!s})".format(message, policy)
         super(Concretize, self).__init__(**kwargs)
 
 

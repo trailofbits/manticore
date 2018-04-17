@@ -14,7 +14,7 @@ class Expression(object):
         self._taint = frozenset(taint)
 
     def __repr__(self):
-        return "<%s at %x>" % (type(self).__name__, id(self))
+        return "<{!s} at {:x}>".format(type(self).__name__, id(self))
 
     @property
     def is_tainted(self):
@@ -137,7 +137,7 @@ class BoolVariable(Bool, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () Bool)' % self.name
+        return '(declare-fun {!s} () Bool)'.format(self.name)
 
 
 class BoolConstant(Bool, Constant):
@@ -391,7 +391,7 @@ class BitVecVariable(BitVec, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () (_ BitVec %d))' % (self.name, self.size)
+        return '(declare-fun {!s} () (_ BitVec {:d}))'.format(self.name, self.size)
 
 
 class BitVecConstant(BitVec, Constant):
@@ -618,7 +618,7 @@ class ArrayVariable(Array, Variable):
 
     @property
     def declaration(self):
-        return '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (self.name, self.index_bits, self.value_bits)
+        return '(declare-fun {!s} () (Array (_ BitVec {:d}) (_ BitVec {:d})))'.format(self.name, self.index_bits, self.value_bits)
 
 class ArrayOperation(Array, Operation):
     def __init__(self, array, *operands, **kwargs):
@@ -729,7 +729,9 @@ class ArrayProxy(Array):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
-            new_array = ArrayVariable(self.index_bits, size, self.value_bits, name='%s_b%d_e%d'%(self.name, start, stop), taint=self.taint)
+            new_array = ArrayVariable(self.index_bits, size, self.value_bits,
+                                      name='{!s}_b{:d}_e{:d}'.format(self.name, start, stop),
+                                      taint=self.taint)
             new_array = ArrayProxy(new_array)
             for i in range(size):
                 if self.index_max is not None and not isinstance(i + start, Expression) and i + start >= self.index_max:

@@ -55,7 +55,7 @@ class Visitor(object):
     def _method(self, expression, *args):
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = 'visit_{!s}'.format(sort)
             if hasattr(self, methodname):
                 value = getattr(self, methodname)(expression, *args)
                 if value is not None:
@@ -195,7 +195,7 @@ class PrettyPrinter(Visitor):
         '''
         for cls in expression.__class__.__mro__:
             sort = cls.__name__
-            methodname = 'visit_%s' % sort
+            methodname = 'visit_{!s}'.format(sort)
             method = getattr(self, methodname, None)
             if method is not None:
                 method(expression, *args)
@@ -214,7 +214,7 @@ class PrettyPrinter(Visitor):
         return ''
 
     def visit_BitVecExtract(self, expression):
-        self._print(expression.__class__.__name__ + '{%d:%d}' % (expression.begining, expression.end), expression)
+        self._print(expression.__class__.__name__ + '{{{:d}:{:d}}}'.format(expression.begining, expression.end), expression)
         self.indent += 2
         if self.depth is None or self.indent < self.depth * 2:
             for o in expression.operands:
@@ -516,7 +516,7 @@ class TranslatorSmtlib(Visitor):
                 return nm #fixme change to dict
         '''
         TranslatorSmtlib.unique += 1
-        name = 'aux%d' % TranslatorSmtlib.unique
+        name = 'aux{:d}'.format(TranslatorSmtlib.unique)
 
         self._bindings.append((name, expression, smtlib))
 
@@ -561,9 +561,9 @@ class TranslatorSmtlib(Visitor):
         UnsignedGreaterThan: 'bvugt',
         UnsignedGreaterOrEqual: 'bvuge',
         ArraySelect: 'select',
-        BitVecSignExtend: '(_ sign_extend %d)',
-        BitVecZeroExtend: '(_ zero_extend %d)',
-        BitVecExtract: '(_ extract %d %d)',
+        BitVecSignExtend: '(_ sign_extend {:d})',
+        BitVecZeroExtend: '(_ zero_extend {:d})',
+        BitVecExtract: '(_ extract {:d} {:d})',
         BitVecConcat: 'concat',
         BitVecITE: 'ite',
         ArrayStore: 'store',
@@ -574,7 +574,7 @@ class TranslatorSmtlib(Visitor):
         if expression.size == 1:
             return '#' + bin(expression.value & expression.mask)[1:]
         else:
-            return '#x%0*x' % (expression.size // 4, expression.value & expression.mask)
+            return '#x{:0{width}x}'.format(expression.value & expression.mask, width=expression.size // 4)
 
     def visit_BoolConstant(self, expression):
         return expression.value and 'true' or 'false'
@@ -585,12 +585,12 @@ class TranslatorSmtlib(Visitor):
     def visit_Operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
         if isinstance(expression, (BitVecSignExtend, BitVecZeroExtend)):
-            operation = operation % expression.extend
+            operation = operation.format(expression.extend)
         elif isinstance(expression, BitVecExtract):
-            operation = operation % (expression.end, expression.begining)
+            operation = operation.format(expression.end, expression.begining)
 
         operands = [self._add_binding(*x) for x in zip(expression.operands, operands)]
-        smtlib = '(%s %s)' % (operation, ' '.join(operands))
+        smtlib = '({!s} {!s})'.format(operation, ' '.join(operands))
         return smtlib
 
     @property
@@ -602,7 +602,7 @@ class TranslatorSmtlib(Visitor):
         output = super(TranslatorSmtlib, self).result
         if self.use_bindings:
             for name, expr, smtlib in reversed(self._bindings):
-                output = '( let ((%s %s)) %s )' % (name, smtlib, output)
+                output = '( let (({!s} {!s})) {!s} )'.format(name, smtlib, output)
         #self._bindings = []
         return output
 

@@ -101,7 +101,7 @@ def t_TOKEN(t):
     elif re_SEGMENT.match(t.value):
         t.type = 'SEGMENT'
     else:
-        raise Exception("Unknown:<%s>" % t.value)
+        raise Exception("Unknown:<{!s}>".format(t.value))
     return t
 
 # Define a rule so we can track line numbers
@@ -119,7 +119,7 @@ t_ignore = ' \t'
 
 
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
+    print("Illegal character '{!s}'".format(t.value[0]))
     t.lexer.skip(1)
 
 
@@ -140,11 +140,11 @@ precedence = (
 
 
 def default_read_memory(address, size):
-    return "READM(%08x,%d)" % (address, size)
+    return "READM({:08x},{:d})".format(address, size)
 
 
 def default_read_register(reg):
-    return "REG(%s)" % (reg)
+    return "REG({!s})".format(reg)
 
 
 def default_get_descriptor(selector):

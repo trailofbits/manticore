@@ -159,7 +159,7 @@ class Map(with_metaclass(ABCMeta, object)):
 
         :rtype: str
         '''
-        return '<%s 0x%016x-0x%016x %s>' % (self.__class__.__name__, self.start, self.end, self.perms)
+        return '<{!s} 0x{:016x}-0x{:016x} {!s}>'.format(self.__class__.__name__, self.start, self.end, self.perms)
 
     def __eq__(self, other):
         return self.start == other.start and \
@@ -334,7 +334,7 @@ class FileMap(Map):
         _munmap(self._data, self._mapped_size)
 
     def __repr__(self):
-        return '<%s [%s+%x] 0x%016x-0x%016x %s>' % (self.__class__.__name__, self._filename, self._offset, self.start, self.end, self.perms)
+        return '<{!s} [{!s}+{:x}] 0x{:016x}-0x{:016x} {!s}>'.format(self.__class__.__name__, self._filename, self._offset, self.start, self.end, self.perms)
 
     def __setitem__(self, index, value):
         assert not isinstance(index, slice) or \
@@ -599,7 +599,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug('New file-memory map @%x size:%x', addr, size)
+        logger.debug('New file-memory map @{:x} size:{:x}'.format(addr, size))
         return addr
 
     def mmap(self, addr, size, perms, data_init=None, name=None):
@@ -644,7 +644,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug('New memory map @%x size:%x', addr, size)
+        logger.debug('New memory map @{:x} size:{:x}'.format(addr, size))
         return addr
 
     def _add(self, m):
@@ -699,7 +699,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         return sorted(result)
 
     def __str__(self):
-        return '\n'.join('%016x-%016x % 4s %08x %s' % (start, end, p, offset, name or '') for start, end, p, offset, name in self.mappings())
+        return '\n'.join('{:016x}-{:016x} {!s:>4} {:08x} {!s}'.format(start, end, p, offset, name or '') for start, end, p, offset, name in self.mappings())
 
     def _maps_in_range(self, start, end):
         '''
@@ -738,7 +738,7 @@ class Memory(with_metaclass(ABCMeta, object)):
             if tail:
                 self._add(tail)
 
-        logger.debug('Unmap memory @%x size:%x', start, size)
+        logger.debug('Unmap memory @{:x} size:{:x}'.format(start, size))
 
     def mprotect(self, start, size, perms):
         assert size > 0
@@ -953,13 +953,13 @@ class SMemory(Memory):
 
         if issymbolic(address):
             assert solver.check(self.constraints)
-            logger.debug('Reading %d bytes from symbolic address %s', size, address)
+            logger.debug('Reading {:d} bytes from symbolic address {!s}'.format(size, address))
             try:
                 solutions = self._try_get_solutions(address, size, 'r', force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
-                logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
+                logger.debug('Got TooManySolutions on a symbolic read. Range [{:x}, {:x}]. Not crashing!', m, M)
 
                 # The force param shouldn't affect this, as this is checking for unmapped reads, not bad perms
                 crashing_condition = True

@@ -80,7 +80,7 @@ class ConstraintSet(object):
         added = True
         while added:
             added = False
-            logger.debug('Related variables %r', [x.name for x in related_variables])
+            logger.debug('Related variables {!r}'.format([x.name for x in related_variables]))
             next_remaining_constraints = set()
             for constraint in remaining_constraints:
                 variables = get_variables(constraint)
@@ -103,22 +103,22 @@ class ConstraintSet(object):
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
-                result += '(declare-fun %s () (_ BitVec %d))' % (name, exp.size)
+                result += '(declare-fun {!s} () (_ BitVec {:d}))'.format(name, exp.size)
             elif isinstance(exp, Bool):
-                result += '(declare-fun %s () Bool)' % name
+                result += '(declare-fun {!s} () Bool)'.format(name)
             elif isinstance(exp, Array):
-                result += '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (name, exp.index_bits, exp.value_bits)
+                result += '(declare-fun {!s} () (Array (_ BitVec {:d}) (_ BitVec {:d})))'.format(name, exp.index_bits, exp.value_bits)
             else:
-                raise Exception("Type not supported %r", exp)
-            result += '(assert (= %s %s))\n' % (name, smtlib)
+                raise Exception("Type not supported {!r}".format(exp))
+            result += '(assert (= {!s} {!s}))\n'.format(name, smtlib)
 
         constraint_str = translator.pop()
         while constraint_str is not None:
             if constraint_str != 'true':
-                result += '(assert %s)\n' % constraint_str
+                result += '(assert {!s})\n'.format(constraint_str)
             constraint_str = translator.pop()
 
-        logger.debug('Reduced %d constraints!!', N - len(related_constraints))
+        logger.debug('Reduced {:d} constraints!!'.format(N - len(related_constraints)))
 
         return result
 
@@ -163,19 +163,19 @@ class ConstraintSet(object):
 
         for name, exp, smtlib in translator.bindings:
             if isinstance(exp, BitVec):
-                result += '(declare-fun %s () (_ BitVec %d))' % (name, exp.size)
+                result += '(declare-fun {!s} () (_ BitVec {:d}))'.format(name, exp.size)
             elif isinstance(exp, Bool):
-                result += '(declare-fun %s () Bool)' % name
+                result += '(declare-fun {!s} () Bool)'.format(name)
             elif isinstance(exp, Array):
-                result += '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (name, exp.index_bits, exp.value_bits)
+                result += '(declare-fun {!s} () (Array (_ BitVec {:d}) (_ BitVec {:d})))'.format(name, exp.index_bits, exp.value_bits)
             else:
-                raise Exception("Type not supported %r", exp)
-            result += '(assert (= %s %s))\n' % (name, smtlib)
+                raise Exception("Type not supported {!r}".format(exp))
+            result += '(assert (= {!s} {!s}))\n'.format(name, smtlib)
 
         constraint_str = translator.pop()
         while constraint_str is not None:
             if constraint_str != 'true':
-                result += '(assert %s)\n' % constraint_str
+                result += '(assert {!s})\n'.format(constraint_str)
             constraint_str = translator.pop()
 
         return result
@@ -186,12 +186,12 @@ class ConstraintSet(object):
         for constraint in self.constraints:
             constraint_str = translate_to_smtlib(constraint, use_bindings=True)
             if constraint_str != 'true':
-                buf += '(assert %s)\n' % constraint_str
+                buf += '(assert {!s})\n'.format(constraint_str)
         return buf
 
     def _get_new_name(self, name='VAR'):
         ''' Makes an uniq variable name'''
-        return '%s_%d' % (name, self._get_sid())
+        return '{!s}_{:d}'.format(name, self._get_sid())
 
     def new_bool(self, name='B', taint=frozenset()):
         ''' Declares a free symbolic boolean in the constraint store

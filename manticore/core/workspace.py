@@ -548,7 +548,7 @@ class ManticoreOutput(object):
             memories = set()
             for cpu in [f for f in state.platform.procs if f]:
                 idx = state.platform.procs.index(cpu)
-                summary.write(u"================ PROC: %02d ================\n" % idx)
+                summary.write(u"================ PROC: {:02d} ================\n".format(idx))
                 summary.write(u"Memory:\n")
                 if hash(cpu.memory) not in memories:
                     b = str(cpu.memory).replace('\n', '\n  ')
@@ -559,7 +559,7 @@ class ManticoreOutput(object):
 
                 if hasattr(cpu, "instruction") and cpu.instruction is not None:
                     i = cpu.instruction
-                    summary.write(u'Instruction: 0x%x\t(%s %s)\n' % (i.address,
+                    summary.write(u'Instruction: 0x{:x}\t({!s} {!s})\n'.format(i.address,
                                                                     i.mnemonic.encode('utf-16be'),
                                                                     i.op_str.encode('utf-16be')))
                 else:
