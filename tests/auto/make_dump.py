@@ -40,51 +40,51 @@ class Gdb(subprocess.Popen):
         reg = "$"+reg
         if "XMM" in reg:
             reg = reg+".uint128"
-            val = self.correspond('p %s\n'%reg.lower()).split("=")[-1].split("\n")[0]
+            val = self.correspond('p {!s}\n'.format(reg.lower())).split("=")[-1].split("\n")[0]
             if "0x" in val:
                 return int(val.split("0x")[-1],16)
             else:
                 return int(val)
         if "FLAG" in reg:
             reg = "(unsigned) "+reg
-        if reg in ['$R%dB'%i for i in range(16)] :
+        if reg in ['$R{Ld}B'.format(i) for i in range(16)]:
             reg = reg[:-1] + "&0xff"
-        if reg in ['$R%dW'%i for i in range(16)] :
+        if reg in ['$R{:d}W'.format(i) for i in range(16)]:
             reg = reg[:-1] + "&0xffff"
-        val = self.correspond('p /x %s\n'%reg.lower())
+        val = self.correspond('p /x {!s}\n'.format(reg.lower()))
         val = val.split("0x")[-1]
         return int(val.split("\n")[0],16)
 
     def setR(reg, value):
-        self.correspond('set $%s = %s\n'%(reg.lower(), int(value)))
+        self.correspond('set ${!s} = {!s}\n'.format(reg.lower(), int(value)))
     def setByte(self, m, value):
-        self.correspond('set *(char*)(%s) = %s\n'%(m,value))
+        self.correspond('set *(char*)({!s}) = {!s}\n'.format(m, value))
 
     def stepi(self):
         #print self.correspond("x/i $pc\n")
         self.correspond("stepi\n")
     def getM(self, m):
         try:
-            return int(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
+            return int(self.correspond('x/xg {!s}\n'.format(m)).split("\t")[-1].split("0x")[-1].split("\n")[0], 16)
         except Exception as e:
             raise e
             return 0
     def get_pid(self):
         return int(self.correspond('info proc\n').split("\n")[0].split(" ")[-1])
     def getStack(self):
-        maps = open("/proc/%s/maps"%self.correspond('info proc\n').split("\n")[0].split(" ")[-1]).read().split("\n")
+        maps = open("/proc/{!s}/maps".format(self.correspond('info proc\n').split("\n")[0].split(" ")[-1])).read().split("\n")
         i,o = [ int(x,16) for x in maps[-3].split(" ")[0].split('-')]
     def getByte(self, m):
         arch = self.get_arch()
         mask = {'i386': 0xffffffff, 'amd64': 0xffffffffffffffff}[arch]
-        return int(self.correspond("x/1bx %d\n"%(m&mask)).split("\t")[-1].split("\n")[0][2:],16)
+        return int(self.correspond("x/1bx {:d}\n".format(m & mask)).split("\t")[-1].split("\n")[0][2:],16)
     def get_entry(self):
         a=self.correspond('info target\n')
         return int(a[a.find("Entry point:"):].split('\n')[0].split(' ')[-1][2:],16)
 
     def get_maps(self):
         pid = self.get_pid()
-        return open('/proc/%d/maps'%pid, 'rb').read()
+        return open('/proc/{:d}/maps'.format(pid), 'rb').read()
 
     _arch = None
     def get_arch(self):
@@ -170,7 +170,7 @@ while True:
             continue
 
         #print instruction
-        disassembly = "0x%x:\t%s\t%s" %(instruction.address, instruction.mnemonic, instruction.op_str)
+        disassembly = "0x{:x}:\t{!s}\t{!s}".format(instruction.address, instruction.mnemonic, instruction.op_str)
         print("#INSTRUCTION:", disassembly)
         groups = [instruction.group_name(g) for g in instruction.groups]
 
@@ -413,6 +413,6 @@ while True:
         if not stepped:
             gdb.stepi()
 
-print("# Processed %d instructions." % count)
+print("# Processed {:d} instructions.".format(count))
 
 

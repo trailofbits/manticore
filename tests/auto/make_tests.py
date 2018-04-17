@@ -21,7 +21,7 @@ for test in tests:
         if test['mnemonic'] != 'PCMPISTRI' and test['mnemonic'] != 'PCMPISTRM' and test['mnemonic'] != 'PCMPESTRI' and test['mnemonic'] != 'PCMPESTRM':
             continue
         op_count[test['mnemonic']] = cnt+1
-        test_dic["%s_%d"%(test['mnemonic'], op_count[test['mnemonic']])] = test
+        test_dic["{!s}_{:d}".format(test['mnemonic'], op_count[test['mnemonic']])] = test
     except Exception as e:
         print("EX", e, test)
         pass
@@ -104,7 +104,7 @@ def regSize(x):
     if x in ('FP0', 'FP1', 'FP2', 'FP3', 'FP4', 'FP5', 'FP6', 'FP7', 'FPSW', 'FPTAG', 'FPCW'):
         raise Exception('FPU not supported')
 
-    raise Exception('%s not supported', x)
+    raise Exception('{!s} not supported', format(x))
 
 
 def get_maps(test):
@@ -132,41 +132,40 @@ for test_name in sorted(test_dic.keys()):
     pc = {'i386': 'EIP', 'amd64': 'RIP'}[test['arch']]
 
     print("""
-    def test_%(test_name)s(self):
-        ''' Instruction %(test_name)s
-            Groups: %(groups)s
-            %(disassembly)s
+    def test_{test_name}s(self):
+        ''' Instruction {test_name}s
+            Groups: {groups}s
+            {disassembly}s
         '''
-        mem = Memory%(bits)d()
-        cpu = %(cpu)s(mem)"""%{   'test_name': test_name,
-                                        'groups': ', '.join(map(str,test['groups'])),
-                                        'disassembly': test['disassembly'],
-                                        'bits': bits,
-                                        'arch': test['arch'],
-                                        'cpu': {64:'AMD64Cpu', 32:'I386Cpu'}[bits], })
+        mem = Memory{bits}d()
+        cpu = {cpu}s(mem)""".format(
+        test_name=test_name,
+        groups=', '.join(map(str, test['groups'])),
+        disassembly=test['disassembly'],
+        bits=bits,
+        arch=test['arch'],
+        cpu={64: 'AMD64Cpu', 32: 'I386Cpu'}[bits]))
 
     for addr, size in get_maps(test):
-        print('''        mem.mmap(0x%08x, 0x%x, 'rwx')''' % (addr, size))
-
-
+        print("        mem.mmap(0x{:08x}, 0x{:x}, 'rwx')".format(addr, size))
 
     for addr, byte in test['pre']['memory'].items():
-        print('''        mem[0x%08x] = %r''' % (addr, byte))
+        print("        mem[0x{:08x}] = {!r}".format(addr, byte))
 
     for reg_name, value in test['pre']['registers'].items():
         if isFlag(reg_name):
-            print("""        cpu.%s = %r"""%(reg_name, value))
+            print("        cpu.{!s} = {!r}".format(reg_name, value))
         else:
-            print("""        cpu.%s = 0x%x"""%(reg_name, value))
+            print("        cpu.{!s} = 0x{:x}".format(reg_name, value))
 
     print("""        cpu.execute()
     """)
 
     for addr, byte in test['pos']['memory'].items():
-        print("""        self.assertEqual(mem[0x%x], %r)"""%(addr, byte))
+        print("        self.assertEqual(mem[0x{:x}], {!r})".format(addr, byte))
 
     for reg_name, value in test['pos']['registers'].items():
-        print("""        self.assertEqual(cpu.%s, %r)"""%(reg_name, value))
+        print("        self.assertEqual(cpu.{!s}, {!r})".format(reg_name, value))
 
 for test_name in sorted(test_dic.keys()):
 
@@ -175,49 +174,50 @@ for test_name in sorted(test_dic.keys()):
     pc = {'i386': 'EIP', 'amd64': 'RIP'}[test['arch']]
 
     print("""
-    def test_%(test_name)s_symbolic(self):
-        ''' Instruction %(test_name)s
-            Groups: %(groups)s
-            %(disassembly)s
+    def test_{test_name}s_symbolic(self):
+        ''' Instruction {test_name}s
+            Groups: {groups}s
+            {disassembly}s
         '''
         cs = ConstraintSet()
-        mem = SMemory%(bits)d(cs)
-        cpu = %(cpu)s(mem)"""%{   'test_name': test_name,
-                                        'groups': ', '.join(map(str,test['groups'])),
-                                        'disassembly': test['disassembly'],
-                                        'bits': bits,
-                                        'arch': test['arch'],
-                                        'cpu': {64:'AMD64Cpu', 32:'I386Cpu'}[bits] })
+        mem = SMemory{bits}d(cs)
+        cpu = {cpu}s(mem)""".format(
+        test_name=test_name,
+        groups=', '.join(map(str,test['groups'])),
+        disassembly=test['disassembly'],
+        bits=bits,
+        arch=test['arch'],
+        cpu={64:'AMD64Cpu', 32:'I386Cpu'}[bits]))
 
     for addr, size in get_maps(test):
-        print('''        mem.mmap(0x%08x, 0x%x, 'rwx')''' % (addr, size))
+        print('        mem.mmap(0x{:08x}, 0x{:x}, 'rwx')'.format(addr, size))
 
 
     ip = test['pre']['registers'][pc]
     text_size = len(test['text'])
     for addr, byte in test['pre']['memory'].items():
         if addr >= ip and addr <= ip+text_size:
-            print("""        mem[0x%x] = %r"""%(addr, byte))
+            print("        mem[0x{:x}] = {!r}".format(addr, byte))
             continue
 
-        print('''        addr = cs.new_bitvec(%d)''' %bits)
-        print('''        cs.add(addr == 0x%x)''' % addr)
-        print('''        value = cs.new_bitvec(8)''')
-        print('''        cs.add(value == 0x%x)''' % ord(byte))
-        print('''        mem[addr] = value''')
+        print('        addr = cs.new_bitvec({!d})'.format(bits))
+        print('        cs.add(addr == 0x{!x})'.format(addr))
+        print('        value = cs.new_bitvec(8)')
+        print('        cs.add(value == 0x{!x})'.format(ord(byte)))
+        print('        mem[addr] = value')
 
 
 
     for reg_name, value in test['pre']['registers'].items():
         if reg_name in ('EIP', 'RIP'):
-            print("""        cpu.%s = 0x%x"""%(reg_name, value))
+            print("        cpu.{!s} = 0x{:x}".format(reg_name, value))
             continue
         if isFlag(reg_name):
-            print("""        cpu.%s = cs.new_bool()"""%reg_name)
-            print("""        cs.add(cpu.%s == %r)"""%(reg_name, value))
+            print("        cpu.{!s} = cs.new_bool()".format(reg_name))
+            print("        cs.add(cpu.{!s} == {!r})".format(reg_name, value))
         else:
-            print("""        cpu.%s = cs.new_bitvec(%d)"""%(reg_name, regSize(reg_name)))
-            print("""        cs.add(cpu.%s == 0x%x)"""%(reg_name, value))
+            print("        cpu.{!s} = cs.new_bitvec({:d})".format(reg_name, regSize(reg_name)))
+            print("        cs.add(cpu.{!s} == 0x{:x})".format(reg_name, value))
 
 
     pc_reg = 'RIP' if 'RIP' in test['pre']['registers'] else 'EIP'
@@ -258,12 +258,12 @@ for test_name in sorted(test_dic.keys()):
         condition = True""")
 
     for addr, byte in test['pos']['memory'].items():
-        print("""        condition = Operators.AND(condition, cpu.read_int(0x%x, 8)== ord(%r))"""%(addr, byte))
+        print("        condition = Operators.AND(condition, cpu.read_int(0x{:x}, 8)== ord({!r}))".format(addr, byte))
     for reg_name, value in test['pos']['registers'].items():
         if isFlag(reg_name):
-            print("""        condition = Operators.AND(condition, cpu.%s == %r)"""%(reg_name, value))
+            print("        condition = Operators.AND(condition, cpu.{!s} == {!r})".format(reg_name, value))
         else:
-            print("""        condition = Operators.AND(condition, cpu.%s == 0x%x)"""%(reg_name, value))
+            print("        condition = Operators.AND(condition, cpu.{!s} == 0x{:x})".format(reg_name, value))
 
 
     print("""

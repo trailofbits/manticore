@@ -12,19 +12,19 @@ def pretty(value, htchar=' ', lfchar='\n', indent=0, width=100):
             nlch + repr(key) + ': ' + pretty(value[key], htchar, lfchar, indent +  1, width)
             for key in value
         ]
-        return '{%s}' % (','.join(items) + lfchar + htchar * indent)
+        return '{{{!s}}}'.format(','.join(items) + lfchar + htchar * indent)
     elif type(value) is list:
         items = [
             nlch + pretty(item, htchar, lfchar, indent + 1, width)
             for item in value
         ]
-        return '[%s]' % (','.join(items) + lfchar + htchar * indent)
+        return '[{!s}]'.format(','.join(items) + lfchar + htchar * indent)
     elif type(value) is tuple:
         items = [
             nlch + pretty(item, htchar, lfchar, indent + 1, width)
             for item in value
         ]
-        return '(%s)' % (','.join(items) + lfchar + htchar * indent)
+        return '({!s})'.format(','.join(items) + lfchar + htchar * indent)
     elif type(value) is str:
         if len(value) ==0:
             return repr(value)
@@ -75,7 +75,7 @@ def gen_test(testcase, testname, skip):
     if skip:
         output += '''    @unittest.skip('Gas or performance related')\n'''
 
-    output += '    def test_%s(self):\n'% (os.path.split(testname)[1].replace('-','_'))
+    output += '    def test_{!s}(self):\n'.format(os.path.split(testname)[1].replace('-','_'))
     header = {}
     env = testcase['env']
     for key in env:
@@ -143,39 +143,39 @@ def gen_test(testcase, testname, skip):
     
     for address, contract in pre_world.items():
         output +='''           
-        platform.create_account(address=%s, 
-                                balance=%s, 
-                                code=%s, 
-                                storage=%s
-                                )''' % (pp(address),
+        platform.create_account(address={!s},
+                                balance={!s},
+                                code={!s},
+                                storage={!s}
+                                )'''.format(pp(address),
                                         pp(contract['balance']), 
                                         pp(contract['code'],width=60, indent=37), 
                                         pp(contract['storage'],width=80, indent=40))
 
         output +='''           
-        platform.create_account(address=%s, 
-                                balance=%s, 
-                                code=%s, 
-                                storage=%s
-                                )''' % (pp(transaction['caller']),
+        platform.create_account(address={!s},
+                                balance={!s},
+                                code={!s},
+                                storage={!s}
+                                )'''.format(pp(transaction['caller']),
                                         pp(contract['balance']), 
                                         pp(contract['code'],width=60, indent=37), 
                                         pp(contract['storage'],width=80, indent=40))
 
 
     output += '''        
-        address = %s
-        origin = %s
-        price = %s
-        data = %s
-        caller = %s
-        value = %s''' % (
+        address = {!s}
+        origin = {!s}
+        price = {!s}
+        data = {!s}
+        caller = {!s}
+        value = {!s}'''.format(
     pp(transaction['address']),
     pp(transaction['origin']),
     pp(transaction['price']),
     pp(transaction['data']),
     pp(transaction['caller']),
-    pp(transaction['value']) )
+    pp(transaction['value']))
     output += '''        
         #platform.transaction(address, origin, price, data, caller, value, header)
         bytecode = platform.storage[address]['code']
@@ -217,10 +217,10 @@ from manticore.core.smtlib import Operators, ConstraintSet
 import os
 
 
-class EVMTest_%s(unittest.TestCase):
+class EVMTest_{!s}(unittest.TestCase):
     _multiprocess_can_split_ = True
     maxDiff=None 
-'''%  os.path.split(sys.argv[1][:-5])[1]) 
+'''.format(os.path.split(sys.argv[1][:-5])[1]))
 
     js = open(filename).read()
     tests = dict(json.loads(js))
@@ -257,7 +257,7 @@ class EVMTest_%s(unittest.TestCase):
 'fa78200fce12b17e9c320d743ddd7d32094326376fe9f6bf9964b285a9350a7e', 'DynamicJump0_foreverOutOfGas', 'JDfromStorageDynamicJump0_foreverOutOfGas', 'ABAcalls1', 'ABAcalls3', 'CallToNameRegistratorTooMuchMemory1','callcodeToNameRegistrator0'):
             skip = True
         #print filename, test_name, tests[test_name]    
-        name = 'test_%s_%s'%(filename[:-5],test_name)
+        name = 'test_{!s}_{!s}'.format(filename[:-5], test_name)
         name = str(name.replace('.', '_'))
         print(gen_test(testcase, test_name, skip))
 
