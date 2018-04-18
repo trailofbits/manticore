@@ -1181,7 +1181,7 @@ class ManticoreEVM(Manticore):
         def flagged(flag):
             return '(*)' if flag else ''
 
-        testcase = self._output.testcase()
+        testcase = self._output.testcase(name)
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
         with testcase.open_stream('summary', binary=False) as summary:
