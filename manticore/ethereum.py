@@ -242,14 +242,14 @@ class SolidityMetadata(object):
         try:
             beg, size, _, _ = srcmap[asm_offset]
         except KeyError:
-            return ''
+            return u''
 
-        output = ''
+        output = u''
         source = self.source_code
         nl = source.count('\n')
         snippet = source[beg:beg + size]
         for l in snippet.split('\n'):
-            output += '    {!s}  {!s}\n'.format(nl, l)
+            output += u'    {!s}  {!s}\n'.format(nl, l)
             nl += 1
         return output
 
@@ -1398,7 +1398,7 @@ class ManticoreEVM(Manticore):
 
             md = self.get_metadata(address)
             if md is not None and len(md.warnings) > 0:
-                global_summary.write('\n\nCompiler warnings for {!s}:\n'.format(md.name))
+                global_summary.write(u'\n\nCompiler warnings for {!s}:\n'.format(md.name))
                 global_summary.write(md.warnings.decode())
 
         for address, md in self.metadata.items():
