@@ -3,9 +3,12 @@ sudo: required
 os:
   - linux
 language: python
-python:
-  - 2.7
-  - 3.5
+matrix:
+  include:
+  - python: "2.7"
+    env: PIP=pip
+  - python: "3.5"
+    env: PIP=pip3
 
 env:
   global:
