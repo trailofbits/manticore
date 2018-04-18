@@ -133,21 +133,21 @@ class UninitializedStorage(Detector):
         Detects uses of uninitialized storage
     '''
 
-    def did_evm_read_storage_callback(self, state, offset, value):
+    def did_evm_read_storage_callback(self, state, address, offset, value):
         if not state.can_be_true(value != 0):
             # Not initialized memory should be zero
             return
         # check if offset is known
         cbu = True  # Can be unknown
-        for known_address in state.context['seth.detectors.initialized_storage']:
-            cbu = Operators.AND(cbu, offset != known_address)
+        for known_address, known_offset in state.context['seth.detectors.initialized_storage']:
+            cbu = Operators.AND(cbu, Operators.OR(address != known_address, offset != known_offset))
 
         if state.can_be_true(cbu):
             self.add_finding(state, "Potentially reading uninitialized storage")
 
-    def did_evm_write_storage_callback(self, state, offset, value):
+    def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_storage', set()).add(offset)
+        state.context.setdefault('seth.detectors.initialized_storage', set()).add((address,offset))
 
 
 def calculate_coverage(code, seen):
@@ -890,28 +890,23 @@ class ManticoreEVM(Manticore):
             Moves the state from the running list into the terminated list and
             generates a testcase for it
         '''
+
+        # Move state from runnign to final states
         if state_id != -1:
             with self.locked_context('seth') as seth_context:
-                lst = seth_context['_saved_states']
-                try:
-                    lst.remove(state_id)
-                except ValueError:
-                    print "SD@!#!@#", state_id
-                    pass
-                seth_context['_saved_states'] = lst
-
-        state = self.load(state_id)
-        last_exc = state.context['last_exception']
-        self._generate_testcase_callback(state, 'test', last_exc.message)
-
-        if state_id == -1:
-            state_id = self.save(state, final=True)
-            self._initial_state = None
+                saved_states = seth_context['_saved_states']
+                final_states = seth_context['_final_states']
+                if state_id in saved_states:
+                    saved_states.remove(state_id)
+                    final_states.append(state_id)
+                seth_context['_saved_states'] = saved_states
+                seth_context['_final_states'] = final_states
         else:
-            with self.locked_context('seth') as seth_context:
-                lst = seth_context['_final_states']
-                lst.append(state_id)
-                seth_context['_final_states'] = lst
+            assert state_id == -1
+            state_id = self.save(self._initial_state, final=True)
+            self._initial_state = None
+
+
 
     # deprecate this 5 in favor of for sta in seth.all_states: do stuff?
     def get_world(self, state_id=None):

@@ -63,7 +63,7 @@ class Transaction(object):
 
     @sort.setter
     def sort(self, sort):
-        if sort not in {'CREATE', 'CALL'}:
+        if sort not in {'CREATE', 'CALL', 'DELEGATECALL'}:
             raise EVMException('Invalid transaction type')
         self._sort = sort
 
@@ -410,6 +410,7 @@ class EVMAsm(object):
 
     # from http://gavwood.com/paper.pdf
     _table = {  # opcode: (name, immediate_operand_size, pops, pushes, gas, description)
+
         0x00: ('STOP', 0, 0, 0, 0, 'Halts execution.'),
         0x01: ('ADD', 0, 2, 1, 3, 'Addition operation.'),
         0x02: ('MUL', 0, 2, 1, 5, 'Multiplication operation.'),
@@ -447,6 +448,8 @@ class EVMAsm(object):
         0x3a: ('GASPRICE', 0, 0, 1, 2, 'Get price of gas in current environment.'),
         0x3b: ('EXTCODESIZE', 0, 1, 1, 20, "Get size of an account's code."),
         0x3c: ('EXTCODECOPY', 0, 4, 0, 20, "Copy an account's code to memory."),
+        0x3d: ('RETURNDATASIZE', 0, 0, 1, 2, 'Get size of output data from the previous call from the current environment'),
+        0x3e: ('RETURNDATACOPY', 0, 3, 0, 3, 'Copy output data from the previous call to memory'),
         0x40: ('BLOCKHASH', 0, 1, 1, 20, 'Get the hash of one of the 256 most recent complete blocks.'),
         0x41: ('COINBASE', 0, 0, 1, 2, "Get the block's beneficiary address."),
         0x42: ('TIMESTAMP', 0, 0, 1, 2, "Get the block's timestamp."),
@@ -539,14 +542,7 @@ class EVMAsm(object):
         0xf2: ('CALLCODE', 0, 7, 1, 40, "Message-call into this account with alternative account's code."),
         0xf3: ('RETURN', 0, 2, 0, 0, 'Halt execution returning output data.'),
         0xf4: ('DELEGATECALL', 0, 6, 1, 40, "Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code."),
-        0xf5: ('BREAKPOINT', 0, 0, 0, 40, 'Not in yellow paper FIXME'),
-        0xf6: ('RNGSEED', 0, 1, 1, 0, 'Not in yellow paper FIXME'),
-        0xf7: ('SSIZEEXT', 0, 2, 1, 0, 'Not in yellow paper FIXME'),
-        0xf8: ('SLOADBYTES', 0, 3, 0, 0, 'Not in yellow paper FIXME'),
-        0xf9: ('SSTOREBYTES', 0, 3, 0, 0, 'Not in yellow paper FIXME'),
-        0xfa: ('SSIZE', 0, 1, 1, 40, 'Not in yellow paper FIXME'),
-        0xfb: ('STATEROOT', 0, 1, 1, 0, 'Not in yellow paper FIXME'),
-        0xfc: ('TXEXECGAS', 0, 0, 1, 0, 'Not in yellow paper FIXME'),
+        0xfa: ('STATICCALL', 0, 6, 1, 40, 'Static message-call into an account.'),
         0xfd: ('REVERT', 0, 2, 0, 0, 'Stop execution and revert state changes, without consuming all provided gas and providing a reason.'),
         0xfe: ('INVALID', 0, 0, 0, 0, 'Designated invalid instruction.'),
         0xff: ('SELFDESTRUCT', 0, 1, 0, 5000, 'Halt execution and register account for later deletion.')
@@ -1241,6 +1237,7 @@ class EVM(Eventful):
                              setstate=setstate,
                              policy='ALL')
 
+        #print self
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)
@@ -1640,6 +1637,19 @@ class EVM(Eventful):
             else:
                 self._store(address + i, 0)
 
+    def RETURNDATACOPY(self, mem_offset, return_offset, size):
+        return_data = self.world.last_transaction.return_data
+
+        self._allocate(mem_offset + size)
+        for i in range(size):
+            if offset + i < len(return_data):
+                self._store(mem_offset + i, return_data[offset + i])
+            else:
+                self._store(mem_offset + i, 0)
+
+    def RETURNDATASIZE(self):
+        return len(self.world.last_transaction.return_data)
+
     ############################################################################
     # Block Information
     def BLOCKHASH(self, a):
@@ -1701,27 +1711,16 @@ class EVM(Eventful):
 
     def SLOAD(self, offset):
         '''Load word from storage'''
-        self._publish('will_evm_read_storage', offset)
-        tx = self.world.current_transaction
-        storage_address = tx.address
-        if tx.sort == 'DELEGATECALL':
-            storage_address = tx.caller
-
+        storage_address = self.address
+        self._publish('will_evm_read_storage', storage_address, offset)
         value = self.world.get_storage_data(storage_address, offset)
-        address = self.address
-        if self.world.current_transaction.sort == 'DELEGATECALL':
-            address = self.world.current_transaction.caller
-        self._publish('did_evm_read_storage', address, offset, value)
+        self._publish('did_evm_read_storage', storage_address, offset, value)
         return value
 
     def SSTORE(self, offset, value):
         '''Save word to storage'''
-        self._publish('will_evm_write_storage', offset, value)
-        tx = self.world.current_transaction
-        storage_address = tx.address
-        if tx.sort == 'DELEGATECALL':
-            storage_address = tx.caller
-
+        storage_address = self.address
+        self._publish('will_evm_write_storage', storage_address, offset, value)
         self.world.set_storage_data(storage_address, offset, value)
         self._publish('did_evm_write_storage', storage_address, offset, value)
 
@@ -1854,24 +1853,20 @@ class EVM(Eventful):
         data = self.read_buffer(offset, size)
         raise EndTx('RETURN', data)
 
-    def DELEGATECALL(self, gas, to, in_offset, in_size, out_offset, out_size):
-        '''Message-call into this account with an alternative account's code, but persisting into this account with an alternative account's code'''
-        raise NotImplemented
-
     @transact
     @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
-    def DELEGATECALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+    def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('DELEGATECALL',
                                      address,
                                      data=self.read_buffer(in_offset, in_size),
                                      caller=self.address,
-                                     value=value,
+                                     value=0,
                                      gas=self.gas)
         raise StartTx()
 
-    @CALL.pos
-    def DELEGATECALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
+    @DELEGATECALL.pos
+    def DELEGATECALL(self, gas, address, in_offset, in_size, out_offset, out_size):
         data = self.world.current_transaction.return_data
 
         if data is not None:
@@ -1881,6 +1876,28 @@ class EVM(Eventful):
 
         return self.world.last_transaction.return_value
 
+    @transact
+    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
+    def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
+        '''Message-call into an account'''
+        self.world.start_transaction('DELEGATECALL',
+                                     address,
+                                     data=self.read_buffer(in_offset, in_size),
+                                     caller=self.address,
+                                     value=0,
+                                     gas=self.gas)
+        raise StartTx()
+
+    @STATICCALL.pos
+    def STATICCALL(self, gas, address, in_offset, in_size, out_offset, out_size):
+        data = self.world.current_transaction.return_data
+
+        if data is not None:
+            data_size = len(data)
+            size = Operators.ITEBV(256, Operators.ULT(out_size, data_size), out_size, data_size)
+            self.current_vm.write_buffer(out_offset, data[:size])
+
+        return self.world.last_transaction.return_value
 
     def REVERT(self, offset, size):
         data = self.read_buffer(offset, size)
@@ -2090,17 +2107,19 @@ class EVMWorld(Platform):
             data = data
             bytecode = self.get_code(address)
 
+        address = tx.address
+        if tx.sort == 'DELEGATECALL':
+            address = tx.caller
+            assert value == 0
+
         vm = EVM(self._constraints, address, data, caller, value, bytecode, world=self)
 
         if self.depth == 1024:
             #FIXME this should just close the tx
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
-        storage_address = tx.address
-        if tx.sort == 'DELEGATECALL':
-            storage_address = tx.caller
 
-        self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(storage_address)), vm))
+        self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm))
 
         self._do_events()
 
@@ -2113,11 +2132,8 @@ class EVMWorld(Platform):
         if rollback:
             for address, account in self._deleted_accounts:
                 self.world_state[address] = account
-            storage_address = tx.address
-            if tx.sort == 'DELEGATECALL':
-                storage_address = tx.caller
 
-            self.set_storage(storage_address, account_storage)
+            self.set_storage(vm.address, account_storage)
             self._deleted_accounts = self._deleted_accounts
             self._logs = logs
 
@@ -2412,7 +2428,7 @@ class EVMWorld(Platform):
            origin not in self.accounts:
             raise EVMException('Account does not exist')
 
-        if sort == 'CALL':
+        if sort in ('CALL', 'DELEGATECALL'):
             #FIXME should len(bytecode)>0 ?
             bytecode = self.get_code(address)
         else:

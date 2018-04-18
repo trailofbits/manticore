@@ -407,7 +407,6 @@ class Executor(Eventful):
                 # maintain a list of childres for logging purpose
                 children.append(state_id)
 
-        print "Forking current state into states %r" % children
         logger.info("Forking current state into states %r", children)
         return None
 
