@@ -71,7 +71,7 @@ class IntegrationTest(unittest.TestCase):
         filename = filename[len(os.getcwd())+1:]
         workspace = '{!s}/workspace'.format(self.test_dir)
         t = time.time()
-        with open(os.path.join(os.pardir, '{!s}/output.log'.format(self.test_dir), "w") as output:
+        with open(os.path.join(os.pardir, '{!s}/output.log'.format(self.test_dir)), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--timeout', '1',
@@ -109,7 +109,7 @@ class IntegrationTest(unittest.TestCase):
         assertions = '{!s}/assertions.txt'.format(self.test_dir)
         with open(assertions, 'wb') as f:
             f.write(b'0x0000000000401003 ZF == 1')
-        with open(os.path.join(os.pardir, '{!s}/output.log'.format(self.test_dir), "w")) as output:
+        with open(os.path.join(os.pardir, '{!s}/output.log'.format(self.test_dir)), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
