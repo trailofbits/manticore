@@ -112,7 +112,7 @@ banner = '''Please enter your password:
 '''
 import json
 
-PROGRAM += '''printf ("%s");'''%json.dumps(banner).strip('"')
+PROGRAM += '''printf ("{!s}");'''.format(json.dumps(banner).strip('"'))
 PROGRAM += '''char xor(char a, char b){
     return a^b;
 }
@@ -138,9 +138,9 @@ def func(password, pad, flag=True):
     
     SUBPROGRAM = ''
     if config[0]:
-        SUBPROGRAM += '''if ( ((c = getchar(), (c >= 0)) && xor(c, '%c') == ('%c' ^ '%c')) ){\n'''%(pad[0], password[0], pad[0])
+        SUBPROGRAM += '''if ( ((c = getchar(), (c >= 0)) && xor(c, '{:c}') == ('{:c}' ^ '{:c}')) ){\n'''.format(pad[0], password[0], pad[0])
     else:
-        SUBPROGRAM += '''if ( ((c = getchar(), (c <  0)) || xor(c, '%c') != ('%c' ^ '%c')) ){\n'''%(pad[0], password[0], pad[0])
+        SUBPROGRAM += '''if ( ((c = getchar(), (c <  0)) || xor(c, '{:c}') != ('{:c}' ^ '{:c}')) ){\n'''.format(pad[0], password[0], pad[0])
 
     SUBPROGRAM += config[1]
     SUBPROGRAM += '''}else {\n''' 

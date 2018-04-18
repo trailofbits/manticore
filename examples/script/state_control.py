@@ -18,7 +18,7 @@ Usage:
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        sys.stderr.write("Usage: %s [binary] [address]\n"%(sys.argv[0],))
+        sys.stderr.write("Usage: {!s} [binary] [address]\n".format(sys.argv[0]))
         sys.exit(2)
 
     m = Manticore(sys.argv[1])

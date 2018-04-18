@@ -44,6 +44,6 @@ m.transaction(  caller=user_account,
                  )
 
 m.finalize()
-print("[+] Look for results in %s"% m.workspace)
+print("[+] Look for results in {!s}".format(m.workspace))
 
 

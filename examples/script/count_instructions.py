@@ -13,7 +13,7 @@ share data when running with multiple worker processes.
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        sys.stderr.write("Usage: %s [binary]\n"%(sys.argv[0],))
+        sys.stderr.write("Usage: {!s} [binary]\n".format(sys.argv[0]))
         sys.exit(2)
 
     m = Manticore(sys.argv[1])
