@@ -1310,7 +1310,6 @@ class Linux(Platform):
                     - "Error in brk!" if there is any error allocating the memory
         '''
         if brk != 0 and brk != self.elf_brk:
-            assert brk > self.elf_brk
             mem = self.current.memory
             size = brk - self.elf_brk
             perms = mem.perms(self.elf_brk - 1)

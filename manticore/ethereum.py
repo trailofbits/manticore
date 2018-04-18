@@ -1,5 +1,5 @@
 import string
-
+import re
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
@@ -7,7 +7,7 @@ from .core.smtlib.visitors import simplify
 from .platforms import evm
 from .core.state import State
 import tempfile
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
 import sha3
@@ -150,24 +150,11 @@ class UninitializedStorage(Detector):
         state.context.setdefault('seth.detectors.initialized_storage', set()).add((address,offset))
 
 
-def calculate_coverage(code, seen):
-    ''' Calculates what percentage of code has been seen '''
-
-    def array_to_string(arr):
-        #Get a string out of constant Array
-        result = ''
-        for i in range(len(arr)):
-            result += chr(simplify(arr[i]).value)
-        return result
-    bytecode = array_to_string(code)
-
-    end = None
-    if bytecode[-44: -34] == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and bytecode[-2:] == '\x00\x29':
-        end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-
+def calculate_coverage(runtime_bytecode, seen):
+    ''' Calculates what percentage of runtime_bytecode has been seen '''
     count, total = 0, 0
-    for i in evm.EVMAsm.disassemble_all(bytecode[:end]):
+    bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
+    for i in evm.EVMAsm.disassemble_all(bytecode):
         if i.offset in seen:
             count += 1
         total += 1
@@ -202,13 +189,18 @@ class SolidityMetadata(object):
                            'name': name,
                            'outputs': [{'type': ty} for ty in output_types]}
 
+    @staticmethod
+    def _without_metadata(bytecode):
+        end = None
+        if ''.join(bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+                and ''.join(bytecode[-2:]) == '\x00\x29':
+            end = -9 - 32 - 2  # Size of metadata at the end of most contracts
+        return bytecode[:end]
+
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
-        end = None
-        if ''.join(bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
+        bytecode = self._without_metadata(bytecode)
 
         asm_offset = 0
         asm_pos = 0
@@ -218,7 +210,7 @@ class SolidityMetadata(object):
         f = int(md.get(2, 0))
         j = md.get(3, None)
 
-        for i in evm.EVMAsm.disassemble_all(bytecode[:end]):
+        for i in evm.EVMAsm.disassemble_all(bytecode):
             if asm_pos in srcmap and len(srcmap[asm_pos]):
                 md = srcmap[asm_pos]
                 if len(md):
@@ -241,20 +233,12 @@ class SolidityMetadata(object):
     @property
     def runtime_bytecode(self):
         # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._runtime_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._runtime_bytecode[:end]
+        return self._without_metadata(self._runtime_bytecode)
 
     @property
     def init_bytecode(self):
         # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._init_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._init_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._init_bytecode[:end]
+        return self._without_metadata(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
@@ -479,7 +463,10 @@ class ABI(object):
 
         new_offset = offset + 32
 
-        if ty.startswith('uint'):
+        if ty == u'':
+            new_offset = offset
+            result = None
+        elif ty.startswith('uint'):
             size = ABI._parse_size(ty[4:]) // 8
             result = ABI.get_uint(data, size, offset)
         elif ty.startswith('int'):
@@ -488,19 +475,20 @@ class ABI(object):
             mask = 2**(size - 1)
             value = -(value & mask) + (value & ~mask)
             result = value
-        elif ty in (u'bool'):
+        elif ty == u'bool':
             result = ABI.get_uint(data, 1, offset)
         elif ty == u'address':
             result = ABI.get_uint(data, 20, offset)
-        elif ty == u'':
-            new_offset = offset
-            result = None
         elif ty in (u'bytes', u'string'):
             dyn_offset = ABI.get_uint(data, 32, offset)
             size = ABI.get_uint(data, 32, dyn_offset)
             result = data[dyn_offset + 32:dyn_offset + 32 + size]
         elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
             size = int(ty[5:])
+            result = data[offset:offset + size]
+        elif ty == u'function':
+            # `function` is a special case of `bytes24`
+            size = 24
             result = data[offset:offset + size]
         elif ty == u'address[]':
             dyn_offset = simplify(ABI.get_uint(data, 32, offset))
@@ -746,6 +734,19 @@ class ManticoreEVM(Manticore):
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
+
+        #check solc version
+        supported_versions = ('0.4.18', '0.4.21')
+        installed_version_output = check_output([solc, "--version"])
+
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+
+        installed_version = m.groupdict()['version']
+        if installed_version not in supported_versions:
+            #Fixme https://github.com/trailofbits/manticore/issues/847
+            #logger.warning("Unsupported solc version %s", installed_version)
+            pass
+
         with tempfile.NamedTemporaryFile() as temp:
             temp.write(source_code)
             temp.flush()
@@ -1069,7 +1070,7 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_account="attacker"):
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
         with open(solidity_filename) as f:
             source_code = f.read()
 
@@ -1111,7 +1112,7 @@ class ManticoreEVM(Manticore):
         prev_coverage = 0
         current_coverage = 0
 
-        while current_coverage < 100 and not self.is_shutdown():
+        while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
                 run_symbolic_tx()
             except NoAliveStates:
@@ -1122,12 +1123,13 @@ class ManticoreEVM(Manticore):
                 if tx_limit == 0:
                     break
 
-            prev_coverage = current_coverage
-            current_coverage = self.global_coverage(contract_account)
-            found_new_coverage = prev_coverage < current_coverage
+            if tx_use_coverage:
+                prev_coverage = current_coverage
+                current_coverage = self.global_coverage(contract_account)
+                found_new_coverage = prev_coverage < current_coverage
 
-            if not found_new_coverage:
-                break
+                if not found_new_coverage:
+                    break
 
         self.finalize()
 

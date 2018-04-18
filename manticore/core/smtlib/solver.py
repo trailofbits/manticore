@@ -361,10 +361,6 @@ class Z3Solver(Solver):
             while self._check() == 'sat':
                 value = self._getvalue(var)
                 result.append(value)
-                # Reset the solver to avoid the incremental mode
-                # Triggered with two consecutive calls to check-sat
-                # Yet, if the number of solution is large, sending back
-                # the whole formula is more expensive
                 self._assert(var != value)
 
                 if len(result) >= maxcnt:

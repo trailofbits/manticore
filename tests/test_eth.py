@@ -203,6 +203,31 @@ class EthAbiTests(unittest.TestCase):
             parsed = ABI.parse('uint{}'.format(i), data)
             self.assertEqual(parsed, 2**i - 1)
 
+    def test_empty_types(self):
+        name, args = ABI.parse('func()', '\0'*32)
+        self.assertEqual(name, 'func')
+        self.assertEqual(args, tuple())
+
+    def test_function_type(self):
+        # setup ABI for function with one function param
+        func_name = 'func'
+        spec = func_name+'(function)'
+        func_id = ABI.make_function_id(spec)
+        # build bytes24 data for function value (address+selector)
+        # calls member id lookup on 'Ethereum Foundation Tip Box' (see https://www.ethereum.org/donate)
+        address = ''.join(ABI.serialize_uint(0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, 20))
+        selector = ABI.make_function_id('memberId(address)')
+        function_ref_data = address + selector
+        # build tx call data
+        call_data = ''.join([
+            func_id,
+            function_ref_data,
+            '\0'*8
+        ])
+        name, args = ABI.parse(spec, call_data)
+        self.assertEqual(name, func_name)
+        self.assertEqual(args, (function_ref_data,))
+
 
 class EthTests(unittest.TestCase):
     def setUp(self):
