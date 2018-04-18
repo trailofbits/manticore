@@ -2351,7 +2351,7 @@ class EVMWorld(Platform):
             data = data_symb
         else:
             if not isbytestr(data):
-                data = bytes(all_ints(data))
+                data = bytes(list(all_ints(data)))
         bytecode = self.get_code(address)
 
         self._pending_transaction = PendingTransaction('Call', address, origin, price, data, caller, value, bytecode, header)
