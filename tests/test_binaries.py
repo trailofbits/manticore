@@ -37,8 +37,8 @@ class IntegrationTest(unittest.TestCase):
         :param filename: Name of file inside the `tests/binaries` directory
         :return:
         """
-        dirname = os.path.dirname(__file__)
-        filename = '{}/binaries/{}'.format(dirname, filename)
+        dirname = os.path.abspath(__file__)
+        filename = os.path.join(dirname, 'binaries', filename)
         command = ['python', '-m', 'manticore']
 
         if contract:
