@@ -1222,8 +1222,8 @@ class ManticoreEVM(Manticore):
                     fcode = io.BytesIO(runtime_code)
                     for chunk in iter(lambda: fcode.read(32), b''):
                         summary.write(u'\t{}\n'.format(binascii.hexlify(chunk)))
-                    trace = set((offset for address_i, offset in state.context['seth.rt.trace'] if address == address_i))
-                    summary.write(u"Coverage {:0.3f}% (on this state)\n".format(calculate_coverage(runtime_code, trace)))  # coverage % for address in this account/state
+                    runtime_trace = set((pc for contract, pc in state.context['seth.rt.trace'] if address == contract))
+                    summary.write(u"Coverage {:0.3f}% (on this state)\n".format(calculate_coverage(runtime_code, runtime_trace)))  # coverage % for address in this account/state
                 summary.write(u"\n")
 
             if blockchain._sha3:
