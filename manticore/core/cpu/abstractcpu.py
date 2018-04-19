@@ -427,7 +427,7 @@ class SyscallAbi(Abi):
             if ret > min_hex_expansion:
                 ret_s = ret_s + '(0x{:x})'.format(ret)
 
-            platform_logger.debug('{!s}({!s}) -> {!s}'.format(model.__func__.__name__, args_s, ret_s))
+            platform_logger.debug('%s(%s) -> %s', model.__func__.__name__, args_s, ret_s)
 
 ############################################################################
 # Abstract cpu encapsulating common cpu methods used by platforms and executor.
@@ -770,7 +770,7 @@ class Cpu(Eventful):
                 if isinstance(c, Constant):
                     c = c.value
                 else:
-                    logger.error('Concretize executable memory {!r} {!r}'.format(c, text))
+                    logger.error('Concretize executable memory %r %r', c, text)
                     raise ConcretizeMemory(self.memory,
                                            address=pc,
                                            size=8 * self.max_instr_width,
@@ -846,8 +846,8 @@ class Cpu(Eventful):
 
             else:
                 text_bytes = ' '.join('{:02x}'.format(x) for x in insn.bytes)
-                logger.info("Unimplemented instruction: 0x{:016x}:\t{!s}\t{!s}\t{!s}".format(
-                            insn.address, text_bytes, insn.mnemonic, insn.op_str))
+                logger.info("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
+                            insn.address, text_bytes, insn.mnemonic, insn.op_str)
                 self.emulate(insn)
 
         except (Interruption, Syscall) as e:
@@ -880,7 +880,7 @@ class Cpu(Eventful):
         except unicorn.UcError as e:
             if e.errno == unicorn.UC_ERR_INSN_INVALID:
                 text_bytes = ' '.join('{:02x}'.format(x) for x in insn.bytes)
-                logger.error("Unimplemented instruction: 0x{:016x}:\t{!s}\t{!s}\t{!s}",
+                logger.error("Unimplemented instruction: 0x%016x:\t%s\t%s\t%s",
                              insn.address, text_bytes, insn.mnemonic, insn.op_str)
             raise InstructionEmulationError(str(e))
         finally:

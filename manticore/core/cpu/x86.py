@@ -839,7 +839,7 @@ class X86Cpu(Cpu):
                 }
 
         if cpu.EAX not in conf:
-            logger.warning('CPUID with EAX={:x} not implemented @ {:x}'.format(cpu.EAX, cpu.PC))
+            logger.warning('CPUID with EAX=%x not implemented @ %x', cpu.EAX, cpu.PC)
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
             return
 
@@ -848,7 +848,7 @@ class X86Cpu(Cpu):
             return
 
         if cpu.ECX not in conf[cpu.EAX]:
-            logger.warning('CPUID with EAX={:x} ECX={:x} not implemented'.format(cpu.EAX, cpu.ECX))
+            logger.warning('CPUID with EAX=%x ECX=%x not implemented', cpu.EAX, cpu.ECX)
             cpu.EAX, cpu.EBX, cpu.ECX, cpu.EDX = 0, 0, 0, 0
             return
 
@@ -3491,7 +3491,7 @@ class X86Cpu(Cpu):
         '''
         We are just going to ignore the CS selector for now.
         '''
-        logger.info("LJMP: Jumping to: {!r}:{!r}".format(cs_selector.read(), target.read()))
+        logger.info("LJMP: Jumping to: %r:%r", cs_selector.read(), target.read())
         cpu.CS = cs_selector.read()
         cpu.PC = target.read()
 
@@ -5805,7 +5805,7 @@ class X86Cpu(Cpu):
         # Checks that the segment selector is not null.
         if selector == 0 or selector not in cpu._segments:  # Shouldn't we need check for max GDTR limit instead?
             cpu.ZF = False
-            logger.info("Invalid selector {!s}. Clearing ZF".format(selector))
+            logger.info("Invalid selector %s. Clearing ZF", selector)
             return
 
         base, limit, ty = cpu.get_descriptor(selector)
