@@ -4,6 +4,8 @@ RV=0
 
 set -o errexit
 set -o pipefail
+set -x
+set -v
 
 # Run all examples; this assumes PWD is examples/script
 run_examples() {
