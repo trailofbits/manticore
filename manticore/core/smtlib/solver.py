@@ -136,7 +136,7 @@ class Z3Solver(Solver):
         self.support_maximize = False
         self.support_minimize = False
         self.support_reset = True
-        logger.debug('Z3 version: {!s}'.format(self.version))
+        logger.debug('Z3 version: %s', self.version)
 
         if self.version >= Version(4, 5, 0):
             self.support_maximize = False
@@ -234,7 +234,7 @@ class Z3Solver(Solver):
         ''' Send a string to the solver.
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
-        logger.debug('>{!s}'.format(cmd))
+        logger.debug('>%s', cmd)
         if self.debug:
             self._send_log.append(str(cmd))
         try:
@@ -259,7 +259,7 @@ class Z3Solver(Solver):
             left += l
             right += r
         buf = received.getvalue().decode().strip()
-        logger.debug('<{!s}'.format(buf))
+        logger.debug('<%s', buf)
         return buf
 
     # UTILS: check-sat get-value
@@ -269,7 +269,7 @@ class Z3Solver(Solver):
         start = time.time()
         self._send('(check-sat)')
         _status = self._recv()
-        logger.debug("Check took {!s} seconds ({!s})".format(time.time() - start, _status))
+        logger.debug("Check took %s seconds (%s)", time.time() - start, _status)
         if _status not in ('sat', 'unsat', 'unknown'):
             raise SolverException(_status)
         if consider_unknown_as_unsat:

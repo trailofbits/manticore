@@ -80,7 +80,7 @@ class ConstraintSet(object):
         added = True
         while added:
             added = False
-            logger.debug('Related variables {!r}'.format([x.name for x in related_variables]))
+            logger.debug('Related variables %r', [x.name for x in related_variables])
             next_remaining_constraints = set()
             for constraint in remaining_constraints:
                 variables = get_variables(constraint)
@@ -118,7 +118,7 @@ class ConstraintSet(object):
                 result += '(assert {!s})\n'.format(constraint_str)
             constraint_str = translator.pop()
 
-        logger.debug('Reduced {:d} constraints!!'.format(N - len(related_constraints)))
+        logger.debug('Reduced %d constraints!!', N - len(related_constraints))
 
         return result
 

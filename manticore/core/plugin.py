@@ -208,7 +208,7 @@ class InstructionCounter(Plugin):
     def did_finish_run_callback(self):
         _shared_context = self.manticore.context
         instructions_count = _shared_context.get('instructions_count', 0)
-        logger.info('Instructions executed: {:d}'.format(instructions_count))
+        logger.info('Instructions executed: %d', instructions_count)
 
 
 class Visited(Plugin):
@@ -243,7 +243,7 @@ class Visited(Plugin):
             with self.manticore._output.save_stream(self.coverage_file, binary=False) as f:
                 for m in executor_visited:
                     f.write(u"0x{:016x}\n".format(m))
-        logger.info('Coverage: {:d} different instructions executed'.format(len(executor_visited)))
+        logger.info('Coverage: %d different instructions executed', len(executor_visited))
 
 
 class ConcreteTraceFollower(Plugin):
@@ -299,46 +299,46 @@ class ExamplePlugin(Plugin):
 
     def did_enqueue_state_callback(self, state_id, state):
         ''' state was just got enqueued in the executor procesing list'''
-        logger.info('did_enqueue_state {!r} {!r}'.format(state_id, state))
+        logger.info('did_enqueue_state %r %r', state_id, state)
 
     def will_fork_state_callback(self, parent_state, expression, solutions, policy):
-        logger.info('will_fork_state {!r} {!r} {!r} {!r}'.format(parent_state, expression, solutions, policy))
+        logger.info('will_fork_state %r %r %r %r', parent_state, expression, solutions, policy)
 
     def did_fork_state_callback(self, child_state, expression, new_value, policy):
-        logger.info('did_fork_state {!r} {!r} {!r} {!r}'.format(child_state, expression, new_value, policy))
+        logger.info('did_fork_state %r %r %r %r', child_state, expression, new_value, policy)
 
     def did_load_state_callback(self, state, state_id):
-        logger.info('did_load_state {!r} {!r}'.format(state, state_id))
+        logger.info('did_load_state %r %r', state, state_id)
 
     def did_enqueue_state_callback(self, state, state_id):
-        logger.info('did_enqueue_state {!r} {!r}'.format(state, state_id))
+        logger.info('did_enqueue_state %r %r', state, state_id)
 
     def will_terminate_state_callback(self, state, state_id, exception):
-        logger.info('will_terminate_state {!r} {!r} {!r}'.format(state, state_id, exception))
+        logger.info('will_terminate_state %r %r %r', state, state_id, exception)
 
     def will_generate_testcase_callback(self, state, testcase_id, message):
-        logger.info('will_generate_testcase {!r} {!r} {!r}'.format(state, testcase_id, message))
+        logger.info('will_generate_testcase %r %r %r', state, testcase_id, message)
 
     def will_read_memory_callback(self, state, where, size):
-        logger.info('will_read_memory {!r} {!r} {!r}'.format(state, where, size))
+        logger.info('will_read_memory %r %r %r', state, where, size)
 
     def did_read_memory_callback(self, state, where, value, size):
-        logger.info('did_read_memory {!r} {!r} {!r} {!r}'.format(state, where, value, size))
+        logger.info('did_read_memory %r %r %r %r', state, where, value, size)
 
     def will_write_memory_callback(self, state, where, value, size):
-        logger.info('will_write_memory {!r} {!r} {!r}'.format(state, where, value, size))
+        logger.info('will_write_memory %r %r %r', state, where, value, size)
 
     def did_write_memory_callback(self, state, where, value, size):
-        logger.info('did_write_memory {!r} {!r} {!r} {!r}'.format(state, where, value, size))
+        logger.info('did_write_memory %r %r %r %r', state, where, value, size)
 
     def will_read_register_callback(self, state, register):
-        logger.info('will_read_register {!r} {!r}'.format(state, register))
+        logger.info('will_read_register %r %r', state, register)
 
     def did_read_register_callback(self, state, register, value):
-        logger.info('did_read_register {!r} {!r} {!r}'.format(state, register, value))
+        logger.info('did_read_register %r %r %r', state, register, value)
 
     def will_write_register_callback(self, state, register, value):
-        logger.info('will_write_register {!r} {!r} {!r}'.format(state, register, value))
+        logger.info('will_write_register %r %r %r', state, register, value)
 
     def did_write_register_callback(self, state, register, value):
-        logger.info('did_write_register {!r} {!r} {!r}'.format(state, register, value))
+        logger.info('did_write_register %r %r %r', state, register, value)

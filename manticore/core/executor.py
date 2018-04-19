@@ -383,9 +383,9 @@ class Executor(Eventful):
             setstate(state, solutions[0])
             return state
 
-        logger.info("Forking, about to store. (policy: {!s}, values: {!s})".format(
+        logger.info("Forking, about to store. (policy: %s, values: %s)",
                     policy,
-                    ', '.join('0x{:x}'.format(sol) for sol in solutions)))
+                    ', '.join('0x{:x}'.format(sol) for sol in solutions))
 
         self._publish('will_fork_state', state, expression, solutions, policy)
 
@@ -406,7 +406,7 @@ class Executor(Eventful):
                 # maintain a list of childres for logging purpose
                 children.append(state_id)
 
-        logger.debug("Forking current state into states {!r}".format(children))
+        logger.debug("Forking current state into states %r", children)
         return None
 
     def run(self):
@@ -422,7 +422,7 @@ class Executor(Eventful):
             # notify siblings we are about to start a run
             self._notify_start_run()
 
-            logger.debug("Starting Manticore Symbolic Emulator Worker (pid {:d}).".format(os.getpid()))
+            logger.debug("Starting Manticore Symbolic Emulator Worker (pid %d).", os.getpid())
 
             while not self.is_shutdown():
                 try:  # handle fatal errors: exceptions in Manticore
@@ -441,7 +441,7 @@ class Executor(Eventful):
                                         current_state = self._workspace.load_state(current_state_id)
                                         self.forward_events_from(current_state, True)
                                         self._publish('did_load_state', current_state, current_state_id)
-                                        logger.info("load state {!r}".format(current_state_id))
+                                        logger.info("load state %r", current_state_id)
                                     # notify siblings we have a state to play with
                                 finally:
                                     self._notify_start_run()
@@ -484,7 +484,7 @@ class Executor(Eventful):
                     except SolverException as e:
                         import traceback
                         trace = traceback.format_exc()
-                        logger.error("Exception: {!s}\n{!s}".format(e, trace))
+                        logger.error("Exception: %s\n%s", str(e), trace)
 
                         # Notify this state is done
                         self._publish('will_terminate_state', current_state, current_state_id, e)
@@ -496,7 +496,7 @@ class Executor(Eventful):
                 except (Exception, AssertionError) as e:
                     import traceback
                     trace = traceback.format_exc()
-                    logger.error("Exception: {!s}\n{!s}".format(e, trace))
+                    logger.error("Exception: %s\n%s", str(e), trace)
                     # Notify this worker is done
                     self._publish('will_terminate_state', current_state, current_state_id, e)
                     current_state = None

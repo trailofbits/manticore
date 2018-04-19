@@ -599,7 +599,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug('New file-memory map @{:x} size:{:x}'.format(addr, size))
+        logger.debug('New file-memory map @%x size:%x', addr, size)
         return addr
 
     def mmap(self, addr, size, perms, data_init=None, name=None):
@@ -644,7 +644,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         # Okay, ready to alloc
         self._add(m)
 
-        logger.debug('New memory map @{:x} size:{:x}'.format(addr, size))
+        logger.debug('New memory map @%x size:%x', addr, size)
         return addr
 
     def _add(self, m):
@@ -738,7 +738,7 @@ class Memory(with_metaclass(ABCMeta, object)):
             if tail:
                 self._add(tail)
 
-        logger.debug('Unmap memory @{:x} size:{:x}'.format(start, size))
+        logger.debug('Unmap memory @%x size:%x', start, size)
 
     def mprotect(self, start, size, perms):
         assert size > 0
@@ -953,13 +953,13 @@ class SMemory(Memory):
 
         if issymbolic(address):
             assert solver.check(self.constraints)
-            logger.debug('Reading {:d} bytes from symbolic address {!s}'.format(size, address))
+            logger.debug('Reading %d bytes from symbolic address %s', size, address)
             try:
                 solutions = self._try_get_solutions(address, size, 'r', force=force)
                 assert len(solutions) > 0
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
-                logger.debug('Got TooManySolutions on a symbolic read. Range [{:x}, {:x}]. Not crashing!', m, M)
+                logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
 
                 # The force param shouldn't affect this, as this is checking for unmapped reads, not bad perms
                 crashing_condition = True
