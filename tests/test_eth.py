@@ -236,7 +236,7 @@ class EthTests(unittest.TestCase):
 
     def tearDown(self):
         self.mevm=None
-        shutil.rmtree(self.worksp)
+        #shutil.rmtree(self.worksp)
 
     def test_emit_did_execute_end_instructions(self):
         """
@@ -271,17 +271,19 @@ class EthTests(unittest.TestCase):
             Record the pcs of all end instructions encountered. Source of truth.
             """
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-            #def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-                world = state.platform
-                if world.current_transaction.sort == 'CREATE':
-                    name = 'init'
-                else:
-                    name = 'rt'
+                try:
+                    world = state.platform
+                    if world.current_transaction.sort == 'CREATE':
+                        name = 'init'
+                    else:
+                        name = 'rt'
 
-                # collect all end instructions based on whether they are in init or rt
-                if instruction.is_endtx:
-                    with self.locked_context(name) as d:
-                        d.append(instruction.offset)
+                    # collect all end instructions based on whether they are in init or rt
+                    if instruction.is_endtx:
+                        with self.locked_context(name) as d:
+                            d.append(instruction.offset)
+                except Exception as e:
+                    raise
 
         mevm = self.mevm
         p = TestPlugin()

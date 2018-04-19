@@ -192,8 +192,8 @@ class SolidityMetadata(object):
     @staticmethod
     def _without_metadata(bytecode):
         end = None
-        if ''.join(bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(bytecode[-2:]) == '\x00\x29':
+        if bytecode[-43: -34] == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+                and bytecode[-2:] == '\x00\x29':
             end = -9 - 32 - 2  # Size of metadata at the end of most contracts
         return bytecode[:end]
 
@@ -887,7 +887,7 @@ class ManticoreEVM(Manticore):
         return len(self._terminated_state_ids)
         
     def _terminate_state_id(self, state_id):
-        ''' Manually  terminates a states by state_id.
+        ''' Manually terminates a states by state_id.
             Moves the state from the running list into the terminated list and
             generates a testcase for it
         '''
@@ -906,7 +906,7 @@ class ManticoreEVM(Manticore):
             assert state_id == -1
             state_id = self.save(self._initial_state, final=True)
             self._initial_state = None
-
+        return state_id
 
 
     # deprecate this 5 in favor of for sta in seth.all_states: do stuff?
@@ -1417,7 +1417,7 @@ class ManticoreEVM(Manticore):
                         is_something_symbolic = is_something_symbolic or is_storage_symbolic
                 '''
 
-                runtime_code = blockchain.get_code(account_address)
+                runtime_code = state.solve_one(blockchain.get_code(account_address))
                 if runtime_code:
                     summary.write("Code:\n")
                     fcode = StringIO.StringIO(runtime_code)
@@ -1547,7 +1547,9 @@ class ManticoreEVM(Manticore):
             try:
                 while True:
                     state_id = q.get_nowait()
-                    self._terminate_state_id(state_id)
+                    state_id = self._terminate_state_id(state_id)
+                    st = self.load(state_id)
+                    self._generate_testcase_callback(st, 'test', '')
             except EmptyQueue:
                 pass
 
