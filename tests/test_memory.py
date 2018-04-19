@@ -10,7 +10,6 @@ import fcntl
 import resource
 import sys
 from manticore.core.memory import *
-import sys
 
 def issymbolic(value):
     return isinstance(value, Expression)
