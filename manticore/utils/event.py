@@ -109,7 +109,7 @@ class Eventful(with_metaclass(EventsGatherMetaclass, object)):
 
         cls = self.__class__
         if basename not in cls.__all_events__[cls]:
-            logger.warning("Event '{!s}' not pre-declared. (self: {!s})".format(_name, repr(self)))
+            logger.warning("Event '%s' not pre-declared. (self: %s)", _name, repr(self))
 
     # Wrapper for _publish_impl that also makes sure the event is published from
     # a class that supports it.

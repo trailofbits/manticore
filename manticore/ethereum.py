@@ -924,15 +924,15 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
 
-        logger.info("Starting symbolic transaction: {:d}".format(self.completed_transactions + 1))
+        logger.info("Starting symbolic transaction: %d", self.completed_transactions + 1)
 
         status = self.run(procs=self._config_procs)
 
         with self.locked_context('seth') as context:
             context['_completed_transactions'] = context['_completed_transactions'] + 1
 
-        logger.info("Finished symbolic transaction: {:d} | Code Coverage: {:0.3f}% | Terminated States: {:d} | Alive States: {:d}".format(
-                    self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids)))
+        logger.info("Finished symbolic transaction: %d | Code Coverage: %d%% | Terminated States: %d | Alive States: %d",
+                    self.completed_transactions, self.global_coverage(address), len(self.terminated_state_ids), len(self.running_state_ids))
 
         return status
 
@@ -1120,7 +1120,7 @@ class ManticoreEVM(Manticore):
         ''' INTERNAL USE '''
         assert state.constraints == state.platform.constraints
         assert state.platform.constraints == state.platform.current.constraints
-        logger.debug(str(state.platform.current))
+        logger.debug("%s", state.platform.current)
 
         if isinstance(state.platform.current.last_exception, evm.Create):
             coverage_context_name = 'init_coverage'
@@ -1452,7 +1452,7 @@ class ManticoreEVM(Manticore):
                     for o in sorted(visited):
                         f.write(u'0x{:x}\n'.format(o))
 
-        logger.info(u"Results in {!s}".format(self.workspace))
+        logger.info(u"Results in %s", self.workspace)
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
