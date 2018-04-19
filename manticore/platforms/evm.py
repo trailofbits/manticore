@@ -235,12 +235,12 @@ class EVMMemory(object):
         if issymbolic(address):
             address = arithmetic_simplifier(address)
             assert solver.check(self.constraints)
-            logger.debug('Reading {:d} items from symbolic offset {!s}'.format(size, address))
+            logger.debug('Reading %d items from symbolic offset %s', size, address)
             try:
                 solutions = solver.get_all_values(self.constraints, address, maxcnt=0x1000)  # if more than 0x3000 exception
             except TooManySolutions as e:
                 m, M = solver.minmax(self.constraints, address)
-                logger.debug('Got TooManySolutions on a symbolic read. Range [{:x}, {:x}]. Not crashing!'.format(m, M))
+                logger.debug('Got TooManySolutions on a symbolic read. Range [%x, %x]. Not crashing!', m, M)
                 logger.info('INCOMPLETE Result! Using the sampled solutions we have as result')
                 condition = False
                 for base in e.solutions:
@@ -1605,7 +1605,7 @@ class EVM(Eventful):
         value = sha3.keccak_256(data).hexdigest()
         value = int('0x' + value, 0)
         self._publish('on_concrete_sha3', data, value)
-        logger.info("Found a concrete SHA3 example {!r} -> {:x}".format(data, value))
+        logger.info("Found a concrete SHA3 example %r -> %x", data, value)
         return value
 
     ##########################################################################
@@ -1842,7 +1842,7 @@ class EVM(Eventful):
         memlog = self.read_buffer(address, size)
 
         self.logs.append(EVMLog(self.address, memlog, topics))
-        logger.info('LOG {!r} {!r}'.format(memlog, topics))
+        logger.info('LOG %r %r', memlog, topics)
 
     ##########################################################################
     # System operations
@@ -2144,7 +2144,7 @@ class EVMWorld(Platform):
 
     def log(self, address, topic, data):
         self.logs.append((address, data, topics))
-        logger.info('LOG {!r} {!r}'.format(memlog, topics))
+        logger.info('LOG %r %r', memlog, topics)
 
     def log_storage(self, addr):
         pass
@@ -2552,7 +2552,7 @@ class EVMWorld(Platform):
             return cond
 
         assert any(map(issymbolic, data))
-        logger.info("SHA3 Searching over {:d} known hashes".format(len(self._sha3)))
+        logger.info("SHA3 Searching over %d known hashes", len(self._sha3))
         logger.info("SHA3 TODO save this state for future explorations with more known hashes")
         #Broadcast the signal
         self._publish('on_symbolic_sha3', data, list(self._sha3.items()))
