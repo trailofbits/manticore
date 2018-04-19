@@ -90,6 +90,8 @@ class LinuxTest(unittest.TestCase):
     def test_linux_workspace_files(self):
         files = self.symbolic_linux.generate_workspace_files()
         self.assertIn('syscalls', files)
+        self.assertIn('argv', files)
+        self.assertIn('env', files)
         self.assertIn('stdout', files)
         self.assertIn('stdin', files)
         self.assertIn('stderr', files)
