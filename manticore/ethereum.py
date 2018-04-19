@@ -177,7 +177,7 @@ class SolidityMetadata(object):
     def __init__(self, name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings):
         ''' Contract metadata for Solidity-based contracts
 
-            :param bytes source_code
+            :param bytes source_code:
         '''
         self.name = name
         self.source_code = source_code.decode()
