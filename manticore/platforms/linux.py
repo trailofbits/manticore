@@ -371,14 +371,14 @@ class Linux(Platform):
     RLIMIT_NOFILE = 7  # /* max number of open files */
     FCNTL_FDCWD = -100  # /* Special value used to indicate openat should use the cwd */
 
-    def __init__(self, program, argv=None, envp=None, function=None, disasm='capstone', **kwargs):
+    def __init__(self, program, argv=None, envp=None, entry=None, disasm='capstone', **kwargs):
         '''
         Builds a Linux OS platform
         :param string program: The path to ELF binary
         :param string disasm: Disassembler to be used
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
-        :param list function: function to use as entry point
+        :param list entry: entry point to use
         :ivar files: List of active file descriptors
         :type files: list[Socket] or list[File]
         '''
@@ -405,7 +405,7 @@ class Linux(Platform):
 
             self._init_cpu(self.arch)
             self._init_std_fds()
-            self._execve(program, argv, envp, function)
+            self._execve(program, argv, envp, entry)
 
     @classmethod
     def empty_platform(cls, arch):
@@ -451,41 +451,35 @@ class Linux(Platform):
         self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
 
     def _find_symbol(self, name):
-        symbol_tables = [s for s in self.elf.iter_sections()
-                         if isinstance(s, SymbolTableSection)]
-
-        if not symbol_tables and self.elffile.num_sections() == 0:
-            return None
+        symbol_tables = (s for s in self.elf.iter_sections()
+                         if isinstance(s, SymbolTableSection))
 
         for section in symbol_tables:
-            if not isinstance(section, SymbolTableSection):
-                continue
-
             if section['sh_entsize'] == 0:
                 continue
 
-            for nsym, symbol in enumerate(section.iter_symbols()):
+            for symbol in section.iter_symbols():
                 if describe_symbol_type(symbol['st_info']['type']) == 'FUNC':
                     if symbol.name == name:
                         return symbol['st_value']
 
         return None
 
-    def _execve(self, program, argv, envp, function):
+    def _execve(self, program, argv, envp, entry):
         '''
         Load `program` and establish program state, such as stack and arguments.
 
         :param program str: The ELF binary to load
         :param argv list: argv array
         :param envp list: envp array
-        :param list function: function to use as entry point
+        :param list entry: entry point to use
         '''
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
         logger.debug("Loading %s as a %s elf", program, self.arch)
 
-        self.load(program, function)
+        self.load(program, entry)
         self._arch_specific_init()
 
         self._stack_top = self.current.STACK
@@ -823,7 +817,7 @@ class Linux(Platform):
         # ARGC
         cpu.push_int(len(argvlst))
 
-    def load(self, filename, function=None):
+    def load(self, filename, entry=None):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state.
         Creates the stack and loads the environment variables and the arguments in it.
@@ -853,7 +847,7 @@ class Linux(Platform):
             logger.info('Interpreter filename: %s', interpreter_filename)
             try:
                 interpreter = ELFFile(file(interpreter_filename))
-            except:
+            except IOError:
                 logger.warning('Interpreter not loaded: %s', interpreter_filename)
             break
         if interpreter is not None:
@@ -922,11 +916,11 @@ class Linux(Platform):
                 elf_brk = k
 
         elf_entry = elf.header.e_entry
-        if function is not None:
-            symbolPC = self._find_symbol(function)
+        if entry is not None:
+            symbolPC = self._find_symbol(entry)
             if symbolPC is None:
-                logger.error("No symbol for %s in %s", function, program)
-                #TODO raise exception
+                logger.error("No symbol for %s in %s", entry, program)
+                raise Exception("Symbol not found")
             else:
                 elf_entry = symbolPC
                 #TODO use argv as arguments
@@ -2397,11 +2391,11 @@ class SLinux(Linux):
     :param str disasm: disassembler to be used
     :param list argv: argv not including binary
     :param list envp: environment variables
-    :param list function: function to use as entry point
+    :param list entry: entry point
     :param tuple[str] symbolic_files: files to consider symbolic
     """
 
-    def __init__(self, programs, argv=None, envp=None, function=None, symbolic_files=None,
+    def __init__(self, programs, argv=None, envp=None, entry=None, symbolic_files=None,
                  disasm='capstone'):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
@@ -2413,7 +2407,7 @@ class SLinux(Linux):
         super(SLinux, self).__init__(programs,
                                      argv=argv,
                                      envp=envp,
-                                     function=function,
+                                     entry=entry,
                                      disasm=disasm)
 
     def _mk_proc(self, arch):

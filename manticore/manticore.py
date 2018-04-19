@@ -76,7 +76,7 @@ def make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
-def make_linux(program, argv=None, env=None, function=None, symbolic_files=None, concrete_start=''):
+def make_linux(program, argv=None, env=None, entry=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = ['%s=%s' % (k, v) for k, v in env.items()]
@@ -84,7 +84,7 @@ def make_linux(program, argv=None, env=None, function=None, symbolic_files=None,
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-    platform = linux.SLinux(program, argv=argv, envp=env, function=function,
+    platform = linux.SLinux(program, argv=argv, envp=env, entry=entry,
                             symbolic_files=symbolic_files)
 
     initial_state = State(constraints, platform)
