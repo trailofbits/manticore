@@ -147,7 +147,7 @@ class UninitializedStorage(Detector):
         state.context.setdefault('seth.detectors.initialized_storage', set()).add(offset)
 
 
-def without_metadata(code):
+def remove_metadata(code):
     """
     Return provided bytecode without the metadata
 
@@ -162,7 +162,7 @@ def without_metadata(code):
 
 def calculate_coverage(code, seen):
     ''' Calculates what percentage of code has been seen '''
-    runtime_bytecode = without_metadata(code)
+    runtime_bytecode = remove_metadata(code)
 
     count, total = 0, 0
     for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
@@ -192,7 +192,7 @@ class SolidityMetadata(object):
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
-        bytecode = without_metadata(bytecode)
+        bytecode = remove_metadata(bytecode)
 
         asm_offset = 0
         asm_pos = 0
@@ -224,11 +224,11 @@ class SolidityMetadata(object):
 
     @property
     def runtime_bytecode(self):
-        return without_metadata(self._runtime_bytecode)
+        return remove_metadata(self._runtime_bytecode)
 
     @property
     def init_bytecode(self):
-        return without_metadata(self._init_bytecode)
+        return remove_metadata(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
