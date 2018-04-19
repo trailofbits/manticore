@@ -23,6 +23,7 @@ setup(
         'unicorn',
         'ply',
         'pysha3',
+        'functools32',
     ] + rtd_dependent_deps(),
     extras_require={
         'dev': [
