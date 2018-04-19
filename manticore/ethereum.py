@@ -245,9 +245,8 @@ class SolidityMetadata(object):
             return u''
 
         output = u''
-        source = self.source_code
-        nl = source.count('\n')
-        snippet = source[beg:beg + size]
+        nl = self.source_code.count('\n')
+        snippet = self.source_code[beg:beg + size]
         for l in snippet.split('\n'):
             output += u'    {!s}  {!s}\n'.format(nl, l)
             nl += 1
