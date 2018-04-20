@@ -658,13 +658,12 @@ class ManticoreEVM(Manticore):
         return bytecode
 
     @staticmethod
-    def _compile(source_code, contract_name):
-        """ Compile a Solidity contract, used internally
+    def _run_solc(source_file):
+        ''' Compile a source file with the Solidity compiler
 
-            :param source_code: a solidity source code
-            :param contract_name: a string with the name of the contract to analyze
-            :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
-        """
+            :param source_file: a file object for the source file
+            :return: output, warnings
+        '''
         solc = "solc"
 
         #check solc version
@@ -679,43 +678,74 @@ class ManticoreEVM(Manticore):
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
 
-        with tempfile.NamedTemporaryFile() as temp:
-            temp.write(source_code)
-            temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths', '.', temp.name], stdout=PIPE, stderr=PIPE)
-
+        solc_invocation = [
+            solc,
+            '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
+            '--allow-paths', '.',
+            source_file.name
+        ]
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE)
+        with p.stdout as stdout, p.stderr as stderr:
             try:
-                output = json.loads(p.stdout.read())
+                return json.loads(stdout.read()), stderr.read()
             except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
+                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
 
-            contracts = output.get('contracts', [])
-            if len(contracts) != 1 and contract_name is None:
-                raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+    @staticmethod
+    def _compile(source_code, contract_name):
+        """ Compile a Solidity contract, used internally
 
-            name, contract = None, None
-            if contract_name is None:
-                name, contract = contracts.items()[0]
-            else:
-                for n, c in contracts.items():
-                    if n.split(":")[1] == contract_name:
-                        name, contract = n, c
-                        break
+            :param source_code: solidity source as either a string or a file handle
+            :param contract_name: a string with the name of the contract to analyze
+            :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+        """
+        try:
+            file_type = file  # Python 2
+        except NameError:
+            from io import IOBase
+            file_type = IOBase  # Python 3
 
-            assert(name is not None)
-            name = name.split(':')[1]
+        if isinstance(source_code, str):
+            with tempfile.NamedTemporaryFile() as temp:
+                temp.write(source_code)
+                temp.flush()
+                output, warnings = ManticoreEVM._run_solc(temp)
+        elif isinstance(source_code, file_type):
+            output, warnings = ManticoreEVM._run_solc(source_code)
+        else:
+            raise TypeError
 
-            if contract['bin'] == '':
-                raise Exception('Solidity failed to compile your contract.')
-                
-            bytecode = contract['bin'].decode('hex')
-            srcmap = contract['srcmap'].split(';')
-            srcmap_runtime = contract['srcmap-runtime'].split(';')
-            hashes = contract['hashes']
-            abi = json.loads(contract['abi'])
-            runtime = contract['bin-runtime'].decode('hex')
-            warnings = p.stderr.read()
-            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+        contracts = output.get('contracts', [])
+        if len(contracts) != 1 and contract_name is None:
+            raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+
+        name, contract = None, None
+        if contract_name is None:
+            name, contract = contracts.items()[0]
+        else:
+            for n, c in contracts.items():
+                if n.split(":")[1] == contract_name:
+                    name, contract = n, c
+                    break
+
+        assert(name is not None)
+        # capture source code if file handle was passed as arg
+        if isinstance(source_code, file_type):
+            source_path = name.split(':')[0]
+            with open(source_path) as f:
+                source_code = f.read()
+        name = name.split(':')[1]
+
+        if contract['bin'] == '':
+            raise Exception('Solidity failed to compile your contract.')
+
+        bytecode = contract['bin'].decode('hex')
+        srcmap = contract['srcmap'].split(';')
+        srcmap_runtime = contract['srcmap-runtime'].split(';')
+        hashes = contract['hashes']
+        abi = json.loads(contract['abi'])
+        runtime = contract['bin-runtime'].decode('hex')
+        return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1, **kwargs):
         ''' A Manticore EVM manager
@@ -992,11 +1022,9 @@ class ManticoreEVM(Manticore):
         return status
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
-        with open(solidity_filename) as f:
-            source_code = f.read()
-
         owner_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
+        with open(solidity_filename) as f:
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
 
         if tx_account == "attacker":
