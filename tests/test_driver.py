@@ -12,7 +12,7 @@ import time
 from manticore import Manticore, issymbolic
 from manticore.core.smtlib import BitVecVariable
 
-class ManticoreDriver(unittest.TestCase):
+class ManticoreDriverTest(unittest.TestCase):
     _multiprocess_can_split_ = True
     def setUp(self):
         # Create a temporary directory

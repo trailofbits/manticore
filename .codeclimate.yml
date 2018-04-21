@@ -43,6 +43,9 @@ checks:
 plugins:
   pep8:
     enabled: true
+    checks:
+      E712:
+        enabled: false
   sonar-python:
     enabled: false
     config:

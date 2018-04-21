@@ -1,13 +1,13 @@
 import string
-
+import re
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
-from .core.smtlib.visitors import arithmetic_simplifier
+from .core.smtlib.visitors import arithmetic_simplify, pretty_print
 from .platforms import evm
 from .core.state import State
 import tempfile
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output
 from multiprocessing import Process, Queue
 from Queue import Empty as EmptyQueue
 import sha3
@@ -140,13 +140,9 @@ class UninitializedStorage(Detector):
 
 def calculate_coverage(runtime_bytecode, seen):
     ''' Calculates what percentage of runtime_bytecode has been seen '''
-    end = None
-    if ''.join(runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-            and ''.join(runtime_bytecode[-2:]) == '\x00\x29':
-        end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-
     count, total = 0, 0
-    for i in evm.EVMAsm.disassemble_all(runtime_bytecode[:end]):
+    bytecode = SolidityMetadata._without_metadata(runtime_bytecode)
+    for i in evm.EVMAsm.disassemble_all(bytecode):
         if i.offset in seen:
             count += 1
         total += 1
@@ -167,13 +163,18 @@ class SolidityMetadata(object):
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
         self.srcmap = self.__build_source_map(self.init_bytecode, srcmap)
 
+    @staticmethod
+    def _without_metadata(bytecode):
+        end = None
+        if ''.join(bytecode[-43: -34]) == '\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
+                and ''.join(bytecode[-2:]) == '\x00\x29':
+            end = -9 - 32 - 2  # Size of metadata at the end of most contracts
+        return bytecode[:end]
+
     def __build_source_map(self, bytecode, srcmap):
         # https://solidity.readthedocs.io/en/develop/miscellaneous.html#source-mappings
         new_srcmap = {}
-        end = None
-        if ''.join(bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
+        bytecode = self._without_metadata(bytecode)
 
         asm_offset = 0
         asm_pos = 0
@@ -183,7 +184,7 @@ class SolidityMetadata(object):
         f = int(md.get(2, 0))
         j = md.get(3, None)
 
-        for i in evm.EVMAsm.disassemble_all(bytecode[:end]):
+        for i in evm.EVMAsm.disassemble_all(bytecode):
             if asm_pos in srcmap and len(srcmap[asm_pos]):
                 md = srcmap[asm_pos]
                 if len(md):
@@ -206,20 +207,12 @@ class SolidityMetadata(object):
     @property
     def runtime_bytecode(self):
         # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._runtime_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._runtime_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._runtime_bytecode[:end]
+        return self._without_metadata(self._runtime_bytecode)
 
     @property
     def init_bytecode(self):
         # Removes metadata from the tail of bytecode
-        end = None
-        if ''.join(self._init_bytecode[-44: -34]) == '\x00\xa1\x65\x62\x7a\x7a\x72\x30\x58\x20' \
-                and ''.join(self._init_bytecode[-2:]) == '\x00\x29':
-            end = -9 - 33 - 2  # Size of metadata at the end of most contracts
-        return self._init_bytecode[:end]
+        return self._without_metadata(self._init_bytecode)
 
     def get_source_for(self, asm_offset, runtime=True):
         ''' Solidity source code snippet related to `asm_pos` evm bytecode offset.
@@ -230,7 +223,10 @@ class SolidityMetadata(object):
         else:
             srcmap = self.srcmap
 
-        beg, size, _, _ = srcmap[asm_offset]
+        try:
+            beg, size, _, _ = srcmap[asm_offset]
+        except KeyError:
+            return ''
 
         output = ''
         nl = self.source_code.count('\n')
@@ -273,8 +269,7 @@ class ABI(object):
 
     '''
     class SByte():
-        ''' Unconstrained symbolic byte, not associated with any ConstraintSet '''
-
+        ''' Unconstrained symbolic byte string, not associated with any ConstraintSet '''
         def __init__(self, size=1):
             self.size = size
 
@@ -369,74 +364,138 @@ class ABI(object):
     @staticmethod
     def make_function_call(method_name, *args):
         function_id = ABI.make_function_id(method_name)
-
-        def check_bitsize(value, size):
-            if isinstance(value, BitVec):
-                return value.size == size
-            return (value & ~((1 << size) - 1)) == 0
         assert len(function_id) == 4
         result = [tuple(function_id)]
         result.append(ABI.make_function_arguments(*args))
         return reduce(lambda x, y: x + y, result)
 
     @staticmethod
-    def _consume_type(ty, data, offset):
-        ''' INTERNAL parses a value of type from data '''
-        def get_uint(size, offset):
-            def simplify(x):
-                value = arithmetic_simplifier(x)
-                if isinstance(value, Constant) and not value.taint:
-                    return value.value
-                else:
-                    return value
+    def _parse_size(num):
+        """
+        Parses the size part of a uint or int Solidity declaration.
+        If empty string, returns 256
 
-            size = simplify(size)
-            offset = simplify(offset)
-            byte_size = size / 8
-            padding = 32 - byte_size  # for 160
-            value = arithmetic_simplifier(Operators.CONCAT(size, *map(Operators.ORD, data[offset + padding:offset + padding + byte_size])))
-            return simplify(value)
+        :param str num: text following uint/int in a Solidity type declaration
+        :return: uint or int size
+        :rtype: int
+        :raises EthereumError: if invalid size
+        """
+        if not num:
+            return 256
 
-        if ty == u'uint256':
-            return get_uint(256, offset), offset + 32
-        elif ty in (u'bool', u'uint8'):
-            return get_uint(8, offset), offset + 32
-        elif ty == u'address':
-            return get_uint(160, offset), offset + 32
-        elif ty == u'int256':
-            value = get_uint(256, offset)
-            mask = 2**(256 - 1)
-            value = -(value & mask) + (value & ~mask)
-            return value, offset + 32
-        elif ty == u'':
-            return None, offset
-        elif ty in (u'bytes', u'string'):
-            dyn_offset = 4 + get_uint(256, offset)
-            size = get_uint(256, dyn_offset)
-            return data[dyn_offset + 32:dyn_offset + 32 + size], offset + 4
-        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
-            size = int(ty[5:])
-            return data[offset:offset + size], offset + 32
-        else:
-            raise NotImplementedError(ty)
+        malformed = False
+        try:
+            size = int(num)
+        except ValueError:
+            malformed = True
+
+        if malformed or size < 8 or size > 256 or size % 8 != 0:
+            raise EthereumError('Invalid type size: {}'.format(num))
+
+        return size
 
     @staticmethod
-    def parse(signature, data):
-        ''' Deserialize function ID and arguments specified in `signature` from `data` '''
+    def get_uint(data, nbytes, offset):
+        """
+        Read a `nbytes` bytes long big endian unsigned integer from `data` starting at `offset` 
 
-        is_multiple = '(' in signature
+        :param data: sliceable buffer; symbolic buffer of Eth ABI encoded data
+        :param offset: byte offset
+        :param nbytes: number of bytes to read starting from least significant byte
+        :rtype: int or Expression
+        """
+        nbytes = arithmetic_simplify(nbytes)
+        offset = arithmetic_simplify(offset)
+        padding = 32 - nbytes
+        start = offset + padding
+        value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
+        return arithmetic_simplify(value)
+
+    @staticmethod        
+    def _consume_type(ty, data, offset):
+        """
+        Parses a value of type from data
+
+        Further info: http://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
+
+        :param data: transaction data WITHOUT the function hash first 4 bytes
+        :param offset: offset into data of the first byte of the "head part" of the ABI element
+        :return: tuple where the first element is the extracted ABI element, and the second is the offset of
+            the next ABI element
+        :rtype: tuple
+        """
+        # TODO(mark) refactor so we don't return this tuple thing. the offset+32 thing
+        # should be something the caller keeps track of.
+
+        new_offset = offset + 32
+
+        if ty == u'':
+            new_offset = offset
+            result = None
+        elif ty.startswith('uint'):
+            size = ABI._parse_size(ty[4:]) // 8
+            result = ABI.get_uint(data, size, offset)
+
+        elif ty.startswith('int'):
+            size = ABI._parse_size(ty[3:])
+            value = ABI.get_uint(data, size // 8, offset)
+            mask = 2**(size - 1)
+            value = -(value & mask) + (value & ~mask)
+            result = value
+
+        elif ty == u'bool':
+            result = ABI.get_uint(data, 1, offset)
+        elif ty == u'address':
+            result = ABI.get_uint(data, 20, offset)
+        elif ty in (u'bytes', u'string'):
+            dyn_offset = ABI.get_uint(data, 32, offset)
+            size = ABI.get_uint(data, 32, dyn_offset)
+            result = data[dyn_offset + 32:dyn_offset + 32 + size]
+        elif ty.startswith('bytes') and 0 <= int(ty[5:]) <= 32:
+            size = int(ty[5:])
+            result = data[offset:offset + size]
+        elif ty == u'function':
+            # `function` is a special case of `bytes24`
+            size = 24
+            result = data[offset:offset + size]
+        elif ty == u'address[]':
+            dyn_offset = arithmetic_simplify(ABI.get_uint(data, 32, offset))
+            size = arithmetic_simplify(ABI.get_uint(data, 32, dyn_offset))
+            result = [ABI.get_uint(data, 20, dyn_offset + 32 + 32 * i) for i in range(size)]
+        else:
+            raise NotImplementedError(repr(ty))
+
+        return result, new_offset
+
+    @staticmethod
+    def parse_type_spec(type_spec):
+        is_multiple = '(' in type_spec
         if is_multiple:
-            func_name = signature.split('(')[0]
-            types = signature.split('(')[1][:-1].split(',')
-            if len(func_name) > 0:
-                off = 4
-            else:
+            func_name = type_spec.split('(')[0]
+            types = type_spec.split('(')[1][:-1].split(',')
+            if not func_name:
                 func_name = None
-                off = 0
         else:
             func_name = None
-            types = (signature,)
-            off = 0
+            types = (type_spec,)
+        return is_multiple, func_name, types
+
+    @staticmethod
+    def parse(type_spec, data):
+        ''' Deserialize function ID and arguments specified in `type_spec` from `data`
+
+        :param str type_spec: EVM ABI function specification. function name is optional
+        :param data: ethereum transaction data
+        :type data: str or Array
+        :return:
+        '''
+        is_multiple, func_name, types = ABI.parse_type_spec(type_spec)
+
+        off = 0
+
+        #If it parsed the function name from the spec, skip 4 bytes from the data
+        if func_name:
+            data = data[4:]
 
         arguments = []
         for ty in types:
@@ -599,51 +658,94 @@ class ManticoreEVM(Manticore):
         return bytecode
 
     @staticmethod
+    def _run_solc(source_file):
+        ''' Compile a source file with the Solidity compiler
+
+            :param source_file: a file object for the source file
+            :return: output, warnings
+        '''
+        solc = "solc"
+
+        #check solc version
+        supported_versions = ('0.4.18', '0.4.21')
+        installed_version_output = check_output([solc, "--version"])
+
+        m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
+
+        installed_version = m.groupdict()['version']
+        if installed_version not in supported_versions:
+            #Fixme https://github.com/trailofbits/manticore/issues/847
+            #logger.warning("Unsupported solc version %s", installed_version)
+            pass
+
+        solc_invocation = [
+            solc,
+            '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
+            '--allow-paths', '.',
+            source_file.name
+        ]
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE)
+        with p.stdout as stdout, p.stderr as stderr:
+            try:
+                return json.loads(stdout.read()), stderr.read()
+            except ValueError:
+                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
+
+    @staticmethod
     def _compile(source_code, contract_name):
         """ Compile a Solidity contract, used internally
 
-            :param source_code: a solidity source code
+            :param source_code: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
-            :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
+            :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
-        solc = "solc"
-        with tempfile.NamedTemporaryFile() as temp:
-            temp.write(source_code)
-            temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths', '.', temp.name], stdout=PIPE, stderr=PIPE)
+        try:
+            file_type = file  # Python 2
+        except NameError:
+            from io import IOBase
+            file_type = IOBase  # Python 3
 
-            try:
-                output = json.loads(p.stdout.read())
-            except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
+        if isinstance(source_code, str):
+            with tempfile.NamedTemporaryFile() as temp:
+                temp.write(source_code)
+                temp.flush()
+                output, warnings = ManticoreEVM._run_solc(temp)
+        elif isinstance(source_code, file_type):
+            output, warnings = ManticoreEVM._run_solc(source_code)
+        else:
+            raise TypeError
 
-            contracts = output.get('contracts', [])
-            if len(contracts) != 1 and contract_name is None:
-                raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+        contracts = output.get('contracts', [])
+        if len(contracts) != 1 and contract_name is None:
+            raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
-            name, contract = None, None
-            if contract_name is None:
-                name, contract = contracts.items()[0]
-            else:
-                for n, c in contracts.items():
-                    if n.split(":")[1] == contract_name:
-                        name, contract = n, c
-                        break
+        name, contract = None, None
+        if contract_name is None:
+            name, contract = contracts.items()[0]
+        else:
+            for n, c in contracts.items():
+                if n.split(":")[1] == contract_name:
+                    name, contract = n, c
+                    break
 
-            assert(name is not None)
-            name = name.split(':')[1]
+        assert(name is not None)
+        # capture source code if file handle was passed as arg
+        if isinstance(source_code, file_type):
+            source_path = name.split(':')[0]
+            with open(source_path) as f:
+                source_code = f.read()
+        name = name.split(':')[1]
 
-            if contract['bin'] == '':
-                raise Exception('Solidity failed to compile your contract.')
-                
-            bytecode = contract['bin'].decode('hex')
-            srcmap = contract['srcmap'].split(';')
-            srcmap_runtime = contract['srcmap-runtime'].split(';')
-            hashes = contract['hashes']
-            abi = json.loads(contract['abi'])
-            runtime = contract['bin-runtime'].decode('hex')
-            warnings = p.stderr.read()
-            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+        if contract['bin'] == '':
+            raise Exception('Solidity failed to compile your contract.')
+
+        bytecode = contract['bin'].decode('hex')
+        srcmap = contract['srcmap'].split(';')
+        srcmap_runtime = contract['srcmap-runtime'].split(';')
+        hashes = contract['hashes']
+        abi = json.loads(contract['abi'])
+        runtime = contract['bin-runtime'].decode('hex')
+        return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1, **kwargs):
         ''' A Manticore EVM manager
@@ -903,6 +1005,7 @@ class ManticoreEVM(Manticore):
 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
+
         with self.locked_context('seth') as context:
             context['_pending_transaction'] = ('CALL', caller, address, value, data)
 
@@ -918,12 +1021,10 @@ class ManticoreEVM(Manticore):
 
         return status
 
-    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_account="attacker"):
-        with open(solidity_filename) as f:
-            source_code = f.read()
-
+    def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
         owner_account = self.create_account(balance=1000)
-        contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account)
+        with open(solidity_filename) as f:
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
 
         if tx_account == "attacker":
@@ -944,7 +1045,7 @@ class ManticoreEVM(Manticore):
         prev_coverage = 0
         current_coverage = 0
 
-        while current_coverage < 100:
+        while current_coverage < 100 or not tx_use_coverage:
             try:
                 run_symbolic_tx()
             except NoAliveStates:
@@ -955,12 +1056,13 @@ class ManticoreEVM(Manticore):
                 if tx_limit == 0:
                     break
 
-            prev_coverage = current_coverage
-            current_coverage = self.global_coverage(contract_account)
-            found_new_coverage = prev_coverage < current_coverage
+            if tx_use_coverage:
+                prev_coverage = current_coverage
+                current_coverage = self.global_coverage(contract_account)
+                found_new_coverage = prev_coverage < current_coverage
 
-            if not found_new_coverage:
-                break
+                if not found_new_coverage:
+                    break
 
         self.finalize()
 

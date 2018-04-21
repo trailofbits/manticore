@@ -323,12 +323,13 @@ class Z3Solver(Solver):
             if not expression:
                 return expression
             else:
+                #Still need to check if the constraints are feasible
                 expression = BoolConstant(expression)
         assert isinstance(expression, Bool)
 
         with constraints as temp_cs:
             temp_cs.add(expression)
-            self._reset(temp_cs.related_to(expression))
+            self._reset(temp_cs)
             return self._check() == 'sat'
 
     # get-all-values min max minmax
@@ -357,16 +358,7 @@ class Z3Solver(Solver):
                 value = self._getvalue(var)
                 result.append(value)
 
-                # Reset the solver to avoid the incremental mode
-                # Triggered with two consecutive calls to check-sat
-                # Yet, if the number of solution is large, sending back
-                # the whole formula is more expensive
-                if len(result) < 50:
-                    self._reset(temp_cs.related_to(var))
-                    for value in result:
-                        self._assert(var != value)
-                else:
-                    self._assert(var != value)
+                self._assert(var != value)
 
                 if len(result) >= maxcnt:
                     if silent:

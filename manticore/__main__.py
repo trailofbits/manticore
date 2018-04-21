@@ -60,10 +60,13 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.1.7',
+    parser.add_argument('--version', action='version', version='Manticore 0.1.8',
                         help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
+
+    parser.add_argument('--txnocoverage', action='store_true',
+                        help='Do not use coverage as stopping criteria (Ethereum only)')
 
     parser.add_argument('--txaccount', type=str, default="attacker",
                         help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
@@ -96,7 +99,7 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, args.txaccount)
+    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, not args.txnocoverage, args.txaccount)
 
 
 def main():
