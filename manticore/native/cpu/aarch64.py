@@ -100,12 +100,13 @@ class Aarch64Cpu(Cpu):
     max_instr_width = 4
     machine = 'armv8'
     arch = cs.CS_ARCH_ARM64
-    mode = cs.CS_MODE_ARM
+    # Though there is no thumb mode in aarch64, we still have to set it as some other components may require it
+    # see https://stackoverflow.com/questions/46086329/can-i-use-thumb-instructions-in-an-arm64-binary
+    mode = cs.CS_ARCH_ARM
 
     def __init__(self, memory):
         warnings.warn('Aarch64 support is experimental')
         self._last_flags = {'C': 0, 'V': 0, 'N': 0, 'Z': 0, 'GE': 0}
-        self._mode = cs.CS_MODE_ARM
         super(Aarch64Cpu, self).__init__(Aarch64RegisterFile(), memory)
 
     def __getstate__(self):
@@ -114,7 +115,6 @@ class Aarch64Cpu(Cpu):
         # TODO / FIXME / REVIEWME: do we need those in aarch64? [copied from armv7]
         # state['at_symbolic_conditional'] = self._at_symbolic_conditional
         # state['_it_conditional'] = self._it_conditional
-        state['_mode'] = self._mode
         return state
 
     def __setstate__(self, state):
@@ -122,7 +122,6 @@ class Aarch64Cpu(Cpu):
         # TODO / FIXME / REVIEWME: do we need those in aarch64? [copied from armv7]
         # self._at_symbolic_conditional = state['at_symbolic_conditional']
         # self._it_conditional = state['_it_conditional']
-        self._mode = state['_mode']
         super(Aarch64Cpu, self).__setstate__(state)
 
     def _wrap_operands(self, ops):
@@ -139,15 +138,9 @@ class Aarch64Cpu(Cpu):
         :param Arm64Operand dest: The destination operand; register.
         :param Arm64Operand src: The source operand; register or immediate.
         """
-        if cpu.mode == cs.CS_MODE_ARM:
-            result, carry_out = src.read(with_carry=True)
-            dest.write(result)
-            cpu.set_flags(C=carry_out, N=HighBit(result), Z=(result == 0))
-        else:
-            # thumb mode cannot do wonky things to the operand, so no carry calculation
-            result = src.read()
-            dest.write(result)
-            cpu.set_flags(N=HighBit(result), Z=(result == 0))
+        result, carry_out = src.read(with_carry=True)
+        dest.write(result)
+        cpu.set_flags(C=carry_out, N=HighBit(result), Z=(result == 0))
 
     @staticmethod
     def canonicalize_instruction_name(instr):

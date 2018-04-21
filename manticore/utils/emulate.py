@@ -43,10 +43,9 @@ class UnicornEmulator:
 
         elif self._cpu.arch == CS_ARCH_ARM64:
             self._uc_arch = UC_ARCH_ARM64
-            self._uc_mode = {
-                CS_MODE_ARM: UC_MODE_ARM,
-                CS_MODE_THUMB: UC_MODE_THUMB
-            }[self._cpu.mode]
+            self._uc_mode = UC_MODE_ARM
+            if self._cpu.mode != UC_MODE_ARM:
+                raise Exception('Aarch64/Arm64 cannot have different uc mode than ARM.')
 
         elif self._cpu.arch == CS_ARCH_X86:
             self._uc_arch = UC_ARCH_X86
