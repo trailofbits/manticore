@@ -827,12 +827,13 @@ class Linux(Platform):
             interpreter_filename = elf_segment.data()[:-1]
             logger.info('Interpreter filename: %s', interpreter_filename)
             if os.path.exists(interpreter_filename):
-                interpreter = ELFFile(file(interpreter_filename))
+                interpreter = ELFFile(open(interpreter_filename))
             elif 'MANTICORE_LD_PATH' in os.environ:
                 for mpath in os.environ['MANTICORE_LD_PATH'].split(":"):
-                    logger.info("looking for interpreter %s", mpath+'/'+os.path.basename(interpreter_filename))
-                    if os.path.exists(mpath+'/'+os.path.basename(interpreter_filename)):
-                        interpreter = ELFFile(file(mpath+'/'+os.path.basename(interpreter_filename)))
+                    interpreter_path_filename = os.path.join(mpath,os.path.basename(interpreter_filename))
+                    logger.info("looking for interpreter %s", interpreter_path_filename)
+                    if os.path.exists(interpreter_filename):
+                        interpreter = ELFFile(open(interpreter_path_filename))
                         break
             break
         if interpreter is not None:
