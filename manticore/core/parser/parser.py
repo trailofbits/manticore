@@ -346,6 +346,6 @@ if __name__ == '__main__':
        except EOFError:
            break
        if not s:
-            continue
+           continue
        result = parse(s)
        print(result)
