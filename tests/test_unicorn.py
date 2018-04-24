@@ -26,7 +26,7 @@ semantics from ARM tests to ensure that they match. UnicornConcretization tests
 to make sure symbolic values get properly concretized.
 '''
 
-
+# python3's unittest does not have this function, so we need to implement it ourselves
 def assertItemsEqual(self, a, b):
     if isinstance(b, bytes):
         b = [bytes([x]) for x in b]

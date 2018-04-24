@@ -17,7 +17,7 @@ def issymbolic(value):
 def isconcrete(value):
     return not issymbolic(value)
 
-
+# python3's unittest does not have this function, so we need to implement it ourselves
 def assertItemsEqual(self, a, b):
     if isinstance(b, bytes):
         b = [bytes([x]) for x in b]
