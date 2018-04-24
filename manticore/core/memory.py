@@ -324,10 +324,22 @@ class FileMap(Map):
         if isinstance(index, slice):
             result = []
             for i in xrange(index.stop - index.start):
-                result.append(get_byte_at_offset(i + index.start))
+                offset = i + index.start
+                if offset in self._overlay:
+                    result.append(self._overlay[offset])
+                else:
+                    if offset >= self._mapped_size:
+                        result.append('\x00')   # , 'Extra data must initially be zero'
+                    else:
+                        result.append(self._data[offset])
             return result
         else:
-            return get_byte_at_offset(index)
+            if index in self._overlay:
+                return self._overlay[index]
+            else:
+                if index >= self._mapped_size:
+                    return '\x00'  # , 'Extra data must initially be zero'
+                return self._data[index]
 
     def split(self, address):
         if address <= self.start:
