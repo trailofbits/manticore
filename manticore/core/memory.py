@@ -312,14 +312,6 @@ class FileMap(Map):
             self._overlay[index] = value
 
     def __getitem__(self, index):
-        def get_byte_at_offset(offset):
-            if offset in self._overlay:
-                return self._overlay[offset]
-            else:
-                if offset >= self._mapped_size:
-                    return '\x00'  # , 'Extra data must initially be zero'
-                return self._data[offset]
-
         index = self._get_offset(index)
         if isinstance(index, slice):
             result = []
