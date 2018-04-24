@@ -132,7 +132,7 @@ From there it can be run interactively with examples mounted with the following
 This drops you into a shell in the container. The following is a run of the Getting Started example.
 
 ```
-2blockchains:manticore leeazzarello$ docker run -it -v `pwd`/examples:/root/examples manticore
+$ docker run -it -v `pwd`/examples:/root/examples manticore
 root@8acf0c2a8df0:~# which manticore
 /usr/local/bin/manticore
 root@8acf0c2a8df0:~# cd examples/linux/
