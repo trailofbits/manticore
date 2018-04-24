@@ -129,15 +129,16 @@ class Store(object):
             return s.read()
 
     @contextmanager
-    def save_stream(self, key, *rest, **kwargs):
+    def save_stream(self, key, binary=False, *rest, **kwargs):
         """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
 
         :param key:
+        :param binary bool: whether stream should be saved using a binary format
         :return: A managed stream-like object
         """
-        if kwargs.get('binary', True):
+        if binary:
             s = io.BytesIO()
         else:
             s = io.StringIO()
@@ -162,7 +163,6 @@ class Store(object):
 
         :param manticore.core.State state:
         :param str key:
-        :param binary bool:
         :return:
         """
         with self.save_stream(key, binary=True) as f:
@@ -234,7 +234,7 @@ class FilesystemStore(Store):
     @contextmanager
     def load_stream(self, key, binary=False):
         """
-        :param str key: The file to load from
+        :param str key: name of stream to load
         :param bool binary: Whether we should treat it as binary
         :return:
         """
