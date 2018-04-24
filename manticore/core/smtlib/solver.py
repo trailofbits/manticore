@@ -238,9 +238,6 @@ class Z3Solver(Solver):
 
     def _recv(self):
         ''' Reads the response from the solver '''
-        def readline():
-            buf = self._proc.stdout.readline()
-            return buf, buf.count('('), buf.count(')')
         bufl = []
         left = 0
         right = 0
