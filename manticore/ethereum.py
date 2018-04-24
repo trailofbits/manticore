@@ -1183,7 +1183,7 @@ class ManticoreEVM(Manticore):
         testcase = self._output.testcase(name)
         logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
         blockchain = state.platform
-        with testcase.open_stream('summary', binary=False) as summary:
+        with testcase.open_stream('summary') as summary:
             summary.write(u"Last exception: {!s}\n".format(state.context['last_exception']))
 
             address, offset = state.context['seth.rt.trace'][-1]
@@ -1235,7 +1235,7 @@ class ManticoreEVM(Manticore):
                 summary.write(u'\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # Transactions
-        with testcase.open_stream('tx', binary=False) as tx_summary:
+        with testcase.open_stream('tx') as tx_summary:
             is_something_symbolic = False
             for tx in blockchain.transactions:  # external transactions
                 tx_summary.write(u"Transactions Nr. {:d}\n".format(blockchain.transactions.index(tx)))
@@ -1286,7 +1286,7 @@ class ManticoreEVM(Manticore):
                 tx_summary.write(u'\n\n(*) Example solution given. Value is symbolic and may take other values\n')
 
         # logs
-        with testcase.open_stream('logs', binary=False) as logs_summary:
+        with testcase.open_stream('logs') as logs_summary:
             is_something_symbolic = False
             for log_item in blockchain.logs:
                 is_log_symbolic = issymbolic(log_item.memlog)
@@ -1300,7 +1300,7 @@ class ManticoreEVM(Manticore):
                 for i, topic in enumerate(log_item.topics):
                     logs_summary.write(u"\t{:d}) {:x} {!s}".format(i, state.solve_one(topic), flagged(issymbolic(topic))))
 
-        with testcase.open_stream('constraints', binary=False) as smt_summary:
+        with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
 
         with testcase.open_stream('pkl', binary=True) as statef:
@@ -1321,15 +1321,15 @@ class ManticoreEVM(Manticore):
     @staticmethod
     def _emit_trace_file(filestream, trace):
         """
-        :param filestream: file object for the workspace trace file
+        :param filestream: file object for the workspace trace file. should be opened in non-binary mode
         :param trace: list of (contract address, pc) tuples
         :type trace: list[tuple(int, int)]
         """
 
         for contract, pc in trace:
             if pc == 0:
-                filestream.write(b'---\n')
-            ln = '0x{:x}:0x{:x}\n'.format(contract, pc).encode()
+                filestream.write(u'---\n')
+            ln = u'0x{:x}:0x{:x}\n'.format(contract, pc)
             filestream.write(ln)
 
     def finalize(self):

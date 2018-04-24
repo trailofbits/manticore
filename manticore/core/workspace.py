@@ -168,14 +168,14 @@ class Store(object):
         with self.save_stream(key, binary=True) as f:
             self._serializer.serialize(state, f)
 
-    def load_state(self, key, delete=True, binary=False):
+    def load_state(self, key, delete=True):
         """
         Load a state from storage.
 
         :param key: key that identifies state
         :rtype: manticore.core.State
         """
-        with self.load_stream(key, binary) as f:
+        with self.load_stream(key, binary=True) as f:
             state = self._serializer.deserialize(f)
             if delete:
                 self.rm(key)
@@ -399,7 +399,7 @@ class Workspace(object):
         :return: The deserialized state
         :rtype: State
         """
-        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete, binary=True)
+        return self._store.load_state('{}{:08x}{}'.format(self._prefix, state_id, self._suffix), delete=delete)
 
     def save_state(self, state):
         """
@@ -456,7 +456,7 @@ class ManticoreOutput(object):
             def num(self):
                 return self._num
 
-            def open_stream(self, suffix='', binary=True):
+            def open_stream(self, suffix='', binary=False):
                 stream_name = '{}_{:08x}.{}'.format(self._prefix, self._num, suffix)
                 return self._ws.save_stream(stream_name, binary=binary)
 
