@@ -119,6 +119,33 @@ def hook(state):
 m.run()
 ```
 
+### Docker
+
+To run manticore in a container, the `Dockerfile` in the root can be built with
+
+`docker build -t manticore .`
+
+From there it can be run interactively with examples mounted with the following
+
+``docker run -it -v `pwd`/examples:/root/examples manticore``
+
+This drops you into a shell in the container. The following is a run of the Getting Started example.
+
+```
+2blockchains:manticore leeazzarello$ docker run -it -v `pwd`/examples:/root/examples manticore
+root@8acf0c2a8df0:~# which manticore
+/usr/local/bin/manticore
+root@8acf0c2a8df0:~# cd examples/linux/
+root@8acf0c2a8df0:~/examples/linux# make
+make: Nothing to be done for 'all'.
+root@8acf0c2a8df0:~/examples/linux# manticore basic
+2018-04-24 18:49:03,528: [18] m.manticore:INFO: Loading program basic
+2018-04-24 18:49:09,781: [18] m.manticore:INFO: Generated testcase No. 0 - Program finished with exit status: 0
+2018-04-24 18:49:11,024: [18] m.manticore:INFO: Generated testcase No. 1 - Program finished with exit status: 0
+2018-04-24 18:49:11,030: [18] m.manticore:INFO: Results in /root/examples/linux/mcore_IIhtEW
+2018-04-24 18:49:11,030: [18] m.manticore:INFO: Total time: 6.42126202583
+```
+
 Further documentation is available in several places:
 
   * The [wiki](https://github.com/trailofbits/manticore/wiki) contains some
