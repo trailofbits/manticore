@@ -1292,7 +1292,7 @@ class ManticoreEVM(Manticore):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = bytes(c for c in solved_memlog if chr(c) in string.printable)
+                printable_bytes = bytes([c for c in solved_memlog if chr(c) in string.printable])
 
                 logs_summary.write(u"Address: {:x}\n".format(log_item.address))
                 logs_summary.write(u"Memlog: {!s} ({!s}) {!s}\n".format(solved_memlog.hex(), printable_bytes, flagged(is_log_symbolic)))
