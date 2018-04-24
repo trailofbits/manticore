@@ -1295,7 +1295,7 @@ class ManticoreEVM(Manticore):
                 printable_bytes = bytes([c for c in solved_memlog if chr(c) in string.printable])
 
                 logs_summary.write(u"Address: {:x}\n".format(log_item.address))
-                logs_summary.write(u"Memlog: {!s} ({!s}) {!s}\n".format(solved_memlog.hex(), printable_bytes, flagged(is_log_symbolic)))
+                logs_summary.write(u"Memlog: {!s} ({!s}) {!s}\n".format(binascii.hexlify(solved_memlog), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write(u"Topics:\n")
                 for i, topic in enumerate(log_item.topics):
                     logs_summary.write(u"\t{:d}) {:x} {!s}".format(i, state.solve_one(topic), flagged(issymbolic(topic))))
