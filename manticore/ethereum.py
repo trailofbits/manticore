@@ -668,7 +668,11 @@ class ManticoreEVM(Manticore):
 
         #check solc version
         supported_versions = ('0.4.18', '0.4.21')
-        installed_version_output = check_output([solc, "--version"])
+
+        try:
+            installed_version_output = check_output([solc, "--version"])
+        except OSError:
+            raise Exception("Solidity compiler not installed.")
 
         m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
