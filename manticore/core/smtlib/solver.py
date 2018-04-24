@@ -244,12 +244,16 @@ class Z3Solver(Solver):
         bufl = []
         left = 0
         right = 0
-        buf, l, r = readline()
+        buf = self._proc.stdout.readline()
+        l = buf.count('(')
+        r = buf.count(')')
         bufl.append(buf)
         left += l
         right += r
         while left != right:
-            buf, l, r = readline()
+            buf = self._proc.stdout.readline()
+            l = buf.count('(')
+            r = buf.count(')')
             bufl.append(buf)
             left += l
             right += r
