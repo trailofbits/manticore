@@ -715,7 +715,6 @@ class ManticoreEVM(Manticore):
                 hex_contract[pos:pos + 40] = '{:040x}'.format(int(lib_address))
         return bytes(hex_contract)
 
-    @staticmethod
     def _run_solc(source_file):
         ''' Compile a source file with the Solidity compiler
 
@@ -788,13 +787,12 @@ class ManticoreEVM(Manticore):
                     break
 
         assert(name is not None)
-        name = name.split(':')[1]
-
         # capture source code if file handle was passed as arg
         if isinstance(source_code, file_type):
             source_path = name.split(':')[0]
             with open(source_path) as f:
                 source_code = f.read()
+        name = name.split(':')[1]
 
         if contract['bin'] == '':
             raise Exception('Solidity failed to compile your contract.')
@@ -805,7 +803,6 @@ class ManticoreEVM(Manticore):
         hashes = contract['hashes']
         abi = json.loads(contract['abi'])
         runtime = binascii.unhexlify(ManticoreEVM._link(contract['bin-runtime'], libraries))
-        warnings = p.stderr.read()
 
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
