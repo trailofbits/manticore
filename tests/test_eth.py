@@ -6,10 +6,12 @@ import struct
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
+from manticore.core.smtlib import solver
 from manticore.core.state import State
-
 from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args
+from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
+from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
+
 import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -352,16 +354,53 @@ class EthTests(unittest.TestCase):
     def test_reachability(self):
         class StopAtFirstJump414141(Detector):
             def will_decode_instruction_callback(self, state, pc):
+                TRUE = bytearray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1))
+                FALSE = bytearray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+                #print pc, state.platform.current_vm.instruction
                 #Once this address is reached the challenge is won
                 if pc == 0x4141414141414141414141414141414141414141:
-                    with self.locked_context('flags', dict) as d:
-                        d['found'] = True
-                    self.manticore.terminate()
-                #Once this address is reached the challenge is lost
-                if pc == 0x4242424242424242424242424242424242424242:
-                    with self.locked_context('flags', dict) as d:
-                        d['found'] = False
-                    self.manticore.terminate()
+                    func_id = to_constant(state.platform.current_transaction.data[:4])
+                    print repr(func_id)
+                    if func_id == ABI.make_function_id("print(string)"):
+                        func_name, args = ABI.parse("print(string)", state.platform.current_transaction.data)
+                        print to_constant(args[0])
+                        raise Return()
+                    elif func_id == ABI.make_function_id("terminate(string)"):
+                        func_name, args = ABI.parse("terminate(string)", state.platform.current_transaction.data)
+                        print "TERMINATE:", to_constant(args[0])
+                        self.manticore.shutdown()
+                        raise Return(TRUE)
+                    elif func_id == ABI.make_function_id("assume(bool)"):
+                        func_name, args = ABI.parse("assume(bool)", state.platform.current_transaction.data)
+                        state.add(args[0])
+                        raise Return(TRUE)
+                    elif func_id == ABI.make_function_id("is_symbolic(bytes)"):
+                        func_name, args = ABI.parse("is_symbolic(bytes)", state.platform.current_transaction.data)
+                        try:
+                            arg = to_constant(args[0])
+                        except:
+                            raise Return(TRUE)
+                        raise Return(FALSE)
+                    elif func_id == ABI.make_function_id("is_symbolic(uint256)"):
+                        func_name, args = ABI.parse("is_symbolic(uint256)", state.platform.current_transaction.data)
+                        try:
+                            arg = to_constant(args[0])
+                        except Exception,e:
+                            raise Return(TRUE)
+                        raise Return(FALSE)
+                    elif func_id == ABI.make_function_id("shutdown(string)"):
+                        func_name, args = ABI.parse("shutdown(string)", state.platform.current_transaction.data)
+                        print "Shutdown", to_constant(args[0])
+                        self.manticore.shutdown()
+                    elif func_id == ABI.make_function_id("can_be_true(bool)"):
+                        func_name, args = ABI.parse("can_be_true(bool)", state.platform.current_transaction.data)
+                        result = solver.can_be_true(state.constraints, args[0] != 0)
+                        if result:
+                            raise Return(TRUE)
+                        raise Return(FALSE)
+
+                    raise Stop()
+
                 #otherwise keep exploring
 
         mevm = self.mevm

@@ -53,7 +53,7 @@ class Transaction(object):
         self.caller = caller
         self.value = value
         self.depth = depth
-        self._return_data = return_data
+        self.return_data = return_data
         self.result = result
         self.gas = gas
 
@@ -84,6 +84,13 @@ class Transaction(object):
     def return_data(self):
         return self._return_data
 
+    @return_data.setter
+    def return_data(self, return_data):
+        if not isinstance(return_data, (type(None), bytearray, Array)):
+            print return_data, type(return_data)
+            raise EVMException('Invalid transaction return_data')
+        self._return_data = return_data
+
     @property
     def return_value(self):
         if self.result in {'RETURN'}:
@@ -96,7 +103,7 @@ class Transaction(object):
         if self.result is not None:
             raise EVMException('Transaction result already set')
         self.result = result
-        self._return_data = data
+        self.return_data = data
 
     def __reduce__(self):
         ''' Implements serialization/pickle '''
@@ -244,7 +251,7 @@ class EVMAsm(object):
                 operand = 0
                 for _ in range(self.operand_size):
                     operand <<= 8
-                    operand |= ord(next(buf))
+                    operand |= next(buf)
                 self._operand = operand
             except StopIteration:
                 raise Exception("Not enough data for decoding")
@@ -640,7 +647,9 @@ class EVMAsm(object):
 
         '''
         bytecode = iter(bytecode)
-        opcode = ord(next(bytecode))
+        opcode = next(bytecode)
+        assert isinstance(opcode, (int, long))
+
         invalid = ('INVALID', 0, 0, 0, 0, 'Unknown opcode')
         name, operand_size, pops, pushes, gas, description = EVMAsm._table.get(opcode, invalid)
         instruction = EVMAsm.Instruction(opcode, name, operand_size, pops, pushes, gas, description, offset=offset)
@@ -678,6 +687,8 @@ class EVMAsm(object):
 
         '''
 
+        if isinstance(bytecode, str):
+            bytecode = bytearray(bytecode)
         bytecode = iter(bytecode)
         while True:
             instr = EVMAsm.disassemble_one(bytecode, offset=offset)
@@ -865,7 +876,7 @@ class Stop(EndTx):
 
 class Return(EndTx):
     ''' Program reached a RETURN instruction '''
-    def __init__(self, data):
+    def __init__(self, data=bytearray()):
         super(Return, self).__init__('RETURN', data)
 
 
@@ -1135,15 +1146,24 @@ class EVM(Eventful):
         #    return InvalidOpcode('Code out of range')
         # if self.pc in self.invalid:
         #    raise InvalidOpcode('Opcode inside a PUSH immediate')
+        try:
+            _decoding_cache = getattr(self, '_decoding_cache')
+        except:
+            _decoding_cache = self._decoding_cache = {}
+
+        if self.pc in _decoding_cache:
+            return _decoding_cache[self.pc]
 
         def getcode():
             bytecode = self.bytecode
             for pc in range(self.pc, len(bytecode)):
-                yield chr(simplify(bytecode[pc]).value)
+                yield simplify(bytecode[pc]).value
 
             while True:
-                yield '\x00'
-        return EVMAsm.disassemble_one(getcode(), offset=self.pc)
+                yield 0
+        instruction =  EVMAsm.disassemble_one(getcode(), offset=self.pc)
+        _decoding_cache[self.pc] = instruction
+        return instruction
 
     # auxiliar funcs
     # Stack related
@@ -1237,7 +1257,7 @@ class EVM(Eventful):
                              setstate=setstate,
                              policy='ALL')
 
-        #print self
+        #print self.instruction
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)
@@ -1302,7 +1322,7 @@ class EVM(Eventful):
         if issymbolic(size):
             raise EVMException("Symbolic size not supported")
         if size == 0:
-            return ''
+            return bytearray()
         self._allocate(offset + size)
         return self.memory[offset: offset+size]
 

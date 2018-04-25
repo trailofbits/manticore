@@ -505,10 +505,19 @@ def arithmetic_simplify(expression):
 
 def to_constant(expression):
     value = arithmetic_simplify(expression)
-    if isinstance(value, Constant) and not value.taint:
+    if isinstance(value, Constant):
         return value.value
-    else:
-        return value
+    elif isinstance(value, Array):
+        if value.index_max:
+            ba = bytearray()
+            for i in range(value.index_max):
+                value_i = simplify(value[i])
+                if not isinstance(value_i, Constant):
+                    break
+                ba.append(value_i.value)
+            else:
+                return ba
+    return value
 
 from functools32 import lru_cache
 @lru_cache(maxsize=128)

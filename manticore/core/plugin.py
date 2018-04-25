@@ -118,8 +118,7 @@ class ExtendedTracer(Plugin):
             'value': value,
             'size': size
         }
-        state.context[self.context_key].append(entry)
-
+        state.context.get(self.context_key,[]).append(entry)
 
 class Follower(Plugin):
     def __init__(self, trace):

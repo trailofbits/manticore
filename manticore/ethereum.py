@@ -1083,6 +1083,8 @@ class ManticoreEVM(Manticore):
             contract_name = contract_names.pop()
             try:
                 contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account, libraries=deps)
+                if contract_account is None:
+                    raise Exception("Failed to build contract %s"%contract_name)
                 deps[contract_name] = contract_account
             except DependencyError as e:
                 contract_names.append(contract_name)
@@ -1397,7 +1399,6 @@ class ManticoreEVM(Manticore):
 
                             temp_cs.add(storage.get(a_index) != 0)
                             temp_cs.add(index != a_index)
-                            #print "AINDEX:", a_index, solver.get_value(temp_cs, storage[a_index])
                     except:
                         pass
 
@@ -1549,6 +1550,7 @@ class ManticoreEVM(Manticore):
                     state_id = q.get_nowait()
                     state_id = self._terminate_state_id(state_id)
                     st = self.load(state_id)
+                    logger.debug("Generating testcase for state_id %d", state_id)
                     self._generate_testcase_callback(st, 'test', '')
             except EmptyQueue:
                 pass

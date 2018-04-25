@@ -454,7 +454,7 @@ class Z3Solver(Solver):
                 var = temp_cs.new_bitvec(expression.size)
             elif isinstance(expression, Array):
                 var = []
-                result = ''
+                result = bytearray()
                 for i in xrange(expression.index_max):
                     subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
@@ -471,7 +471,7 @@ class Z3Solver(Solver):
                     pattern, base = self._get_value_fmt
                     m = pattern.match(ret)
                     expr, value = m.group('expr'), m.group('value')
-                    result += chr(int(value, base))
+                    result.append(int(value, base))
                 return result
 
             temp_cs.add(var == expression)
