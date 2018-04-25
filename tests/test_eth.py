@@ -1,7 +1,8 @@
+import shutil
 import struct
+import tempfile
 import unittest
 import os
-import struct
 
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
@@ -202,6 +203,31 @@ class EthAbiTests(unittest.TestCase):
             parsed = ABI.parse('uint{}'.format(i), data)
             self.assertEqual(parsed, 2**i - 1)
 
+    def test_empty_types(self):
+        name, args = ABI.parse('func()', '\0'*32)
+        self.assertEqual(name, 'func')
+        self.assertEqual(args, tuple())
+
+    def test_function_type(self):
+        # setup ABI for function with one function param
+        func_name = 'func'
+        spec = func_name+'(function)'
+        func_id = ABI.make_function_id(spec)
+        # build bytes24 data for function value (address+selector)
+        # calls member id lookup on 'Ethereum Foundation Tip Box' (see https://www.ethereum.org/donate)
+        address = ''.join(ABI.serialize_uint(0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, 20))
+        selector = ABI.make_function_id('memberId(address)')
+        function_ref_data = address + selector
+        # build tx call data
+        call_data = ''.join([
+            func_id,
+            function_ref_data,
+            '\0'*8
+        ])
+        name, args = ABI.parse(spec, call_data)
+        self.assertEqual(name, func_name)
+        self.assertEqual(args, (function_ref_data,))
+
 
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
@@ -353,3 +379,32 @@ class EthHelpersTest(unittest.TestCase):
         self.assertEquals(ManticoreEVM._link(bytecode, libraries), result)
   
 
+class EthSolidityCompilerTest(unittest.TestCase):
+    def test_run_solc(self):
+        source_a = '''
+        import "./B.sol";
+        contract A {
+            function callB(B _b) public { _b.fromA(); }
+            function fromB() public { revert(); }
+        }
+        '''
+        source_b = '''
+        import "./A.sol";
+        contract B {
+            function callA(A _a) public { _a.fromB(); }
+            function fromA() public { revert(); }
+        }
+        '''
+        d = tempfile.mkdtemp()
+        try:
+            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(d, 'B.sol'), 'w') as b:
+                a.write(source_a)
+                a.flush()
+                b.write(source_b)
+                b.flush()
+                output, warnings = ManticoreEVM._run_solc(a)
+                source_list = output.get('sourceList', [])
+                self.assertIn(a.name, source_list)
+                self.assertIn(b.name, source_list)
+        finally:
+            shutil.rmtree(d)
