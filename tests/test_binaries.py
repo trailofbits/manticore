@@ -146,7 +146,6 @@ class IntegrationTest(unittest.TestCase):
             {'number': 795, 'contract': None},
             {'number': 799, 'contract': 'C'},
             {'number': 807, 'contract': 'C'},
-            {'number': 808, 'contract': 'C'},
         ]
 
         for issue in issues:
@@ -161,6 +160,9 @@ class IntegrationTest(unittest.TestCase):
         os.chdir('{}/binaries'.format(dirname))
         self._simple_cli_run('705.sol')
         os.chdir(old_cwd)
+
+    def test_eth_library(self):
+        self._simple_cli_run('simple_library.sol', contract='C')
 
     def test_basic_arm(self):
         dirname = os.path.dirname(__file__)
