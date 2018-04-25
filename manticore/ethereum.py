@@ -30,7 +30,7 @@ class EthereumError(ManticoreError):
 
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
-        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses {libname:address, ...} for %r" % lib_names)
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses {{libname:address, ...}} for {}".format(lib_names))
         self.lib_names = lib_names
 
 
@@ -668,6 +668,27 @@ class ManticoreEVM(Manticore):
         return bytecode
 
     @staticmethod
+    def _find_placeholders(hex_contract):
+        """
+        Find placeholders like __/tmp/tmp_9k7_l:Manticore______________ in a hex
+        bytecode. 
+        :param hex_bytecode: hex string representation of the bytecode potentially containing library addresses placeholders
+        :return: A dictionary that matches library names to positions in the hex bytecode { library_name: [ pos0, pos1 .. ]}
+        """
+        deps = {}
+        pos = 0
+        while pos < len(hex_contract):
+            if hex_contract[pos] == ord('_'):
+                # __/tmp/tmp_9k7_l:Manticore______________
+                lib_placeholder = hex_contract[pos:pos + 40]
+                lib_name = lib_placeholder.split(':')[1].split('_')[0]
+                deps.setdefault(bytes(lib_name), []).append(pos)
+                pos += 40
+            else:
+                pos += 2
+        return deps
+
+    @staticmethod
     def _link(bytecode, libraries=None):
         """
         Fill bytecode placeholders with library addresses.
@@ -680,30 +701,21 @@ class ManticoreEVM(Manticore):
         the address of the library contract.`
         """
         has_dependencies = '_' in bytecode
-        hex_contract = bytearray(bytecode, 'utf8')
-        if has_dependencies:
-            deps = {}
-            pos = 0
-            while pos < len(hex_contract):
-                if hex_contract[pos] == ord('_'):
-                    # __/tmp/tmp_9k7_l:Manticore______________
-                    lib_placeholder = hex_contract[pos:pos + 40]
-                    lib_name = lib_placeholder.split(':')[1].split('_')[0]
-                    deps.setdefault(bytes(lib_name), []).append(pos)
-                    pos += 40
-                else:
-                    pos += 2
+        hex_contract = bytearray(bytecode, 'utf-8')
+        if not has_dependencies:
+            return bytes(hex_contract)
 
-            if libraries is None:
-                raise DependencyError(deps.keys())
-            libraries = dict(libraries)
-            for lib_name, pos_lst in deps.items():
-                try:
-                    lib_address = libraries[lib_name]
-                except KeyError:
-                    raise DependencyError([lib_name])
-                for pos in pos_lst:
-                    hex_contract[pos:pos + 40] = '%040x' % lib_address
+        deps = ManticoreEVM._find_placeholders(hex_contract)
+        if libraries is None:
+            raise DependencyError(deps.keys())
+        libraries = dict(libraries)
+        for lib_name, pos_lst in deps.items():
+            try:
+                lib_address = libraries[lib_name]
+            except KeyError:
+                raise DependencyError([lib_name])
+            for pos in pos_lst:
+                hex_contract[pos:pos + 40] = '{:040x}'.format(int(lib_address))
         return bytes(hex_contract)
 
     @staticmethod
@@ -712,7 +724,7 @@ class ManticoreEVM(Manticore):
 
             :param source_code: a solidity source code
             :param contract_name: a string with the name of the contract to analyze
-            :param libraries: an itemizable of pairs (library_name, library_address) 
+            :param libraries: an iterable of pairs (library_name, library_address) 
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
@@ -928,7 +940,7 @@ class ManticoreEVM(Manticore):
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
             :rtype: EVMAccount
-            :param libraries: an itemizable of pairs (library_name, library_address) 
+            :param libraries: an iterable of pairs (library_name, library_address) 
 
         '''
         compile_results = self._compile(source_code, contract_name, libraries=libraries)
