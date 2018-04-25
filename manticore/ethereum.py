@@ -712,7 +712,7 @@ class ManticoreEVM(Manticore):
 
             :param source_code: a solidity source code
             :param contract_name: a string with the name of the contract to analyze
-            :param libraries: an itemizable of pairs (library_name, address) 
+            :param libraries: an itemizable of pairs (library_name, library_address) 
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
         """
         solc = "solc"
@@ -928,6 +928,8 @@ class ManticoreEVM(Manticore):
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
             :rtype: EVMAccount
+            :param libraries: an itemizable of pairs (library_name, library_address) 
+
         '''
         compile_results = self._compile(source_code, contract_name, libraries=libraries)
         init_bytecode = compile_results[2]
