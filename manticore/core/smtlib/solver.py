@@ -184,10 +184,13 @@ class Z3Solver(Solver):
     def _stop_proc(self):
         ''' Auxiliary method to stop the external solver process'''
         if self._proc is not None:
-            self._send("(exit)")
-            self._proc.stdin.close()
-            self._proc.stdout.close()
-            self._proc.wait()
+            try:
+                self._send("(exit)")
+                self._proc.stdin.close()
+                self._proc.stdout.close()
+                self._proc.wait()
+            except:
+                pass
         try:
             self._proc.kill()
         except BaseException:

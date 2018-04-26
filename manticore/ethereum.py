@@ -715,6 +715,7 @@ class ManticoreEVM(Manticore):
                 hex_contract[pos:pos + 40] = '{:040x}'.format(int(lib_address))
         return bytes(hex_contract)
 
+    @staticmethod
     def _run_solc(source_file):
         ''' Compile a source file with the Solidity compiler
 
@@ -1084,8 +1085,6 @@ class ManticoreEVM(Manticore):
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
         owner_account = self.create_account(balance=1000)
-        with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
 
         deps = {}
@@ -1093,7 +1092,8 @@ class ManticoreEVM(Manticore):
         while contract_names:
             contract_name = contract_names.pop()
             try:
-                contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account, libraries=deps)
+                with open(solidity_filename) as f:
+                    contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, libraries=deps)
                 deps[contract_name] = contract_account
             except DependencyError as e:
                 contract_names.append(contract_name)
