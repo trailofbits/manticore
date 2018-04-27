@@ -84,8 +84,16 @@ def make_linux(program, argv=None, env=None, entry=None, symbolic_files=None, co
     logger.info('Loading program %s', program)
 
     constraints = ConstraintSet()
-    platform = linux.SLinux(program, argv=argv, envp=env, entry=entry,
+    platform = linux.SLinux(program, argv=argv, envp=env,
                             symbolic_files=symbolic_files)
+    if entry:
+        entryPC = platform._find_symbol(entry)
+        if entryPC is None:
+            logger.error("No symbol for %s in %s", entry, program)
+            raise Exception("Symbol not found")
+        else:
+            platform.set_entry(entryPC)
+            #TODO use argv as arguments for function
 
     initial_state = State(constraints, platform)
 

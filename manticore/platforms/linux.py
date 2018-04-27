@@ -371,14 +371,13 @@ class Linux(Platform):
     RLIMIT_NOFILE = 7  # /* max number of open files */
     FCNTL_FDCWD = -100  # /* Special value used to indicate openat should use the cwd */
 
-    def __init__(self, program, argv=None, envp=None, entry=None, disasm='capstone', **kwargs):
+    def __init__(self, program, argv=None, envp=None, disasm='capstone', **kwargs):
         '''
         Builds a Linux OS platform
         :param string program: The path to ELF binary
         :param string disasm: Disassembler to be used
         :param list argv: The argv array; not including binary.
         :param list envp: The ENV variables.
-        :param list entry: entry point to use
         :ivar files: List of active file descriptors
         :type files: list[Socket] or list[File]
         '''
@@ -405,7 +404,7 @@ class Linux(Platform):
 
             self._init_cpu(self.arch)
             self._init_std_fds()
-            self._execve(program, argv, envp, entry)
+            self._execve(program, argv, envp)
 
     @classmethod
     def empty_platform(cls, arch):
@@ -465,21 +464,20 @@ class Linux(Platform):
 
         return None
 
-    def _execve(self, program, argv, envp, entry):
+    def _execve(self, program, argv, envp):
         '''
         Load `program` and establish program state, such as stack and arguments.
 
         :param program str: The ELF binary to load
         :param argv list: argv array
         :param envp list: envp array
-        :param list entry: entry point to use
         '''
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
 
         logger.debug("Loading %s as a %s elf", program, self.arch)
 
-        self.load(program, entry)
+        self.load(program)
         self._arch_specific_init()
 
         self._stack_top = self.current.STACK
@@ -817,7 +815,14 @@ class Linux(Platform):
         # ARGC
         cpu.push_int(len(argvlst))
 
-    def load(self, filename, entry=None):
+    def set_entry(self, entryPC):
+        elf_entry = entryPC
+        if self.elf.header.e_type == 'ET_DYN':
+            elf_entry += self.load_addr
+        self.current.PC = elf_entry
+        logger.debug("Entry point updated: %016x", elf_entry)
+
+    def load(self, filename):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state.
         Creates the stack and loads the environment variables and the arguments in it.
@@ -846,7 +851,7 @@ class Linux(Platform):
             interpreter_filename = elf_segment.data()[:-1]
             logger.info('Interpreter filename: %s', interpreter_filename)
             try:
-                interpreter = ELFFile(file(interpreter_filename))
+                interpreter = ELFFile(open(interpreter_filename))
             except IOError:
                 logger.warning('Interpreter not loaded: %s', interpreter_filename)
             break
@@ -870,7 +875,7 @@ class Linux(Platform):
         end_code = 0
         end_data = 0
         elf_brk = 0
-        load_addr = 0
+        self.load_addr = 0
 
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != 'PT_LOAD':
@@ -901,8 +906,8 @@ class Linux(Platform):
             logger.debug("Loading elf offset: %08x addr:%08x %08x %s" % (offset, base + vaddr, base + vaddr + memsz, perms))
             base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) - vaddr
 
-            if load_addr == 0:
-                load_addr = base + vaddr
+            if self.load_addr == 0:
+                self.load_addr = base + vaddr
 
             k = base + vaddr + filesz
             if k > elf_bss:
@@ -916,16 +921,8 @@ class Linux(Platform):
                 elf_brk = k
 
         elf_entry = elf.header.e_entry
-        if entry is not None:
-            symbolPC = self._find_symbol(entry)
-            if symbolPC is None:
-                logger.error("No symbol for %s in %s", entry, program)
-                raise Exception("Symbol not found")
-            else:
-                elf_entry = symbolPC
-                #TODO use argv as arguments
         if elf.header.e_type == 'ET_DYN':
-            elf_entry += load_addr
+            elf_entry += self.load_addr
         entry = elf_entry
         real_elf_brk = elf_brk
 
@@ -1044,7 +1041,7 @@ class Linux(Platform):
         at_execfn = cpu.push_bytes(filename + '\x00')
 
         self.auxv = {
-            'AT_PHDR': load_addr + elf.header.e_phoff,  # Program headers for program
+            'AT_PHDR': self.load_addr + elf.header.e_phoff,  # Program headers for program
             'AT_PHENT': elf.header.e_phentsize,       # Size of program header entry
             'AT_PHNUM': elf.header.e_phnum,           # Number of program headers
             'AT_PAGESZ': cpu.memory.page_size,         # System page size
@@ -2391,11 +2388,10 @@ class SLinux(Linux):
     :param str disasm: disassembler to be used
     :param list argv: argv not including binary
     :param list envp: environment variables
-    :param list entry: entry point
     :param tuple[str] symbolic_files: files to consider symbolic
     """
 
-    def __init__(self, programs, argv=None, envp=None, entry=None, symbolic_files=None,
+    def __init__(self, programs, argv=None, envp=None, symbolic_files=None,
                  disasm='capstone'):
         argv = [] if argv is None else argv
         envp = [] if envp is None else envp
@@ -2407,7 +2403,6 @@ class SLinux(Linux):
         super(SLinux, self).__init__(programs,
                                      argv=argv,
                                      envp=envp,
-                                     entry=entry,
                                      disasm=disasm)
 
     def _mk_proc(self, arch):

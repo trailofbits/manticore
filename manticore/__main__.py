@@ -38,9 +38,9 @@ def parse_arguments():
                         help='Specify symbolic environment variable VARNAME=++++++')
     #TODO allow entry as an address
     #parser.add_argument('--entry', type=str, default=None,
-    #                    help='entry point as an address')
+    #                    help='address as entry point')
     parser.add_argument('--entrysymbol', type=str, default=None,
-                        help='entry point as a symbol')
+                        help='symbol as entry point')
     parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
