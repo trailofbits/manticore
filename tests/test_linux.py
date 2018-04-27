@@ -88,9 +88,13 @@ class LinuxTest(unittest.TestCase):
         print ''.join(platform.current.read_bytes(stat, 100)).encode('hex')
 
     def test_linux_workspace_files(self):
-        files = self.symbolic_linux.generate_workspace_files()
+        platform = self.symbolic_linux
+        platform.argv = ["arg1", "arg2"]
+
+        files = platform.generate_workspace_files()
         self.assertIn('syscalls', files)
         self.assertIn('argv', files)
+        self.assertEquals(files['argv'], "arg1\narg2\n")
         self.assertIn('env', files)
         self.assertIn('stdout', files)
         self.assertIn('stdin', files)
