@@ -34,8 +34,10 @@ class ConcretizeMemory(MemoryException):
     Raised when a symbolic memory cell needs to be concretized.
     '''
 
-    def __init__(self, mem, address, size, policy='MINMAX'):
-        self.message = "Concretizing memory address {} size {}".format(address, size)
+    def __init__(self, mem, address, size, message=None, policy='MINMAX'):
+        self.message = message
+        if message is None:
+            self.message = "Concretizing memory address {} size {}".format(address, size)
         self.mem = mem
         self.address = address
         self.size = size
