@@ -576,11 +576,11 @@ class Memory(with_metaclass(ABCMeta, object)):
         '''
         #If addr is NULL, the system determines where to allocate the region.
         assert addr is None or isint(addr), 'Address shall be concrete'
-        assert addr is None or addr < self.memory_size, 'Address too big'
         assert size > 0
 
         # address is rounded down to the nearest multiple of the allocation granularity
         if addr is not None:
+            assert addr < self.memory_size, 'Address too big'
             addr = self._floor(addr)
 
         # size value is rounded up to the next page boundary
