@@ -247,10 +247,10 @@ class Z3Solver(Solver):
 
         def readline():
             buf = self._proc.stdout.readline()
-            return buf.encode(), buf.count('('), buf.count(')')
-        received = io.BytesIO()
+            return buf, buf.count('('), buf.count(')')
+        received = io.StringIO()
         buf, left, right = readline()
-        if b'(error' in buf:
+        if '(error' in buf:
             raise Exception("Error in smtlib: {}".format(buf))
         received.write(buf)
         while left != right:
@@ -258,7 +258,7 @@ class Z3Solver(Solver):
             received.write(buf)
             left += l
             right += r
-        buf = received.getvalue().decode().strip()
+        buf = received.getvalue().strip()
         logger.debug('<%s', buf)
         return buf
 
