@@ -76,7 +76,7 @@ def make_decree(program, concrete_start='', **kwargs):
     return initial_state
 
 
-def make_linux(program, argv=None, env=None, entry=None, symbolic_files=None, concrete_start=''):
+def make_linux(program, argv=None, env=None, entry_symbol=None, symbolic_files=None, concrete_start=''):
     env = {} if env is None else env
     argv = [] if argv is None else argv
     env = ['%s=%s' % (k, v) for k, v in env.items()]
@@ -86,14 +86,15 @@ def make_linux(program, argv=None, env=None, entry=None, symbolic_files=None, co
     constraints = ConstraintSet()
     platform = linux.SLinux(program, argv=argv, envp=env,
                             symbolic_files=symbolic_files)
-    if entry:
-        entryPC = platform._find_symbol(entry)
-        if entryPC is None:
-            logger.error("No symbol for %s in %s", entry, program)
+    if entry_symbol is not None:
+        entry_pc = platform._find_symbol(entry_symbol)
+        if entry_pc is None:
+            logger.error("No symbol for '%s' in %s", entry_symbol, program)
             raise Exception("Symbol not found")
         else:
-            platform.set_entry(entryPC)
-            #TODO use argv as arguments for function
+            logger.info("Found symbol '%s' (%x)", entry_symbol, entry_pc)
+            #TODO: use argv as arguments for function
+            platform.set_entry(entry_pc)
 
     initial_state = State(constraints, platform)
 
