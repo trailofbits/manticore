@@ -985,7 +985,7 @@ class EVMAsm(object):
                 ...
                 "0x6060604052600261010"
         '''
-        return '0x' + binascii.hexlify(EVMAsm.assemble(asmcode, offset=offset)).decode('ascii')
+        return '0x' + binascii.hexlify(EVMAsm.assemble(asmcode, offset=offset)).decode()
 
 
 # Exceptions...
