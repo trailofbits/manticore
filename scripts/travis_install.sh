@@ -6,6 +6,7 @@ function install_solc {
 }
 
 install_solc
+: ${PIP:="pip3"}
 
 $PIP install -U pip
 $PIP uninstall -y Manticore || echo "Manticore not cached"  # uninstall any old, cached Manticore
