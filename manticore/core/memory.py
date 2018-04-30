@@ -533,7 +533,7 @@ class Memory(with_metaclass(ABCMeta, object)):
         '''
         assert size & self.page_mask == 0
         if start is None:
-            end = {32: 0xf8000000, 64: 0x000000000000000}[self.memory_bit_size]
+            end = {32: 0xf8000000, 64: 0x0000800000000000}[self.memory_bit_size]
             start = end - size
         else:
             if start > self.memory_size - size:
