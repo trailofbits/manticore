@@ -905,7 +905,7 @@ class EVMAsm(object):
 
             Example use::
 
-                >>> EVMAsm.disassemble(bytes.fromhex("\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00"))
+                >>> EVMAsm.disassemble(b'\x60\x60\x60\x40\x52\x60\x02\x61\x01\x00')
                 ...
                 PUSH1 0x60
                 BLOCKHASH
