@@ -143,7 +143,7 @@ class State(Eventful):
             expression = self.cpu.read_int(e.address, e.size)
 
             def setstate(state, value):
-                state.cpu.write_int(state.e.address, value, e.size)
+                state.cpu.write_int(setstate.e.address, value, e.size)
             setstate.e = e
             raise Concretize(e.message,
                              expression=expression,
