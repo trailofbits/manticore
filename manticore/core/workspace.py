@@ -129,7 +129,7 @@ class Store(object):
             return s.read()
 
     @contextmanager
-    def save_stream(self, key, binary=False, *rest, **kwargs):
+    def save_stream(self, key, binary=False):
         """
         Return a managed file-like object into which the calling code can write
         arbitrary data.
@@ -521,18 +521,18 @@ class ManticoreOutput(object):
         return self._store.save_stream(key, *rest, **kwargs)
 
     @contextmanager
-    def _named_stream(self, name, *args, **kwargs):
+    def _named_stream(self, name, binary=False):
         """
         Create an indexed output stream i.e. 'test_00000001.name'
 
         :param name: Identifier for the stream
         :return: A context-managed stream-like object
         """
-        with self._store.save_stream(self._named_key(name), *args, **kwargs) as s:
+        with self._store.save_stream(self._named_key(name), binary=binary) as s:
             yield s
 
     def save_summary(self, state, message):
-        with self._named_stream('messages', binary=False) as summary:
+        with self._named_stream('messages') as summary:
             summary.write(u"Command line:\n  '{}'\n" .format(' '.join(sys.argv)))
             summary.write(u'Status:\n  {}\n\n'.format(message))
 
@@ -566,7 +566,7 @@ class ManticoreOutput(object):
                     summary.write(u"  Instruction: {symbolic}\n")
 
     def save_trace(self, state):
-        with self._named_stream('trace', binary=False) as f:
+        with self._named_stream('trace') as f:
             if 'trace' not in state.context:
                 return
             for entry in state.context['trace']:
@@ -576,11 +576,11 @@ class ManticoreOutput(object):
         # XXX(yan): We want to conditionally enable this check
         # assert solver.check(state.constraints)
 
-        with self._named_stream('smt', binary=False) as f:
+        with self._named_stream('smt') as f:
             f.write(str(state.constraints))
 
     def save_input_symbols(self, state):
-        with self._named_stream('input', binary=False) as f:
+        with self._named_stream('input') as f:
             for symbol in state.input_symbols:
                 buf = solver.get_value(state.constraints, symbol)
                 f.write(u'{}: {}\n'.format(symbol.name, repr(buf)))
