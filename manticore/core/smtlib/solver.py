@@ -27,7 +27,7 @@ import io
 import re
 import time
 from .visitors import *
-from ...utils.helpers import issymbolic, memoized
+from ...utils.helpers import issymbolic, memoized, as_unicode
 import collections
 from future.utils import with_metaclass
 
@@ -246,7 +246,8 @@ class Z3Solver(Solver):
         ''' Reads the response from the solver '''
 
         def readline():
-            buf = self._proc.stdout.readline()
+            # stdout.readline() returns internal 'str' value, which is bytestring in py2 and unicode-ish in py3
+            buf = as_unicode(self._proc.stdout.readline())
             return buf, buf.count('('), buf.count(')')
         received = io.StringIO()
         buf, left, right = readline()

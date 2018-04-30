@@ -93,7 +93,7 @@ def isbytestr(value):
     # in python3, bytestring types are 'bytes'
     # in python2, bytestring types are 'str'
     if sys.version_info[0] == 2:
-        return isinstance(value, str)
+        return isinstance(value, (str, StringType))
     elif sys.version_info[0] == 3:
         return isinstance(value, bytes)
 
@@ -111,6 +111,13 @@ def isint(value):
         return isinstance(value, (int, long, IntType))
     elif sys.version_info[0] == 3:
         return isinstance(value, int)
+
+def as_unicode(s):
+    if isbytestr(s):
+        return s.decode()
+    elif isstring(s):
+        return s
+    raise ValueError('expected string-like value, got {}'.format(type(s).__name__))
 
 import functools
 
