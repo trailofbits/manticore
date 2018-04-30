@@ -4922,7 +4922,7 @@ class X86Cpu(Cpu):
         else:
             oecx = 128 // stepsize - 1
             tres = res
-            msbmask = 1 << ((128 // stepsize) - 1)
+            msbmask = 1 << (128 // stepsize) - 1
             while (tres & msbmask) == 0:
                 oecx -= 1
                 tres = (tres << 1) & ((msbmask << 1) - 1)
