@@ -418,7 +418,7 @@ class SyscallAbi(Abi):
                         if len(s) == max_arg_expansion:
                             s = s + b'..'
                         if len(s) > 2:
-                            arg_s = arg_s + ' ({})'.format(s.decode().replace('\n',''))
+                            arg_s = arg_s + ' ({})'.format(s.decode().translate(None, '\n'))
                 args.append(arg_s)
 
             args_s = ', '.join(args)
