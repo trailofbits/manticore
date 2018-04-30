@@ -252,6 +252,7 @@ class AnonMap(Map):
         self._data = bytearray(size)
         if data_init is not None:
             assert len(data_init) <= size, 'More initial data than reserved memory'
+            # check that the values this slice points to are ints
             if isint(data_init[0]):
                 self._data[0:len(data_init)] = data_init
             else:
