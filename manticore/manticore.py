@@ -177,8 +177,10 @@ class Manticore(Eventful):
         self.forward_events_from(self._executor)
 
         if isstring(path_or_state):
-            assert os.path.isfile(path_or_state)
+            if not os.path.isfile(path_or_state):
+                raise Exception('{} is not an existing regular file'.format(path_or_state))
             self._initial_state = make_initial_state(path_or_state, argv=argv, **kwargs)
+
         elif isinstance(path_or_state, State):
             self._initial_state = path_or_state
         else:
