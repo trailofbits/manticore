@@ -676,9 +676,12 @@ class ManticoreEVM(Manticore):
         pos = 0
         while pos < len(hex_contract):
             if hex_contract[pos] == ord('_'):
-                # __/tmp/tmp_9k7_l:Manticore______________
-                lib_placeholder = hex_contract[pos:pos + 40]
-                lib_name = lib_placeholder.split(':')[1].split('_')[0]
+                lib_placeholder = hex_contract[pos+2:pos + 40-2]
+                lib_name = lib_placeholder.strip('_')
+                try:
+                    lib_name = lib_name.split(':')[1]
+                except:
+                    pass
                 deps.setdefault(bytes(lib_name), []).append(pos)
                 pos += 40
             else:
