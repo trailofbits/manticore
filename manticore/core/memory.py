@@ -934,6 +934,8 @@ class SMemory(Memory):
         :param size: the length of the unmapping.
         '''
         for addr in range(start, start + size):
+            if len(self._symbols) == 0:
+                break
             if addr in self._symbols:
                 del self._symbols[addr]
         super(SMemory, self).munmap(start, size)
