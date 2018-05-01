@@ -485,11 +485,21 @@ class ArithmeticSimplifier(Visitor):
 arithmetic_simplifier_cache = {}
 
 
-def arithmetic_simplifier(expression):
+def arithmetic_simplify(expression):
     global arithmetic_simplifier_cache
+
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
-    return simp.result
+    value = simp.result
+    return value
+
+
+def to_constant(expression):
+    value = arithmetic_simplify(expression)
+    if isinstance(value, Constant) and not value.taint:
+        return value.value
+    else:
+        return value
 
 
 class TranslatorSmtlib(Visitor):

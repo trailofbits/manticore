@@ -1,5 +1,5 @@
 from expression import BitVecVariable, BoolVariable, ArrayVariable, Array, Bool, BitVec, BitVecConstant, BoolConstant, ArrayProxy
-from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplifier
+from visitors import GetDeclarations, TranslatorSmtlib, ArithmeticSimplifier, PrettyPrinter, pretty_print, translate_to_smtlib, get_depth, get_variables, arithmetic_simplify
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ class ConstraintSet(object):
         if isinstance(constraint, bool):
             constraint = BoolConstant(constraint)
         assert isinstance(constraint, Bool)
-        constraint = arithmetic_simplifier(constraint)
+        constraint = arithmetic_simplify(constraint)
         if isinstance(constraint, BoolConstant) and not constraint.value:
             logger.info("Adding an imposible constant constraint")
         # If self._child is not None this constraint set has been forked and a
@@ -205,7 +205,8 @@ class ConstraintSet(object):
                          if not uniq a numeric nonce will be appended
             :return: a fresh BitVecVariable
         '''
-        assert size in (1, 4, 8, 16, 32, 64, 128, 160, 256)
+        if not (size == 1 or size % 8 == 0):
+            raise Exception('Invalid bitvec size %s' % size)
         name = self._get_new_name(name)
         return BitVecVariable(size, name, taint=taint)
 
