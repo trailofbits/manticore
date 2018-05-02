@@ -87,7 +87,7 @@ class ExtendedTracer(Plugin):
             'values': _dict_diff(self.last_dict, reg_state)
         }
         self.last_dict = reg_state
-        state.context.get(self.context_key,[]).append(entry)
+        state.context.setdefault(self.context_key, []).append(entry)
 
     def will_read_memory_callback(self, state, where, size):
         if self.current_pc == where:
@@ -118,7 +118,7 @@ class ExtendedTracer(Plugin):
             'value': value,
             'size': size
         }
-        state.context.get(self.context_key,[]).append(entry)
+        state.context.set_default(self.context_key, []).append(entry)
 
 class Follower(Plugin):
     def __init__(self, trace):
@@ -165,7 +165,7 @@ class Follower(Plugin):
 class RecordSymbolicBranches(Plugin):
     def did_execute_instruction_callback(self, state, last_pc, target_pc, instruction):
         if state.context.get('forking_pc', False):
-            branches = state.context.get('branches', {})
+            branches = state.context.setdefault('branches', {})
             branch = (last_pc, target_pc)
             if branch in branches:
                 branches[branch] += 1

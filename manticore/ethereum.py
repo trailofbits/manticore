@@ -1216,7 +1216,7 @@ class ManticoreEVM(Manticore):
     def _concrete_sha3(self, state, buf, value):
         ''' INTERNAL USE '''
         with self.locked_context('known_sha3', set) as known_sha3:
-            known_sha3.add((buf, value))
+            known_sha3.add((str(buf), value))
 
     def _terminate_state_callback(self, state, state_id, e):
         ''' INTERNAL USE

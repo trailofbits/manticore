@@ -2105,6 +2105,7 @@ class EVMWorld(Platform):
             self.subscribe('on_concrete_sha3', self._concrete_sha3_callback)
 
     def _concrete_sha3_callback(self, buf, value):
+        buf = str(buf)
         if buf in self._sha3:
             assert self._sha3[buf] == value
         self._sha3[buf] = value
