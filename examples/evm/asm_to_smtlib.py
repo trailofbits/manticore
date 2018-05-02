@@ -6,7 +6,7 @@ from manticore.core.smtlib import *
 from manticore.core.smtlib.visitors import *
 from manticore.utils import log
 #log.set_verbosity(9)
-
+config.out_of_gas=1
 
 def printi(instruction):
     print 'Instruction: %s'% instruction
@@ -36,20 +36,12 @@ constraints = ConstraintSet()
 
 code = EVMAsm.assemble(
 '''
-	PUSH1 0x0
-	DUP2
-	SWAP1
-	POP
-	SWAP2
-	SWAP1
-	POP
-	JUMP 
+    MSTORE
 '''
 )
 
 
 data = constraints.new_array(index_bits=256, name='array')
-header = {         }
 
 class callbacks():
     initial_stack = []
@@ -58,26 +50,6 @@ class callbacks():
             e = constraints.new_bitvec(256, name='stack_%d'%len(self.initial_stack))
             self.initial_stack.append(e)
             evm.stack.insert(0, e)
-
-    def COINBASE(self):
-        '''Get the block's beneficiary address'''
-        return self.world.block_coinbase()
-
-    def TIMESTAMP(self):
-        '''Get the block's timestamp'''
-        return self.world.block_timestamp()
-
-    def NUMBER(self):
-        '''Get the block's number'''
-        return self.world.block_number()
-
-    def DIFFICULTY(self):
-        '''Get the block's difficulty'''
-        return self.world.block_difficulty()
-
-    def GASLIMIT(self):
-        '''Get the block's gas limit'''
-        return self.world.block_gaslimit()
 
 class DummyWorld():
     def __init__(self, constraints):
@@ -135,18 +107,14 @@ callbacks = callbacks()
 evm = EVM(constraints, 0x41424344454647484950, data, caller, value, code, world=world, gas=1000000)
 evm.subscribe('will_execute_instruction', callbacks.will_execute_instruction)
 
-
-
-
 print "CODE:"
 while not issymbolic(evm.pc):
     print '\t',evm.pc, evm.instruction
     try:
         evm.execute()
-        print evm
-    except EndTx:
+    except EndTx as e:
+        print type(e)
         break
-
 
 #print translate_to_smtlib(arithmetic_simplifier(evm.stack[0]))
 print "STORAGE =",  translate_to_smtlib(world.storage)
@@ -158,6 +126,5 @@ for i in range(len(callbacks.initial_stack)):
 print "CONSTRAINTS:"
 print constraints
 
-
-print "PC:", solver.get_all_values(constraints, evm.pc)
+print "PC:", translate_to_smtlib(evm.pc), solver.get_all_values(constraints, evm.pc, maxcnt=3, silent=True)
 

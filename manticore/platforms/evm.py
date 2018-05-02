@@ -18,6 +18,10 @@ if sys.version_info < (3, 6):
 
 logger = logging.getLogger(__name__)
 
+#fixme make it gobal using this https://docs.python.org/3/library/configparser.html
+#and save it at the workspace so results are reproducible
+config = namedtuple("config", "out_of_gas")
+config.out_of_gas = 1 # 0: default not enough gas, 1 default to always enough gas, 2: for on both
 
 # Auxiliar constants and functions
 TT256 = 2 ** 256
@@ -1195,10 +1199,28 @@ class EVM(Eventful):
     def _consume(self, fee):
         self.constraints.add(Operators.UGE(fee, 0))
         #FIXME add configurable checks here
-        if solver.can_be_true(self.constraints, self._gas < fee):
-            self.constraints.add(Operators.UGT(fee, self.gas))
-            logger.debug("Not enough gas for instruction")
-            raise NotEnoughGas()
+        if config.out_of_gas == 0:
+            #default to OOG exception if possible
+            if solver.can_be_true(self.constraints, self._gas < fee):
+                self.constraints.add(Operators.UGT(fee, self.gas))
+                logger.debug("Not enough gas for instruction")
+                raise NotEnoughGas()
+        elif config.out_of_gas == 1:
+            #default to enough gas if possible
+            if solver.can_be_true(self.constraints, self._gas > fee):
+                self.constraints.add(Operators.UGT(self.gas, fee))
+            else:
+                logger.debug("Not enough gas for instruction")
+                raise NotEnoughGas()
+        else:
+            #fork on both options
+            if len(solver.get_all_values(self.constraints, self._gas > fee)==2):
+                raise Concretize("Concretice gas fee",
+                                 expression=self._gas > fee,
+                                 setstate=None,
+                                 policy='ALL')
+
+
         self._gas -= fee
 
     def _indemnify(self, fee):
@@ -1684,7 +1706,8 @@ class EVM(Eventful):
 
         # 0 is left on the stack if the looked for block number is greater than the current block number
         # or more than 256 blocks behind the current block.
-        value = Operators.ITEBV(256, Operators.OR(a > self.world.block_number(), a < max(0, self.world.block_number()-256)), 0, value)
+        bnmax = Operators.ITEBV(256, self.world.block_number() > 256, 256, self.world.block_number())
+        value = Operators.ITEBV(256, Operators.OR(a > self.world.block_number(), a < bnmax), 0, value)
         return value
 
     def COINBASE(self):
@@ -2176,7 +2199,7 @@ class EVMWorld(Platform):
 
     @property
     def human_transactions(self):
-        ''' Completed transaction '''
+        ''' Completed human transaction '''
         txs = []
         for tx in self.transactions:
             if tx.depth == 0:
