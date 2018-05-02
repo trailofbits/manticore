@@ -5,7 +5,6 @@ import os
 import sys
 import glob
 import signal
-import pickle
 import logging
 import tempfile
 import io
@@ -17,6 +16,11 @@ from .smtlib import solver
 from .smtlib.solver import SolverException
 from .state import State
 from ..utils.helpers import isunicode
+
+if sys.version_info[0] == 2:
+    import cPickle as pickle
+else:
+    import pickle
 
 logger = logging.getLogger(__name__)
 
