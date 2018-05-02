@@ -12,7 +12,8 @@ from collections import namedtuple
 from itertools import chain
 from functools import wraps
 
-from ..utils.helpers import issymbolic, memoized, isstring, isint, isbytestr, all_ints
+from ..utils.helpers import memoized, isstring, isint, isbytestr, all_ints
+from ..utils.symbolic_helpers import issymbolic
 from ..platforms.platform import *
 from ..core.smtlib import solver, TooManySolutions, Expression, BitVec, Operators, Constant, BitVecConstant, ConstraintSet
 from ..core.state import ForkState

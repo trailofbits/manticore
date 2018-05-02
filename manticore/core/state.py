@@ -4,7 +4,7 @@ import copy
 import logging
 
 from .smtlib import solver, Bool
-from ..utils.helpers import issymbolic
+from ..utils.symbolic_helpers import issymbolic
 
 #import exceptions
 from .cpu.abstractcpu import ConcretizeRegister

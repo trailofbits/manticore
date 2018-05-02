@@ -16,7 +16,8 @@ from .abstractcpu import (
 
 from ..smtlib import Operators, BitVec, Bool, BitVecConstant, operator, visitors
 from ..memory import ConcretizeMemory
-from ...utils.helpers import issymbolic, isint
+from ...utils.helpers import isint
+from ...utils.symbolic_helpers import issymbolic
 from functools import reduce
 
 logger = logging.getLogger(__name__)

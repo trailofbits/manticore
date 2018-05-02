@@ -25,7 +25,8 @@ from ..core.smtlib import Operators, ConstraintSet, SolverException, solver
 from ..core.cpu.arm import *
 from ..core.executor import TerminateState
 from ..platforms.platform import Platform, SyscallNotImplemented
-from ..utils.helpers import issymbolic, is_binja_disassembler, isunicode, isint
+from ..utils.helpers import is_binja_disassembler, isunicode, isint
+from ..utils.symbolic_helpers import issymbolic
 from . import linux_syscalls
 
 logger = logging.getLogger(__name__)

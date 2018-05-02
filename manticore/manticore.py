@@ -23,7 +23,8 @@ from .core.state import State, TerminateState
 from .core.smtlib import solver, ConstraintSet
 from .core.workspace import ManticoreOutput
 from .platforms import linux, decree, evm
-from .utils.helpers import issymbolic, is_binja_disassembler, isstring, isint
+from .utils.helpers import is_binja_disassembler, isstring, isint
+from .utils.symbolic_helpers import issymbolic
 from .utils.nointerrupt import WithKeyboardInterruptAs
 from .utils.event import Eventful
 from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Visited, Tracer

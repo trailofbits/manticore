@@ -27,7 +27,9 @@ import io
 import re
 import time
 from .visitors import *
-from ...utils.helpers import issymbolic, memoized, as_unicode
+from ...utils.helpers import memoized, as_unicode
+from ...utils.symbolic_helpers import issymbolic
+
 import collections
 from future.utils import with_metaclass
 

@@ -11,7 +11,9 @@ from .abstractcpu import instruction as abstract_instruction
 from .bitwise import *
 from .register import Register
 from ..smtlib import Operators, BitVecConstant
-from ...utils.helpers import issymbolic, isstring, isint
+from ...utils.helpers import isstring, isint
+from ...utils.symbolic_helpers import issymbolic
+
 
 logger = logging.getLogger(__name__)
 

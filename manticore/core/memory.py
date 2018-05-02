@@ -9,7 +9,8 @@ from weakref import WeakValueDictionary
 from .smtlib import *
 import logging
 from ..utils.mappings import _mmap, _munmap
-from ..utils.helpers import issymbolic, isstring, isint
+from ..utils.helpers import isstring, isint
+from ..utils.symbolic_helpers import issymbolic
 from future.utils import with_metaclass
 logger = logging.getLogger(__name__)
 

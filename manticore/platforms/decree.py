@@ -11,7 +11,8 @@ from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
 from ..core.memory import SMemory32
 from ..core.smtlib import *
 from ..core.executor import TerminateState
-from ..utils.helpers import issymbolic, isstring
+from ..utils.helpers import isstring
+from ..utils.symbolic_helpers import issymbolic
 from ..binary import CGCElf
 from ..platforms.platform import Platform
 from contextlib import closing

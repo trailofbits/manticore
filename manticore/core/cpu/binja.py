@@ -14,7 +14,8 @@ from .abstractcpu import Cpu, RegisterFile, Operand, Syscall
 from .cpufactory import CpuFactory
 from ...core.cpu.disasm import BinjaILDisasm
 from ..smtlib import Operators, BitVecConstant, operator
-from ...utils.helpers import issymbolic, isstring, isint
+from ...utils.helpers import isstring, isint
+from ...utils.symbolic_helpers import issymbolic
 from functools import reduce
 from itertools import chain
 

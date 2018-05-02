@@ -4,7 +4,7 @@ import logging
 
 from ..core.memory import MemoryException, FileMap, AnonMap
 
-from .helpers import issymbolic
+from .symbolic_helpers import issymbolic
 ######################################################################
 # Abstract classes for capstone/unicorn based cpus
 # no emulator by default

@@ -2,8 +2,7 @@ from builtins import *
 import logging
 
 from capstone import CS_GRP_JUMP
-
-from ..utils.helpers import issymbolic
+from ..utils.symbolic_helpers import issymbolic
 from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)

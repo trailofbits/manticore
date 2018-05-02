@@ -4,7 +4,7 @@ Models here are intended to be passed to :meth:`~manticore.core.state.State.invo
 
 from builtins import *
 from .core.cpu.abstractcpu import ConcretizeArgument
-from .utils.helpers import issymbolic
+from .utils.symbolic_helpers import issymbolic
 from .core.smtlib.solver import solver
 from .core.smtlib.operators import ITEBV, ZEXTEND
 

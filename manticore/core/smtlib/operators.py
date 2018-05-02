@@ -1,7 +1,8 @@
 from __future__ import division, absolute_import
 from builtins import *
 from .expression import *
-from ...utils.helpers import issymbolic, isint
+from ...utils.helpers import isint
+from ...utils.symbolic_helpers import issymbolic
 import math
 
 
