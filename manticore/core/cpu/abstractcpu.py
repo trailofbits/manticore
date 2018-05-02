@@ -551,9 +551,9 @@ class Cpu(Eventful):
 
         :param str name: Name of the register
         '''
-        assert name != '_regfile'
-        if hasattr(self, '_regfile') and name in self._regfile:
-            return self.read_register(name)
+        if name != '_regfile':
+            if name in self._regfile:
+                return self.read_register(name)
         raise AttributeError(name)
 
     def __setattr__(self, name, value):
@@ -564,9 +564,12 @@ class Cpu(Eventful):
         :param value: The value to set the register to
         :type param: int or long or Expression
         '''
-        if '_regfile' in dir(self) and name in self._regfile:
-            return self.write_register(name, value)
-        object.__setattr__(self, name, value)
+        try:
+            if name in self._regfile:
+                return self.write_register(name, value)
+            object.__setattr__(self, name, value)
+        except AttributeError:
+            object.__setattr__(self, name, value)
 
     #############################
     # Memory access
