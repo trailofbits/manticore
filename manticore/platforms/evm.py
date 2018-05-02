@@ -87,7 +87,6 @@ class Transaction(object):
     @return_data.setter
     def return_data(self, return_data):
         if not isinstance(return_data, (type(None), bytearray, Array)):
-            print return_data, type(return_data)
             raise EVMException('Invalid transaction return_data')
         self._return_data = return_data
 
@@ -102,6 +101,8 @@ class Transaction(object):
     def set_result(self, result, data=None):
         if self.result is not None:
             raise EVMException('Transaction result already set')
+        if not isinstance(data, (type(None), bytearray, Array)):
+            raise EVMException('Transaction result data wrong type')
         self.result = result
         self.return_data = data
 
@@ -831,7 +832,9 @@ class EndTx(EVMException):
         if result not in {None, 'TXERROR', 'REVERT', 'RETURN', 'THROW', 'STOP', 'SELFDESTRUCT'}:
             raise EVMException('Invalid end transaction result')
         if result is None and data is not None:
-            raise EVMException('Invalid end transaction result/data')
+            raise EVMException('Invalid end transaction result')
+        if not isinstance(data, (type(None), Array, bytearray) 
+            raise EVMException('Invalid end transaction data type')
 
         self.result = result
         self.data = data
@@ -1257,7 +1260,6 @@ class EVM(Eventful):
                              setstate=setstate,
                              policy='ALL')
 
-        #print self.instruction
         #Fixme[felipe] add a with self.disabled_events context mangr to Eventful
         if self._on_transaction is False:
             self._publish('will_decode_instruction', self.pc)

@@ -1,3 +1,4 @@
+import binascii
 import string
 import re
 from . import Manticore
@@ -1055,6 +1056,7 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
+        #Fixme 
         if isinstance(data, self.SByte):
             data = (None,) * data.size
 
@@ -1282,6 +1284,8 @@ class ManticoreEVM(Manticore):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
                 data = symbolic_data
+            else:
+                data = bytearray(data)
 
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value, price=price)
@@ -1447,17 +1451,16 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
                 tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_data = ''.join(state.solve_one(tx.data))
-                tx_summary.write("Data: %s %s\n"% (tx_data.encode('hex'), flagged(issymbolic(tx.data))))
+                tx_data = state.solve_one(tx.data) 
+                tx_summary.write("Data: %s %s\n"% (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
-                    tx_summary.write("Return_data: %s %s\n" % (''.join(return_data).encode('hex'), flagged(issymbolic(tx.return_data))))
-
+                    tx_summary.write("Return_data: %s %s\n" % (binascii.hexlify(return_data), flagged(issymbolic(tx.return_data))))
                 metadata = self.get_metadata(tx.address)
                 if tx.sort == 'CALL':
                     if metadata is not None:
                         function_id = tx.data[:4]  # hope there is enough data
-                        function_id = state.solve_one(function_id).encode('hex')
+                        function_id = binascii.hexlify(state.solve_one(function_id))
                         signature = metadata.get_func_signature(function_id)
                         function_name, arguments = ABI.parse(signature, tx.data)
 
@@ -1501,7 +1504,7 @@ class ManticoreEVM(Manticore):
                 printable_bytes = ''.join(filter(lambda c: c in string.printable, solved_memlog))
 
                 logs_summary.write("Address: %x\n" % log_item.address)
-                logs_summary.write("Memlog: %s (%s) %s\n" % (solved_memlog.encode('hex'), printable_bytes, flagged(is_log_symbolic)))
+                logs_summary.write("Memlog: %s (%s) %s\n" % (binascii.hexlify(solved_memlog), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write("Topics:\n")
                 for i, topic in enumerate(log_item.topics):
                     logs_summary.write("\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
