@@ -10,9 +10,7 @@ run_examples() {
     # concolic assumes presence of ../linux/simpleassert
     echo "Running concolic.py..."
     HW=../linux/helloworld
-    SA=../linux/simpleassert
-    END_OF_MAIN=$(objdump -d $SA|awk -v RS= '/^[[:xdigit:]].*<main>/'|grep ret|tr  -d ' ' | awk -F: '{print "0x" $1}')
-    python ./concolic.py $END_OF_MAIN
+    python ./concolic.py
     if [ $? -ne 0 ]; then
         return 1
     fi
