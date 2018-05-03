@@ -163,8 +163,8 @@ def symbolic_run_get_cons(trace):
     m2.verbosity(VERBOSITY)
     m2.register_plugin(f)
 
-    def on_gen_testcase(mcore, state, name, msg):
-        with mcore.locked_context() as ctx:
+    def on_term_testcase(mcore, state, stateid, err):
+        with m2.locked_context() as ctx:
             readdata = []
             for name, fd, data in state.platform.syscall_trace:
                 if name in ('_receive', '_read') and fd == 0:
@@ -172,7 +172,7 @@ def symbolic_run_get_cons(trace):
             ctx['readdata'] = readdata
             ctx['constraints'] = list(state.constraints.constraints)
 
-    m2.subscribe('will_generate_testcase', on_gen_testcase)
+    m2.subscribe('will_terminate_state', on_term_testcase)
 
     m2.run()
 
