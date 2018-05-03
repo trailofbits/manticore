@@ -723,22 +723,24 @@ class ManticoreEVM(Manticore):
                 for pos in pos_lst:
                     hex_contract_lst[pos:pos + 40] = '%040x' % lib_address
             hex_contract = ''.join(hex_contract_lst)
-        return hex_contract
+        return binascii.unhexlify(hex_contract)
 
     @staticmethod
-    def _compile(source_code, contract_name, libraries=None):
-        """ Compile a Solidity contract, used internally
+    def _run_solc(source_file):
+        ''' Compile a source file with the Solidity compiler
 
-            :param source_code: a solidity source code
-            :param contract_name: a string with the name of the contract to analyze
-            :param libraries: an itemizable of piars (library_name, address) 
-            :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
-        """
+            :param source_file: a file object for the source file
+            :return: output, warnings
+        '''
         solc = "solc"
 
         #check solc version
         supported_versions = ('0.4.18', '0.4.21')
-        installed_version_output = check_output([solc, "--version"])
+
+        try:
+            installed_version_output = check_output([solc, "--version"])
+        except OSError:
+            raise Exception("Solidity compiler not installed.")
 
         m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
@@ -748,44 +750,83 @@ class ManticoreEVM(Manticore):
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
 
-        with tempfile.NamedTemporaryFile() as temp:
-            temp.write(source_code)
-            temp.flush()
-            p = Popen([solc, '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime', '--allow-paths', '.', temp.name], stdout=PIPE, stderr=PIPE)
-
+        solc_invocation = [
+            solc,
+            '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
+            '--allow-paths', '.',
+            source_file.name
+        ]
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE)
+        with p.stdout as stdout, p.stderr as stderr:
             try:
-                output = json.loads(p.stdout.read())
+                return json.loads(stdout.read()), stderr.read()
             except ValueError:
-                raise Exception('Solidity compilation error:\n\n{}'.format(p.stderr.read()))
+                raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
 
-            contracts = output.get('contracts', [])
-            if len(contracts) != 1 and contract_name is None:
-                raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
 
-            name, contract = None, None
-            if contract_name is None:
-                name, contract = contracts.items()[0]
-            else:
-                for n, c in contracts.items():
-                    if n.split(":")[1] == contract_name:
-                        name, contract = n, c
-                        break
+    @staticmethod
+    def _compile(source_code, contract_name, libraries=None):
+        """ Compile a Solidity contract, used internally
 
-            assert(name is not None)
-            name = name.split(':')[1]
+            :param source_code: solidity source as either a string or a file handle
+            :param contract_name: a string with the name of the contract to analyze
+            :param libraries: an itemizable of piars (library_name, address) 
+            :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
+            :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+        """
 
-            if contract['bin'] == '':
-                raise Exception('Solidity failed to compile your contract.')
+        try:
+            file_type = file  # Python 2
+        except NameError:
+            from io import IOBase
+            file_type = IOBase  # Python 3
 
-            bytecode = ManticoreEVM._link(contract['bin'], libraries).decode('hex')
-            srcmap = contract['srcmap'].split(';')
-            srcmap_runtime = contract['srcmap-runtime'].split(';')
-            hashes = contract['hashes']
-            abi = json.loads(contract['abi'])
-            runtime = ManticoreEVM._link(contract['bin-runtime'], libraries).decode('hex')
-            warnings = p.stderr.read()
+        if isinstance(source_code, str):
+            with tempfile.NamedTemporaryFile() as temp:
+                temp.write(source_code)
+                temp.flush()
+                output, warnings = ManticoreEVM._run_solc(temp)
+        elif isinstance(source_code, file_type):
+            output, warnings = ManticoreEVM._run_solc(source_code)
+        else:
+            raise TypeError
 
-            return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+
+        contracts = output.get('contracts', [])
+        if len(contracts) != 1 and contract_name is None:
+            raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
+
+        name, contract = None, None
+        if contract_name is None:
+            name, contract = contracts.items()[0]
+        else:
+            for n, c in contracts.items():
+                if n.split(":")[1] == contract_name:
+                    name, contract = n, c
+                    break
+
+
+        assert(name is not None)
+        # capture source code if file handle was passed as arg
+        if isinstance(source_code, file_type):
+            source_path = name.split(':')[0]
+            with open(source_path) as f:
+                source_code = f.read()
+        name = name.split(':')[1]
+
+        if contract['bin'] == '':
+            raise Exception('Solidity failed to compile your contract.')
+
+
+        bytecode = ManticoreEVM._link(contract['bin'], libraries)
+        srcmap = contract['srcmap'].split(';')
+        srcmap_runtime = contract['srcmap-runtime'].split(';')
+        hashes = contract['hashes']
+        abi = json.loads(contract['abi'])
+        runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
+        return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
+
+
 
     def __init__(self, procs=10, **kwargs):
         ''' A Manticore EVM manager
@@ -1073,9 +1114,6 @@ class ManticoreEVM(Manticore):
         return status
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
-        with open(solidity_filename) as f:
-            source_code = f.read()
-
         owner_account = self.create_account(balance=1000)
         attacker_account = self.create_account(balance=1000)
 
@@ -1084,7 +1122,8 @@ class ManticoreEVM(Manticore):
         while contract_names:
             contract_name = contract_names.pop()
             try:
-                contract_account = self.solidity_create_contract(source_code, contract_name=contract_name, owner=owner_account, libraries=deps)
+                with open(solidity_filename) as f:
+                    contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, libraries=deps)
                 if contract_account is None:
                     raise Exception("Failed to build contract %s"%contract_name)
                 deps[contract_name] = contract_account
