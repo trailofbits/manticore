@@ -770,7 +770,7 @@ class ManticoreEVM(Manticore):
 
             :param source_code: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
-            :param libraries: an itemizable of piars (library_name, address) 
+            :param libraries: an itemizable of pairs (library_name, address) 
             :return: name, source_code, bytecode, srcmap, srcmap_runtime, hashes
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
