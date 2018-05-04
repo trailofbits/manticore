@@ -13,12 +13,18 @@ Thanks to our external contributors!
 - [cclauss](https://github.com/cclauss)
 - [dwhjames](https://github.com/dwhjames)
 - [catenacyber](https://github.com/catenacyber)
+- [disconnect3d](https://github.com/disconnect3d)
 
 ### Added
 
+- Ethereum: `--txnocoverage` cli argument to suppress coverage based analysis halting criteria
+- Ethereum: Support added for more Solidity features (imports, uint/int types, function types)
 
 ### Fixed
 
+- Numerous Ethereum ABI fixes
+- Linux and x86/64 emulation fixes
+- Solver performance issue
 
 ## 0.1.8 - 2018-03-30
 
