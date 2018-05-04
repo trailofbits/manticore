@@ -131,11 +131,13 @@ class EVMTest_CALLDATACOPY(unittest.TestCase):
             self.assertEqual(new_vm.stack, [])
             self.assertEqual(new_vm.memory.read(0, 3), [ord(c) for c in data[-remainder:]])
             # make sure all 9999 bytes were written (even though they're mostly zeroes)
-            self.assertEqual(len(new_vm.memory.items()), 9999)
+            mem_items = new_vm.memory.items()
+            self.assertEqual(len(mem_items), 9999)
+            filtered_mem = [obj for obj in mem_items if obj[0] >= remainder]
             # make sure all but the first |remainder| items are 0
-            self.assertTrue(all(val == 0 for addr, val in new_vm.memory.items() if addr > remainder - 1))
+            self.assertTrue(all(val == 0 for _, val in filtered_mem))
             # and make sure there's 9999-remainder of them
-            self.assertEqual(sum(1 for addr, _ in new_vm.memory.items() if addr >= remainder), 9999-remainder)
+            self.assertEqual(len(filtered_mem), 9999-remainder)
 
 if __name__ == '__main__':
     unittest.main()
