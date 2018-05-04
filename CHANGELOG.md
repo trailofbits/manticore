@@ -2,7 +2,23 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.8...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.9...HEAD)
+
+## 0.1.9 - 2018-05-04
+
+Thanks to our external contributors!
+
+- [khorben](https://github.com/khorben)
+- [arunjohnkuruvilla](https://github.com/arunjohnkuruvilla)
+- [cclauss](https://github.com/cclauss)
+- [dwhjames](https://github.com/dwhjames)
+- [catenacyber](https://github.com/catenacyber)
+
+### Added
+
+
+### Fixed
+
 
 ## 0.1.8 - 2018-03-30
 
