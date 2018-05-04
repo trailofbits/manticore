@@ -289,7 +289,8 @@ class ABI(object):
 
     @staticmethod
     def _tuple_bytes_to_long(tpl):
-        return reduce(lambda acc, b: (acc << 8) + ord(b), tpl, 0L)
+        from functools import reduce
+        return reduce(lambda acc, b: (acc << 8) + ord(b), tpl, 0)
 
     class StaticBytes(object):
         def __init__(self, value, size=32):
@@ -364,7 +365,7 @@ class ABI(object):
         '''
         if isinstance(value, (str, tuple)):
             result = ABI.serialize_string(value)
-        elif isinstance(value, (list)):
+        elif isinstance(value, list):
             result = ABI.serialize_array(value)
         elif isinstance(value, (int, long)):
             result = ABI.serialize_uint(value)
@@ -379,7 +380,7 @@ class ABI(object):
         elif value is None:
             result = (None,) * 32
         else:
-            raise TypeError
+            raise TypeError("ABI.serialize does not support type %s" % type(value))
         return result
 
     @staticmethod
