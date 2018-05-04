@@ -1,6 +1,7 @@
 import binascii
 import string
 import re
+import os
 from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
@@ -750,11 +751,16 @@ class ManticoreEVM(Manticore):
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
 
+        #shorten the path size so library placeholders wont fail. 
+        current_folder = os.getcwd()
+        filename = source_file.name
+        if source_file.name.startswith(filename):
+            filename = filename[len(current_folder)+1:]
         solc_invocation = [
             solc,
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
-            source_file.name
+            filename
         ]
         p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE)
         with p.stdout as stdout, p.stderr as stderr:
