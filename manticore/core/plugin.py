@@ -93,7 +93,7 @@ class ExtendedTracer(Plugin):
             'values': _dict_diff(self.last_dict, reg_state)
         }
         self.last_dict = reg_state
-        state.context[self.context_key].append(entry)
+        state.context.get(self.context_key, []).append(entry)
 
     def will_read_memory_callback(self, state, where, size):
         if self.current_pc == where:
@@ -124,7 +124,7 @@ class ExtendedTracer(Plugin):
             'value': value,
             'size': size
         }
-        state.context[self.context_key].append(entry)
+        state.context.setdefault(self.context_key, []).append(entry)
 
 
 class Follower(Plugin):
