@@ -1659,8 +1659,10 @@ class EVM(Eventful):
         for i in range(size):
             try:
                 maybe_byte = Operators.ORD(self.data[data_offset+i])
-            except (TypeError, IndexError):
+            except IndexError:
                 maybe_byte = 0
+            except TypeError:
+                raise EVMException("CALLDATACOPY with a symbolic data_offset is not yet supported")
             c = Operators.ITEBV(8, data_offset + i < len(self.data), maybe_byte, 0)
             self._store(mem_offset + i, c)
 
