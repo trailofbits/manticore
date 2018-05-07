@@ -35,9 +35,10 @@ class ConcretizeMemory(MemoryException):
     '''
 
     def __init__(self, mem, address, size, message=None, policy='MINMAX'):
-        self.message = message
         if message is None:
             self.message = "Concretizing memory address {} size {}".format(address, size)
+        else:
+            self.message = message
         self.mem = mem
         self.address = address
         self.size = size
