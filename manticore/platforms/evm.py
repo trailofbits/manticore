@@ -1648,14 +1648,22 @@ class EVM(Eventful):
 
         # FIXME put zero if not enough data
         if issymbolic(size) or issymbolic(data_offset):
-            #self._constraints.add(Operators.ULE(data_offset, len(self.data)))
             self._constraints.add(Operators.ULE(size + data_offset, len(self.data) + (32 - len(self.data) % 32)))
 
         if issymbolic(size):
             raise ConcretizeStack(3, policy='ALL')
 
+        if not issymbolic(data_offset):
+            data_offset = min(data_offset, len(self.data))
+
         for i in range(size):
-            c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
+            try:
+                maybe_byte = Operators.ORD(self.data[data_offset+i])
+            except IndexError:
+                maybe_byte = 0
+            except TypeError:
+                raise EVMException("CALLDATACOPY with a symbolic data_offset is not yet supported")
+            c = Operators.ITEBV(8, data_offset + i < len(self.data), maybe_byte, 0)
             self._store(mem_offset + i, c)
 
     def CODESIZE(self):
