@@ -10,6 +10,8 @@ import socket
 
 # Remove in favor of binary.py
 from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+from elftools.elf.descriptions import describe_symbol_type
 
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeArgument
 from ..core.cpu.cpufactory import CpuFactory
@@ -449,6 +451,21 @@ class Linux(Platform):
         self._function_abi = CpuFactory.get_function_abi(cpu, 'linux', arch)
         self._syscall_abi = CpuFactory.get_syscall_abi(cpu, 'linux', arch)
 
+    def _find_symbol(self, name):
+        symbol_tables = (s for s in self.elf.iter_sections()
+                         if isinstance(s, SymbolTableSection))
+
+        for section in symbol_tables:
+            if section['sh_entsize'] == 0:
+                continue
+
+            for symbol in section.iter_symbols():
+                if describe_symbol_type(symbol['st_info']['type']) == 'FUNC':
+                    if symbol.name == name:
+                        return symbol['st_value']
+
+        return None
+
     def _execve(self, program, argv, envp):
         '''
         Load `program` and establish program state, such as stack and arguments.
@@ -804,6 +821,13 @@ class Linux(Platform):
         # ARGC
         cpu.push_int(len(argvlst))
 
+    def set_entry(self, entryPC):
+        elf_entry = entryPC
+        if self.elf.header.e_type == 'ET_DYN':
+            elf_entry += self.load_addr
+        self.current.PC = elf_entry
+        logger.debug("Entry point updated: %016x", elf_entry)
+
     def load(self, filename):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state.
@@ -855,7 +879,7 @@ class Linux(Platform):
         end_code = 0
         end_data = 0
         elf_brk = 0
-        load_addr = 0
+        self.load_addr = 0
 
         for elf_segment in elf.iter_segments():
             if elf_segment.header.p_type != 'PT_LOAD':
@@ -886,8 +910,8 @@ class Linux(Platform):
             logger.debug("Loading elf offset: %08x addr:%08x %08x %s" % (offset, base + vaddr, base + vaddr + memsz, perms))
             base = cpu.memory.mmapFile(hint, memsz, perms, elf_segment.stream.name, offset) - vaddr
 
-            if load_addr == 0:
-                load_addr = base + vaddr
+            if self.load_addr == 0:
+                self.load_addr = base + vaddr
 
             k = base + vaddr + filesz
             if k > elf_bss:
@@ -902,7 +926,7 @@ class Linux(Platform):
 
         elf_entry = elf.header.e_entry
         if elf.header.e_type == 'ET_DYN':
-            elf_entry += load_addr
+            elf_entry += self.load_addr
         entry = elf_entry
         real_elf_brk = elf_brk
 
@@ -1021,7 +1045,7 @@ class Linux(Platform):
         at_execfn = cpu.push_bytes(filename + '\x00')
 
         self.auxv = {
-            'AT_PHDR': load_addr + elf.header.e_phoff,  # Program headers for program
+            'AT_PHDR': self.load_addr + elf.header.e_phoff,  # Program headers for program
             'AT_PHENT': elf.header.e_phentsize,       # Size of program header entry
             'AT_PHNUM': elf.header.e_phnum,           # Number of program headers
             'AT_PAGESZ': cpu.memory.page_size,         # System page size
