@@ -258,7 +258,7 @@ class Manticore(Eventful):
         plugin.manticore = None
 
     @classmethod
-    def linux(cls, path, argv=None, envp=None, symbolic_files=None, concrete_start='', **kwargs):
+    def linux(cls, path, argv=None, envp=None, entry_symbol=None, symbolic_files=None, concrete_start='', **kwargs):
         """
         Constructor for Linux binary analysis.
 
@@ -267,6 +267,8 @@ class Manticore(Eventful):
         :type argv: list[str]
         :param envp: Environment to provide to the binary
         :type envp: dict[str, str]
+        :param entry_symbol: Entry symbol to resolve to start execution
+        :type envp: str
         :param symbolic_files: Filenames to mark as having symbolic input
         :type symbolic_files: list[str]
         :param str concrete_start: Concrete stdin to use before symbolic inputt
@@ -275,7 +277,7 @@ class Manticore(Eventful):
         :rtype: Manticore
         """
         try:
-            return cls(make_linux(path, argv, envp, symbolic_files, concrete_start), **kwargs)
+            return cls(make_linux(path, argv, envp, entry_symbol, symbolic_files, concrete_start), **kwargs)
         except elftools.common.exceptions.ELFError:
             raise Exception('Invalid binary: {}'.format(path))
 
