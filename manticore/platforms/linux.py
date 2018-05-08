@@ -2621,6 +2621,9 @@ class SLinux(Linux):
 
         return super(SLinux, self).sys_getrandom(buf, size, flags)
 
+    def sys_chroot(self, buf):
+        return -errno.EPERM
+
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
             try:
