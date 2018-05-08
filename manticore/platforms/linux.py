@@ -1309,7 +1309,7 @@ class Linux(Platform):
         :raises error:
                     - "Error in brk!" if there is any error allocating the memory
         '''
-        if brk != 0 and brk != self.elf_brk:
+        if brk != 0 and brk > self.elf_brk:
             mem = self.current.memory
             size = brk - self.elf_brk
             if brk > mem._ceil(self.elf_brk):
