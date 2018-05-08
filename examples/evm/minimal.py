@@ -1,4 +1,4 @@
-from manticore.ethereum import ManticoreEVM
+from manticore.ethereum import ManticoreEVM, evm
 ################ Script #######################
 
 m = ManticoreEVM()
@@ -23,10 +23,21 @@ contract NoDistpatcher {
 user_account = m.create_account(balance=1000)
 print "[+] Creating a user account", user_account
 
-contract_account = m.solidity_create_contract(source_code, owner=user_account)
-print "[+] Creating a contract account", contract_account
+init_bytecode = m.compile(source_code)
 print "[+] Source code:"
 print source_code
+
+print "[+] Init bytecode:", init_bytecode.encode('hex')
+print "[+] EVM init assembler:"
+for instr in evm.EVMAsm.disassemble_all(init_bytecode[:-44]):
+    print hex(instr.offset), instr
+
+
+
+contract_account = m.create_contract(owner=user_account,
+                                        init=init_bytecode)
+print "[+] Creating a contract account", contract_account
+
 
 print "[+] Now the symbolic values"
 symbolic_data = m.make_symbolic_buffer(320) 
