@@ -796,6 +796,7 @@ class ManticoreEVM(Manticore):
                 output, warnings = ManticoreEVM._run_solc(temp)
         elif isinstance(source_code, file_type):
             output, warnings = ManticoreEVM._run_solc(source_code)
+            source_code = source_code.read()
         else:
             raise TypeError
 
@@ -815,11 +816,6 @@ class ManticoreEVM(Manticore):
 
 
         assert(name is not None)
-        # capture source code if file handle was passed as arg
-        if isinstance(source_code, file_type):
-            source_path = name.split(':')[0]
-            with open(source_path) as f:
-                source_code = f.read()
         name = name.split(':')[1]
 
         if contract['bin'] == '':
