@@ -752,17 +752,19 @@ class ManticoreEVM(Manticore):
             pass
 
         #shorten the path size so library placeholders wont fail. 
+        #solc path search is a mess #fixme
+        #https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
         current_folder = os.getcwd()
-        filename = source_file.name
-        if source_file.name.startswith(filename):
-            filename = filename[len(current_folder)+1:]
+        abs_filename = os.path.abspath(source_file.name)
+        working_folder, filename = os.path.split(abs_filename)
+
         solc_invocation = [
             solc,
             '--combined-json', 'abi,srcmap,srcmap-runtime,bin,hashes,bin-runtime',
             '--allow-paths', '.',
             filename
         ]
-        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE)
+        p = Popen(solc_invocation, stdout=PIPE, stderr=PIPE, cwd=working_folder)
         with p.stdout as stdout, p.stderr as stderr:
             try:
                 return json.loads(stdout.read()), stderr.read()

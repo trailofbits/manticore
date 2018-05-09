@@ -1614,7 +1614,7 @@ class EVM(Eventful):
         self._consume(GCOPY * ceil32(size) // 32)
 
         if issymbolic(size):
-            raise ConcretizeStack(3, policy='SAMPLE')
+            raise ConcretizeStack(3, policy='SAMPLED')
 
         self._allocate(mem_offset + size)
         for i in range(size):

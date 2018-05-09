@@ -37,7 +37,8 @@ class Concretize(StateException):
     _ValidPolicies = ['MINMAX', 'ALL', 'SAMPLED', 'ONE']
 
     def __init__(self, message, expression, setstate=None, policy='ALL', **kwargs):
-        assert policy in self._ValidPolicies, "Policy must be one of: %s" % (', '.join(self._ValidPolicies),)
+        if policy not in self._ValidPolicies:
+            raise Exception("Policy (%s) must be one of: %s" % (policy, ', '.join(self._ValidPolicies),))
         self.expression = expression
         self.setstate = setstate
         self.policy = policy
