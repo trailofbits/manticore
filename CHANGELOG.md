@@ -2,7 +2,29 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
-## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.8...HEAD)
+## [Unreleased](https://github.com/trailofbits/manticore/compare/0.1.9...HEAD)
+
+## 0.1.9 - 2018-05-04
+
+Thanks to our external contributors!
+
+- [khorben](https://github.com/khorben)
+- [arunjohnkuruvilla](https://github.com/arunjohnkuruvilla)
+- [cclauss](https://github.com/cclauss)
+- [dwhjames](https://github.com/dwhjames)
+- [catenacyber](https://github.com/catenacyber)
+- [disconnect3d](https://github.com/disconnect3d)
+
+### Added
+
+- Ethereum: `--txnocoverage` cli argument to suppress coverage based analysis halting criteria
+- Ethereum: Support added for more Solidity features (imports, uint/int types, function types)
+
+### Fixed
+
+- Numerous Ethereum ABI fixes
+- Linux and x86/64 emulation fixes
+- Solver performance issue
 
 ## 0.1.8 - 2018-03-30
 

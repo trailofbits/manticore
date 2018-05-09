@@ -15,7 +15,7 @@ setup(
     description='Manticore is a symbolic execution tool for analysis of binaries and smart contracts.',
     url='https://github.com/trailofbits/manticore',
     author='Trail of Bits',
-    version='0.1.8',
+    version='0.1.9',
     packages=find_packages(),
     install_requires=[
         'capstone>=3.0.5rc2',
