@@ -36,6 +36,11 @@ def parse_arguments():
                         help=argparse.SUPPRESS)
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
                         help='Specify symbolic environment variable VARNAME=++++++')
+    #TODO allow entry as an address
+    #parser.add_argument('--entry', type=str, default=None,
+    #                    help='address as entry point')
+    parser.add_argument('--entrysymbol', type=str, default=None,
+                        help='symbol as entry point')
     parser.add_argument('--file', type=str, default=[], action='append', dest='files',
                         help='Specify symbolic input file, \'+\' marks symbolic bytes')
     parser.add_argument('--names', type=str, default=None,
@@ -60,10 +65,13 @@ def parse_arguments():
     parser.add_argument('--workspace', type=str, default=None,
                         help=("A folder name for temporaries and results."
                               "(default mcore_?????)"))
-    parser.add_argument('--version', action='version', version='Manticore 0.1.8',
+    parser.add_argument('--version', action='version', version='Manticore 0.1.9',
                         help='Show program version information')
     parser.add_argument('--txlimit', type=positive,
                         help='Maximum number of symbolic transactions to run (positive integer) (Ethereum only)')
+
+    parser.add_argument('--txnocoverage', action='store_true',
+                        help='Do not use coverage as stopping criteria (Ethereum only)')
 
     parser.add_argument('--txaccount', type=str, default="attacker",
                         help='Account used as caller in the symbolic transactions, either "attacker" or "owner" (Ethereum only)')
@@ -96,7 +104,7 @@ def ethereum_cli(args):
 
     logger.info("Beginning analysis")
 
-    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, args.txaccount)
+    m.multi_tx_analysis(args.argv[0], args.contract, args.txlimit, not args.txnocoverage, args.txaccount)
 
 
 def main():
@@ -112,7 +120,7 @@ def main():
 
     env = {key: val for key, val in map(lambda env: env[0].split('='), args.env)}
 
-    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
+    m = Manticore(args.argv[0], argv=args.argv[1:], env=env, entry_symbol=args.entrysymbol, workspace_url=args.workspace,  policy=args.policy, disasm=args.disasm, concrete_start=args.data)
 
     # Fixme(felipe) remove this, move to plugin
     m.coverage_file = args.coverage
