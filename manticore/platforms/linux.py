@@ -1280,6 +1280,12 @@ class Linux(Platform):
 
         return len(data)
 
+    def sys_fork(self):
+        '''
+        We don't support forking, but do return a valid error code to client binary.
+        '''
+        return -errno.ENOSYS
+
     def sys_access(self, buf, mode):
         '''
         Checks real user's permissions for a file
