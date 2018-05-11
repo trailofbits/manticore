@@ -1039,6 +1039,10 @@ class ManticoreEVM(Manticore):
             deps = {}
         else:
             deps = dict(libraries)
+        # If not selected get a new one for the main contract
+        if address is None:
+            address = self.world.new_address()
+
         contract_names = [contract_name]
         while contract_names:
             contract_name_i = contract_names.pop()
@@ -1046,12 +1050,6 @@ class ManticoreEVM(Manticore):
                 compile_results = self._compile(source_code, contract_name_i, libraries=deps)
                 init_bytecode = compile_results[2]
 
-                if address is None:
-                    address = self.world.new_address()
-
-                # FIXME different states "could"(VERY UNLIKELY) have different contracts
-                # asociated with the same address
-                self.metadata[address] = SolidityMetadata(*compile_results)
 
                 if contract_name_i == contract_name:
                     contract_account = self.create_contract(owner=owner,
@@ -1059,15 +1057,15 @@ class ManticoreEVM(Manticore):
                                                    address=address,
                                                    init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
                 else:
-                    contract_account = self.create_contract(owner=owner,
-                                                   address=address,
-                                                   init=tuple(init_bytecode))
+                    contract_account = self.create_contract(owner=owner, init=tuple(init_bytecode))
 
                 if contract_account is None:
-                    raise Exception("Failed to build contract %s"%contract_name)
-                deps[contract_name] = contract_account
+                    raise Exception("Failed to build contract %s"%contract_name_i)
+                self.metadata[int(contract_account)] = SolidityMetadata(*compile_results)
+
+                deps[contract_name_i] = contract_account
             except DependencyError as e:
-                contract_names.append(contract_name)
+                contract_names.append(contract_name_i)
                 for lib_name in e.lib_names:
                     if lib_name not in deps:
                         contract_names.append(lib_name)

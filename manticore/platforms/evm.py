@@ -2056,7 +2056,8 @@ class EVM(Eventful):
 
 class EVMWorld(Platform):
     _published_events = {'evm_read_storage', 'evm_write_storage', 'evm_read_code',
-                         'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3'}
+                         'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3',
+                         'open_transaction', 'close_transaction'}
 
     def __init__(self, constraints, storage=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
@@ -2169,13 +2170,16 @@ class EVMWorld(Platform):
             #FIXME this should just close the tx
             raise TerminateState("Maximum call depth limit is reached", testcase=True)
 
-
+        self._publish('will_open_transaction', tx)
         self._callstack.append((tx, self.logs, self.deleted_accounts, copy.copy(self.get_storage(address)), vm))
+        self._publish('did_open_transaction', tx)
 
         self._do_events()
 
     def _close_transaction(self, result, data=None, rollback=False):
+        self._publish('will_close_transaction', self._callstack[-1][0])
         tx, logs, deleted_accounts, account_storage, vm = self._callstack.pop()
+        self._publish('did_close_transaction', tx)
         assert self.constraints == vm.constraints
         #seth constraints to the constraints gathered in the last vm
         self.constraints = vm.constraints
@@ -2437,7 +2441,6 @@ class EVMWorld(Platform):
         address = self.create_account(address)
         self.start_transaction('CREATE', address, price, init, caller, balance)
         self._process_pending_transaction()
-
         return address
 
     def transaction(self, address, price=0, data='', caller=None, value=0):

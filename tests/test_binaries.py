@@ -65,12 +65,12 @@ class IntegrationTest(unittest.TestCase):
 
     def testTimeout(self):
         dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries/arguments_linux_amd64'))
+        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        workspace = '%s/workspace'%self.test_dir
+        workspace = os.path.join(self.test_dir, 'workspace')
         t = time.time()
-        with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
+        with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                 '--workspace', workspace,
                                 '--timeout', '1',
@@ -86,7 +86,7 @@ class IntegrationTest(unittest.TestCase):
         """
 
         dirname = os.path.dirname(__file__)
-        filename = os.path.join(dirname, 'binaries/basic_linux_amd64')
+        filename = os.path.join(dirname, 'binaries', 'basic_linux_amd64')
         output = subprocess.check_output(['python', '-m', 'manticore', filename])
         output_lines = output.splitlines()
         start_info = output_lines[:2]
@@ -101,37 +101,37 @@ class IntegrationTest(unittest.TestCase):
 
     def testArgumentsAssertions(self):
         dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries/arguments_linux_amd64'))
+        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'arguments_linux_amd64'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        workspace = '%s/workspace'%self.test_dir
-        assertions = '%s/assertions.txt'%self.test_dir
+        workspace = os.path.join(self.test_dir, 'workspace')
+        assertions = os.path.join(self.test_dir, 'assertions.txt')
         file(assertions,'w').write('0x0000000000401003 ZF == 1')
-        with open(os.path.join(os.pardir, '%s/output.log'%self.test_dir), "w") as output:
+        with open(os.path.join(os.pardir, self.test_dir, 'output.log'), "w") as output:
             subprocess.check_call(['python', '-m', 'manticore',
                                    '--workspace', workspace,
                                    '--proc', '4',
                                    '--assertions', assertions,
                                    filename,
                                    '+++++++++'], stdout=output)
-        actual = self._loadVisitedSet(os.path.join(dirname, '%s/visited.txt'%workspace))
-        expected = self._loadVisitedSet(os.path.join(dirname, 'reference/arguments_linux_amd64_visited.txt'))
+        actual = self._loadVisitedSet(os.path.join(dirname, workspace, 'visited.txt'))
+        expected = self._loadVisitedSet(os.path.join(dirname, 'reference', 'arguments_linux_amd64_visited.txt'))
         self.assertGreaterEqual(actual, expected)
 
     def testDecree(self):
         dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries/cadet_decree_x86'))
+        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'cadet_decree_x86'))
         self.assertTrue(filename.startswith(os.getcwd()))
         filename = filename[len(os.getcwd())+1:]
-        workspace = '%s/workspace'%self.test_dir
+        workspace = os.path.join(self.test_dir, 'workspace')
         self._runWithTimeout(['python', '-m', 'manticore',
                     '--workspace', workspace,
                     '--timeout', '20',
                     '--proc', '4',
                     '--policy', 'uncovered',
-                    filename], '%s/output.log'%self.test_dir)
+                    filename], os.path.join(self.test_dir, 'output.log'))
 
-        actual = self._loadVisitedSet(os.path.join(dirname, '%s/visited.txt'%workspace))
+        actual = self._loadVisitedSet(os.path.join(dirname, workspace, 'visited.txt'))
         self.assertTrue(len(actual) > 100 )
 
     def test_eth_regressions(self):
@@ -165,8 +165,8 @@ class IntegrationTest(unittest.TestCase):
 
     def test_basic_arm(self):
         dirname = os.path.dirname(__file__)
-        filename = os.path.abspath(os.path.join(dirname, 'binaries/basic_linux_armv7'))
-        workspace = '%s/workspace' % self.test_dir
+        filename = os.path.abspath(os.path.join(dirname, 'binaries', 'basic_linux_armv7'))
+        workspace = os.path.join(self.test_dir,'workspace') 
         output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
 
         with open(os.path.join(workspace, "test_00000000.stdout")) as f:
