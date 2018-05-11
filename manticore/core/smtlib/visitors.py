@@ -290,6 +290,18 @@ class ConstantFolderSimplifier(Visitor):
             value = value & mask
             return BitVecConstant(expression.size, value, taint=expression.taint)
 
+    def visit_BoolAnd(self, expression, a, b):
+        if isinstance(a, Constant) and a.value == True:
+            return b
+        if isinstance(b, Constant) and b.value == True:
+            return a
+
+    def visit_BoolOr(self, expression, a, b):
+        if isinstance(a, Constant) and a.value == False:
+            return b
+        if isinstance(b, Constant) and b.value == False:
+            return a
+
     def visit_Operation(self, expression, *operands):
         ''' constant folding, if all operands of an expression are a Constant do the math '''
         operation = self.operations.get(type(expression), None)
@@ -307,14 +319,23 @@ class ConstantFolderSimplifier(Visitor):
         return expression
 
 
+def clean_cache(cache):
+    #print "cleaning cache", id(cache), deep_getsizeof(cache), 'M'
+    M = 256
+    if len(cache) > M:
+        import random
+        N = len(cache) - M
+        for i in range(N):
+            cache.pop( random.choice(cache.keys()) )
+
 constant_folder_simplifier_cache = {}
 
-
 def constant_folder(expression):
-    #global constant_folder_simplifier_cache
-    constant_folder_simplifier_cache = {}
+    global constant_folder_simplifier_cache
+    #constant_folder_simplifier_cache = {}
     simp = ConstantFolderSimplifier(cache=constant_folder_simplifier_cache)
     simp.visit(expression)
+    clean_cache(constant_folder_simplifier_cache)
     return simp.result
 
 
@@ -493,13 +514,13 @@ class ArithmeticSimplifier(Visitor):
 # FIXME this should forget old expressions lru?
 arithmetic_simplifier_cache = {}
 
-
 def arithmetic_simplify(expression):
-    #global arithmetic_simplifier_cache
-    arithmetic_simplifier_cache = {}
+    global arithmetic_simplifier_cache
+    #arithmetic_simplifier_cache = {}
     simp = ArithmeticSimplifier(cache=arithmetic_simplifier_cache)
     simp.visit(expression, use_fixed_point=True)
     value = simp.result
+    clean_cache(arithmetic_simplifier_cache)
     return value
 
 

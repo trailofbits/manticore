@@ -171,7 +171,7 @@ class SolidityMetadata(object):
         self.source_code = source_code
         self._init_bytecode = init_bytecode
         self._runtime_bytecode = runtime_bytecode
-        self.hashes = hashes
+        self._hashes = hashes
         self.abi = dict([(item.get('name', '{fallback}'), item) for item in abi])
         self.warnings = warnings
         self.srcmap_runtime = self.__build_source_map(self.runtime_bytecode, srcmap_runtime)
@@ -183,7 +183,7 @@ class SolidityMetadata(object):
             raise Exception("Function already defined")
         hsh = ABI.make_function_id(method_name_and_signature)
         name = method_name_and_signature.split('(')[0]
-        self.hashes.append(method_name_and_signature, hsh)
+        self._hashes.append(method_name_and_signature, hsh)
 
         input_types = method_name_and_signature.split('(')[1].split(')')[0].split(',')
         output_types = method_name_and_signature.split(')')[1].split(',')
@@ -267,7 +267,7 @@ class SolidityMetadata(object):
 
     @property
     def signatures(self):
-        return dict(((b, a) for (a, b) in self.hashes.items()))
+        return dict(((b, a) for (a, b) in self._hashes.items()))
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
@@ -287,7 +287,18 @@ class SolidityMetadata(object):
 
     def get_func_signature(self, hsh):
         return self.signatures.get(hsh, '{fallback}()')
+    
+    def get_hash(self, method_name_and_signature):
+        #helper
+        return ABI.make_function_id(method_name_and_signature)
 
+    @property
+    def functions(self):
+        return tuple(self.signatures.values()) + ('{fallback}()',)
+
+    @property
+    def hashes(self):
+        return tuple(self.signatures.keys()) + ('00000000',)
 
 class ABI(object):
     '''
@@ -590,7 +601,7 @@ class EVMAccount(object):
             self._hashes = {}
             md = self._m.get_metadata(self._address)
             if md is not None:
-                for signature, func_id in md.hashes.items():
+                for signature, func_id in md._hashes.items():
                     func_name = str(signature.split('(')[0])
                     self._hashes[func_name] = signature, func_id
             # It was successful, no need to re-run. _init_hashes disabled
@@ -883,18 +894,18 @@ class ManticoreEVM(Manticore):
                 return context['_saved_states']
 
     @property
+    def _terminated_state_ids(self):
+        ''' IDs of the terminated states ''' 
+        with self.locked_context('seth') as context:
+            return context['_final_states']
+
+    @property
     def _all_state_ids(self):
         ''' IDs of the all states
 
             Note: state with id -1 is already in memory and it is not backed on the storage
         ''' 
         return self._running_state_ids + self._terminated_state_ids
-
-    @property
-    def _terminated_state_ids(self):
-        ''' IDs of the terminated states ''' 
-        with self.locked_context('seth') as context:
-            return context['_final_states']
 
     @property
     def running_states(self):
@@ -934,11 +945,10 @@ class ManticoreEVM(Manticore):
         
     def _terminate_state_id(self, state_id):
         ''' Manually terminates a states by state_id.
-            Moves the state from the running list into the terminated list and
-            generates a testcase for it
+            Moves the state from the running list into the terminated list
         '''
 
-        # Move state from runnign to final states
+        # Move state from running to final
         if state_id != -1:
             with self.locked_context('seth') as seth_context:
                 saved_states = seth_context['_saved_states']
@@ -952,6 +962,23 @@ class ManticoreEVM(Manticore):
             assert state_id == -1
             state_id = self.save(self._initial_state, final=True)
             self._initial_state = None
+        return state_id
+
+    def _revive_state_id(self, state_id):
+        ''' Manually revice a states by state_id.
+            Moves the state from the final list into the running list
+        '''
+
+        # Move state from final to running
+        if state_id != -1:
+            with self.locked_context('seth') as seth_context:
+                saved_states = seth_context['_saved_states']
+                final_states = seth_context['_final_states']
+                if state_id in final_states:
+                    final_states.remove(state_id)
+                    saved_states.append(state_id)
+                seth_context['_saved_states'] = saved_states
+                seth_context['_final_states'] = final_states
         return state_id
 
 
@@ -993,7 +1020,7 @@ class ManticoreEVM(Manticore):
         return state.platform.transactions
 
     def solidity_create_contract(self, source_code, owner, contract_name=None, libraries=None, balance=0, address=None, args=()):
-        ''' Creates a solidity contract
+        ''' Creates a solidity contract and library dependencies
 
             :param str source_code: solidity source code
             :param owner: owner account (will be default caller in any transactions)
@@ -1007,24 +1034,47 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-        compile_results = self._compile(source_code, contract_name, libraries=libraries)
-        init_bytecode = compile_results[2]
 
-        if address is None:
-            address = self.world.new_address()
+        if libraries is None:
+            deps = {}
+        else:
+            deps = dict(libraries)
+        contract_names = [contract_name]
+        while contract_names:
+            contract_name_i = contract_names.pop()
+            try:
+                compile_results = self._compile(source_code, contract_name_i, libraries=deps)
+                init_bytecode = compile_results[2]
 
-        # FIXME different states "could"(VERY UNLIKELY) have different contracts
-        # asociated with the same address
-        self.metadata[address] = SolidityMetadata(*compile_results)
+                if address is None:
+                    address = self.world.new_address()
 
-        account = self.create_contract(owner=owner,
-                                       balance=balance,
-                                       address=address,
-                                       init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
+                # FIXME different states "could"(VERY UNLIKELY) have different contracts
+                # asociated with the same address
+                self.metadata[address] = SolidityMetadata(*compile_results)
 
-        if not self.count_running_states() or self.get_code(account) == '':
+                if contract_name_i == contract_name:
+                    contract_account = self.create_contract(owner=owner,
+                                                   balance=balance,
+                                                   address=address,
+                                                   init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
+                else:
+                    contract_account = self.create_contract(owner=owner,
+                                                   address=address,
+                                                   init=tuple(init_bytecode))
+
+                if contract_account is None:
+                    raise Exception("Failed to build contract %s"%contract_name)
+                deps[contract_name] = contract_account
+            except DependencyError as e:
+                contract_names.append(contract_name)
+                for lib_name in e.lib_names:
+                    if lib_name not in deps:
+                        contract_names.append(lib_name)
+
+        if not self.count_running_states() or self.get_code(contract_account) == '':
             return None
-        return account
+        return contract_account
 
     def create_contract(self, owner, balance=0, address=None, init=None):
         ''' Creates a contract
@@ -1081,7 +1131,7 @@ class ManticoreEVM(Manticore):
         return address
 
     def transaction(self, caller, address, value, data):
-        ''' Issue a symbolic transaction
+        ''' Issue a symbolic transaction in all running states
 
             :param caller: the address of the account sending the transaction
             :type caller: int or EVMAccount
@@ -1120,22 +1170,8 @@ class ManticoreEVM(Manticore):
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
         owner_account = self.create_account(balance=1000)
         attacker_account = self.create_account(balance=1000)
-
-        deps = {}
-        contract_names = [contract_name]
-        while contract_names:
-            contract_name = contract_names.pop()
-            try:
-                with open(solidity_filename) as f:
-                    contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, libraries=deps)
-                if contract_account is None:
-                    raise Exception("Failed to build contract %s"%contract_name)
-                deps[contract_name] = contract_account
-            except DependencyError as e:
-                contract_names.append(contract_name)
-                for lib_name in e.lib_names:
-                    if lib_name not in deps:
-                        contract_names.append(lib_name)
+        with open(solidity_filename) as f:
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account)
 
         if tx_account == "attacker":
             tx_account = attacker_account
@@ -1370,6 +1406,14 @@ class ManticoreEVM(Manticore):
         self.detectors[d.name] = d
         self.register_plugin(d)
 
+    def unregister_detector(self, d):
+        if not isinstance(d, Detector):
+            raise Exception("Not a Detector")
+        if not d.name in self.detectors:
+            raise Exception("Detector not registered")
+        del self.detectors[d.name]
+        self.unregister_plugin(d)
+
     @property
     def global_findings(self):
         with self.locked_context('seth.global_findings', set) as global_findings:
@@ -1431,7 +1475,7 @@ class ManticoreEVM(Manticore):
                 from .core.smtlib.visitors import translate_to_smtlib
 
                 storage = blockchain.get_storage(account_address)
-                summary.write("Storage: %s" % translate_to_smtlib(storage))
+                summary.write("Storage: %s" % translate_to_smtlib(storage, use_bindings=True))
 
                 all_used_indexes = []
                 with state.constraints as temp_cs:
@@ -1529,9 +1573,6 @@ class ManticoreEVM(Manticore):
                             tx_summary.write('return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
                             is_something_symbolic = is_something_symbolic or is_return_symbolic
 
-                            tx_summary.write('return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
-                            is_something_symbolic = is_something_symbolic or is_return_symbolic
-
                 tx_summary.write('\n\n')
 
             if is_something_symbolic:
@@ -1544,7 +1585,7 @@ class ManticoreEVM(Manticore):
                 is_log_symbolic = issymbolic(log_item.memlog)
                 is_something_symbolic = is_log_symbolic or is_something_symbolic
                 solved_memlog = state.solve_one(log_item.memlog)
-                printable_bytes = ''.join(filter(lambda c: c in string.printable, solved_memlog))
+                printable_bytes = ''.join(filter(lambda c: c in string.printable, map(chr, solved_memlog)))
 
                 logs_summary.write("Address: %x\n" % log_item.address)
                 logs_summary.write("Memlog: %s (%s) %s\n" % (binascii.hexlify(solved_memlog), printable_bytes, flagged(is_log_symbolic)))

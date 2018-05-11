@@ -554,6 +554,14 @@ class Array(Expression):
         self._value_bits = value_bits
         super(Array, self).__init__(*operands, **kwargs)
 
+    def cast(self, possible_array):
+        if isinstance(possible_array, bytearray):
+            arr = Array(self.index_bits, len(possible_array), 8)
+            for pos, byte in enumerate(possible_array):
+                arr = arr.store(pos, byte)
+            return arr
+        raise ValueError #cast not implemented
+
     def cast_index(self, index):
         if isinstance(index, (int, long)):
             #assert self.index_max is None or index >= 0 and index < self.index_max
@@ -595,13 +603,24 @@ class Array(Expression):
     def __getitem__(self, index):
         return self.select(self.cast_index(index))
 
+    def __eq__(self, other):
+        def compare_buffers(a, b):
+            if len(a) != len(b):
+                return BoolConstant(False)
+            cond = BoolConstant(True)
+            for i in range(len(a)):
+                cond = BoolAnd(a[i] == b[i], cond)
+                if cond is BoolConstant(False):
+                    return BoolConstant(False)
+            return cond
+        return compare_buffers(self, other)
+
     @property
     def underlying_variable(self):
         array = self
         while not isinstance(array, ArrayVariable):
             array = array.array
         return array
-
 
     def read_BE(self, address, size):
         bytes = []
@@ -669,6 +688,47 @@ class ArrayStore(ArrayOperation):
     def value(self):
         return self.operands[2]
 
+class ArraySlice(Array):
+    def __init__(self, array, offset, size):
+        if not isinstance(array, Array):
+            raise ValueError("Array expected")
+        self._array = array 
+        self._slice_offset = offset
+        self._slice_size = size
+
+    @property
+    def underlying_variable(self):
+        return self._array.underlying_variable
+
+    @property
+    def operands(self):
+        return self._array.operands
+
+    @property
+    def index_bits(self):
+        return self._array.index_bits
+
+    @property
+    def index_max(self):
+        return self._slice_size
+
+    @property
+    def value_bits(self):
+        return self._array.value_bits
+
+    @property
+    def value_bits(self):
+        return self._array.value_bits
+
+    @property
+    def taint(self):
+        return self._array.taint
+
+    def select(self, index):
+        return self._array.select(index+self._slice_offset)
+
+    def store(self, index, value):
+        return self._array.store(index+self.slice_offset, value)
 
 class ArrayProxy(Array):
     def __init__(self, array):
@@ -692,6 +752,11 @@ class ArrayProxy(Array):
             #arrayproxy for an prepopulated array
             super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
             self._name = array.underlying_variable.name            
+            self._array = array
+
+    @property
+    def underlying_variable(self):
+        return self._array.underlying_variable
             
     @property
     def array(self):
@@ -729,8 +794,6 @@ class ArrayProxy(Array):
             index = simplify(BitVecITE(self.index_bits, index < 0, self.index_max + index + 1, index))
         if isinstance(index, Constant) and index.value in self._concrete_cache:
             return self._concrete_cache[index.value]
-        else:
-            self._concrete_cache = {}
 
         return self._array.select(index)
 
@@ -739,6 +802,8 @@ class ArrayProxy(Array):
             index = self.cast_index(index)
         if not isinstance(value, Expression):
             value = self.cast_value(value)
+        from manticore.core.smtlib.visitors import simplify, translate_to_smtlib
+        index = simplify(index)
         if isinstance(index, Constant):
             self._concrete_cache[index.value] = value
         self.written.add(index)
@@ -772,6 +837,7 @@ class ArrayProxy(Array):
         if isinstance(index, slice):
             start, stop = self._fix_index(index)
             size = self._get_size(index)
+            return ArrayProxy(ArraySlice(self, start, size))
             if isinstance(start, Expression) or isinstance(stop, Expression):
                 name = '{}_sliced'.format(self.name)
             else:
