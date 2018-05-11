@@ -37,8 +37,8 @@ class IntegrationTest(unittest.TestCase):
         :param filename: Name of file inside the `tests/binaries` directory
         :return:
         """
-        dirname = os.path.dirname(__file__)
-        filename = '{}/binaries/{}'.format(dirname, filename)
+        dirname = os.path.dirname(os.path.abspath(__file__))
+        filename = os.path.join(dirname, 'binaries', filename)
         command = ['python', '-m', 'manticore']
 
         if contract:
@@ -146,6 +146,7 @@ class IntegrationTest(unittest.TestCase):
             {'number': 795, 'contract': None},
             {'number': 799, 'contract': 'C'},
             {'number': 807, 'contract': 'C'},
+            {'number': 808, 'contract': 'C'},
         ]
 
         for issue in issues:
@@ -157,9 +158,10 @@ class IntegrationTest(unittest.TestCase):
         # that is in the tests/binaries dir
         dirname = os.path.dirname(__file__)
         old_cwd = os.getcwd()
-        os.chdir('{}/binaries'.format(dirname))
-        self._simple_cli_run('705.sol')
-        os.chdir(old_cwd)
+        try:
+            self._simple_cli_run('705.sol')
+        finally:
+            os.chdir(old_cwd)
 
     def test_basic_arm(self):
         dirname = os.path.dirname(__file__)
