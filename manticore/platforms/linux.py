@@ -1280,6 +1280,12 @@ class Linux(Platform):
 
         return len(data)
 
+    def sys_fork(self):
+        '''
+        We don't support forking, but do return a valid error code to client binary.
+        '''
+        return -errno.ENOSYS
+
     def sys_access(self, buf, mode):
         '''
         Checks real user's permissions for a file
@@ -2620,9 +2626,6 @@ class SLinux(Linux):
             raise ConcretizeArgument(self, 2)
 
         return super(SLinux, self).sys_getrandom(buf, size, flags)
-
-    def sys_fork(self):
-        return -errno.ENOSYS
 
     def generate_workspace_files(self):
         def solve_to_fd(data, fd):
