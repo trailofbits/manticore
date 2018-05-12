@@ -45,7 +45,7 @@ if osname == "darwin" or osname.startswith("linux"):
 
 elif osname.startswith("netbsd"):
 
-    libc = ctypes.cdll.LoadLibrary("libc.so.12")
+    libc = ctypes.cdll.LoadLibrary("libc.so")
 
     # void* mmap(void* addr, size_t len, int prot, int flags, int fd, off_t offset)
     mmap_function = libc.mmap
