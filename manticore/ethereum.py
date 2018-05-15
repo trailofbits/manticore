@@ -1557,7 +1557,6 @@ class ManticoreEVM(Manticore):
         runtime_bytecode = world.get_code(account_address)
         return calculate_coverage(runtime_bytecode, seen)
 
-
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
     # We suppress because otherwise we log it many times and it looks weird.
     def _did_finish_run_callback(self):
