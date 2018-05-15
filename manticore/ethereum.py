@@ -1554,16 +1554,9 @@ class ManticoreEVM(Manticore):
         with self.locked_context('runtime_coverage') as coverage:
             seen = coverage
 
-        #fixme use this https://github.com/trailofbits/manticore/blob/a98902c81adfa59a86b35e116869609ad1774cdc/manticore/ethereum.py#L173-L179
-        runtime_bytecode = world.get_code(account_address)[:-44]
+        runtime_bytecode = world.get_code(account_address)
+        return calculate_coverage(runtime_bytecode, seen)
 
-        count, total = 0, 0
-        for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
-            if (account_address, i.offset) in seen:
-                count += 1
-            total += 1
-
-        return count * 100.0 / total
 
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
     # We suppress because otherwise we log it many times and it looks weird.
