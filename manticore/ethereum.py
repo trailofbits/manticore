@@ -903,7 +903,7 @@ class ManticoreEVM(Manticore):
     def last_return(self, state_id=None):
         ''' Last returned buffer for state `state_id` '''
         state = self.load(state_id)
-        return state.platform.last_return
+        return state.platform.last_return_data
 
     def transactions(self, state_id=None):
         ''' Transactions list for state `state_id` '''

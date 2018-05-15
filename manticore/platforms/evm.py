@@ -2240,7 +2240,7 @@ class EVMWorld(Platform):
                 self.execute()
         except TerminateState as e:
             if self.depth == 0 and e.message == 'RETURN':
-                return self.last_return
+                return self.last_return_data
             raise e
 
     def create_account(self, address=None, balance=0, code='', storage=None):
