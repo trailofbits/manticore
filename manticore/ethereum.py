@@ -1422,6 +1422,40 @@ class ManticoreEVM(Manticore):
         Terminate and generate testcases for all currently alive states (contract states that cleanly executed
         to a STOP or RETURN in the last symbolic transaction).
         """
+        # move running states to final states list
+        # and generate a testcase for each
+        q = Queue()
+        map(q.put, self.running_state_ids)
+
+        def f(q):
+            try:
+                while True:
+                    state_id = q.get_nowait()
+                    self.terminate_state_id(state_id)
+            except EmptyQueue:
+                pass
+
+        ps = []
+
+        for _ in range(self._config_procs):
+            p = Process(target=f, args=(q,))
+            p.start()
+            ps.append(p)
+
+        for p in ps:
+            p.join()
+
+        # delete actual streams from storage
+        for state_id in self.all_state_ids:
+            # state_id -1 is always only on memory
+            if state_id != -1:
+                self._executor._workspace.rm_state(state_id)
+
+        # clean up lists
+        with self.locked_context('seth') as seth_context:
+            seth_context['_saved_states'] = []
+        with self.locked_context('seth') as seth_context:
+            seth_context['_final_states'] = []
 
         #global summary
         with self._output.save_stream('global.summary') as global_summary:
@@ -1501,41 +1535,6 @@ class ManticoreEVM(Manticore):
                     for o in sorted(visited):
                         f.write('0x%x\n' % o)
 
-        # move running states to final states list
-        # and generate a testcase for each
-        q = Queue()
-        map(q.put, self.running_state_ids)
-
-        def f(q):
-            try:
-                while True:
-                    state_id = q.get_nowait()
-                    self.terminate_state_id(state_id)
-            except EmptyQueue:
-                pass
-
-        ps = []
-
-        for _ in range(self._config_procs):
-            p = Process(target=f, args=(q,))
-            p.start()
-            ps.append(p)
-
-        for p in ps:
-            p.join()
-
-        # delete actual streams from storage
-        for state_id in self.all_state_ids:
-            # state_id -1 is always only on memory
-            if state_id != -1:
-                self._executor._workspace.rm_state(state_id)
-
-        # clean up lists
-        with self.locked_context('seth') as seth_context:
-            seth_context['_saved_states'] = []
-        with self.locked_context('seth') as seth_context:
-            seth_context['_final_states'] = []
-
         logger.info("Results in %s", self.workspace)
 
     def global_coverage(self, account_address):
@@ -1554,8 +1553,9 @@ class ManticoreEVM(Manticore):
 
         with self.locked_context('runtime_coverage') as coverage:
             seen = coverage
+
+        #fixme use this https://github.com/trailofbits/manticore/blob/a98902c81adfa59a86b35e116869609ad1774cdc/manticore/ethereum.py#L173-L179
         runtime_bytecode = world.get_code(account_address)[:-44]
-        #runtime_bytecode = self.get_metadata(account_address).runtime_bytecode
 
         count, total = 0, 0
         for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
