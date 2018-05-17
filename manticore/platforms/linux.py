@@ -439,7 +439,7 @@ class Linux(Platform):
 
         in_fd = self._open(stdin)
         out_fd = self._open(stdout)
-        err_fd =  self._open(stderr)
+        err_fd = self._open(stderr)
 
         assert (in_fd, out_fd, err_fd) == (0, 1, 2)
 
