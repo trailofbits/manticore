@@ -409,7 +409,7 @@ class ABITest(unittest.TestCase):
         def test(prefix, extracted):
             raise ConcretizeArgument(cpu, 0)
 
-        if not sys.flags.optimize:
+        if __debug__:
             with self.assertRaises(AssertionError) as cr:
                 cpu.func_abi.invoke(test, prefix_args=(1,))
 

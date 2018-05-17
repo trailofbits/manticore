@@ -30,7 +30,7 @@ class Armv7RFTest(unittest.TestCase):
         self.assertEqual(self.r.read('APSR_Z'), False)
 
     def test_bad_reg_name(self):
-        if not sys.flags.optimize:
+        if __debug__:
             exception = AssertionError
         else:
             exception = KeyError
