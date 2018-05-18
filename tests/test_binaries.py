@@ -172,6 +172,42 @@ class IntegrationTest(unittest.TestCase):
         with open(os.path.join(workspace, "test_00000001.stdout")) as f:
             self.assertIn("Message", f.read())
 
+    def test_brk_regression(self):
+        """
+        Tests for brk behavior. Source of brk_static_amd64:
+
+	#include <stdio.h>
+	#include <unistd.h>
+	#include <stdint.h>
+
+	int main(int argc, char *argv[])
+	{
+	    uint8_t *p = sbrk(0);
+
+	    int valid_at_first = (p == sbrk(16));
+	    int valid_after_shift = ((p+16) == sbrk(0));
+	    sbrk(-16);
+	    int valid_after_reset = (p == sbrk(0));
+	    sbrk(-(2<<20));
+	    int valid_after_bad_brk = (p == sbrk(0));
+
+	    if (valid_at_first && valid_after_shift 
+		    && valid_after_reset && valid_after_bad_brk)
+		return 0;
+	    else
+		return 1;
+	}
+
+
+        """
+        dirname = os.path.dirname(__file__)
+        filename = os.path.abspath(os.path.join(dirname, 'binaries/brk_static_amd64'))
+        workspace = '%s/workspace' % self.test_dir
+        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+
+        with open(os.path.join(workspace, "test_00000000.messages")) as f:
+            self.assertIn("finished with exit status: 0", f.read())
+
 if __name__ == '__main__':
     unittest.main()
 

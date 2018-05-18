@@ -541,6 +541,7 @@ class Linux(Platform):
         state['end_code'] = self.end_code
         state['end_data'] = self.end_data
         state['elf_brk'] = self.elf_brk
+        state['brk'] = self.brk
         state['auxv'] = self.auxv
         state['program'] = self.program
         state['functionabi'] = self._function_abi
@@ -595,6 +596,7 @@ class Linux(Platform):
         self.end_code = state['end_code']
         self.end_data = state['end_data']
         self.elf_brk = state['elf_brk']
+        self.brk = state['brk']
         self.auxv = state['auxv']
         self.program = state['program']
         self._function_abi = state['functionabi']
@@ -1051,6 +1053,7 @@ class Linux(Platform):
         self.end_code = end_code
         self.end_data = end_data
         self.elf_brk = real_elf_brk
+        self.brk = real_elf_brk
 
         at_random = cpu.push_bytes('A' * 16)
         at_execfn = cpu.push_bytes(filename + '\x00')
@@ -1350,22 +1353,22 @@ class Linux(Platform):
 
     def sys_brk(self, brk):
         '''
-        Changes data segment size (moves the C{elf_brk} to the new address)
+        Changes data segment size (moves the C{brk} to the new address)
         :rtype: int
-        :param brk: the new address for C{elf_brk}.
-        :return: the value of the new C{elf_brk}.
+        :param brk: the new address for C{brk}.
+        :return: the value of the new C{brk}.
         :raises error:
                     - "Error in brk!" if there is any error allocating the memory
         '''
-        if brk != 0 and brk != self.elf_brk:
+        if brk != 0 and brk > self.elf_brk:
             mem = self.current.memory
-            size = brk - self.elf_brk
-            perms = mem.perms(self.elf_brk - 1)
-            if brk > mem._ceil(self.elf_brk):
-                addr = mem.mmap(mem._ceil(self.elf_brk), size, perms)
-                assert mem._ceil(self.elf_brk) == addr, "Error in brk!"
-            self.elf_brk += size
-        return self.elf_brk
+            size = brk - self.brk
+            if brk > mem._ceil(self.brk):
+                perms = mem.perms(self.brk - 1)
+                addr = mem.mmap(mem._ceil(self.brk), size, perms)
+                assert mem._ceil(self.brk) == addr, "Error in brk!"
+            self.brk += size
+        return self.brk
 
     def sys_arch_prctl(self, code, addr):
         '''
