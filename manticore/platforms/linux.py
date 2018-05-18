@@ -437,9 +437,11 @@ class Linux(Platform):
         self.input.peer = stdin
         # A receive on stdout or stderr will return no data (rx_bytes: 0)
 
-        assert self._open(stdin) == 0
-        assert self._open(stdout) == 1
-        assert self._open(stderr) == 2
+        in_fd = self._open(stdin)
+        out_fd = self._open(stdout)
+        err_fd = self._open(stderr)
+
+        assert (in_fd, out_fd, err_fd) == (0, 1, 2)
 
     def _init_cpu(self, arch):
         # create memory and CPU
