@@ -172,6 +172,15 @@ class IntegrationTest(unittest.TestCase):
         with open(os.path.join(workspace, "test_00000001.stdout")) as f:
             self.assertIn("Message", f.read())
 
+    def test_brk_regression(self):
+        dirname = os.path.dirname(__file__)
+        filename = os.path.abspath(os.path.join(dirname, 'binaries/brk_static_amd64'))
+        workspace = '%s/workspace' % self.test_dir
+        output = subprocess.check_output(['python', '-m', 'manticore', '--workspace', workspace, filename])
+
+        with open(os.path.join(workspace, "test_00000000.messages")) as f:
+            self.assertIn("finished with exit status: 0", f.read())
+
 if __name__ == '__main__':
     unittest.main()
 
