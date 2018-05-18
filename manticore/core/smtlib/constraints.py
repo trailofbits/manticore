@@ -152,7 +152,6 @@ class ConstraintSet(object):
             if constraint_str != 'true':
                 result += '(assert %s)\n' % constraint_str
             constraint_str = translator.pop()
-
         return result
 
     @property
@@ -179,6 +178,9 @@ class ConstraintSet(object):
         if self._parent is not None:
             return tuple(self._constraints) + self._parent.constraints
         return tuple(self._constraints)
+
+    def __iter__(self):
+        return iter(self.constraints)
 
     def __str__(self):
         ''' Returns a smtlib representation of the current state '''
