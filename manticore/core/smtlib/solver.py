@@ -14,7 +14,6 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
 from subprocess import PIPE, Popen, check_output
-from abc import ABCMeta, abstractmethod
 import operators as Operators
 from expression import *
 from constraints import *
@@ -47,38 +46,35 @@ class TooManySolutions(SolverException):
 
 
 class Solver(object):
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
     def __init__(self):
-        pass
+       pass
 
-    @abstractmethod
-    def optimize(self, X, operation, M=10000):
+    def optimize(self, constraints, X, operation, M=10000):
         ''' Iterativelly finds the maximum or minimal value for the operation
             (Normally Operators.UGT or Operators.ULT)
+            :param constraints: the constraints set
             :param X: a symbol or expression
             :param M: maximum number of iterations allowed
         '''
-
+        raise Exception("Abstract method not implemented")
     def check(self, constraints):
         ''' Check if expression can be valid '''
         return self.can_be_true(constraints, True)
 
-    @abstractmethod
     def can_be_true(self, constraints, expression):
         ''' Check if expression can be valid '''
+        raise Exception("Abstract method not implemented")
 
-    @abstractmethod
     def get_all_values(self, constraints, x, maxcnt=10000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
+        raise Exception("Abstract method not implemented")
 
-    @abstractmethod
     def get_value(self, constraints, expression):
         ''' Ask the solver for one possible assignment for expression using current set
             of constraints.
             The current set of assertions must be sat.
             :param val: an expression or symbol '''
+        raise Exception("Abstract method not implemented")
 
     def max(self, constraints, X, M=10000):
         ''' Iterativelly finds the maximum value for a symbol.
@@ -139,7 +135,7 @@ class Z3Solver(Solver):
         else:
             logger.debug(' Please install Z3 4.4.1 or newer to get optimization support')
 
-        self._command = 'z3 -t:120000 -smt2 -in'
+        self._command = 'z3 -t:240000 -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
@@ -494,6 +490,5 @@ class Z3Solver(Solver):
             expr, value = m.group('expr'), m.group('value')
             return int(value, base)
         raise NotImplementedError("get_value only implemented for Bool and BitVec")
-
 
 solver = Z3Solver()
