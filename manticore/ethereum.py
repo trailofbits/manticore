@@ -676,8 +676,7 @@ class ManticoreEVM(Manticore):
 
         m = re.match(r".*Version: (?P<version>(?P<major>\d+)\.(?P<minor>\d+)\.(?P<build>\d+))\+(?P<commit>[^\s]+).*", installed_version_output, re.DOTALL | re.IGNORECASE)
 
-        installed_version = m.groupdict()['version']
-        if installed_version not in supported_versions:
+        if not m or m.groupdict()['version'] not in supported_versions:
             #Fixme https://github.com/trailofbits/manticore/issues/847
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
