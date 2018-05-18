@@ -481,7 +481,7 @@ class Linux(Platform):
 
         logger.debug("Loading %s as a %s elf", program, self.arch)
 
-        self.load(program)
+        self.load(program, envp)
         self._arch_specific_init()
 
         self._stack_top = self.current.STACK
@@ -830,12 +830,13 @@ class Linux(Platform):
         self.current.PC = elf_entry
         logger.debug("Entry point updated: %016x", elf_entry)
 
-    def load(self, filename):
+    def load(self, filename, env):
         '''
         Loads and an ELF program in memory and prepares the initial CPU state.
         Creates the stack and loads the environment variables and the arguments in it.
 
         :param filename: pathname of the file to be executed. (used for auxv)
+        :param list env: A list of env variables. (used for extracting vars that control ld behavior)
         :raises error:
             - 'Not matching cpu': if the program is compiled for a different architecture
             - 'Not matching memory': if the program is compiled for a different address size
@@ -846,6 +847,7 @@ class Linux(Platform):
         cpu = self.current
         elf = self.elf
         arch = self.arch
+        env = dict(var.split('=') for var in env if '=' in var)
         addressbitsize = {'x86': 32, 'x64': 64, 'ARM': 32}[elf.get_machine_arch()]
         logger.debug("Loading %s as a %s elf", filename, arch)
 
@@ -860,6 +862,13 @@ class Linux(Platform):
             logger.info('Interpreter filename: %s', interpreter_filename)
             if os.path.exists(interpreter_filename.decode('utf-8')):
                 interpreter = ELFFile(open(interpreter_filename, 'rb'))
+            elif 'LD_LIBRARY_PATH' in env:
+                for mpath in env['LD_LIBRARY_PATH'].split(":"):
+                    interpreter_path_filename = os.path.join(mpath, os.path.basename(interpreter_filename))
+                    logger.info("looking for interpreter %s", interpreter_path_filename)
+                    if os.path.exists(interpreter_filename):
+                        interpreter = ELFFile(open(interpreter_path_filename))
+                        break
             break
         if interpreter is not None:
             assert interpreter.get_machine_arch() == elf.get_machine_arch()

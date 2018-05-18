@@ -35,7 +35,7 @@ def parse_arguments():
     parser.add_argument('--disasm', type=str, default='capstone', choices=disas,
                         help=argparse.SUPPRESS)
     parser.add_argument('--env', type=str, nargs=1, default=[], action='append',
-                        help='Specify symbolic environment variable VARNAME=++++++')
+                        help='Add an environment variable. Use "+" for symbolic bytes. (VARNAME=++++)')
     #TODO allow entry as an address
     #parser.add_argument('--entry', type=str, default=None,
     #                    help='address as entry point')
