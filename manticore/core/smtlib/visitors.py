@@ -382,6 +382,7 @@ class ArithmeticSimplifier(Visitor):
     def visit_BitVecExtract(self, expression, *operands):
         ''' extract(0,sizeof(a))(a)  ==> a
             extract(0, 16 )( concat(a,b,c,d) ) => concat(c, d)
+            extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)  
         '''
         op = expression.operands[0]
         begining = expression.begining
@@ -400,6 +401,9 @@ class ArithmeticSimplifier(Visitor):
             if begining != expression.begining:
                 return BitVecExtract(BitVecConcat(sum(map(lambda x: x.size, new_operands)), *reversed(new_operands)),
                                      begining, expression.size, taint=expression.taint)
+        if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
+            bitoperand_a, bitoperand_b = op.operands
+            return op.__class__(BitVecExtract(bitoperand_a, begining, size), BitVecExtract(bitoperand_b, begining, size), taint=expression.taint)
 
     def visit_BitVecAdd(self, expression, *operands):
         ''' a + 0  ==> a
@@ -557,27 +561,22 @@ class TranslatorSmtlib(Visitor):
         assert 'bindings' not in kw
         super(TranslatorSmtlib, self).__init__(*args, **kw)
         self.use_bindings = use_bindings
+        self._bindings_cache = {}
         self._bindings = []
 
     def _add_binding(self, expression, smtlib):
         if not self.use_bindings or len(smtlib) <= 10:
             return smtlib
-        '''
-        for nm, exp, smt in self._bindings:
-            if expression is exp:
-                return nm #fixme change to dict
-            if smtlib == smt:
-                return nm #fixme change to dict
 
-        if expression in self._cache:
-            return self._cache[expression]
-        '''
+        if smtlib in self._bindings_cache:
+            return self._bindings_cache[smtlib]
+
         TranslatorSmtlib.unique += 1
-        name = 'aux%d' % TranslatorSmtlib.unique
+        name = 'a_%d' % TranslatorSmtlib.unique
 
         self._bindings.append((name, expression, smtlib))
 
-        self._cache[expression] = name
+        self._bindings_cache[expression] = name
         return name
 
     @property
@@ -639,6 +638,12 @@ class TranslatorSmtlib(Visitor):
     def visit_Variable(self, expression):
         return expression.name
 
+    def visit_ArraySelect(self, expression, *operands):
+        array_smt, index_smt = operands
+        if isinstance(expression.array, ArrayStore):
+            array_smt = self._add_binding(expression.array, array_smt)
+        return '(select %s %s)'%(array_smt, index_smt)
+
     def visit_Operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
         if isinstance(expression, (BitVecSignExtend, BitVecZeroExtend)):
@@ -647,8 +652,7 @@ class TranslatorSmtlib(Visitor):
             operation = operation % (expression.end, expression.begining)
 
         operands = map(lambda x: self._add_binding(*x), zip(expression.operands, operands))
-        smtlib = '(%s %s)' % (operation, ' '.join(operands))
-        return smtlib
+        return '(%s %s)' % (operation, ' '.join(operands))
 
     @property
     def results(self):
