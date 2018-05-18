@@ -2,45 +2,46 @@ from manticore.ethereum import ManticoreEVM, evm
 ################ Script #######################
 
 m = ManticoreEVM()
-m.verbosity(9)
+
 #And now make the contract account to analyze
+# cat  | solc --bin 
 source_code = '''
-contract InternalAttacker {
-    function internalAttack(address _target) payable {
-        address(this).call(bytes4(keccak256("dive(address)")), _target);
-        msg.sender.transfer(this.balance);
-    }
-    function dive(address _target) {
-        _target.transfer(this.balance);
-        revert();
-    }
+pragma solidity ^0.4.13;
+contract NoDistpatcher {
+    event Log(string);
+
+    function() payable {
+        if (msg.data[0] == 'A') {
+            Log("Got an A");
+        }
+        else{
+            Log("Got something else");
+        }
+    } 
 }
 '''
+init_bytecode = m.compile(source_code)
 
-owner_account = m.create_account(balance=1000)
 user_account = m.create_account(balance=1000)
-target_account = m.create_account(balance=1000)
-#contract_account = m.solidity_create_contract(source_code, owner=user_account)
-init_bytecode = ManticoreEVM.compile(source_code, runtime=False, contract_name='InternalAttacker')
-contract_account = m.create_contract(init_bytecode, owner=user_account)
+print "[+] Creating a user account", user_account
 
-print "[+] User account", user_account
-print "[+] target account", target_account
-print "[+] Contract account", contract_account
-print "[+] Source code:"
-print source_code
+print "[+] Init bytecode:", init_bytecode.encode('hex')
+print "[+] EVM init assembler:"
+for instr in evm.EVMAsm.disassemble_all(init_bytecode[:-44]):
+    print hex(instr.offset), instr
 
-symbolic_data = m.SByte(16) 
-symbolic_value = m.SValue()
+contract_account = m.create_contract(owner=user_account,
+                                        init=init_bytecode)
+print "[+] Creating a contract account", contract_account
 
+print "[+] Now the symbolic values"
+symbolic_data = m.make_symbolic_buffer(320) 
+symbolic_value = None 
 m.transaction(caller=user_account,
                 address=contract_account,
                 data=symbolic_data,
                 value=symbolic_value )
 
-
-print target_account, m.get_balance(target_account)
-print user_account, m.get_balance(user_account)
 #Let seth know we are not sending more transactions 
 m.finalize()
 print "[+] Look for results in %s"% m.workspace
