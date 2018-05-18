@@ -337,6 +337,32 @@ class State(Eventful):
         '''
         return self._solver.get_all_values(self._constraints, expr, nsolves, silent=True)
 
+    def solve_max(self, expr):
+        '''
+        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        its maximun solution
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if isinstance(expr, (int,long)):
+            return expr
+        return self._solver.max(self._constraints, expr)
+
+    def solve_min(self, expr):
+        '''
+        Solves a symbolic :class:`~manticore.core.smtlib.expression.Expression` into
+        its minimun solution
+
+        :param manticore.core.smtlib.Expression expr: Symbolic value to solve
+        :return: Concrete value
+        :rtype: list[int]
+        '''
+        if isinstance(expr, (int,long)):
+            return expr
+        return self._solver.min(self._constraints, expr)
+
     def solve_buffer(self, addr, nbytes):
         '''
         Reads `nbytes` of symbolic data from a buffer in memory at `addr` and attempts to
