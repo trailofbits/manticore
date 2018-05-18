@@ -6,6 +6,7 @@ from . import Manticore
 from .manticore import ManticoreError
 from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
 from .core.smtlib.visitors import simplify
+from .core.plugin import FilterFunctions
 from .platforms import evm
 from .core.state import State
 import tempfile
@@ -271,15 +272,16 @@ class SolidityMetadata(object):
 
     def get_abi(self, hsh):
         func_name = self.get_func_name(hsh)
-        return self.abi[func_name]
+        default_fallback_abi = {u'stateMutability': u'nonpayable', u'payable': False, u'type': u'fallback'}
+        return self.abi.get(func_name, default_fallback_abi)
 
     def get_func_argument_types(self, hsh):
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi['inputs']) + ')'
+        return '(' + ','.join(x['type'] for x in abi.get('inputs',[])) + ')'
 
     def get_func_return_types(self, hsh):
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi['outputs']) + ')'
+        return '(' + ','.join(x['type'] for x in abi.get('outputs',[]) ) + ')'
 
     def get_func_name(self, hsh):
         signature = self.signatures.get(hsh, '{fallback}()')
@@ -1435,12 +1437,13 @@ class ManticoreEVM(Manticore):
         #super(ManticoreEVM, self)._generate_testcase_callback(state, name, message)
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
+        blockchain = state.platform
         def flagged(flag):
             return '(*)' if flag else '' 
         testcase = self._output.testcase(name.replace(' ', '_'))
-        logger.info("Generated testcase No. {} - {}".format(testcase.num, message))
-        blockchain = state.platform
+        logger.info("Generated testcase No. {} - {}".format(testcase.num, message+blockchain.last_transaction.result))
         with testcase.open_stream('summary') as summary:
+            summary.write("Message: %s\n" % message)
             summary.write("Last exception: %s\n" % state.context['last_exception'])
 
             at_runtime = blockchain.last_transaction.sort != 'CREATE'

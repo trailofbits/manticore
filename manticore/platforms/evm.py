@@ -97,10 +97,10 @@ class Transaction(object):
 
     @property
     def return_value(self):
-        if self.result in {'RETURN'}:
+        if self.result in {'RETURN', 'STOP'}:
             return 1
         else:
-            assert self.result in {'TXERROR', 'REVERT', 'STOP', 'THROW', 'SELFDESTRUCT'}
+            assert self.result in {'TXERROR', 'REVERT', 'THROW', 'SELFDESTRUCT'}
             return 0
 
     def set_result(self, result, data=None):
@@ -995,7 +995,7 @@ class EVM(Eventful):
         def pos(self, pos):
             return type(self)(self._pre, pos)
 
-    def __init__(self, constraints, address, data, caller, value, bytecode, world=None, gas=1000000000, **kwargs):
+    def __init__(self, constraints, address, data, caller, value, bytecode, world=None, gas=210000, **kwargs):
         '''
         Builds a Ethereum Virtual Machine instance
 
@@ -1022,8 +1022,10 @@ class EVM(Eventful):
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
-        if len(bytecode) == 0:
-            raise EVMException("Need code")
+        #A no code VM is used to execute transactions to normal accounts. 
+        #I'll execute a STOP and close the transaction
+        #if len(bytecode) == 0:
+        #    raise EVMException("Need code")
         self._constraints = constraints
         self.memory = constraints.new_array(index_bits=256, value_bits=8, name='EMPTY_MEMORY')
         self.address = address
@@ -1099,20 +1101,22 @@ class EVM(Eventful):
         super(EVM, self).__setstate__(state)
 
     def _allocate(self, address):
+
         allocated = self.allocated
         GMEMORY = 3
         GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
-        old_size = Operators.ZEXTEND(Operators.UDIV(ceil32(allocated), 32), 512)
-        new_size = Operators.ZEXTEND(Operators.UDIV(ceil32(address), 32), 512)
+        old_size = Operators.ZEXTEND(Operators.UDIV(self.safe_add(allocated, 31), 32), 512)
+        new_size = Operators.ZEXTEND(Operators.UDIV(self.safe_add(address, 31), 32), 512)
 
-        old_totalfee = old_size * GMEMORY + old_size * old_size // GQUADRATICMEMDENOM
-        new_totalfee = new_size * GMEMORY + new_size * new_size // GQUADRATICMEMDENOM
+        old_totalfee = self.safe_mul(old_size, GMEMORY) + Operators.UDIV(self.safe_mul(old_size, old_size), GQUADRATICMEMDENOM)
+        new_totalfee = self.safe_mul(new_size, GMEMORY) + Operators.UDIV(self.safe_mul(new_size, new_size), GQUADRATICMEMDENOM)
         memfee = new_totalfee - old_totalfee
 
         flag = Operators.UGT(new_totalfee, old_totalfee)
         self._consume(Operators.ITEBV(512, flag, memfee, 0))
 
-        self._allocated = Operators.ITEBV(512, flag, Operators.ZEXTEND(ceil32(address), 512), Operators.ZEXTEND(allocated, 512))
+        address_c = Operators.UDIV(self.safe_add(address, 31), 32) * 32
+        self._allocated = Operators.ITEBV(512, flag, Operators.ZEXTEND(address_c, 512), Operators.ZEXTEND(allocated, 512))
 
     @property
     def allocated(self):
@@ -1201,7 +1205,16 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
+        if isinstance(fee, (int,long)):
+            if fee > (1<<256)-1:
+                raise ValueError
+        elif isinstance(fee, BitVec):
+            if (fee.size != 512):
+                raise Exception("Fees should be 512 bit long")
+
         self.constraints.add(Operators.UGE(fee, 0))
+        self.constraints.add(Operators.ULE(fee, self._gas))
+
         #FIXME add configurable checks here
         if config.out_of_gas is not None:
             if config.out_of_gas == 0:
@@ -1224,7 +1237,6 @@ class EVM(Eventful):
                                      expression=self._gas > fee,
                                      setstate=None,
                                      policy='ALL')
-
 
         self._gas -= fee
 
@@ -1293,11 +1305,11 @@ class EVM(Eventful):
 
         last_pc = self.pc
         current = self.instruction
-        print '%02x'%current.offset, current
         if self._on_transaction is False:
             self._publish('will_execute_instruction', self.pc, current)
 
         #Need to consume before potential out of stack exception
+        old_gas = self._gas
         self._consume(current.fee)
         arguments = self._pop_arguments()
         result = None
@@ -1311,7 +1323,7 @@ class EVM(Eventful):
         except ConcretizeStack as ex:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
-            self._indemnify(current.fee)
+            self._gast = old_gas
 
             def setstate(state, value):
                 self.stack[-ex.pos] = value
@@ -1323,7 +1335,7 @@ class EVM(Eventful):
         except StartTx:
             #Revert the stack and gas so it looks like before executing the instruction
             self._push_arguments(arguments)
-            self._indemnify(current.fee)
+            self._gast = old_gas
             raise
 
         except EndTx as ex:
@@ -1613,15 +1625,39 @@ class EVM(Eventful):
         '''Get size of input data in current environment'''
         return len(self.data)
 
+    def safe_add(self, a, b):
+        a = Operators.ZEXTEND(a, 512)
+        b = Operators.ZEXTEND(b, 512)
+        result = a + b
+        self.constraints.add(Operators.UGE(result, 0 ))
+        self.constraints.add(Operators.ULT(result, 1<<256 ))
+        return result
+
+    def safe_mul(self, a, b):
+        a = Operators.ZEXTEND(a, 512)
+        b = Operators.ZEXTEND(b, 512)
+        result = a * b
+        self.constraints.add(Operators.UGE(result, 0 ))
+        self.constraints.add(Operators.ULT(result, 1<<256 ))
+        return result
+
     def CALLDATACOPY(self, mem_offset, data_offset, size):
         '''Copy input data in current environment to memory'''
         GCOPY = 3             # cost to copy one 32 byte word
-        self._consume(GCOPY * ceil32(size) // 32)
+        old_gas = self.gas
 
+        self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31)/32))
+        self._allocate(self.safe_add(mem_offset, size))
+
+        # slow debug check
+        if issymbolic(size):
+            assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
+
+        self.constraints.add(size%32 == 0)
+        self.constraints.add(Operators.ULT(size,  32*10))
         if issymbolic(size):
             raise ConcretizeStack(3, policy='SAMPLED')
 
-        self._allocate(mem_offset + size)
         for i in range(size):
             try:
                 c = Operators.ITEBV(8, data_offset + i < len(self.data), Operators.ORD(self.data[data_offset + i]), 0)
