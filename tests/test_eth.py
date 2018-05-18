@@ -1,3 +1,6 @@
+import shutil
+import struct
+import tempfile
 import unittest
 import os
 
@@ -5,8 +8,7 @@ from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
 from manticore.core.state import State
-
-from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates
+from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
 from manticore.platforms.evm import EVMWorld, ConcretizeStack, Create, concretized_args
 
 
@@ -16,6 +18,11 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 from manticore.utils.log import init_logging
 
 init_logging()
+
+def make_mock_evm_state():
+    cs = ConstraintSet()
+    fakestate = State(cs, EVMWorld(cs))
+    return fakestate
 
 
 class EthDetectorsIntegrationTest(unittest.TestCase):
@@ -34,13 +41,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
 class EthDetectorsTest(unittest.TestCase):
     def setUp(self):
         self.io = IntegerOverflow()
-        self.state = self.make_mock_evm_state()
-
-    @staticmethod
-    def make_mock_evm_state():
-        cs = ConstraintSet()
-        fakestate = State(cs, EVMWorld(cs))
-        return fakestate
+        self.state = make_mock_evm_state()
 
     def test_mul_no_overflow(self):
         """
@@ -74,8 +75,166 @@ class EthDetectorsTest(unittest.TestCase):
         self.assertTrue(check)
 
 
+class EthAbiTests(unittest.TestCase):
+    _multiprocess_can_split = True
+
+    @staticmethod
+    def _pack_int_to_32(x):
+        return '\x00' * 28 + struct.pack('>I', x)
+
+    def test_dyn_address(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),  # offset to data start
+            self._pack_int_to_32(2),   # data start; # of elements
+            self._pack_int_to_32(42),  # element 1
+            self._pack_int_to_32(43),  # element 2
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(address[])', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ([42, 43],))
+
+    def test_dyn_bytes(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),  # offset to data start
+            self._pack_int_to_32(30),   # data start; # of elements
+            'Z'*30, '\x00'*2
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(bytes)', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ('Z'*30,))
+
+    def test_simple_types(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(32),
+            '\xff' * 32,
+            '\xff'.rjust(32, '\0'),
+            self._pack_int_to_32(0x424242),
+            '\x7f' + '\xff' *31, # int256 max
+            '\x80'.ljust(32, '\0'), # int256 min
+
+
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(uint256,uint256,bool,address,int256,int256)', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, (32, 2**256 - 1, 0xff, 0x424242, 2**255 - 1,-(2**255) ))
+
+    def test_address0(self):
+        data = '{}\x01\x55{}'.format('\0'*11, '\0'*19)
+        parsed = ABI.parse('address', data)
+        self.assertEqual(parsed, 0x55 << (8 * 19) )
+
+    def test_mult_dyn_types(self):
+        d = [
+            'AAAA',                    # function hash
+            self._pack_int_to_32(0x40),  # offset to data 1 start
+            self._pack_int_to_32(0x80),  # offset to data 2 start
+            self._pack_int_to_32(10),  # data 1 size
+            'helloworld'.ljust(32, '\x00'), # data 1
+            self._pack_int_to_32(3),  # data 2 size
+            self._pack_int_to_32(3),  # data 2
+            self._pack_int_to_32(4),
+            self._pack_int_to_32(5),
+        ]
+        d = ''.join(d)
+
+        funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
+
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ('helloworld', [3, 4, 5]))
+
+    def test_self_make_and_parse_multi_dyn(self):
+        d = ABI.make_function_call('func', 'h'*50, [1, 1, 2, 2, 3, 3] )
+        d = ''.join(d)
+        funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
+        self.assertEqual(funcname, 'func')
+        self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
+
+    def test_parse_invalid_int(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("intXXX", "\xFF")
+            ABI.parse("uintXXX", "\xFF")
+
+    def test_parse_invalid_int_too_big(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int3000", "\xFF")
+            ABI.parse("uint3000", "\xFF")
+
+    def test_parse_invalid_int_negative(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int-8", "\xFF")
+            ABI.parse("uint-8", "\xFF")
+
+    def test_parse_invalid_int_not_pow_of_two(self):
+        with self.assertRaises(EthereumError):
+            ABI.parse("int31", "\xFF")
+            ABI.parse("uint31", "\xFF")
+
+    def test_parse_valid_int0(self):
+        ret = ABI.parse("int8", "\x10"*32)
+        self.assertEqual(ret, 0x10)
+
+    def test_parse_valid_int1(self):
+        ret = ABI.parse("int", "\x10".ljust(32, '\0'))
+        self.assertEqual(ret, 1 << 252)
+
+    def test_parse_valid_int2(self):
+        ret = ABI.parse("int40", "\x40\x00\x00\x00\x00".rjust(32, '\0'))
+        self.assertEqual(ret, 1 << 38)
+
+    def test_valid_uint(self):
+        data = "\xFF"*32
+
+        parsed = ABI.parse('uint', data)
+        self.assertEqual(parsed, 2**256 - 1)
+
+        for i in range(8, 257, 8):
+            parsed = ABI.parse('uint{}'.format(i), data)
+            self.assertEqual(parsed, 2**i - 1)
+
+    def test_empty_types(self):
+        name, args = ABI.parse('func()', '\0'*32)
+        self.assertEqual(name, 'func')
+        self.assertEqual(args, tuple())
+
+    def test_function_type(self):
+        # setup ABI for function with one function param
+        func_name = 'func'
+        spec = func_name+'(function)'
+        func_id = ABI.make_function_id(spec)
+        # build bytes24 data for function value (address+selector)
+        # calls member id lookup on 'Ethereum Foundation Tip Box' (see https://www.ethereum.org/donate)
+        address = ''.join(ABI.serialize_uint(0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359, 20))
+        selector = ABI.make_function_id('memberId(address)')
+        function_ref_data = address + selector
+        # build tx call data
+        call_data = ''.join([
+            func_id,
+            function_ref_data,
+            '\0'*8
+        ])
+        name, args = ABI.parse(spec, call_data)
+        self.assertEqual(name, func_name)
+        self.assertEqual(args, (function_ref_data,))
+
+
 class EthTests(unittest.TestCase):
     def test_emit_did_execute_end_instructions(self):
+        """
+        Tests whether the did_evm_execute_instruction event is fired for instructions that internally trigger
+        an exception
+        """
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
                 if instruction.semantics in ('REVERT', 'STOP'):
@@ -207,3 +366,32 @@ class EthHelpersTest(unittest.TestCase):
         inner_func(None, self.bv, 123)
 
 
+class EthSolidityCompilerTest(unittest.TestCase):
+    def test_run_solc(self):
+        source_a = '''
+        import "./B.sol";
+        contract A {
+            function callB(B _b) public { _b.fromA(); }
+            function fromB() public { revert(); }
+        }
+        '''
+        source_b = '''
+        import "./A.sol";
+        contract B {
+            function callA(A _a) public { _a.fromB(); }
+            function fromA() public { revert(); }
+        }
+        '''
+        d = tempfile.mkdtemp()
+        try:
+            with open(os.path.join(d, 'A.sol'), 'w') as a, open(os.path.join(d, 'B.sol'), 'w') as b:
+                a.write(source_a)
+                a.flush()
+                b.write(source_b)
+                b.flush()
+                output, warnings = ManticoreEVM._run_solc(a)
+                source_list = output.get('sourceList', [])
+                self.assertIn(a.name, source_list)
+                self.assertIn(b.name, source_list)
+        finally:
+            shutil.rmtree(d)

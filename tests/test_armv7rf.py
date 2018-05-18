@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 from manticore.core.cpu.arm import Armv7RegisterFile as RF
@@ -29,7 +30,11 @@ class Armv7RFTest(unittest.TestCase):
         self.assertEqual(self.r.read('APSR_Z'), False)
 
     def test_bad_reg_name(self):
-        with self.assertRaises(AssertionError):
+        if __debug__:
+            exception = AssertionError
+        else:
+            exception = KeyError
+        with self.assertRaises(exception):
             nonexistant_reg = "Pc"
             self.r.read(nonexistant_reg)
 
