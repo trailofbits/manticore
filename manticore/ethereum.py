@@ -1012,7 +1012,7 @@ class ManticoreEVM(Manticore):
     def last_return(self, state_id=None):
         ''' Last returned buffer for state `state_id` '''
         state = self.load(state_id)
-        return state.platform.last_return
+        return state.platform.last_return_data
 
     def transactions(self, state_id=None):
         ''' Transactions list for state `state_id` '''
@@ -1740,6 +1740,41 @@ class ManticoreEVM(Manticore):
                     for o in sorted(visited):
                         f.write('0x%x\n' % o)
 
+        # move running states to final states list
+        # and generate a testcase for each
+        q = Queue()
+        map(q.put, self.running_state_ids)
+
+        def f(q):
+            try:
+                while True:
+                    state_id = q.get_nowait()
+                    self.terminate_state_id(state_id)
+            except EmptyQueue:
+                pass
+
+        ps = []
+
+        for _ in range(self._config_procs):
+            p = Process(target=f, args=(q,))
+            p.start()
+            ps.append(p)
+
+        for p in ps:
+            p.join()
+
+        # delete actual streams from storage
+        for state_id in self.all_state_ids:
+            # state_id -1 is always only on memory
+            if state_id != -1:
+                self._executor._workspace.rm_state(state_id)
+
+        # clean up lists
+        with self.locked_context('seth') as seth_context:
+            seth_context['_saved_states'] = []
+        with self.locked_context('seth') as seth_context:
+            seth_context['_final_states'] = []
+
         logger.info("Results in %s", self.workspace)
 
     def global_coverage(self, account_address):
@@ -1757,15 +1792,9 @@ class ManticoreEVM(Manticore):
 
         with self.locked_context('runtime_coverage') as coverage:
             seen = coverage
-        runtime_bytecode = self.get_metadata(account_address).runtime_bytecode
 
-        count, total = 0, 0
-        for i in evm.EVMAsm.disassemble_all(runtime_bytecode):
-            if (account_address, i.offset) in seen:
-                count += 1
-            total += 1
-
-        return count * 100.0 / total
+        runtime_bytecode = world.get_code(account_address)
+        return calculate_coverage(runtime_bytecode, seen)
 
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
     # We suppress because otherwise we log it many times and it looks weird.

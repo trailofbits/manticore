@@ -1,4 +1,4 @@
-from manticore.ethereum import ManticoreEVM
+from manticore.ethereum import ManticoreEVM, evm
 ################ Script #######################
 
 m = ManticoreEVM()
@@ -32,6 +32,7 @@ print source_code
 
 symbolic_data = m.SByte(16) 
 symbolic_value = m.SValue()
+
 m.transaction(caller=user_account,
                 address=contract_account,
                 data=symbolic_data,

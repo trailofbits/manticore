@@ -1280,6 +1280,12 @@ class Linux(Platform):
 
         return len(data)
 
+    def sys_fork(self):
+        '''
+        We don't support forking, but do return a valid error code to client binary.
+        '''
+        return -errno.ENOSYS
+
     def sys_access(self, buf, mode):
         '''
         Checks real user's permissions for a file
@@ -1556,6 +1562,25 @@ class Linux(Platform):
         self.files[newfd] = self.files[fd]
 
         return newfd
+
+    def sys_chroot(self, path):
+        '''
+        An implementation of chroot that does perform some basic error checking,
+        but does not actually chroot.
+
+        :param path: Path to chroot
+        '''
+        if path not in self.current.memory:
+            return -errno.EFAULT
+
+        path_s = self.current.read_string(path)
+        if not os.path.exists(path_s):
+            return -errno.ENOENT
+
+        if not os.path.isdir(path_s):
+            return -errno.ENOTDIR
+
+        return -errno.EPERM
 
     def sys_close(self, fd):
         '''
