@@ -35,6 +35,8 @@ Install and try Manticore in a few shell commands (see an [asciinema](https://as
 sudo apt-get update && sudo apt-get install python-pip -y
 
 # Install manticore and its dependencies
+# Note you can pass --process-dependency-links flag to pip to install capstone from its latest next branch
+# (which can help if you are experiencing errors and unexpected "invalid memory access" testcases)
 sudo pip2 install manticore
 
 # Download and build the examples
