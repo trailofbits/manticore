@@ -2338,7 +2338,7 @@ class Linux(Platform):
 
         bufstat = add(8, stat.st_dev)        # unsigned long long      st_dev;
         bufstat += add(4, 0)                  # unsigned char   __pad0[4];
-        bufstat += add(4, stat.st_ino)        # unsigned long   __st_ino;
+        bufstat += add(8, stat.st_ino)        # unsigned long   __st_ino;
         bufstat += add(4, stat.st_mode)       # unsigned int    st_mode;
         bufstat += add(4, stat.st_nlink)      # unsigned int    st_nlink;
         bufstat += add(4, stat.st_uid)        # unsigned long   st_uid;
