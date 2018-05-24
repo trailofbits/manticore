@@ -10,6 +10,10 @@ pragma solidity ^0.4.13;
 contract NoDistpatcher {
     event Log(string);
 
+    function  named_func(uint x) returns (uint) {
+    return 5 + x;
+    }
+
     function() payable {
         if (msg.data[0] == 'A') {
             Log("Got an A");
@@ -20,19 +24,14 @@ contract NoDistpatcher {
     } 
 }
 '''
-init_bytecode = m.compile(source_code)
 
 user_account = m.create_account(balance=1000)
 print "[+] Creating a user account", user_account
 
-print "[+] Init bytecode:", init_bytecode.encode('hex')
-print "[+] EVM init assembler:"
-for instr in evm.EVMAsm.disassemble_all(init_bytecode[:-44]):
-    print hex(instr.offset), instr
 
-contract_account = m.create_contract(owner=user_account,
-                                        init=init_bytecode)
+contract_account = m.solidity_create_contract(source_code, owner=user_account)
 print "[+] Creating a contract account", contract_account
+contract_account.named_func(1)
 
 print "[+] Now the symbolic values"
 symbolic_data = m.make_symbolic_buffer(320) 

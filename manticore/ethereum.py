@@ -577,7 +577,6 @@ class EVMAccount(object):
         self._m = m
         self._address = address
         self._hashes = None
-        self._init_hashes()
 
     def add_function(self, signature):
         func_id = ABI.make_function_id(signature)
@@ -701,12 +700,12 @@ class ManticoreEVM(Manticore):
         return ABI.SValue
 
     @staticmethod
-    def compile(source_code, contract_name=None, libraries=None):
+    def compile(source_code, contract_name=None, libraries=None, runtime=False):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
+        name, source_code, init_bytecode, runtime_bytecode, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
         if runtime:
             return runtime_bytecode
-        return bytecode
+        return init_bytecode
 
     @staticmethod
     def _link(bytecode, libraries=None):
@@ -1035,7 +1034,6 @@ class ManticoreEVM(Manticore):
             :param tuple args: constructor arguments
             :rtype: EVMAccount
         '''
-
         if libraries is None:
             deps = {}
         else:
@@ -1050,7 +1048,6 @@ class ManticoreEVM(Manticore):
             try:
                 compile_results = self._compile(source_code, contract_name_i, libraries=deps)
                 init_bytecode = compile_results[2]
-
 
                 if contract_name_i == contract_name:
                     contract_account = self.create_contract(owner=owner,
@@ -1652,18 +1649,6 @@ class ManticoreEVM(Manticore):
         for p in ps:
             p.join()            
                 
-        #delete actual streams from storage
-        for state_id in self._all_state_ids:
-            #state_id -1 is always only on memory
-            if state_id != -1:
-                self._executor._workspace.rm_state(state_id)
-
-        # clean up lists
-        with self.locked_context('seth') as seth_context:
-            seth_context['_saved_states'] = []
-        with self.locked_context('seth') as seth_context:
-            seth_context['_final_states'] = []
-
         #global summary
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
@@ -1745,13 +1730,13 @@ class ManticoreEVM(Manticore):
         # move running states to final states list
         # and generate a testcase for each
         q = Queue()
-        map(q.put, self.running_state_ids)
+        map(q.put, self._running_state_ids)
 
         def f(q):
             try:
                 while True:
                     state_id = q.get_nowait()
-                    self.terminate_state_id(state_id)
+                    self._terminate_state_id(state_id)
             except EmptyQueue:
                 pass
 
@@ -1766,7 +1751,7 @@ class ManticoreEVM(Manticore):
             p.join()
 
         # delete actual streams from storage
-        for state_id in self.all_state_ids:
+        for state_id in self._all_state_ids:
             # state_id -1 is always only on memory
             if state_id != -1:
                 self._executor._workspace.rm_state(state_id)
@@ -1779,13 +1764,26 @@ class ManticoreEVM(Manticore):
 
         logger.info("Results in %s", self.workspace)
 
+        #delete actual streams from storage
+        for state_id in self._all_state_ids:
+            #state_id -1 is always only on memory
+            if state_id != -1:
+                self._executor._workspace.rm_state(state_id)
+
+        # clean up lists
+        with self.locked_context('seth') as seth_context:
+            seth_context['_saved_states'] = []
+        with self.locked_context('seth') as seth_context:
+            seth_context['_final_states'] = []
+
+
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
             This sums up all the visited code lines from any of the explored
             states.
         '''
         account_address = int(account_address)
-
+        runtime_bytecode = None
         #Search one state in which the account_address exists
         for state in self.all_states:
             world = state.platform
