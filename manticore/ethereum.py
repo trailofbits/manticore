@@ -1790,12 +1790,13 @@ class ManticoreEVM(Manticore):
         for state in self.all_states:
             world = state.platform
             if account_address in world:
+                code = world.get_code(account_address)
+                runtime_bytecode = state.solve_one(code)
                 break
 
         with self.locked_context('runtime_coverage') as coverage:
             seen = coverage
 
-        runtime_bytecode = world.get_code(account_address)
         return calculate_coverage(runtime_bytecode, seen)
 
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback

@@ -403,7 +403,7 @@ class ArithmeticSimplifier(Visitor):
                                      begining, expression.size, taint=expression.taint)
         if isinstance(op, (BitVecAnd, BitVecOr, BitVecXor)):
             bitoperand_a, bitoperand_b = op.operands
-            return op.__class__(BitVecExtract(bitoperand_a, begining, size), BitVecExtract(bitoperand_b, begining, size), taint=expression.taint)
+            return op.__class__(BitVecExtract(bitoperand_a, begining, expression.size), BitVecExtract(bitoperand_b, begining, expression.size), taint=expression.taint)
 
     def visit_BitVecAdd(self, expression, *operands):
         ''' a + 0  ==> a
