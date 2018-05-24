@@ -2095,7 +2095,7 @@ class EVMWorld(Platform):
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3',
                          'open_transaction', 'close_transaction'}
 
-    def __init__(self, constraints, storage=None, **kwargs):
+    def __init__(self, constraints, storage=None, initial_block_number=None, _initial_timestamp=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
@@ -2105,6 +2105,18 @@ class EVMWorld(Platform):
         self._sha3 = {}
         self._pending_transaction = None
         self._transactions = list()
+
+        if _initial_block_number is None:
+            #assume initial symbolic block
+            _initial_block_number = constraints.new_bitvec(256, "BLOCKNUMBER")
+        self._initial_block_number = _initial_block_number
+        if _initial_timestamp is None:
+            #1524785992; // Thu Apr 26 23:39:52 UTC 2018
+            _initial_timestamp = constraints.new_bitvec(256, "TIMESTAMP")
+            constrants.add(Operators.UGT(_initial_timestamp, 1000000000))
+            constrants.add(Operators.ULT(_initial_timestamp, 3000000000))
+        self._initial_timestamp = _initial_timestamp
+
         self._do_events()
         '''
         for var_i in range(5):
@@ -2127,6 +2139,8 @@ class EVMWorld(Platform):
         state['callstack'] = self._callstack
         state['deleted_accounts'] = self._deleted_accounts
         state['transactions'] = self._transactions
+        state['initial_block_number'] = self._initial_block_number
+        state['_initial_timestamp'] = self._initial_timestamp
         return state
 
     def __setstate__(self, state):
@@ -2139,6 +2153,8 @@ class EVMWorld(Platform):
         self._logs = state['logs']
         self._callstack = state['callstack']
         self._transactions = state['transactions']
+        self._initial_block_number = state['initial_block_number']
+        self._initial_timestamp = state['_initial_timestamp']
         self._do_events()
 
     def _do_events(self):
@@ -2406,10 +2422,10 @@ class EVMWorld(Platform):
         return 0
 
     def block_timestamp(self):
-        return 0
+        return self._initial_timestamp + len(self.human_transactions)
 
     def block_number(self):
-        return 0
+        return self._initial_block_number + len(self.human_transactions)
 
     def block_difficulty(self):
         return 0
