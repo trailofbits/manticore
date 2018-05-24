@@ -2095,7 +2095,7 @@ class EVMWorld(Platform):
                          'decode_instruction', 'execute_instruction', 'concrete_sha3', 'symbolic_sha3',
                          'open_transaction', 'close_transaction'}
 
-    def __init__(self, constraints, storage=None, initial_block_number=None, _initial_timestamp=None, **kwargs):
+    def __init__(self, constraints, storage=None, initial_block_number=None, initial_timestamp=None, **kwargs):
         super(EVMWorld, self).__init__(path="NOPATH", **kwargs)
         self._world_state = {} if storage is None else storage
         self._constraints = constraints
@@ -2106,16 +2106,16 @@ class EVMWorld(Platform):
         self._pending_transaction = None
         self._transactions = list()
 
-        if _initial_block_number is None:
+        if initial_block_number is None:
             #assume initial symbolic block
-            _initial_block_number = constraints.new_bitvec(256, "BLOCKNUMBER")
-        self._initial_block_number = _initial_block_number
-        if _initial_timestamp is None:
+            initial_block_number = constraints.new_bitvec(256, "BLOCKNUMBER")
+        self._initial_block_number = initial_block_number
+        if initial_timestamp is None:
             #1524785992; // Thu Apr 26 23:39:52 UTC 2018
-            _initial_timestamp = constraints.new_bitvec(256, "TIMESTAMP")
-            constrants.add(Operators.UGT(_initial_timestamp, 1000000000))
-            constrants.add(Operators.ULT(_initial_timestamp, 3000000000))
-        self._initial_timestamp = _initial_timestamp
+            initial_timestamp = constraints.new_bitvec(256, "TIMESTAMP")
+            constraints.add(Operators.UGT(initial_timestamp, 1000000000))
+            constraints.add(Operators.ULT(initial_timestamp, 3000000000))
+        self._initial_timestamp = initial_timestamp
 
         self._do_events()
         '''
