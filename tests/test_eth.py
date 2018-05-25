@@ -424,7 +424,11 @@ class EthHelpersTest(unittest.TestCase):
             return a, b
 
         with self.assertRaises(ConcretizeStack) as cm:
-            inner_func(None, self.bv, 34)
+            try :
+                print inner_func(None, self.bv, 34)
+            except Exception as e:
+                print e
+                raise
 
         self.assertEquals(cm.exception.pos, 1)
         self.assertEquals(cm.exception.policy, policy)
@@ -479,7 +483,7 @@ class EthSolidityCompilerTest(unittest.TestCase):
                 b.flush()
                 output, warnings = ManticoreEVM._run_solc(a)
                 source_list = output.get('sourceList', [])
-                self.assertIn(a.name, source_list)
-                self.assertIn(b.name, source_list)
+                self.assertIn(os.path.split(a.name)[-1], source_list)
+                self.assertIn(os.path.split(b.name)[-1], source_list)
         finally:
             shutil.rmtree(d)
