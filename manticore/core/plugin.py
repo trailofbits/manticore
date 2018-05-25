@@ -313,7 +313,7 @@ class FilterFunctions(Plugin):
             #Get metadata if any for the targe addreess of current tx
             md = self.manticore.get_metadata(tx.address)
             if md is None:
-                resturn
+                return
             #Lets compile  the list of interesting hashes
             selected_functions = []
 
