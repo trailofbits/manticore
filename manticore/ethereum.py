@@ -589,6 +589,17 @@ class EVMAccount(object):
 
         return object.__getattribute__(self, name)
 
+def pack32(val):
+    """
+    Pack an integer into a big endian 32 byte str
+
+    :param int val:
+    :return: big endian 32 byte str
+    :rtype: str
+    """
+
+    return "{:064x}".format(val).decode('hex')
+
 
 class ManticoreEVM(Manticore):
     ''' Manticore EVM manager
@@ -1196,6 +1207,8 @@ class ManticoreEVM(Manticore):
                     if data[i] is not None:
                         symbolic_data[i] = data[i]
                 data = symbolic_data
+
+        
         if ty == 'CALL':
             world.transaction(address=address, caller=caller, data=data, value=value)
         else:
@@ -1246,6 +1259,78 @@ class ManticoreEVM(Manticore):
     @property
     def workspace(self):
         return self._executor._workspace._store.uri
+
+    @staticmethod
+    def _concretize_offsets_and_sizes(state, signature, data):
+        """
+        Checks if there are dynamically sized arguments encoded in the data and apply additional state
+        constraints and concretizations to make this more tractable for the solver. Concretizes the 1. fields
+        for offsets to arg data and 2. fields for length of the individual arguments. Evenly divides the
+        available space in data among all the arguments.
+
+        :param state:
+        :param str signature: type spec of the arguments encoded in `data`
+        :param data: transaction data
+        :type data: str or Array Expression
+        """
+        is_multiple, func_name, types = ABI.parse_type_spec(signature)
+        dyn_arguments = []
+        for pos, t in enumerate(types):
+            dynamic = t in ('bytes', 'string') or t.endswith(']')
+            if dynamic:
+                dyn_arguments.append(pos)
+
+        number_dyn_arguments = len(dyn_arguments)
+        if not number_dyn_arguments:
+            return
+        free_pointer = 4 + len(types)*32
+        space_for_all_size_fields = number_dyn_arguments * 32
+
+        # TODO FIXME (mark) what if space_for_arg_data or space_for_each_arg ends up being zero?
+        space_for_arg_data = len(data) - free_pointer - space_for_all_size_fields
+
+
+        #
+        # This will try certain partition of the data into arguments.
+        # It may generate an unsolvable core. Other feasible partitions may exist.
+        #
+
+        # space_for_each_arg needs to be a multiple of 32, as required by the ABI. so if the math didn't work
+        # out cleanly, we force it, and round it down to the next multiple of 32. this does waste some space,
+        # meaning not every byte in the data will correspond to an argument.
+
+        space_for_each_arg = (space_for_arg_data/number_dyn_arguments)
+        space_for_each_arg_aligned = space_for_each_arg & (~0x1f)
+
+        for index in dyn_arguments:
+            # Constrain/concretize the argument's head element, which can be calculated based on the number
+            # of dynamic arguments in the type spec, as the length of the data
+            arg_head_element_offset = 4 + index * 32
+            offset_to_arg_data = ABI.get_uint(data, 32, arg_head_element_offset)
+
+            concrete_offset_to_arg_data = free_pointer - 4
+            state.constrain(offset_to_arg_data == concrete_offset_to_arg_data)
+            data[arg_head_element_offset:arg_head_element_offset + 32] = pack32(concrete_offset_to_arg_data)
+
+            # Constrain/concretize the argument's size field, which we calculate based on the number of
+            # dynamic arguments and the total amount of space they all share
+            number_of_elements_in_arg = ABI.get_uint(data, 32, free_pointer)
+
+            # FIXME TODO (mark) i'm not sure that the encoding for bytes and string is identical, this could
+            # be buggy for string
+            typ = types[index]
+            if typ not in ('bytes', 'string'):
+                element_size = 32
+            else:
+                element_size = 1
+
+            concrete_number_of_elements_in_arg = space_for_each_arg_aligned/element_size
+            state.constrain(number_of_elements_in_arg == concrete_number_of_elements_in_arg)
+            data[free_pointer:free_pointer + 32]= pack32(concrete_number_of_elements_in_arg)
+
+            #free_pointer points to the first unused byte in the dynamic argument area
+            free_pointer += 32 + space_for_each_arg_aligned
+
 
     def generate_testcase(self, state, name, message=''):
         self._generate_testcase_callback(state, name, message)
@@ -1341,6 +1426,10 @@ class ManticoreEVM(Manticore):
                         function_id = tx.data[:4]  # hope there is enough data
                         function_id = state.solve_one(function_id).encode('hex')
                         signature = metadata.get_func_signature(function_id)
+
+
+
+                        self._concretize_offsets_and_sizes(state, signature, tx.data)
                         function_name, arguments = ABI.parse(signature, tx.data)
 
                         return_data = None
@@ -1349,9 +1438,21 @@ class ManticoreEVM(Manticore):
                             return_data = ABI.parse(ret_types, tx.return_data)  # function return
 
                         tx_summary.write('\n')
-                        tx_summary.write("Function call:\n")
-                        tx_summary.write("%s(" % state.solve_one(function_name))
-                        tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
+                        tx_summary.write( "Function call:\n")
+                        tx_summary.write("%s(" % state.solve_one(function_name ))
+
+                        for argument in arguments:
+                            if isinstance(argument, (list, tuple)):
+                                tx_summary.write('{')
+                                tx_summary.write( ','.join(map(repr, map(state.solve_one, argument))))
+                                tx_summary.write('}')
+                            else:
+                                tx_summary.write(repr( state.solve_one( argument)))
+                            if not argument is arguments[-1]:
+                                tx_summary.write(', ')
+                            else:
+                                tx_summary.write('\n')
+
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
                         tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))

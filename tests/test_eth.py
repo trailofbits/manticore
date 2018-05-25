@@ -78,6 +78,9 @@ class EthDetectorsTest(unittest.TestCase):
 class EthAbiTests(unittest.TestCase):
     _multiprocess_can_split = True
 
+    def setUp(self):
+        self.state = make_mock_evm_state()
+
     @staticmethod
     def _pack_int_to_32(x):
         return '\x00' * 28 + struct.pack('>I', x)
@@ -160,6 +163,76 @@ class EthAbiTests(unittest.TestCase):
         funcname, dynargs = ABI.parse(type_spec='func(bytes,address[])', data=d)
         self.assertEqual(funcname, 'func')
         self.assertEqual(dynargs, ('h'*50, [1, 1, 2, 2, 3, 3]))
+
+    def test_concretize_dyn_args(self):
+        sig = 'func(address[],address[])'
+
+        funchash_sz = 4
+        head_element_sz = 32
+        nelements_sz = 32
+        each_data_sz = 32*2
+        data_space = each_data_sz*2  # my choice, choosing to give 2 elements to each array
+        total_tx_data_size = funchash_sz + head_element_sz*2  + nelements_sz*2 + data_space
+
+        dat = self.state.new_symbolic_buffer(total_tx_data_size)
+        ManticoreEVM._concretize_offsets_and_sizes(self.state, sig, dat)
+
+        head1 = ABI.get_uint(dat, 32, funchash_sz)
+        nelements1 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2)
+        head2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz)
+        nelements2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2 + nelements_sz + each_data_sz)
+
+        self.assertTrue(self.state.must_be_true(head1 == head_element_sz*2))
+        self.assertTrue(self.state.must_be_true(nelements1 == 2))
+        self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
+        self.assertTrue(self.state.must_be_true(nelements2 == 2))
+
+    def test_concretize_dyn_args_odd_len(self):
+        sig = 'func(address[],address[])'
+
+        funchash_sz = 4
+        head_element_sz = 32
+        nelements_sz = 32
+        each_data_sz = 32*2
+        odd_len_amount = 3  # purposefully make the len of tx data a weird number
+        data_space = each_data_sz*2 + odd_len_amount  # my choice, choosing to give 2 elements to each array
+        total_tx_data_size = funchash_sz + head_element_sz*2  + nelements_sz*2 + data_space
+
+        dat = self.state.new_symbolic_buffer(total_tx_data_size)
+        ManticoreEVM._concretize_offsets_and_sizes(self.state, sig, dat)
+
+        head1 = ABI.get_uint(dat, 32, funchash_sz)
+        nelements1 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2)
+        head2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz)
+        nelements2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2 + nelements_sz + each_data_sz)
+
+        self.assertTrue(self.state.must_be_true(head1 == head_element_sz*2))
+        self.assertTrue(self.state.must_be_true(nelements1 == 2))
+        self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
+        self.assertTrue(self.state.must_be_true(nelements2 == 2))
+
+    def test_concretize_dyn_args_bytes(self):
+        sig = 'func(address[],bytes)'
+
+        funchash_sz = 4
+        head_element_sz = 32
+        nelements_sz = 32
+        each_data_sz = 32*2
+        data_space = each_data_sz*2  # my choice, choosing to give 2 elements to each array
+        total_tx_data_size = funchash_sz + head_element_sz*2  + nelements_sz*2 + data_space
+
+        dat = self.state.new_symbolic_buffer(total_tx_data_size)
+        ManticoreEVM._concretize_offsets_and_sizes(self.state, sig, dat)
+
+        head1 = ABI.get_uint(dat, 32, funchash_sz)
+        nelements1 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2)
+        head2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz)
+        nelements2 = ABI.get_uint(dat, 32, funchash_sz + head_element_sz*2 + nelements_sz + each_data_sz)
+
+        self.assertTrue(self.state.must_be_true(head1 == head_element_sz*2))
+        self.assertTrue(self.state.must_be_true(nelements1 == 2))
+        self.assertTrue(self.state.must_be_true(head2 == head_element_sz*2 + nelements_sz + each_data_sz))
+        self.assertTrue(self.state.must_be_true(nelements2 == 64))
 
     def test_parse_invalid_int(self):
         with self.assertRaises(EthereumError):
