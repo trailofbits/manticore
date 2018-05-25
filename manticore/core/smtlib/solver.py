@@ -127,7 +127,7 @@ class Z3Solver(Solver):
         if self.version >= Version(4, 5, 0):
             self.support_maximize = True
             self.support_minimize = True
-            self.support_reset = True
+            self.support_reset = False
         elif self.version >= Version(4, 4, 1):
             self.support_maximize = True
             self.support_minimize = True
