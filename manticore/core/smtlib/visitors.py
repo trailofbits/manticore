@@ -549,7 +549,6 @@ def to_constant(expression):
     return value
 
 
-
 @lru_cache(maxsize=128)
 def simplify(expression):
     expression = constant_folder(expression)

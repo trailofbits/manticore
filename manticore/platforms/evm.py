@@ -944,18 +944,18 @@ def concretized_args(**policies):
                 # index is 0-indexed, but ConcretizeStack is 1-indexed. However, this is correct
                 # since implementation method is always a bound method (self is param 0)
                 index = spec.args.index(arg)
-                if issymbolic(args[index]):
-                    if policy:
-                        if policy == "ACCOUNTS":
-                            #special handler for EVM only policy
-                            cond = args[index] == 0
-                            for known_account in args[0].world.accounts:
-                                cond = Operators.OR(args[index] == known_account, cond)
-                                args[0].constraints.add(cond)
-                                raise ConcretizeStack(index, policy='ALL')
-                        raise ConcretizeStack(index, policy=policy)
-                    else:
-                        raise ConcretizeStack(index)
+                if not issymbolic(args[index]):
+                    continue
+                if not policy:
+                    raise ConcretizeStack(index)
+                if policy == "ACCOUNTS":
+                    #special handler for EVM only policy
+                    cond = args[index] == 0
+                    self = args[0]
+                    for known_account in self.world.accounts:
+                        cond = Operators.OR(args[index] == known_account, cond)
+                        self.constraints.add(cond)
+                    raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
         return wrapper
     return concretizer
