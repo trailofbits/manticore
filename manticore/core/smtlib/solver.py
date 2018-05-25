@@ -135,7 +135,7 @@ class Z3Solver(Solver):
         else:
             logger.debug(' Please install Z3 4.4.1 or newer to get optimization support')
 
-        self._command = 'z3 -t:240000 -smt2 -in'
+        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
