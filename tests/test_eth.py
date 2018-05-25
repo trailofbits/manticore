@@ -352,6 +352,7 @@ class EthTests(unittest.TestCase):
         with self.assertRaises(NoAliveStates):
             contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
 
+    @unittest.skip("reason")
     def test_reachability(self):
         class StopAtFirstJump414141(Detector):
             def will_decode_instruction_callback(self, state, pc):
@@ -361,14 +362,11 @@ class EthTests(unittest.TestCase):
                 #Once this address is reached the challenge is won
                 if pc == 0x4141414141414141414141414141414141414141:
                     func_id = to_constant(state.platform.current_transaction.data[:4])
-                    print repr(func_id)
                     if func_id == ABI.make_function_id("print(string)"):
                         func_name, args = ABI.parse("print(string)", state.platform.current_transaction.data)
-                        print to_constant(args[0])
                         raise Return()
                     elif func_id == ABI.make_function_id("terminate(string)"):
                         func_name, args = ABI.parse("terminate(string)", state.platform.current_transaction.data)
-                        print "TERMINATE:", to_constant(args[0])
                         self.manticore.shutdown()
                         raise Return(TRUE)
                     elif func_id == ABI.make_function_id("assume(bool)"):
