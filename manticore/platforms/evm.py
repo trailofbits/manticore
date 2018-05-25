@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 #fixme make it gobal using this https://docs.python.org/3/library/configparser.html
 #and save it at the workspace so results are reproducible
 config = namedtuple("config", "out_of_gas")
-config.out_of_gas = 1 #None # 0: default not enough gas, 1 default to always enough gas, 2: for on both
+config.out_of_gas = 1  # None # 0: default not enough gas, 1 default to always enough gas, 2: for on both
 
 # Auxiliar constants and functions
 TT256 = 2 ** 256
@@ -1222,8 +1222,8 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        if isinstance(fee, (int,long)):
-            if fee > (1<<512)-1:
+        if isinstance(fee, (int, long)):
+            if fee > (1 << 512) - 1:
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
