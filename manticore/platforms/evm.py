@@ -643,15 +643,18 @@ class EVMAsm(object):
         ''' Decode a single instruction from a bytecode
 
             :param bytecode: the bytecode stream
+            :type bytecode: bytearray or str
             :param offset: offset of the instruction in the bytecode(optional)
             :type bytecode: iterator/sequence/str
             :return: an Instruction object
 
             Example use::
 
-                >>> print EVMAsm.assemble_one('PUSH1 0x10')
+                >>> print EVMAsm.disassemble_one('\x60\x10')
 
         '''
+        if isinstance(bytecode, str):
+            bytecode = bytearray(bytecode)
         bytecode = iter(bytecode)
         opcode = next(bytecode)
         assert isinstance(opcode, (int, long))
