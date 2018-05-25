@@ -101,12 +101,22 @@ class IntegerOverflow(Detector):
         if mnemonic == 'ADD':
             if self._can_add_overflow(state, result, *arguments):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+                if issymbolic(result):
+                    result._taint = result.taint | frozenset(("IOA",))
         elif mnemonic == 'MUL':
             if self._can_mul_overflow(state, result, *arguments):
                 self.add_finding(state, "Integer overflow at {} instruction".format(mnemonic))
+                if issymbolic(result):
+                    result._taint = result.taint | frozenset(("IOM",))
         elif mnemonic == 'SUB':
             if self._can_sub_underflow(state, *arguments):
                 self.add_finding(state, "Integer underflow at {} instruction".format(mnemonic))
+                if issymbolic(result):
+                    result._taint = result.taint | frozenset(("IU",))
+        if mnemonic == 'SSTORE':
+            for arg in arguments:
+                if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
+                   self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
 
 
 class UninitializedMemory(Detector):
@@ -162,6 +172,9 @@ def calculate_coverage(runtime_bytecode, seen):
             count += 1
         total += 1
 
+    if total == 0:
+        #No runtime_bytecode
+        return 0
     return count * 100.0 / total
 
 
@@ -1652,7 +1665,7 @@ class ManticoreEVM(Manticore):
         #global summary
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
-            global_summary.write("Global coverage:\n")
+            global_summary.write("Global runtime coverage:\n")
             for address in self.contract_accounts:
                 global_summary.write("%x: %d%%\n" % (address, self.global_coverage(address)))  # coverage % for address in this state
 

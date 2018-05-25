@@ -1,5 +1,5 @@
 from expression import *
-from ...utils.helpers import issymbolic
+from ...utils.helpers import issymbolic, istainted
 import math
 
 

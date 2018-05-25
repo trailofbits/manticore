@@ -267,7 +267,7 @@ class State(Eventful):
                     assert b != 0
         return data
 
-    def concretize(self, symbolic, policy, maxcount=1000):
+    def concretize(self, symbolic, policy, maxcount=5):
         ''' This finds a set of solutions for symbolic using policy.
             This raises TooManySolutions if more solutions than maxcount
         '''

@@ -1650,8 +1650,8 @@ class EVM(Eventful):
         self._allocate(self.safe_add(mem_offset, size))
 
         # slow debug check
-        if issymbolic(size):
-            assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
+        #if issymbolic(size):
+        #    assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
 
         self.constraints.add(size%32 == 0)
         self.constraints.add(Operators.ULT(size,  32*10))

@@ -21,7 +21,7 @@ import logging
 import re
 import time
 from visitors import *
-from ...utils.helpers import issymbolic, memoized
+from ...utils.helpers import issymbolic, istainted, memoized
 import collections
 
 logger = logging.getLogger(__name__)
