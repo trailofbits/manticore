@@ -2482,7 +2482,7 @@ class EVMWorld(Platform):
             pass
         except EndTx as ex:
             if ex.is_rollback():
-                self.world.send_funds(self.address, self.caller, self.value)
+                self.send_funds(self.address, self.caller, self.value)
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
     def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
