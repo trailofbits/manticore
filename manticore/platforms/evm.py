@@ -652,6 +652,8 @@ class EVMAsm(object):
                 >>> print EVMAsm.assemble_one('PUSH1 0x10')
 
         '''
+        if isinstance(bytecode, str):
+            bytecode = bytearray(bytecode)
         bytecode = iter(bytecode)
         opcode = next(bytecode)
         assert isinstance(opcode, (int, long))
