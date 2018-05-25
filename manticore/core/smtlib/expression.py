@@ -1,5 +1,6 @@
 from functools import reduce
 
+
 class Expression(object):
     ''' Abstract taintable Expression. '''
 
@@ -138,7 +139,7 @@ class BoolConstant(Bool, Constant):
 
     def __nonzero__(self):
         return self.value
-        
+
 
 class BoolOperation(Operation, Bool):
     def __init__(self, *operands, **kwargs):
@@ -560,7 +561,7 @@ class Array(Expression):
             for pos, byte in enumerate(possible_array):
                 arr = arr.store(pos, byte)
             return arr
-        raise ValueError #cast not implemented
+        raise ValueError  # cast not implemented
 
     def cast_index(self, index):
         if isinstance(index, (int, long)):
@@ -638,7 +639,7 @@ class Array(Expression):
     def write_BE(self, address, value, size):
         address = self.cast_index(address)
         value = BitVec(size * self.value_bits).cast(value)
-        array = self    
+        array = self
         for offset in xrange(size):
             array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
@@ -646,10 +647,11 @@ class Array(Expression):
     def write_LE(self, address, value, size):
         address = self.cast_index(address)
         value = BitVec(size * self.value_bits).cast(value)
-        array = self    
+        array = self
         for offset in reversed(xrange(size)):
             array = self.store(address + offset, BitVecExtract(value, (size - 1 - offset) * self.value_bits, self.value_bits))
         return array
+
 
 class ArrayVariable(Array, Variable):
     def __init__(self, index_bits, index_max, value_bits, name, *operands, **kwargs):
@@ -658,6 +660,7 @@ class ArrayVariable(Array, Variable):
     @property
     def declaration(self):
         return '(declare-fun %s () (Array (_ BitVec %d) (_ BitVec %d)))' % (self.name, self.index_bits, self.value_bits)
+
 
 class ArrayOperation(Array, Operation):
     def __init__(self, array, *operands, **kwargs):
@@ -688,11 +691,12 @@ class ArrayStore(ArrayOperation):
     def value(self):
         return self.operands[2]
 
+
 class ArraySlice(Array):
     def __init__(self, array, offset, size):
         if not isinstance(array, Array):
             raise ValueError("Array expected")
-        self._array = array 
+        self._array = array
         self._slice_offset = offset
         self._slice_size = size
 
@@ -725,17 +729,18 @@ class ArraySlice(Array):
         return self._array.taint
 
     def select(self, index):
-        return self._array.select(index+self._slice_offset)
+        return self._array.select(index + self._slice_offset)
 
     def store(self, index, value):
-        return self._array.store(index+self.slice_offset, value)
+        return self._array.store(index + self.slice_offset, value)
+
 
 class ArrayProxy(Array):
     def __init__(self, array):
         assert isinstance(array, Array)
         self._concrete_cache = {}
         self._written = None
-        if isinstance (array, ArrayProxy):
+        if isinstance(array, ArrayProxy):
             #copy constructor
             super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
             self._array = array._array
@@ -751,13 +756,13 @@ class ArrayProxy(Array):
         else:
             #arrayproxy for an prepopulated array
             super(ArrayProxy, self).__init__(array.index_bits, array.index_max, array.value_bits)
-            self._name = array.underlying_variable.name            
+            self._name = array.underlying_variable.name
             self._array = array
 
     @property
     def underlying_variable(self):
         return self._array.underlying_variable
-            
+
     @property
     def array(self):
         return self._array
@@ -866,7 +871,6 @@ class ArrayProxy(Array):
         else:
             self.store(index, value)
 
-
     def __getstate__(self):
         state = {}
         state['_array'] = self._array
@@ -883,7 +887,7 @@ class ArrayProxy(Array):
 
     def __copy__(self):
         return ArrayProxy(self)
-        
+
     @property
     def written(self):
         if self._written is None:
@@ -911,11 +915,12 @@ class ArrayProxy(Array):
     def get(self, index, default=0):
         value = self.select(index)
         if not isinstance(value, ArraySelect):
-            return value 
+            return value
         is_known = self.is_known(index)
         index = self.cast_index(index)
         default = self.cast_value(default)
         return BitVecITE(self._array.value_bits, is_known, value, default)
+
 
 class ArraySelect(BitVec, Operation):
     def __init__(self, array, index, *args, **kwargs):
@@ -974,4 +979,4 @@ class BitVecITE(BitVecOperation):
         assert isinstance(false_value, BitVec)
         assert true_value.size == size
         assert false_value.size == size
-        super(BitVecITE, self).__init__(size, condition, true_value, false_value, *args, **kwargs)  
+        super(BitVecITE, self).__init__(size, condition, true_value, false_value, *args, **kwargs)

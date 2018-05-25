@@ -346,7 +346,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
-        if isinstance(expr, (int,long)):
+        if isinstance(expr, (int, long)):
             return expr
         return self._solver.max(self._constraints, expr)
 
@@ -359,7 +359,7 @@ class State(Eventful):
         :return: Concrete value
         :rtype: list[int]
         '''
-        if isinstance(expr, (int,long)):
+        if isinstance(expr, (int, long)):
             return expr
         return self._solver.min(self._constraints, expr)
 

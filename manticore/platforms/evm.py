@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 #fixme make it gobal using this https://docs.python.org/3/library/configparser.html
 #and save it at the workspace so results are reproducible
 config = namedtuple("config", "out_of_gas")
-config.out_of_gas = None # 0: default not enough gas, 1 default to always enough gas, 2: for on both
+config.out_of_gas = None  # 0: default not enough gas, 1 default to always enough gas, 2: for on both
 
 # Auxiliar constants and functions
 TT256 = 2 ** 256
@@ -806,6 +806,7 @@ class Emulated(EVMException):
         super(Emulated, self).__init__("Emulated instruction")
         self.result = result
 
+
 class ConcretizeStack(EVMException):
     '''
     Raised when a symbolic memory cell needs to be concretized.
@@ -833,12 +834,13 @@ class StartTx(EVMException):
 
 class EndTx(EVMException):
     ''' The current transaction ends'''
+
     def __init__(self, result, data=None):
         if result not in {None, 'TXERROR', 'REVERT', 'RETURN', 'THROW', 'STOP', 'SELFDESTRUCT'}:
             raise EVMException('Invalid end transaction result')
         if result is None and data is not None:
             raise EVMException('Invalid end transaction result')
-        if not isinstance(data, (type(None), Array, bytearray)): 
+        if not isinstance(data, (type(None), Array, bytearray)):
             raise EVMException('Invalid end transaction data type')
 
         self.result = result
@@ -854,56 +856,66 @@ class EndTx(EVMException):
 
 class StackOverflow(EndTx):
     ''' Attemped to push more than 1024 items '''
+
     def __init__(self):
         super(StackOverflow, self).__init__('THROW')
 
 
 class StackUnderflow(EndTx):
     ''' Attemped to popo from an empty stack '''
+
     def __init__(self):
         super(StackUnderflow, self).__init__('THROW')
 
 
 class InvalidOpcode(EndTx):
     ''' Trying to execute invalid opcode '''
+
     def __init__(self):
         super(InvalidOpcode, self).__init__('THROW')
 
 
 class NotEnoughGas(EndTx):
     ''' Not enough gas for operation '''
+
     def __init__(self):
         super(NotEnoughGas, self).__init__('THROW')
 
 
 class Stop(EndTx):
     ''' Program reached a STOP instruction '''
+
     def __init__(self):
         super(Stop, self).__init__('STOP')
 
 
 class Return(EndTx):
     ''' Program reached a RETURN instruction '''
+
     def __init__(self, data=bytearray()):
         super(Return, self).__init__('RETURN', data)
 
 
 class Revert(EndTx):
     ''' Program reached a REVERT instruction '''
+
     def __init__(self, data):
         super(Revert, self).__init__('REVERT', data)
 
 
 class SelfDestruct(EndTx):
     ''' Program reached a SELFDESTRUCT instruction '''
+
     def __init__(self):
         super(SelfDestruct, self).__init__('SELFDESTRUCT')
 
 
 class TXError(EndTx):
     ''' A failed Transaction '''
+
     def __init__(self):
         super(TXError, self).__init__('TXERROR')
+
 
 def concretized_args(**policies):
     """
@@ -1029,7 +1041,7 @@ class EVM(Eventful):
             bytecode_symbolic[0:bytecode_size] = bytecode
             bytecode = bytecode_symbolic
 
-        #A no code VM is used to execute transactions to normal accounts. 
+        #A no code VM is used to execute transactions to normal accounts.
         #I'll execute a STOP and close the transaction
         #if len(bytecode) == 0:
         #    raise EVMException("Need code")
@@ -1180,7 +1192,7 @@ class EVM(Eventful):
 
             while True:
                 yield 0
-        instruction =  EVMAsm.disassemble_one(getcode(), offset=self.pc)
+        instruction = EVMAsm.disassemble_one(getcode(), offset=self.pc)
         _decoding_cache[self.pc] = instruction
         return instruction
 
@@ -1212,8 +1224,8 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-        if isinstance(fee, (int,long)):
-            if fee > (1<<256)-1:
+        if isinstance(fee, (int, long)):
+            if fee > (1 << 256) - 1:
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
@@ -1239,7 +1251,7 @@ class EVM(Eventful):
                     raise NotEnoughGas()
             else:
                 #fork on both options
-                if len(solver.get_all_values(self.constraints, self._gas > fee))==2:
+                if len(solver.get_all_values(self.constraints, self._gas > fee)) == 2:
                     raise Concretize("Concretice gas fee",
                                      expression=self._gas > fee,
                                      setstate=None,
@@ -1321,7 +1333,6 @@ class EVM(Eventful):
         arguments = self._pop_arguments()
         result = None
 
-
         ex = None
         try:
             if self._on_transaction is False:
@@ -1372,8 +1383,7 @@ class EVM(Eventful):
         if size == 0:
             return bytearray()
         self._allocate(offset + size)
-        return self.memory[offset: offset+size]
-
+        return self.memory[offset: offset + size]
 
     def write_buffer(self, offset, data):
         self._allocate(offset + len(data))
@@ -1585,7 +1595,7 @@ class EVM(Eventful):
         else:
             buf = ''.join(data)
             value = sha3.keccak_256(buf).hexdigest()
-            value = int('0x'+value, 0)
+            value = int('0x' + value, 0)
             self._publish('on_concrete_sha3', buf, value)
             logger.info("Found a concrete SHA3 example %r -> %x", buf, value)
             return value
@@ -1620,7 +1630,7 @@ class EVM(Eventful):
         bytes = []
         for i in range(32):
             try:
-                c = Operators.ITEBV(8, offset + i < data_length, self.data[offset+i], 0)
+                c = Operators.ITEBV(8, offset + i < data_length, self.data[offset + i], 0)
             except IndexError:
                 # offset + i is concrete and outside data
                 c = 0
@@ -1636,16 +1646,16 @@ class EVM(Eventful):
         a = Operators.ZEXTEND(a, 512)
         b = Operators.ZEXTEND(b, 512)
         result = a + b
-        self.constraints.add(Operators.UGE(result, 0 ))
-        self.constraints.add(Operators.ULT(result, 1<<256 ))
+        self.constraints.add(Operators.UGE(result, 0))
+        self.constraints.add(Operators.ULT(result, 1 << 256))
         return result
 
     def safe_mul(self, a, b):
         a = Operators.ZEXTEND(a, 512)
         b = Operators.ZEXTEND(b, 512)
         result = a * b
-        self.constraints.add(Operators.UGE(result, 0 ))
-        self.constraints.add(Operators.ULT(result, 1<<256 ))
+        self.constraints.add(Operators.UGE(result, 0))
+        self.constraints.add(Operators.ULT(result, 1 << 256))
         return result
 
     def CALLDATACOPY(self, mem_offset, data_offset, size):
@@ -1653,15 +1663,15 @@ class EVM(Eventful):
         GCOPY = 3             # cost to copy one 32 byte word
         old_gas = self.gas
 
-        self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31)/32))
+        self._consume(self.safe_mul(GCOPY, self.safe_add(size, 31) / 32))
         self._allocate(self.safe_add(mem_offset, size))
 
         # slow debug check
         #if issymbolic(size):
         #    assert not solver.can_be_true(self.constraints, Operators.UGT(self.gas, old_gas))
 
-        self.constraints.add(size%32 == 0)
-        self.constraints.add(Operators.ULT(size,  32*10))
+        self.constraints.add(size % 32 == 0)
+        self.constraints.add(Operators.ULT(size, 32 * 10))
         if issymbolic(size):
             raise ConcretizeStack(3, policy='SAMPLED')
 
@@ -1697,9 +1707,9 @@ class EVM(Eventful):
                     default = self._load(mem_offset + i)
 
             if issymbolic(code_offset):
-                value = Operators.ITEBV(256, code_offset+i >= len(self.bytecode), default, self.bytecode[code_offset + i])
+                value = Operators.ITEBV(256, code_offset + i >= len(self.bytecode), default, self.bytecode[code_offset + i])
             else:
-                if code_offset+i >= len(self.bytecode):
+                if code_offset + i >= len(self.bytecode):
                     value = default
                 else:
                     value = self.bytecode[code_offset + i]
@@ -1790,13 +1800,13 @@ class EVM(Eventful):
 
     def MLOAD(self, address):
         '''Load word from memory'''
-        self._allocate(address+32)
+        self._allocate(address + 32)
         value = self._load(address, 32)
         return value
 
     def MSTORE(self, address, value):
         '''Save word to memory'''
-        self._allocate(address+32)
+        self._allocate(address + 32)
         self._store(address, value, 32)
 
     def MSTORE8(self, address, value):
@@ -2138,6 +2148,7 @@ class EVMWorld(Platform):
                     value = int(sha3.keccak_256(data).hexdigest(), 16)
                     self._concrete_sha3_callback(data, value)
         '''
+
     def __getstate__(self):
         state = super(EVMWorld, self).__getstate__()
         state['sha3'] = self._sha3
@@ -2557,7 +2568,6 @@ class EVMWorld(Platform):
         if self._pending_transaction is None:
             return
         ty, address, origin, price, data, caller, value, bytecode, gas = self._pending_transaction
-
 
         failed = False
 
