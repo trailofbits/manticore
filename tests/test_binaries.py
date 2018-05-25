@@ -161,6 +161,9 @@ class IntegrationTest(unittest.TestCase):
         self._simple_cli_run('705.sol')
         os.chdir(old_cwd)
 
+    def test_eth_library(self):
+        self._simple_cli_run('simple_library.sol', contract='C')
+
     def test_basic_arm(self):
         dirname = os.path.dirname(__file__)
         filename = os.path.abspath(os.path.join(dirname, 'binaries/basic_linux_armv7'))

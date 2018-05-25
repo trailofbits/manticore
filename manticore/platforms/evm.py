@@ -1346,7 +1346,7 @@ class EVM(Eventful):
                              expression=expression,
                              setstate=setstate,
                              policy='ALL')
-
+        #print self
         self._publish('will_decode_instruction', self.pc)
         last_pc = self.pc
         current = self.instruction

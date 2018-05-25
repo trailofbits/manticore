@@ -17,6 +17,7 @@ import StringIO
 import cPickle as pickle
 from .core.plugin import Plugin
 from functools import reduce
+import binascii
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,12 @@ logger = logging.getLogger(__name__)
 
 class EthereumError(ManticoreError):
     pass
+
+
+class DependencyError(EthereumError):
+    def __init__(self, lib_names):
+        super(DependencyError, self).__init__("You must pre-load and provide libraries addresses {{libname:address, ...}} for {}".format(lib_names))
+        self.lib_names = lib_names
 
 
 class NoAliveStates(EthereumError):
@@ -652,10 +659,64 @@ class ManticoreEVM(Manticore):
         return ABI.SValue
 
     @staticmethod
-    def compile(source_code, contract_name=None):
+    def compile(source_code, contract_name=None, libraries=None):
         ''' Get initialization bytecode from a Solidity source code '''
-        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name)
+        name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings = ManticoreEVM._compile(source_code, contract_name, libraries)
         return bytecode
+
+    @staticmethod
+    def _find_placeholders(hex_contract):
+        """
+        Find placeholders like __/tmp/tmp_9k7_l:Manticore______________ in a hex
+        bytecode. 
+        :param hex_bytecode: hex string representation of the bytecode potentially containing library addresses placeholders
+        :return: A dictionary that matches library names to positions in the hex bytecode { library_name: [ pos0, pos1 .. ]}
+        """
+        deps = {}
+        pos = 0
+        while pos < len(hex_contract):
+            if hex_contract[pos] == ord('_'):
+                lib_placeholder = hex_contract[pos+2:pos + 40-2]
+                lib_name = lib_placeholder.strip('_')
+                try:
+                    lib_name = lib_name.split(':')[1]
+                except:
+                    pass
+                deps.setdefault(bytes(lib_name), []).append(pos)
+                pos += 40
+            else:
+                pos += 2
+        return deps
+
+    @staticmethod
+    def _link(bytecode, libraries=None):
+        """
+        Fill bytecode placeholders with library addresses.
+
+        From https://solidity.readthedocs.io/en/v0.4.21/contracts.html:
+        `If the addresses are not given as arguments to the compiler, the 
+        compiled hex code will contain placeholders of the form __Set______
+        (where Set is the name of the library). The address can be filled
+        manually by replacing all those 40 symbols by the hex encoding of 
+        the address of the library contract.`
+        """
+        has_dependencies = '_' in bytecode
+        hex_contract = bytearray(bytecode, 'utf-8')
+        if not has_dependencies:
+            return bytes(hex_contract)
+
+        deps = ManticoreEVM._find_placeholders(hex_contract)
+        if libraries is None:
+            raise DependencyError(deps.keys())
+        libraries = dict(libraries)
+        for lib_name, pos_lst in deps.items():
+            try:
+                lib_address = libraries[lib_name]
+            except KeyError:
+                raise DependencyError([lib_name])
+            for pos in pos_lst:
+                hex_contract[pos:pos + 40] = '{:040x}'.format(int(lib_address))
+        return bytes(hex_contract)
 
     @staticmethod
     def _run_solc(source_file):
@@ -695,11 +756,12 @@ class ManticoreEVM(Manticore):
                 raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
 
     @staticmethod
-    def _compile(source_code, contract_name):
+    def _compile(source_code, contract_name, libraries=None):
         """ Compile a Solidity contract, used internally
 
             :param source_code: solidity source as either a string or a file handle
             :param contract_name: a string with the name of the contract to analyze
+            :param libraries: an iterable of pairs (library_name, library_address) 
             :return: name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
         """
         try:
@@ -742,12 +804,13 @@ class ManticoreEVM(Manticore):
         if contract['bin'] == '':
             raise Exception('Solidity failed to compile your contract.')
 
-        bytecode = contract['bin'].decode('hex')
+        bytecode = binascii.unhexlify(ManticoreEVM._link(contract['bin'], libraries))
         srcmap = contract['srcmap'].split(';')
         srcmap_runtime = contract['srcmap-runtime'].split(';')
         hashes = contract['hashes']
         abi = json.loads(contract['abi'])
-        runtime = contract['bin-runtime'].decode('hex')
+        runtime = binascii.unhexlify(ManticoreEVM._link(contract['bin-runtime'], libraries))
+
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
 
     def __init__(self, procs=1, **kwargs):
@@ -909,7 +972,7 @@ class ManticoreEVM(Manticore):
         state = self.load(state_id)
         return state.platform.transactions
 
-    def solidity_create_contract(self, source_code, owner, contract_name=None, balance=0, address=None, args=()):
+    def solidity_create_contract(self, source_code, owner, contract_name=None, libraries=None, balance=0, address=None, args=()):
         ''' Creates a solidity contract
 
             :param str source_code: solidity source code
@@ -923,8 +986,10 @@ class ManticoreEVM(Manticore):
             :type address: int or EVMAccount
             :param tuple args: constructor arguments
             :rtype: EVMAccount
+            :param libraries: an iterable of pairs (library_name, library_address) 
+
         '''
-        compile_results = self._compile(source_code, contract_name)
+        compile_results = self._compile(source_code, contract_name, libraries=libraries)
         init_bytecode = compile_results[2]
 
         if address is None:
@@ -1026,9 +1091,21 @@ class ManticoreEVM(Manticore):
 
     def multi_tx_analysis(self, solidity_filename, contract_name=None, tx_limit=None, tx_use_coverage=True, tx_account="attacker"):
         owner_account = self.create_account(balance=1000)
-        with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account)
         attacker_account = self.create_account(balance=1000)
+
+        deps = {}
+        contract_names = [contract_name]
+        while contract_names:
+            contract_name = contract_names.pop()
+            try:
+                with open(solidity_filename) as f:
+                    contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, libraries=deps)
+                deps[contract_name] = contract_account
+            except DependencyError as e:
+                contract_names.append(contract_name)
+                for lib_name in e.lib_names:
+                    if lib_name not in deps:
+                        contract_names.append(lib_name)
 
         if tx_account == "attacker":
             tx_account = attacker_account
