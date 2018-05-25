@@ -125,7 +125,7 @@ class ConstraintSet(object):
             # FIXME
             # band aid hack around the fact that we are double declaring stuff :( :(
             if var.declaration in tmp:
-                logger.warning("Variable '%s' was copied twice somewhere", var.name)
+                #logger.warning("Variable '%s' was copied twice somewhere", var.name)
                 continue
             tmp.add(var.declaration)
             result += var.declaration + '\n'
