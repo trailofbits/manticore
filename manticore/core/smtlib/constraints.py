@@ -65,7 +65,7 @@ class ConstraintSet(object):
                 return
 
         self._constraints.append(constraint)
-        
+
     def _get_sid(self):
         ''' Returns an unique id. '''
         assert self._child is None
@@ -88,7 +88,7 @@ class ConstraintSet(object):
                         if constraint.value:
                             continue
                         else:
-                            related_constraints=set((constraint,))
+                            related_constraints = set((constraint,))
                             break
 
                     variables = get_variables(constraint)
@@ -108,7 +108,7 @@ class ConstraintSet(object):
         return related_variables, related_constraints
 
     def to_string(self, related_to=None, replace_constants=False):
-        replace_constants=True
+        replace_constants = True
         related_variables, related_constraints = self.__get_related(related_to)
 
         if replace_constants:

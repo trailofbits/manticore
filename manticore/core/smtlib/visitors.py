@@ -326,9 +326,11 @@ def clean_cache(cache):
         import random
         N = len(cache) - M
         for i in range(N):
-            cache.pop( random.choice(cache.keys()) )
+            cache.pop(random.choice(cache.keys()))
+
 
 constant_folder_simplifier_cache = {}
+
 
 def constant_folder(expression):
     global constant_folder_simplifier_cache
@@ -518,6 +520,7 @@ class ArithmeticSimplifier(Visitor):
 # FIXME this should forget old expressions lru?
 arithmetic_simplifier_cache = {}
 
+
 def arithmetic_simplify(expression):
     global arithmetic_simplifier_cache
     #arithmetic_simplifier_cache = {}
@@ -544,7 +547,10 @@ def to_constant(expression):
                 return ba
     return value
 
+
 from functools32 import lru_cache
+
+
 @lru_cache(maxsize=128)
 def simplify(expression):
     expression = constant_folder(expression)
@@ -642,7 +648,7 @@ class TranslatorSmtlib(Visitor):
         array_smt, index_smt = operands
         if isinstance(expression.array, ArrayStore):
             array_smt = self._add_binding(expression.array, array_smt)
-        return '(select %s %s)'%(array_smt, index_smt)
+        return '(select %s %s)' % (array_smt, index_smt)
 
     def visit_Operation(self, expression, *operands):
         operation = self.translation_table[type(expression)]
@@ -675,6 +681,7 @@ def translate_to_smtlib(expression, **kwargs):
 
 class Replace(Visitor):
     ''' Simple visitor to replaces expresions '''
+
     def __init__(self, bindings, **kwargs):
         super(Replace, self).__init__(**kwargs)
         self.bindings = bindings
