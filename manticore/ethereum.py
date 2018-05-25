@@ -4,7 +4,7 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, Array, Expression, Constant, operators
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted,  Array, Expression, Constant, operators
 from .core.smtlib.visitors import simplify
 from .core.plugin import FilterFunctions
 from .platforms import evm
@@ -1180,7 +1180,7 @@ class ManticoreEVM(Manticore):
         owner_account = self.create_account(balance=1000)
         attacker_account = self.create_account(balance=1000)
         with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account)
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=(None,None,None,None))
 
         if tx_account == "attacker":
             tx_account = attacker_account
