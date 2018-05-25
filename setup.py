@@ -25,6 +25,9 @@ setup(
         'pysha3',
         'functools32',
     ] + rtd_dependent_deps(),
+    dependency_links=[
+        'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',
+    ],
     extras_require={
         'dev': [
             'keystone-engine',
