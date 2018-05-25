@@ -1805,7 +1805,7 @@ class ManticoreEVM(Manticore):
                 break
 
         with self.locked_context('runtime_coverage') as coverage:
-            seen = (off for addr, off in coverage if addr == account_address)
+            seen = {off for addr, off in coverage if addr == account_address}
         return calculate_coverage(runtime_bytecode, seen)
 
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
