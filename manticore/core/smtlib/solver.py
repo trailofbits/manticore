@@ -47,7 +47,7 @@ class TooManySolutions(SolverException):
 
 class Solver(object):
     def __init__(self):
-       pass
+        pass
 
     def optimize(self, constraints, X, operation, M=10000):
         ''' Iterativelly finds the maximum or minimal value for the operation
@@ -57,6 +57,7 @@ class Solver(object):
             :param M: maximum number of iterations allowed
         '''
         raise Exception("Abstract method not implemented")
+
     def check(self, constraints):
         ''' Check if expression can be valid '''
         return self.can_be_true(constraints, True)
@@ -490,5 +491,6 @@ class Z3Solver(Solver):
             expr, value = m.group('expr'), m.group('value')
             return int(value, base)
         raise NotImplementedError("get_value only implemented for Bool and BitVec")
+
 
 solver = Z3Solver()

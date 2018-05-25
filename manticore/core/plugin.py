@@ -57,7 +57,7 @@ def _dict_diff(d1, d2):
 
 class Tracer(Plugin):
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        state.context.setdefault('trace',[]).append(pc)
+        state.context.setdefault('trace', []).append(pc)
 
 
 class ExtendedTracer(Plugin):
@@ -119,6 +119,7 @@ class ExtendedTracer(Plugin):
             'size': size
         }
         state.context.setdefault(self.context_key, []).append(entry)
+
 
 class Follower(Plugin):
     def __init__(self, trace):
@@ -265,23 +266,24 @@ class ConcreteTraceFollower(Plugin):
         if self.saved_flags:
             state.cpu.RFLAGS = self.saved_flags
 
+
 class FilterFunctions(Plugin):
     def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
         """
-            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria. 
+            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
 
             Examples:
-            #Do not explore any human transactions that end up calling a constant function        
+            #Do not explore any human transactions that end up calling a constant function
             no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
 
             #At human tx depth only accept synthetic check functions
             only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
-        
+
             :param regexp: a regular expresion over the name of the function '.*' will match all functions
             :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
             :param depth: match functions in internal transactions, in human initiated transactions or in both types
             :param fallback: if True include the fallback function. Hash will be 00000000 for it
-            :param include: if False exclude the selected functions, if True include them 
+            :param include: if False exclude the selected functions, if True include them
         """
         super(FilterFunctions, self).__init__(**kwargs)
         depth = depth.lower()
@@ -290,7 +292,7 @@ class FilterFunctions(Plugin):
         mutability = mutability.lower()
         if mutability not in ('mutable', 'constant', 'both'):
             raise ValueError
-            
+
         #fixme better names for member variables
         self._regexp = regexp
         self._mutability = mutability
@@ -302,8 +304,8 @@ class FilterFunctions(Plugin):
         world = state.platform
         tx_cnt = len(world.all_transactions)
         # Constrain input only once per tx, per plugin
-        if state.context.get('constrained%d'%id(self), 0) != tx_cnt:
-            state.context['constrained%d'%id(self)] = tx_cnt
+        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
+            state.context['constrained%d' % id(self)] = tx_cnt
 
             if self._depth == 'human' and not tx.is_human:
                 return
@@ -333,11 +335,10 @@ class FilterFunctions(Plugin):
             if self._fallback:
                 selected_functions.append('00000000')
 
-
             if self._include:
                 # constraint the input so it can take only the interesting values
                 from manticore.core.smtlib import Operators
-                constraint = reduce (Operators.OR, map(lambda x: tx.data[:4] == x.decode('hex'), selected_functions))            
+                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == x.decode('hex'), selected_functions))
                 state.constrain(constraint)
             else:
                 #Avoid all not seleted hashes
@@ -345,7 +346,7 @@ class FilterFunctions(Plugin):
                     if func_hsh in selected_functions:
                         constraint = tx.data[:4] != func_hsh.decode('hex')
                         state.constrain(constraint)
-                
+
 
 # TODO document all callbacks
 

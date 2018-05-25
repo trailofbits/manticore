@@ -4,7 +4,7 @@ import re
 import os
 from . import Manticore
 from .manticore import ManticoreError
-from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted,  Array, Expression, Constant, operators
+from .core.smtlib import ConstraintSet, Operators, solver, issymbolic, istainted, Array, Expression, Constant, operators
 from .core.smtlib.visitors import simplify
 from .core.plugin import FilterFunctions
 from .platforms import evm
@@ -29,11 +29,11 @@ logger = logging.getLogger(__name__)
 class EthereumError(ManticoreError):
     pass
 
+
 class DependencyError(EthereumError):
     def __init__(self, lib_names):
         super(DependencyError, self).__init__("You must pre-load and provide libraries addresses{ libname:address, ...} for %r" % lib_names)
         self.lib_names = lib_names
-
 
 
 class DependencyError(EthereumError):
@@ -116,7 +116,7 @@ class IntegerOverflow(Detector):
         if mnemonic == 'SSTORE':
             for arg in arguments:
                 if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
-                   self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
+                    self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
 
 
 class UninitializedMemory(Detector):
@@ -160,7 +160,7 @@ class UninitializedStorage(Detector):
 
     def did_evm_write_storage_callback(self, state, address, offset, value):
         # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_storage', set()).add((address,offset))
+        state.context.setdefault('seth.detectors.initialized_storage', set()).add((address, offset))
 
 
 def calculate_coverage(runtime_bytecode, seen):
@@ -201,9 +201,9 @@ class SolidityMetadata(object):
 
         input_types = method_name_and_signature.split('(')[1].split(')')[0].split(',')
         output_types = method_name_and_signature.split(')')[1].split(',')
-        self.abi[name] = { 'inputs': [{'type': ty} for ty in input_types],
-                           'name': name,
-                           'outputs': [{'type': ty} for ty in output_types]}
+        self.abi[name] = {'inputs': [{'type': ty} for ty in input_types],
+                          'name': name,
+                          'outputs': [{'type': ty} for ty in output_types]}
 
     @staticmethod
     def _without_metadata(bytecode):
@@ -290,11 +290,11 @@ class SolidityMetadata(object):
 
     def get_func_argument_types(self, hsh):
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi.get('inputs',[])) + ')'
+        return '(' + ','.join(x['type'] for x in abi.get('inputs', [])) + ')'
 
     def get_func_return_types(self, hsh):
         abi = self.get_abi(hsh)
-        return '(' + ','.join(x['type'] for x in abi.get('outputs',[]) ) + ')'
+        return '(' + ','.join(x['type'] for x in abi.get('outputs', [])) + ')'
 
     def get_func_name(self, hsh):
         signature = self.signatures.get(hsh, '{fallback}()')
@@ -302,7 +302,7 @@ class SolidityMetadata(object):
 
     def get_func_signature(self, hsh):
         return self.signatures.get(hsh, '{fallback}()')
-    
+
     def get_hash(self, method_name_and_signature):
         #helper
         return ABI.make_function_id(method_name_and_signature)
@@ -315,6 +315,7 @@ class SolidityMetadata(object):
     def hashes(self):
         return tuple(self.signatures.keys()) + ('00000000',)
 
+
 class ABI(object):
     '''
         This class contains methods to handle the ABI.
@@ -325,6 +326,7 @@ class ABI(object):
     '''
     class SByte():
         ''' Unconstrained symbolic byte string, not associated with any ConstraintSet '''
+
         def __init__(self, size=1):
             self.size = size
 
@@ -473,7 +475,7 @@ class ABI(object):
         value = Operators.CONCAT(nbytes * 8, *[Operators.ORD(x) for x in data[start:start + nbytes]])
         return _simplify(value)
 
-    @staticmethod        
+    @staticmethod
     def _consume_type(ty, data, offset):
         """
         Parses a value of type from data
@@ -775,7 +777,7 @@ class ManticoreEVM(Manticore):
             #logger.warning("Unsupported solc version %s", installed_version)
             pass
 
-        #shorten the path size so library placeholders wont fail. 
+        #shorten the path size so library placeholders wont fail.
         #solc path search is a mess #fixme
         #https://solidity.readthedocs.io/en/latest/layout-of-source-files.html
         current_folder = os.getcwd()
@@ -794,7 +796,6 @@ class ManticoreEVM(Manticore):
                 return json.loads(stdout.read()), stderr.read()
             except ValueError:
                 raise Exception('Solidity compilation error:\n\n{}'.format(stderr.read()))
-
 
     @staticmethod
     def _compile(source_code, contract_name, libraries=None):
@@ -824,7 +825,6 @@ class ManticoreEVM(Manticore):
         else:
             raise TypeError
 
-
         contracts = output.get('contracts', [])
         if len(contracts) != 1 and contract_name is None:
             raise Exception('Solidity file must contain exactly one contract or you must use contract parameter to specify which one.')
@@ -838,13 +838,11 @@ class ManticoreEVM(Manticore):
                     name, contract = n, c
                     break
 
-
         assert(name is not None)
         name = name.split(':')[1]
 
         if contract['bin'] == '':
             raise Exception('Solidity failed to compile your contract.')
-
 
         bytecode = ManticoreEVM._link(contract['bin'], libraries)
         srcmap = contract['srcmap'].split(';')
@@ -853,8 +851,6 @@ class ManticoreEVM(Manticore):
         abi = json.loads(contract['abi'])
         runtime = ManticoreEVM._link(contract['bin-runtime'], libraries)
         return name, source_code, bytecode, runtime, srcmap, srcmap_runtime, hashes, abi, warnings
-
-
 
     def __init__(self, procs=10, **kwargs):
         ''' A Manticore EVM manager
@@ -899,7 +895,7 @@ class ManticoreEVM(Manticore):
 
     @property
     def _running_state_ids(self):
-        ''' IDs of the running states''' 
+        ''' IDs of the running states'''
         with self.locked_context('seth') as context:
             if self.initial_state is not None:
                 return context['_saved_states'] + [-1]
@@ -908,7 +904,7 @@ class ManticoreEVM(Manticore):
 
     @property
     def _terminated_state_ids(self):
-        ''' IDs of the terminated states ''' 
+        ''' IDs of the terminated states '''
         with self.locked_context('seth') as context:
             return context['_final_states']
 
@@ -917,12 +913,12 @@ class ManticoreEVM(Manticore):
         ''' IDs of the all states
 
             Note: state with id -1 is already in memory and it is not backed on the storage
-        ''' 
+        '''
         return self._running_state_ids + self._terminated_state_ids
 
     @property
     def running_states(self):
-        ''' Iterates over the running states''' 
+        ''' Iterates over the running states'''
         for state_id in self._running_state_ids:
             state = self.load(state_id)
             yield state
@@ -930,7 +926,7 @@ class ManticoreEVM(Manticore):
 
     @property
     def terminated_states(self):
-        ''' Iterates over the terminated states''' 
+        ''' Iterates over the terminated states'''
         for state_id in self._terminated_state_ids:
             state = self.load(state_id)
             yield state
@@ -938,7 +934,7 @@ class ManticoreEVM(Manticore):
 
     @property
     def all_states(self):
-        ''' Iterates over the all states (terminated and alive)''' 
+        ''' Iterates over the all states (terminated and alive)'''
         for state_id in self._all_state_ids:
             state = self.load(state_id)
             yield state
@@ -955,7 +951,7 @@ class ManticoreEVM(Manticore):
     def count_terminated_states(self):
         ''' Terminated states count '''
         return len(self._terminated_state_ids)
-        
+
     def _terminate_state_id(self, state_id):
         ''' Manually terminates a states by state_id.
             Moves the state from the running list into the terminated list
@@ -994,8 +990,8 @@ class ManticoreEVM(Manticore):
                 seth_context['_final_states'] = final_states
         return state_id
 
-
     # deprecate this 5 in favor of for sta in seth.all_states: do stuff?
+
     def get_world(self, state_id=None):
         ''' Returns the evm world of `state_id` state. '''
         state = self.load(state_id)
@@ -1064,14 +1060,14 @@ class ManticoreEVM(Manticore):
 
                 if contract_name_i == contract_name:
                     contract_account = self.create_contract(owner=owner,
-                                                   balance=balance,
-                                                   address=address,
-                                                   init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
+                                                            balance=balance,
+                                                            address=address,
+                                                            init=tuple(init_bytecode) + tuple(ABI.make_function_arguments(*args)))
                 else:
                     contract_account = self.create_contract(owner=owner, init=tuple(init_bytecode))
 
                 if contract_account is None:
-                    raise Exception("Failed to build contract %s"%contract_name_i)
+                    raise Exception("Failed to build contract %s" % contract_name_i)
                 self.metadata[int(contract_account)] = SolidityMetadata(*compile_results)
 
                 deps[contract_name_i] = contract_account
@@ -1110,7 +1106,7 @@ class ManticoreEVM(Manticore):
         self.run(procs=self._config_procs)
 
         #FIxme?
-        #We assume the constructor run in all states effectivelly and add the 
+        #We assume the constructor run in all states effectivelly and add the
         #address to the accounts list
         self.contract_accounts.add(address)
         return EVMAccount(address, self, default_caller=owner)
@@ -1132,9 +1128,9 @@ class ManticoreEVM(Manticore):
 
         #self.world refers to the evm world of the single state in existance
         address = self.world.new_address()
-        self.world.create_account( address, balance, code=code, storage=None)
+        self.world.create_account(address, balance, code=code, storage=None)
 
-        #keep a list just in case. 
+        #keep a list just in case.
         #Caveat: After some execution the account list on different states may differ
         self.normal_accounts.add(address)
         return address
@@ -1160,7 +1156,7 @@ class ManticoreEVM(Manticore):
         if not self.count_running_states():
             raise NoAliveStates
 
-        #Fixme 
+        #Fixme
         if isinstance(data, self.SByte):
             data = (None,) * data.size
 
@@ -1180,7 +1176,7 @@ class ManticoreEVM(Manticore):
         owner_account = self.create_account(balance=1000)
         attacker_account = self.create_account(balance=1000)
         with open(solidity_filename) as f:
-            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=(None,None,None,None))
+            contract_account = self.solidity_create_contract(f, contract_name=contract_name, owner=owner_account, args=(None, None, None, None))
 
         if tx_account == "attacker":
             tx_account = attacker_account
@@ -1203,7 +1199,6 @@ class ManticoreEVM(Manticore):
 
         prev_coverage = 0
         current_coverage = 0
-
 
         #avoid all human level tx that has no effect on the storage
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
@@ -1284,8 +1279,8 @@ class ManticoreEVM(Manticore):
         state = None
         if state_id is None:
             #a single state was assumed
-            if self.count_running_states() == 1:  
-                #Get the ID of the single running state              
+            if self.count_running_states() == 1:
+                #Get the ID of the single running state
                 state_id = self._running_state_ids[0]
             else:
                 raise Exception("More than one state running.")
@@ -1325,12 +1320,12 @@ class ManticoreEVM(Manticore):
         if not world.all_transactions:
             logger.debug("Something was wrong. Search terminated in the middle of an ongoing tx")
             self.save(state, final=True)
-            return 
+            return
 
         tx = world.all_transactions[-1]
 
         #is we initiated the Tx we need process the outcome for now.
-        #Fixme incomplete. 
+        #Fixme incomplete.
         if tx.is_human():
             if tx.sort == 'CREATE':
                 if tx.result == 'RETURN':
@@ -1341,7 +1336,7 @@ class ManticoreEVM(Manticore):
             logger.info("Manticore exception. State should be terminated only at the end of the human transaction")
 
         #Human tx that ends in this wont modify the storage so finalize and
-        # generate a testcase. FIXME This should be configurable as REVERT and 
+        # generate a testcase. FIXME This should be configurable as REVERT and
         # THROWit actually changes the balance and nonce? of some accounts
         if tx.result in {'REVERT', 'THROW', 'TXERROR'}:
             self.save(state, final=True)
@@ -1350,7 +1345,7 @@ class ManticoreEVM(Manticore):
             # if not a revert we save the state for further transactioning
             del state.context['processed']
             self.save(state)  # Add tu running states
-    
+
     #Callbacks
     def _load_state_callback(self, state, state_id):
         ''' INTERNAL USE
@@ -1422,7 +1417,7 @@ class ManticoreEVM(Manticore):
     def unregister_detector(self, d):
         if not isinstance(d, Detector):
             raise Exception("Not a Detector")
-        if not d.name in self.detectors:
+        if d.name not in self.detectors:
             raise Exception("Detector not registered")
         del self.detectors[d.name]
         self.unregister_plugin(d)
@@ -1438,7 +1433,7 @@ class ManticoreEVM(Manticore):
 
     def generate_testcase(self, state, name, message=''):
         self._generate_testcase_callback(state, name, message)
-    
+
     def _generate_testcase_callback(self, state, name, message=''):
         '''
         Create a serialized description of a given state.
@@ -1452,10 +1447,11 @@ class ManticoreEVM(Manticore):
         # TODO(mark): Refactor ManticoreOutput to let the platform be more in control
         #  so this function can be fully ported to EVMWorld.generate_workspace_files.
         blockchain = state.platform
+
         def flagged(flag):
-            return '(*)' if flag else '' 
+            return '(*)' if flag else ''
         testcase = self._output.testcase(name.replace(' ', '_'))
-        logger.info("Generated testcase No. {} - {}".format(testcase.num, message+blockchain.last_transaction.result))
+        logger.info("Generated testcase No. {} - {}".format(testcase.num, message + blockchain.last_transaction.result))
         with testcase.open_stream('summary') as summary:
             summary.write("Message: %s\n" % message)
             summary.write("Last exception: %s\n" % state.context['last_exception'])
@@ -1468,7 +1464,7 @@ class ManticoreEVM(Manticore):
             if state.context['last_exception'].message != 'TXERROR':
                 metadata = self.get_metadata(blockchain.last_transaction.address)
                 if metadata is not None:
-                    summary.write('Last instruction at contract %x offset %x\n' %(address, offset))
+                    summary.write('Last instruction at contract %x offset %x\n' % (address, offset))
                     source_code_snippet = metadata.get_source_for(offset, at_runtime)
                     if source_code_snippet:
                         summary.write(source_code_snippet)
@@ -1551,9 +1547,9 @@ class ManticoreEVM(Manticore):
                 tx_summary.write("Type: %s\n" % tx.sort)
                 tx_summary.write("From: 0x%x %s\n" % (state.solve_one(tx.caller), flagged(issymbolic(tx.caller))))
                 tx_summary.write("To: 0x%x %s\n" % (state.solve_one(tx.address), flagged(issymbolic(tx.address))))
-                tx_summary.write("Value: %d %s\n"% (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
-                tx_data = state.solve_one(tx.data) 
-                tx_summary.write("Data: %s %s\n"% (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
+                tx_summary.write("Value: %d %s\n" % (state.solve_one(tx.value), flagged(issymbolic(tx.value))))
+                tx_data = state.solve_one(tx.data)
+                tx_summary.write("Data: %s %s\n" % (binascii.hexlify(tx_data), flagged(issymbolic(tx.data))))
                 if tx.return_data is not None:
                     return_data = state.solve_one(tx.return_data)
                     tx_summary.write("Return_data: %s %s\n" % (binascii.hexlify(return_data), flagged(issymbolic(tx.return_data))))
@@ -1576,7 +1572,7 @@ class ManticoreEVM(Manticore):
                         tx_summary.write(','.join(map(repr, map(state.solve_one, arguments))))
                         is_argument_symbolic = any(map(issymbolic, arguments))
                         is_something_symbolic = is_something_symbolic or is_argument_symbolic
-                        tx_summary.write(') -> %s %s\n' % ( tx.result, flagged(is_argument_symbolic)))
+                        tx_summary.write(') -> %s %s\n' % (tx.result, flagged(is_argument_symbolic)))
 
                         if return_data is not None:
                             is_return_symbolic = any(map(issymbolic, return_data))
@@ -1584,7 +1580,7 @@ class ManticoreEVM(Manticore):
                             if len(return_values) == 1:
                                 return_values = return_values[0]
 
-                            tx_summary.write('return: %r %s\n' % ( return_values, flagged(is_return_symbolic)))
+                            tx_summary.write('return: %r %s\n' % (return_values, flagged(is_return_symbolic)))
                             is_something_symbolic = is_something_symbolic or is_return_symbolic
 
                 tx_summary.write('\n\n')
@@ -1605,7 +1601,7 @@ class ManticoreEVM(Manticore):
                 logs_summary.write("Memlog: %s (%s) %s\n" % (binascii.hexlify(solved_memlog), printable_bytes, flagged(is_log_symbolic)))
                 logs_summary.write("Topics:\n")
                 for i, topic in enumerate(log_item.topics):
-                    logs_summary.write("\t%d) %x %s" %(i, state.solve_one(topic), flagged(issymbolic(topic))))
+                    logs_summary.write("\t%d) %x %s" % (i, state.solve_one(topic), flagged(issymbolic(topic))))
 
         with testcase.open_stream('constraints') as smt_summary:
             smt_summary.write(str(state.constraints))
@@ -1664,8 +1660,8 @@ class ManticoreEVM(Manticore):
             ps.append(p)
 
         for p in ps:
-            p.join()            
-                
+            p.join()
+
         #global summary
         with self._output.save_stream('global.summary') as global_summary:
             # (accounts created by contract code are not in this list )
@@ -1793,7 +1789,6 @@ class ManticoreEVM(Manticore):
         with self.locked_context('seth') as seth_context:
             seth_context['_final_states'] = []
 
-
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.
             This sums up all the visited code lines from any of the explored
@@ -1810,7 +1805,7 @@ class ManticoreEVM(Manticore):
                 break
 
         with self.locked_context('runtime_coverage') as coverage:
-            seen =  (off for addr, off in coverage if addr==account_address)
+            seen = (off for addr, off in coverage if addr == account_address)
         return calculate_coverage(runtime_bytecode, seen)
 
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
