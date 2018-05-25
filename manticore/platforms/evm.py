@@ -958,7 +958,7 @@ def concretized_args(**policies):
                     for known_account in self.world.accounts:
                         cond = Operators.OR(args[index] == known_account, cond)
                         self.constraints.add(cond)
-                    raise ConcretizeStack(index, policy=policy)
+                raise ConcretizeStack(index, policy=policy)
             return func(*args, **kwargs)
         return wrapper
     return concretizer
