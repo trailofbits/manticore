@@ -8,7 +8,7 @@ def rtd_dependent_deps():
     if on_rtd:
         return []
     else:
-        return ['z3-solver']
+        return []
 
 setup(
     name='manticore',
@@ -23,6 +23,7 @@ setup(
         'unicorn',
         'ply',
         'pysha3',
+        'functools32',
     ] + rtd_dependent_deps(),
     dependency_links=[
         'https://github.com/aquynh/capstone/archive/next.zip#egg=capstone-4&subdirectory=bindings/python',

@@ -1,5 +1,5 @@
 from expression import *
-from ...utils.helpers import issymbolic
+from ...utils.helpers import issymbolic, istainted
 import math
 
 
@@ -249,6 +249,14 @@ def SREM(a, b):
         return a.srem(b)
     elif isinstance(a, BitVec):
         return b.rsrem(a)
+    return a % b
+
+
+def UREM(a, b):
+    if isinstance(a, BitVec):
+        return a.urem(b)
+    elif isinstance(a, BitVec):
+        return b.rurem(a)
     return a % b
 
 

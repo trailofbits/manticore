@@ -15,7 +15,13 @@ class EVMTest_CALLCODE(unittest.TestCase):
         last_returned = None
         last_exception = None
         try:
+            
+            try:
+                new_vm.execute()
+            except evm.StartTx:
+                pass
             new_vm.execute()
+
         except evm.Stop, e:
             last_exception = "STOP"
         except evm.NotEnoughGas:
@@ -54,7 +60,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -84,7 +90,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -114,7 +120,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -144,7 +150,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -174,7 +180,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -204,7 +210,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -234,7 +240,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -264,7 +270,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -294,7 +300,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -324,7 +330,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -354,7 +360,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
@@ -384,7 +390,7 @@ class EVMTest_CALLCODE(unittest.TestCase):
                         }
             gas = 1000000
 
-            new_vm = evm.EVM(constraints, address, origin, price, data, caller, value, bytecode, header, gas=gas, global_storage=world.storage)
+            new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
             new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)

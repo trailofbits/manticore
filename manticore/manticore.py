@@ -28,7 +28,6 @@ from .core.plugin import Plugin, InstructionCounter, RecordSymbolicBranches, Vis
 import logging
 from .utils import log
 
-
 logger = logging.getLogger(__name__)
 log.init_logging()
 
@@ -606,9 +605,9 @@ class Manticore(Eventful):
 
     def _start_run(self):
         assert not self.running
-        if self._initial_state is not None:
-            self._publish('will_start_run', self._initial_state)
+        self._publish('will_start_run', self._initial_state)
 
+        if self._initial_state is not None:
             self.enqueue(self._initial_state)
             self._initial_state = None
 
@@ -648,12 +647,24 @@ class Manticore(Eventful):
                 t.cancel()
         self._finish_run(profiling=should_profile)
 
+    #Fixme remove. terminate is used to TerminateState. May be confusing
     def terminate(self):
         '''
         Gracefully terminate the currently-executing run. Typically called from within
         a :func:`~hook`.
         '''
         self._executor.shutdown()
+
+    def shutdown(self):
+        '''
+        Gracefully terminate the currently-executing run. Typically called from within
+        a :func:`~hook`.
+        '''
+        self._executor.shutdown()
+
+    def is_shutdown(self):
+        ''' Returns True if shutdown was requested '''
+        return self._executor.is_shutdown()
 
     #############################################################################
     #############################################################################

@@ -189,6 +189,38 @@ class ExpressionTest(unittest.TestCase):
             temp_cs.add(key != 1002)
             self.assertTrue(self.solver.check(temp_cs))
 
+
+
+    def testBasicArraySymbIdx(self):
+        cs =  ConstraintSet()
+        array = cs.new_array(index_bits=32, value_bits=32, name='array')
+        key = cs.new_bitvec(32, name='key')
+        index = cs.new_bitvec(32, name='index')
+
+        array[key] = 1 # Write 1 to a single location
+
+        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+
+        cs.add(index != key)
+        # key and index are the same there is only one slot in 1
+        self.assertFalse(self.solver.check(cs))
+
+
+    def testBasicArraySymbIdx2(self):
+        cs =  ConstraintSet()
+        array = cs.new_array(index_bits=32, value_bits=32, name='array')
+        key = cs.new_bitvec(32, name='key')
+        index = cs.new_bitvec(32, name='index')
+
+        array[key] = 1 # Write 1 to a single location
+        cs.add(array.get(index) != 0) # Constrain index so it selects that location
+        a_index = self.solver.get_value(cs, index)  # get a concrete solution for index
+        cs.add(array.get(a_index) != 0)             # now storage must have something at that location
+        cs.add(a_index != index)                    # remove it from the solutions
+
+        # It should not be another solution for index
+        self.assertFalse(self.solver.check(cs))
+
     def testBasicPickle(self):
         import pickle
         cs =  ConstraintSet()

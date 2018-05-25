@@ -48,7 +48,7 @@ class TraceReceiver(Plugin):
         return self._trace
 
     def will_generate_testcase_callback(self, state, test_id, msg):
-        self._trace = state.context[self._tracer.context_key]
+        self._trace = state.context.get(self._tracer.context_key, [])
 
         instructions, writes = _partition(lambda x: x['type'] == 'regs', self._trace)
         total = len(self._trace)
@@ -132,12 +132,17 @@ def constraints_to_constraintset(constupl):
 
 def input_from_cons(constupl, datas):
     ' solve bytes in |datas| based on '
+    def make_chr(c):
+        try:
+            return chr(c)
+        except:
+            return c
     newset = constraints_to_constraintset(constupl)
 
     ret = ''
     for data in datas:
         for c in data:
-            ret += chr(solver.get_value(newset, c))
+            ret += make_chr(solver.get_value(newset, c))
     return ret
 
 # Run a concrete run with |inp| as stdin

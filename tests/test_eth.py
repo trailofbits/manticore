@@ -7,10 +7,13 @@ import os
 from manticore.core.plugin import Plugin
 from manticore.core.smtlib import ConstraintSet, operators
 from manticore.core.smtlib.expression import BitVec
+from manticore.core.smtlib import solver
 from manticore.core.state import State
 from manticore.ethereum import ManticoreEVM, IntegerOverflow, Detector, NoAliveStates, ABI, EthereumError
-from manticore.platforms.evm import EVMWorld, ConcretizeStack, Create, concretized_args
+from manticore.platforms.evm import EVMWorld, ConcretizeStack, concretized_args, Return, Stop
+from manticore.core.smtlib.visitors import pretty_print, translate_to_smtlib, simplify, to_constant
 
+import shutil
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -30,7 +33,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         mevm = ManticoreEVM()
         mevm.register_detector(IntegerOverflow())
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
-        mevm.multi_tx_analysis(filename)
+        mevm.multi_tx_analysis(filename, tx_limit=1)
         self.assertEqual(len(mevm.global_findings), 3)
         all_findings = ''.join(map(lambda x: x[2], mevm.global_findings))
         self.assertIn('underflow at SUB', all_findings)
@@ -230,6 +233,14 @@ class EthAbiTests(unittest.TestCase):
 
 
 class EthTests(unittest.TestCase):
+    def setUp(self):
+        self.mevm = ManticoreEVM()
+        self.worksp = self.mevm.workspace
+
+    def tearDown(self):
+        self.mevm=None
+        #shutil.rmtree(self.worksp)
+
     def test_emit_did_execute_end_instructions(self):
         """
         Tests whether the did_evm_execute_instruction event is fired for instructions that internally trigger
@@ -237,20 +248,21 @@ class EthTests(unittest.TestCase):
         """
         class TestDetector(Detector):
             def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
-                if instruction.semantics in ('REVERT', 'STOP'):
+                if instruction.is_endtx:
                     with self.locked_context('insns', dict) as d:
                         d[instruction.semantics] = True
 
-        mevm = ManticoreEVM()
+        mevm = self.mevm
         p = TestDetector()
         mevm.register_detector(p)
 
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
-        mevm.multi_tx_analysis(filename, tx_limit=1)
+        mevm.multi_tx_analysis(filename, tx_limit=2)
 
         self.assertIn('insns', p.context)
         context = p.context['insns']
         self.assertIn('STOP', context)
+        self.assertIn('RETURN', context)
         self.assertIn('REVERT', context)
 
     def test_end_instruction_trace(self):
@@ -261,49 +273,66 @@ class EthTests(unittest.TestCase):
             """
             Record the pcs of all end instructions encountered. Source of truth.
             """
-            def will_evm_execute_instruction_callback(self, state, instruction, arguments):
-                if isinstance(state.platform.current.last_exception, Create):
-                    name = 'init'
-                else:
-                    name = 'rt'
+            def did_evm_execute_instruction_callback(self, state, instruction, arguments, result):
+                try:
+                    world = state.platform
+                    if world.current_transaction.sort == 'CREATE':
+                        name = 'init'
+                    else:
+                        name = 'rt'
 
-                # collect all end instructions based on whether they are in init or rt
-                if instruction.semantics in ('REVERT', 'STOP', 'RETURN'):
-                    with self.locked_context(name) as d:
-                        d.append(state.platform.current.pc)
+                    # collect all end instructions based on whether they are in init or rt
+                    if instruction.is_endtx:
+                        with self.locked_context(name) as d:
+                            d.append(instruction.offset)
+                except Exception as e:
+                    raise
 
-        mevm = ManticoreEVM()
+        mevm = self.mevm
         p = TestPlugin()
         mevm.register_plugin(p)
 
+
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
+
         mevm.multi_tx_analysis(filename, tx_limit=1)
 
         worksp = mevm.workspace
         listdir = os.listdir(worksp)
 
-        def get_concatenated_files(directory, suffix):
+        def get_concatenated_files(directory, suffix, init):
             paths = [os.path.join(directory, f) for f in listdir if f.endswith(suffix)]
             concatenated = ''.join(open(path).read() for path in paths)
-            return concatenated
+            result = set()
+            for x in concatenated.split('\n'):
+                if ':' in x:
+                    address = int(x.split(':')[0],16)
+                    pc = int(x.split(':')[1].split(' ')[0],16)
+                    at_init = '*' in x
+                    if at_init == init:
+                        result.add(pc)
+            return result
 
-        all_init_traces = get_concatenated_files(worksp, 'init.trace')
-        all_rt_traces = get_concatenated_files(worksp, 'rt.trace')
+        all_init_traces = get_concatenated_files(worksp, 'trace', init=True)
+        all_rt_traces = get_concatenated_files(worksp, 'trace', init=False)
 
         # make sure all init end insns appear somewhere in the init traces
         for pc in p.context['init']:
-            self.assertIn(':0x{:x}'.format(pc), all_init_traces)
+            self.assertIn(pc, all_init_traces)
 
         # and all rt end insns appear somewhere in the rt traces
         for pc in p.context['rt']:
-            self.assertIn(':0x{:x}'.format(pc), all_rt_traces)
+            self.assertIn(pc, all_rt_traces)
+
+
+
 
     def test_graceful_handle_no_alive_states(self):
         """
         If there are no alive states, or no initial states, we should not crash. issue #795
         """
         # initiate the blockchain
-        m = ManticoreEVM()
+        m = self.mevm
         source_code = '''
         contract Simple {
             function f(uint a) payable public {
@@ -323,6 +352,65 @@ class EthTests(unittest.TestCase):
         with self.assertRaises(NoAliveStates):
             contract_account.f(m.SValue)  # no alive states, but try to run a tx anyway
 
+    @unittest.skip("reason")
+    def test_reachability(self):
+        class StopAtFirstJump414141(Detector):
+            def will_decode_instruction_callback(self, state, pc):
+                TRUE = bytearray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1))
+                FALSE = bytearray((0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+                #print pc, state.platform.current_vm.instruction
+                #Once this address is reached the challenge is won
+                if pc == 0x4141414141414141414141414141414141414141:
+                    func_id = to_constant(state.platform.current_transaction.data[:4])
+                    if func_id == ABI.make_function_id("print(string)"):
+                        func_name, args = ABI.parse("print(string)", state.platform.current_transaction.data)
+                        raise Return()
+                    elif func_id == ABI.make_function_id("terminate(string)"):
+                        func_name, args = ABI.parse("terminate(string)", state.platform.current_transaction.data)
+                        self.manticore.shutdown()
+                        raise Return(TRUE)
+                    elif func_id == ABI.make_function_id("assume(bool)"):
+                        func_name, args = ABI.parse("assume(bool)", state.platform.current_transaction.data)
+                        state.add(args[0])
+                        raise Return(TRUE)
+                    elif func_id == ABI.make_function_id("is_symbolic(bytes)"):
+                        func_name, args = ABI.parse("is_symbolic(bytes)", state.platform.current_transaction.data)
+                        try:
+                            arg = to_constant(args[0])
+                        except:
+                            raise Return(TRUE)
+                        raise Return(FALSE)
+                    elif func_id == ABI.make_function_id("is_symbolic(uint256)"):
+                        func_name, args = ABI.parse("is_symbolic(uint256)", state.platform.current_transaction.data)
+                        try:
+                            arg = to_constant(args[0])
+                        except Exception,e:
+                            raise Return(TRUE)
+                        raise Return(FALSE)
+                    elif func_id == ABI.make_function_id("shutdown(string)"):
+                        func_name, args = ABI.parse("shutdown(string)", state.platform.current_transaction.data)
+                        print "Shutdown", to_constant(args[0])
+                        self.manticore.shutdown()
+                    elif func_id == ABI.make_function_id("can_be_true(bool)"):
+                        func_name, args = ABI.parse("can_be_true(bool)", state.platform.current_transaction.data)
+                        result = solver.can_be_true(state.constraints, args[0] != 0)
+                        if result:
+                            raise Return(TRUE)
+                        raise Return(FALSE)
+
+                    raise Stop()
+
+                #otherwise keep exploring
+
+        mevm = self.mevm
+        p = StopAtFirstJump414141()
+        mevm.register_detector(p)
+
+        filename = os.path.join(THIS_DIR, 'binaries/reached.sol')
+        mevm.multi_tx_analysis(filename, tx_limit=2, contract_name='Reachable')
+
+        context = p.context.get('flags', {})
+        self.assertTrue(context.get('found', False))
 
 class EthHelpersTest(unittest.TestCase):
     def setUp(self):
@@ -391,7 +479,7 @@ class EthSolidityCompilerTest(unittest.TestCase):
                 b.flush()
                 output, warnings = ManticoreEVM._run_solc(a)
                 source_list = output.get('sourceList', [])
-                self.assertIn(a.name, source_list)
-                self.assertIn(b.name, source_list)
+                self.assertIn(os.path.split(a.name)[-1], source_list)
+                self.assertIn(os.path.split(b.name)[-1], source_list)
         finally:
             shutil.rmtree(d)

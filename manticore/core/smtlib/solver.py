@@ -14,7 +14,6 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
 from subprocess import PIPE, Popen, check_output
-from abc import ABCMeta, abstractmethod
 import operators as Operators
 from expression import *
 from constraints import *
@@ -22,7 +21,7 @@ import logging
 import re
 import time
 from visitors import *
-from ...utils.helpers import issymbolic, memoized
+from ...utils.helpers import issymbolic, istainted, memoized
 import collections
 
 logger = logging.getLogger(__name__)
@@ -47,38 +46,36 @@ class TooManySolutions(SolverException):
 
 
 class Solver(object):
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
     def __init__(self):
         pass
 
-    @abstractmethod
-    def optimize(self, X, operation, M=10000):
+    def optimize(self, constraints, X, operation, M=10000):
         ''' Iterativelly finds the maximum or minimal value for the operation
             (Normally Operators.UGT or Operators.ULT)
+            :param constraints: the constraints set
             :param X: a symbol or expression
             :param M: maximum number of iterations allowed
         '''
+        raise Exception("Abstract method not implemented")
 
     def check(self, constraints):
         ''' Check if expression can be valid '''
         return self.can_be_true(constraints, True)
 
-    @abstractmethod
     def can_be_true(self, constraints, expression):
         ''' Check if expression can be valid '''
+        raise Exception("Abstract method not implemented")
 
-    @abstractmethod
     def get_all_values(self, constraints, x, maxcnt=10000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
+        raise Exception("Abstract method not implemented")
 
-    @abstractmethod
     def get_value(self, constraints, expression):
         ''' Ask the solver for one possible assignment for expression using current set
             of constraints.
             The current set of assertions must be sat.
             :param val: an expression or symbol '''
+        raise Exception("Abstract method not implemented")
 
     def max(self, constraints, X, M=10000):
         ''' Iterativelly finds the maximum value for a symbol.
@@ -120,7 +117,6 @@ class Z3Solver(Solver):
         '''
         super(Z3Solver, self).__init__()
         self._proc = None
-        self._log = ''  # this should be enabled only if we are debugging
 
         self.version = self._solver_version()
 
@@ -132,7 +128,7 @@ class Z3Solver(Solver):
         if self.version >= Version(4, 5, 0):
             self.support_maximize = False
             self.support_minimize = False
-            self.support_reset = True
+            self.support_reset = False
         elif self.version >= Version(4, 4, 1):
             self.support_maximize = True
             self.support_minimize = True
@@ -140,7 +136,7 @@ class Z3Solver(Solver):
         else:
             logger.debug(' Please install Z3 4.4.1 or newer to get optimization support')
 
-        self._command = 'z3 -t:120000 -smt2 -in'
+        self._command = 'z3 -t:240000 -memory:16384 -smt2 -in'
         self._init = ['(set-logic QF_AUFBV)', '(set-option :global-decls false)']
         self._get_value_fmt = (re.compile('\(\((?P<expr>(.*))\ #x(?P<value>([0-9a-fA-F]*))\)\)'), 16)
 
@@ -173,7 +169,8 @@ class Z3Solver(Solver):
         assert '_proc' not in dir(self) or self._proc is None
         try:
             self._proc = Popen(self._command.split(' '), stdin=PIPE, stdout=PIPE)
-        except OSError:
+        except OSError as e:
+            print e, "Probably too  much cached expressions? visitors._cache..."
             # Z3 was removed from the system in the middle of operation
             raise Z3NotFoundError  # TODO(mark) don't catch this exception in two places
 
@@ -183,8 +180,12 @@ class Z3Solver(Solver):
 
     def _stop_proc(self):
         ''' Auxiliary method to stop the external solver process'''
-        if self._proc is not None:
-            self._send("(exit)")
+        if self._proc is not None and self._proc.returncode is None:
+            try:
+                self._send("(exit)")
+            except SolverException:
+                #z3 was too fast to close
+                pass
             self._proc.stdin.close()
             self._proc.stdout.close()
             self._proc.wait()
@@ -229,7 +230,6 @@ class Z3Solver(Solver):
             :param cmd: a SMTLIBv2 command (ex. (check-sat))
         '''
         logger.debug('>%s', cmd)
-        self._log += str(cmd) + '\n'
         try:
             buf = str(cmd)
             self._proc.stdin.write(buf + '\n')
@@ -323,18 +323,19 @@ class Z3Solver(Solver):
             if not expression:
                 return expression
             else:
-                #Still need to check if the constraints are feasible
-                expression = BoolConstant(expression)
+                #if True check if constraints are feasible
+                self._reset(constraints)
+                return self._check() == 'sat'
         assert isinstance(expression, Bool)
 
         with constraints as temp_cs:
             temp_cs.add(expression)
-            self._reset(temp_cs)
+            self._reset(temp_cs.to_string(related_to=expression))
             return self._check() == 'sat'
 
     # get-all-values min max minmax
     #@memoized
-    def get_all_values(self, constraints, expression, maxcnt=3000, silent=False):
+    def get_all_values(self, constraints, expression, maxcnt=30000, silent=False):
         ''' Returns a list with all the possible values for the symbol x'''
         if not isinstance(expression, Expression):
             return [expression]
@@ -350,14 +351,13 @@ class Z3Solver(Solver):
                 raise NotImplementedError("get_all_values only implemted for Bool and BitVec")
 
             temp_cs.add(var == expression)
-            self._reset(temp_cs.related_to(var))
+            self._reset(temp_cs.to_string(related_to=var))
 
             result = []
             val = None
             while self._check() == 'sat':
                 value = self._getvalue(var)
                 result.append(value)
-
                 self._assert(var != value)
 
                 if len(result) >= maxcnt:
@@ -386,7 +386,7 @@ class Z3Solver(Solver):
             X = temp_cs.new_bitvec(x.size)
             temp_cs.add(X == x)
             aux = temp_cs.new_bitvec(X.size, name='optimized_')
-            self._reset(temp_cs)
+            self._reset(temp_cs.to_string(related_to=X))
             self._send(aux.declaration)
 
             if getattr(self, 'support_{}'.format(goal)):
@@ -451,7 +451,7 @@ class Z3Solver(Solver):
                 var = temp_cs.new_bitvec(expression.size)
             elif isinstance(expression, Array):
                 var = []
-                result = ''
+                result = bytearray()
                 for i in xrange(expression.index_max):
                     subvar = temp_cs.new_bitvec(expression.value_bits)
                     var.append(subvar)
@@ -468,7 +468,7 @@ class Z3Solver(Solver):
                     pattern, base = self._get_value_fmt
                     m = pattern.match(ret)
                     expr, value = m.group('expr'), m.group('value')
-                    result += chr(int(value, base))
+                    result.append(int(value, base))
                 return result
 
             temp_cs.add(var == expression)

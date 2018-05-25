@@ -5,8 +5,9 @@ import signal
 
 from ..utils.nointerrupt import WithKeyboardInterruptAs
 from ..utils.event import Eventful
-from .smtlib import solver, Expression, SolverException
+from .smtlib import solver, Z3Solver, Expression, SolverException
 from .state import Concretize, TerminateState
+
 from workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
@@ -383,7 +384,7 @@ class Executor(Eventful):
             setstate(state, solutions[0])
             return state
 
-        logger.info("Forking, about to store. (policy: %s, values: %s)",
+        logger.info("Forking. Policy: %s. Values: %s",
                     policy,
                     ', '.join('0x{:x}'.format(sol) for sol in solutions))
 
@@ -406,7 +407,7 @@ class Executor(Eventful):
                 # maintain a list of childres for logging purpose
                 children.append(state_id)
 
-        logger.debug("Forking current state into states %r", children)
+        logger.info("Forking current state into states %r", children)
         return None
 
     def run(self):
@@ -423,7 +424,7 @@ class Executor(Eventful):
             self._notify_start_run()
 
             logger.debug("Starting Manticore Symbolic Emulator Worker (pid %d).", os.getpid())
-
+            solver = Z3Solver()
             while not self.is_shutdown():
                 try:  # handle fatal errors: exceptions in Manticore
                     try:  # handle external (e.g. solver) errors, and executor control exceptions
@@ -502,7 +503,7 @@ class Executor(Eventful):
                     current_state = None
                     logger.setState(None)
 
-            assert current_state is None
+            assert current_state is None or self.is_shutdown()
 
             # notify siblings we are about to stop this run
             self._notify_stop_run()

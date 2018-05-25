@@ -1,5 +1,5 @@
 import logging
-
+import re
 from capstone import CS_GRP_JUMP
 
 from ..utils.helpers import issymbolic
@@ -56,11 +56,8 @@ def _dict_diff(d1, d2):
 
 
 class Tracer(Plugin):
-    def will_start_run_callback(self, state):
-        state.context['trace'] = []
-
     def did_execute_instruction_callback(self, state, pc, target_pc, instruction):
-        state.context['trace'].append(pc)
+        state.context.setdefault('trace', []).append(pc)
 
 
 class ExtendedTracer(Plugin):
@@ -72,9 +69,6 @@ class ExtendedTracer(Plugin):
         self.last_dict = {}
         self.current_pc = None
         self.context_key = 'e_trace'
-
-    def will_start_run_callback(self, state):
-        state.context[self.context_key] = []
 
     def register_state_to_dict(self, cpu):
         d = {}
@@ -93,7 +87,7 @@ class ExtendedTracer(Plugin):
             'values': _dict_diff(self.last_dict, reg_state)
         }
         self.last_dict = reg_state
-        state.context[self.context_key].append(entry)
+        state.context.setdefault(self.context_key, []).append(entry)
 
     def will_read_memory_callback(self, state, where, size):
         if self.current_pc == where:
@@ -124,7 +118,7 @@ class ExtendedTracer(Plugin):
             'value': value,
             'size': size
         }
-        state.context[self.context_key].append(entry)
+        state.context.setdefault(self.context_key, []).append(entry)
 
 
 class Follower(Plugin):
@@ -170,12 +164,9 @@ class Follower(Plugin):
 
 
 class RecordSymbolicBranches(Plugin):
-    def will_start_run_callback(self, state):
-        state.context['branches'] = {}
-
     def did_execute_instruction_callback(self, state, last_pc, target_pc, instruction):
         if state.context.get('forking_pc', False):
-            branches = state.context['branches']
+            branches = state.context.setdefault('branches', {})
             branch = (last_pc, target_pc)
             if branch in branches:
                 branches[branch] += 1
@@ -274,6 +265,88 @@ class ConcreteTraceFollower(Plugin):
         # Should direct execution via trace
         if self.saved_flags:
             state.cpu.RFLAGS = self.saved_flags
+
+
+class FilterFunctions(Plugin):
+    def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
+        """
+            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
+
+            Examples:
+            #Do not explore any human transactions that end up calling a constant function
+            no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
+
+            #At human tx depth only accept synthetic check functions
+            only_tests = FilterFunctions(regexp=r'mcore_.*', depth='human', include=False)
+
+            :param regexp: a regular expresion over the name of the function '.*' will match all functions
+            :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
+            :param depth: match functions in internal transactions, in human initiated transactions or in both types
+            :param fallback: if True include the fallback function. Hash will be 00000000 for it
+            :param include: if False exclude the selected functions, if True include them
+        """
+        super(FilterFunctions, self).__init__(**kwargs)
+        depth = depth.lower()
+        if depth not in ('human', 'internal', 'both'):
+            raise ValueError
+        mutability = mutability.lower()
+        if mutability not in ('mutable', 'constant', 'both'):
+            raise ValueError
+
+        #fixme better names for member variables
+        self._regexp = regexp
+        self._mutability = mutability
+        self._depth = depth
+        self._fallback = fallback
+        self._include = include
+
+    def will_open_transaction_callback(self, state, tx):
+        world = state.platform
+        tx_cnt = len(world.all_transactions)
+        # Constrain input only once per tx, per plugin
+        if state.context.get('constrained%d' % id(self), 0) != tx_cnt:
+            state.context['constrained%d' % id(self)] = tx_cnt
+
+            if self._depth == 'human' and not tx.is_human:
+                return
+            if self._depth == 'internal' and tx.is_human:
+                return
+
+            #Get metadata if any for the targe addreess of current tx
+            md = self.manticore.get_metadata(tx.address)
+            if md is None:
+                return
+            #Lets compile  the list of interesting hashes
+            selected_functions = []
+
+            for func_hsh in md.hashes:
+                if func_hsh == '00000000':
+                    continue
+                abi = md.get_abi(func_hsh)
+                func_name = md.get_func_name(func_hsh)
+                if self._mutability == 'constant' and not abi.get('constant', False):
+                    continue
+                if self._mutability == 'mutable' and abi.get('constant', False):
+                    continue
+                if not re.match(self._regexp, func_name):
+                    continue
+                selected_functions.append(func_hsh)
+
+            if self._fallback:
+                selected_functions.append('00000000')
+
+            if self._include:
+                # constraint the input so it can take only the interesting values
+                from manticore.core.smtlib import Operators
+                constraint = reduce(Operators.OR, map(lambda x: tx.data[:4] == x.decode('hex'), selected_functions))
+                state.constrain(constraint)
+            else:
+                #Avoid all not seleted hashes
+                for func_hsh in md.hashes:
+                    if func_hsh in selected_functions:
+                        constraint = tx.data[:4] != func_hsh.decode('hex')
+                        state.constrain(constraint)
+
 
 # TODO document all callbacks
 
