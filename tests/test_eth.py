@@ -424,11 +424,7 @@ class EthHelpersTest(unittest.TestCase):
             return a, b
 
         with self.assertRaises(ConcretizeStack) as cm:
-            try :
-                print inner_func(None, self.bv, 34)
-            except Exception as e:
-                print e
-                raise
+            inner_func(None, self.bv, 34)
 
         self.assertEquals(cm.exception.pos, 1)
         self.assertEquals(cm.exception.policy, policy)
