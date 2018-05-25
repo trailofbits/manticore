@@ -1,4 +1,5 @@
 from expression import *
+from functools32 import lru_cache
 import logging
 import operator
 logger = logging.getLogger(__name__)
@@ -384,7 +385,7 @@ class ArithmeticSimplifier(Visitor):
     def visit_BitVecExtract(self, expression, *operands):
         ''' extract(0,sizeof(a))(a)  ==> a
             extract(0, 16 )( concat(a,b,c,d) ) => concat(c, d)
-            extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)  
+            extract(m,M)(and/or/xor a b ) => and/or/xor((extract(m,M) a) (extract(m,M) a)
         '''
         op = expression.operands[0]
         begining = expression.begining
@@ -547,8 +548,6 @@ def to_constant(expression):
                 return ba
     return value
 
-
-from functools32 import lru_cache
 
 
 @lru_cache(maxsize=128)

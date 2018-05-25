@@ -24,7 +24,7 @@ def istainted(arg, taint=None):
     if not issymbolic(arg):
         return False
     if taint is None:
-        return len(arg.taint) !=0
+        return len(arg.taint) != 0
     return taint in arg.taint
 
 

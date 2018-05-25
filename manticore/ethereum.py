@@ -1417,7 +1417,7 @@ class ManticoreEVM(Manticore):
     def unregister_detector(self, d):
         if not isinstance(d, Detector):
             raise Exception("Not a Detector")
-        if not d.name in self.detectors:
+        if d.name not in self.detectors:
             raise Exception("Detector not registered")
         del self.detectors[d.name]
         self.unregister_plugin(d)

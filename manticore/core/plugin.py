@@ -270,10 +270,10 @@ class ConcreteTraceFollower(Plugin):
 class FilterFunctions(Plugin):
     def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
         """
-            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria. 
+            Constrain input based on function metadata. Include or avoid functions selected by the specified criteria.
 
             Examples:
-            #Do not explore any human transactions that end up calling a constant function        
+            #Do not explore any human transactions that end up calling a constant function
             no_human_constant = FilterFunctions(depth='human', mutability='constant', include=False)
 
             #At human tx depth only accept synthetic check functions
@@ -283,7 +283,7 @@ class FilterFunctions(Plugin):
             :param mutability: mutable, constant or both will match functions declared in the abi to be of such class
             :param depth: match functions in internal transactions, in human initiated transactions or in both types
             :param fallback: if True include the fallback function. Hash will be 00000000 for it
-            :param include: if False exclude the selected functions, if True include them 
+            :param include: if False exclude the selected functions, if True include them
         """
         super(FilterFunctions, self).__init__(**kwargs)
         depth = depth.lower()
