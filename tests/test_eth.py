@@ -33,7 +33,7 @@ class EthDetectorsIntegrationTest(unittest.TestCase):
         mevm = ManticoreEVM()
         mevm.register_detector(IntegerOverflow())
         filename = os.path.join(THIS_DIR, 'binaries/int_overflow.sol')
-        mevm.multi_tx_analysis(filename)
+        mevm.multi_tx_analysis(filename, tx_limit=1)
         self.assertEqual(len(mevm.global_findings), 3)
         all_findings = ''.join(map(lambda x: x[2], mevm.global_findings))
         self.assertIn('underflow at SUB', all_findings)
