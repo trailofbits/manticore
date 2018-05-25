@@ -31,7 +31,7 @@ class IntegrationTest(unittest.TestCase):
 
         return set(vitems)
 
-    def _simple_cli_run(self, filename, contract=None):
+    def _simple_cli_run(self, filename, contract=None, tx_limit=1):
         """
         Simply run the Manticore command line with `filename`
         :param filename: Name of file inside the `tests/binaries` directory
@@ -44,6 +44,8 @@ class IntegrationTest(unittest.TestCase):
         if contract:
             command.append('--contract')
             command.append(contract)
+        command.append('--txlimit')
+        command.append(str(tx_limit))
         command.append(filename)
 
         subprocess.check_call(command, stdout=subprocess.PIPE)
@@ -136,22 +138,22 @@ class IntegrationTest(unittest.TestCase):
 
     def test_eth_regressions(self):
         issues = [
-            {'number': 676, 'contract': None},
-            {'number': 678, 'contract': None},
-            {'number': 701, 'contract': None},
-            {'number': 714, 'contract': None},
-            {'number': 735, 'contract': None},
-            {'number': 760, 'contract': None},
-            {'number': 780, 'contract': None},
-            {'number': 795, 'contract': None},
-            {'number': 799, 'contract': 'C'},
-            {'number': 807, 'contract': 'C'},
-            {'number': 808, 'contract': 'C'},
+            {'number': 676, 'contract': None, 'txlimit': 1},
+            {'number': 678, 'contract': None, 'txlimit': 1},
+            {'number': 701, 'contract': None, 'txlimit': 1},
+            {'number': 714, 'contract': None, 'txlimit': 1},
+            {'number': 735, 'contract': None, 'txlimit': 2},
+            {'number': 760, 'contract': None, 'txlimit': 1},
+            {'number': 780, 'contract': None, 'txlimit': 1},
+            {'number': 795, 'contract': None, 'txlimit': 1},
+            {'number': 799, 'contract': 'C', 'txlimit': 1},
+            {'number': 807, 'contract': 'C', 'txlimit': 1},
+            {'number': 808, 'contract': 'C', 'txlimit': 1},
         ]
 
         for issue in issues:
             self._simple_cli_run('{}.sol'.format(issue['number']),
-                                 contract=issue['contract'])
+                                 contract=issue['contract'], tx_limit=issue['txlimit'])
 
     def test_eth_705(self):
         # This test needs to run inside tests/binaries because the contract imports a file
