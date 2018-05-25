@@ -868,7 +868,7 @@ class Linux(Platform):
                 for mpath in env['LD_LIBRARY_PATH'].split(":"):
                     interpreter_path_filename = os.path.join(mpath, os.path.basename(interpreter_filename))
                     logger.info("looking for interpreter %s", interpreter_path_filename)
-                    if os.path.exists(interpreter_filename):
+                    if os.path.exists(interpreter_path_filename):
                         interpreter = ELFFile(open(interpreter_path_filename))
                         break
             break
