@@ -22,11 +22,7 @@ logger = logging.getLogger(__name__)
 #fixme make it gobal using this https://docs.python.org/3/library/configparser.html
 #and save it at the workspace so results are reproducible
 config = namedtuple("config", "out_of_gas")
-<<<<<<< HEAD
 config.out_of_gas = 1 #None # 0: default not enough gas, 1 default to always enough gas, 2: for on both
-=======
-config.out_of_gas = None  # 0: default not enough gas, 1 default to always enough gas, 2: for on both
->>>>>>> 0a5384029af925fcc28cebc0c481680d69579140
 
 # Auxiliar constants and functions
 TT256 = 2 ** 256
