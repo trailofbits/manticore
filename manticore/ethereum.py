@@ -1204,6 +1204,10 @@ class ManticoreEVM(Manticore):
         prev_coverage = 0
         current_coverage = 0
 
+
+        #avoid all human level tx that has no effect on the storage
+        filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
+        self.register_plugin(filter_nohuman_constants)
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
                 run_symbolic_tx()
@@ -1222,7 +1226,8 @@ class ManticoreEVM(Manticore):
 
                 if not found_new_coverage:
                     break
-
+        #Remove the filter
+        self.unregister_plugin(filter_nohuman_constants)
         self.finalize()
 
     def run(self, **kwargs):
