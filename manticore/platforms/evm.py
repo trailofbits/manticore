@@ -934,6 +934,13 @@ def concretized_args(**policies):
                 index = spec.args.index(arg)
                 if issymbolic(args[index]):
                     if policy:
+                        if policy == "ACCOUNTS":
+                            #special handler for EVM only policy
+                            cond = args[index] == 0
+                            for known_account in args[0].world.accounts:
+                                cond = Operators.OR(args[index] == known_account, cond)
+                                args[0].constraints.add(cond)
+                                raise ConcretizeStack(index, policy='ALL')
                         raise ConcretizeStack(index, policy=policy)
                     else:
                         raise ConcretizeStack(index)
@@ -1704,10 +1711,12 @@ class EVM(Eventful):
         '''Get price of gas in current environment'''
         return self.world.tx_gasprice()
 
+    @concretized_args(account='ACCOUNTS')
     def EXTCODESIZE(self, account):
         '''Get size of an account's code'''
         return len(self.world.get_code(account))
 
+    @concretized_args(account='ACCOUNTS')
     def EXTCODECOPY(self, account, address, offset, size):
         '''Copy an account's code to memory'''
         extbytecode = self.world.get_code(account)
@@ -1889,7 +1898,7 @@ class EVM(Eventful):
         return address
 
     @transact
-    @concretized_args(in_offset='SAMPLED', in_size='SAMPLED')
+    @concretized_args(address='ACCOUNTS', in_offset='SAMPLED', in_size='SAMPLED')
     def CALL(self, gas, address, value, in_offset, in_size, out_offset, out_size):
         '''Message-call into an account'''
         self.world.start_transaction('CALL',
