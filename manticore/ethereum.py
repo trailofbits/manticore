@@ -1218,7 +1218,6 @@ class ManticoreEVM(Manticore):
                 tx_limit -= 1
                 if tx_limit == 0:
                     break
-
             if tx_use_coverage:
                 prev_coverage = current_coverage
                 current_coverage = self.global_coverage(contract_account)
@@ -1811,8 +1810,7 @@ class ManticoreEVM(Manticore):
                 break
 
         with self.locked_context('runtime_coverage') as coverage:
-            seen = coverage
-
+            seen =  (off for addr, off in coverage if addr==account_address)
         return calculate_coverage(runtime_bytecode, seen)
 
     # TODO: Find a better way to suppress execution of Manticore._did_finish_run_callback
