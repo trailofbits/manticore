@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 #fixme make it gobal using this https://docs.python.org/3/library/configparser.html
 #and save it at the workspace so results are reproducible
 config = namedtuple("config", "out_of_gas")
-config.out_of_gas = None # 0: default not enough gas, 1 default to always enough gas, 2: for on both
+config.out_of_gas = 1 #None # 0: default not enough gas, 1 default to always enough gas, 2: for on both
 
 # Auxiliar constants and functions
 TT256 = 2 ** 256
@@ -1108,7 +1108,6 @@ class EVM(Eventful):
         super(EVM, self).__setstate__(state)
 
     def _allocate(self, address):
-
         allocated = self.allocated
         GMEMORY = 3
         GQUADRATICMEMDENOM = 512  # 1 gas per 512 quadwords
@@ -1118,7 +1117,6 @@ class EVM(Eventful):
         old_totalfee = self.safe_mul(old_size, GMEMORY) + Operators.UDIV(self.safe_mul(old_size, old_size), GQUADRATICMEMDENOM)
         new_totalfee = self.safe_mul(new_size, GMEMORY) + Operators.UDIV(self.safe_mul(new_size, new_size), GQUADRATICMEMDENOM)
         memfee = new_totalfee - old_totalfee
-
         flag = Operators.UGT(new_totalfee, old_totalfee)
         self._consume(Operators.ITEBV(512, flag, memfee, 0))
 
@@ -1213,7 +1211,7 @@ class EVM(Eventful):
 
     def _consume(self, fee):
         if isinstance(fee, (int,long)):
-            if fee > (1<<256)-1:
+            if fee > (1<<512)-1:
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
@@ -1996,13 +1994,11 @@ class EVM(Eventful):
 
     def REVERT(self, offset, size):
         data = self.read_buffer(offset, size)
-        self.world.send_funds(self.address, self.caller, self.value)
         #FIXME return remaining gas
         raise EndTx('REVERT', data)
 
     def THROW(self):
         #revert balance on CALL fail
-        self.send_funds(self.current_vm.address, self.current_vm.caller, self.current_vm.value)
         raise EndTx('THROW')
 
     def SELFDESTRUCT(self, recipient):
@@ -2471,6 +2467,8 @@ class EVMWorld(Platform):
         except StartTx:
             pass
         except EndTx as ex:
+            if ex.is_rollback():
+                self.world.send_funds(self.address, self.caller, self.value)
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
     def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
