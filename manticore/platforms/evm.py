@@ -1222,13 +1222,8 @@ class EVM(Eventful):
         return self.stack.pop()
 
     def _consume(self, fee):
-<<<<<<< HEAD
         if isinstance(fee, (int,long)):
             if fee > (1<<512)-1:
-=======
-        if isinstance(fee, (int, long)):
-            if fee > (1 << 256) - 1:
->>>>>>> 0a5384029af925fcc28cebc0c481680d69579140
                 raise ValueError
         elif isinstance(fee, BitVec):
             if (fee.size != 512):
