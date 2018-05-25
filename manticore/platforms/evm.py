@@ -2263,6 +2263,9 @@ class EVMWorld(Platform):
             self._deleted_accounts = self._deleted_accounts
             self._logs = logs
 
+            self.send_funds(tx.address, tx.caller, tx.value)
+
+
         tx.set_result(result, data)
         self._transactions.append(tx)
         if self.depth == 0:
@@ -2481,8 +2484,6 @@ class EVMWorld(Platform):
         except StartTx:
             pass
         except EndTx as ex:
-            if ex.is_rollback():
-                self.send_funds(self.address, self.caller, self.value)
             self._close_transaction(ex.result, ex.data, rollback=ex.is_rollback())
 
     def create_account(self, address=None, balance=0, code='', storage=None, nonce=0):
