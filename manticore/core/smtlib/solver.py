@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 ###############################################################################
 # Solver
 # A solver maintains a companion smtlib capable process connected via stdio.
@@ -14,14 +15,14 @@
 # You can add new constraints. A new constraint may change the state from {None, sat} to {sat, unsat, unknown}
 
 from subprocess import PIPE, Popen, check_output
-import operators as Operators
-from expression import *
-from constraints import *
+from . import operators as Operators
+from .expression import *
+from .constraints import *
 import logging
 import re
 import time
-from visitors import *
-from ...utils.helpers import issymbolic, istainted, taint_with, memoized
+from .visitors import *
+from ...utils.helpers import issymbolic, istainted, memoized
 import collections
 
 logger = logging.getLogger(__name__)

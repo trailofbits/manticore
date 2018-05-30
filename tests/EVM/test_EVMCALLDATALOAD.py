@@ -16,7 +16,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
         last_exception = None
         try:
             new_vm.execute()
-        except evm.Stop, e:
+        except evm.Stop as e:
             last_exception = "STOP"
         except evm.NotEnoughGas:
             last_exception = "OOG"
@@ -55,7 +55,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -86,7 +86,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [29515630589904128245223976570842015727304113738300535931626442982409229107200L])
+            self.assertEqual(new_vm.stack, [29515630589904128245223976570842015727304113738300535931626442982409229107200])
 
     def test_CALLDATALOAD_3(self):
             #Make the constraint store
@@ -113,7 +113,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [29515630589904128245223976570842015727304113738300535931626442982409224847360L])
+            self.assertEqual(new_vm.stack, [29515630589904128245223976570842015727304113738300535931626442982409224847360])
 
     def test_CALLDATALOAD_4(self):
             #Make the constraint store
@@ -136,7 +136,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -163,7 +163,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -194,7 +194,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [29515630589904128245223976570842010042800435681475029265659040150473943285760L])
+            self.assertEqual(new_vm.stack, [29515630589904128245223976570842010042800435681475029265659040150473943285760])
 
     def test_CALLDATALOAD_7(self):
             #Make the constraint store
@@ -271,7 +271,7 @@ class EVMTest_CALLDATALOAD(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 import random
 import logging
@@ -8,7 +9,7 @@ from ..utils.event import Eventful
 from .smtlib import solver, Z3Solver, Expression, SolverException
 from .state import Concretize, TerminateState
 
-from workspace import Workspace
+from .workspace import Workspace
 from multiprocessing.managers import SyncManager
 from contextlib import contextmanager
 

@@ -16,7 +16,7 @@ class EVMTest_CALLER(unittest.TestCase):
         last_exception = None
         try:
             new_vm.execute()
-        except evm.Stop, e:
+        except evm.Stop as e:
             last_exception = "STOP"
         except evm.NotEnoughGas:
             last_exception = "OOG"
@@ -58,7 +58,7 @@ class EVMTest_CALLER(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912L])
+            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912])
 
 if __name__ == '__main__':
     unittest.main()

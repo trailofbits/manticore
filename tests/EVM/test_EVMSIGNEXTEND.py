@@ -16,7 +16,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
         last_exception = None
         try:
             new_vm.execute()
-        except evm.Stop, e:
+        except evm.Stop as e:
             last_exception = "STOP"
         except evm.NotEnoughGas:
             last_exception = "OOG"
@@ -55,12 +55,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_2(self):
             #Make the constraint store
@@ -83,12 +83,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_3(self):
             #Make the constraint store
@@ -111,12 +111,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_4(self):
             #Make the constraint store
@@ -139,12 +139,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_5(self):
             #Make the constraint store
@@ -167,12 +167,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_6(self):
             #Make the constraint store
@@ -195,12 +195,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_7(self):
             #Make the constraint store
@@ -223,12 +223,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_8(self):
             #Make the constraint store
@@ -251,12 +251,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_9(self):
             #Make the constraint store
@@ -279,12 +279,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639935])
 
     def test_SIGNEXTEND_10(self):
             #Make the constraint store
@@ -308,7 +308,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -392,7 +392,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -420,7 +420,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -452,7 +452,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0L])
+            self.assertEqual(new_vm.stack, [0])
 
     def test_SIGNEXTEND_16(self):
             #Make the constraint store
@@ -532,7 +532,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -560,7 +560,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -644,7 +644,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -672,7 +672,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -704,7 +704,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [1L])
+            self.assertEqual(new_vm.stack, [1])
 
     def test_SIGNEXTEND_25(self):
             #Make the constraint store
@@ -784,7 +784,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -811,12 +811,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952L])
+            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952])
 
     def test_SIGNEXTEND_29(self):
             #Make the constraint store
@@ -839,12 +839,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639920L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639920])
 
     def test_SIGNEXTEND_30(self):
             #Make the constraint store
@@ -867,12 +867,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639920L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639920])
 
     def test_SIGNEXTEND_31(self):
             #Make the constraint store
@@ -895,12 +895,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952L])
+            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952])
 
     def test_SIGNEXTEND_32(self):
             #Make the constraint store
@@ -923,12 +923,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952L])
+            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952])
 
     def test_SIGNEXTEND_33(self):
             #Make the constraint store
@@ -951,12 +951,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639920L])
+            self.assertEqual(new_vm.stack, [115792089237316195423570985008687907853269984665640564039457584007913129639920])
 
     def test_SIGNEXTEND_34(self):
             #Make the constraint store
@@ -979,12 +979,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952L])
+            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952])
 
     def test_SIGNEXTEND_35(self):
             #Make the constraint store
@@ -1007,12 +1007,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952L])
+            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952])
 
     def test_SIGNEXTEND_36(self):
             #Make the constraint store
@@ -1035,12 +1035,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952L])
+            self.assertEqual(new_vm.stack, [57896044618658097711785492504343953926634992332820282019728792003956564819952])
 
     def test_SIGNEXTEND_37(self):
             #Make the constraint store
@@ -1063,12 +1063,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263L])
+            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263])
 
     def test_SIGNEXTEND_38(self):
             #Make the constraint store
@@ -1091,12 +1091,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [15L])
+            self.assertEqual(new_vm.stack, [15])
 
     def test_SIGNEXTEND_39(self):
             #Make the constraint store
@@ -1119,12 +1119,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [15L])
+            self.assertEqual(new_vm.stack, [15])
 
     def test_SIGNEXTEND_40(self):
             #Make the constraint store
@@ -1147,12 +1147,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263L])
+            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263])
 
     def test_SIGNEXTEND_41(self):
             #Make the constraint store
@@ -1175,12 +1175,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263L])
+            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263])
 
     def test_SIGNEXTEND_42(self):
             #Make the constraint store
@@ -1203,12 +1203,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [15L])
+            self.assertEqual(new_vm.stack, [15])
 
     def test_SIGNEXTEND_43(self):
             #Make the constraint store
@@ -1231,12 +1231,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263L])
+            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263])
 
     def test_SIGNEXTEND_44(self):
             #Make the constraint store
@@ -1259,12 +1259,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263L])
+            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263])
 
     def test_SIGNEXTEND_45(self):
             #Make the constraint store
@@ -1287,12 +1287,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263L])
+            self.assertEqual(new_vm.stack, [3618502788666131106986593281521497120414687020801267626233049500247285301263])
 
     def test_SIGNEXTEND_46(self):
             #Make the constraint store
@@ -1316,7 +1316,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1400,7 +1400,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1428,7 +1428,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1460,7 +1460,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [16L])
+            self.assertEqual(new_vm.stack, [16])
 
     def test_SIGNEXTEND_52(self):
             #Make the constraint store
@@ -1540,7 +1540,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1568,7 +1568,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1652,7 +1652,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1680,7 +1680,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1712,7 +1712,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [32L])
+            self.assertEqual(new_vm.stack, [32])
 
     def test_SIGNEXTEND_61(self):
             #Make the constraint store
@@ -1792,7 +1792,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1820,7 +1820,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1904,7 +1904,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1932,7 +1932,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -1964,7 +1964,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [48L])
+            self.assertEqual(new_vm.stack, [48])
 
     def test_SIGNEXTEND_70(self):
             #Make the constraint store
@@ -2044,7 +2044,7 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
@@ -2071,12 +2071,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912L])
+            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912])
 
     def test_SIGNEXTEND_74(self):
             #Make the constraint store
@@ -2099,12 +2099,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [0L])
+            self.assertEqual(new_vm.stack, [0])
 
     def test_SIGNEXTEND_75(self):
             #Make the constraint store
@@ -2127,12 +2127,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [4352L])
+            self.assertEqual(new_vm.stack, [4352])
 
     def test_SIGNEXTEND_76(self):
             #Make the constraint store
@@ -2155,12 +2155,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912L])
+            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912])
 
     def test_SIGNEXTEND_77(self):
             #Make the constraint store
@@ -2183,12 +2183,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912L])
+            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912])
 
     def test_SIGNEXTEND_78(self):
             #Make the constraint store
@@ -2211,12 +2211,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [5807485728784016443108259966835510808832L])
+            self.assertEqual(new_vm.stack, [5807485728784016443108259966835510808832])
 
     def test_SIGNEXTEND_79(self):
             #Make the constraint store
@@ -2239,12 +2239,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912L])
+            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912])
 
     def test_SIGNEXTEND_80(self):
             #Make the constraint store
@@ -2267,12 +2267,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912L])
+            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912])
 
     def test_SIGNEXTEND_81(self):
             #Make the constraint store
@@ -2295,12 +2295,12 @@ class EVMTest_SIGNEXTEND(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912L])
+            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912])
 
 if __name__ == '__main__':
     unittest.main()

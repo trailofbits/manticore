@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import sys
 import logging
 import argparse
@@ -92,7 +93,7 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from ethereum import ManticoreEVM
+    from .ethereum import ManticoreEVM
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)

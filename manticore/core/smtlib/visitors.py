@@ -1,4 +1,5 @@
-from expression import *
+from __future__ import absolute_import
+from .expression import *
 from functools32 import lru_cache
 import logging
 import operator

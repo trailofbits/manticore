@@ -826,10 +826,10 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(cpu.AF, False)
         self.assertEqual(cpu.OF, False)
         self.assertEqual(cpu.ZF, False)
-        self.assertEqual(cpu.RIP, 4317452L)
+        self.assertEqual(cpu.RIP, 4317452)
         self.assertEqual(cpu.PF, True)
         self.assertEqual(cpu.SF, False)
-        self.assertEqual(cpu.ECX, 12L)
+        self.assertEqual(cpu.ECX, 12)
 
     def test_PUSHFD_1(self):
         ''' Instruction PUSHFD_1
@@ -879,7 +879,7 @@ class SymCPUTest(unittest.TestCase):
         self.assertEqual(mem[0x8059a8d], '\xd7')
         self.assertEqual(mem[0xffffd00a], '\x41')
         self.assertEqual(cpu.AL, 0x41)
-        self.assertEqual(cpu.EIP, 134584974L)
+        self.assertEqual(cpu.EIP, 134584974)
 
     def test_XLATB_1_symbolic(self):
         ''' Instruction XLATB_1
@@ -949,7 +949,7 @@ Using the SAR instruction to perform a division operation does not produce the s
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -1021,7 +1021,7 @@ Using the SAR instruction to perform a division operation does not produce the s
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -1086,7 +1086,7 @@ Using the SAR instruction to perform a division operation does not produce the s
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)

@@ -23,7 +23,7 @@ class EVMTest_SHA3(unittest.TestCase):
         last_exception = None
         try:
             new_vm.execute()
-        except evm.Stop, e:
+        except evm.Stop as e:
             last_exception = "STOP"
         except evm.NotEnoughGas:
             last_exception = "OOG"
@@ -62,8 +62,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -88,7 +88,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -114,7 +114,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -140,8 +140,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -166,8 +166,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -192,7 +192,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -218,7 +218,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -244,7 +244,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -270,8 +270,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -297,11 +297,11 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_11(self):
             #Make the constraint store
@@ -329,7 +329,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_12(self):
             #Make the constraint store
@@ -357,7 +357,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_13(self):
             #Make the constraint store
@@ -381,11 +381,11 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_14(self):
             #Make the constraint store
@@ -409,11 +409,11 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_15(self):
             #Make the constraint store
@@ -441,7 +441,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_16(self):
             #Make the constraint store
@@ -469,7 +469,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_17(self):
             #Make the constraint store
@@ -497,7 +497,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_18(self):
             #Make the constraint store
@@ -521,11 +521,11 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(0)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552L])
+            self.assertEqual(new_vm.stack, [89477152217924674838424037953991966239322087453347756267410168184682657981552])
 
     def test_SHA3_19(self):
             #Make the constraint store
@@ -549,7 +549,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -580,7 +580,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846L])
+            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846])
 
     def test_SHA3_21(self):
             #Make the constraint store
@@ -609,7 +609,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846L])
+            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846])
 
     def test_SHA3_22(self):
             #Make the constraint store
@@ -633,7 +633,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -659,7 +659,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -690,7 +690,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846L])
+            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846])
 
     def test_SHA3_25(self):
             #Make the constraint store
@@ -719,7 +719,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846L])
+            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846])
 
     def test_SHA3_26(self):
             #Make the constraint store
@@ -748,7 +748,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846L])
+            self.assertEqual(new_vm.stack, [38468488817986530247887777414678086216360049057372179296543030553902011157846])
 
     def test_SHA3_27(self):
             #Make the constraint store
@@ -772,7 +772,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(1)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -797,8 +797,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -823,7 +823,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -849,7 +849,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -875,8 +875,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -901,8 +901,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -927,7 +927,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -953,7 +953,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -979,7 +979,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -1005,8 +1005,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1031,8 +1031,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1057,7 +1057,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -1083,7 +1083,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -1109,8 +1109,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1135,8 +1135,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1161,7 +1161,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -1187,7 +1187,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -1213,7 +1213,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -1239,8 +1239,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1266,7 +1266,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1312,7 +1312,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461L])
+            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461])
 
     def test_SHA3_48(self):
             #Make the constraint store
@@ -1356,7 +1356,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461L])
+            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461])
 
     def test_SHA3_49(self):
             #Make the constraint store
@@ -1380,7 +1380,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1406,7 +1406,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1452,7 +1452,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461L])
+            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461])
 
     def test_SHA3_52(self):
             #Make the constraint store
@@ -1496,7 +1496,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461L])
+            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461])
 
     def test_SHA3_53(self):
             #Make the constraint store
@@ -1540,7 +1540,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461L])
+            self.assertEqual(new_vm.stack, [4734955612022241403446959571200475901047349850262219251209420455990604867461])
 
     def test_SHA3_54(self):
             #Make the constraint store
@@ -1564,7 +1564,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(16)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1590,7 +1590,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1652,7 +1652,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581L])
+            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581])
 
     def test_SHA3_57(self):
             #Make the constraint store
@@ -1712,7 +1712,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581L])
+            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581])
 
     def test_SHA3_58(self):
             #Make the constraint store
@@ -1736,7 +1736,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1762,7 +1762,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1824,7 +1824,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581L])
+            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581])
 
     def test_SHA3_61(self):
             #Make the constraint store
@@ -1884,7 +1884,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581L])
+            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581])
 
     def test_SHA3_62(self):
             #Make the constraint store
@@ -1944,7 +1944,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581L])
+            self.assertEqual(new_vm.stack, [55858784234176438416533633276923373318937222299816437706613930531814037745581])
 
     def test_SHA3_63(self):
             #Make the constraint store
@@ -1968,7 +1968,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(32)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -1994,7 +1994,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2072,7 +2072,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046L])
+            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046])
 
     def test_SHA3_66(self):
             #Make the constraint store
@@ -2148,7 +2148,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046L])
+            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046])
 
     def test_SHA3_67(self):
             #Make the constraint store
@@ -2172,7 +2172,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2198,7 +2198,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2276,7 +2276,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046L])
+            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046])
 
     def test_SHA3_70(self):
             #Make the constraint store
@@ -2352,7 +2352,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046L])
+            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046])
 
     def test_SHA3_71(self):
             #Make the constraint store
@@ -2428,7 +2428,7 @@ class EVMTest_SHA3(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046L])
+            self.assertEqual(new_vm.stack, [87315138422451183025224871972802370450373932520512056513148796263698858401046])
 
     def test_SHA3_72(self):
             #Make the constraint store
@@ -2452,7 +2452,7 @@ class EVMTest_SHA3(unittest.TestCase):
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
             new_vm._push(48)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2477,8 +2477,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(115792089237316195423570985008687907853269984665640564039457584007913129639935)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2503,7 +2503,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(0)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -2529,7 +2529,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(1)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -2555,8 +2555,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(57896044618658097711785492504343953926634992332820282019728792003956564819952)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2581,8 +2581,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(3618502788666131106986593281521497120414687020801267626233049500247285301263)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
@@ -2607,7 +2607,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(16)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -2633,7 +2633,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(32)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -2659,7 +2659,7 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             new_vm._push(48)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
@@ -2685,8 +2685,8 @@ class EVMTest_SHA3(unittest.TestCase):
             gas = 1000000
 
             new_vm = evm.EVM(constraints, address, data, caller, value, bytecode, gas=gas, world=world)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
-            new_vm._push(6089590155545428825848686802984512581899718912L)
+            new_vm._push(6089590155545428825848686802984512581899718912)
+            new_vm._push(6089590155545428825848686802984512581899718912)
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, 'OOG')
 
