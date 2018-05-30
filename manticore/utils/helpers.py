@@ -1,4 +1,6 @@
-import collections, re
+import functools
+import collections
+import re
 from ..core.smtlib import Expression
 
 
@@ -23,16 +25,13 @@ def istainted(arg, taint=None):
 
     if not issymbolic(arg):
         return False
-    if taint is None: #any taint
+    if taint is None:
         return len(arg.taint) != 0
     for arg_taint in arg.taint:
         m = re.match(taint, arg_taint, re.DOTALL | re.IGNORECASE)
         if m:
             return True
     return False
-        
-import functools
-
 
 class memoized(object):
     '''Decorator. Caches a function's return value each time it is called.

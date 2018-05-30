@@ -76,7 +76,6 @@ class Detector(Plugin):
     def _get_location(self, state, hash_id):
         return state.context.setdefault('%s.locations' % self.name, {})[hash_id]
 
-
     def _get_src(self, address, pc):
         return self.manticore.get_metadata(address).get_source_for(pc)
 
@@ -90,6 +89,7 @@ class Detector(Plugin):
             output += '\n'.join(('\t\t' + x for x in self._get_src(address, pc).split('\n')))
             output += '\n'
         return output
+
 
 class FilterFunctions(Plugin):
     def __init__(self, regexp=r'.*', mutability='both', depth='both', fallback=False, include=True, **kwargs):
@@ -193,6 +193,7 @@ class DetectInvalid(Detector):
             if not self._only_human or state.platform.current_transaction.depth == 0:
                 self.add_finding_here(state, "INVALID intruction")
 
+
 class IntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
@@ -232,7 +233,6 @@ class IntegerOverflow(Detector):
             for arg in arguments:
                 if istainted(arg, 'IOA') or istainted(arg, 'IOM') or istainted(arg, 'IU'):
                     self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
-
 
 
 class UninitializedMemory(Detector):
@@ -1346,7 +1346,6 @@ class ManticoreEVM(Manticore):
         self.register_detector(UninitializedStorage())
         self.register_detector(UninitializedMemory())
 
-
         self.register_detector(DetectInvalid())
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
@@ -1945,7 +1944,6 @@ class ManticoreEVM(Manticore):
             seth_context['_final_states'] = []
 
         logger.info("Results in %s", self.workspace)
-
 
     def global_coverage(self, account_address):
         ''' Returns code coverage for the contract on `account_address`.

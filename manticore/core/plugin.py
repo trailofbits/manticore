@@ -270,8 +270,6 @@ class ConcreteTraceFollower(Plugin):
 
 
 # TODO document all callbacks
-
-
 class ExamplePlugin(Plugin):
     def will_decode_instruction_callback(self, state, pc):
         logger.info('will_decode_instruction', state, pc)
