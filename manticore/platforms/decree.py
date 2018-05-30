@@ -1,4 +1,5 @@
-import cgcrandom
+from __future__ import absolute_import
+from . import cgcrandom
 # TODO use cpu factory
 from ..core.cpu.x86 import I386Cpu
 from ..core.cpu.abstractcpu import Interruption, Syscall, ConcretizeRegister
@@ -1055,7 +1056,7 @@ class DecreeEmu(object):
 
     @staticmethod
     def cgc_random(platform, buf, count, rnd_bytes):
-        import cgcrandom
+        from . import cgcrandom
         if issymbolic(buf):
             logger.info("Ask to write random bytes to a symbolic buffer")
             raise ConcretizeArgument(platform.current, 0)

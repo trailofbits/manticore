@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 import sys
 import time
@@ -501,9 +502,9 @@ class Manticore(Eventful):
 
         # Imported straight from __main__.py; this will be re-written once the new
         # event code is in place.
-        import core.cpu
+        from .core import cpu
         import importlib
-        import platforms
+        from . import platforms
 
         with open(path, 'r') as fnames:
             for line in fnames.readlines():
