@@ -58,7 +58,7 @@ class EVMTest_ADDRESS(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [12179180311090857651697373605969025163799437824L])
+            self.assertEqual(new_vm.stack, [12179180311090857651697373605969025163799437824])
 
 if __name__ == '__main__':
     unittest.main()

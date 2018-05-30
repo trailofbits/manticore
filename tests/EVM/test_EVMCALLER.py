@@ -58,7 +58,7 @@ class EVMTest_CALLER(unittest.TestCase):
             last_exception, last_returned = self._execute(new_vm)
             self.assertEqual(last_exception, None)
             self.assertEqual(new_vm.pc, 1)
-            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912L])
+            self.assertEqual(new_vm.stack, [6089590155545428825848686802984512581899718912])
 
 if __name__ == '__main__':
     unittest.main()
