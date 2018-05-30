@@ -1,9 +1,11 @@
+from __future__ import absolute_import
 import struct
 import unittest
 from manticore.core.cpu.x86 import *
 from manticore.core.smtlib import Operators
 from manticore.core.memory import *
-import mockmem
+from . import mockmem
+from functools import reduce
 
 class ROOperand(object):
     ''' Mocking class for operand ronly '''

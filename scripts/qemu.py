@@ -1,3 +1,4 @@
+from __future__ import print_function
 import copy
 import traceback
 import os
@@ -82,7 +83,7 @@ def start(arch, argv, port=1234, va_size=0xc0000000, stack_size=0x20000):
     stats = parse_mmu_debug_output(mmu_debug_output)
     for m in stats['maps']:
         start,  end, size, perms = m
-        print '{:x}-{:x}, {}, {}'.format(*m)
+        print('{:x}-{:x}, {}, {}'.format(*m))
 
 def correspond(text):
     """Communicate with the child process without closing stdin."""

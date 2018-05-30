@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Minimal INTEL assembler expression calculator
 import ply.yacc as yacc
 import copy
@@ -116,7 +117,7 @@ t_ignore = ' \t'
 
 
 def t_error(t):
-    print "Illegal character '%s'" % t.value[0]
+    print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
 
 
@@ -296,7 +297,7 @@ def p_expression_ge(p):
 
 # Error rule for syntax errors
 def p_error(p):
-    print "Syntax error in input:", p
+    print("Syntax error in input:", p)
 
 # Build the parser
 
@@ -345,4 +346,4 @@ if __name__ == '__main__':
         if not s:
             continue
         result = parse(s)
-        print result
+        print(result)
