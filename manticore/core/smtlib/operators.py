@@ -1,4 +1,5 @@
-from expression import *
+from __future__ import absolute_import
+from .expression import *
 from ...utils.helpers import issymbolic, istainted
 import math
 
