@@ -16818,7 +16818,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -16882,7 +16882,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -16945,7 +16945,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17008,7 +17008,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17114,7 +17114,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17229,7 +17229,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17299,7 +17299,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17361,7 +17361,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17423,7 +17423,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17484,7 +17484,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17544,7 +17544,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17629,7 +17629,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17689,7 +17689,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17738,7 +17738,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17787,7 +17787,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17837,7 +17837,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17888,7 +17888,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17938,7 +17938,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -17985,7 +17985,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18031,7 +18031,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18078,7 +18078,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18125,7 +18125,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18172,7 +18172,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18220,7 +18220,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18270,7 +18270,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18321,7 +18321,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18372,7 +18372,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18423,7 +18423,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18474,7 +18474,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18525,7 +18525,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18661,7 +18661,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -18856,7 +18856,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19017,7 +19017,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19170,7 +19170,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19323,7 +19323,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19476,7 +19476,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19538,7 +19538,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19579,7 +19579,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19620,7 +19620,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19661,7 +19661,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19702,7 +19702,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19743,7 +19743,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19783,7 +19783,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19822,7 +19822,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19861,7 +19861,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19900,7 +19900,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19939,7 +19939,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -19978,7 +19978,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20024,7 +20024,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20074,7 +20074,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20124,7 +20124,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20174,7 +20174,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20224,7 +20224,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20274,7 +20274,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20326,7 +20326,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20378,7 +20378,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20430,7 +20430,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20482,7 +20482,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20534,7 +20534,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20586,7 +20586,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20638,7 +20638,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20690,7 +20690,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20742,7 +20742,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20794,7 +20794,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20846,7 +20846,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20898,7 +20898,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20948,7 +20948,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -20997,7 +20997,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21045,7 +21045,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21094,7 +21094,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21143,7 +21143,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21191,7 +21191,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21240,7 +21240,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21290,7 +21290,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21340,7 +21340,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21433,7 +21433,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21494,7 +21494,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21544,7 +21544,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21594,7 +21594,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21644,7 +21644,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21694,7 +21694,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21744,7 +21744,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21793,7 +21793,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21842,7 +21842,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21892,7 +21892,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -21942,7 +21942,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22072,7 +22072,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22217,7 +22217,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22362,7 +22362,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22507,7 +22507,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22651,7 +22651,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22795,7 +22795,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -22907,7 +22907,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23016,7 +23016,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23124,7 +23124,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23232,7 +23232,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23341,7 +23341,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23451,7 +23451,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23548,7 +23548,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23643,7 +23643,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23735,7 +23735,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23848,7 +23848,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -23945,7 +23945,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24037,7 +24037,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24106,7 +24106,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24182,7 +24182,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24247,7 +24247,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24354,7 +24354,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24429,7 +24429,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24492,7 +24492,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24543,7 +24543,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24587,7 +24587,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24631,7 +24631,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24675,7 +24675,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24719,7 +24719,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24763,7 +24763,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24815,7 +24815,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24871,7 +24871,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -24927,7 +24927,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25006,7 +25006,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25069,7 +25069,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25125,7 +25125,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25176,7 +25176,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25225,7 +25225,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25274,7 +25274,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25323,7 +25323,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25372,7 +25372,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25421,7 +25421,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25470,7 +25470,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25519,7 +25519,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25568,7 +25568,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25617,7 +25617,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25666,7 +25666,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25715,7 +25715,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25770,7 +25770,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25828,7 +25828,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25883,7 +25883,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25936,7 +25936,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -25993,7 +25993,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26053,7 +26053,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26112,7 +26112,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26170,7 +26170,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26228,7 +26228,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26286,7 +26286,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26344,7 +26344,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26402,7 +26402,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26449,7 +26449,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26489,7 +26489,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26529,7 +26529,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26573,7 +26573,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26617,7 +26617,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26657,7 +26657,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26699,7 +26699,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26741,7 +26741,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26783,7 +26783,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26825,7 +26825,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26867,7 +26867,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26909,7 +26909,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -26955,7 +26955,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27005,7 +27005,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27051,7 +27051,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27097,7 +27097,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27143,7 +27143,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27189,7 +27189,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27233,7 +27233,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27273,7 +27273,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27317,7 +27317,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27361,7 +27361,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27401,7 +27401,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27441,7 +27441,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27485,7 +27485,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27533,7 +27533,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27581,7 +27581,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27629,7 +27629,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27673,7 +27673,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27713,7 +27713,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27759,7 +27759,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27805,7 +27805,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27851,7 +27851,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27899,7 +27899,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27947,7 +27947,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -27995,7 +27995,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28043,7 +28043,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28095,7 +28095,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28147,7 +28147,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28195,7 +28195,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28243,7 +28243,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28291,7 +28291,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28335,7 +28335,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28379,7 +28379,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28423,7 +28423,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28465,7 +28465,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28507,7 +28507,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28549,7 +28549,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28590,7 +28590,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28631,7 +28631,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28672,7 +28672,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28715,7 +28715,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28754,7 +28754,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28792,7 +28792,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28832,7 +28832,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28872,7 +28872,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28916,7 +28916,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -28960,7 +28960,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29000,7 +29000,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29040,7 +29040,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29080,7 +29080,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29124,7 +29124,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29168,7 +29168,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29208,7 +29208,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29248,7 +29248,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29288,7 +29288,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29332,7 +29332,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29380,7 +29380,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29428,7 +29428,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29472,7 +29472,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29512,7 +29512,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29552,7 +29552,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -29759,7 +29759,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30000,7 +30000,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30246,7 +30246,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30493,7 +30493,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30740,7 +30740,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -30987,7 +30987,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31107,7 +31107,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31204,7 +31204,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31301,7 +31301,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31398,7 +31398,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31496,7 +31496,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31598,7 +31598,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31661,7 +31661,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31718,7 +31718,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31775,7 +31775,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31832,7 +31832,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31889,7 +31889,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31946,7 +31946,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -31999,7 +31999,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32047,7 +32047,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32095,7 +32095,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32225,7 +32225,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32290,7 +32290,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32338,7 +32338,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32468,7 +32468,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32615,7 +32615,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32763,7 +32763,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -32912,7 +32912,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33061,7 +33061,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33209,7 +33209,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33274,7 +33274,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33322,7 +33322,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33370,7 +33370,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33418,7 +33418,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33466,7 +33466,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33514,7 +33514,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33604,7 +33604,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33703,7 +33703,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33802,7 +33802,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -33901,7 +33901,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34000,7 +34000,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34099,7 +34099,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34238,7 +34238,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34383,7 +34383,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34528,7 +34528,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34673,7 +34673,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34818,7 +34818,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -34963,7 +34963,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35025,7 +35025,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35095,7 +35095,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35169,7 +35169,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35242,7 +35242,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35315,7 +35315,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35390,7 +35390,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35448,7 +35448,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35501,7 +35501,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35554,7 +35554,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35607,7 +35607,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35660,7 +35660,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35713,7 +35713,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35767,7 +35767,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35821,7 +35821,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35868,7 +35868,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35927,7 +35927,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -35978,7 +35978,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36032,7 +36032,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36080,7 +36080,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36127,7 +36127,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36196,7 +36196,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36273,7 +36273,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36351,7 +36351,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36429,7 +36429,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36487,7 +36487,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36539,7 +36539,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36591,7 +36591,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36643,7 +36643,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36695,7 +36695,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36749,7 +36749,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36808,7 +36808,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36869,7 +36869,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36929,7 +36929,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -36989,7 +36989,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37050,7 +37050,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37111,7 +37111,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37160,7 +37160,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37202,7 +37202,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37244,7 +37244,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37287,7 +37287,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37330,7 +37330,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37373,7 +37373,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37428,7 +37428,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37530,7 +37530,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37641,7 +37641,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37752,7 +37752,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37863,7 +37863,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37933,7 +37933,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -37985,7 +37985,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38034,7 +38034,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38083,7 +38083,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38131,7 +38131,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38179,7 +38179,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38227,7 +38227,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38358,7 +38358,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38507,7 +38507,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38573,7 +38573,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38704,7 +38704,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38770,7 +38770,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38818,7 +38818,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38867,7 +38867,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38917,7 +38917,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -38966,7 +38966,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39015,7 +39015,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39065,7 +39065,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39115,7 +39115,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39247,7 +39247,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39395,7 +39395,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39545,7 +39545,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39694,7 +39694,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39842,7 +39842,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -39990,7 +39990,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40053,7 +40053,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40101,7 +40101,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40149,7 +40149,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40197,7 +40197,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40245,7 +40245,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40293,7 +40293,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40340,7 +40340,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40387,7 +40387,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40434,7 +40434,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40481,7 +40481,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40528,7 +40528,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40575,7 +40575,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40621,7 +40621,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40666,7 +40666,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40711,7 +40711,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40756,7 +40756,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40801,7 +40801,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40846,7 +40846,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40891,7 +40891,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40936,7 +40936,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -40981,7 +40981,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41026,7 +41026,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41071,7 +41071,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41116,7 +41116,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41249,7 +41249,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41400,7 +41400,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41553,7 +41553,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41704,7 +41704,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41850,7 +41850,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -41999,7 +41999,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42064,7 +42064,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42111,7 +42111,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42158,7 +42158,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42205,7 +42205,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42252,7 +42252,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42299,7 +42299,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42430,7 +42430,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42575,7 +42575,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42720,7 +42720,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -42865,7 +42865,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43010,7 +43010,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43155,7 +43155,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43219,7 +43219,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43270,7 +43270,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43321,7 +43321,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43372,7 +43372,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43423,7 +43423,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43474,7 +43474,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43525,7 +43525,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43576,7 +43576,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43627,7 +43627,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43678,7 +43678,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43729,7 +43729,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43780,7 +43780,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43837,7 +43837,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43897,7 +43897,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -43957,7 +43957,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44017,7 +44017,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44077,7 +44077,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44137,7 +44137,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44273,7 +44273,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44421,7 +44421,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44569,7 +44569,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44717,7 +44717,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -44865,7 +44865,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45013,7 +45013,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45078,7 +45078,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45126,7 +45126,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45175,7 +45175,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45224,7 +45224,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45273,7 +45273,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45322,7 +45322,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45371,7 +45371,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45417,7 +45417,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45462,7 +45462,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45507,7 +45507,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45552,7 +45552,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45597,7 +45597,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45642,7 +45642,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45688,7 +45688,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45734,7 +45734,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45779,7 +45779,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45824,7 +45824,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45870,7 +45870,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45916,7 +45916,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -45966,7 +45966,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46017,7 +46017,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46067,7 +46067,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46116,7 +46116,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46161,7 +46161,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46206,7 +46206,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46251,7 +46251,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46296,7 +46296,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46341,7 +46341,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46386,7 +46386,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46475,7 +46475,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46534,7 +46534,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46584,7 +46584,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46676,7 +46676,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46740,7 +46740,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46797,7 +46797,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46854,7 +46854,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46911,7 +46911,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -46968,7 +46968,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47025,7 +47025,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47081,7 +47081,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47138,7 +47138,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47196,7 +47196,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47252,7 +47252,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47309,7 +47309,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47365,7 +47365,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47410,7 +47410,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47449,7 +47449,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47488,7 +47488,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47527,7 +47527,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47566,7 +47566,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47605,7 +47605,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47732,7 +47732,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -47879,7 +47879,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48026,7 +48026,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48173,7 +48173,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48320,7 +48320,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48467,7 +48467,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48615,7 +48615,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48764,7 +48764,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -48914,7 +48914,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49063,7 +49063,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49212,7 +49212,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49361,7 +49361,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49439,7 +49439,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49508,7 +49508,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49574,7 +49574,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49640,7 +49640,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49709,7 +49709,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49778,7 +49778,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49840,7 +49840,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49896,7 +49896,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -49953,7 +49953,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50019,7 +50019,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50080,7 +50080,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50138,7 +50138,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50189,7 +50189,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50237,7 +50237,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50285,7 +50285,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50333,7 +50333,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50381,7 +50381,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50429,7 +50429,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50478,7 +50478,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50528,7 +50528,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50578,7 +50578,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50628,7 +50628,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50678,7 +50678,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50728,7 +50728,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50775,7 +50775,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50820,7 +50820,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50865,7 +50865,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50910,7 +50910,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -50955,7 +50955,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51000,7 +51000,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51042,7 +51042,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51082,7 +51082,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51122,7 +51122,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51162,7 +51162,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51202,7 +51202,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51242,7 +51242,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51288,7 +51288,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51337,7 +51337,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51386,7 +51386,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51435,7 +51435,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51484,7 +51484,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51533,7 +51533,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51580,7 +51580,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51626,7 +51626,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51754,7 +51754,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51817,7 +51817,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -51945,7 +51945,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52090,7 +52090,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52160,7 +52160,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52219,7 +52219,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52277,7 +52277,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52333,7 +52333,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52389,7 +52389,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
@@ -52446,7 +52446,7 @@ class CPUTest(unittest.TestCase):
                 cpu.execute()
                 #cpu.writeback()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)

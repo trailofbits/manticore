@@ -51,7 +51,7 @@ class Gdb(subprocess.Popen):
     def getM(self, m):
         try:
             return long(self.correspond('x/xg %s\n'%m).split("\t")[-1].split("0x")[-1].split("\n")[0],16)
-        except Exception,e:
+        except Exception as e:
             print 'x/xg %s\n'%m
             print self.correspond('x/xg %s\n'%m)
             raise e
@@ -122,7 +122,7 @@ while True:
         print hex(pc)
         gdb.stepi()
         print gdb.correspond('info registers\n')
-    except Exception,e:
+    except Exception as e:
         print e
 print "# Processed %d instructions." % count
 

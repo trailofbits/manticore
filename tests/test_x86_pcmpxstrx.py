@@ -12,7 +12,7 @@ def skipIfNotImplemented(f):
     def test_inner(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except NotImplementedError, e:
+        except NotImplementedError as e:
             raise unittest.SkipTest(e.message)
 
     return test_inner
@@ -11440,14 +11440,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400becL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11533,14 +11533,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b20L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11626,14 +11626,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b38L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11719,14 +11719,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bfeL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11812,14 +11812,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b86L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11905,14 +11905,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ae4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -11998,14 +11998,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c04L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12091,14 +12091,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b6eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12184,14 +12184,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b2cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12277,14 +12277,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400af0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12370,14 +12370,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400be0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12463,14 +12463,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b4aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12556,14 +12556,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c0aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12649,14 +12649,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b14L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12742,14 +12742,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bb6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12835,14 +12835,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b08L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -12928,14 +12928,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c1cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13021,14 +13021,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bdaL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13114,14 +13114,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c10L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13207,14 +13207,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c34L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13300,14 +13300,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c2eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13393,14 +13393,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b80L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13486,14 +13486,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ac6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13579,14 +13579,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ba4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13672,14 +13672,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ad8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13765,14 +13765,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b50L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13858,14 +13858,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b44L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -13951,14 +13951,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bbcL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14044,14 +14044,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ad2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14137,14 +14137,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b26L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14230,14 +14230,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bc8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14323,14 +14323,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b98L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14416,14 +14416,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b02L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14509,14 +14509,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c22L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14602,14 +14602,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c3aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14695,14 +14695,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400af6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14788,14 +14788,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c28L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14881,14 +14881,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b62L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -14974,14 +14974,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400baaL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15067,14 +15067,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b68L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15160,14 +15160,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400c16L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15253,14 +15253,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400accL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15346,14 +15346,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b92L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15439,14 +15439,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400afcL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15532,14 +15532,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400be6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15625,14 +15625,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b9eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15718,14 +15718,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400ac0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15811,14 +15811,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b74L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15904,14 +15904,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bceL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -15997,14 +15997,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b56L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16090,14 +16090,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b7aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16183,14 +16183,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b5cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16276,14 +16276,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400adeL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16369,14 +16369,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b3eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16462,14 +16462,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bb0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16555,14 +16555,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b0eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16648,14 +16648,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b1aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16741,14 +16741,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bf2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16834,14 +16834,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bd4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -16927,14 +16927,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bf8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17020,14 +17020,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400bc2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17113,14 +17113,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b8cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17206,14 +17206,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400aeaL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17299,14 +17299,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400b32L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17390,14 +17390,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009d0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17480,14 +17480,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009acL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17570,14 +17570,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a24L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17660,14 +17660,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009f4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17750,14 +17750,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a1eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17840,14 +17840,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a7eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -17930,14 +17930,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400994L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18020,14 +18020,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400934L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18110,14 +18110,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a9cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18200,14 +18200,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40092eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18290,14 +18290,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009a6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18380,14 +18380,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a54L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18470,14 +18470,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a66L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18560,14 +18560,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400958L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18650,14 +18650,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40095eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18740,14 +18740,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400976L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18830,14 +18830,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a8aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -18920,14 +18920,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a12L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19010,14 +19010,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40093aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19100,14 +19100,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a30L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19190,14 +19190,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009caL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19280,14 +19280,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a3cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19370,14 +19370,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a18L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19460,14 +19460,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40098eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19550,14 +19550,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a96L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19640,14 +19640,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a90L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19730,14 +19730,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a06L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19820,14 +19820,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400928L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -19910,14 +19910,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a84L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20000,14 +20000,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a72L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20090,14 +20090,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400946L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20180,14 +20180,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400940L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20270,14 +20270,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400aa2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20360,14 +20360,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40097cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20450,14 +20450,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a48L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20540,14 +20540,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400952L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20630,14 +20630,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40094cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20720,14 +20720,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a0cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20810,14 +20810,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400964L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20900,14 +20900,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a36L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -20990,14 +20990,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40099aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21080,14 +21080,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400988L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21170,14 +21170,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a5aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21260,14 +21260,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40096aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21350,14 +21350,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009b2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21440,14 +21440,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a60L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21530,14 +21530,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009beL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21620,14 +21620,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009e2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21710,14 +21710,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009d6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21800,14 +21800,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a6cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21890,14 +21890,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009c4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -21980,14 +21980,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a00L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22070,14 +22070,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009e8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22160,14 +22160,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009b8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22250,14 +22250,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009eeL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22340,14 +22340,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009a0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22430,14 +22430,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400970L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22520,14 +22520,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a78L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22610,14 +22610,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a2aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22700,14 +22700,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a42L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22790,14 +22790,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400a4eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22880,14 +22880,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009dcL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -22970,14 +22970,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4009faL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23060,14 +23060,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400982L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23148,14 +23148,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400746L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23235,14 +23235,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400650L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23322,14 +23322,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400668L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23409,14 +23409,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400698L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23496,14 +23496,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006c8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23583,14 +23583,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006bcL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23670,14 +23670,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40068cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23757,14 +23757,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40062cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23844,14 +23844,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400764L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -23931,14 +23931,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4005fcL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24018,14 +24018,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006ceL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24105,14 +24105,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400704L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24192,14 +24192,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006f8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24279,14 +24279,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006c2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24366,14 +24366,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40069eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24453,14 +24453,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006b6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24540,14 +24540,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400620L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24627,14 +24627,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400710L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24714,14 +24714,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006b0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24801,14 +24801,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400740L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24888,14 +24888,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400692L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -24975,14 +24975,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40064aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25062,14 +25062,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400728L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25234,14 +25234,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40077cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'RBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25341,14 +25341,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400626L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25428,14 +25428,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006d4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25515,14 +25515,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400686L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25602,14 +25602,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400770L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25689,14 +25689,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40071cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25776,14 +25776,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400776L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25863,14 +25863,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400758L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -25950,14 +25950,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400602L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26037,14 +26037,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400608L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26124,14 +26124,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400752L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26211,14 +26211,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400638L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26298,14 +26298,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40074cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26385,14 +26385,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400734L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26472,14 +26472,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400644L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26559,14 +26559,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40065cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26646,14 +26646,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40061aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26733,14 +26733,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40073aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26820,14 +26820,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40070aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26907,14 +26907,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006aaL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -26994,14 +26994,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400716L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27081,14 +27081,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40063eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27168,14 +27168,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400656L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27255,14 +27255,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40072eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27342,14 +27342,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400680L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27429,14 +27429,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400674L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27516,14 +27516,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40067aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27603,14 +27603,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400722L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27690,14 +27690,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006e6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27777,14 +27777,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40076aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27864,14 +27864,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006ecL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -27951,14 +27951,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400632L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28038,14 +28038,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40066eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28125,14 +28125,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006f2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28212,14 +28212,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400614L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28299,14 +28299,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006daL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28386,14 +28386,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006a4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28473,14 +28473,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006feL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28560,14 +28560,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400662L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28647,14 +28647,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4006e0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28734,14 +28734,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40060eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28821,14 +28821,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40075eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28906,14 +28906,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400856L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -28990,14 +28990,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007ccL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29074,14 +29074,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40087aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29158,14 +29158,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400802L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29242,14 +29242,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007fcL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29326,14 +29326,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008c8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29410,14 +29410,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008f8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29494,14 +29494,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40080eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29578,14 +29578,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40089eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29662,14 +29662,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008f2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29746,14 +29746,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007b4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29830,14 +29830,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008ecL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29914,14 +29914,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007d8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -29998,14 +29998,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400892L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30082,14 +30082,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40084aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30166,14 +30166,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40088cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30250,14 +30250,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008feL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30334,14 +30334,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400838L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30418,14 +30418,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400832L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30502,14 +30502,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400820L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30586,14 +30586,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400850L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30670,14 +30670,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007d2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30754,14 +30754,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400826L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30838,14 +30838,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400898L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -30922,14 +30922,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008aaL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31006,14 +31006,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007eaL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31090,14 +31090,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007f6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31174,14 +31174,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008b0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31258,14 +31258,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008a4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31342,14 +31342,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008e0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31426,14 +31426,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400904L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31510,14 +31510,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008c2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31594,14 +31594,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40081aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31678,14 +31678,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008bcL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31762,14 +31762,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007deL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31846,14 +31846,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400814L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -31930,14 +31930,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007c6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32014,14 +32014,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400868L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32098,14 +32098,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008ceL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32182,14 +32182,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400874L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32266,14 +32266,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40085cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32350,14 +32350,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007a8L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32434,14 +32434,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40082cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32518,14 +32518,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008daL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32602,14 +32602,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007a2L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32686,14 +32686,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007e4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32770,14 +32770,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400880L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32854,14 +32854,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400886L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -32938,14 +32938,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008b6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33022,14 +33022,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007baL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33106,14 +33106,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40090aL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33190,14 +33190,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40079cL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33274,14 +33274,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007aeL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33358,14 +33358,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400844L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33442,14 +33442,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008e6L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33526,14 +33526,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400808L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33610,14 +33610,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4008d4L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33694,14 +33694,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400796L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33778,14 +33778,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40083eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33862,14 +33862,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400790L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -33946,14 +33946,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007c0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -34030,14 +34030,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x4007f0L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -34114,14 +34114,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x40086eL)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
@@ -34198,14 +34198,14 @@ class CPUTest(unittest.TestCase):
             try:
                 cpu.execute()
                 done = True
-            except ConcretizeRegister,e:
+            except ConcretizeRegister as e:
                 symbol = getattr(cpu, e.reg_name)
                 values = solver.get_all_values(cs, symbol)
                 self.assertEqual(len(values), 1)
                 setattr(cpu, e.reg_name, values[0])
                 setattr(cpu, 'RIP', 0x400862L)
 
-            except ConcretizeMemory,e:
+            except ConcretizeMemory as e:
                 symbol = getattr(cpu, 'EBP')
                 if isinstance(symbol, Expression):
                     values = solver.get_all_values(cs, symbol)
