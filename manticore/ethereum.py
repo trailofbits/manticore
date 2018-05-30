@@ -194,7 +194,7 @@ class DetectInvalid(Detector):
                 self.add_finding_here(state, "INVALID intruction")
 
 
-class IntegerOverflow(Detector):
+class DetectIntegerOverflow(Detector):
     '''
         Detects potential overflow and underflow conditions on ADD and SUB instructions.
     '''
@@ -235,7 +235,7 @@ class IntegerOverflow(Detector):
                     self.add_finding(state, "Result of integuer overflowed intruction is written to the storage")
 
 
-class UninitializedMemory(Detector):
+class DetectUninitializedMemory(Detector):
     '''
         Detects uses of uninitialized memory
     '''
@@ -257,29 +257,7 @@ class UninitializedMemory(Detector):
         state.context.setdefault('seth.detectors.initialized_memory', set()).add((current_contract, offset))
 
 
-class UninitializedMemory(Detector):
-    '''
-        Detects uses of uninitialized memory
-    '''
-
-    def did_evm_read_memory_callback(self, state, offset, value):
-        initialized_memory = state.context.get('seth.detectors.initialized_memory', set())
-        cbu = True  # Can be unknown
-        current_contract = state.platform.current_vm.address
-        for known_contract, known_offset in initialized_memory:
-            if current_contract == known_contract:
-                cbu = Operators.AND(cbu, offset != known_offset)
-        if state.can_be_true(cbu):
-            self.add_finding_here(state, "Potentially reading uninitialized memory at instruction (address: %r, offset %r)" % (current_contract, offset))
-
-    def did_evm_write_memory_callback(self, state, offset, value):
-        current_contract = state.platform.current_vm.address
-
-        # concrete or symbolic write
-        state.context.setdefault('seth.detectors.initialized_memory', set()).add((current_contract, offset))
-
-
-class UninitializedStorage(Detector):
+class DetectUninitializedStorage(Detector):
     '''
         Detects uses of uninitialized storage
     '''
@@ -1342,11 +1320,6 @@ class ManticoreEVM(Manticore):
         filter_nohuman_constants = FilterFunctions(regexp=r".*", depth='human', mutability='constant', include=False)
         self.register_plugin(filter_nohuman_constants)
 
-        self.register_detector(IntegerOverflow())
-        self.register_detector(UninitializedStorage())
-        self.register_detector(UninitializedMemory())
-
-        self.register_detector(DetectInvalid())
         while (current_coverage < 100 or not tx_use_coverage) and not self.is_shutdown():
             try:
                 run_symbolic_tx()

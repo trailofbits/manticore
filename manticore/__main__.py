@@ -80,6 +80,22 @@ def parse_arguments():
     parser.add_argument('--contract', type=str,
                         help='Contract name to analyze in case of multiple ones (Ethereum only)')
 
+    parser.add_argument('--detect-io', action='store_true',
+                        help='Enable integer overflow detection (Ethereum only)')
+
+    parser.add_argument('--detect-invalid', action='store_true',
+                        help='Enable INVALID instruction detection (Ethereum only)')
+
+    parser.add_argument('--detect-uninitialized-memory', action='store_true',
+                        help='Enable detection of uninitialized memory usage (Ethereum only)')
+
+    parser.add_argument('--detect-uninitialized-storage',  action='store_true',
+                        help='Enable detection of uninitialized storage usage (Ethereum only)')
+
+    parser.add_argument('--detect-all',  action='store_true',
+                        help='Enable all detector heuristics (Ethereum only)')
+
+
     parsed = parser.parse_args(sys.argv[1:])
     if parsed.procs <= 0:
         parsed.procs = 1
@@ -93,10 +109,25 @@ def parse_arguments():
 
 
 def ethereum_cli(args):
-    from .ethereum import ManticoreEVM
+    from .ethereum import ManticoreEVM, DetectInvalid, DetectIntegerOverflow, DetectUninitializedStorage, DetectUninitializedMemory
     log.init_logging()
 
     m = ManticoreEVM(procs=args.procs)
+
+    if args.detect_all:
+        args.detect_invalid = True
+        args.detect_io = True
+        args.detect_uninitialized_storage = True
+        args.detect_uninitialized_memory = True
+
+    if args.detect_invalid:
+        m.register_detector(DetectInvalid())
+    if args.detect_io:
+        m.register_detector(DetectIntegerOverflow())
+    if args.detect_uninitialized_storage:
+        m.register_detector(DetectUninitializedStorage())
+    if args.detect_uninitialized_memory:
+        m.register_detector(DetectUninitializedMemory())
 
     logger.info("Beginning analysis")
 
