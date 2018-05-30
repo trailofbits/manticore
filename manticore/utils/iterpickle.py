@@ -23,6 +23,7 @@ Misc variables:
     compatible_formats
 
 """
+from __future__ import print_function
 
 __version__ = "$Revision: 72223 $"       # Code version
 
@@ -1080,8 +1081,8 @@ class Unpickler:
             try:
                 value = klass(*args)
             except TypeError as err:
-                raise TypeError, "in constructor for %s: %s" % (
-                    klass.__name__, str(err)), sys.exc_info()[2]
+                raise TypeError("in constructor for %s: %s" % (
+                    klass.__name__, str(err)), sys.exc_info()[2])
         self.append(value)
 
     def load_inst(self):
